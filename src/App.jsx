@@ -15,6 +15,13 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Lista de irmãos
+  const [irmaos, setIrmaos] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('todos');
+  const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
+  const [familiaresSelecionado, setFamiliaresSelecionado] = useState(null);
+
   const [irmaoForm, setIrmaoForm] = useState({
     cim: '', nome: '', cpf: '', rg: '', data_nascimento: '',
     estado_civil: '', profissao: '', formacao: '', status: 'ativo',
@@ -31,14 +38,21 @@ function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session) loadUserData(session.user.email);
+      if (session) {
+        loadUserData(session.user.email);
+        loadIrmaos();
+      }
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session) loadUserData(session.user.email);
-      else setUserData(null);
+      if (session) {
+        loadUserData(session.user.email);
+        loadIrmaos();
+      } else {
+        setUserData(null);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -51,6 +65,39 @@ function App() {
       setUserData(data);
     } catch (err) {
       console.error('Erro ao carregar dados:', err);
+    }
+  };
+
+  const loadIrmaos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('irmaos')
+        .select('*')
+        .order('nome', { ascending: true });
+      
+      if (error) throw error;
+      setIrmaos(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar irmãos:', err);
+    }
+  };
+
+  const loadFamiliares = async (irmaoId) => {
+    try {
+      const [esposaRes, paisRes, filhosRes] = await Promise.all([
+        supabase.from('esposas').select('*').eq('irmao_id', irmaoId),
+        supabase.from('pais').select('*').eq('irmao_id', irmaoId),
+        supabase.from('filhos').select('*').eq('irmao_id', irmaoId)
+      ]);
+
+      setFamiliaresSelecionado({
+        esposa: esposaRes.data?.[0] || null,
+        pai: paisRes.data?.find(p => p.tipo === 'pai') || null,
+        mae: paisRes.data?.find(p => p.tipo === 'mae') || null,
+        filhos: filhosRes.data || []
+      });
+    } catch (err) {
+      console.error('Erro ao carregar familiares:', err);
     }
   };
 
@@ -96,6 +143,18 @@ function App() {
     return `${anos} ano(s) e ${meses} mês(es)`;
   };
 
+  const calcularIdade = (dataNascimento) => {
+    if (!dataNascimento) return '';
+    const nascimento = new Date(dataNascimento);
+    const hoje = new Date();
+    let idade = hoje.getFullYear() - nascimento.getFullYear();
+    const m = hoje.getMonth() - nascimento.getMonth();
+    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+      idade--;
+    }
+    return `${idade} anos`;
+  };
+
   const adicionarFilho = () => {
     setFilhos([...filhos, { nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
   };
@@ -110,6 +169,20 @@ function App() {
     setFilhos(novosFilhos);
   };
 
+  const limparFormulario = () => {
+    setIrmaoForm({
+      cim: '', nome: '', cpf: '', rg: '', data_nascimento: '',
+      estado_civil: '', profissao: '', formacao: '', status: 'ativo',
+      naturalidade: '', endereco: '', cidade: '', celular: '',
+      email: '', local_trabalho: '', cargo: '',
+      data_iniciacao: '', data_elevacao: '', data_exaltacao: ''
+    });
+    setEsposa({ nome: '', data_nascimento: '' });
+    setPai({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
+    setMae({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
+    setFilhos([{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
+  };
+
   const handleSubmitIrmao = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -117,43 +190,73 @@ function App() {
     setSuccessMessage('');
 
     try {
-      const { data: irmaoData, error: irmaoError } = await supabase.from('irmaos').insert([irmaoForm]).select().single();
+      // Inserir irmão
+      const { data: irmaoData, error: irmaoError } = await supabase
+        .from('irmaos')
+        .insert([irmaoForm])
+        .select()
+        .single();
+
       if (irmaoError) throw irmaoError;
 
       const irmaoId = irmaoData.id;
 
-      if (esposa.nome) {
-        await supabase.from('esposas').insert([{ irmao_id: irmaoId, ...esposa }]);
+      // Inserir esposa APENAS se nome preenchido
+      if (esposa.nome && esposa.nome.trim() !== '') {
+        const { error: esposaError } = await supabase.from('esposas').insert([{ 
+          irmao_id: irmaoId,
+          nome: esposa.nome,
+          data_nascimento: esposa.data_nascimento || null
+        }]);
+        if (esposaError) console.error('Erro ao inserir esposa:', esposaError);
       }
 
-      if (pai.nome) {
-        await supabase.from('pais').insert([{ irmao_id: irmaoId, tipo: 'pai', ...pai }]);
+      // Inserir pai APENAS se nome preenchido
+      if (pai.nome && pai.nome.trim() !== '') {
+        const { error: paiError } = await supabase.from('pais').insert([{ 
+          irmao_id: irmaoId,
+          tipo: 'pai',
+          nome: pai.nome,
+          data_nascimento: pai.data_nascimento || null,
+          falecido: pai.falecido,
+          data_obito: pai.falecido ? pai.data_obito || null : null
+        }]);
+        if (paiError) console.error('Erro ao inserir pai:', paiError);
       }
 
-      if (mae.nome) {
-        await supabase.from('pais').insert([{ irmao_id: irmaoId, tipo: 'mae', ...mae }]);
+      // Inserir mãe APENAS se nome preenchido
+      if (mae.nome && mae.nome.trim() !== '') {
+        const { error: maeError } = await supabase.from('pais').insert([{ 
+          irmao_id: irmaoId,
+          tipo: 'mae',
+          nome: mae.nome,
+          data_nascimento: mae.data_nascimento || null,
+          falecido: mae.falecido,
+          data_obito: mae.falecido ? mae.data_obito || null : null
+        }]);
+        if (maeError) console.error('Erro ao inserir mãe:', maeError);
       }
 
-      const filhosValidos = filhos.filter(f => f.nome);
+      // Inserir filhos APENAS os que têm nome preenchido
+      const filhosValidos = filhos.filter(f => f.nome && f.nome.trim() !== '');
       if (filhosValidos.length > 0) {
-        await supabase.from('filhos').insert(filhosValidos.map(f => ({ irmao_id: irmaoId, ...f })));
+        const filhosParaInserir = filhosValidos.map(f => ({
+          irmao_id: irmaoId,
+          nome: f.nome,
+          data_nascimento: f.data_nascimento || null,
+          falecido: f.falecido,
+          data_obito: f.falecido ? f.data_obito || null : null
+        }));
+        
+        const { error: filhosError } = await supabase.from('filhos').insert(filhosParaInserir);
+        if (filhosError) console.error('Erro ao inserir filhos:', filhosError);
       }
 
-      setSuccessMessage('Irmão cadastrado com sucesso!');
-      
-      setIrmaoForm({
-        cim: '', nome: '', cpf: '', rg: '', data_nascimento: '',
-        estado_civil: '', profissao: '', formacao: '', status: 'ativo',
-        naturalidade: '', endereco: '', cidade: '', celular: '',
-        email: '', local_trabalho: '', cargo: '',
-        data_iniciacao: '', data_elevacao: '', data_exaltacao: ''
-      });
-      setEsposa({ nome: '', data_nascimento: '' });
-      setPai({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-      setMae({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-      setFilhos([{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
-
+      setSuccessMessage('✅ Irmão cadastrado com sucesso!');
+      limparFormulario();
+      loadIrmaos();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+
     } catch (err) {
       setError(err.message || 'Erro ao cadastrar irmão');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -161,6 +264,19 @@ function App() {
       setLoading(false);
     }
   };
+
+  const visualizarIrmao = (irmao) => {
+    setIrmaoSelecionado(irmao);
+    loadFamiliares(irmao.id);
+    setCurrentPage('visualizar');
+  };
+
+  const irmaosFiltrados = irmaos.filter(irmao => {
+    const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       irmao.cim.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchStatus = statusFilter === 'todos' || irmao.status === statusFilter;
+    return matchSearch && matchStatus;
+  });
 
   if (loading && !session) {
     return (
@@ -195,6 +311,12 @@ function App() {
                 Dashboard
               </button>
               <button
+                onClick={() => setCurrentPage('listagem')}
+                className={`py-4 px-2 border-b-2 font-medium ${currentPage === 'listagem' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+              >
+                Listagem de Irmãos
+              </button>
+              <button
                 onClick={() => setCurrentPage('cadastro')}
                 className={`py-4 px-2 border-b-2 font-medium ${currentPage === 'cadastro' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
               >
@@ -206,26 +328,249 @@ function App() {
 
         <main className="max-w-7xl mx-auto px-6 py-8">
           {currentPage === 'dashboard' && (
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl shadow-md p-8 border border-green-200">
-              <div className="flex items-start gap-4">
-                <div className="text-5xl">🎉</div>
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-3">Sistema Operacional!</h2>
-                  <p className="text-gray-700 mb-4">
-                    ✅ Fase 1: Autenticação completa<br />
-                    ✅ Fase 2: Cadastro de Irmãos pronto
-                  </p>
-                  <div className="bg-white rounded-lg p-4 border border-blue-200">
-                    <p className="text-gray-800 font-semibold mb-2">📋 Funcionalidades disponíveis:</p>
-                    <ul className="text-gray-600 space-y-1">
-                      <li>• Cadastro completo de irmãos com todos os campos</li>
-                      <li>• Cadastro de esposa</li>
-                      <li>• Cadastro de pais (pai e mãe)</li>
-                      <li>• Cadastro de múltiplos filhos</li>
-                      <li>• Cálculo automático do tempo de maçonaria</li>
-                    </ul>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-blue-600">
+                  <h3 className="text-2xl font-bold text-blue-900 mb-2">{irmaos.length}</h3>
+                  <p className="text-gray-600">Total de Irmãos</p>
+                </div>
+                <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-green-600">
+                  <h3 className="text-2xl font-bold text-green-900 mb-2">
+                    {irmaos.filter(i => i.status === 'ativo').length}
+                  </h3>
+                  <p className="text-gray-600">Irmãos Ativos</p>
+                </div>
+                <div className="bg-white rounded-xl shadow-md p-6 border-l-4 border-red-600">
+                  <h3 className="text-2xl font-bold text-red-900 mb-2">
+                    {irmaos.filter(i => i.status === 'inativo').length}
+                  </h3>
+                  <p className="text-gray-600">Irmãos Inativos</p>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl shadow-md p-8 border border-green-200">
+                <div className="flex items-start gap-4">
+                  <div className="text-5xl">🎉</div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-3">Sistema Completo!</h2>
+                    <p className="text-gray-700 mb-4">
+                      ✅ Fase 1: Autenticação<br />
+                      ✅ Fase 2: Cadastro de Irmãos<br />
+                      ✅ Fase 3: Listagem e Pesquisa
+                    </p>
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {currentPage === 'listagem' && (
+            <div>
+              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Listagem de Irmãos</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">🔍 Pesquisar por Nome ou CIM</label>
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Digite o nome ou CIM..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por Status</label>
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    >
+                      <option value="todos">Todos</option>
+                      <option value="ativo">Ativos</option>
+                      <option value="inativo">Inativos</option>
+                    </select>
+                  </div>
+                </div>
+
+                {irmaosFiltrados.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-xl mb-2">📭</p>
+                    <p>Nenhum irmão encontrado</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">CIM</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Cargo</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {irmaosFiltrados.map((irmao) => (
+                          <tr key={irmao.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">{irmao.cim}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900 font-medium">{irmao.nome}</td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{irmao.cargo || '-'}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                irmao.status === 'ativo' 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {irmao.status === 'ativo' ? '✅ Ativo' : '❌ Inativo'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              <button
+                                onClick={() => visualizarIrmao(irmao)}
+                                className="text-blue-600 hover:text-blue-800 font-semibold"
+                              >
+                                Ver Detalhes →
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {currentPage === 'visualizar' && irmaoSelecionado && (
+            <div>
+              <button
+                onClick={() => setCurrentPage('listagem')}
+                className="mb-4 text-blue-600 hover:text-blue-800 font-semibold"
+              >
+                ← Voltar para Listagem
+              </button>
+
+              <div className="bg-white rounded-xl shadow-lg p-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Dados Completos do Irmão</h2>
+
+                {/* Dados Principais */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">📋 Dados Pessoais</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div><strong>CIM:</strong> {irmaoSelecionado.cim}</div>
+                    <div><strong>Nome:</strong> {irmaoSelecionado.nome}</div>
+                    <div><strong>CPF:</strong> {irmaoSelecionado.cpf || '-'}</div>
+                    <div><strong>RG:</strong> {irmaoSelecionado.rg || '-'}</div>
+                    <div><strong>Data Nascimento:</strong> {irmaoSelecionado.data_nascimento ? new Date(irmaoSelecionado.data_nascimento).toLocaleDateString('pt-BR') : '-'}</div>
+                    {irmaoSelecionado.data_nascimento && (
+                      <div><strong>Idade:</strong> {calcularIdade(irmaoSelecionado.data_nascimento)}</div>
+                    )}
+                    <div><strong>Estado Civil:</strong> {irmaoSelecionado.estado_civil || '-'}</div>
+                    <div><strong>Profissão:</strong> {irmaoSelecionado.profissao || '-'}</div>
+                    <div><strong>Formação:</strong> {irmaoSelecionado.formacao || '-'}</div>
+                    <div><strong>Naturalidade:</strong> {irmaoSelecionado.naturalidade || '-'}</div>
+                    <div className="md:col-span-2"><strong>Endereço:</strong> {irmaoSelecionado.endereco || '-'}</div>
+                    <div><strong>Cidade:</strong> {irmaoSelecionado.cidade || '-'}</div>
+                    <div><strong>Celular:</strong> {irmaoSelecionado.celular || '-'}</div>
+                    <div><strong>E-mail:</strong> {irmaoSelecionado.email || '-'}</div>
+                    <div className="md:col-span-2"><strong>Local de Trabalho:</strong> {irmaoSelecionado.local_trabalho || '-'}</div>
+                  </div>
+                </div>
+
+                {/* Dados Maçônicos */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">🔷 Dados Maçônicos</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div><strong>Cargo:</strong> {irmaoSelecionado.cargo || '-'}</div>
+                    <div><strong>Status:</strong> 
+                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
+                        irmaoSelecionado.status === 'ativo' 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {irmaoSelecionado.status === 'ativo' ? '✅ Ativo' : '❌ Inativo'}
+                      </span>
+                    </div>
+                    <div><strong>Data Iniciação:</strong> {irmaoSelecionado.data_iniciacao ? new Date(irmaoSelecionado.data_iniciacao).toLocaleDateString('pt-BR') : '-'}</div>
+                    <div><strong>Data Elevação:</strong> {irmaoSelecionado.data_elevacao ? new Date(irmaoSelecionado.data_elevacao).toLocaleDateString('pt-BR') : '-'}</div>
+                    <div><strong>Data Exaltação:</strong> {irmaoSelecionado.data_exaltacao ? new Date(irmaoSelecionado.data_exaltacao).toLocaleDateString('pt-BR') : '-'}</div>
+                    {irmaoSelecionado.data_iniciacao && (
+                      <div className="md:col-span-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <strong>⏱️ Tempo de Maçonaria:</strong> {calcularTempoMaconaria(irmaoSelecionado.data_iniciacao)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Familiares */}
+                {familiaresSelecionado && (
+                  <div className="space-y-6">
+                    {familiaresSelecionado.esposa && (
+                      <div>
+                        <h3 className="text-xl font-bold text-pink-900 mb-4 pb-2 border-b-2 border-pink-200">💑 Esposa</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div><strong>Nome:</strong> {familiaresSelecionado.esposa.nome}</div>
+                          <div><strong>Data Nascimento:</strong> {familiaresSelecionado.esposa.data_nascimento ? new Date(familiaresSelecionado.esposa.data_nascimento).toLocaleDateString('pt-BR') : '-'}</div>
+                          {familiaresSelecionado.esposa.data_nascimento && (
+                            <div><strong>Idade:</strong> {calcularIdade(familiaresSelecionado.esposa.data_nascimento)}</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {(familiaresSelecionado.pai || familiaresSelecionado.mae) && (
+                      <div>
+                        <h3 className="text-xl font-bold text-green-900 mb-4 pb-2 border-b-2 border-green-200">👨‍👩‍👦 Pais</h3>
+                        
+                        {familiaresSelecionado.pai && (
+                          <div className="mb-4">
+                            <p className="font-semibold text-gray-700 mb-2">Pai:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                              <div><strong>Nome:</strong> {familiaresSelecionado.pai.nome}</div>
+                              <div><strong>Data Nascimento:</strong> {familiaresSelecionado.pai.data_nascimento ? new Date(familiaresSelecionado.pai.data_nascimento).toLocaleDateString('pt-BR') : '-'}</div>
+                              <div><strong>Status:</strong> {familiaresSelecionado.pai.falecido ? `❌ Falecido em ${familiaresSelecionado.pai.data_obito ? new Date(familiaresSelecionado.pai.data_obito).toLocaleDateString('pt-BR') : '(data não informada)'}` : '✅ Vivo'}</div>
+                            </div>
+                          </div>
+                        )}
+
+                        {familiaresSelecionado.mae && (
+                          <div>
+                            <p className="font-semibold text-gray-700 mb-2">Mãe:</p>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                              <div><strong>Nome:</strong> {familiaresSelecionado.mae.nome}</div>
+                              <div><strong>Data Nascimento:</strong> {familiaresSelecionado.mae.data_nascimento ? new Date(familiaresSelecionado.mae.data_nascimento).toLocaleDateString('pt-BR') : '-'}</div>
+                              <div><strong>Status:</strong> {familiaresSelecionado.mae.falecido ? `❌ Falecida em ${familiaresSelecionado.mae.data_obito ? new Date(familiaresSelecionado.mae.data_obito).toLocaleDateString('pt-BR') : '(data não informada)'}` : '✅ Viva'}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {familiaresSelecionado.filhos && familiaresSelecionado.filhos.length > 0 && (
+                      <div>
+                        <h3 className="text-xl font-bold text-purple-900 mb-4 pb-2 border-b-2 border-purple-200">👶 Filhos</h3>
+                        <div className="space-y-3">
+                          {familiaresSelecionado.filhos.map((filho, index) => (
+                            <div key={filho.id} className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                              <p className="font-semibold text-gray-700 mb-2">Filho {index + 1}:</p>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div><strong>Nome:</strong> {filho.nome}</div>
+                                <div><strong>Data Nascimento:</strong> {filho.data_nascimento ? new Date(filho.data_nascimento).toLocaleDateString('pt-BR') : '-'}</div>
+                                <div><strong>Status:</strong> {filho.falecido ? `❌ Falecido em ${filho.data_obito ? new Date(filho.data_obito).toLocaleDateString('pt-BR') : '(data não informada)'}` : '✅ Vivo'}</div>
+                                {filho.data_nascimento && !filho.falecido && (
+                                  <div><strong>Idade:</strong> {calcularIdade(filho.data_nascimento)}</div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -242,12 +587,11 @@ function App() {
 
               {successMessage && (
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-                  ✅ {successMessage}
+                  {successMessage}
                 </div>
               )}
 
               <div className="space-y-8">
-                {/* Dados do Irmão */}
                 <div>
                   <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">📋 Dados do Irmão</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -344,7 +688,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Esposa */}
                 <div>
                   <h3 className="text-xl font-bold text-pink-900 mb-4 pb-2 border-b-2 border-pink-200">💑 Dados da Esposa (Opcional)</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -359,7 +702,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Pais */}
                 <div>
                   <h3 className="text-xl font-bold text-green-900 mb-4 pb-2 border-b-2 border-green-200">👨‍👩‍👦 Dados dos Pais (Opcional)</h3>
                   
@@ -416,7 +758,6 @@ function App() {
                   </div>
                 </div>
 
-                {/* Filhos */}
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-purple-900 pb-2 border-b-2 border-purple-200">👶 Dados dos Filhos (Opcional)</h3>
@@ -459,23 +800,10 @@ function App() {
                   ))}
                 </div>
 
-                {/* Botão Salvar */}
                 <div className="flex justify-end gap-4 pt-6 border-t">
                   <button
                     type="button"
-                    onClick={() => {
-                      setIrmaoForm({
-                        cim: '', nome: '', cpf: '', rg: '', data_nascimento: '',
-                        estado_civil: '', profissao: '', formacao: '', status: 'ativo',
-                        naturalidade: '', endereco: '', cidade: '', celular: '',
-                        email: '', local_trabalho: '', cargo: '',
-                        data_iniciacao: '', data_elevacao: '', data_exaltacao: ''
-                      });
-                      setEsposa({ nome: '', data_nascimento: '' });
-                      setPai({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-                      setMae({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-                      setFilhos([{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
-                    }}
+                    onClick={limparFormulario}
                     className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
                   >
                     Limpar Formulário
@@ -496,7 +824,6 @@ function App() {
     );
   }
 
-  // Tela de Login
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md">
@@ -553,7 +880,7 @@ function App() {
         </div>
 
         <div className="mt-8 text-center">
-          <p className="text-xs text-gray-400">Fase 2: Cadastro Completo ✅</p>
+          <p className="text-xs text-gray-400">Fase 3: Listagem e Pesquisa ✅</p>
         </div>
       </div>
     </div>
