@@ -552,7 +552,7 @@ function App() {
         <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md">
           <div className="text-center mb-8">
             <img src={LOGO_URL} alt="Logo" className="w-32 h-32 mx-auto mb-4 rounded-full shadow-lg" />
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">Loja Maçônica</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">A∴R∴L∴S∴ Acácia de Paranatinga nº 30</h1>
             <p className="text-gray-600">Sistema de Gestão</p>
           </div>
 
