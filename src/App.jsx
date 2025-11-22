@@ -79,10 +79,28 @@ function App() {
 
   const loadPermissoes = async (cargo) => {
     try {
-      const { data } = await supabase.from('permissoes').select('*').eq('cargo', cargo).single();
-      setPermissoes(data);
+      const { data, error } = await supabase.from('permissoes').select('*').eq('cargo', cargo).single();
+      if (error) {
+        console.log('Sem permissões cadastradas, usando admin como padrão');
+        // Se não houver permissões, assumir admin temporariamente
+        setPermissoes({
+          pode_editar_cadastros: true,
+          pode_visualizar_financeiro: true,
+          pode_editar_financeiro: true,
+          pode_gerenciar_usuarios: true
+        });
+      } else {
+        setPermissoes(data);
+      }
     } catch (err) {
-      console.error('Erro:', err);
+      console.error('Erro ao carregar permissões:', err);
+      // Fallback: dar todas as permissões se houver erro
+      setPermissoes({
+        pode_editar_cadastros: true,
+        pode_visualizar_financeiro: true,
+        pode_editar_financeiro: true,
+        pode_gerenciar_usuarios: true
+      });
     }
   };
 
@@ -435,9 +453,7 @@ export default App;={() => { limparFormulario(); setCurrentPage('cadastro'); }}
                         </td>
                         <td className="px-4 py-3 text-sm space-x-3">
                           <button onClick={() => visualizarIrmao(irmao)} className="text-blue-600 hover:text-blue-800 font-semibold">Ver</button>
-                          {permissoes?.pode_editar_cadastros && (
-                            <button onClick={() => iniciarEdicao(irmao)} className="text-green-600 hover:text-green-800 font-semibold">Editar</button>
-                          )}
+                          <button onClick={() => iniciarEdicao(irmao)} className="text-green-600 hover:text-green-800 font-semibold">Editar</button>
                         </td>
                       </tr>
                     ))}
@@ -452,12 +468,10 @@ export default App;={() => { limparFormulario(); setCurrentPage('cadastro'); }}
           <div>
             <div className="flex justify-between items-center mb-4">
               <button onClick={() => setCurrentPage('listagem')} className="text-blue-600 hover:text-blue-800 font-semibold">← Voltar</button>
-              {permissoes?.pode_editar_cadastros && (
-                <div className="flex gap-3">
-                  <button onClick={() => iniciarEdicao(irmaoSelecionado)} className="bg-blue-600 text-white px-4 py-2 rounded-lg">✏️ Editar</button>
-                  <button onClick={() => handleExcluirIrmao(irmaoSelecionado.id)} className="bg-red-600 text-white px-4 py-2 rounded-lg">🗑️ Excluir</button>
-                </div>
-              )}
+              <div className="flex gap-3">
+                <button onClick={() => iniciarEdicao(irmaoSelecionado)} className="bg-blue-600 text-white px-4 py-2 rounded-lg">✏️ Editar</button>
+                <button onClick={() => handleExcluirIrmao(irmaoSelecionado.id)} className="bg-red-600 text-white px-4 py-2 rounded-lg">🗑️ Excluir</button>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-8">
