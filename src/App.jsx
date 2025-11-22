@@ -461,17 +461,37 @@ export default App;={() => { limparFormulario(); setCurrentPage('cadastro'); }}
             </div>
 
             <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-800 mb-6">Dados do Irmão</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div><strong>CIM:</strong> {irmaoSelecionado.cim}</div>
-                <div><strong>Nome:</strong> {irmaoSelecionado.nome}</div>
-                <div><strong>CPF:</strong> {irmaoSelecionado.cpf || '-'}</div>
-                <div><strong>Data Nasc:</strong> {formatarData(irmaoSelecionado.data_nascimento)}</div>
-                <div><strong>Cargo:</strong> {irmaoSelecionado.cargo || '-'}</div>
-                <div><strong>Status:</strong> {irmaoSelecionado.status}</div>
-                <div><strong>Data Iniciação:</strong> {formatarData(irmaoSelecionado.data_iniciacao)}</div>
-                <div><strong>Data Elevação:</strong> {formatarData(irmaoSelecionado.data_elevacao)}</div>
-                <div><strong>Data Exaltação:</strong> {formatarData(irmaoSelecionado.data_exaltacao)}</div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Dados Completos do Irmão</h2>
+              
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-blue-900 mb-3 pb-2 border-b">📋 Dados Pessoais</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div><strong>CIM:</strong> {irmaoSelecionado.cim}</div>
+                  <div><strong>Nome:</strong> {irmaoSelecionado.nome}</div>
+                  <div><strong>CPF:</strong> {irmaoSelecionado.cpf || '-'}</div>
+                  <div><strong>RG:</strong> {irmaoSelecionado.rg || '-'}</div>
+                  <div><strong>Data Nasc:</strong> {formatarData(irmaoSelecionado.data_nascimento)}</div>
+                  <div><strong>Estado Civil:</strong> {irmaoSelecionado.estado_civil || '-'}</div>
+                  <div><strong>Profissão:</strong> {irmaoSelecionado.profissao || '-'}</div>
+                  <div><strong>Formação:</strong> {irmaoSelecionado.formacao || '-'}</div>
+                  <div><strong>Naturalidade:</strong> {irmaoSelecionado.naturalidade || '-'}</div>
+                  <div className="md:col-span-2"><strong>Endereço:</strong> {irmaoSelecionado.endereco || '-'}</div>
+                  <div><strong>Cidade:</strong> {irmaoSelecionado.cidade || '-'}</div>
+                  <div><strong>Celular:</strong> {irmaoSelecionado.celular || '-'}</div>
+                  <div><strong>E-mail:</strong> {irmaoSelecionado.email || '-'}</div>
+                  <div className="md:col-span-2"><strong>Local de Trabalho:</strong> {irmaoSelecionado.local_trabalho || '-'}</div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold text-blue-900 mb-3 pb-2 border-b">🔷 Dados Maçônicos</h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <div><strong>Cargo na Loja:</strong> {irmaoSelecionado.cargo || '-'}</div>
+                  <div><strong>Status:</strong> <span className={`px-2 py-1 rounded text-xs ${irmaoSelecionado.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{irmaoSelecionado.status}</span></div>
+                  <div><strong>Data de Iniciação:</strong> {formatarData(irmaoSelecionado.data_iniciacao)}</div>
+                  <div><strong>Data de Elevação:</strong> {formatarData(irmaoSelecionado.data_elevacao)}</div>
+                  <div><strong>Data de Exaltação:</strong> {formatarData(irmaoSelecionado.data_exaltacao)}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -495,16 +515,30 @@ export default App;={() => { limparFormulario(); setCurrentPage('cadastro'); }}
                 <input type="text" value={irmaoForm.cpf} onChange={(e) => setIrmaoForm({...irmaoForm, cpf: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">RG</label>
+                <input type="text" value={irmaoForm.rg} onChange={(e) => setIrmaoForm({...irmaoForm, rg: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Data Nascimento</label>
                 <input type="date" value={irmaoForm.data_nascimento} onChange={(e) => setIrmaoForm({...irmaoForm, data_nascimento: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Estado Civil</label>
+                <select value={irmaoForm.estado_civil} onChange={(e) => setIrmaoForm({...irmaoForm, estado_civil: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                  <option value="">Selecione</option>
+                  <option value="solteiro">Solteiro</option>
+                  <option value="casado">Casado</option>
+                  <option value="divorciado">Divorciado</option>
+                  <option value="viuvo">Viúvo</option>
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Profissão</label>
                 <input type="text" value={irmaoForm.profissao} onChange={(e) => setIrmaoForm({...irmaoForm, profissao: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo na Loja</label>
-                <input type="text" value={irmaoForm.cargo} onChange={(e) => setIrmaoForm({...irmaoForm, cargo: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">Formação</label>
+                <input type="text" value={irmaoForm.formacao} onChange={(e) => setIrmaoForm({...irmaoForm, formacao: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
@@ -514,15 +548,43 @@ export default App;={() => { limparFormulario(); setCurrentPage('cadastro'); }}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data Iniciação</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Naturalidade</label>
+                <input type="text" value={irmaoForm.naturalidade} onChange={(e) => setIrmaoForm({...irmaoForm, naturalidade: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Endereço</label>
+                <input type="text" value={irmaoForm.endereco} onChange={(e) => setIrmaoForm({...irmaoForm, endereco: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cidade</label>
+                <input type="text" value={irmaoForm.cidade} onChange={(e) => setIrmaoForm({...irmaoForm, cidade: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Celular</label>
+                <input type="text" value={irmaoForm.celular} onChange={(e) => setIrmaoForm({...irmaoForm, celular: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
+                <input type="email" value={irmaoForm.email} onChange={(e) => setIrmaoForm({...irmaoForm, email: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Local de Trabalho</label>
+                <input type="text" value={irmaoForm.local_trabalho} onChange={(e) => setIrmaoForm({...irmaoForm, local_trabalho: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo na Loja</label>
+                <input type="text" value={irmaoForm.cargo} onChange={(e) => setIrmaoForm({...irmaoForm, cargo: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Ex: Venerável Mestre" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Iniciação</label>
                 <input type="date" value={irmaoForm.data_iniciacao} onChange={(e) => setIrmaoForm({...irmaoForm, data_iniciacao: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data Elevação</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Elevação</label>
                 <input type="date" value={irmaoForm.data_elevacao} onChange={(e) => setIrmaoForm({...irmaoForm, data_elevacao: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data Exaltação</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data de Exaltação</label>
                 <input type="date" value={irmaoForm.data_exaltacao} onChange={(e) => setIrmaoForm({...irmaoForm, data_exaltacao: e.target.value})} className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
               </div>
             </div>
