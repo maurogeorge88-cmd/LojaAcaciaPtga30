@@ -616,7 +616,7 @@ function App() {
             <div className="flex items-center gap-4">
               <img src={LOGO_URL} alt="Logo" className="w-12 h-12 rounded-full shadow-md" />
               <div>
-                <h1 className="text-2xl font-bold">Sistema Loja Maçônica</h1>
+                <h1 className="text-2xl font-bold">A∴R∴L∴S∴ Acácia de Paranatinga nº 30</h1>
                 <p className="text-sm text-blue-200">
                   {userData?.nome} • {userData?.cargo.charAt(0).toUpperCase() + userData?.cargo.slice(1)}
                 </p>
