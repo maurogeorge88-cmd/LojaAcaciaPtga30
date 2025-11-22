@@ -9,7 +9,7 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Logo placeholder - SUBSTITUA pela URL da sua logo
-const LOGO_URL = 'https://via.placeholder.com/150x150/1e3a8a/ffffff?text=LOJA';
+const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
 
 // ========================================
 // FUNÇÕES AUXILIARES
