@@ -84,6 +84,11 @@ function App() {
   const [corpoAdmin, setCorpoAdmin] = useState([]);
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
+  const [balaustres, setBalaustres] = useState([]);
+  const [pranchas, setPranchas] = useState([]);
+  const [corpoAdmin, setCorpoAdmin] = useState([]);
+  const [tiposSessao, setTiposSessao] = useState([]);
+  const [cargosLoja, setCargosLoja] = useState([]);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ativo');
