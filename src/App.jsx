@@ -8,8 +8,7 @@ const supabaseUrl = 'https://ypnvzjctyfdrkkrhskzs.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbnZ6amN0eWZkcmtrcmhza3pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTgxMzcsImV4cCI6MjA3OTMzNDEzN30.J5Jj7wudOhIAxy35DDBIWtr9yr9Lq3ABBRI9ZJ5z2pc';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Logo placeholder - SUBSTITUA pela URL da sua logo
-const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
+const LOGO_URL = 'https://via.placeholder.com/150x150/1e3a8a/ffffff?text=LOJA';
 
 // ========================================
 // FUNÇÕES AUXILIARES
@@ -36,16 +35,35 @@ const calcularIdade = (dataNascimento) => {
   return `${idade} anos`;
 };
 
+// CORREÇÃO: Formatar data sem problemas de fuso horário
 const formatarData = (data) => {
   if (!data) return '-';
-  return new Date(data).toLocaleDateString('pt-BR');
+  const date = new Date(data + 'T00:00:00');
+  return date.toLocaleDateString('pt-BR');
+};
+
+// Formatar data para input (YYYY-MM-DD)
+const formatarDataInput = (data) => {
+  if (!data) return '';
+  const date = new Date(data + 'T00:00:00');
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Obter dia da semana
+const obterDiaSemana = (data) => {
+  if (!data) return '';
+  const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+  const date = new Date(data + 'T00:00:00');
+  return dias[date.getDay()];
 };
 
 // ========================================
 // COMPONENTE PRINCIPAL
 // ========================================
 function App() {
-  // Estados globais
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -61,6 +79,12 @@ function App() {
   // Estados de dados
   const [irmaos, setIrmaos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
+  const [balaustres, setBalaustres] = useState([]);
+  const [pranchas, setPranchas] = useState([]);
+  const [corpoAdmin, setCorpoAdmin] = useState([]);
+  const [tiposSessao, setTiposSessao] = useState([]);
+  const [cargosLoja, setCargosLoja] = useState([]);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ativo');
   const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
@@ -70,7 +94,7 @@ function App() {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [irmaoEditando, setIrmaoEditando] = useState(null);
 
-  // Estados de formulários
+  // Formulário de irmão
   const [irmaoForm, setIrmaoForm] = useState({
     cim: '', nome: '', cpf: '', rg: '', data_nascimento: '',
     estado_civil: '', profissao: '', formacao: '', status: 'ativo',
@@ -84,13 +108,24 @@ function App() {
   const [mae, setMae] = useState({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
   const [filhos, setFilhos] = useState([{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
 
-  // Estado de novo usuário
+  // Formulário de usuário
   const [novoUsuario, setNovoUsuario] = useState({
-    email: '',
-    senha: '',
-    nome: '',
-    cargo: 'irmao',
-    ativo: true
+    email: '', senha: '', nome: '', cargo: 'irmao', ativo: true
+  });
+
+  // Formulário de Balaustre
+  const [balaustreForm, setBalaustreForm] = useState({
+    numero_balaustre: '', data_sessao: '', tipo_sessao: '', ordem_dia: ''
+  });
+
+  // Formulário de Prancha
+  const [pranchaForm, setPranchaForm] = useState({
+    numero_prancha: '', data_prancha: '', assunto: '', destinatario: ''
+  });
+
+  // Formulário de Corpo Administrativo
+  const [corpoAdminForm, setCorpoAdminForm] = useState({
+    irmao_id: '', cargo: '', ano_exercicio: ''
   });
 
   // ========================================
@@ -102,6 +137,8 @@ function App() {
       if (session) {
         loadUserData(session.user.email);
         loadIrmaos();
+        loadTiposSessao();
+        loadCargosLoja();
       }
       setLoading(false);
     });
@@ -143,11 +180,7 @@ function App() {
 
   const loadIrmaos = async () => {
     try {
-      const { data, error } = await supabase
-        .from('irmaos')
-        .select('*')
-        .order('nome', { ascending: true });
-      
+      const { data, error } = await supabase.from('irmaos').select('*').order('nome', { ascending: true });
       if (error) throw error;
       setIrmaos(data || []);
     } catch (err) {
@@ -157,15 +190,64 @@ function App() {
 
   const loadUsuarios = async () => {
     try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .order('nome', { ascending: true });
-      
+      const { data, error } = await supabase.from('usuarios').select('*').order('nome', { ascending: true });
       if (error) throw error;
       setUsuarios(data || []);
     } catch (err) {
       console.error('Erro ao carregar usuários:', err);
+    }
+  };
+
+  const loadBalaustres = async () => {
+    try {
+      const { data, error } = await supabase.from('balaustres').select('*').order('data_sessao', { ascending: false });
+      if (error) throw error;
+      setBalaustres(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar balaustres:', err);
+    }
+  };
+
+  const loadPranchas = async () => {
+    try {
+      const { data, error } = await supabase.from('pranchas_expedidas').select('*').order('data_prancha', { ascending: false });
+      if (error) throw error;
+      setPranchas(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar pranchas:', err);
+    }
+  };
+
+  const loadCorpoAdmin = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('corpo_administrativo')
+        .select('*, irmaos(nome, cim)')
+        .order('ano_exercicio', { ascending: false });
+      if (error) throw error;
+      setCorpoAdmin(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar corpo administrativo:', err);
+    }
+  };
+
+  const loadTiposSessao = async () => {
+    try {
+      const { data, error } = await supabase.from('tipos_sessao').select('*').eq('ativo', true).order('nome');
+      if (error) throw error;
+      setTiposSessao(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar tipos de sessão:', err);
+    }
+  };
+
+  const loadCargosLoja = async () => {
+    try {
+      const { data, error } = await supabase.from('cargos_loja').select('*').eq('ativo', true).order('ordem');
+      if (error) throw error;
+      setCargosLoja(data || []);
+    } catch (err) {
+      console.error('Erro ao carregar cargos:', err);
     }
   };
 
@@ -225,7 +307,7 @@ function App() {
   };
 
   // ========================================
-  // MÓDULO: GESTÃO DE FORMULÁRIOS
+  // MÓDULO: GESTÃO DE FORMULÁRIOS DE IRMÃO
   // ========================================
   const limparFormulario = () => {
     setIrmaoForm({
@@ -277,20 +359,15 @@ function App() {
 
       const irmaoId = irmaoData.id;
 
-      // Inserir familiares
       if (esposa.nome && esposa.nome.trim() !== '') {
         await supabase.from('esposas').insert([{ 
-          irmao_id: irmaoId,
-          nome: esposa.nome,
-          data_nascimento: esposa.data_nascimento || null
+          irmao_id: irmaoId, nome: esposa.nome, data_nascimento: esposa.data_nascimento || null
         }]);
       }
 
       if (pai.nome && pai.nome.trim() !== '') {
         await supabase.from('pais').insert([{ 
-          irmao_id: irmaoId,
-          tipo: 'pai',
-          nome: pai.nome,
+          irmao_id: irmaoId, tipo: 'pai', nome: pai.nome,
           data_nascimento: pai.data_nascimento || null,
           falecido: pai.falecido,
           data_obito: pai.falecido ? pai.data_obito || null : null
@@ -299,9 +376,7 @@ function App() {
 
       if (mae.nome && mae.nome.trim() !== '') {
         await supabase.from('pais').insert([{ 
-          irmao_id: irmaoId,
-          tipo: 'mae',
-          nome: mae.nome,
+          irmao_id: irmaoId, tipo: 'mae', nome: mae.nome,
           data_nascimento: mae.data_nascimento || null,
           falecido: mae.falecido,
           data_obito: mae.falecido ? mae.data_obito || null : null
@@ -311,8 +386,7 @@ function App() {
       const filhosValidos = filhos.filter(f => f.nome && f.nome.trim() !== '');
       if (filhosValidos.length > 0) {
         await supabase.from('filhos').insert(filhosValidos.map(f => ({
-          irmao_id: irmaoId,
-          nome: f.nome,
+          irmao_id: irmaoId, nome: f.nome,
           data_nascimento: f.data_nascimento || null,
           falecido: f.falecido,
           data_obito: f.falecido ? f.data_obito || null : null
@@ -338,9 +412,18 @@ function App() {
   const iniciarEdicao = async (irmao) => {
     setModoEdicao(true);
     setIrmaoEditando(irmao);
-    setIrmaoForm(irmao);
     
-    // Carregar familiares para edição
+    // Formatar datas para o input
+    const irmaoFormatado = {
+      ...irmao,
+      data_nascimento: formatarDataInput(irmao.data_nascimento),
+      data_iniciacao: formatarDataInput(irmao.data_iniciacao),
+      data_elevacao: formatarDataInput(irmao.data_elevacao),
+      data_exaltacao: formatarDataInput(irmao.data_exaltacao)
+    };
+    
+    setIrmaoForm(irmaoFormatado);
+    
     try {
       const [esposaRes, paisRes, filhosRes] = await Promise.all([
         supabase.from('esposas').select('*').eq('irmao_id', irmao.id),
@@ -348,10 +431,32 @@ function App() {
         supabase.from('filhos').select('*').eq('irmao_id', irmao.id)
       ]);
 
-      setEsposa(esposaRes.data?.[0] || { nome: '', data_nascimento: '' });
-      setPai(paisRes.data?.find(p => p.tipo === 'pai') || { nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-      setMae(paisRes.data?.find(p => p.tipo === 'mae') || { nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-      setFilhos(filhosRes.data?.length > 0 ? filhosRes.data : [{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
+      const esposaData = esposaRes.data?.[0];
+      setEsposa(esposaData ? {
+        ...esposaData,
+        data_nascimento: formatarDataInput(esposaData.data_nascimento)
+      } : { nome: '', data_nascimento: '' });
+
+      const paiData = paisRes.data?.find(p => p.tipo === 'pai');
+      setPai(paiData ? {
+        ...paiData,
+        data_nascimento: formatarDataInput(paiData.data_nascimento),
+        data_obito: formatarDataInput(paiData.data_obito)
+      } : { nome: '', data_nascimento: '', falecido: false, data_obito: '' });
+
+      const maeData = paisRes.data?.find(p => p.tipo === 'mae');
+      setMae(maeData ? {
+        ...maeData,
+        data_nascimento: formatarDataInput(maeData.data_nascimento),
+        data_obito: formatarDataInput(maeData.data_obito)
+      } : { nome: '', data_nascimento: '', falecido: false, data_obito: '' });
+
+      const filhosData = filhosRes.data?.map(f => ({
+        ...f,
+        data_nascimento: formatarDataInput(f.data_nascimento),
+        data_obito: formatarDataInput(f.data_obito)
+      }));
+      setFilhos(filhosData?.length > 0 ? filhosData : [{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
     } catch (err) {
       console.error('Erro ao carregar familiares para edição:', err);
     }
@@ -367,7 +472,6 @@ function App() {
     setSuccessMessage('');
 
     try {
-      // Atualizar dados do irmão
       const { error: irmaoError } = await supabase
         .from('irmaos')
         .update(irmaoForm)
@@ -375,27 +479,21 @@ function App() {
 
       if (irmaoError) throw irmaoError;
 
-      // Deletar familiares antigos
       await Promise.all([
         supabase.from('esposas').delete().eq('irmao_id', irmaoEditando.id),
         supabase.from('pais').delete().eq('irmao_id', irmaoEditando.id),
         supabase.from('filhos').delete().eq('irmao_id', irmaoEditando.id)
       ]);
 
-      // Inserir familiares atualizados
       if (esposa.nome && esposa.nome.trim() !== '') {
         await supabase.from('esposas').insert([{ 
-          irmao_id: irmaoEditando.id,
-          nome: esposa.nome,
-          data_nascimento: esposa.data_nascimento || null
+          irmao_id: irmaoEditando.id, nome: esposa.nome, data_nascimento: esposa.data_nascimento || null
         }]);
       }
 
       if (pai.nome && pai.nome.trim() !== '') {
         await supabase.from('pais').insert([{ 
-          irmao_id: irmaoEditando.id,
-          tipo: 'pai',
-          nome: pai.nome,
+          irmao_id: irmaoEditando.id, tipo: 'pai', nome: pai.nome,
           data_nascimento: pai.data_nascimento || null,
           falecido: pai.falecido,
           data_obito: pai.falecido ? pai.data_obito || null : null
@@ -404,9 +502,7 @@ function App() {
 
       if (mae.nome && mae.nome.trim() !== '') {
         await supabase.from('pais').insert([{ 
-          irmao_id: irmaoEditando.id,
-          tipo: 'mae',
-          nome: mae.nome,
+          irmao_id: irmaoEditando.id, tipo: 'mae', nome: mae.nome,
           data_nascimento: mae.data_nascimento || null,
           falecido: mae.falecido,
           data_obito: mae.falecido ? mae.data_obito || null : null
@@ -416,8 +512,7 @@ function App() {
       const filhosValidos = filhos.filter(f => f.nome && f.nome.trim() !== '');
       if (filhosValidos.length > 0) {
         await supabase.from('filhos').insert(filhosValidos.map(f => ({
-          irmao_id: irmaoEditando.id,
-          nome: f.nome,
+          irmao_id: irmaoEditando.id, nome: f.nome,
           data_nascimento: f.data_nascimento || null,
           falecido: f.falecido,
           data_obito: f.falecido ? f.data_obito || null : null
@@ -471,21 +566,16 @@ function App() {
     setSuccessMessage('');
 
     try {
-      // Criar usuário no Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { error: authError } = await supabase.auth.signUp({
         email: novoUsuario.email,
         password: novoUsuario.senha,
       });
 
       if (authError) throw authError;
 
-      // Inserir na tabela usuarios
       const { error: userError } = await supabase.from('usuarios').insert([{
-        email: novoUsuario.email,
-        nome: novoUsuario.nome,
-        cargo: novoUsuario.cargo,
-        nivel_acesso: novoUsuario.cargo,
-        ativo: novoUsuario.ativo
+        email: novoUsuario.email, nome: novoUsuario.nome,
+        cargo: novoUsuario.cargo, nivel_acesso: novoUsuario.cargo, ativo: novoUsuario.ativo
       }]);
 
       if (userError) throw userError;
@@ -502,16 +592,126 @@ function App() {
 
   const handleAlterarStatusUsuario = async (usuarioId, novoStatus) => {
     try {
-      const { error } = await supabase
-        .from('usuarios')
-        .update({ ativo: novoStatus })
-        .eq('id', usuarioId);
-
+      const { error } = await supabase.from('usuarios').update({ ativo: novoStatus }).eq('id', usuarioId);
       if (error) throw error;
       setSuccessMessage('✅ Status do usuário atualizado!');
       loadUsuarios();
     } catch (err) {
       setError('Erro ao alterar status: ' + err.message);
+    }
+  };
+
+  // ========================================
+  // MÓDULO: BALAUSTRES
+  // ========================================
+  const handleSubmitBalaustre = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const diaSemana = obterDiaSemana(balaustref.data_sessao);
+      
+      const { error } = await supabase.from('balaustres').insert([{
+        ...balaustref,
+        dia_semana: diaSemana
+      }]);
+
+      if (error) throw error;
+
+      setSuccessMessage('✅ Balaustre cadastrado com sucesso!');
+      setBalaustref({ numero_balaustre: '', data_sessao: '', tipo_sessao: '', ordem_dia: '' });
+      loadBalaustres();
+    } catch (err) {
+      setError('Erro ao cadastrar balaustre: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcluirBalaustre = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir este balaustre?')) return;
+
+    try {
+      const { error } = await supabase.from('balaustres').delete().eq('id', id);
+      if (error) throw error;
+      setSuccessMessage('✅ Balaustre excluído!');
+      loadBalaustres();
+    } catch (err) {
+      setError('Erro ao excluir: ' + err.message);
+    }
+  };
+
+  // ========================================
+  // MÓDULO: PRANCHAS EXPEDIDAS
+  // ========================================
+  const handleSubmitPrancha = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const { error } = await supabase.from('pranchas_expedidas').insert([pranchaForm]);
+      if (error) throw error;
+
+      setSuccessMessage('✅ Prancha cadastrada com sucesso!');
+      setPranchaForm({ numero_prancha: '', data_prancha: '', assunto: '', destinatario: '' });
+      loadPranchas();
+    } catch (err) {
+      setError('Erro ao cadastrar prancha: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcluirPrancha = async (id) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta prancha?')) return;
+
+    try {
+      const { error } = await supabase.from('pranchas_expedidas').delete().eq('id', id);
+      if (error) throw error;
+      setSuccessMessage('✅ Prancha excluída!');
+      loadPranchas();
+    } catch (err) {
+      setError('Erro ao excluir: ' + err.message);
+    }
+  };
+
+  // ========================================
+  // MÓDULO: CORPO ADMINISTRATIVO
+  // ========================================
+  const handleSubmitCorpoAdmin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      const { error } = await supabase.from('corpo_administrativo').insert([corpoAdminForm]);
+      if (error) throw error;
+
+      setSuccessMessage('✅ Cargo cadastrado com sucesso!');
+      setCorpoAdminForm({ irmao_id: '', cargo: '', ano_exercicio: '' });
+      loadCorpoAdmin();
+    } catch (err) {
+      setError('Erro ao cadastrar cargo: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExcluirCorpoAdmin = async (id) => {
+    if (!window.confirm('Tem certeza que deseja remover este cargo?')) return;
+
+    try {
+      const { error } = await supabase.from('corpo_administrativo').delete().eq('id', id);
+      if (error) throw error;
+      setSuccessMessage('✅ Cargo removido!');
+      loadCorpoAdmin();
+    } catch (err) {
+      setError('Erro ao remover: ' + err.message);
     }
   };
 
@@ -552,7 +752,7 @@ function App() {
         <div className="bg-white rounded-2xl shadow-2xl p-10 w-full max-w-md">
           <div className="text-center mb-8">
             <img src={LOGO_URL} alt="Logo" className="w-32 h-32 mx-auto mb-4 rounded-full shadow-lg" />
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">A∴R∴L∴S∴ Acácia de Paranatinga nº 30</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">Loja Maçônica</h1>
             <p className="text-gray-600">Sistema de Gestão</p>
           </div>
 
@@ -597,7 +797,7 @@ function App() {
           </div>
 
           <div className="mt-8 text-center">
-            <p className="text-xs text-gray-400">Fase 4: Edição e Permissões ✅</p>
+            <p className="text-xs text-gray-400">Sistema Completo v2.0 ✅</p>
           </div>
         </div>
       </div>
@@ -616,7 +816,7 @@ function App() {
             <div className="flex items-center gap-4">
               <img src={LOGO_URL} alt="Logo" className="w-12 h-12 rounded-full shadow-md" />
               <div>
-                <h1 className="text-2xl font-bold">A∴R∴L∴S∴ Acácia de Paranatinga nº 30</h1>
+                <h1 className="text-2xl font-bold">Sistema Loja Maçônica</h1>
                 <p className="text-sm text-blue-200">
                   {userData?.nome} • {userData?.cargo.charAt(0).toUpperCase() + userData?.cargo.slice(1)}
                 </p>
@@ -632,31 +832,49 @@ function App() {
       {/* NAVEGAÇÃO */}
       <nav className="bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex space-x-8">
+          <div className="flex space-x-8 overflow-x-auto">
             <button
               onClick={() => setCurrentPage('dashboard')}
-              className={`py-4 px-2 border-b-2 font-medium ${currentPage === 'dashboard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+              className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'dashboard' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
             >
               Dashboard
             </button>
             <button
               onClick={() => setCurrentPage('listagem')}
-              className={`py-4 px-2 border-b-2 font-medium ${currentPage === 'listagem' || currentPage === 'visualizar' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+              className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'listagem' || currentPage === 'visualizar' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
             >
               Irmãos
             </button>
             {permissoes?.pode_editar_cadastros && (
               <button
                 onClick={() => { limparFormulario(); setCurrentPage('cadastro'); }}
-                className={`py-4 px-2 border-b-2 font-medium ${currentPage === 'cadastro' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+                className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'cadastro' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
               >
                 Cadastrar Irmão
               </button>
             )}
+            <button
+              onClick={() => { loadBalaustres(); setCurrentPage('balaustres'); }}
+              className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'balaustres' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+            >
+              Balaustres
+            </button>
+            <button
+              onClick={() => { loadPranchas(); setCurrentPage('pranchas'); }}
+              className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'pranchas' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+            >
+              Pranchas
+            </button>
+            <button
+              onClick={() => { loadCorpoAdmin(); setCurrentPage('corpo-admin'); }}
+              className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'corpo-admin' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+            >
+              Corpo Administrativo
+            </button>
             {permissoes?.pode_gerenciar_usuarios && (
               <button
                 onClick={() => { loadUsuarios(); setCurrentPage('usuarios'); }}
-                className={`py-4 px-2 border-b-2 font-medium ${currentPage === 'usuarios' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
+                className={`py-4 px-2 border-b-2 font-medium whitespace-nowrap ${currentPage === 'usuarios' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-blue-600'}`}
               >
                 Usuários
               </button>
@@ -665,8 +883,20 @@ function App() {
         </div>
       </nav>
 
-      {/* CONTEÚDO PRINCIPAL */}
+      {/* MENSAGENS GLOBAIS */}
       <main className="max-w-7xl mx-auto px-6 py-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+            {successMessage}
+          </div>
+        )}
+
         {/* ========================================
             PÁGINA: DASHBOARD
             ======================================== */}
@@ -695,12 +925,13 @@ function App() {
               <div className="flex items-start gap-4">
                 <div className="text-5xl">🎉</div>
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-3">Sistema Completo - Fase 4!</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-3">Sistema Completo!</h2>
                   <p className="text-gray-700 mb-4">
-                    ✅ Fase 1: Autenticação<br />
-                    ✅ Fase 2: Cadastro de Irmãos e Familiares<br />
-                    ✅ Fase 3: Listagem e Pesquisa<br />
-                    ✅ Fase 4: Edição e Sistema de Permissões
+                    ✅ Gestão de Irmãos e Familiares<br />
+                    ✅ Sistema de Permissões<br />
+                    ✅ Controle de Balaustres<br />
+                    ✅ Pranchas Expedidas<br />
+                    ✅ Corpo Administrativo
                   </p>
                   <div className="bg-white rounded-lg p-4 border border-blue-200">
                     <p className="text-sm text-gray-700 mb-2"><strong>Suas permissões:</strong></p>
@@ -785,7 +1016,7 @@ function App() {
                           <td className="px-4 py-3 text-sm">
                             <button
                               onClick={() => visualizarIrmao(irmao)}
-                              className="text-blue-600 hover:text-blue-800 font-semibold mr-3"
+                              className="text-blue-600 hover:text-blue-800 font-semibold"
                             >
                               Ver Detalhes
                             </button>
@@ -861,7 +1092,7 @@ function App() {
 
               <div className="mb-8">
                 <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">🔷 Dados Maçônicos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div><strong>Cargo:</strong> {irmaoSelecionado.cargo || '-'}</div>
                   <div><strong>Status:</strong> 
                     <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${
@@ -876,7 +1107,7 @@ function App() {
                   <div><strong>Data Elevação:</strong> {formatarData(irmaoSelecionado.data_elevacao)}</div>
                   <div><strong>Data Exaltação:</strong> {formatarData(irmaoSelecionado.data_exaltacao)}</div>
                   {irmaoSelecionado.data_iniciacao && (
-                    <div className="md:col-span-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                    <div className="md:col-span-2 bg-blue-50 p-4 rounded-lg border border-blue-200">
                       <strong>⏱️ Tempo de Maçonaria:</strong> {calcularTempoMaconaria(irmaoSelecionado.data_iniciacao)}
                     </div>
                   )}
@@ -952,6 +1183,8 @@ function App() {
           </div>
         )}
 
+        {/* Continuação do código nos próximos blocos... */}
+
         {/* ========================================
             PÁGINA: CADASTRO/EDIÇÃO DE IRMÃO
             ======================================== */}
@@ -960,18 +1193,6 @@ function App() {
             <h2 className="text-2xl font-bold text-gray-800 mb-6">
               {modoEdicao ? '✏️ Editar Cadastro do Irmão' : 'Cadastro de Irmão'}
             </h2>
-
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                ⚠️ {error}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-                {successMessage}
-              </div>
-            )}
 
             <div className="space-y-8">
               <div>
@@ -1201,6 +1422,338 @@ function App() {
             </div>
           </div>
         )}
+      </main>
+    </div>
+  );
+}
+{/* ========================================
+            PÁGINA: BALAUSTRES
+            ======================================== */}
+        {currentPage === 'balaustres' && (
+          <div>
+            <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Cadastrar Balaustre</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número do Balaustre *</label>
+                  <input
+                    type="text"
+                    value={balaustreForm.numero_balaustre}
+                    onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Ex: 001/2025"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data da Sessão *</label>
+                  <input
+                    type="date"
+                    value={balaustreForm.data_sessao}
+                    onChange={(e) => {
+                      setBalaustreForm({ ...balaustreForm, data_sessao: e.target.value });
+                    }}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  {balaustreForm.data_sessao && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      Dia da semana: <strong>{obterDiaSemana(balaustreForm.data_sessao)}</strong>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Sessão *</label>
+                  <select
+                    value={balaustreForm.tipo_sessao}
+                    onChange={(e) => setBalaustreForm({ ...balaustreForm, tipo_sessao: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Selecione</option>
+                    {tiposSessao.map((tipo) => (
+                      <option key={tipo.id} value={tipo.nome}>{tipo.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ordem do Dia</label>
+                  <textarea
+                    value={balaustreForm.ordem_dia}
+                    onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    rows="3"
+                    placeholder="Descrição da ordem do dia..."
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmitBalaustre}
+                disabled={loading || !balaustreForm.numero_balaustre || !balaustreForm.data_sessao || !balaustreForm.tipo_sessao}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:bg-gray-400"
+              >
+                {loading ? 'Salvando...' : '💾 Cadastrar Balaustre'}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Lista de Balaustres</h2>
+
+              {balaustres.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Nenhum balaustre cadastrado</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Número</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Dia</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Tipo</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {balaustres.map((bal) => (
+                        <tr key={bal.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">{bal.numero_balaustre}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{formatarData(bal.data_sessao)}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{bal.dia_semana}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{bal.tipo_sessao}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <button
+                              onClick={() => handleExcluirBalaustre(bal.id)}
+                              className="text-red-600 hover:text-red-800 font-semibold"
+                            >
+                              Excluir
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================
+            PÁGINA: PRANCHAS EXPEDIDAS
+            ======================================== */}
+        {currentPage === 'pranchas' && (
+          <div>
+            <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Cadastrar Prancha Expedida</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Prancha *</label>
+                  <input
+                    type="text"
+                    value={pranchaForm.numero_prancha}
+                    onChange={(e) => setPranchaForm({ ...pranchaForm, numero_prancha: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Ex: 001/2025"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data *</label>
+                  <input
+                    type="date"
+                    value={pranchaForm.data_prancha}
+                    onChange={(e) => setPranchaForm({ ...pranchaForm, data_prancha: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Assunto *</label>
+                  <input
+                    type="text"
+                    value={pranchaForm.assunto}
+                    onChange={(e) => setPranchaForm({ ...pranchaForm, assunto: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Assunto da prancha"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Destinatário *</label>
+                  <input
+                    type="text"
+                    value={pranchaForm.destinatario}
+                    onChange={(e) => setPranchaForm({ ...pranchaForm, destinatario: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Para quem foi enviada"
+                  />
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmitPrancha}
+                disabled={loading || !pranchaForm.numero_prancha || !pranchaForm.data_prancha || !pranchaForm.assunto || !pranchaForm.destinatario}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:bg-gray-400"
+              >
+                {loading ? 'Salvando...' : '💾 Cadastrar Prancha'}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Lista de Pranchas Expedidas</h2>
+
+              {pranchas.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Nenhuma prancha cadastrada</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Número</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Assunto</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Destinatário</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {pranchas.map((prancha) => (
+                        <tr key={prancha.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">{prancha.numero_prancha}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{formatarData(prancha.data_prancha)}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{prancha.assunto}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{prancha.destinatario}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <button
+                              onClick={() => handleExcluirPrancha(prancha.id)}
+                              className="text-red-600 hover:text-red-800 font-semibold"
+                            >
+                              Excluir
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================
+            PÁGINA: CORPO ADMINISTRATIVO
+            ======================================== */}
+        {currentPage === 'corpo-admin' && (
+          <div>
+            <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Cadastrar Cargo no Corpo Administrativo</h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                  <select
+                    value={corpoAdminForm.irmao_id}
+                    onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, irmao_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Selecione o irmão</option>
+                    {irmaos.filter(i => i.status === 'ativo').map((irmao) => (
+                      <option key={irmao.id} value={irmao.id}>{irmao.nome} - CIM: {irmao.cim}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
+                  <select
+                    value={corpoAdminForm.cargo}
+                    onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Selecione o cargo</option>
+                    {cargosLoja.map((cargo) => (
+                      <option key={cargo.id} value={cargo.nome}>{cargo.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Ano de Exercício *</label>
+                  <select
+                    value={corpoAdminForm.ano_exercicio}
+                    onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, ano_exercicio: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  >
+                    <option value="">Selecione</option>
+                    <option value="2024/2025">2024/2025</option>
+                    <option value="2025/2026">2025/2026</option>
+                    <option value="2026/2027">2026/2027</option>
+                    <option value="2027/2028">2027/2028</option>
+                    <option value="2028/2029">2028/2029</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={handleSubmitCorpoAdmin}
+                disabled={loading || !corpoAdminForm.irmao_id || !corpoAdminForm.cargo || !corpoAdminForm.ano_exercicio}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:bg-gray-400"
+              >
+                {loading ? 'Salvando...' : '💾 Cadastrar Cargo'}
+              </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6">Corpo Administrativo</h2>
+
+              {corpoAdmin.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p>Nenhum cargo cadastrado</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">CIM</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Cargo</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ano</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {corpoAdmin.map((ca) => (
+                        <tr key={ca.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900 font-medium">{ca.irmaos?.nome}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{ca.irmaos?.cim}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{ca.cargo}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{ca.ano_exercicio}</td>
+                          <td className="px-4 py-3 text-sm">
+                            <button
+                              onClick={() => handleExcluirCorpoAdmin(ca.id)}
+                              className="text-red-600 hover:text-red-800 font-semibold"
+                            >
+                              Remover
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* ========================================
             PÁGINA: GESTÃO DE USUÁRIOS
@@ -1209,18 +1762,6 @@ function App() {
           <div>
             <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Cadastrar Novo Usuário</h2>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-                  ⚠️ {error}
-                </div>
-              )}
-
-              {successMessage && (
-                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-                  {successMessage}
-                </div>
-              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
@@ -1349,9 +1890,4 @@ function App() {
             </div>
           </div>
         )}
-      </main>
-    </div>
-  );
-}
-
 export default App;
