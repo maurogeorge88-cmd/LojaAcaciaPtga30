@@ -148,12 +148,14 @@ function App() {
     destinatario: ''
   });
   const [searchPrancha, setSearchPrancha] = useState('');
+  const [modoEdicaoPrancha, setModoEdicaoPrancha] = useState(false);
+  const [pranchaEditando, setPranchaEditando] = useState(null);
 
   // Estados para Corpo Administrativo
   const [corpoAdmin, setCorpoAdmin] = useState([]);
   const [corpoAdminForm, setCorpoAdminForm] = useState({
     irmao_id: '',
-    cargo_id: '',
+    cargo: '',
     ano_exercicio: ''
   });
   const [anoFiltroAdmin, setAnoFiltroAdmin] = useState('');
@@ -345,11 +347,7 @@ function App() {
       console.log('🔍 Carregando corpo administrativo...');
       const { data, error } = await supabase
         .from('corpo_administrativo')
-        .select(`
-          *,
-          irmaos (nome, cim),
-          cargos_loja (nome, ordem)
-        `)
+        .select('*')
         .order('ano_exercicio', { ascending: false });
       
       if (error) {
@@ -358,8 +356,21 @@ function App() {
       }
       
       if (data) {
-        console.log('✅ Corpo administrativo carregado:', data.length);
-        setCorpoAdmin(data);
+        // Buscar dados dos irmãos separadamente
+        const irmaoIds = [...new Set(data.map(ca => ca.irmao_id))];
+        const { data: irmaosData } = await supabase
+          .from('irmaos')
+          .select('id, nome, cim')
+          .in('id', irmaoIds);
+        
+        // Fazer join manual
+        const corpoComIrmaos = data.map(ca => ({
+          ...ca,
+          irmao: irmaosData?.find(i => i.id === ca.irmao_id)
+        }));
+        
+        console.log('✅ Corpo administrativo carregado:', corpoComIrmaos.length);
+        setCorpoAdmin(corpoComIrmaos);
       }
     } catch (err) {
       console.error('❌ Exceção ao carregar corpo admin:', err);
@@ -1229,7 +1240,7 @@ function App() {
       if (error) throw error;
 
       setSuccessMessage('✅ Prancha cadastrada com sucesso!');
-      setPranchaForm({ numero_prancha: '', data_prancha: '', assunto: '', destinatario: '' });
+      limparFormularioPrancha();
       loadPranchas();
 
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -1239,6 +1250,59 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAtualizarPrancha = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      console.log('💾 Atualizando prancha expedida...');
+      
+      const dadosPrancha = {
+        numero_prancha: pranchaForm.numero_prancha,
+        data_prancha: tratarData(pranchaForm.data_prancha),
+        assunto: pranchaForm.assunto,
+        destinatario: pranchaForm.destinatario
+      };
+
+      const { error } = await supabase
+        .from('pranchas_expedidas')
+        .update(dadosPrancha)
+        .eq('id', pranchaEditando.id);
+
+      if (error) throw error;
+
+      setSuccessMessage('✅ Prancha atualizada com sucesso!');
+      limparFormularioPrancha();
+      loadPranchas();
+
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('❌ Erro ao atualizar prancha:', err);
+      setError('Erro ao atualizar prancha: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditarPrancha = (prancha) => {
+    setModoEdicaoPrancha(true);
+    setPranchaEditando(prancha);
+    setPranchaForm({
+      numero_prancha: prancha.numero_prancha,
+      data_prancha: prancha.data_prancha,
+      assunto: prancha.assunto,
+      destinatario: prancha.destinatario
+    });
+  };
+
+  const limparFormularioPrancha = () => {
+    setPranchaForm({ numero_prancha: '', data_prancha: '', assunto: '', destinatario: '' });
+    setModoEdicaoPrancha(false);
+    setPranchaEditando(null);
   };
 
   const handleExcluirPrancha = async (id) => {
@@ -1283,7 +1347,7 @@ function App() {
       if (error) throw error;
 
       setSuccessMessage('✅ Cargo cadastrado com sucesso!');
-      setCorpoAdminForm({ irmao_id: '', cargo_id: '', ano_exercicio: '' });
+      setCorpoAdminForm({ irmao_id: '', cargo: '', ano_exercicio: '' });
       loadCorpoAdmin();
 
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -1455,7 +1519,7 @@ function App() {
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
               }`}
             >
-              📜 Controle de Balaustres
+              📜 Balaustres
             </button>
             <button
               onClick={() => setCurrentPage('pranchas')}
@@ -1465,7 +1529,7 @@ function App() {
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
               }`}
             >
-              📄 Pranchas Expedidas
+              📄 Pranchas
             </button>
             <button
               onClick={() => setCurrentPage('corpo-admin')}
@@ -1475,7 +1539,7 @@ function App() {
                   : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
               }`}
             >
-              👔 Corpo Administrativo
+              👔 Administração
             </button>
             {permissoes?.canManageUsers && (
               <button
@@ -1572,14 +1636,18 @@ function App() {
 
                   {/* Número do Balaustre */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Número do Balaustre *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número do Balaustre * 
+                      <span className="text-xs text-gray-500 ml-2">(editável)</span>
+                    </label>
                     <input
                       type="number"
                       value={balaustreForm.numero_balaustre}
-                      onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                      onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: parseInt(e.target.value) || '' })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                       required
-                      readOnly={!modoEdicaoBalaustre}
+                      min="1"
+                      placeholder="Número automático (pode alterar)"
                     />
                   </div>
 
@@ -2858,9 +2926,11 @@ function App() {
 
             {/* FORMULÁRIO DE CADASTRO */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Registrar Nova Prancha</h3>
+              <h3 className="text-xl font-bold text-blue-900 mb-4">
+                {modoEdicaoPrancha ? '✏️ Editar Prancha' : '➕ Registrar Nova Prancha'}
+              </h3>
 
-              <form onSubmit={handleSubmitPrancha}>
+              <form onSubmit={modoEdicaoPrancha ? handleAtualizarPrancha : handleSubmitPrancha}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Número da Prancha *</label>
@@ -2910,13 +2980,22 @@ function App() {
                   </div>
                 </div>
 
-                <div className="flex justify-end mt-6">
+                <div className="flex justify-end gap-4 mt-6">
+                  {modoEdicaoPrancha && (
+                    <button
+                      type="button"
+                      onClick={limparFormularioPrancha}
+                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                    >
+                      Cancelar
+                    </button>
+                  )}
                   <button
                     type="submit"
                     disabled={loading}
                     className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
                   >
-                    {loading ? 'Salvando...' : '💾 Registrar Prancha'}
+                    {loading ? 'Salvando...' : modoEdicaoPrancha ? '💾 Atualizar Prancha' : '💾 Registrar Prancha'}
                   </button>
                 </div>
               </form>
@@ -2983,15 +3062,26 @@ function App() {
                             {prancha.assunto}
                           </td>
                           <td className="px-6 py-4 text-center">
-                            {permissoes?.canEdit && (
-                              <button
-                                onClick={() => handleExcluirPrancha(prancha.id)}
-                                className="text-red-600 hover:text-red-800 font-semibold"
-                                title="Excluir"
-                              >
-                                🗑️
-                              </button>
-                            )}
+                            <div className="flex justify-center gap-2">
+                              {permissoes?.canEdit && (
+                                <>
+                                  <button
+                                    onClick={() => handleEditarPrancha(prancha)}
+                                    className="text-blue-600 hover:text-blue-800 font-semibold"
+                                    title="Editar"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => handleExcluirPrancha(prancha.id)}
+                                    className="text-red-600 hover:text-red-800 font-semibold"
+                                    title="Excluir"
+                                  >
+                                    🗑️
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -3046,19 +3136,14 @@ function App() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
-                    <select
-                      value={corpoAdminForm.cargo_id}
-                      onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo_id: e.target.value })}
+                    <input
+                      type="text"
+                      value={corpoAdminForm.cargo}
+                      onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      placeholder="Ex: Venerável Mestre, 1º Vigilante..."
                       required
-                    >
-                      <option value="">Selecione um cargo</option>
-                      {cargosLoja.map(cargo => (
-                        <option key={cargo.id} value={cargo.id}>
-                          {cargo.nome}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -3139,22 +3224,25 @@ function App() {
                         <tbody className="divide-y divide-gray-200">
                           {corpoAdmin
                             .filter(ca => ca.ano_exercicio === ano)
-                            .sort((a, b) => (a.cargos_loja?.ordem || 999) - (b.cargos_loja?.ordem || 999))
-                            .map((cargo) => (
-                              <tr key={cargo.id} className="hover:bg-gray-50 transition">
+                            .sort((a, b) => {
+                              // Ordem por cargo (alfabética)
+                              return (a.cargo || '').localeCompare(b.cargo || '');
+                            })
+                            .map((item) => (
+                              <tr key={item.id} className="hover:bg-gray-50 transition">
                                 <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                  {cargo.cargos_loja?.nome || 'Cargo não encontrado'}
+                                  {item.cargo || 'Cargo não informado'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                  {cargo.irmaos?.nome || 'Irmão não encontrado'}
+                                  {item.irmao?.nome || 'Irmão não encontrado'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                  {cargo.irmaos?.cim || '-'}
+                                  {item.irmao?.cim || '-'}
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                   {permissoes?.canEdit && (
                                     <button
-                                      onClick={() => handleExcluirCorpoAdmin(cargo.id)}
+                                      onClick={() => handleExcluirCorpoAdmin(item.id)}
                                       className="text-red-600 hover:text-red-800 font-semibold"
                                       title="Remover"
                                     >
