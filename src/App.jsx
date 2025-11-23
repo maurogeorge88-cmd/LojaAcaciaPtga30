@@ -379,17 +379,22 @@ function App() {
 
       if (irmaoError) throw irmaoError;
 
+      console.log('✅ Irmão cadastrado:', irmaoData.id);
+
+      // Salvar esposa na tabela esposas
       if (esposa.nome) {
-        await supabase.from('familiares').insert([{
+        const { error: esposaError } = await supabase.from('esposas').insert([{
           irmao_id: irmaoData.id,
-          tipo: 'esposa',
           nome: esposa.nome,
           data_nascimento: esposa.data_nascimento
         }]);
+        if (esposaError) console.error('❌ Erro ao salvar esposa:', esposaError);
+        else console.log('✅ Esposa salva');
       }
 
+      // Salvar pai na tabela pais
       if (pai.nome) {
-        await supabase.from('familiares').insert([{
+        const { error: paiError } = await supabase.from('pais').insert([{
           irmao_id: irmaoData.id,
           tipo: 'pai',
           nome: pai.nome,
@@ -397,10 +402,13 @@ function App() {
           falecido: pai.falecido,
           data_obito: pai.data_obito
         }]);
+        if (paiError) console.error('❌ Erro ao salvar pai:', paiError);
+        else console.log('✅ Pai salvo');
       }
 
+      // Salvar mãe na tabela pais
       if (mae.nome) {
-        await supabase.from('familiares').insert([{
+        const { error: maeError } = await supabase.from('pais').insert([{
           irmao_id: irmaoData.id,
           tipo: 'mae',
           nome: mae.nome,
@@ -408,18 +416,22 @@ function App() {
           falecido: mae.falecido,
           data_obito: mae.data_obito
         }]);
+        if (maeError) console.error('❌ Erro ao salvar mãe:', maeError);
+        else console.log('✅ Mãe salva');
       }
 
+      // Salvar filhos na tabela filhos
       for (const filho of filhos) {
         if (filho.nome) {
-          await supabase.from('familiares').insert([{
+          const { error: filhoError } = await supabase.from('filhos').insert([{
             irmao_id: irmaoData.id,
-            tipo: 'filho',
             nome: filho.nome,
             data_nascimento: filho.data_nascimento,
             falecido: filho.falecido,
             data_obito: filho.data_obito
           }]);
+          if (filhoError) console.error('❌ Erro ao salvar filho:', filhoError);
+          else console.log('✅ Filho salvo:', filho.nome);
         }
       }
 
@@ -452,19 +464,27 @@ function App() {
 
       if (irmaoError) throw irmaoError;
 
-      await supabase.from('familiares').delete().eq('irmao_id', irmaoEditando.id);
+      console.log('✅ Irmão atualizado:', irmaoEditando.id);
 
+      // Deletar dados antigos
+      await supabase.from('esposas').delete().eq('irmao_id', irmaoEditando.id);
+      await supabase.from('pais').delete().eq('irmao_id', irmaoEditando.id);
+      await supabase.from('filhos').delete().eq('irmao_id', irmaoEditando.id);
+
+      console.log('🗑️ Dados familiares antigos removidos');
+
+      // Inserir novos dados
       if (esposa.nome) {
-        await supabase.from('familiares').insert([{
+        await supabase.from('esposas').insert([{
           irmao_id: irmaoEditando.id,
-          tipo: 'esposa',
           nome: esposa.nome,
           data_nascimento: esposa.data_nascimento
         }]);
+        console.log('✅ Esposa atualizada');
       }
 
       if (pai.nome) {
-        await supabase.from('familiares').insert([{
+        await supabase.from('pais').insert([{
           irmao_id: irmaoEditando.id,
           tipo: 'pai',
           nome: pai.nome,
@@ -472,10 +492,11 @@ function App() {
           falecido: pai.falecido,
           data_obito: pai.data_obito
         }]);
+        console.log('✅ Pai atualizado');
       }
 
       if (mae.nome) {
-        await supabase.from('familiares').insert([{
+        await supabase.from('pais').insert([{
           irmao_id: irmaoEditando.id,
           tipo: 'mae',
           nome: mae.nome,
@@ -483,13 +504,13 @@ function App() {
           falecido: mae.falecido,
           data_obito: mae.data_obito
         }]);
+        console.log('✅ Mãe atualizada');
       }
 
       for (const filho of filhos) {
         if (filho.nome) {
-          await supabase.from('familiares').insert([{
+          await supabase.from('filhos').insert([{
             irmao_id: irmaoEditando.id,
-            tipo: 'filho',
             nome: filho.nome,
             data_nascimento: filho.data_nascimento,
             falecido: filho.falecido,
@@ -497,6 +518,7 @@ function App() {
           }]);
         }
       }
+      console.log('✅ Filhos atualizados');
 
       setSuccessMessage('Cadastro atualizado com sucesso!');
       loadIrmaos();
@@ -519,21 +541,50 @@ function App() {
     setIrmaoEditando(irmao);
     setIrmaoForm(irmao);
 
-    const { data: familiares } = await supabase
-      .from('familiares')
+    console.log('🔍 Carregando dados familiares para edição...');
+
+    // Carregar esposa
+    const { data: esposaData } = await supabase
+      .from('esposas')
+      .select('*')
+      .eq('irmao_id', irmao.id)
+      .single();
+
+    // Carregar pais
+    const { data: paisData } = await supabase
+      .from('pais')
       .select('*')
       .eq('irmao_id', irmao.id);
 
-    if (familiares) {
-      const esposaData = familiares.find(f => f.tipo === 'esposa');
-      const paiData = familiares.find(f => f.tipo === 'pai');
-      const maeData = familiares.find(f => f.tipo === 'mae');
-      const filhosData = familiares.filter(f => f.tipo === 'filho');
+    // Carregar filhos
+    const { data: filhosData } = await supabase
+      .from('filhos')
+      .select('*')
+      .eq('irmao_id', irmao.id);
 
-      if (esposaData) setEsposa(esposaData);
-      if (paiData) setPai(paiData);
-      if (maeData) setMae(maeData);
-      if (filhosData.length > 0) setFilhos(filhosData);
+    // Preencher formulários
+    if (esposaData) {
+      setEsposa(esposaData);
+      console.log('✅ Esposa carregada');
+    }
+
+    if (paisData && paisData.length > 0) {
+      const paiData = paisData.find(p => p.tipo === 'pai');
+      const maeData = paisData.find(p => p.tipo === 'mae');
+      
+      if (paiData) {
+        setPai(paiData);
+        console.log('✅ Pai carregado');
+      }
+      if (maeData) {
+        setMae(maeData);
+        console.log('✅ Mãe carregada');
+      }
+    }
+
+    if (filhosData && filhosData.length > 0) {
+      setFilhos(filhosData);
+      console.log('✅ Filhos carregados:', filhosData.length);
     }
 
     setCurrentPage('cadastro');
@@ -544,24 +595,62 @@ function App() {
     
     console.log('🔍 Carregando familiares do irmão:', irmao.nome);
     
-    const { data: familiares, error } = await supabase
-      .from('familiares')
-      .select('*')
-      .eq('irmao_id', irmao.id);
+    try {
+      // Buscar esposa
+      const { data: esposaData, error: esposaError } = await supabase
+        .from('esposas')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .maybeSingle();
 
-    console.log('📊 Familiares encontrados:', familiares?.length || 0);
-    
-    if (error) {
-      console.error('❌ Erro ao carregar familiares:', error);
-    }
-    
-    if (familiares) {
+      // Buscar pais (pai e mãe)
+      const { data: paisData, error: paisError } = await supabase
+        .from('pais')
+        .select('*')
+        .eq('irmao_id', irmao.id);
+
+      // Buscar filhos
+      const { data: filhosData, error: filhosError } = await supabase
+        .from('filhos')
+        .select('*')
+        .eq('irmao_id', irmao.id);
+
+      // Montar array de familiares no formato esperado pelo modal
+      const familiares = [];
+
+      if (esposaData) {
+        familiares.push({ ...esposaData, tipo: 'esposa' });
+        console.log('✅ Esposa encontrada');
+      }
+
+      if (paisData) {
+        paisData.forEach(p => {
+          familiares.push(p);
+        });
+        console.log('✅ Pais encontrados:', paisData.length);
+      }
+
+      if (filhosData) {
+        filhosData.forEach(f => {
+          familiares.push({ ...f, tipo: 'filho' });
+        });
+        console.log('✅ Filhos encontrados:', filhosData.length);
+      }
+
+      console.log('📊 Total de familiares:', familiares.length);
+      
+      if (esposaError) console.error('❌ Erro ao carregar esposa:', esposaError);
+      if (paisError) console.error('❌ Erro ao carregar pais:', paisError);
+      if (filhosError) console.error('❌ Erro ao carregar filhos:', filhosError);
+      
       setFamiliaresSelecionado(familiares);
-    } else {
+      setMostrarDetalhes(true);
+      
+    } catch (err) {
+      console.error('❌ Erro inesperado ao carregar familiares:', err);
       setFamiliaresSelecionado([]);
+      setMostrarDetalhes(true);
     }
-    
-    setMostrarDetalhes(true);
   };
 
   const fecharDetalhes = () => {
