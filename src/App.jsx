@@ -8,7 +8,8 @@ const supabaseUrl = 'https://ypnvzjctyfdrkkrhskzs.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbnZ6amN0eWZkcmtrcmhza3pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTgxMzcsImV4cCI6MjA3OTMzNDEzN30.J5Jj7wudOhIAxy35DDBIWtr9yr9Lq3ABBRI9ZJ5z2pc';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const LOGO_URL = 'https://via.placeholder.com/150x150/1e3a8a/ffffff?text=LOJA';
+const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
+const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
 
 // ========================================
 // FUNÇÕES AUXILIARES
@@ -421,17 +422,31 @@ function App() {
       }
 
       // Salvar filhos na tabela filhos
-      for (const filho of filhos) {
-        if (filho.nome) {
+      console.log('📋 Total de filhos a salvar:', filhos.length);
+      console.log('📋 Dados dos filhos:', JSON.stringify(filhos, null, 2));
+      
+      for (let i = 0; i < filhos.length; i++) {
+        const filho = filhos[i];
+        console.log(`🔍 Verificando filho ${i + 1}:`, filho);
+        
+        if (filho.nome && filho.nome.trim() !== '') {
+          console.log(`💾 Salvando filho ${i + 1}: ${filho.nome}`);
+          
           const { error: filhoError } = await supabase.from('filhos').insert([{
             irmao_id: irmaoData.id,
             nome: filho.nome,
-            data_nascimento: filho.data_nascimento,
-            falecido: filho.falecido,
-            data_obito: filho.data_obito
+            data_nascimento: filho.data_nascimento || null,
+            falecido: filho.falecido || false,
+            data_obito: filho.data_obito || null
           }]);
-          if (filhoError) console.error('❌ Erro ao salvar filho:', filhoError);
-          else console.log('✅ Filho salvo:', filho.nome);
+          
+          if (filhoError) {
+            console.error(`❌ Erro ao salvar filho ${i + 1}:`, filhoError);
+          } else {
+            console.log(`✅ Filho ${i + 1} salvo com sucesso: ${filho.nome}`);
+          }
+        } else {
+          console.log(`⚠️ Filho ${i + 1} sem nome, pulando...`);
         }
       }
 
@@ -507,18 +522,34 @@ function App() {
         console.log('✅ Mãe atualizada');
       }
 
-      for (const filho of filhos) {
-        if (filho.nome) {
-          await supabase.from('filhos').insert([{
+      console.log('📋 Atualizando filhos - Total:', filhos.length);
+      console.log('📋 Dados dos filhos:', JSON.stringify(filhos, null, 2));
+      
+      for (let i = 0; i < filhos.length; i++) {
+        const filho = filhos[i];
+        console.log(`🔍 Verificando filho ${i + 1} para atualização:`, filho);
+        
+        if (filho.nome && filho.nome.trim() !== '') {
+          console.log(`💾 Atualizando filho ${i + 1}: ${filho.nome}`);
+          
+          const { error: filhoError } = await supabase.from('filhos').insert([{
             irmao_id: irmaoEditando.id,
             nome: filho.nome,
-            data_nascimento: filho.data_nascimento,
-            falecido: filho.falecido,
-            data_obito: filho.data_obito
+            data_nascimento: filho.data_nascimento || null,
+            falecido: filho.falecido || false,
+            data_obito: filho.data_obito || null
           }]);
+          
+          if (filhoError) {
+            console.error(`❌ Erro ao atualizar filho ${i + 1}:`, filhoError);
+          } else {
+            console.log(`✅ Filho ${i + 1} atualizado: ${filho.nome}`);
+          }
+        } else {
+          console.log(`⚠️ Filho ${i + 1} sem nome na atualização, pulando...`);
         }
       }
-      console.log('✅ Filhos atualizados');
+      console.log('✅ Processo de atualização de filhos concluído');
 
       setSuccessMessage('Cadastro atualizado com sucesso!');
       loadIrmaos();
@@ -676,16 +707,21 @@ function App() {
   };
 
   const adicionarFilho = () => {
-    setFilhos([...filhos, { nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
+    const novosFilhos = [...filhos, { nome: '', data_nascimento: '', falecido: false, data_obito: '' }];
+    console.log('➕ Adicionando filho. Total agora:', novosFilhos.length);
+    setFilhos(novosFilhos);
   };
 
   const removerFilho = (index) => {
-    setFilhos(filhos.filter((_, i) => i !== index));
+    const novosFilhos = filhos.filter((_, i) => i !== index);
+    console.log('➖ Removendo filho. Total agora:', novosFilhos.length);
+    setFilhos(novosFilhos);
   };
 
   const atualizarFilho = (index, field, value) => {
     const novosFilhos = [...filhos];
     novosFilhos[index][field] = value;
+    console.log(`✏️ Atualizando filho ${index + 1} - ${field}:`, value);
     setFilhos(novosFilhos);
   };
 
@@ -826,7 +862,7 @@ function App() {
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
           <div className="text-center mb-8">
             <img src={LOGO_URL} alt="Logo" className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-blue-600" />
-            <h1 className="text-3xl font-bold text-blue-900 mb-2">Sistema da Loja</h1>
+            <h1 className="text-3xl font-bold text-blue-900 mb-2">{NOME_LOJA}</h1>
             <p className="text-gray-600">Gestão Maçônica</p>
           </div>
 
@@ -884,7 +920,7 @@ function App() {
             <div className="flex items-center gap-4">
               <img src={LOGO_URL} alt="Logo" className="w-12 h-12 rounded-full border-2 border-white" />
               <div>
-                <h1 className="text-2xl font-bold">Sistema da Loja Maçônica</h1>
+                <h1 className="text-2xl font-bold">{NOME_LOJA}</h1>
                 <p className="text-sm text-blue-200">Gestão e Controle</p>
               </div>
             </div>
