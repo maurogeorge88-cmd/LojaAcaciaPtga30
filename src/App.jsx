@@ -11,6 +11,14 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
 const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
 
+// Função para tratar datas vazias
+const tratarData = (data) => {
+  if (!data || data === '' || data === 'undefined' || data === 'null') {
+    return null;
+  }
+  return data;
+};
+
 // ========================================
 // FUNÇÕES AUXILIARES
 // ========================================
@@ -372,9 +380,18 @@ function App() {
     setSuccessMessage('');
 
     try {
+      // Preparar dados do irmão com datas tratadas
+      const dadosIrmao = {
+        ...irmaoForm,
+        data_nascimento: tratarData(irmaoForm.data_nascimento),
+        data_iniciacao: tratarData(irmaoForm.data_iniciacao),
+        data_elevacao: tratarData(irmaoForm.data_elevacao),
+        data_exaltacao: tratarData(irmaoForm.data_exaltacao)
+      };
+
       const { data: irmaoData, error: irmaoError } = await supabase
         .from('irmaos')
-        .insert([irmaoForm])
+        .insert([dadosIrmao])
         .select()
         .single();
 
@@ -389,7 +406,7 @@ function App() {
         const { error: esposaError } = await supabase.from('esposas').insert([{
           irmao_id: irmaoData.id,
           nome: esposa.nome,
-          data_nascimento: esposa.data_nascimento || null
+          data_nascimento: tratarData(esposa.data_nascimento)
         }]);
         if (esposaError) {
           console.error('❌ Erro ao salvar esposa:', esposaError);
@@ -409,9 +426,9 @@ function App() {
           irmao_id: irmaoData.id,
           tipo: 'pai',
           nome: pai.nome,
-          data_nascimento: pai.data_nascimento || null,
+          data_nascimento: tratarData(pai.data_nascimento),
           falecido: pai.falecido || false,
-          data_obito: pai.data_obito || null
+          data_obito: tratarData(pai.data_obito)
         }]);
         if (paiError) {
           console.error('❌ Erro ao salvar pai:', paiError);
@@ -431,9 +448,9 @@ function App() {
           irmao_id: irmaoData.id,
           tipo: 'mae',
           nome: mae.nome,
-          data_nascimento: mae.data_nascimento || null,
+          data_nascimento: tratarData(mae.data_nascimento),
           falecido: mae.falecido || false,
-          data_obito: mae.data_obito || null
+          data_obito: tratarData(mae.data_obito)
         }]);
         if (maeError) {
           console.error('❌ Erro ao salvar mãe:', maeError);
@@ -459,9 +476,9 @@ function App() {
           const { error: filhoError } = await supabase.from('filhos').insert([{
             irmao_id: irmaoData.id,
             nome: filho.nome,
-            data_nascimento: filho.data_nascimento || null,
+            data_nascimento: tratarData(filho.data_nascimento),
             falecido: filho.falecido || false,
-            data_obito: filho.data_obito || null
+            data_obito: tratarData(filho.data_obito)
           }]);
           
           if (filhoError) {
@@ -496,9 +513,18 @@ function App() {
     setSuccessMessage('');
 
     try {
+      // Preparar dados do irmão com datas tratadas
+      const dadosIrmao = {
+        ...irmaoForm,
+        data_nascimento: tratarData(irmaoForm.data_nascimento),
+        data_iniciacao: tratarData(irmaoForm.data_iniciacao),
+        data_elevacao: tratarData(irmaoForm.data_elevacao),
+        data_exaltacao: tratarData(irmaoForm.data_exaltacao)
+      };
+
       const { error: irmaoError } = await supabase
         .from('irmaos')
-        .update(irmaoForm)
+        .update(dadosIrmao)
         .eq('id', irmaoEditando.id);
 
       if (irmaoError) throw irmaoError;
@@ -519,7 +545,7 @@ function App() {
         const { error: esposaError } = await supabase.from('esposas').insert([{
           irmao_id: irmaoEditando.id,
           nome: esposa.nome,
-          data_nascimento: esposa.data_nascimento || null
+          data_nascimento: tratarData(esposa.data_nascimento)
         }]);
         if (esposaError) {
           console.error('❌ Erro ao atualizar esposa:', esposaError);
@@ -538,9 +564,9 @@ function App() {
           irmao_id: irmaoEditando.id,
           tipo: 'pai',
           nome: pai.nome,
-          data_nascimento: pai.data_nascimento || null,
+          data_nascimento: tratarData(pai.data_nascimento),
           falecido: pai.falecido || false,
-          data_obito: pai.data_obito || null
+          data_obito: tratarData(pai.data_obito)
         }]);
         if (paiError) {
           console.error('❌ Erro ao atualizar pai:', paiError);
@@ -559,9 +585,9 @@ function App() {
           irmao_id: irmaoEditando.id,
           tipo: 'mae',
           nome: mae.nome,
-          data_nascimento: mae.data_nascimento || null,
+          data_nascimento: tratarData(mae.data_nascimento),
           falecido: mae.falecido || false,
-          data_obito: mae.data_obito || null
+          data_obito: tratarData(mae.data_obito)
         }]);
         if (maeError) {
           console.error('❌ Erro ao atualizar mãe:', maeError);
@@ -586,9 +612,9 @@ function App() {
           const { error: filhoError } = await supabase.from('filhos').insert([{
             irmao_id: irmaoEditando.id,
             nome: filho.nome,
-            data_nascimento: filho.data_nascimento || null,
+            data_nascimento: tratarData(filho.data_nascimento),
             falecido: filho.falecido || false,
-            data_obito: filho.data_obito || null
+            data_obito: tratarData(filho.data_obito)
           }]);
           
           if (filhoError) {
