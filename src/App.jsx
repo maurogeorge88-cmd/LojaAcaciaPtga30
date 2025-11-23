@@ -383,42 +383,66 @@ function App() {
       console.log('✅ Irmão cadastrado:', irmaoData.id);
 
       // Salvar esposa na tabela esposas
-      if (esposa.nome) {
+      console.log('🔍 Verificando esposa para salvar:', esposa);
+      if (esposa.nome && esposa.nome.trim() !== '') {
+        console.log('💾 Salvando esposa:', esposa.nome);
         const { error: esposaError } = await supabase.from('esposas').insert([{
           irmao_id: irmaoData.id,
           nome: esposa.nome,
-          data_nascimento: esposa.data_nascimento
+          data_nascimento: esposa.data_nascimento || null
         }]);
-        if (esposaError) console.error('❌ Erro ao salvar esposa:', esposaError);
-        else console.log('✅ Esposa salva');
+        if (esposaError) {
+          console.error('❌ Erro ao salvar esposa:', esposaError);
+          console.error('❌ Dados que tentei salvar:', { irmao_id: irmaoData.id, nome: esposa.nome });
+        } else {
+          console.log('✅ Esposa salva com sucesso:', esposa.nome);
+        }
+      } else {
+        console.log('⚠️ Esposa sem nome, não salvando');
       }
 
       // Salvar pai na tabela pais
-      if (pai.nome) {
+      console.log('🔍 Verificando pai para salvar:', pai);
+      if (pai.nome && pai.nome.trim() !== '') {
+        console.log('💾 Salvando pai:', pai.nome);
         const { error: paiError } = await supabase.from('pais').insert([{
           irmao_id: irmaoData.id,
           tipo: 'pai',
           nome: pai.nome,
-          data_nascimento: pai.data_nascimento,
-          falecido: pai.falecido,
-          data_obito: pai.data_obito
+          data_nascimento: pai.data_nascimento || null,
+          falecido: pai.falecido || false,
+          data_obito: pai.data_obito || null
         }]);
-        if (paiError) console.error('❌ Erro ao salvar pai:', paiError);
-        else console.log('✅ Pai salvo');
+        if (paiError) {
+          console.error('❌ Erro ao salvar pai:', paiError);
+          console.error('❌ Dados que tentei salvar:', { irmao_id: irmaoData.id, tipo: 'pai', nome: pai.nome });
+        } else {
+          console.log('✅ Pai salvo com sucesso:', pai.nome);
+        }
+      } else {
+        console.log('⚠️ Pai sem nome, não salvando');
       }
 
       // Salvar mãe na tabela pais
-      if (mae.nome) {
+      console.log('🔍 Verificando mãe para salvar:', mae);
+      if (mae.nome && mae.nome.trim() !== '') {
+        console.log('💾 Salvando mãe:', mae.nome);
         const { error: maeError } = await supabase.from('pais').insert([{
           irmao_id: irmaoData.id,
           tipo: 'mae',
           nome: mae.nome,
-          data_nascimento: mae.data_nascimento,
-          falecido: mae.falecido,
-          data_obito: mae.data_obito
+          data_nascimento: mae.data_nascimento || null,
+          falecido: mae.falecido || false,
+          data_obito: mae.data_obito || null
         }]);
-        if (maeError) console.error('❌ Erro ao salvar mãe:', maeError);
-        else console.log('✅ Mãe salva');
+        if (maeError) {
+          console.error('❌ Erro ao salvar mãe:', maeError);
+          console.error('❌ Dados que tentei salvar:', { irmao_id: irmaoData.id, tipo: 'mae', nome: mae.nome });
+        } else {
+          console.log('✅ Mãe salva com sucesso:', mae.nome);
+        }
+      } else {
+        console.log('⚠️ Mãe sem nome, não salvando');
       }
 
       // Salvar filhos na tabela filhos
@@ -489,37 +513,64 @@ function App() {
       console.log('🗑️ Dados familiares antigos removidos');
 
       // Inserir novos dados
-      if (esposa.nome) {
-        await supabase.from('esposas').insert([{
+      console.log('🔍 Verificando esposa para atualizar:', esposa);
+      if (esposa.nome && esposa.nome.trim() !== '') {
+        console.log('💾 Atualizando esposa:', esposa.nome);
+        const { error: esposaError } = await supabase.from('esposas').insert([{
           irmao_id: irmaoEditando.id,
           nome: esposa.nome,
-          data_nascimento: esposa.data_nascimento
+          data_nascimento: esposa.data_nascimento || null
         }]);
-        console.log('✅ Esposa atualizada');
+        if (esposaError) {
+          console.error('❌ Erro ao atualizar esposa:', esposaError);
+          console.error('❌ Dados que tentei salvar:', { irmao_id: irmaoEditando.id, nome: esposa.nome });
+        } else {
+          console.log('✅ Esposa atualizada com sucesso:', esposa.nome);
+        }
+      } else {
+        console.log('⚠️ Esposa sem nome na atualização, não salvando');
       }
 
-      if (pai.nome) {
-        await supabase.from('pais').insert([{
+      console.log('🔍 Verificando pai para atualizar:', pai);
+      if (pai.nome && pai.nome.trim() !== '') {
+        console.log('💾 Atualizando pai:', pai.nome);
+        const { error: paiError } = await supabase.from('pais').insert([{
           irmao_id: irmaoEditando.id,
           tipo: 'pai',
           nome: pai.nome,
-          data_nascimento: pai.data_nascimento,
-          falecido: pai.falecido,
-          data_obito: pai.data_obito
+          data_nascimento: pai.data_nascimento || null,
+          falecido: pai.falecido || false,
+          data_obito: pai.data_obito || null
         }]);
-        console.log('✅ Pai atualizado');
+        if (paiError) {
+          console.error('❌ Erro ao atualizar pai:', paiError);
+          console.error('❌ Dados que tentei salvar:', { irmao_id: irmaoEditando.id, tipo: 'pai', nome: pai.nome });
+        } else {
+          console.log('✅ Pai atualizado com sucesso:', pai.nome);
+        }
+      } else {
+        console.log('⚠️ Pai sem nome na atualização, não salvando');
       }
 
-      if (mae.nome) {
-        await supabase.from('pais').insert([{
+      console.log('🔍 Verificando mãe para atualizar:', mae);
+      if (mae.nome && mae.nome.trim() !== '') {
+        console.log('💾 Atualizando mãe:', mae.nome);
+        const { error: maeError } = await supabase.from('pais').insert([{
           irmao_id: irmaoEditando.id,
           tipo: 'mae',
           nome: mae.nome,
-          data_nascimento: mae.data_nascimento,
-          falecido: mae.falecido,
-          data_obito: mae.data_obito
+          data_nascimento: mae.data_nascimento || null,
+          falecido: mae.falecido || false,
+          data_obito: mae.data_obito || null
         }]);
-        console.log('✅ Mãe atualizada');
+        if (maeError) {
+          console.error('❌ Erro ao atualizar mãe:', maeError);
+          console.error('❌ Dados que tentei salvar:', { irmao_id: irmaoEditando.id, tipo: 'mae', nome: mae.nome });
+        } else {
+          console.log('✅ Mãe atualizada com sucesso:', mae.nome);
+        }
+      } else {
+        console.log('⚠️ Mãe sem nome na atualização, não salvando');
       }
 
       console.log('📋 Atualizando filhos - Total:', filhos.length);
