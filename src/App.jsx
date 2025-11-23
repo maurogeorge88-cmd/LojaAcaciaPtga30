@@ -1099,11 +1099,15 @@ function App() {
     try {
       console.log('💾 Criando novo usuário:', usuarioForm.email);
 
-      // Criar usuário no Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Criar usuário no Auth usando signUp
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: usuarioForm.email,
         password: usuarioForm.senha,
-        email_confirm: true
+        options: {
+          data: {
+            nome: usuarioForm.nome
+          }
+        }
       });
 
       if (authError) throw authError;
@@ -1120,7 +1124,7 @@ function App() {
 
       if (dbError) throw dbError;
 
-      setSuccessMessage('Usuário criado com sucesso!');
+      setSuccessMessage('✅ Usuário criado com sucesso! Um email de confirmação foi enviado.');
       loadUsuarios();
       limparFormularioUsuario();
 
@@ -1455,6 +1459,152 @@ function App() {
   };
 
   // ========================================
+  // FUNÇÃO PARA GERAR PDF
+  // ========================================
+  const gerarPDFIrmao = async (irmao) => {
+    try {
+      console.log('📄 Gerando PDF para:', irmao.nome);
+
+      // Buscar dados familiares
+      const { data: esposaData } = await supabase
+        .from('esposas')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      const { data: paisData } = await supabase
+        .from('pais')
+        .select('*')
+        .eq('irmao_id', irmao.id);
+
+      const { data: filhosData } = await supabase
+        .from('filhos')
+        .select('*')
+        .eq('irmao_id', irmao.id);
+
+      const pai = paisData?.find(p => p.tipo === 'pai');
+      const mae = paisData?.find(p => p.tipo === 'mae');
+
+      // Criar conteúdo HTML para o PDF
+      let htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ficha - ${irmao.nome}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e40af; padding-bottom: 20px; }
+    .header h1 { color: #1e40af; margin: 0; font-size: 24px; }
+    .header h2 { color: #666; margin: 5px 0 0 0; font-size: 16px; }
+    .section { margin: 25px 0; page-break-inside: avoid; }
+    .section-title { background: #1e40af; color: white; padding: 10px; font-size: 16px; font-weight: bold; margin-bottom: 15px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .info-item { margin-bottom: 10px; }
+    .info-label { font-weight: bold; color: #1e40af; display: block; margin-bottom: 3px; }
+    .info-value { color: #333; display: block; padding-left: 10px; }
+    .family-member { background: #f3f4f6; padding: 15px; margin: 10px 0; border-left: 4px solid #1e40af; }
+    .footer { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; color: #666; font-size: 12px; }
+    @media print { body { margin: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>${NOME_LOJA}</h1>
+    <h2>Ficha Cadastral de Irmão</h2>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📋 DADOS PESSOAIS</div>
+    <div class="info-grid">
+      <div class="info-item"><span class="info-label">Nome Completo:</span><span class="info-value">${irmao.nome || '-'}</span></div>
+      <div class="info-item"><span class="info-label">CIM:</span><span class="info-value">${irmao.cim || '-'}</span></div>
+      <div class="info-item"><span class="info-label">CPF:</span><span class="info-value">${irmao.cpf || '-'}</span></div>
+      <div class="info-item"><span class="info-label">RG:</span><span class="info-value">${irmao.rg || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(irmao.data_nascimento)}</span></div>
+      <div class="info-item"><span class="info-label">Naturalidade:</span><span class="info-value">${irmao.naturalidade || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Estado Civil:</span><span class="info-value">${irmao.estado_civil || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Profissão:</span><span class="info-value">${irmao.profissao || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Formação:</span><span class="info-value">${irmao.formacao || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Status:</span><span class="info-value">${irmao.status === 'ativo' ? '✅ Ativo' : '❌ Inativo'}</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">📍 CONTATO</div>
+    <div class="info-grid">
+      <div class="info-item"><span class="info-label">Endereço:</span><span class="info-value">${irmao.endereco || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Cidade:</span><span class="info-value">${irmao.cidade || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Celular:</span><span class="info-value">${irmao.celular || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Email:</span><span class="info-value">${irmao.email || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Local de Trabalho:</span><span class="info-value">${irmao.local_trabalho || '-'}</span></div>
+      <div class="info-item"><span class="info-label">Cargo:</span><span class="info-value">${irmao.cargo || '-'}</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">🔺 DADOS MAÇÔNICOS</div>
+    <div class="info-grid">
+      <div class="info-item"><span class="info-label">Data de Iniciação:</span><span class="info-value">${formatarData(irmao.data_iniciacao)}</span></div>
+      <div class="info-item"><span class="info-label">Data de Elevação:</span><span class="info-value">${formatarData(irmao.data_elevacao)}</span></div>
+      <div class="info-item"><span class="info-label">Data de Exaltação:</span><span class="info-value">${formatarData(irmao.data_exaltacao)}</span></div>
+      <div class="info-item"><span class="info-label">Grau Atual:</span><span class="info-value">${obterGrau(irmao)}</span></div>
+    </div>
+  </div>`;
+
+      if (esposaData) {
+        htmlContent += `<div class="section"><div class="section-title">💑 ESPOSA</div><div class="family-member">
+<div class="info-item"><span class="info-label">Nome:</span><span class="info-value">${esposaData.nome || '-'}</span></div>
+<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(esposaData.data_nascimento)}</span></div>
+</div></div>`;
+      }
+
+      if (pai || mae) {
+        htmlContent += `<div class="section"><div class="section-title">👨‍👩‍👦 PAIS</div>`;
+        if (pai) {
+          htmlContent += `<div class="family-member"><div class="info-item"><span class="info-label">Pai:</span><span class="info-value">${pai.nome || '-'}</span></div>
+<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(pai.data_nascimento)}</span></div>
+${pai.falecido ? `<div class="info-item"><span class="info-label">Status:</span><span class="info-value">🕊️ Falecido em ${formatarData(pai.data_obito)}</span></div>` : ''}</div>`;
+        }
+        if (mae) {
+          htmlContent += `<div class="family-member"><div class="info-item"><span class="info-label">Mãe:</span><span class="info-value">${mae.nome || '-'}</span></div>
+<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(mae.data_nascimento)}</span></div>
+${mae.falecido ? `<div class="info-item"><span class="info-label">Status:</span><span class="info-value">🕊️ Falecida em ${formatarData(mae.data_obito)}</span></div>` : ''}</div>`;
+        }
+        htmlContent += `</div>`;
+      }
+
+      if (filhosData && filhosData.length > 0) {
+        htmlContent += `<div class="section"><div class="section-title">👶 FILHOS</div>`;
+        filhosData.forEach((filho, index) => {
+          htmlContent += `<div class="family-member"><div class="info-item"><span class="info-label">Filho(a) ${index + 1}:</span><span class="info-value">${filho.nome || '-'}</span></div>
+<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(filho.data_nascimento)}</span></div>
+${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</span><span class="info-value">🕊️ Falecido(a) em ${formatarData(filho.data_obito)}</span></div>` : ''}</div>`;
+        });
+        htmlContent += `</div>`;
+      }
+
+      htmlContent += `<div class="footer"><p>Documento gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p><p>${NOME_LOJA}</p></div></body></html>`;
+
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Ficha_${irmao.nome.replace(/\s+/g, '_')}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setSuccessMessage('✅ Arquivo HTML gerado! Abra no navegador e use Ctrl+P para salvar em PDF.');
+      setTimeout(() => setSuccessMessage(''), 5000);
+
+    } catch (error) {
+      console.error('❌ Erro ao gerar PDF:', error);
+      setError('Erro ao gerar arquivo: ' + error.message);
+    }
+  };
+
+  // ========================================
   // RENDERIZAÇÃO
   // ========================================
   if (loading && !session) {
@@ -1519,6 +1669,20 @@ function App() {
 
   const irmaosAtivos = irmaos.filter(i => i.status === 'ativo');
   const totalIrmaos = irmaos.length;
+
+  // Função para determinar o grau do irmão
+  const obterGrau = (irmao) => {
+    if (irmao.data_exaltacao) return 'Mestre';
+    if (irmao.data_elevacao) return 'Companheiro';
+    if (irmao.data_iniciacao) return 'Aprendiz';
+    return 'Não Iniciado';
+  };
+
+  // Contagem por grau
+  const irmaosAprendiz = irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz').length;
+  const irmaosCompanheiro = irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro').length;
+  const irmaosMestre = irmaosAtivos.filter(i => obterGrau(i) === 'Mestre').length;
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1654,12 +1818,27 @@ function App() {
             <h2 className="text-3xl font-bold text-gray-800 mb-6">📊 Dashboard</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-2">Total de Irmãos</h3>
-                <p className="text-4xl font-bold">{totalIrmaos}</p>
+                <h3 className="text-lg font-semibold mb-3">Total de Irmãos Ativos</h3>
+                <p className="text-5xl font-bold mb-4">{irmaosAtivos.length}</p>
+                <div className="border-t border-blue-400 pt-3 space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>⬜ Aprendizes:</span>
+                    <span className="font-bold">{irmaosAprendiz}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>🔷 Companheiros:</span>
+                    <span className="font-bold">{irmaosCompanheiro}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>🔺 Mestres:</span>
+                    <span className="font-bold">{irmaosMestre}</span>
+                  </div>
+                </div>
               </div>
               <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-2">Irmãos Ativos</h3>
-                <p className="text-4xl font-bold">{irmaosAtivos.length}</p>
+                <h3 className="text-lg font-semibold mb-2">Total Geral</h3>
+                <p className="text-4xl font-bold">{totalIrmaos}</p>
+                <p className="text-sm mt-2 opacity-90">Ativos e Inativos</p>
               </div>
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Balaustres Registrados</h3>
@@ -2020,6 +2199,13 @@ function App() {
                         className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg font-semibold transition"
                       >
                         👁️ Detalhes
+                      </button>
+                      <button
+                        onClick={() => gerarPDFIrmao(irmao)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition"
+                        title="Gerar PDF"
+                      >
+                        📄 PDF
                       </button>
                     </div>
                   </div>
