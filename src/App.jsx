@@ -159,6 +159,33 @@ function App() {
     ano_exercicio: ''
   });
   const [anoFiltroAdmin, setAnoFiltroAdmin] = useState('');
+  const [modoEdicaoCorpoAdmin, setModoEdicaoCorpoAdmin] = useState(false);
+  const [corpoAdminEditando, setCorpoAdminEditando] = useState(null);
+
+  // Lista fixa de cargos administrativos
+  const cargosAdministrativos = [
+    'Venerável Mestre',
+    '1º Vigilante',
+    '2º Vigilante',
+    'Orador',
+    'Secretário',
+    'Tesoureiro',
+    'Chanceler',
+    'Mestre de Cerimônias',
+    'Mestre de Harmonia',
+    'Hospitaleiro',
+    'Guarda do Templo',
+    '1º Diácono',
+    '2º Diácono',
+    '1º Experto',
+    '2º Experto',
+    'Porta-Estandarte',
+    'Porta-Espada',
+    'Bibliotecário',
+    'Orador Adjunto',
+    'Secretário Adjunto',
+    'Tesoureiro Adjunto'
+  ];
 
   // ========================================
   // EFEITOS E CARREGAMENTOS
@@ -1347,7 +1374,7 @@ function App() {
       if (error) throw error;
 
       setSuccessMessage('✅ Cargo cadastrado com sucesso!');
-      setCorpoAdminForm({ irmao_id: '', cargo: '', ano_exercicio: '' });
+      limparFormularioCorpoAdmin();
       loadCorpoAdmin();
 
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -1357,6 +1384,51 @@ function App() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleAtualizarCorpoAdmin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+
+    try {
+      console.log('💾 Atualizando cargo administrativo...');
+
+      const { error } = await supabase
+        .from('corpo_administrativo')
+        .update(corpoAdminForm)
+        .eq('id', corpoAdminEditando.id);
+
+      if (error) throw error;
+
+      setSuccessMessage('✅ Cargo atualizado com sucesso!');
+      limparFormularioCorpoAdmin();
+      loadCorpoAdmin();
+
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (err) {
+      console.error('❌ Erro ao atualizar cargo:', err);
+      setError('Erro ao atualizar cargo: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditarCorpoAdmin = (item) => {
+    setModoEdicaoCorpoAdmin(true);
+    setCorpoAdminEditando(item);
+    setCorpoAdminForm({
+      irmao_id: item.irmao_id,
+      cargo: item.cargo,
+      ano_exercicio: item.ano_exercicio
+    });
+  };
+
+  const limparFormularioCorpoAdmin = () => {
+    setCorpoAdminForm({ irmao_id: '', cargo: '', ano_exercicio: '' });
+    setModoEdicaoCorpoAdmin(false);
+    setCorpoAdminEditando(null);
   };
 
   const handleExcluirCorpoAdmin = async (id) => {
@@ -3111,9 +3183,11 @@ function App() {
 
             {/* FORMULÁRIO DE CADASTRO */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Registrar Cargo Administrativo</h3>
+              <h3 className="text-xl font-bold text-blue-900 mb-4">
+                {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
+              </h3>
 
-              <form onSubmit={handleSubmitCorpoAdmin}>
+              <form onSubmit={modoEdicaoCorpoAdmin ? handleAtualizarCorpoAdmin : handleSubmitCorpoAdmin}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
@@ -3136,14 +3210,19 @@ function App() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
-                    <input
-                      type="text"
+                    <select
                       value={corpoAdminForm.cargo}
                       onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="Ex: Venerável Mestre, 1º Vigilante..."
                       required
-                    />
+                    >
+                      <option value="">Selecione um cargo</option>
+                      {cargosAdministrativos.map((cargo) => (
+                        <option key={cargo} value={cargo}>
+                          {cargo}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
@@ -3161,13 +3240,22 @@ function App() {
                   </div>
                 </div>
 
-                <div className="flex justify-end mt-6">
+                <div className="flex justify-end gap-4 mt-6">
+                  {modoEdicaoCorpoAdmin && (
+                    <button
+                      type="button"
+                      onClick={limparFormularioCorpoAdmin}
+                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                    >
+                      Cancelar
+                    </button>
+                  )}
                   <button
                     type="submit"
                     disabled={loading}
                     className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
                   >
-                    {loading ? 'Salvando...' : '💾 Registrar Cargo'}
+                    {loading ? 'Salvando...' : modoEdicaoCorpoAdmin ? '💾 Atualizar Cargo' : '💾 Registrar Cargo'}
                   </button>
                 </div>
               </form>
@@ -3241,13 +3329,22 @@ function App() {
                                 </td>
                                 <td className="px-6 py-4 text-center">
                                   {permissoes?.canEdit && (
-                                    <button
-                                      onClick={() => handleExcluirCorpoAdmin(item.id)}
-                                      className="text-red-600 hover:text-red-800 font-semibold"
-                                      title="Remover"
-                                    >
-                                      🗑️
-                                    </button>
+                                    <div className="flex justify-center gap-2">
+                                      <button
+                                        onClick={() => handleEditarCorpoAdmin(item)}
+                                        className="text-blue-600 hover:text-blue-800 font-semibold"
+                                        title="Editar"
+                                      >
+                                        ✏️
+                                      </button>
+                                      <button
+                                        onClick={() => handleExcluirCorpoAdmin(item.id)}
+                                        className="text-red-600 hover:text-red-800 font-semibold"
+                                        title="Remover"
+                                      >
+                                        🗑️
+                                      </button>
+                                    </div>
                                   )}
                                 </td>
                               </tr>
