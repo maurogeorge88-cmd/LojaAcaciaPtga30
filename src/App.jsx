@@ -83,7 +83,8 @@ function App() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ativo');
   const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
-  const [familiaresSelecionado, setFamiliaresSelecionado] = useState(null);
+  const [familiaresSelecionado, setFamiliaresSelecionado] = useState([]);
+  const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
 
   // Estados de edição
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -536,6 +537,37 @@ function App() {
     }
 
     setCurrentPage('cadastro');
+  };
+
+  const handleVisualizarDetalhes = async (irmao) => {
+    setIrmaoSelecionado(irmao);
+    
+    console.log('🔍 Carregando familiares do irmão:', irmao.nome);
+    
+    const { data: familiares, error } = await supabase
+      .from('familiares')
+      .select('*')
+      .eq('irmao_id', irmao.id);
+
+    console.log('📊 Familiares encontrados:', familiares?.length || 0);
+    
+    if (error) {
+      console.error('❌ Erro ao carregar familiares:', error);
+    }
+    
+    if (familiares) {
+      setFamiliaresSelecionado(familiares);
+    } else {
+      setFamiliaresSelecionado([]);
+    }
+    
+    setMostrarDetalhes(true);
+  };
+
+  const fecharDetalhes = () => {
+    setMostrarDetalhes(false);
+    setIrmaoSelecionado(null);
+    setFamiliaresSelecionado([]);
   };
 
   const limparFormulario = () => {
@@ -1214,7 +1246,7 @@ function App() {
                         </button>
                       )}
                       <button
-                        onClick={() => setIrmaoSelecionado(irmao)}
+                        onClick={() => handleVisualizarDetalhes(irmao)}
                         className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg font-semibold transition"
                       >
                         👁️ Detalhes
@@ -1234,6 +1266,295 @@ function App() {
                 Nenhum irmão encontrado com os filtros aplicados
               </div>
             )}
+          </div>
+        )}
+
+        {/* MODAL DE DETALHES DO IRMÃO */}
+        {mostrarDetalhes && irmaoSelecionado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header do Modal */}
+              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h2 className="text-2xl font-bold">{irmaoSelecionado.nome}</h2>
+                    <p className="text-blue-100">CIM: {irmaoSelecionado.cim}</p>
+                  </div>
+                  <button
+                    onClick={fecharDetalhes}
+                    className="text-white hover:bg-white hover:text-blue-600 rounded-full p-2 transition"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {/* Conteúdo do Modal */}
+              <div className="p-6 space-y-6">
+                {/* Dados Pessoais */}
+                <div>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">
+                    👤 Dados Pessoais
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-700">CPF:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.cpf || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">RG:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.rg || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                      <span className="ml-2 text-gray-600">{formatarData(irmaoSelecionado.data_nascimento)}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Idade:</span>
+                      <span className="ml-2 text-gray-600">{calcularIdade(irmaoSelecionado.data_nascimento)}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Estado Civil:</span>
+                      <span className="ml-2 text-gray-600 capitalize">{irmaoSelecionado.estado_civil || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Profissão:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.profissao || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Formação:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.formacao || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Naturalidade:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.naturalidade || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados de Contato */}
+                <div>
+                  <h3 className="text-xl font-bold text-green-900 mb-4 pb-2 border-b-2 border-green-200">
+                    📞 Dados de Contato
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-700">Email:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.email || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Celular:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.celular || '-'}</span>
+                    </div>
+                    <div className="md:col-span-2">
+                      <span className="font-semibold text-gray-700">Endereço:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.endereco || '-'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Cidade:</span>
+                      <span className="ml-2 text-gray-600">{irmaoSelecionado.cidade || '-'}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados Maçônicos */}
+                <div>
+                  <h3 className="text-xl font-bold text-purple-900 mb-4 pb-2 border-b-2 border-purple-200">
+                    🔺 Dados Maçônicos
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-700">Data de Iniciação:</span>
+                      <span className="ml-2 text-gray-600">{formatarData(irmaoSelecionado.data_iniciacao)}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Data de Elevação:</span>
+                      <span className="ml-2 text-gray-600">{formatarData(irmaoSelecionado.data_elevacao)}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold text-gray-700">Data de Exaltação:</span>
+                      <span className="ml-2 text-gray-600">{formatarData(irmaoSelecionado.data_exaltacao)}</span>
+                    </div>
+                    {irmaoSelecionado.data_iniciacao && (
+                      <div>
+                        <span className="font-semibold text-gray-700">Tempo de Maçonaria:</span>
+                        <span className="ml-2 text-gray-600">{calcularTempoMaconaria(irmaoSelecionado.data_iniciacao)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Dados Familiares */}
+                <div>
+                  <h3 className="text-xl font-bold text-pink-900 mb-4 pb-2 border-b-2 border-pink-200">
+                    👨‍👩‍👧‍👦 Dados Familiares
+                  </h3>
+                  
+                  {familiaresSelecionado.length === 0 ? (
+                    <p className="text-gray-500 text-center py-4">Nenhum familiar cadastrado</p>
+                  ) : (
+                    <div className="space-y-4">
+                      {/* Esposa */}
+                      {familiaresSelecionado.find(f => f.tipo === 'esposa') && (
+                        <div className="bg-pink-50 p-4 rounded-lg border border-pink-200">
+                          <h4 className="font-bold text-pink-900 mb-2">💑 Esposa</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-semibold text-gray-700">Nome:</span>
+                              <span className="ml-2 text-gray-600">
+                                {familiaresSelecionado.find(f => f.tipo === 'esposa').nome}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                              <span className="ml-2 text-gray-600">
+                                {formatarData(familiaresSelecionado.find(f => f.tipo === 'esposa').data_nascimento)}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-700">Idade:</span>
+                              <span className="ml-2 text-gray-600">
+                                {calcularIdade(familiaresSelecionado.find(f => f.tipo === 'esposa').data_nascimento)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Pai */}
+                      {familiaresSelecionado.find(f => f.tipo === 'pai') && (
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                          <h4 className="font-bold text-blue-900 mb-2">👨 Pai</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-semibold text-gray-700">Nome:</span>
+                              <span className="ml-2 text-gray-600">
+                                {familiaresSelecionado.find(f => f.tipo === 'pai').nome}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                              <span className="ml-2 text-gray-600">
+                                {formatarData(familiaresSelecionado.find(f => f.tipo === 'pai').data_nascimento)}
+                              </span>
+                            </div>
+                            {familiaresSelecionado.find(f => f.tipo === 'pai').falecido && (
+                              <>
+                                <div>
+                                  <span className="font-semibold text-red-700">✝ Falecido</span>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-700">Data do Óbito:</span>
+                                  <span className="ml-2 text-gray-600">
+                                    {formatarData(familiaresSelecionado.find(f => f.tipo === 'pai').data_obito)}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Mãe */}
+                      {familiaresSelecionado.find(f => f.tipo === 'mae') && (
+                        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                          <h4 className="font-bold text-purple-900 mb-2">👩 Mãe</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                            <div>
+                              <span className="font-semibold text-gray-700">Nome:</span>
+                              <span className="ml-2 text-gray-600">
+                                {familiaresSelecionado.find(f => f.tipo === 'mae').nome}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                              <span className="ml-2 text-gray-600">
+                                {formatarData(familiaresSelecionado.find(f => f.tipo === 'mae').data_nascimento)}
+                              </span>
+                            </div>
+                            {familiaresSelecionado.find(f => f.tipo === 'mae').falecido && (
+                              <>
+                                <div>
+                                  <span className="font-semibold text-red-700">✝ Falecida</span>
+                                </div>
+                                <div>
+                                  <span className="font-semibold text-gray-700">Data do Óbito:</span>
+                                  <span className="ml-2 text-gray-600">
+                                    {formatarData(familiaresSelecionado.find(f => f.tipo === 'mae').data_obito)}
+                                  </span>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Filhos */}
+                      {familiaresSelecionado.filter(f => f.tipo === 'filho').length > 0 && (
+                        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                          <h4 className="font-bold text-green-900 mb-3">👶 Filhos ({familiaresSelecionado.filter(f => f.tipo === 'filho').length})</h4>
+                          <div className="space-y-3">
+                            {familiaresSelecionado.filter(f => f.tipo === 'filho').map((filho, index) => (
+                              <div key={filho.id || index} className="bg-white p-3 rounded border border-green-300">
+                                <p className="font-semibold text-gray-700 mb-2">Filho {index + 1}</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                                  <div>
+                                    <span className="font-semibold text-gray-700">Nome:</span>
+                                    <span className="ml-2 text-gray-600">{filho.nome}</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                                    <span className="ml-2 text-gray-600">{formatarData(filho.data_nascimento)}</span>
+                                  </div>
+                                  <div>
+                                    <span className="font-semibold text-gray-700">Idade:</span>
+                                    <span className="ml-2 text-gray-600">{calcularIdade(filho.data_nascimento)}</span>
+                                  </div>
+                                  {filho.falecido && (
+                                    <>
+                                      <div>
+                                        <span className="font-semibold text-red-700">✝ Falecido(a)</span>
+                                      </div>
+                                      <div>
+                                        <span className="font-semibold text-gray-700">Data do Óbito:</span>
+                                        <span className="ml-2 text-gray-600">{formatarData(filho.data_obito)}</span>
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer do Modal */}
+              <div className="sticky bottom-0 bg-gray-100 p-4 rounded-b-2xl flex justify-end gap-3">
+                {permissoes?.canEdit && (
+                  <button
+                    onClick={() => {
+                      fecharDetalhes();
+                      handleEditarIrmao(irmaoSelecionado);
+                    }}
+                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition"
+                  >
+                    ✏️ Editar
+                  </button>
+                )}
+                <button
+                  onClick={fecharDetalhes}
+                  className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
