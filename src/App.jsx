@@ -90,7 +90,7 @@ function App() {
   const [cargosLoja, setCargosLoja] = useState([]);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ativo');
+  const [situacaoFilter, setSituacaoFilter] = useState('Todos');
   const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
   const [familiaresSelecionado, setFamiliaresSelecionado] = useState([]);
   const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
@@ -102,11 +102,29 @@ function App() {
   // Formulário de irmão
   const [irmaoForm, setIrmaoForm] = useState({
     cim: '', nome: '', cpf: '', rg: '', data_nascimento: '',
-    estado_civil: '', profissao: '', formacao: '', status: 'ativo',
+    estado_civil: '', profissao: '', formacao: '', situacao: 'Regular',
     naturalidade: '', endereco: '', cidade: '', celular: '',
     email: '', local_trabalho: '', cargo: '',
     data_iniciacao: '', data_elevacao: '', data_exaltacao: ''
   });
+
+  // Lista de situações possíveis
+  const situacoesPossiveis = [
+    { valor: 'Regular', cor: 'bg-green-100 text-green-800 border-green-300' },
+    { valor: 'Irregular', cor: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+    { valor: 'Licenciado', cor: 'bg-blue-100 text-blue-800 border-blue-300' },
+    { valor: 'Suspenso', cor: 'bg-orange-100 text-orange-800 border-orange-300' },
+    { valor: 'Desligado', cor: 'bg-gray-100 text-gray-800 border-gray-300' },
+    { valor: 'Excluído', cor: 'bg-red-100 text-red-800 border-red-300' },
+    { valor: 'Falecido', cor: 'bg-purple-100 text-purple-800 border-purple-300' },
+    { valor: 'Ex-Ofício', cor: 'bg-indigo-100 text-indigo-800 border-indigo-300' }
+  ];
+
+  // Função para obter cor da situação
+  const obterCorSituacao = (situacao) => {
+    const sit = situacoesPossiveis.find(s => s.valor === situacao);
+    return sit ? sit.cor : 'bg-gray-100 text-gray-800 border-gray-300';
+  };
 
   const [esposa, setEsposa] = useState({ nome: '', data_nascimento: '' });
   const [pai, setPai] = useState({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
@@ -1667,7 +1685,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
     );
   }
 
-  const irmaosAtivos = irmaos.filter(i => i.status === 'ativo');
+  // Contagens por situação
+  const irmaosRegulares = irmaos.filter(i => i.situacao === 'Regular');
+  const irmaosIrregulares = irmaos.filter(i => i.situacao === 'Irregular');
+  const irmaosLicenciados = irmaos.filter(i => i.situacao === 'Licenciado');
+  const irmaosSuspensos = irmaos.filter(i => i.situacao === 'Suspenso');
+  const irmaosDesligados = irmaos.filter(i => i.situacao === 'Desligado');
+  const irmaosExcluidos = irmaos.filter(i => i.situacao === 'Excluído');
+  const irmaosFalecidos = irmaos.filter(i => i.situacao === 'Falecido');
+  const irmaosExOficio = irmaos.filter(i => i.situacao === 'Ex-Ofício');
+  
   const totalIrmaos = irmaos.length;
 
   // Função para determinar o grau do irmão
@@ -1678,10 +1705,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
     return 'Não Iniciado';
   };
 
-  // Contagem por grau
-  const irmaosAprendiz = irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz').length;
-  const irmaosCompanheiro = irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro').length;
-  const irmaosMestre = irmaosAtivos.filter(i => obterGrau(i) === 'Mestre').length;
+  // Contagem por grau (apenas regulares)
+  const irmaosAprendiz = irmaosRegulares.filter(i => obterGrau(i) === 'Aprendiz').length;
+  const irmaosCompanheiro = irmaosRegulares.filter(i => obterGrau(i) === 'Companheiro').length;
+  const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
 
 
   return (
@@ -1816,10 +1843,12 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'dashboard' && (
           <div>
             <h2 className="text-3xl font-bold text-gray-800 mb-6">📊 Dashboard</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Cards de Graus */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-3">Total de Irmãos Ativos</h3>
-                <p className="text-5xl font-bold mb-4">{irmaosAtivos.length}</p>
+                <h3 className="text-lg font-semibold mb-3">Irmãos Regulares</h3>
+                <p className="text-5xl font-bold mb-4">{irmaosRegulares.length}</p>
                 <div className="border-t border-blue-400 pt-3 space-y-1">
                   <div className="flex justify-between text-sm">
                     <span>⬜ Aprendizes:</span>
@@ -1835,21 +1864,63 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 </div>
               </div>
+              
               <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
                 <h3 className="text-lg font-semibold mb-2">Total Geral</h3>
-                <p className="text-4xl font-bold">{totalIrmaos}</p>
-                <p className="text-sm mt-2 opacity-90">Ativos e Inativos</p>
+                <p className="text-4xl font-bold mb-2">{totalIrmaos}</p>
+                <p className="text-sm opacity-90">Todas as situações</p>
               </div>
+              
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-2">Balaustres Registrados</h3>
+                <h3 className="text-lg font-semibold mb-2">Balaustres</h3>
                 <p className="text-4xl font-bold">{balaustres.length}</p>
+                <p className="text-sm mt-2 opacity-90">Registrados</p>
               </div>
             </div>
 
-            <div className="mt-8 bg-white rounded-xl shadow-md p-6">
+            {/* Cards de Situações */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+              <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
+                  <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
+                  <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
+                </div>
+                <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
+                  <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
+                  <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
+                </div>
+                <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
+                  <div className="text-blue-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
+                  <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
+                </div>
+                <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
+                  <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
+                  <div className="text-3xl font-bold text-orange-700">{irmaosSuspensos.length}</div>
+                </div>
+                <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg">
+                  <div className="text-gray-600 text-sm font-semibold mb-1">↩️ Desligados</div>
+                  <div className="text-3xl font-bold text-gray-700">{irmaosDesligados.length}</div>
+                </div>
+                <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg">
+                  <div className="text-red-600 text-sm font-semibold mb-1">❌ Excluídos</div>
+                  <div className="text-3xl font-bold text-red-700">{irmaosExcluidos.length}</div>
+                </div>
+                <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg">
+                  <div className="text-purple-600 text-sm font-semibold mb-1">🕊️ Falecidos</div>
+                  <div className="text-3xl font-bold text-purple-700">{irmaosFalecidos.length}</div>
+                </div>
+                <div className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg">
+                  <div className="text-indigo-600 text-sm font-semibold mb-1">👔 Ex-Ofício</div>
+                  <div className="text-3xl font-bold text-indigo-700">{irmaosExOficio.length}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
               <p className="text-gray-600">
-                Utilize o menu de navegação acima para acessar as diferentes funcionalidades do sistema.
+                Utilize o menu de navegação para acessar as diferentes funcionalidades do sistema.
               </p>
             </div>
           </div>
@@ -2125,7 +2196,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'visualizar' && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">👥 Irmãos Cadastrados</h2>
+              <h2 className="text-3xl font-bold text-gray-800">👥 Quadro de Irmãos</h2>
             </div>
 
             {/* Filtros */}
@@ -2139,24 +2210,105 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
                 <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  value={situacaoFilter}
+                  onChange={(e) => setSituacaoFilter(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 >
-                  <option value="">Todos os Status</option>
-                  <option value="ativo">Ativos</option>
-                  <option value="inativo">Inativos</option>
-                  <option value="afastado">Afastados</option>
+                  <option value="Todos">Todas as Situações</option>
+                  {situacoesPossiveis.map(sit => (
+                    <option key={sit.valor} value={sit.valor}>{sit.valor}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
-            {/* Lista de Irmãos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {irmaos
-                .filter(irmao => {
-                  const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                    irmao.cim.toString().includes(searchTerm);
+            {/* Tabela de Irmãos */}
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b-2 border-gray-200">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CIM</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grau</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Situação</th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {irmaos
+                    .filter(irmao => {
+                      const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                        irmao.cim?.toString().includes(searchTerm);
+                      const matchSituacao = situacaoFilter === 'Todos' || irmao.situacao === situacaoFilter;
+                      return matchSearch && matchSituacao;
+                    })
+                    .sort((a, b) => a.nome.localeCompare(b.nome))
+                    .map(irmao => (
+                      <tr key={irmao.id} className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="font-medium text-gray-900">{irmao.nome}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-600">{irmao.cim}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {obterGrau(irmao) === 'Mestre' && '🔺'}
+                            {obterGrau(irmao) === 'Companheiro' && '🔷'}
+                            {obterGrau(irmao) === 'Aprendiz' && '⬜'}
+                            {' '}{obterGrau(irmao)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 ${obterCorSituacao(irmao.situacao)}`}>
+                            {irmao.situacao}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <div className="flex justify-center gap-2">
+                            {permissoes?.canEdit && (
+                              <button
+                                onClick={() => handleEditarIrmao(irmao)}
+                                className="text-blue-600 hover:text-blue-800 font-semibold"
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleVisualizarDetalhes(irmao)}
+                              className="text-gray-600 hover:text-gray-800 font-semibold"
+                              title="Detalhes"
+                            >
+                              👁️
+                            </button>
+                            <button
+                              onClick={() => gerarPDFIrmao(irmao)}
+                              className="text-green-600 hover:text-green-800 font-semibold"
+                              title="Gerar PDF"
+                            >
+                              📄
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              
+              {irmaos.filter(irmao => {
+                const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                  irmao.cim?.toString().includes(searchTerm);
+                const matchSituacao = situacaoFilter === 'Todos' || irmao.situacao === situacaoFilter;
+                return matchSearch && matchSituacao;
+              }).length === 0 && (
+                <div className="text-center py-12 text-gray-500">
+                  Nenhum irmão encontrado com os filtros selecionados
+                </div>
+              )}
+            </div>
+          </div>
+        )}
                   const matchStatus = !statusFilter || irmao.status === statusFilter;
                   return matchSearch && matchStatus;
                 })
@@ -2614,6 +2766,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         onChange={(e) => setIrmaoForm({ ...irmaoForm, formacao: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Situação *</label>
+                      <select
+                        value={irmaoForm.situacao}
+                        onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        required
+                      >
+                        {situacoesPossiveis.map(sit => (
+                          <option key={sit.valor} value={sit.valor}>{sit.valor}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
