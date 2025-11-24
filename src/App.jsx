@@ -2733,6 +2733,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Naturalidade</label>
+                      <input
+                        type="text"
+                        value={irmaoForm.naturalidade}
+                        onChange={(e) => setIrmaoForm({ ...irmaoForm, naturalidade: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
                     {irmaoForm.data_nascimento && (
                       <div className="md:col-span-3 bg-blue-50 p-4 rounded-lg border border-blue-200">
                         <p className="text-sm font-semibold text-blue-900">
@@ -2809,15 +2818,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         type="text"
                         value={irmaoForm.celular}
                         onChange={(e) => setIrmaoForm({ ...irmaoForm, celular: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Naturalidade</label>
-                      <input
-                        type="text"
-                        value={irmaoForm.naturalidade}
-                        onChange={(e) => setIrmaoForm({ ...irmaoForm, naturalidade: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
