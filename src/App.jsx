@@ -1732,115 +1732,111 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         </div>
 
         {/* Menu de Navegação */}
-        <nav className="py-4 flex-1 overflow-y-auto">
+        <nav className="py-2 flex-1 overflow-y-auto">
           <button
             onClick={() => setCurrentPage('dashboard')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'dashboard'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">📊</span>
+            <span className="text-base">📊</span>
             <span className="font-semibold">Dashboard</span>
           </button>
 
           <button
             onClick={() => setCurrentPage('cadastro')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'cadastro'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">➕</span>
+            <span className="text-base">➕</span>
             <span className="font-semibold">Cadastrar Irmão</span>
           </button>
 
           <button
             onClick={() => setCurrentPage('visualizar')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'visualizar'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">👥</span>
+            <span className="text-base">👥</span>
             <span className="font-semibold">Visualizar Irmãos</span>
           </button>
 
           <button
             onClick={() => setCurrentPage('quadro')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'quadro'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">📋</span>
+            <span className="text-base">📋</span>
             <span className="font-semibold">Quadro de Irmãos</span>
           </button>
 
           <button
             onClick={() => setCurrentPage('balaustres')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'balaustres'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">📜</span>
+            <span className="text-base">📜</span>
             <span className="font-semibold">Balaustres</span>
           </button>
 
           <button
             onClick={() => setCurrentPage('pranchas')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'pranchas'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">📄</span>
+            <span className="text-base">📄</span>
             <span className="font-semibold">Pranchas</span>
           </button>
 
           <button
             onClick={() => setCurrentPage('corpo-admin')}
-            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'corpo-admin'
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
           >
-            <span className="text-xl">👔</span>
+            <span className="text-base">👔</span>
             <span className="font-semibold">Administração</span>
           </button>
 
           {permissoes?.canManageUsers && (
             <button
               onClick={() => setCurrentPage('usuarios')}
-              className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                 currentPage === 'usuarios'
                   ? 'bg-blue-700 border-l-4 border-white'
                   : 'hover:bg-blue-800'
               }`}
             >
-              <span className="text-xl">👤</span>
+              <span className="text-base">👤</span>
               <span className="font-semibold">Gerenciar Usuários</span>
             </button>
           )}
         </nav>
 
-        {/* Informações do Usuário e Sair */}
-        <div className="border-t border-blue-700 bg-blue-950 p-4 flex-shrink-0">
-          <div className="mb-3">
-            <p className="font-semibold text-sm truncate">{userData?.nome}</p>
-            <p className="text-xs text-blue-300 capitalize">{userData?.cargo}</p>
-          </div>
+        {/* Botão Sair */}
+        <div className="border-t border-blue-700 bg-blue-950 p-3 flex-shrink-0">
           <button
             onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+            className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm"
           >
             <span>🚪</span>
             <span>Sair</span>
@@ -1866,13 +1862,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
                 </h2>
               </div>
-              <div className="text-sm text-gray-500">
-                {new Date().toLocaleDateString('pt-BR', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="font-semibold text-sm text-gray-800">{userData?.nome}</p>
+                  <p className="text-xs text-gray-600 capitalize">{userData?.cargo}</p>
+                </div>
+                <div className="text-sm text-gray-500">
+                  {new Date().toLocaleDateString('pt-BR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
+                </div>
               </div>
             </div>
           </div>
