@@ -129,7 +129,7 @@ function App() {
   const [esposa, setEsposa] = useState({ nome: '', data_nascimento: '' });
   const [pai, setPai] = useState({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
   const [mae, setMae] = useState({ nome: '', data_nascimento: '', falecido: false, data_obito: '' });
-  const [filhos, setFilhos] = useState([{ nome: '', data_nascimento: '', falecido: false, data_obito: '' }]);
+  const [filhos, setFilhos] = useState([{ nome: '', data_nascimento: '', tipo: 'Filho', falecido: false, data_obito: '' }]);
 
   // Estados para Balaustre
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
@@ -930,7 +930,7 @@ function App() {
 
       if (filhosData) {
         filhosData.forEach(f => {
-          familiares.push({ ...f, tipo: 'filho' });
+          familiares.push({ ...f, tipo: f.tipo || 'filho' });
         });
         console.log('✅ Filhos encontrados:', filhosData.length);
       }
@@ -974,7 +974,7 @@ function App() {
   };
 
   const adicionarFilho = () => {
-    const novosFilhos = [...filhos, { nome: '', data_nascimento: '', falecido: false, data_obito: '' }];
+    const novosFilhos = [...filhos, { nome: '', data_nascimento: '', tipo: 'Filho', falecido: false, data_obito: '' }];
     console.log('➕ Adicionando filho. Total agora:', novosFilhos.length);
     setFilhos(novosFilhos);
   };
@@ -2520,6 +2520,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                             {familiar.tipo === 'pai' && '👨 Pai'}
                             {familiar.tipo === 'mae' && '👩 Mãe'}
                             {familiar.tipo === 'filho' && '👶 Filho(a)'}
+                            {familiar.tipo === 'Filho' && '👶 Filho(a)'}
+                            {familiar.tipo === 'Neto' && '👦 Neto(a)'}
+                            {familiar.tipo === 'Enteado' && '👧 Enteado(a)'}
                           </p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                             <div>
@@ -3042,21 +3045,21 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <div>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-xl font-bold text-purple-900 pb-2 border-b-2 border-purple-200">
-                      👶 Dados dos Filhos (Opcional)
+                      👶 Filhos, Netos e Enteados (Opcional)
                     </h3>
                     <button
                       type="button"
                       onClick={adicionarFilho}
                       className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
                     >
-                      + Adicionar Filho
+                      + Adicionar
                     </button>
                   </div>
                   
                   {filhos.map((filho, index) => (
                     <div key={index} className="mb-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
                       <div className="flex justify-between items-center mb-3">
-                        <p className="font-semibold text-gray-700">Filho {index + 1}:</p>
+                        <p className="font-semibold text-gray-700">{filho.tipo || 'Filho'} {index + 1}:</p>
                         {filhos.length > 1 && (
                           <button
                             type="button"
@@ -3067,7 +3070,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           </button>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
+                          <select
+                            value={filho.tipo || 'Filho'}
+                            onChange={(e) => atualizarFilho(index, 'tipo', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                          >
+                            <option value="Filho">Filho</option>
+                            <option value="Neto">Neto</option>
+                            <option value="Enteado">Enteado</option>
+                          </select>
+                        </div>
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
                           <input
