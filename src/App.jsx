@@ -1931,9 +1931,22 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </div>
               
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-2">Balaustres</h3>
-                <p className="text-4xl font-bold">{balaustres.length}</p>
-                <p className="text-sm mt-2 opacity-90">Registrados</p>
+                <h3 className="text-lg font-semibold mb-3">Balaustres</h3>
+                <p className="text-5xl font-bold mb-4">{balaustres.length}</p>
+                <div className="border-t border-purple-400 pt-3 space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>⬜ Grau 1 (Aprendiz):</span>
+                    <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Aprendiz').length}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>🔷 Grau 2 (Companheiro):</span>
+                    <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Companheiro').length}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>🔺 Grau 3 (Mestre):</span>
+                    <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Mestre').length}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2068,10 +2081,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 </div>
 
-                {/* Ordem do Dia, Observações e Botão em linha */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4 items-end">
-                  {/* Ordem do Dia - 5 colunas */}
-                  <div className="lg:col-span-5">
+                {/* Ordem do Dia e Observações lado a lado */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                  {/* Ordem do Dia */}
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Ordem do Dia</label>
                     <textarea
                       value={balaustreForm.ordem_dia}
@@ -2082,8 +2095,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     />
                   </div>
 
-                  {/* Observações - 5 colunas */}
-                  <div className="lg:col-span-5">
+                  {/* Observações */}
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
                     <textarea
                       value={balaustreForm.observacoes}
@@ -2093,26 +2106,26 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       placeholder="Observações adicionais..."
                     />
                   </div>
+                </div>
 
-                  {/* Botão Salvar - 2 colunas */}
-                  <div className="lg:col-span-2 flex flex-col gap-2">
-                    {modoEdicaoBalaustre && (
-                      <button
-                        type="button"
-                        onClick={limparFormularioBalaustre}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition text-sm"
-                      >
-                        Cancelar
-                      </button>
-                    )}
+                {/* Botões */}
+                <div className="flex justify-end gap-4 mt-4">
+                  {modoEdicaoBalaustre && (
                     <button
-                      type="submit"
-                      disabled={loading}
-                      className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
+                      type="button"
+                      onClick={limparFormularioBalaustre}
+                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
                     >
-                      {loading ? 'Salvando...' : modoEdicaoBalaustre ? '💾 Atualizar' : '💾 Salvar Balaustre'}
+                      Cancelar
                     </button>
-                  </div>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
+                  >
+                    {loading ? 'Salvando...' : modoEdicaoBalaustre ? '💾 Atualizar' : '💾 Salvar Balaustre'}
+                  </button>
                 </div>
               </form>
             </div>
@@ -2278,7 +2291,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             </div>
 
             {/* Cards de Irmãos */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {irmaos
                 .filter(irmao => {
                   const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -2333,20 +2346,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       {permissoes?.canEdit && (
                         <button
                           onClick={() => handleEditarIrmao(irmao)}
-                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-1.5 px-2 rounded-lg font-semibold transition text-sm"
                         >
                           ✏️ Editar
                         </button>
                       )}
                       <button
                         onClick={() => handleVisualizarDetalhes(irmao)}
-                        className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg font-semibold transition"
+                        className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-1.5 px-2 rounded-lg font-semibold transition text-sm"
                       >
                         👁️ Detalhes
                       </button>
                       <button
                         onClick={() => gerarPDFIrmao(irmao)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition"
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 px-2 rounded-lg font-semibold transition text-sm"
                         title="Gerar PDF"
                       >
                         📄 PDF
@@ -2374,6 +2387,177 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 Nenhum irmão encontrado com os filtros selecionados
               </div>
             )}
+          </div>
+        )}
+
+        {/* MODAL DE DETALHES DO IRMÃO */}
+        {mostrarDetalhes && irmaoSelecionado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">👤 Detalhes do Irmão</h2>
+                  <button
+                    onClick={fecharDetalhes}
+                    className="text-white hover:text-gray-200 text-2xl font-bold"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Dados Pessoais */}
+                <div>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">
+                    📋 Dados Pessoais
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Nome</p>
+                      <p className="font-semibold">{irmaoSelecionado.nome}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">CIM</p>
+                      <p className="font-semibold">{irmaoSelecionado.cim}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">CPF</p>
+                      <p className="font-semibold">{irmaoSelecionado.cpf || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">RG</p>
+                      <p className="font-semibold">{irmaoSelecionado.rg || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Nascimento</p>
+                      <p className="font-semibold">{irmaoSelecionado.data_nascimento ? formatarData(irmaoSelecionado.data_nascimento) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Idade</p>
+                      <p className="font-semibold">{irmaoSelecionado.data_nascimento ? calcularIdade(irmaoSelecionado.data_nascimento) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Naturalidade</p>
+                      <p className="font-semibold">{irmaoSelecionado.naturalidade || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Estado Civil</p>
+                      <p className="font-semibold">{irmaoSelecionado.estado_civil || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Profissão</p>
+                      <p className="font-semibold">{irmaoSelecionado.profissao || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Formação</p>
+                      <p className="font-semibold">{irmaoSelecionado.formacao || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados Maçônicos */}
+                <div>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">
+                    🔷 Dados Maçônicos
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Iniciação</p>
+                      <p className="font-semibold">{irmaoSelecionado.data_iniciacao ? formatarData(irmaoSelecionado.data_iniciacao) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Elevação</p>
+                      <p className="font-semibold">{irmaoSelecionado.data_elevacao ? formatarData(irmaoSelecionado.data_elevacao) : '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Data de Exaltação</p>
+                      <p className="font-semibold">{irmaoSelecionado.data_exaltacao ? formatarData(irmaoSelecionado.data_exaltacao) : '-'}</p>
+                    </div>
+                    <div className="md:col-span-3">
+                      <p className="text-sm text-gray-600">Tempo de Maçonaria</p>
+                      <p className="font-semibold">{irmaoSelecionado.data_iniciacao ? calcularTempoMaconaria(irmaoSelecionado.data_iniciacao) : '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contato */}
+                <div>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">
+                    📞 Contato
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-600">Celular</p>
+                      <p className="font-semibold">{irmaoSelecionado.celular || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Email</p>
+                      <p className="font-semibold">{irmaoSelecionado.email || '-'}</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <p className="text-sm text-gray-600">Endereço</p>
+                      <p className="font-semibold">{irmaoSelecionado.endereco || '-'}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-600">Cidade</p>
+                      <p className="font-semibold">{irmaoSelecionado.cidade || '-'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dados Familiares */}
+                {familiaresSelecionado && familiaresSelecionado.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-bold text-blue-900 mb-4 pb-2 border-b-2 border-blue-200">
+                      👨‍👩‍👧‍👦 Dados Familiares
+                    </h3>
+                    <div className="space-y-4">
+                      {familiaresSelecionado.map((familiar, index) => (
+                        <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                          <p className="font-semibold text-blue-900 mb-2">
+                            {familiar.tipo === 'esposa' && '💍 Esposa'}
+                            {familiar.tipo === 'pai' && '👨 Pai'}
+                            {familiar.tipo === 'mae' && '👩 Mãe'}
+                            {familiar.tipo === 'filho' && '👶 Filho(a)'}
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div>
+                              <p className="text-sm text-gray-600">Nome</p>
+                              <p className="font-semibold">{familiar.nome}</p>
+                            </div>
+                            {familiar.data_nascimento && (
+                              <div>
+                                <p className="text-sm text-gray-600">Data de Nascimento</p>
+                                <p className="font-semibold">{formatarData(familiar.data_nascimento)}</p>
+                              </div>
+                            )}
+                            {familiar.falecido && (
+                              <div className="md:col-span-2">
+                                <p className="text-sm text-red-600">✝️ Falecido(a)</p>
+                                {familiar.data_obito && (
+                                  <p className="font-semibold">Data: {formatarData(familiar.data_obito)}</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Botão Fechar */}
+                <div className="flex justify-end pt-4">
+                  <button
+                    onClick={fecharDetalhes}
+                    className="px-6 py-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold rounded-lg transition"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -3479,8 +3663,36 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           {corpoAdmin
                             .filter(ca => ca.ano_exercicio === ano)
                             .sort((a, b) => {
-                              // Ordem por cargo (alfabética)
-                              return (a.cargo || '').localeCompare(b.cargo || '');
+                              // Ordem por hierarquia maçônica
+                              const ordemHierarquica = [
+                                'Venerável Mestre',
+                                '1º Vigilante',
+                                '2º Vigilante',
+                                'Orador',
+                                'Secretário',
+                                'Tesoureiro',
+                                'Chanceler',
+                                'Mestre de Cerimônias',
+                                'Mestre de Harmonia',
+                                'Hospitaleiro',
+                                'Guarda do Templo',
+                                '1º Diácono',
+                                '2º Diácono',
+                                '1º Experto',
+                                '2º Experto',
+                                'Porta-Estandarte',
+                                'Porta-Espada',
+                                'Bibliotecário',
+                                'Orador Adjunto',
+                                'Secretário Adjunto',
+                                'Tesoureiro Adjunto'
+                              ];
+                              const indexA = ordemHierarquica.indexOf(a.cargo || '');
+                              const indexB = ordemHierarquica.indexOf(b.cargo || '');
+                              if (indexA === -1 && indexB === -1) return (a.cargo || '').localeCompare(b.cargo || '');
+                              if (indexA === -1) return 1;
+                              if (indexB === -1) return -1;
+                              return indexA - indexB;
                             })
                             .map((item) => (
                               <tr key={item.id} className="hover:bg-gray-50 transition">
