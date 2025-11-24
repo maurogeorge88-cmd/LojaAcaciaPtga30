@@ -1988,10 +1988,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CONTROLE DE BALAUSTRES */}
         {currentPage === 'balaustres' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">📜 Controle de Balaustres</h2>
-            </div>
-
             {/* FORMULÁRIO DE BALAUSTRE */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">
@@ -2254,10 +2250,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* VISUALIZAR IRMÃOS */}
         {currentPage === 'visualizar' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">👥 Irmãos Cadastrados</h2>
-            </div>
-
             {/* Filtros */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2385,10 +2377,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* QUADRO DE IRMÃOS - TABELA */}
         {currentPage === 'quadro' && (
           <div>
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">📋 Quadro de Irmãos</h2>
-            </div>
-
             {/* Filtros */}
             <div className="bg-white rounded-xl shadow-md p-4 mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2503,10 +2491,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CADASTRO DE IRMÃOS */}
         {currentPage === 'cadastro' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">
-              {modoEdicao ? '✏️ Editar Cadastro de Irmão' : '➕ Cadastro de Novo Irmão'}
-            </h2>
-
             <div className="bg-white rounded-xl shadow-md p-6">
               <div className="space-y-8">
                 {/* Dados Pessoais */}
@@ -2967,8 +2951,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* GERENCIAMENTO DE USUÁRIOS */}
         {currentPage === 'usuarios' && permissoes?.canManageUsers && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">👤 Gerenciamento de Usuários</h2>
-
             {/* FORMULÁRIO DE USUÁRIO */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">
@@ -3179,8 +3161,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* PRANCHAS EXPEDIDAS */}
         {currentPage === 'pranchas' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">📄 Controle de Pranchas Expedidas</h2>
-
             {/* FORMULÁRIO DE CADASTRO */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">
@@ -3364,8 +3344,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CORPO ADMINISTRATIVO */}
         {currentPage === 'corpo-admin' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">👔 Corpo Administrativo</h2>
-
             {/* FORMULÁRIO DE CADASTRO */}
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">
