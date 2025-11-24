@@ -3722,5 +3722,4 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
     </div>
   );
 }
-
 export default App;
