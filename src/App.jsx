@@ -2454,22 +2454,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       >
                         👁️ Detalhes
                       </button>
-                      <button
-                        onClick={() => gerarPDFIrmao(irmao)}
-                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 px-2 rounded-lg font-semibold transition text-sm"
-                        title="Gerar PDF"
-                      >
-                        📄 PDF
-                      </button>
-                      {permissoes?.canDelete && (
-                        <button
-                          onClick={() => handleDeletarIrmao(irmao)}
-                          className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1.5 px-2 rounded-lg font-semibold transition text-sm"
-                          title="Deletar Irmão"
-                        >
-                          🗑️
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
