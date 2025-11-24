@@ -888,6 +888,103 @@ function App() {
     setCurrentPage('cadastro');
   };
 
+  const handleDeletarIrmao = async (irmao) => {
+    // Confirmar exclusão
+    const confirmar = window.confirm(
+      `⚠️ ATENÇÃO!\n\nTem certeza que deseja excluir o irmão:\n${irmao.nome} (CIM: ${irmao.cim})?\n\n` +
+      `Esta ação também irá excluir:\n` +
+      `• Dados familiares (esposa, pais, filhos)\n` +
+      `• Registros relacionados\n\n` +
+      `ESTA AÇÃO NÃO PODE SER DESFEITA!`
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    // Segunda confirmação (segurança extra)
+    const confirmarNovamente = window.confirm(
+      `🚨 ÚLTIMA CONFIRMAÇÃO!\n\nDigite OK para confirmar a exclusão de:\n${irmao.nome}`
+    );
+
+    if (!confirmarNovamente) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log('🗑️ Deletando irmão:', irmao.nome);
+
+      // Deletar familiares primeiro (por causa das foreign keys)
+      
+      // Deletar esposa
+      const { error: esposaError } = await supabase
+        .from('esposas')
+        .delete()
+        .eq('irmao_id', irmao.id);
+
+      if (esposaError) {
+        console.error('❌ Erro ao deletar esposa:', esposaError);
+      }
+
+      // Deletar pais
+      const { error: paisError } = await supabase
+        .from('pais')
+        .delete()
+        .eq('irmao_id', irmao.id);
+
+      if (paisError) {
+        console.error('❌ Erro ao deletar pais:', paisError);
+      }
+
+      // Deletar filhos
+      const { error: filhosError } = await supabase
+        .from('filhos')
+        .delete()
+        .eq('irmao_id', irmao.id);
+
+      if (filhosError) {
+        console.error('❌ Erro ao deletar filhos:', filhosError);
+      }
+
+      // Deletar corpo administrativo
+      const { error: corpoError } = await supabase
+        .from('corpo_administrativo')
+        .delete()
+        .eq('irmao_id', irmao.id);
+
+      if (corpoError) {
+        console.error('❌ Erro ao deletar corpo administrativo:', corpoError);
+      }
+
+      // Finalmente, deletar o irmão
+      const { error: irmaoError } = await supabase
+        .from('irmaos')
+        .delete()
+        .eq('id', irmao.id);
+
+      if (irmaoError) {
+        console.error('❌ Erro ao deletar irmão:', irmaoError);
+        alert('❌ Erro ao deletar irmão. Verifique o console.');
+        setLoading(false);
+        return;
+      }
+
+      console.log('✅ Irmão deletado com sucesso!');
+      alert('✅ Irmão deletado com sucesso!');
+
+      // Recarregar lista de irmãos
+      carregarIrmaos();
+
+    } catch (err) {
+      console.error('❌ Erro inesperado ao deletar:', err);
+      alert('❌ Erro ao deletar irmão: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const handleVisualizarDetalhes = async (irmao) => {
     setIrmaoSelecionado(irmao);
     
@@ -2364,6 +2461,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       >
                         📄 PDF
                       </button>
+                      {permissoes?.canDelete && (
+                        <button
+                          onClick={() => handleDeletarIrmao(irmao)}
+                          className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1.5 px-2 rounded-lg font-semibold transition text-sm"
+                          title="Deletar Irmão"
+                        >
+                          🗑️
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -2658,6 +2764,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                             >
                               📄
                             </button>
+                            {permissoes?.canDelete && (
+                              <button
+                                onClick={() => handleDeletarIrmao(irmao)}
+                                className="text-red-600 hover:text-red-800 font-semibold"
+                                title="Deletar Irmão"
+                              >
+                                🗑️
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
