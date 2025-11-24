@@ -1775,6 +1775,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               👥 Visualizar Irmãos
             </button>
             <button
+              onClick={() => setCurrentPage('quadro')}
+              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
+                currentPage === 'quadro'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+            >
+              📋 Quadro de Irmãos
+            </button>
+            <button
               onClick={() => setCurrentPage('balaustres')}
               className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
                 currentPage === 'balaustres'
@@ -2196,7 +2206,134 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'visualizar' && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-800">👥 Quadro de Irmãos</h2>
+              <h2 className="text-3xl font-bold text-gray-800">👥 Irmãos Cadastrados</h2>
+            </div>
+
+            {/* Filtros */}
+            <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  placeholder="🔍 Buscar por nome ou CIM..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+                <select
+                  value={situacaoFilter}
+                  onChange={(e) => setSituacaoFilter(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                >
+                  <option value="Regular,Licenciado">Regulares e Licenciados</option>
+                  <option value="Todos">Todas as Situações</option>
+                  {situacoesPossiveis.map(sit => (
+                    <option key={sit.valor} value={sit.valor}>{sit.valor}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Cards de Irmãos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {irmaos
+                .filter(irmao => {
+                  const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                    irmao.cim?.toString().includes(searchTerm);
+                  
+                  // Filtro de situação
+                  let matchSituacao = false;
+                  if (situacaoFilter === 'Todos') {
+                    matchSituacao = true;
+                  } else if (situacaoFilter === 'Regular,Licenciado') {
+                    matchSituacao = irmao.situacao === 'Regular' || irmao.situacao === 'Licenciado';
+                  } else {
+                    matchSituacao = irmao.situacao === situacaoFilter;
+                  }
+                  
+                  return matchSearch && matchSituacao;
+                })
+                .map(irmao => (
+                  <div key={irmao.id} className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-800">{irmao.nome}</h3>
+                        <p className="text-sm text-gray-600">CIM: {irmao.cim}</p>
+                      </div>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border-2 ${obterCorSituacao(irmao.situacao)}`}>
+                        {irmao.situacao}
+                      </span>
+                    </div>
+
+                    <div className="mb-3">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {obterGrau(irmao) === 'Mestre' && '🔺'}
+                        {obterGrau(irmao) === 'Companheiro' && '🔷'}
+                        {obterGrau(irmao) === 'Aprendiz' && '⬜'}
+                        {' '}{obterGrau(irmao)}
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-gray-600 mb-4">
+                      <p>📧 {irmao.email || '-'}</p>
+                      <p>📱 {irmao.celular || '-'}</p>
+                      <p>🎂 {formatarData(irmao.data_nascimento)}</p>
+                      {irmao.data_iniciacao && (
+                        <p>⏱️ {calcularTempoMaconaria(irmao.data_iniciacao)}</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {permissoes?.canEdit && (
+                        <button
+                          onClick={() => handleEditarIrmao(irmao)}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition"
+                        >
+                          ✏️ Editar
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleVisualizarDetalhes(irmao)}
+                        className="flex-1 bg-gray-600 hover:bg-gray-700 text-white py-2 rounded-lg font-semibold transition"
+                      >
+                        👁️ Detalhes
+                      </button>
+                      <button
+                        onClick={() => gerarPDFIrmao(irmao)}
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition"
+                        title="Gerar PDF"
+                      >
+                        📄 PDF
+                      </button>
+                    </div>
+                  </div>
+                ))}
+            </div>
+
+            {irmaos.filter(irmao => {
+              const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                irmao.cim?.toString().includes(searchTerm);
+              let matchSituacao = false;
+              if (situacaoFilter === 'Todos') {
+                matchSituacao = true;
+              } else if (situacaoFilter === 'Regular,Licenciado') {
+                matchSituacao = irmao.situacao === 'Regular' || irmao.situacao === 'Licenciado';
+              } else {
+                matchSituacao = irmao.situacao === situacaoFilter;
+              }
+              return matchSearch && matchSituacao;
+            }).length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                Nenhum irmão encontrado com os filtros selecionados
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* QUADRO DE IRMÃOS - TABELA */}
+        {currentPage === 'quadro' && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-gray-800">📋 Quadro de Irmãos</h2>
             </div>
 
             {/* Filtros */}
