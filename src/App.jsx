@@ -567,23 +567,33 @@ function App() {
   // ========================================
   const loadComissoes = async () => {
     try {
+      console.log('🔄 Carregando comissões...');
+      
       const { data, error } = await supabase
         .from('comissoes')
         .select(`
           *,
-          comissoes_integrantes!inner (
+          comissoes_integrantes (
             id,
             funcao,
             ativo,
+            irmao_id,
             irmaos (nome, cim)
           )
         `)
         .order('data_criacao', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar comissões:', error);
+        throw error;
+      }
+      
+      console.log('✅ Comissões carregadas:', data?.length || 0);
+      console.log('Dados:', data);
+      
       setComissoes(data || []);
     } catch (error) {
-      console.error('Erro ao carregar comissões:', error);
+      console.error('❌ Erro ao carregar comissões:', error);
       setComissoes([]);
     }
   };
