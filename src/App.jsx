@@ -89,6 +89,48 @@ function App() {
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
   
+  // Estados para Comissões
+  const [comissoes, setComissoes] = useState([]);
+  const [comissaoForm, setComissaoForm] = useState({
+    nome: '',
+    data_criacao: new Date().toISOString().split('T')[0],
+    origem: 'interna',
+    objetivo: '',
+    data_inicio: new Date().toISOString().split('T')[0],
+    data_fim: '',
+    status: 'em_andamento',
+    observacoes: ''
+  });
+  const [integrantesComissao, setIntegrantesComissao] = useState([]);
+  const [modoEdicaoComissao, setModoEdicaoComissao] = useState(false);
+  const [comissaoEditando, setComissaoEditando] = useState(null);
+
+  // Estados para Biblioteca
+  const [livros, setLivros] = useState([]);
+  const [emprestimos, setEmprestimos] = useState([]);
+  const [abaBiblioteca, setAbaBiblioteca] = useState('livros'); // livros | emprestimos | atrasados
+  const [livroForm, setLivroForm] = useState({
+    titulo: '',
+    autor: '',
+    editora: '',
+    ano_publicacao: '',
+    isbn: '',
+    categoria: 'Ritualística',
+    localizacao: '',
+    quantidade_total: 1,
+    quantidade_disponivel: 1,
+    observacoes: ''
+  });
+  const [emprestimoForm, setEmprestimoForm] = useState({
+    livro_id: '',
+    irmao_id: '',
+    data_emprestimo: new Date().toISOString().split('T')[0],
+    data_devolucao_prevista: new Date(Date.now() + 15*24*60*60*1000).toISOString().split('T')[0],
+    observacoes: ''
+  });
+  const [modoEdicaoLivro, setModoEdicaoLivro] = useState(false);
+  const [livroEditando, setLivroEditando] = useState(null);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [situacaoFilter, setSituacaoFilter] = useState('Regular,Licenciado');
   const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
@@ -221,6 +263,9 @@ function App() {
         loadPermissoes();
         loadPranchas();
         loadCorpoAdmin();
+        loadComissoes();
+        loadLivros();
+        loadEmprestimos();
       }
       setLoading(false);
     });
@@ -510,6 +555,273 @@ function App() {
     } catch (err) {
       console.error('❌ Exceção ao carregar próximo número:', err);
       setBalaustreForm(prev => ({ ...prev, numero_balaustre: 1 }));
+    }
+  };
+
+  // ========================================
+  // FUNÇÕES PARA COMISSÕES
+  // ========================================
+  const loadComissoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('comissoes')
+        .select(`
+          *,
+          comissoes_integrantes!inner (
+            id,
+            funcao,
+            ativo,
+            irmaos (nome, cim)
+          )
+        `)
+        .order('data_criacao', { ascending: false });
+
+      if (error) throw error;
+      setComissoes(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar comissões:', error);
+      setComissoes([]);
+    }
+  };
+
+  const salvarComissao = async () => {
+    try {
+      setLoading(true);
+
+      let comissaoId;
+
+      if (modoEdicaoComissao && comissaoEditando) {
+        const { error } = await supabase
+          .from('comissoes')
+          .update(comissaoForm)
+          .eq('id', comissaoEditando.id);
+        if (error) throw error;
+        comissaoId = comissaoEditando.id;
+        
+        await supabase
+          .from('comissoes_integrantes')
+          .delete()
+          .eq('comissao_id', comissaoId);
+      } else {
+        const { data, error } = await supabase
+          .from('comissoes')
+          .insert([comissaoForm])
+          .select()
+          .single();
+        if (error) throw error;
+        comissaoId = data.id;
+      }
+
+      if (integrantesComissao.length > 0) {
+        const integrantesParaInserir = integrantesComissao.map(int => ({
+          comissao_id: comissaoId,
+          irmao_id: int.irmao_id,
+          funcao: int.funcao,
+          ativo: true
+        }));
+
+        const { error } = await supabase
+          .from('comissoes_integrantes')
+          .insert(integrantesParaInserir);
+        if (error) throw error;
+      }
+
+      setSuccessMessage(modoEdicaoComissao ? 'Comissão atualizada!' : 'Comissão cadastrada!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+
+      setComissaoForm({
+        nome: '',
+        data_criacao: new Date().toISOString().split('T')[0],
+        origem: 'interna',
+        objetivo: '',
+        data_inicio: new Date().toISOString().split('T')[0],
+        data_fim: '',
+        status: 'em_andamento',
+        observacoes: ''
+      });
+      setIntegrantesComissao([]);
+      setModoEdicaoComissao(false);
+      setComissaoEditando(null);
+      loadComissoes();
+    } catch (err) {
+      console.error('Erro ao salvar comissão:', err);
+      setError('Erro ao salvar comissão');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deletarComissao = async (comissaoId) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta comissão?')) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('comissoes')
+        .delete()
+        .eq('id', comissaoId);
+      if (error) throw error;
+      setSuccessMessage('Comissão deletada!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      loadComissoes();
+    } catch (err) {
+      console.error('Erro ao deletar:', err);
+      setError('Erro ao deletar comissão');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ========================================
+  // FUNÇÕES PARA BIBLIOTECA
+  // ========================================
+  const loadLivros = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('biblioteca_livros')
+        .select('*')
+        .order('titulo');
+      if (error) throw error;
+      setLivros(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar livros:', error);
+      setLivros([]);
+    }
+  };
+
+  const loadEmprestimos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('biblioteca_emprestimos')
+        .select(`
+          *,
+          biblioteca_livros (titulo, autor),
+          irmaos (nome, cim)
+        `)
+        .eq('status', 'emprestado')
+        .order('data_devolucao_prevista');
+      if (error) throw error;
+      setEmprestimos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar empréstimos:', error);
+      setEmprestimos([]);
+    }
+  };
+
+  const salvarLivro = async () => {
+    try {
+      setLoading(true);
+      if (modoEdicaoLivro && livroEditando) {
+        const { error } = await supabase
+          .from('biblioteca_livros')
+          .update(livroForm)
+          .eq('id', livroEditando.id);
+        if (error) throw error;
+        setSuccessMessage('Livro atualizado!');
+      } else {
+        const { error } = await supabase
+          .from('biblioteca_livros')
+          .insert([livroForm]);
+        if (error) throw error;
+        setSuccessMessage('Livro cadastrado!');
+      }
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setLivroForm({
+        titulo: '',
+        autor: '',
+        editora: '',
+        ano_publicacao: '',
+        isbn: '',
+        categoria: 'Ritualística',
+        localizacao: '',
+        quantidade_total: 1,
+        quantidade_disponivel: 1,
+        observacoes: ''
+      });
+      setModoEdicaoLivro(false);
+      setLivroEditando(null);
+      loadLivros();
+    } catch (err) {
+      console.error('Erro ao salvar livro:', err);
+      setError('Erro ao salvar livro');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deletarLivro = async (livroId) => {
+    if (!window.confirm('Tem certeza que deseja deletar este livro?')) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('biblioteca_livros')
+        .delete()
+        .eq('id', livroId);
+      if (error) throw error;
+      setSuccessMessage('Livro deletado!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      loadLivros();
+    } catch (err) {
+      console.error('Erro ao deletar:', err);
+      setError('Erro ao deletar livro');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registrarEmprestimo = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .rpc('registrar_emprestimo_livro', {
+          p_livro_id: parseInt(emprestimoForm.livro_id),
+          p_irmao_id: parseInt(emprestimoForm.irmao_id),
+          p_data_devolucao_prevista: emprestimoForm.data_devolucao_prevista
+        });
+      if (error) throw error;
+      setSuccessMessage('Empréstimo registrado!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setEmprestimoForm({
+        livro_id: '',
+        irmao_id: '',
+        data_emprestimo: new Date().toISOString().split('T')[0],
+        data_devolucao_prevista: new Date(Date.now() + 15*24*60*60*1000).toISOString().split('T')[0],
+        observacoes: ''
+      });
+      loadEmprestimos();
+      loadLivros();
+    } catch (err) {
+      console.error('Erro ao registrar empréstimo:', err);
+      setError(err.message || 'Erro ao registrar empréstimo');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const registrarDevolucao = async (emprestimoId) => {
+    if (!window.confirm('Confirma a devolução deste livro?')) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .rpc('registrar_devolucao_livro', {
+          p_emprestimo_id: emprestimoId,
+          p_data_devolucao: new Date().toISOString().split('T')[0]
+        });
+      if (error) throw error;
+      setSuccessMessage('Devolução registrada!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      loadEmprestimos();
+      loadLivros();
+    } catch (err) {
+      console.error('Erro ao registrar devolução:', err);
+      setError('Erro ao registrar devolução');
+      setTimeout(() => setError(''), 5000);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1914,6 +2226,30 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             <span className="font-semibold">Administração</span>
           </button>
 
+          <button
+            onClick={() => setCurrentPage('comissoes')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'comissoes'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">📋</span>
+            <span className="font-semibold">Comissões</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('biblioteca')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'biblioteca'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">📚</span>
+            <span className="font-semibold">Biblioteca</span>
+          </button>
+
           {permissoes?.canManageUsers && (
             <button
               onClick={() => setCurrentPage('usuarios')}
@@ -1956,6 +2292,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'balaustres' && '📜 Balaustres'}
                   {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
+                  {currentPage === 'comissoes' && '📋 Comissões'}
+                  {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
                 </h2>
               </div>
@@ -3857,6 +4195,617 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </div>
               )}
             </div>
+          </div>
+        )}
+        
+        {/* ========================================
+            PÁGINA: COMISSÕES
+            ======================================== */}
+        {currentPage === 'comissoes' && (
+          <div>
+            {/* FORMULÁRIO */}
+            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+              <h3 className="text-xl font-bold text-blue-900 mb-4">
+                {modoEdicaoComissao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Comissão *</label>
+                  <input
+                    type="text"
+                    value={comissaoForm.nome}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, nome: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Criação *</label>
+                  <input
+                    type="date"
+                    value={comissaoForm.data_criacao}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, data_criacao: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Origem *</label>
+                  <select
+                    value={comissaoForm.origem}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, origem: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="interna">Interna</option>
+                    <option value="externa">Externa</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+                  <select
+                    value={comissaoForm.status}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, status: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="em_andamento">Em Andamento</option>
+                    <option value="encerrada">Encerrada</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Início *</label>
+                  <input
+                    type="date"
+                    value={comissaoForm.data_inicio}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, data_inicio: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data Fim</label>
+                  <input
+                    type="date"
+                    value={comissaoForm.data_fim}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, data_fim: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Objetivo *</label>
+                  <textarea
+                    value={comissaoForm.objetivo}
+                    onChange={(e) => setComissaoForm({ ...comissaoForm, objetivo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    rows="2"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* INTEGRANTES */}
+              <div className="border-t pt-4 mt-4">
+                <h4 className="font-bold text-gray-800 mb-3">👥 Integrantes</h4>
+                
+                <div className="flex gap-2 mb-3">
+                  <select
+                    id="select-irmao-comissao"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecione um irmão</option>
+                    {irmaos.map(irmao => (
+                      <option key={irmao.id} value={irmao.id}>
+                        {irmao.nome} - CIM {irmao.cim}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const select = document.getElementById('select-irmao-comissao');
+                      const irmaoId = parseInt(select.value);
+                      if (!irmaoId) return;
+                      const irmao = irmaos.find(i => i.id === irmaoId);
+                      if (integrantesComissao.some(i => i.irmao_id === irmaoId)) {
+                        alert('Irmão já adicionado!');
+                        return;
+                      }
+                      setIntegrantesComissao([...integrantesComissao, {
+                        irmao_id: irmao.id,
+                        irmao_nome: irmao.nome,
+                        irmao_cim: irmao.cim,
+                        funcao: 'Membro'
+                      }]);
+                      select.value = '';
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    ➕ Adicionar
+                  </button>
+                </div>
+
+                {integrantesComissao.length > 0 && (
+                  <div className="space-y-2">
+                    {integrantesComissao.map((integrante, index) => (
+                      <div key={index} className="flex items-center gap-2 bg-gray-50 p-2 rounded">
+                        <span className="flex-1 text-sm">
+                          {integrante.irmao_nome} (CIM: {integrante.irmao_cim})
+                        </span>
+                        <select
+                          value={integrante.funcao}
+                          onChange={(e) => {
+                            const novos = [...integrantesComissao];
+                            novos[index].funcao = e.target.value;
+                            setIntegrantesComissao(novos);
+                          }}
+                          className="px-2 py-1 border rounded text-sm"
+                        >
+                          <option value="Coordenador">Coordenador</option>
+                          <option value="Secretário">Secretário</option>
+                          <option value="Membro">Membro</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => setIntegrantesComissao(integrantesComissao.filter((_, i) => i !== index))}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={salvarComissao}
+                  disabled={loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {loading ? 'Salvando...' : (modoEdicaoComissao ? 'Atualizar' : 'Salvar')}
+                </button>
+                {modoEdicaoComissao && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModoEdicaoComissao(false);
+                      setComissaoEditando(null);
+                      setComissaoForm({
+                        nome: '',
+                        data_criacao: new Date().toISOString().split('T')[0],
+                        origem: 'interna',
+                        objetivo: '',
+                        data_inicio: new Date().toISOString().split('T')[0],
+                        data_fim: '',
+                        status: 'em_andamento',
+                        observacoes: ''
+                      });
+                      setIntegrantesComissao([]);
+                    }}
+                    className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* LISTA DE COMISSÕES */}
+            <div className="bg-white rounded-xl shadow-md p-6">
+              <h3 className="text-xl font-bold text-blue-900 mb-4">📋 Comissões Cadastradas</h3>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b-2 border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Período</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Integrantes</th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {comissoes.map(comissao => (
+                      <tr key={comissao.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4">
+                          <div className="font-medium text-gray-900">{comissao.nome}</div>
+                          <div className="text-sm text-gray-500">{comissao.objetivo}</div>
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            comissao.origem === 'interna' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                          }`}>
+                            {comissao.origem === 'interna' ? 'Interna' : 'Externa'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {formatarData(comissao.data_inicio)}
+                          {comissao.data_fim && ` → ${formatarData(comissao.data_fim)}`}
+                        </td>
+                        <td className="px-6 py-4 text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            comissao.status === 'em_andamento' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {comissao.status === 'em_andamento' ? '🟢 Em Andamento' : '🔴 Encerrada'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">
+                          {comissao.comissoes_integrantes?.filter(ci => ci.ativo).length || 0} irmãos
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => {
+                                setModoEdicaoComissao(true);
+                                setComissaoEditando(comissao);
+                                setComissaoForm({
+                                  nome: comissao.nome,
+                                  data_criacao: comissao.data_criacao,
+                                  origem: comissao.origem,
+                                  objetivo: comissao.objetivo,
+                                  data_inicio: comissao.data_inicio,
+                                  data_fim: comissao.data_fim || '',
+                                  status: comissao.status,
+                                  observacoes: comissao.observacoes || ''
+                                });
+                                const integrantes = comissao.comissoes_integrantes
+                                  ?.filter(ci => ci.ativo)
+                                  .map(ci => ({
+                                    irmao_id: ci.irmao_id,
+                                    irmao_nome: ci.irmaos?.nome || '',
+                                    irmao_cim: ci.irmaos?.cim || '',
+                                    funcao: ci.funcao || 'Membro'
+                                  })) || [];
+                                setIntegrantesComissao(integrantes);
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                              }}
+                              className="text-blue-600 hover:text-blue-800"
+                              title="Editar"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => deletarComissao(comissao.id)}
+                              className="text-red-600 hover:text-red-800"
+                              title="Deletar"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {comissoes.length === 0 && (
+                <div className="text-center py-8 text-gray-500">
+                  Nenhuma comissão cadastrada
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================
+            PÁGINA: BIBLIOTECA
+            ======================================== */}
+        {currentPage === 'biblioteca' && (
+          <div>
+            {/* ABAS */}
+            <div className="flex gap-2 mb-6">
+              <button
+                onClick={() => setAbaBiblioteca('livros')}
+                className={`px-6 py-2 rounded-lg font-semibold ${
+                  abaBiblioteca === 'livros' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                📚 Livros
+              </button>
+              <button
+                onClick={() => setAbaBiblioteca('emprestimos')}
+                className={`px-6 py-2 rounded-lg font-semibold ${
+                  abaBiblioteca === 'emprestimos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+                }`}
+              >
+                📋 Empréstimos
+              </button>
+            </div>
+
+            {/* ABA LIVROS */}
+            {abaBiblioteca === 'livros' && (
+              <div>
+                {/* FORMULÁRIO LIVRO */}
+                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">
+                    {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Novo Livro'}
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+                      <input
+                        type="text"
+                        value={livroForm.titulo}
+                        onChange={(e) => setLivroForm({ ...livroForm, titulo: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Autor</label>
+                      <input
+                        type="text"
+                        value={livroForm.autor}
+                        onChange={(e) => setLivroForm({ ...livroForm, autor: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Categoria *</label>
+                      <select
+                        value={livroForm.categoria}
+                        onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg"
+                      >
+                        <option value="Ritualística">Ritualística</option>
+                        <option value="Filosofia">Filosofia</option>
+                        <option value="História">História</option>
+                        <option value="Simbolismo">Simbolismo</option>
+                        <option value="Legislação">Legislação</option>
+                        <option value="Geral">Geral</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
+                      <input
+                        type="text"
+                        value={livroForm.localizacao}
+                        onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
+                        placeholder="Ex: Estante A - Prateleira 2"
+                        className="w-full px-3 py-2 border rounded-lg"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade Total *</label>
+                      <input
+                        type="number"
+                        value={livroForm.quantidade_total}
+                        onChange={(e) => setLivroForm({ 
+                          ...livroForm, 
+                          quantidade_total: parseInt(e.target.value),
+                          quantidade_disponivel: modoEdicaoLivro ? livroForm.quantidade_disponivel : parseInt(e.target.value)
+                        })}
+                        min="1"
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={salvarLivro}
+                      disabled={loading}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                      {loading ? 'Salvando...' : (modoEdicaoLivro ? 'Atualizar' : 'Salvar')}
+                    </button>
+                    {modoEdicaoLivro && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModoEdicaoLivro(false);
+                          setLivroEditando(null);
+                          setLivroForm({
+                            titulo: '', autor: '', editora: '', ano_publicacao: '', isbn: '',
+                            categoria: 'Ritualística', localizacao: '', quantidade_total: 1,
+                            quantidade_disponivel: 1, observacoes: ''
+                          });
+                        }}
+                        className="px-6 py-2 bg-gray-500 text-white rounded-lg"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* LISTA DE LIVROS */}
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">📚 Acervo</h3>
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b-2">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Título</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Autor</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Localização</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Disponível</th>
+                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {livros.map(livro => (
+                          <tr key={livro.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 font-medium text-gray-900">{livro.titulo}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{livro.autor || '-'}</td>
+                            <td className="px-6 py-4 text-sm">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                {livro.categoria}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{livro.localizacao || '-'}</td>
+                            <td className="px-6 py-4 text-center">
+                              <span className={`font-bold ${livro.quantidade_disponivel > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                {livro.quantidade_disponivel}/{livro.quantidade_total}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <div className="flex justify-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setModoEdicaoLivro(true);
+                                    setLivroEditando(livro);
+                                    setLivroForm(livro);
+                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => deletarLivro(livro.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {livros.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      Nenhum livro cadastrado
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ABA EMPRÉSTIMOS */}
+            {abaBiblioteca === 'emprestimos' && (
+              <div>
+                {/* FORMULÁRIO EMPRÉSTIMO */}
+                <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">📋 Novo Empréstimo</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
+                      <select
+                        value={emprestimoForm.livro_id}
+                        onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      >
+                        <option value="">Selecione um livro</option>
+                        {livros.filter(l => l.quantidade_disponivel > 0).map(livro => (
+                          <option key={livro.id} value={livro.id}>
+                            {livro.titulo} ({livro.quantidade_disponivel} disponível)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                      <select
+                        value={emprestimoForm.irmao_id}
+                        onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      >
+                        <option value="">Selecione um irmão</option>
+                        {irmaos.map(irmao => (
+                          <option key={irmao.id} value={irmao.id}>
+                            {irmao.nome} - CIM {irmao.cim}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Devolução Prevista *</label>
+                      <input
+                        type="date"
+                        value={emprestimoForm.data_devolucao_prevista}
+                        onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_devolucao_prevista: e.target.value })}
+                        className="w-full px-3 py-2 border rounded-lg"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={registrarEmprestimo}
+                    disabled={loading}
+                    className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  >
+                    {loading ? 'Registrando...' : '📖 Registrar Empréstimo'}
+                  </button>
+                </div>
+
+                {/* LISTA DE EMPRÉSTIMOS */}
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">📋 Empréstimos Ativos</h3>
+                  
+                  <div className="space-y-3">
+                    {emprestimos.map(emp => {
+                      const hoje = new Date();
+                      const vencimento = new Date(emp.data_devolucao_prevista + 'T00:00:00');
+                      const atrasado = vencimento < hoje;
+                      const diasAtraso = atrasado ? Math.floor((hoje - vencimento) / (1000*60*60*24)) : 0;
+
+                      return (
+                        <div key={emp.id} className={`p-4 rounded-lg border-2 ${atrasado ? 'bg-red-50 border-red-300' : 'bg-gray-50 border-gray-300'}`}>
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="font-bold text-gray-900">{emp.biblioteca_livros?.titulo}</div>
+                              <div className="text-sm text-gray-600 mt-1">
+                                <span className="font-medium">Irmão:</span> {emp.irmaos?.nome} (CIM: {emp.irmaos?.cim})
+                              </div>
+                              <div className="text-sm text-gray-600">
+                                <span className="font-medium">Emprestado:</span> {formatarData(emp.data_emprestimo)}
+                              </div>
+                              <div className={`text-sm ${atrasado ? 'text-red-600 font-bold' : 'text-gray-600'}`}>
+                                <span className="font-medium">Devolução:</span> {formatarData(emp.data_devolucao_prevista)}
+                                {atrasado && ` (⚠️ ${diasAtraso} dias de atraso)`}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => registrarDevolucao(emp.id)}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                            >
+                              ✅ Devolver
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {emprestimos.length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      Nenhum empréstimo ativo
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
         </div>
