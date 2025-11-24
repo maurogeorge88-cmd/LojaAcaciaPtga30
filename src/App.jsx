@@ -2068,48 +2068,51 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 </div>
 
-                {/* Ordem do Dia */}
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Ordem do Dia</label>
-                  <textarea
-                    value={balaustreForm.ordem_dia}
-                    onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    rows="4"
-                    placeholder="Descreva a ordem do dia da sessão..."
-                  />
-                </div>
+                {/* Ordem do Dia, Observações e Botão em linha */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mt-4 items-end">
+                  {/* Ordem do Dia - 5 colunas */}
+                  <div className="lg:col-span-5">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ordem do Dia</label>
+                    <textarea
+                      value={balaustreForm.ordem_dia}
+                      onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      rows="4"
+                      placeholder="Descreva a ordem do dia da sessão..."
+                    />
+                  </div>
 
-                {/* Observações */}
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
-                  <textarea
-                    value={balaustreForm.observacoes}
-                    onChange={(e) => setBalaustreForm({ ...balaustreForm, observacoes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    rows="3"
-                    placeholder="Observações adicionais..."
-                  />
-                </div>
+                  {/* Observações - 5 colunas */}
+                  <div className="lg:col-span-5">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                    <textarea
+                      value={balaustreForm.observacoes}
+                      onChange={(e) => setBalaustreForm({ ...balaustreForm, observacoes: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      rows="4"
+                      placeholder="Observações adicionais..."
+                    />
+                  </div>
 
-                {/* Botões */}
-                <div className="flex justify-end gap-4 mt-6">
-                  {modoEdicaoBalaustre && (
+                  {/* Botão Salvar - 2 colunas */}
+                  <div className="lg:col-span-2 flex flex-col gap-2">
+                    {modoEdicaoBalaustre && (
+                      <button
+                        type="button"
+                        onClick={limparFormularioBalaustre}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition text-sm"
+                      >
+                        Cancelar
+                      </button>
+                    )}
                     <button
-                      type="button"
-                      onClick={limparFormularioBalaustre}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                      type="submit"
+                      disabled={loading}
+                      className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
                     >
-                      Cancelar
+                      {loading ? 'Salvando...' : modoEdicaoBalaustre ? '💾 Atualizar' : '💾 Salvar Balaustre'}
                     </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
-                  >
-                    {loading ? 'Salvando...' : modoEdicaoBalaustre ? '💾 Atualizar' : '💾 Salvar Balaustre'}
-                  </button>
+                  </div>
                 </div>
               </form>
             </div>
