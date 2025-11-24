@@ -592,47 +592,112 @@ function App() {
     try {
       setLoading(true);
 
+      // Validação
+      if (!comissaoForm.nome || !comissaoForm.objetivo || !comissaoForm.data_inicio) {
+        setError('Preencha todos os campos obrigatórios!');
+        setTimeout(() => setError(''), 5000);
+        setLoading(false);
+        return;
+      }
+
       let comissaoId;
 
+      // Preparar dados sem campos vazios problemáticos
+      const dadosComissao = {
+        nome: comissaoForm.nome.trim(),
+        data_criacao: comissaoForm.data_criacao,
+        origem: comissaoForm.origem,
+        objetivo: comissaoForm.objetivo.trim(),
+        data_inicio: comissaoForm.data_inicio,
+        status: comissaoForm.status
+      };
+
+      // Adicionar data_fim apenas se tiver valor
+      if (comissaoForm.data_fim && comissaoForm.data_fim !== '') {
+        dadosComissao.data_fim = comissaoForm.data_fim;
+      }
+
+      // Adicionar observacoes apenas se tiver valor
+      if (comissaoForm.observacoes && comissaoForm.observacoes.trim() !== '') {
+        dadosComissao.observacoes = comissaoForm.observacoes.trim();
+      }
+
       if (modoEdicaoComissao && comissaoEditando) {
-        const { error } = await supabase
+        // EDITAR COMISSÃO EXISTENTE
+        console.log('Editando comissão ID:', comissaoEditando.id);
+        console.log('Dados para atualizar:', dadosComissao);
+        
+        const { error: errorUpdate } = await supabase
           .from('comissoes')
-          .update(comissaoForm)
+          .update(dadosComissao)
           .eq('id', comissaoEditando.id);
-        if (error) throw error;
+        
+        if (errorUpdate) {
+          console.error('Erro ao atualizar:', errorUpdate);
+          throw errorUpdate;
+        }
+        
         comissaoId = comissaoEditando.id;
         
-        await supabase
+        // Deletar integrantes antigos
+        console.log('Deletando integrantes antigos...');
+        const { error: errorDelete } = await supabase
           .from('comissoes_integrantes')
           .delete()
           .eq('comissao_id', comissaoId);
+        
+        if (errorDelete) {
+          console.error('Erro ao deletar integrantes:', errorDelete);
+          throw errorDelete;
+        }
       } else {
-        const { data, error } = await supabase
+        // CRIAR NOVA COMISSÃO
+        console.log('Criando nova comissão');
+        console.log('Dados:', dadosComissao);
+        
+        const { data, error: errorInsert } = await supabase
           .from('comissoes')
-          .insert([comissaoForm])
+          .insert([dadosComissao])
           .select()
           .single();
-        if (error) throw error;
+        
+        if (errorInsert) {
+          console.error('Erro ao inserir:', errorInsert);
+          throw errorInsert;
+        }
+        
         comissaoId = data.id;
+        console.log('Comissão criada com ID:', comissaoId);
       }
 
+      // INSERIR INTEGRANTES
       if (integrantesComissao.length > 0) {
+        console.log('Inserindo', integrantesComissao.length, 'integrantes...');
+        
         const integrantesParaInserir = integrantesComissao.map(int => ({
           comissao_id: comissaoId,
           irmao_id: int.irmao_id,
-          funcao: int.funcao,
+          funcao: int.funcao || 'Membro',
           ativo: true
         }));
 
-        const { error } = await supabase
+        console.log('Integrantes a inserir:', integrantesParaInserir);
+
+        const { error: errorIntegrantes } = await supabase
           .from('comissoes_integrantes')
           .insert(integrantesParaInserir);
-        if (error) throw error;
+        
+        if (errorIntegrantes) {
+          console.error('Erro ao inserir integrantes:', errorIntegrantes);
+          throw errorIntegrantes;
+        }
       }
 
-      setSuccessMessage(modoEdicaoComissao ? 'Comissão atualizada!' : 'Comissão cadastrada!');
+      console.log('✅ Comissão salva com sucesso!');
+      setSuccessMessage(modoEdicaoComissao ? '✅ Comissão atualizada com sucesso!' : '✅ Comissão cadastrada com sucesso!');
       setTimeout(() => setSuccessMessage(''), 3000);
 
+      // Limpar formulário
       setComissaoForm({
         nome: '',
         data_criacao: new Date().toISOString().split('T')[0],
@@ -646,10 +711,13 @@ function App() {
       setIntegrantesComissao([]);
       setModoEdicaoComissao(false);
       setComissaoEditando(null);
+      
+      // Recarregar lista
       loadComissoes();
+      
     } catch (err) {
-      console.error('Erro ao salvar comissão:', err);
-      setError('Erro ao salvar comissão');
+      console.error('❌ Erro ao salvar comissão:', err);
+      setError('Erro ao salvar comissão: ' + (err.message || 'Erro desconhecido'));
       setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
