@@ -104,6 +104,8 @@ function App() {
   const [integrantesComissao, setIntegrantesComissao] = useState([]);
   const [modoEdicaoComissao, setModoEdicaoComissao] = useState(false);
   const [comissaoEditando, setComissaoEditando] = useState(null);
+  const [mostrarDetalhesComissao, setMostrarDetalhesComissao] = useState(false);
+  const [comissaoDetalhes, setComissaoDetalhes] = useState(null);
 
   // Estados para Biblioteca
   const [livros, setLivros] = useState([]);
@@ -130,6 +132,8 @@ function App() {
   });
   const [modoEdicaoLivro, setModoEdicaoLivro] = useState(false);
   const [livroEditando, setLivroEditando] = useState(null);
+  const [modoEdicaoEmprestimo, setModoEdicaoEmprestimo] = useState(false);
+  const [emprestimoEditando, setEmprestimoEditando] = useState(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [situacaoFilter, setSituacaoFilter] = useState('Regular,Licenciado');
@@ -712,17 +716,36 @@ function App() {
   const salvarLivro = async () => {
     try {
       setLoading(true);
+      
+      // Preparar dados sem campos vazios
+      const dadosLivro = {
+        titulo: livroForm.titulo.trim(),
+        categoria: livroForm.categoria,
+        quantidade_total: parseInt(livroForm.quantidade_total) || 1,
+        quantidade_disponivel: modoEdicaoLivro 
+          ? parseInt(livroForm.quantidade_disponivel) 
+          : parseInt(livroForm.quantidade_total) || 1
+      };
+      
+      // Adicionar campos opcionais apenas se tiverem valor
+      if (livroForm.autor?.trim()) dadosLivro.autor = livroForm.autor.trim();
+      if (livroForm.editora?.trim()) dadosLivro.editora = livroForm.editora.trim();
+      if (livroForm.ano_publicacao) dadosLivro.ano_publicacao = parseInt(livroForm.ano_publicacao);
+      if (livroForm.isbn?.trim()) dadosLivro.isbn = livroForm.isbn.trim();
+      if (livroForm.localizacao?.trim()) dadosLivro.localizacao = livroForm.localizacao.trim();
+      if (livroForm.observacoes?.trim()) dadosLivro.observacoes = livroForm.observacoes.trim();
+      
       if (modoEdicaoLivro && livroEditando) {
         const { error } = await supabase
           .from('biblioteca_livros')
-          .update(livroForm)
+          .update(dadosLivro)
           .eq('id', livroEditando.id);
         if (error) throw error;
         setSuccessMessage('Livro atualizado!');
       } else {
         const { error } = await supabase
           .from('biblioteca_livros')
-          .insert([livroForm]);
+          .insert([dadosLivro]);
         if (error) throw error;
         setSuccessMessage('Livro cadastrado!');
       }
@@ -744,7 +767,7 @@ function App() {
       loadLivros();
     } catch (err) {
       console.error('Erro ao salvar livro:', err);
-      setError('Erro ao salvar livro');
+      setError('Erro ao salvar livro: ' + err.message);
       setTimeout(() => setError(''), 5000);
     } finally {
       setLoading(false);
@@ -775,14 +798,33 @@ function App() {
   const registrarEmprestimo = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .rpc('registrar_emprestimo_livro', {
-          p_livro_id: parseInt(emprestimoForm.livro_id),
-          p_irmao_id: parseInt(emprestimoForm.irmao_id),
-          p_data_devolucao_prevista: emprestimoForm.data_devolucao_prevista
-        });
-      if (error) throw error;
-      setSuccessMessage('Empréstimo registrado!');
+      
+      if (modoEdicaoEmprestimo && emprestimoEditando) {
+        // Atualizar empréstimo existente
+        const { error } = await supabase
+          .from('biblioteca_emprestimos')
+          .update({
+            data_devolucao_prevista: emprestimoForm.data_devolucao_prevista,
+            observacoes: emprestimoForm.observacoes
+          })
+          .eq('id', emprestimoEditando.id);
+        
+        if (error) throw error;
+        setSuccessMessage('Empréstimo atualizado!');
+        setModoEdicaoEmprestimo(false);
+        setEmprestimoEditando(null);
+      } else {
+        // Novo empréstimo
+        const { data, error } = await supabase
+          .rpc('registrar_emprestimo_livro', {
+            p_livro_id: parseInt(emprestimoForm.livro_id),
+            p_irmao_id: parseInt(emprestimoForm.irmao_id),
+            p_data_devolucao_prevista: emprestimoForm.data_devolucao_prevista
+          });
+        if (error) throw error;
+        setSuccessMessage('Empréstimo registrado!');
+      }
+      
       setTimeout(() => setSuccessMessage(''), 3000);
       setEmprestimoForm({
         livro_id: '',
@@ -2215,18 +2257,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
-            onClick={() => setCurrentPage('corpo-admin')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'corpo-admin'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">👔</span>
-            <span className="font-semibold">Administração</span>
-          </button>
-
-          <button
             onClick={() => setCurrentPage('comissoes')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'comissoes'
@@ -2263,6 +2293,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               <span className="font-semibold">Gerenciar Usuários</span>
             </button>
           )}
+
+          <button
+            onClick={() => setCurrentPage('corpo-admin')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'corpo-admin'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">👔</span>
+            <span className="font-semibold">Administração</span>
+          </button>
         </nav>
 
         {/* Botão Sair */}
@@ -4446,6 +4488,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           <div className="flex justify-center gap-2">
                             <button
                               onClick={() => {
+                                setComissaoDetalhes(comissao);
+                                setMostrarDetalhesComissao(true);
+                              }}
+                              className="text-gray-600 hover:text-gray-800"
+                              title="Ver Detalhes"
+                            >
+                              👁️
+                            </button>
+                            <button
+                              onClick={() => {
                                 setModoEdicaoComissao(true);
                                 setComissaoEditando(comissao);
                                 setComissaoForm({
@@ -4494,6 +4546,156 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   Nenhuma comissão cadastrada
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* MODAL DETALHES COMISSÃO */}
+        {mostrarDetalhesComissao && comissaoDetalhes && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-blue-600 text-white p-6 rounded-t-xl flex justify-between items-center">
+                <h3 className="text-2xl font-bold">📋 Detalhes da Comissão</h3>
+                <button
+                  onClick={() => {
+                    setMostrarDetalhesComissao(false);
+                    setComissaoDetalhes(null);
+                  }}
+                  className="text-white hover:text-gray-200 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-bold text-gray-600">Nome:</label>
+                    <p className="text-gray-900 font-semibold">{comissaoDetalhes.nome}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-gray-600">Origem:</label>
+                    <p>
+                      <span className={`px-2 py-1 rounded text-sm ${
+                        comissaoDetalhes.origem === 'interna' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : 'bg-purple-100 text-purple-800'
+                      }`}>
+                        {comissaoDetalhes.origem === 'interna' ? 'Interna' : 'Externa'}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-bold text-gray-600">Objetivo:</label>
+                  <p className="text-gray-900">{comissaoDetalhes.objetivo}</p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-bold text-gray-600">Data Criação:</label>
+                    <p className="text-gray-900">{formatarData(comissaoDetalhes.data_criacao)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-gray-600">Data Início:</label>
+                    <p className="text-gray-900">{formatarData(comissaoDetalhes.data_inicio)}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-bold text-gray-600">Data Fim:</label>
+                    <p className="text-gray-900">
+                      {comissaoDetalhes.data_fim ? formatarData(comissaoDetalhes.data_fim) : 'Em andamento'}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-bold text-gray-600">Status:</label>
+                  <p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                      comissaoDetalhes.status === 'em_andamento' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {comissaoDetalhes.status === 'em_andamento' ? '🟢 Em Andamento' : '🔴 Encerrada'}
+                    </span>
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-sm font-bold text-gray-600 mb-2 block">👥 Integrantes:</label>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    {comissaoDetalhes.comissoes_integrantes?.filter(ci => ci.ativo).length > 0 ? (
+                      <div className="space-y-2">
+                        {comissaoDetalhes.comissoes_integrantes
+                          .filter(ci => ci.ativo)
+                          .map((integrante, index) => (
+                            <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                              <div>
+                                <p className="font-semibold text-gray-900">{integrante.irmaos?.nome}</p>
+                                <p className="text-sm text-gray-600">CIM: {integrante.irmaos?.cim}</p>
+                              </div>
+                              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                                {integrante.funcao || 'Membro'}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-center">Nenhum integrante cadastrado</p>
+                    )}
+                  </div>
+                </div>
+
+                {comissaoDetalhes.observacoes && (
+                  <div>
+                    <label className="text-sm font-bold text-gray-600">Observações:</label>
+                    <p className="text-gray-900 bg-gray-50 p-3 rounded">{comissaoDetalhes.observacoes}</p>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4">
+                  <button
+                    onClick={() => {
+                      setMostrarDetalhesComissao(false);
+                      setModoEdicaoComissao(true);
+                      setComissaoEditando(comissaoDetalhes);
+                      setComissaoForm({
+                        nome: comissaoDetalhes.nome,
+                        data_criacao: comissaoDetalhes.data_criacao,
+                        origem: comissaoDetalhes.origem,
+                        objetivo: comissaoDetalhes.objetivo,
+                        data_inicio: comissaoDetalhes.data_inicio,
+                        data_fim: comissaoDetalhes.data_fim || '',
+                        status: comissaoDetalhes.status,
+                        observacoes: comissaoDetalhes.observacoes || ''
+                      });
+                      const integrantes = comissaoDetalhes.comissoes_integrantes
+                        ?.filter(ci => ci.ativo)
+                        .map(ci => ({
+                          irmao_id: ci.irmao_id,
+                          irmao_nome: ci.irmaos?.nome || '',
+                          irmao_cim: ci.irmaos?.cim || '',
+                          funcao: ci.funcao || 'Membro'
+                        })) || [];
+                      setIntegrantesComissao(integrantes);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setMostrarDetalhesComissao(false);
+                      setComissaoDetalhes(null);
+                    }}
+                    className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -4700,7 +4902,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               <div>
                 {/* FORMULÁRIO EMPRÉSTIMO */}
                 <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-                  <h3 className="text-xl font-bold text-blue-900 mb-4">📋 Novo Empréstimo</h3>
+                  <h3 className="text-xl font-bold text-blue-900 mb-4">
+                    {modoEdicaoEmprestimo ? '✏️ Editar Empréstimo' : '📋 Novo Empréstimo'}
+                  </h3>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
@@ -4708,13 +4912,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       <select
                         value={emprestimoForm.livro_id}
                         onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-100"
                         required
+                        disabled={modoEdicaoEmprestimo}
                       >
                         <option value="">Selecione um livro</option>
-                        {livros.filter(l => l.quantidade_disponivel > 0).map(livro => (
+                        {livros.filter(l => l.quantidade_disponivel > 0 || l.id === emprestimoForm.livro_id).map(livro => (
                           <option key={livro.id} value={livro.id}>
-                            {livro.titulo} ({livro.quantidade_disponivel} disponível)
+                            {livro.titulo} {!modoEdicaoEmprestimo && `(${livro.quantidade_disponivel} disponível)`}
                           </option>
                         ))}
                       </select>
@@ -4725,8 +4930,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       <select
                         value={emprestimoForm.irmao_id}
                         onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
-                        className="w-full px-3 py-2 border rounded-lg"
+                        className="w-full px-3 py-2 border rounded-lg disabled:bg-gray-100"
                         required
+                        disabled={modoEdicaoEmprestimo}
                       >
                         <option value="">Selecione um irmão</option>
                         {irmaos.map(irmao => (
@@ -4749,14 +4955,38 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={registrarEmprestimo}
-                    disabled={loading}
-                    className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                  >
-                    {loading ? 'Registrando...' : '📖 Registrar Empréstimo'}
-                  </button>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={registrarEmprestimo}
+                      disabled={loading}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      {loading 
+                        ? (modoEdicaoEmprestimo ? 'Atualizando...' : 'Registrando...') 
+                        : (modoEdicaoEmprestimo ? '✅ Atualizar' : '📖 Registrar Empréstimo')
+                      }
+                    </button>
+                    {modoEdicaoEmprestimo && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setModoEdicaoEmprestimo(false);
+                          setEmprestimoEditando(null);
+                          setEmprestimoForm({
+                            livro_id: '',
+                            irmao_id: '',
+                            data_emprestimo: new Date().toISOString().split('T')[0],
+                            data_devolucao_prevista: new Date(Date.now() + 15*24*60*60*1000).toISOString().split('T')[0],
+                            observacoes: ''
+                          });
+                        }}
+                        className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {/* LISTA DE EMPRÉSTIMOS */}
@@ -4786,12 +5016,31 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                                 {atrasado && ` (⚠️ ${diasAtraso} dias de atraso)`}
                               </div>
                             </div>
-                            <button
-                              onClick={() => registrarDevolucao(emp.id)}
-                              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
-                            >
-                              ✅ Devolver
-                            </button>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => {
+                                  setModoEdicaoEmprestimo(true);
+                                  setEmprestimoEditando(emp);
+                                  setEmprestimoForm({
+                                    livro_id: emp.livro_id,
+                                    irmao_id: emp.irmao_id,
+                                    data_emprestimo: emp.data_emprestimo,
+                                    data_devolucao_prevista: emp.data_devolucao_prevista,
+                                    observacoes: emp.observacoes || ''
+                                  });
+                                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                                }}
+                                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm"
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button
+                                onClick={() => registrarDevolucao(emp.id)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                              >
+                                ✅ Devolver
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
