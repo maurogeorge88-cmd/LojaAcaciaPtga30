@@ -90,7 +90,7 @@ function App() {
   const [cargosLoja, setCargosLoja] = useState([]);
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [situacaoFilter, setSituacaoFilter] = useState('Todos');
+  const [situacaoFilter, setSituacaoFilter] = useState('Regular,Licenciado');
   const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
   const [familiaresSelecionado, setFamiliaresSelecionado] = useState([]);
   const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
@@ -280,7 +280,14 @@ function App() {
       .select('*')
       .order('nome');
     
-    if (data) setIrmaos(data);
+    if (data) {
+      // Adicionar situacao padrão para registros que não tem
+      const irmaosComSituacao = data.map(irmao => ({
+        ...irmao,
+        situacao: irmao.situacao || 'Regular'
+      }));
+      setIrmaos(irmaosComSituacao);
+    }
     if (error) console.error('Erro ao carregar irmãos:', error);
   };
 
@@ -2240,14 +2247,17 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                     irmao.cim?.toString().includes(searchTerm);
                   
+                  // Garantir que situacao tenha valor
+                  const situacaoAtual = irmao.situacao || 'Regular';
+                  
                   // Filtro de situação
                   let matchSituacao = false;
                   if (situacaoFilter === 'Todos') {
                     matchSituacao = true;
                   } else if (situacaoFilter === 'Regular,Licenciado') {
-                    matchSituacao = irmao.situacao === 'Regular' || irmao.situacao === 'Licenciado';
+                    matchSituacao = situacaoAtual === 'Regular' || situacaoAtual === 'Licenciado';
                   } else {
-                    matchSituacao = irmao.situacao === situacaoFilter;
+                    matchSituacao = situacaoAtual === situacaoFilter;
                   }
                   
                   return matchSearch && matchSituacao;
@@ -2259,8 +2269,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         <h3 className="text-xl font-bold text-gray-800">{irmao.nome}</h3>
                         <p className="text-sm text-gray-600">CIM: {irmao.cim}</p>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border-2 ${obterCorSituacao(irmao.situacao)}`}>
-                        {irmao.situacao}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold border-2 ${obterCorSituacao(irmao.situacao || 'Regular')}`}>
+                        {irmao.situacao || 'Regular'}
                       </span>
                     </div>
 
@@ -2312,13 +2322,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             {irmaos.filter(irmao => {
               const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 irmao.cim?.toString().includes(searchTerm);
+              const situacaoAtual = irmao.situacao || 'Regular';
               let matchSituacao = false;
               if (situacaoFilter === 'Todos') {
                 matchSituacao = true;
               } else if (situacaoFilter === 'Regular,Licenciado') {
-                matchSituacao = irmao.situacao === 'Regular' || irmao.situacao === 'Licenciado';
+                matchSituacao = situacaoAtual === 'Regular' || situacaoAtual === 'Licenciado';
               } else {
-                matchSituacao = irmao.situacao === situacaoFilter;
+                matchSituacao = situacaoAtual === situacaoFilter;
               }
               return matchSearch && matchSituacao;
             }).length === 0 && (
@@ -2376,7 +2387,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     .filter(irmao => {
                       const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                         irmao.cim?.toString().includes(searchTerm);
-                      const matchSituacao = situacaoFilter === 'Todos' || irmao.situacao === situacaoFilter;
+                      const situacaoAtual = irmao.situacao || 'Regular';
+                      const matchSituacao = situacaoFilter === 'Todos' || situacaoAtual === situacaoFilter;
                       return matchSearch && matchSituacao;
                     })
                     .sort((a, b) => a.nome.localeCompare(b.nome))
@@ -2397,8 +2409,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 ${obterCorSituacao(irmao.situacao)}`}>
-                            {irmao.situacao}
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border-2 ${obterCorSituacao(irmao.situacao || 'Regular')}`}>
+                            {irmao.situacao || 'Regular'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
