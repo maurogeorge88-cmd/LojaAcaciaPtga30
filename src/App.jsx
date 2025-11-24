@@ -1719,147 +1719,189 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* HEADER */}
-      <header className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white shadow-lg sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <img src={LOGO_URL} alt="Logo" className="w-12 h-12 rounded-full border-2 border-white" />
-              <div>
-                <h1 className="text-2xl font-bold">{NOME_LOJA}</h1>
-                <p className="text-sm text-blue-200">Gestão e Controle</p>
-              </div>
+    <div className="flex min-h-screen bg-gray-50">
+      {/* SIDEBAR LATERAL FIXA */}
+      <aside className="w-64 bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen overflow-y-auto shadow-2xl">
+        {/* Logo e Título */}
+        <div className="p-6 border-b border-blue-700">
+          <div className="flex flex-col items-center">
+            <img src={LOGO_URL} alt="Logo" className="w-20 h-20 rounded-full border-4 border-white mb-3" />
+            <h1 className="text-lg font-bold text-center leading-tight">{NOME_LOJA}</h1>
+            <p className="text-xs text-blue-200 mt-1">Gestão e Controle</p>
+          </div>
+        </div>
+
+        {/* Menu de Navegação */}
+        <nav className="py-4">
+          <button
+            onClick={() => setCurrentPage('dashboard')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'dashboard'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">📊</span>
+            <span className="font-semibold">Dashboard</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('cadastro')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'cadastro'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">➕</span>
+            <span className="font-semibold">Cadastrar Irmão</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('visualizar')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'visualizar'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">👥</span>
+            <span className="font-semibold">Visualizar Irmãos</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('quadro')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'quadro'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">📋</span>
+            <span className="font-semibold">Quadro de Irmãos</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('balaustres')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'balaustres'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">📜</span>
+            <span className="font-semibold">Balaustres</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('pranchas')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'pranchas'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">📄</span>
+            <span className="font-semibold">Pranchas</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('corpo-admin')}
+            className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+              currentPage === 'corpo-admin'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-xl">👔</span>
+            <span className="font-semibold">Administração</span>
+          </button>
+
+          {permissoes?.canManageUsers && (
+            <button
+              onClick={() => setCurrentPage('usuarios')}
+              className={`w-full px-6 py-3 flex items-center gap-3 transition ${
+                currentPage === 'usuarios'
+                  ? 'bg-blue-700 border-l-4 border-white'
+                  : 'hover:bg-blue-800'
+              }`}
+            >
+              <span className="text-xl">👤</span>
+              <span className="font-semibold">Gerenciar Usuários</span>
+            </button>
+          )}
+        </nav>
+
+        {/* Informações do Usuário e Sair */}
+        <div className="absolute bottom-0 w-64 border-t border-blue-700 bg-blue-950">
+          <div className="p-4">
+            <div className="mb-3">
+              <p className="font-semibold text-sm truncate">{userData?.nome}</p>
+              <p className="text-xs text-blue-300 capitalize">{userData?.cargo}</p>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="font-semibold">{userData?.nome}</p>
-                <p className="text-sm text-blue-200 capitalize">{userData?.cargo}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition"
-              >
-                Sair
-              </button>
-            </div>
+            <button
+              onClick={handleLogout}
+              className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2"
+            >
+              <span>🚪</span>
+              <span>Sair</span>
+            </button>
           </div>
         </div>
-      </header>
-
-      {/* NAVEGAÇÃO */}
-      <nav className="bg-white shadow-md border-b-2 border-blue-200">
-        <div className="container mx-auto px-4">
-          <div className="flex gap-2 overflow-x-auto py-2">
-            <button
-              onClick={() => setCurrentPage('dashboard')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'dashboard'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              📊 Dashboard
-            </button>
-            <button
-              onClick={() => setCurrentPage('cadastro')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'cadastro'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              ➕ Cadastro de Irmãos
-            </button>
-            <button
-              onClick={() => setCurrentPage('visualizar')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'visualizar'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              👥 Visualizar Irmãos
-            </button>
-            <button
-              onClick={() => setCurrentPage('quadro')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'quadro'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              📋 Quadro de Irmãos
-            </button>
-            <button
-              onClick={() => setCurrentPage('balaustres')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'balaustres'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              📜 Balaustres
-            </button>
-            <button
-              onClick={() => setCurrentPage('pranchas')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'pranchas'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              📄 Pranchas
-            </button>
-            <button
-              onClick={() => setCurrentPage('corpo-admin')}
-              className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                currentPage === 'corpo-admin'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              👔 Administração
-            </button>
-            {permissoes?.canManageUsers && (
-              <button
-                onClick={() => setCurrentPage('usuarios')}
-                className={`px-6 py-3 rounded-lg font-semibold transition whitespace-nowrap ${
-                  currentPage === 'usuarios'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                }`}
-              >
-                👤 Gerenciar Usuários
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* MENSAGENS */}
-      {error && (
-        <div className="container mx-auto px-4 mt-4">
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
-            {error}
-          </div>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="container mx-auto px-4 mt-4">
-          <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
-            {successMessage}
-          </div>
-        </div>
-      )}
+      </aside>
 
       {/* CONTEÚDO PRINCIPAL */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 ml-64">
+        {/* HEADER SUPERIOR */}
+        <header className="bg-white shadow-md border-b-2 border-blue-200 sticky top-0 z-40">
+          <div className="px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  {currentPage === 'dashboard' && '📊 Dashboard'}
+                  {currentPage === 'cadastro' && '➕ Cadastro de Irmãos'}
+                  {currentPage === 'visualizar' && '👥 Visualizar Irmãos'}
+                  {currentPage === 'quadro' && '📋 Quadro de Irmãos'}
+                  {currentPage === 'balaustres' && '📜 Balaustres'}
+                  {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
+                  {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
+                  {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
+                </h2>
+              </div>
+              <div className="text-sm text-gray-500">
+                {new Date().toLocaleDateString('pt-BR', { 
+                  weekday: 'long', 
+                  year: 'numeric', 
+                  month: 'long', 
+                  day: 'numeric' 
+                })}
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* MENSAGENS */}
+        {error && (
+          <div className="px-8 mt-4">
+            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
+              {error}
+            </div>
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="px-8 mt-4">
+            <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
+              {successMessage}
+            </div>
+          </div>
+        )}
+
+        {/* CONTEÚDO DAS PÁGINAS */}
+        <div className="px-8 py-6">
         {/* DASHBOARD */}
         {currentPage === 'dashboard' && (
           <div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-6">📊 Dashboard</h2>
             
             {/* Cards de Graus */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -3510,6 +3552,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             </div>
           </div>
         )}
+        </div>
       </main>
     </div>
   );
