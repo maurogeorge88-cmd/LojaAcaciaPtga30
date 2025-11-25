@@ -1426,7 +1426,7 @@ function App() {
       alert('✅ Irmão deletado com sucesso!');
 
       // Recarregar lista de irmãos
-      carregarIrmaos();
+      loadIrmaos();
 
     } catch (err) {
       console.error('❌ Erro inesperado ao deletar:', err);
