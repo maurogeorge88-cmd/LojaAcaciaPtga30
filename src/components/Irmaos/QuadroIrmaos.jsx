@@ -400,7 +400,7 @@ LEGENDA:
         <div className="bg-white rounded-lg shadow p-4">
           <div className="text-gray-600 text-sm mb-2">Média de idade</div>
           {(() => {
-            const irmaosCom Idade = irmaosAtivos.filter(i => i.data_nascimento);
+            const irmaosComIdade = irmaosAtivos.filter(i => i.data_nascimento);
             if (irmaosComIdade.length === 0) {
               return <div className="text-gray-500">-</div>;
             }
