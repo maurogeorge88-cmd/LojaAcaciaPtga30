@@ -1,3 +1,8 @@
+// TESTE - adicione no topo do App.jsx
+import { formatarData } from './utils/formatters';
+
+console.log('🧪 Teste de import:', formatarData('2024-11-24'));
+
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
