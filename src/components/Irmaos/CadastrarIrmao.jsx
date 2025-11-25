@@ -75,6 +75,20 @@ const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
   const [mostrarConjuge, setMostrarConjuge] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('pessoal'); // pessoal, maconico, familiar
 
+  // useEffect para escutar evento de edição
+  useEffect(() => {
+    const handleEditarEvent = (event) => {
+      if (event.detail) {
+        carregarParaEdicao(event.detail);
+      }
+    };
+
+    window.addEventListener('editarIrmao', handleEditarEvent);
+    return () => {
+      window.removeEventListener('editarIrmao', handleEditarEvent);
+    };
+  }, []);
+
   // Validar CIM único
   const validarCIM = (cim, idAtual = null) => {
     return !irmaos.some(i => i.cim === cim && i.id !== idAtual);
