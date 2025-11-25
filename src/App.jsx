@@ -11,6 +11,16 @@ import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
 
+// Balaustres
+import CadastrarBalaustre from './components/balaustres/CadastrarBalaustre';
+import VisualizarBalaustres from './components/balaustres/VisualizarBalaustres';
+import ListaPresenca from './components/balaustres/ListaPresenca';
+
+// Pranchas
+import CadastrarPrancha from './components/pranchas/CadastrarPrancha';
+import VisualizarPranchas from './components/pranchas/VisualizarPranchas';
+import ProtocoloPranchas from './components/pranchas/ProtocoloPranchas';
+
 // ========================================
 // CONFIGURAÇÃO SUPABASE
 // ========================================
@@ -270,6 +280,8 @@ function App() {
       if (session) {
         loadUserData(session.user.email);
         loadIrmaos();
+        loadBalaustresFase4();  // ← ADICIONAR
+        loadPranchasFase4();    // ← ADICIONAR
         loadTiposSessao();
         loadCargosLoja();
         loadBalaustres();
@@ -347,6 +359,27 @@ function App() {
   };
 
   const loadIrmaos = async () => {
+
+    const loadBalaustresFase4 = async () => {
+  const { data, error } = await supabase
+    .from('balaustres')
+    .select('*')
+    .order('data', { ascending: false });
+  
+  if (data) setBalaustresFase4(data);
+  if (error) console.error('Erro ao carregar balaustres:', error);
+};
+
+const loadPranchasFase4 = async () => {
+  const { data, error } = await supabase
+    .from('pranchas_expedidas')
+    .select('*')
+    .order('data', { ascending: false });
+  
+  if (data) setPranchasFase4(data);
+  if (error) console.error('Erro ao carregar pranchas:', error);
+};
+    
     const { data, error } = await supabase
       .from('irmaos')
       .select('*')
