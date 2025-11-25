@@ -2,11 +2,18 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 // ========================================
+// IMPORTAR COMPONENTES REFATORADOS
+// ========================================
+import { Dashboard } from './components/Dashboard';
+import { CorpoAdmin } from './components/administracao/CorpoAdmin';
+import { Usuarios } from './components/administracao/Usuarios';
+
+// ========================================
 // CONFIGURAÇÃO SUPABASE
 // ========================================
 const supabaseUrl = 'https://ypnvzjctyfdrkkrhskzs.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlwbnZ6amN0eWZkcmtrcmhza3pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3NTgxMzcsImV4cCI6MjA3OTMzNDEzN30.J5Jj7wudOhIAxy35DDBIWtr9yr9Lq3ABBRI9ZJ5z2pc';
-const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
 const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
 const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
@@ -302,6 +309,19 @@ function App() {
       loadBalaustres(grauSelecionado);
     }
   }, [grauSelecionado, currentPage]);
+
+  // ========================================
+  // FUNÇÕES HELPER PARA COMPONENTES
+  // ========================================
+  const showSuccess = (message) => {
+    setSuccessMessage(message);
+    setTimeout(() => setSuccessMessage(''), 3000);
+  };
+
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => setError(''), 5000);
+  };
 
   // ========================================
   // FUNÇÕES DE CARREGAMENTO
@@ -2455,103 +2475,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CONTEÚDO DAS PÁGINAS */}
         <div className="px-8 py-6">
         {/* DASHBOARD */}
+        {/* DASHBOARD */}
         {currentPage === 'dashboard' && (
-          <div>
-            
-            {/* Cards de Graus */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-3">Irmãos Regulares</h3>
-                <p className="text-5xl font-bold mb-4">{irmaosRegulares.length}</p>
-                <div className="border-t border-blue-400 pt-3 space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>⬜ Aprendizes:</span>
-                    <span className="font-bold">{irmaosAprendiz}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>🔷 Companheiros:</span>
-                    <span className="font-bold">{irmaosCompanheiro}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>🔺 Mestres:</span>
-                    <span className="font-bold">{irmaosMestre}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-2">Total Geral</h3>
-                <p className="text-4xl font-bold mb-2">{totalIrmaos}</p>
-                <p className="text-sm opacity-90">Todas as situações</p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-                <h3 className="text-lg font-semibold mb-3">Balaustres</h3>
-                <p className="text-5xl font-bold mb-4">{balaustres.length}</p>
-                <div className="border-t border-purple-400 pt-3 space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span>⬜ Grau 1 (Aprendiz):</span>
-                    <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Aprendiz').length}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>🔷 Grau 2 (Companheiro):</span>
-                    <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Companheiro').length}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span>🔺 Grau 3 (Mestre):</span>
-                    <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Mestre').length}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Cards de Situações */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
-                  <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
-                  <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
-                </div>
-                <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
-                  <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
-                  <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
-                </div>
-                <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
-                  <div className="text-blue-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
-                  <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
-                </div>
-                <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
-                  <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
-                  <div className="text-3xl font-bold text-orange-700">{irmaosSuspensos.length}</div>
-                </div>
-                <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg">
-                  <div className="text-gray-600 text-sm font-semibold mb-1">↩️ Desligados</div>
-                  <div className="text-3xl font-bold text-gray-700">{irmaosDesligados.length}</div>
-                </div>
-                <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg">
-                  <div className="text-red-600 text-sm font-semibold mb-1">❌ Excluídos</div>
-                  <div className="text-3xl font-bold text-red-700">{irmaosExcluidos.length}</div>
-                </div>
-                <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg">
-                  <div className="text-purple-600 text-sm font-semibold mb-1">🕊️ Falecidos</div>
-                  <div className="text-3xl font-bold text-purple-700">{irmaosFalecidos.length}</div>
-                </div>
-                <div className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg">
-                  <div className="text-indigo-600 text-sm font-semibold mb-1">👔 Ex-Ofício</div>
-                  <div className="text-3xl font-bold text-indigo-700">{irmaosExOficio.length}</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
-              <p className="text-gray-600">
-                Utilize o menu de navegação para acessar as diferentes funcionalidades do sistema.
-              </p>
-            </div>
-          </div>
+          <Dashboard 
+            irmaos={irmaos}
+            balaustres={balaustres}
+          />
         )}
+
 
         {/* CONTROLE DE BALAUSTRES */}
         {currentPage === 'balaustres' && (
@@ -3708,213 +3639,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {/* GERENCIAMENTO DE USUÁRIOS */}
+        {/* GERENCIAR USUÁRIOS */}
         {currentPage === 'usuarios' && permissoes?.canManageUsers && (
-          <div>
-            {/* FORMULÁRIO DE USUÁRIO */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">
-                {modoEdicaoUsuario ? '✏️ Editar Usuário' : '➕ Novo Usuário'}
-              </h3>
-
-              <form onSubmit={modoEdicaoUsuario ? handleAtualizarUsuario : handleSubmitUsuario}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Nome Completo *</label>
-                    <input
-                      type="text"
-                      value={usuarioForm.nome}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, nome: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                    <input
-                      type="email"
-                      value={usuarioForm.email}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                      disabled={modoEdicaoUsuario}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Senha {modoEdicaoUsuario ? '(deixe vazio para não alterar)' : '*'}
-                    </label>
-                    <input
-                      type="password"
-                      value={usuarioForm.senha}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, senha: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required={!modoEdicaoUsuario}
-                      minLength={6}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
-                    <select
-                      value={usuarioForm.cargo}
-                      onChange={(e) => setUsuarioForm({ ...usuarioForm, cargo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                    >
-                      <option value="irmao">Irmão</option>
-                      <option value="secretario">Secretário</option>
-                      <option value="tesoureiro">Tesoureiro</option>
-                      <option value="chanceler">Chanceler</option>
-                      <option value="veneravel">Venerável</option>
-                      <option value="administrador">Administrador</option>
-                    </select>
-                  </div>
-
-                  <div className="flex items-center">
-                    <label className="flex items-center cursor-pointer mt-6">
-                      <input
-                        type="checkbox"
-                        checked={usuarioForm.ativo}
-                        onChange={(e) => setUsuarioForm({ ...usuarioForm, ativo: e.target.checked })}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="ml-2 text-sm font-medium text-gray-700">Usuário Ativo</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Mostrar permissões do cargo selecionado */}
-                {getPermissoesUsuario(usuarioForm.cargo) && (
-                  <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h4 className="font-semibold text-blue-900 mb-2">Permissões do cargo "{usuarioForm.cargo}":</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
-                      <div className="flex items-center">
-                        <span className={getPermissoesUsuario(usuarioForm.cargo).pode_editar_cadastros ? 'text-green-600' : 'text-red-600'}>
-                          {getPermissoesUsuario(usuarioForm.cargo).pode_editar_cadastros ? '✅' : '❌'}
-                        </span>
-                        <span className="ml-2">Editar Cadastros</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className={getPermissoesUsuario(usuarioForm.cargo).pode_visualizar_financeiro ? 'text-green-600' : 'text-red-600'}>
-                          {getPermissoesUsuario(usuarioForm.cargo).pode_visualizar_financeiro ? '✅' : '❌'}
-                        </span>
-                        <span className="ml-2">Ver Financeiro</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className={getPermissoesUsuario(usuarioForm.cargo).pode_editar_financeiro ? 'text-green-600' : 'text-red-600'}>
-                          {getPermissoesUsuario(usuarioForm.cargo).pode_editar_financeiro ? '✅' : '❌'}
-                        </span>
-                        <span className="ml-2">Editar Financeiro</span>
-                      </div>
-                      <div className="flex items-center">
-                        <span className={getPermissoesUsuario(usuarioForm.cargo).pode_gerenciar_usuarios ? 'text-green-600' : 'text-red-600'}>
-                          {getPermissoesUsuario(usuarioForm.cargo).pode_gerenciar_usuarios ? '✅' : '❌'}
-                        </span>
-                        <span className="ml-2">Gerenciar Usuários</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex justify-end gap-4 mt-6">
-                  {modoEdicaoUsuario && (
-                    <button
-                      type="button"
-                      onClick={limparFormularioUsuario}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
-                  >
-                    {loading ? 'Salvando...' : modoEdicaoUsuario ? '💾 Atualizar' : '💾 Criar Usuário'}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* LISTA DE USUÁRIOS */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-                <h3 className="text-xl font-bold">Usuários Cadastrados</h3>
-                <p className="text-sm text-blue-100">Total: {usuarios.length} usuários</p>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b-2 border-gray-200">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {usuarios.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                          Nenhum usuário cadastrado
-                        </td>
-                      </tr>
-                    ) : (
-                      usuarios.map((usuario) => (
-                        <tr key={usuario.id} className="hover:bg-gray-50 transition">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{usuario.nome}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600">{usuario.email}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 capitalize">
-                              {usuario.cargo}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                              usuario.ativo 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-red-100 text-red-800'
-                            }`}>
-                              {usuario.ativo ? '✅ Ativo' : '❌ Inativo'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <div className="flex justify-center gap-2">
-                              <button
-                                onClick={() => handleEditarUsuario(usuario)}
-                                className="text-blue-600 hover:text-blue-800 font-semibold"
-                                title="Editar"
-                              >
-                                ✏️
-                              </button>
-                              {usuario.email !== userData?.email && (
-                                <button
-                                  onClick={() => handleExcluirUsuario(usuario)}
-                                  className="text-red-600 hover:text-red-800 font-semibold"
-                                  title="Excluir"
-                                >
-                                  🗑️
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
+          <Usuarios
+            usuarios={usuarios}
+            userData={userData}
+            onUpdate={loadUsuarios}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
         )}
 
         {/* PRANCHAS EXPEDIDAS */}
@@ -4102,220 +3835,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* CORPO ADMINISTRATIVO */}
         {currentPage === 'corpo-admin' && (
-          <div>
-            {/* FORMULÁRIO DE CADASTRO */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">
-                {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
-              </h3>
-
-              <form onSubmit={modoEdicaoCorpoAdmin ? handleAtualizarCorpoAdmin : handleSubmitCorpoAdmin}>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
-                    <select
-                      value={corpoAdminForm.irmao_id}
-                      onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, irmao_id: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                    >
-                      <option value="">Selecione um irmão</option>
-                      {irmaos
-                        .filter(i => i.status === 'ativo')
-                        .map(irmao => (
-                          <option key={irmao.id} value={irmao.id}>
-                            {irmao.nome} - CIM {irmao.cim}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
-                    <select
-                      value={corpoAdminForm.cargo}
-                      onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                    >
-                      <option value="">Selecione um cargo</option>
-                      {cargosAdministrativos.map((cargo) => (
-                        <option key={cargo} value={cargo}>
-                          {cargo}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Ano de Exercício *</label>
-                    <input
-                      type="text"
-                      value={corpoAdminForm.ano_exercicio}
-                      onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, ano_exercicio: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="Ex: 2024"
-                      required
-                      pattern="[0-9]{4}"
-                      title="Digite um ano válido (4 dígitos)"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-4 mt-6">
-                  {modoEdicaoCorpoAdmin && (
-                    <button
-                      type="button"
-                      onClick={limparFormularioCorpoAdmin}
-                      className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
-                    >
-                      Cancelar
-                    </button>
-                  )}
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
-                  >
-                    {loading ? 'Salvando...' : modoEdicaoCorpoAdmin ? '💾 Atualizar Cargo' : '💾 Registrar Cargo'}
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            {/* FILTRO POR ANO */}
-            <div className="bg-white rounded-xl shadow-md p-4 mb-6">
-              <div className="flex gap-4 items-center">
-                <label className="font-medium text-gray-700">Filtrar por Ano:</label>
-                <input
-                  type="text"
-                  placeholder="Digite o ano (ex: 2024)"
-                  value={anoFiltroAdmin}
-                  onChange={(e) => setAnoFiltroAdmin(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                  pattern="[0-9]*"
-                />
-                {anoFiltroAdmin && (
-                  <button
-                    onClick={() => setAnoFiltroAdmin('')}
-                    className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition"
-                  >
-                    Limpar
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* LISTA POR ANO */}
-            <div className="space-y-6">
-              {[...new Set(corpoAdmin
-                .filter(ca => !anoFiltroAdmin || ca.ano_exercicio?.includes(anoFiltroAdmin))
-                .map(ca => ca.ano_exercicio))]
-                .sort((a, b) => b - a)
-                .map(ano => (
-                  <div key={ano} className="bg-white rounded-xl shadow-md overflow-hidden">
-                    <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-                      <h3 className="text-xl font-bold">Administração {ano}</h3>
-                      <p className="text-sm text-blue-100">
-                        {corpoAdmin.filter(ca => ca.ano_exercicio === ano).length} cargos
-                      </p>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b-2 border-gray-200">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Irmão</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CIM</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {corpoAdmin
-                            .filter(ca => ca.ano_exercicio === ano)
-                            .sort((a, b) => {
-                              // Ordem por hierarquia maçônica
-                              const ordemHierarquica = [
-                                'Venerável Mestre',
-                                '1º Vigilante',
-                                '2º Vigilante',
-                                'Orador',
-                                'Secretário',
-                                'Tesoureiro',
-                                'Chanceler',
-                                'Mestre de Cerimônias',
-                                'Mestre de Harmonia',
-                                'Hospitaleiro',
-                                'Guarda do Templo',
-                                '1º Diácono',
-                                '2º Diácono',
-                                '1º Experto',
-                                '2º Experto',
-                                'Porta-Estandarte',
-                                'Porta-Espada',
-                                'Bibliotecário',
-                                'Orador Adjunto',
-                                'Secretário Adjunto',
-                                'Tesoureiro Adjunto'
-                              ];
-                              const indexA = ordemHierarquica.indexOf(a.cargo || '');
-                              const indexB = ordemHierarquica.indexOf(b.cargo || '');
-                              if (indexA === -1 && indexB === -1) return (a.cargo || '').localeCompare(b.cargo || '');
-                              if (indexA === -1) return 1;
-                              if (indexB === -1) return -1;
-                              return indexA - indexB;
-                            })
-                            .map((item) => (
-                              <tr key={item.id} className="hover:bg-gray-50 transition">
-                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                  {item.cargo || 'Cargo não informado'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                  {item.irmao?.nome || 'Irmão não encontrado'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                  {item.irmao?.cim || '-'}
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                  {permissoes?.canEdit && (
-                                    <div className="flex justify-center gap-2">
-                                      <button
-                                        onClick={() => handleEditarCorpoAdmin(item)}
-                                        className="text-blue-600 hover:text-blue-800 font-semibold"
-                                        title="Editar"
-                                      >
-                                        ✏️
-                                      </button>
-                                      <button
-                                        onClick={() => handleExcluirCorpoAdmin(item.id)}
-                                        className="text-red-600 hover:text-red-800 font-semibold"
-                                        title="Remover"
-                                      >
-                                        🗑️
-                                      </button>
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                ))}
-
-              {[...new Set(corpoAdmin
-                .filter(ca => !anoFiltroAdmin || ca.ano_exercicio?.includes(anoFiltroAdmin))
-                .map(ca => ca.ano_exercicio))].length === 0 && (
-                <div className="bg-white rounded-xl shadow-md p-8 text-center text-gray-500">
-                  {anoFiltroAdmin 
-                    ? `Nenhum registro encontrado para o ano "${anoFiltroAdmin}"`
-                    : 'Nenhum cargo administrativo registrado'}
-                </div>
-              )}
-            </div>
-          </div>
+          <CorpoAdmin
+            corpoAdmin={corpoAdmin}
+            irmaos={irmaos}
+            permissoes={permissoes}
+            onUpdate={loadCorpoAdmin}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
         )}
         
         {/* ========================================
