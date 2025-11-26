@@ -26,6 +26,8 @@ const Balaustres = ({
   const [balaustreEditando, setBalaustreEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
+  const [balaustreVisualizando, setBalaustreVisualizando] = useState(null);
+  const [modalVisualizar, setModalVisualizar] = useState(false);
 
   // Função para obter dia da semana
   const obterDiaSemana = (data) => {
@@ -158,6 +160,12 @@ const Balaustres = ({
       observacoes: balaustre.observacoes || ''
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Visualizar balaustre completo
+  const handleVisualizar = (balaustre) => {
+    setBalaustreVisualizando(balaustre);
+    setModalVisualizar(true);
   };
 
   // Excluir balaustre
@@ -390,6 +398,13 @@ const Balaustres = ({
                       <td className="px-4 py-3">
                         <div className="flex gap-2 justify-center">
                           <button
+                            onClick={() => handleVisualizar(balaustre)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm"
+                            title="Visualizar detalhes"
+                          >
+                            👁️ Ver
+                          </button>
+                          <button
                             onClick={() => handleEditar(balaustre)}
                             className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors text-sm"
                           >
@@ -416,6 +431,89 @@ const Balaustres = ({
           </table>
         </div>
       </div>
+
+      {/* MODAL DE VISUALIZAÇÃO */}
+      {modalVisualizar && balaustreVisualizando && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-blue-900 text-white p-6 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">
+                  📋 Balaustre Nº {balaustreVisualizando.numero_balaustre} - {balaustreVisualizando.grau_sessao}
+                </h3>
+                <button
+                  onClick={() => setModalVisualizar(false)}
+                  className="text-white hover:text-gray-200 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Informações da Sessão */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Grau da Sessão</label>
+                  <p className="text-lg font-medium text-gray-900">{balaustreVisualizando.grau_sessao}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Número do Balaustre</label>
+                  <p className="text-lg font-medium text-gray-900">{balaustreVisualizando.numero_balaustre}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Data da Sessão</label>
+                  <p className="text-lg font-medium text-gray-900">{formatarData(balaustreVisualizando.data_sessao)}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Dia da Semana</label>
+                  <p className="text-lg font-medium text-gray-900">{balaustreVisualizando.dia_semana}</p>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Tipo de Sessão</label>
+                  <p className="text-lg font-medium text-gray-900">{obterNomeTipoSessao(balaustreVisualizando.tipo_sessao_id)}</p>
+                </div>
+              </div>
+
+              {/* Ordem do Dia */}
+              <div className="mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-blue-900 mb-3">📝 Ordem do Dia</label>
+                  <div className="text-gray-800 whitespace-pre-wrap">
+                    {balaustreVisualizando.ordem_dia || <span className="text-gray-500 italic">Não informada</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Observações */}
+              {balaustreVisualizando.observacoes && (
+                <div className="mb-6">
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <label className="block text-sm font-semibold text-yellow-900 mb-3">💡 Observações</label>
+                    <div className="text-gray-800 whitespace-pre-wrap">
+                      {balaustreVisualizando.observacoes}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botão Fechar */}
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <button
+                  onClick={() => setModalVisualizar(false)}
+                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
