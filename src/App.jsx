@@ -10,6 +10,7 @@ import { Usuarios } from './components/administracao/Usuarios';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
+import VisualizarBalaustres from './components/balaustres/VisualizarBalaustres';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -96,6 +97,7 @@ function App() {
   const [irmaos, setIrmaos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [balaustres, setBalaustres] = useState([]);
+  const [balaustresFase4, setBalaustresFase4] = useState([]);
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
   
@@ -270,6 +272,7 @@ function App() {
       if (session) {
         loadUserData(session.user.email);
         loadIrmaos();
+        loadBalaustresFase4();
         loadTiposSessao();
         loadCargosLoja();
         loadBalaustres();
@@ -362,6 +365,16 @@ function App() {
     }
     if (error) console.error('Erro ao carregar irmãos:', error);
   };
+
+  const loadBalaustresFase4 = async () => {
+  const { data, error } = await supabase
+    .from('balaustres')
+    .select('*')
+    .order('data', { ascending: false });
+  
+  if (data) setBalaustresFase4(data);
+  if (error) console.error('Erro ao carregar balaustres:', error);
+};
 
   const loadTiposSessao = async () => {
     try {
@@ -2334,6 +2347,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
+  onClick={() => setCurrentPage('visualizar-balaustres-fase4')}
+  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+    currentPage === 'visualizar-balaustres-fase4'
+      ? 'bg-blue-700 border-l-4 border-white'
+      : 'hover:bg-blue-800'
+  }`}
+>
+  <span className="text-base">📋</span>
+  <span className="font-semibold">Visualizar Balaustres (Novo)</span>
+</button>
+
+          <button
             onClick={() => setCurrentPage('balaustres')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'balaustres'
@@ -2763,6 +2788,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             permissoes={permissoes}
           />
         )}
+
+  {currentPage === 'visualizar-balaustres-fase4' && (
+  <VisualizarBalaustres balaustres={balaustresFase4} />
+  )}
+          
         {/* QUADRO DE IRMÃOS */}
         {currentPage === 'quadro' && (
           <QuadroIrmaos irmaos={irmaos} />
