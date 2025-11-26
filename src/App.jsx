@@ -367,14 +367,14 @@ function App() {
   };
 
   const loadBalaustresFase4 = async () => {
-  const { data, error } = await supabase
-    .from('balaustres')
-    .select('*')
-    .order('data', { ascending: false });
-  
-  if (data) setBalaustresFase4(data);
-  if (error) console.error('Erro ao carregar balaustres:', error);
-};
+    const { data, error } = await supabase
+      .from('balaustres')
+      .select('*')
+      .order('data', { ascending: false });
+    
+    if (data) setBalaustresFase4(data);
+    if (error) console.error('Erro ao carregar balaustres Fase 4:', error);
+  };
 
   const loadTiposSessao = async () => {
     try {
@@ -2347,16 +2347,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
-  onClick={() => setCurrentPage('visualizar-balaustres-fase4')}
-  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-    currentPage === 'visualizar-balaustres-fase4'
-      ? 'bg-blue-700 border-l-4 border-white'
-      : 'hover:bg-blue-800'
-  }`}
->
-  <span className="text-base">📋</span>
-  <span className="font-semibold">Visualizar Balaustres (Novo)</span>
-</button>
+            onClick={() => setCurrentPage('visualizar-balaustres-fase4')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'visualizar-balaustres-fase4'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">📋</span>
+            <span className="font-semibold">Visualizar Balaustres (Novo)</span>
+          </button>
 
           <button
             onClick={() => setCurrentPage('balaustres')}
@@ -2788,11 +2788,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             permissoes={permissoes}
           />
         )}
-
-  {currentPage === 'visualizar-balaustres-fase4' && (
-  <VisualizarBalaustres balaustres={balaustresFase4} />
-  )}
-          
         {/* QUADRO DE IRMÃOS */}
         {currentPage === 'quadro' && (
           <QuadroIrmaos irmaos={irmaos} />
@@ -2805,6 +2800,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
           />
+        )}
+
+        {/* VISUALIZAR BALAUSTRES FASE 4 */}
+        {currentPage === 'visualizar-balaustres-fase4' && (
+          <VisualizarBalaustres balaustres={balaustresFase4} />
         )}
 
         {/* GERENCIAMENTO DE USUÁRIOS */}
