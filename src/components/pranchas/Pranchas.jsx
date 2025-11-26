@@ -16,6 +16,8 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
   const [pranchaEditando, setPranchaEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [pranchaVisualizando, setPranchaVisualizando] = useState(null);
+  const [modalVisualizar, setModalVisualizar] = useState(false);
 
   // Função para tratar datas vazias
   const tratarData = (data) => {
@@ -109,6 +111,12 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
       destinatario: prancha.destinatario
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Visualizar prancha completa
+  const handleVisualizar = (prancha) => {
+    setPranchaVisualizando(prancha);
+    setModalVisualizar(true);
   };
 
   // Excluir prancha
@@ -269,6 +277,13 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
                       <td className="px-4 py-3">
                         <div className="flex justify-center gap-2">
                           <button
+                            onClick={() => handleVisualizar(prancha)}
+                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-semibold"
+                            title="Visualizar detalhes"
+                          >
+                            👁️ Ver
+                          </button>
+                          <button
                             onClick={() => handleEditar(prancha)}
                             className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-semibold"
                           >
@@ -295,6 +310,62 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
           </table>
         </div>
       </div>
+
+      {/* MODAL DE VISUALIZAÇÃO */}
+      {modalVisualizar && pranchaVisualizando && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">
+                  📄 Prancha Nº {pranchaVisualizando.numero_prancha}
+                </h3>
+                <button
+                  onClick={() => setModalVisualizar(false)}
+                  className="text-white hover:text-gray-200 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Informações da Prancha */}
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">Número da Prancha</label>
+                  <p className="text-lg font-medium text-gray-900">{pranchaVisualizando.numero_prancha}</p>
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-blue-900 mb-2">Data</label>
+                  <p className="text-lg font-medium text-gray-900">{formatarData(pranchaVisualizando.data_prancha)}</p>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-green-900 mb-2">👤 Destinatário</label>
+                  <p className="text-lg font-medium text-gray-900">{pranchaVisualizando.destinatario}</p>
+                </div>
+
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <label className="block text-sm font-semibold text-yellow-900 mb-2">📋 Assunto</label>
+                  <p className="text-lg text-gray-900">{pranchaVisualizando.assunto}</p>
+                </div>
+              </div>
+
+              {/* Botão Fechar */}
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+                <button
+                  onClick={() => setModalVisualizar(false)}
+                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
