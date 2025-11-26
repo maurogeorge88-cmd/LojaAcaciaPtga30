@@ -367,24 +367,24 @@ function App() {
       .order('nome');
 
   const loadBalaustresFase4 = async () => {
-  const { data, error } = await supabase
-    .from('balaustres')
-    .select('*')
-    .order('data', { ascending: false });
-  
-  if (data) setBalaustresFase4(data);
-  if (error) console.error('Erro ao carregar balaustres:', error);
-};
+    const { data, error } = await supabase
+      .from('balaustres')
+      .select('*')
+      .order('data', { ascending: false });
+    
+    if (data) setBalaustresFase4(data);
+    if (error) console.error('Erro ao carregar balaustres:', error);
+  };
 
-const loadPranchasFase4 = async () => {
-  const { data, error } = await supabase
-    .from('pranchas_expedidas')
-    .select('*')
-    .order('data', { ascending: false });
-  
-  if (data) setPranchasFase4(data);
-  if (error) console.error('Erro ao carregar pranchas:', error);
-};
+  const loadPranchasFase4 = async () => {
+    const { data, error } = await supabase
+      .from('pranchas_expedidas')
+      .select('*')
+      .order('data', { ascending: false });
+    
+    if (data) setPranchasFase4(data);
+    if (error) console.error('Erro ao carregar pranchas:', error);
+  };
     
     
     if (data) {
