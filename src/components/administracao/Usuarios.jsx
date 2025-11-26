@@ -144,11 +144,18 @@ export const Usuarios = ({ usuarios, userData, onUpdate, showSuccess, showError 
       if (error) throw error;
 
       // Se tem nova senha, atualizar no Auth
-      if (usuarioForm.senha) {
-        await supabase.auth.admin.updateUserById(
-          usuarioEditando.id,
+      if (usuarioForm.senha && usuarioEditando.auth_user_id) {
+        const { error: authError } = await supabase.auth.admin.updateUserById(
+          usuarioEditando.auth_user_id,
           { password: usuarioForm.senha }
         );
+        
+        if (authError) {
+          console.error('⚠️ Erro ao atualizar senha no Auth:', authError);
+          // Não lançar erro aqui, pois o usuário já foi atualizado na tabela
+          showError('Usuário atualizado, mas houve erro ao atualizar a senha: ' + authError.message);
+          return;
+        }
       }
 
       showSuccess('✅ Usuário atualizado com sucesso!');
