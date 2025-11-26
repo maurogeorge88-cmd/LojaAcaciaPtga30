@@ -11,16 +11,6 @@ import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
 
-// Balaustres
-import CadastrarBalaustre from './components/balaustres/CadastrarBalaustre';
-import VisualizarBalaustres from './components/balaustres/VisualizarBalaustres';
-import ListaPresenca from './components/balaustres/ListaPresenca';
-
-// Pranchas
-import CadastrarPrancha from './components/pranchas/CadastrarPrancha';
-import VisualizarPranchas from './components/pranchas/VisualizarPranchas';
-import ProtocoloPranchas from './components/pranchas/ProtocoloPranchas';
-
 // ========================================
 // CONFIGURAÇÃO SUPABASE
 // ========================================
@@ -106,8 +96,6 @@ function App() {
   const [irmaos, setIrmaos] = useState([]);
   const [usuarios, setUsuarios] = useState([]);
   const [balaustres, setBalaustres] = useState([]);
-  const [balaustresFase4, setBalaustresFase4] = useState([]);
-  const [pranchasFase4, setPranchasFase4] = useState([]);
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
   
@@ -282,8 +270,6 @@ function App() {
       if (session) {
         loadUserData(session.user.email);
         loadIrmaos();
-        loadBalaustresFase4();  // ← ADICIONAR
-        loadPranchasFase4();    // ← ADICIONAR
         loadTiposSessao();
         loadCargosLoja();
         loadBalaustres();
@@ -365,27 +351,6 @@ function App() {
       .from('irmaos')
       .select('*')
       .order('nome');
-
-  const loadBalaustresFase4 = async () => {
-  const { data, error } = await supabase
-    .from('balaustres')
-    .select('*')
-    .order('data', { ascending: false });
-  
-  if (data) setBalaustresFase4(data);
-  if (error) console.error('Erro ao carregar balaustres:', error);
-};
-
-const loadPranchasFase4 = async () => {
-  const { data, error } = await supabase
-    .from('pranchas_expedidas')
-    .select('*')
-    .order('data', { ascending: false });
-  
-  if (data) setPranchasFase4(data);
-  if (error) console.error('Erro ao carregar pranchas:', error);
-};
-    
     
     if (data) {
       // Adicionar situacao padrão para registros que não tem
@@ -2368,88 +2333,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             <span className="font-semibold">Quadro de Irmãos</span>
           </button>
 
-          {/* ========== BALAUSTRES ========== */}
-          <div className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase tracking-wide">
-            Balaustres
-          </div>
-
-          <button
-            onClick={() => setCurrentPage('cadastrar-balaustre')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'cadastrar-balaustre'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">📝</span>
-            <span className="font-semibold">Cadastrar Balaustre</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('visualizar-balaustres')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'visualizar-balaustres'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">📋</span>
-            <span className="font-semibold">Visualizar Balaustres</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('lista-presenca')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'lista-presenca'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">✅</span>
-            <span className="font-semibold">Lista de Presença</span>
-          </button>
-
-          {/* ========== PRANCHAS ========== */}
-          <div className="px-4 py-2 text-xs font-semibold text-blue-300 uppercase tracking-wide">
-            Pranchas
-          </div>
-
-          <button
-            onClick={() => setCurrentPage('cadastrar-prancha')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'cadastrar-prancha'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">📝</span>
-            <span className="font-semibold">Cadastrar Prancha</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('visualizar-pranchas')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'visualizar-pranchas'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">📄</span>
-            <span className="font-semibold">Visualizar Pranchas</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentPage('protocolo-pranchas')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'protocolo-pranchas'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
-            }`}
-          >
-            <span className="text-base">📖</span>
-            <span className="font-semibold">Livro de Protocolo</span>
-          </button>
-
           <button
             onClick={() => setCurrentPage('balaustres')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -2892,45 +2775,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
           />
-        )}
-
-        {/* ==================== BALAUSTRES ==================== */}
-        {currentPage === 'cadastrar-balaustre' && (
-          <CadastrarBalaustre
-            onUpdate={loadBalaustresFase4}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {currentPage === 'visualizar-balaustres' && (
-          <VisualizarBalaustres balaustres={balaustresFase4} />
-        )}
-
-        {currentPage === 'lista-presenca' && (
-          <ListaPresenca
-            balaustres={balaustresFase4}
-            irmaos={irmaos}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* ==================== PRANCHAS ==================== */}
-        {currentPage === 'cadastrar-prancha' && (
-          <CadastrarPrancha
-            onUpdate={loadPranchasFase4}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {currentPage === 'visualizar-pranchas' && (
-          <VisualizarPranchas pranchas={pranchasFase4} />
-        )}
-
-        {currentPage === 'protocolo-pranchas' && (
-          <ProtocoloPranchas pranchas={pranchasFase4} />
         )}
 
         {/* GERENCIAMENTO DE USUÁRIOS */}
