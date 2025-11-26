@@ -95,10 +95,19 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
   // Excluir livro
   const excluirLivro = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir este livro?')) return;
+    if (!window.confirm('Tem certeza que deseja excluir este livro? Esta ação é irreversível!')) return;
 
     setLoading(true);
     try {
+      // Verificar se há empréstimos ativos deste livro
+      const emprestimosAtivosDoLivro = emprestimos.filter(e => e.livro_id === id && e.status === 'ativo');
+      
+      if (emprestimosAtivosDoLivro.length > 0) {
+        showError('Não é possível excluir este livro pois há empréstimos ativos!');
+        setLoading(false);
+        return;
+      }
+
       const { error } = await supabase
         .from('biblioteca_livros')
         .delete()
@@ -203,6 +212,41 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     }
   };
 
+  // Excluir empréstimo
+  const excluirEmprestimo = async (emprestimoId, livroId, status) => {
+    if (!window.confirm('Tem certeza que deseja excluir este registro de empréstimo?')) return;
+
+    setLoading(true);
+    try {
+      // Se o empréstimo estava ativo, devolver a quantidade ao livro
+      if (status === 'ativo') {
+        const livro = livros.find(l => l.id === livroId);
+        if (livro) {
+          await supabase
+            .from('biblioteca_livros')
+            .update({ quantidade_disponivel: livro.quantidade_disponivel + 1 })
+            .eq('id', livro.id);
+        }
+      }
+
+      // Excluir o empréstimo
+      const { error } = await supabase
+        .from('biblioteca_emprestimos')
+        .delete()
+        .eq('id', emprestimoId);
+
+      if (error) throw error;
+
+      showSuccess('Empréstimo excluído com sucesso!');
+      onUpdate();
+
+    } catch (error) {
+      showError('Erro ao excluir empréstimo: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Obter nome do irmão
   const obterNomeIrmao = (irmaoId) => {
     const irmao = irmaos.find(i => i.id === irmaoId);
@@ -222,45 +266,73 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     return hoje > prevista;
   };
 
-  // Filtrar empréstimos ativos
+  // Filtrar empréstimos ativos e devolvidos
   const emprestimosAtivos = emprestimos.filter(e => e.status === 'ativo');
+  const emprestimosDevolvidos = emprestimos.filter(e => e.status === 'devolvido');
 
   // Filtrar livros disponíveis
   const livrosDisponiveis = livros.filter(l => l.quantidade_disponivel > 0);
 
+  // Obter empréstimos por irmão
+  const emprestimosPorIrmao = irmaos.map(irmao => {
+    const emprestimosDoIrmao = emprestimos.filter(e => e.irmao_id === irmao.id);
+    return {
+      irmao,
+      emprestimos: emprestimosDoIrmao,
+      ativos: emprestimosDoIrmao.filter(e => e.status === 'ativo').length,
+      total: emprestimosDoIrmao.length
+    };
+  }).filter(item => item.total > 0);
+
   return (
     <div>
       {/* ABAS */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setAbaAtiva('livros')}
-          className={`px-6 py-2 rounded-lg font-semibold ${
-            abaAtiva === 'livros' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+          className={`px-6 py-2 rounded-lg font-semibold transition ${
+            abaAtiva === 'livros' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          📚 Livros
+          📚 Livros ({livros.length})
         </button>
         <button
           onClick={() => setAbaAtiva('emprestimos')}
-          className={`px-6 py-2 rounded-lg font-semibold ${
-            abaAtiva === 'emprestimos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'
+          className={`px-6 py-2 rounded-lg font-semibold transition ${
+            abaAtiva === 'emprestimos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          📋 Empréstimos
+          📖 Empréstimos Ativos ({emprestimosAtivos.length})
+        </button>
+        <button
+          onClick={() => setAbaAtiva('devolucoes')}
+          className={`px-6 py-2 rounded-lg font-semibold transition ${
+            abaAtiva === 'devolucoes' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          ✅ Devoluções ({emprestimosDevolvidos.length})
+        </button>
+        <button
+          onClick={() => setAbaAtiva('por-irmao')}
+          className={`px-6 py-2 rounded-lg font-semibold transition ${
+            abaAtiva === 'por-irmao' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          👤 Por Irmão ({emprestimosPorIrmao.length})
         </button>
       </div>
 
       {/* ABA LIVROS */}
       {abaAtiva === 'livros' && (
         <div>
-          {/* FORMULÁRIO LIVRO */}
+          {/* FORMULÁRIO LIVROS */}
           <div className="bg-white rounded-xl shadow-md p-6 mb-6">
             <h3 className="text-xl font-bold text-blue-900 mb-4">
-              {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Novo Livro'}
+              {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
                 <input
                   type="text"
@@ -288,12 +360,11 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
-                  <option value="Ritualística">Ritualística</option>
-                  <option value="Filosofia">Filosofia</option>
-                  <option value="História">História</option>
-                  <option value="Simbolismo">Simbolismo</option>
-                  <option value="Legislação">Legislação</option>
-                  <option value="Geral">Geral</option>
+                  <option>Ritualística</option>
+                  <option>Filosofia</option>
+                  <option>História</option>
+                  <option>Simbologia</option>
+                  <option>Outros</option>
                 </select>
               </div>
 
@@ -303,8 +374,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   type="text"
                   value={livroForm.localizacao}
                   onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
-                  placeholder="Ex: Estante A - Prateleira 2"
                   className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Ex: Estante A, Prateleira 2"
                 />
               </div>
 
@@ -313,10 +384,10 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 <input
                   type="number"
                   value={livroForm.quantidade_total}
-                  onChange={(e) => setLivroForm({ 
-                    ...livroForm, 
-                    quantidade_total: parseInt(e.target.value),
-                    quantidade_disponivel: modoEdicaoLivro ? livroForm.quantidade_disponivel : parseInt(e.target.value)
+                  onChange={(e) => setLivroForm({
+                    ...livroForm,
+                    quantidade_total: parseInt(e.target.value) || 1,
+                    quantidade_disponivel: modoEdicaoLivro ? livroForm.quantidade_disponivel : parseInt(e.target.value) || 1
                   })}
                   min="1"
                   className="w-full px-3 py-2 border rounded-lg"
@@ -413,7 +484,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         </div>
       )}
 
-      {/* ABA EMPRÉSTIMOS */}
+      {/* ABA EMPRÉSTIMOS ATIVOS */}
       {abaAtiva === 'emprestimos' && (
         <div>
           {/* FORMULÁRIO EMPRÉSTIMO */}
@@ -490,7 +561,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     <th className="px-4 py-3 text-left">Empréstimo</th>
                     <th className="px-4 py-3 text-left">Devolução Prevista</th>
                     <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Ação</th>
+                    <th className="px-4 py-3 text-center">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -510,13 +581,21 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                             {estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'No prazo'}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                            className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-                          >
-                            Devolver
-                          </button>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                            >
+                              Devolver
+                            </button>
+                            <button
+                              onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                            >
+                              Excluir
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -529,6 +608,168 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ABA DEVOLUÇÕES */}
+      {abaAtiva === 'devolucoes' && (
+        <div>
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
+              <h3 className="text-xl font-bold">Histórico de Devoluções</h3>
+              <p className="text-sm text-green-100">Total: {emprestimosDevolvidos.length} devolução(ões)</p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Livro</th>
+                    <th className="px-4 py-3 text-left">Irmão</th>
+                    <th className="px-4 py-3 text-left">Empréstimo</th>
+                    <th className="px-4 py-3 text-left">Devolução Prevista</th>
+                    <th className="px-4 py-3 text-left">Devolução Real</th>
+                    <th className="px-4 py-3 text-center">Status</th>
+                    <th className="px-4 py-3 text-center">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {emprestimosDevolvidos.length > 0 ? (
+                    emprestimosDevolvidos
+                      .sort((a, b) => new Date(b.data_devolucao_real) - new Date(a.data_devolucao_real))
+                      .map((emprestimo) => {
+                        const foiDevolvido = emprestimo.data_devolucao_real;
+                        const devolveuAtrasado = foiDevolvido && new Date(emprestimo.data_devolucao_real) > new Date(emprestimo.data_devolucao_prevista);
+                        
+                        return (
+                          <tr key={emprestimo.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-semibold">{obterTituloLivro(emprestimo.livro_id)}</td>
+                            <td className="px-4 py-3">{obterNomeIrmao(emprestimo.irmao_id)}</td>
+                            <td className="px-4 py-3">{formatarData(emprestimo.data_emprestimo)}</td>
+                            <td className="px-4 py-3">{formatarData(emprestimo.data_devolucao_prevista)}</td>
+                            <td className="px-4 py-3">{formatarData(emprestimo.data_devolucao_real)}</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`px-2 py-1 rounded text-sm ${
+                                devolveuAtrasado
+                                  ? 'bg-orange-100 text-orange-800'
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {devolveuAtrasado ? 'Atrasado' : 'No prazo'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <button
+                                onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                              >
+                                Excluir
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                        Nenhuma devolução registrada
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ABA POR IRMÃO */}
+      {abaAtiva === 'por-irmao' && (
+        <div>
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+              <h3 className="text-xl font-bold">Empréstimos por Irmão</h3>
+              <p className="text-sm text-purple-100">
+                {emprestimosPorIrmao.length} irmão(s) com empréstimos registrados
+              </p>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {emprestimosPorIrmao.length > 0 ? (
+                emprestimosPorIrmao.map((item) => (
+                  <div key={item.irmao.id} className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-between items-center mb-4">
+                      <h4 className="text-lg font-bold text-blue-900">{item.irmao.nome}</h4>
+                      <div className="flex gap-4">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-semibold">
+                          Ativos: {item.ativos}
+                        </span>
+                        <span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm font-semibold">
+                          Total: {item.total}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-200">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-sm">Livro</th>
+                            <th className="px-4 py-2 text-left text-sm">Data Empréstimo</th>
+                            <th className="px-4 py-2 text-left text-sm">Devolução Prevista</th>
+                            <th className="px-4 py-2 text-center text-sm">Status</th>
+                            <th className="px-4 py-2 text-center text-sm">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y bg-white">
+                          {item.emprestimos.map((emprestimo) => (
+                            <tr key={emprestimo.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-2 text-sm">{obterTituloLivro(emprestimo.livro_id)}</td>
+                              <td className="px-4 py-2 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
+                              <td className="px-4 py-2 text-sm">
+                                {emprestimo.status === 'ativo' ? formatarData(emprestimo.data_devolucao_prevista) : '-'}
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                <span className={`px-2 py-1 rounded text-xs ${
+                                  emprestimo.status === 'ativo'
+                                    ? estaAtrasado(emprestimo.data_devolucao_prevista)
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                    : 'bg-green-100 text-green-800'
+                                }`}>
+                                  {emprestimo.status === 'ativo' 
+                                    ? (estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'Ativo')
+                                    : 'Devolvido'
+                                  }
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-center">
+                                {emprestimo.status === 'ativo' ? (
+                                  <button
+                                    onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                                    className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                                  >
+                                    Devolver
+                                  </button>
+                                ) : (
+                                  <span className="text-xs text-gray-500">
+                                    {formatarData(emprestimo.data_devolucao_real)}
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  Nenhum irmão com empréstimos registrados
+                </div>
+              )}
             </div>
           </div>
         </div>
