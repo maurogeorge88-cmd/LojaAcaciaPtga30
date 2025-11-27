@@ -1320,6 +1320,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
+        {/* CORPO ADMINISTRATIVO */}
+        {currentPage === 'corpo-admin' && (
           <CorpoAdmin
             corpoAdmin={corpoAdmin}
             irmaos={irmaos}
@@ -1360,6 +1362,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showError={showError}
           />
         )}
+        </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
     </div>
   );
