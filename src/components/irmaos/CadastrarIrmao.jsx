@@ -61,8 +61,12 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const [pais, setPais] = useState({
     nome_pai: '',
     pai_vivo: true,
+    data_nascimento_pai: '',
+    data_obito_pai: '',
     nome_mae: '',
-    mae_viva: true
+    mae_viva: true,
+    data_nascimento_mae: '',
+    data_obito_mae: ''
   });
 
   const [filhos, setFilhos] = useState([]);
@@ -156,12 +160,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         setPais({
           nome_pai: pai?.nome || '',
           pai_vivo: pai ? !pai.falecido : true,
+          data_nascimento_pai: pai?.data_nascimento || '',
+          data_obito_pai: pai?.data_obito || '',
           nome_mae: mae?.nome || '',
-          mae_viva: mae ? !mae.falecido : true
+          mae_viva: mae ? !mae.falecido : true,
+          data_nascimento_mae: mae?.data_nascimento || '',
+          data_obito_mae: mae?.data_obito || ''
         });
       }
     } catch (error) {
-      setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+      setPais({ nome_pai: '', pai_vivo: true, data_nascimento_pai: '', data_obito_pai: '', nome_mae: '', mae_viva: true, data_nascimento_mae: '', data_obito_mae: '' });
     }
 
     // Carregar filhos
@@ -331,7 +339,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             tipo: 'pai',
             nome: pais.nome_pai.trim(),
-            falecido: !pais.pai_vivo
+            falecido: !pais.pai_vivo,
+            data_nascimento: pais.data_nascimento_pai || null,
+            data_obito: pais.data_obito_pai || null
           }]);
         }
         if (pais.nome_mae.trim()) {
@@ -339,7 +349,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             tipo: 'mae',
             nome: pais.nome_mae.trim(),
-            falecido: !pais.mae_viva
+            falecido: !pais.mae_viva,
+            data_nascimento: pais.data_nascimento_mae || null,
+            data_obito: pais.data_obito_mae || null
           }]);
         }
 
@@ -354,7 +366,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            tipo: 'Filho'
+            tipo: filho.sexo === 'M' ? 'Filho' : 'Filha'
           }));
 
           await supabase
@@ -395,7 +407,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             tipo: 'pai',
             nome: pais.nome_pai.trim(),
-            falecido: !pais.pai_vivo
+            falecido: !pais.pai_vivo,
+            data_nascimento: pais.data_nascimento_pai || null,
+            data_obito: pais.data_obito_pai || null
           }]);
         }
         if (pais.nome_mae.trim()) {
@@ -403,7 +417,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             tipo: 'mae',
             nome: pais.nome_mae.trim(),
-            falecido: !pais.mae_viva
+            falecido: !pais.mae_viva,
+            data_nascimento: pais.data_nascimento_mae || null,
+            data_obito: pais.data_obito_mae || null
           }]);
         }
 
@@ -413,7 +429,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            tipo: 'Filho'
+            tipo: filho.sexo === 'M' ? 'Filho' : 'Filha'
           }));
 
           await supabase
@@ -467,7 +483,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       status: 'ativo'
     });
     setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+    setPais({ nome_pai: '', pai_vivo: true, data_nascimento_pai: '', data_obito_pai: '', nome_mae: '', mae_viva: true, data_nascimento_mae: '', data_obito_mae: '' });
     setFilhos([]);
     setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
     setMostrarConjuge(false);
