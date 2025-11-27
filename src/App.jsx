@@ -448,6 +448,69 @@ function App() {
     }
   };
 
+  const loadComissoes = async () => {
+    try {
+      console.log('🔍 Carregando comissões...');
+      const { data, error } = await supabase
+        .from('comissoes')
+        .select('*')
+        .order('data_criacao', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Erro ao carregar comissões:', error);
+        return;
+      }
+      
+      console.log('✅ Comissões carregadas:', data?.length || 0);
+      setComissoes(data || []);
+    } catch (err) {
+      console.error('❌ Exceção ao carregar comissões:', err);
+      setComissoes([]);
+    }
+  };
+
+  const loadLivros = async () => {
+    try {
+      console.log('🔍 Carregando livros...');
+      const { data, error } = await supabase
+        .from('biblioteca_livros')
+        .select('*')
+        .order('titulo', { ascending: true });
+      
+      if (error) {
+        console.error('❌ Erro ao carregar livros:', error);
+        return;
+      }
+      
+      console.log('✅ Livros carregados:', data?.length || 0);
+      setLivros(data || []);
+    } catch (err) {
+      console.error('❌ Exceção ao carregar livros:', err);
+      setLivros([]);
+    }
+  };
+
+  const loadEmprestimos = async () => {
+    try {
+      console.log('🔍 Carregando empréstimos...');
+      const { data, error } = await supabase
+        .from('biblioteca_emprestimos')
+        .select('*')
+        .order('data_emprestimo', { ascending: false });
+      
+      if (error) {
+        console.error('❌ Erro ao carregar empréstimos:', error);
+        return;
+      }
+      
+      console.log('✅ Empréstimos carregados:', data?.length || 0);
+      setEmprestimos(data || []);
+    } catch (err) {
+      console.error('❌ Exceção ao carregar empréstimos:', err);
+      setEmprestimos([]);
+    }
+  };
+
   const carregarProximoNumero = async (grau) => {
     try {
       console.log('🔢 Carregando próximo número para grau:', grau);
