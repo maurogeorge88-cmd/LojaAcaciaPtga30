@@ -44,6 +44,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
   // Estados para visualização
   const [modalVisualizar, setModalVisualizar] = useState(false);
   const [comissaoVisualizar, setComissaoVisualizar] = useState(null);
+  const [integrantesVisualizar, setIntegrantesVisualizar] = useState([]);
 
   // Limpar formulário
   const limparFormulario = () => {
@@ -227,9 +228,27 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
   };
 
   // Visualizar comissão
-  const handleVisualizar = (comissao) => {
+  const handleVisualizar = async (comissao) => {
     setComissaoVisualizar(comissao);
     setModalVisualizar(true);
+    
+    // Buscar integrantes desta comissão
+    try {
+      const { data, error } = await supabase
+        .from('comissoes_integrantes')
+        .select('*')
+        .eq('comissao_id', comissao.id);
+      
+      if (error) {
+        console.error('Erro ao buscar integrantes:', error);
+        setIntegrantesVisualizar([]);
+      } else {
+        setIntegrantesVisualizar(data || []);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar integrantes:', err);
+      setIntegrantesVisualizar([]);
+    }
   };
 
   return (
@@ -552,47 +571,30 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
               {/* Integrantes */}
               <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
                 <h4 className="text-lg font-bold text-gray-800 mb-4">👥 Integrantes</h4>
-                {(() => {
-                  // Buscar integrantes desta comissão
-                  const integrantesComissao = comissoes
-                    .filter(c => c.id === comissaoVisualizar.id)
-                    .map(c => {
-                      // Parsear integrantes (assumindo que está como JSON ou array)
-                      try {
-                        return typeof c.integrantes === 'string' 
-                          ? JSON.parse(c.integrantes) 
-                          : c.integrantes;
-                      } catch {
-                        return [];
-                      }
-                    })
-                    .flat();
-
-                  return integrantesComissao && integrantesComissao.length > 0 ? (
-                    <div className="space-y-2">
-                      {integrantesComissao.map((integrante, index) => {
-                        const irmao = irmaos.find(i => i.id === integrante.irmao_id);
-                        return (
-                          <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                            <div>
-                              <p className="font-semibold text-gray-800">
-                                {irmao?.nome || 'Irmão não encontrado'}
-                              </p>
-                              {irmao?.cim && (
-                                <p className="text-sm text-gray-600">CIM: {irmao.cim}</p>
-                              )}
-                            </div>
-                            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                              {integrante.funcao}
-                            </span>
+                {integrantesVisualizar && integrantesVisualizar.length > 0 ? (
+                  <div className="space-y-2">
+                    {integrantesVisualizar.map((integrante, index) => {
+                      const irmao = irmaos.find(i => i.id === integrante.irmao_id);
+                      return (
+                        <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                          <div>
+                            <p className="font-semibold text-gray-800">
+                              {irmao?.nome || 'Irmão não encontrado'}
+                            </p>
+                            {irmao?.cim && (
+                              <p className="text-sm text-gray-600">CIM: {irmao.cim}</p>
+                            )}
                           </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">Nenhum integrante cadastrado</p>
-                  );
-                })()}
+                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            {integrante.funcao}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Nenhum integrante cadastrado</p>
+                )}
               </div>
             </div>
 
