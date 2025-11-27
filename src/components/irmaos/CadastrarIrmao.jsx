@@ -1003,7 +1003,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Pais</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nome do Pai
                   </label>
@@ -1013,7 +1013,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     onChange={(e) => setPais({ ...pais, nome_pai: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data de Nascimento
+                    </label>
+                    <input
+                      type="date"
+                      value={pais.data_nascimento_pai}
+                      onChange={(e) => setPais({ ...pais, data_nascimento_pai: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={pais.pai_vivo}
@@ -1022,9 +1035,23 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     />
                     <span className="text-sm text-gray-700">Pai vivo</span>
                   </label>
+
+                  {!pais.pai_vivo && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data de Óbito
+                      </label>
+                      <input
+                        type="date"
+                        value={pais.data_obito_pai}
+                        onChange={(e) => setPais({ ...pais, data_obito_pai: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
                 </div>
 
-                <div>
+                <div className="space-y-3">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nome da Mãe
                   </label>
@@ -1034,7 +1061,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     onChange={(e) => setPais({ ...pais, nome_mae: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
-                  <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data de Nascimento
+                    </label>
+                    <input
+                      type="date"
+                      value={pais.data_nascimento_mae}
+                      onChange={(e) => setPais({ ...pais, data_nascimento_mae: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={pais.mae_viva}
@@ -1043,6 +1083,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     />
                     <span className="text-sm text-gray-700">Mãe viva</span>
                   </label>
+
+                  {!pais.mae_viva && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Data de Óbito
+                      </label>
+                      <input
+                        type="date"
+                        value={pais.data_obito_mae}
+                        onChange={(e) => setPais({ ...pais, data_obito_mae: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
