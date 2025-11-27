@@ -115,12 +115,79 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     });
     console.log('✅ Formulário carregado!');
 
-    // TEMPORARIAMENTE desabilitado para evitar erro 404
-    // Carregar familiares será feito manualmente
-    setMostrarConjuge(false);
-    setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
-    setFilhos([]);
+    // Carregar cônjuge
+    try {
+      const { data: conjugeData } = await supabase
+        .from('familiares_conjuge')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      if (conjugeData) {
+        console.log('💑 Cônjuge encontrado:', conjugeData);
+        setMostrarConjuge(true);
+        setConjuge({
+          nome: conjugeData.nome || '',
+          cpf: conjugeData.cpf || '',
+          data_nascimento: conjugeData.data_nascimento || '',
+          profissao: conjugeData.profissao || ''
+        });
+      } else {
+        setMostrarConjuge(false);
+        setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
+      }
+    } catch (error) {
+      console.log('⚠️ Erro ao carregar cônjuge (pode não existir):', error.message);
+      setMostrarConjuge(false);
+      setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
+    }
+
+    // Carregar pais
+    try {
+      const { data: paisData } = await supabase
+        .from('familiares_pais')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      if (paisData) {
+        console.log('👨‍👩 Pais encontrados:', paisData);
+        setPais({
+          nome_pai: paisData.nome_pai || '',
+          pai_vivo: paisData.pai_vivo !== false,
+          nome_mae: paisData.nome_mae || '',
+          mae_viva: paisData.mae_viva !== false
+        });
+      } else {
+        setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+      }
+    } catch (error) {
+      console.log('⚠️ Erro ao carregar pais (pode não existir):', error.message);
+      setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+    }
+
+    // Carregar filhos
+    try {
+      const { data: filhosData } = await supabase
+        .from('familiares_filhos')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .order('data_nascimento', { ascending: true });
+
+      if (filhosData && filhosData.length > 0) {
+        console.log('👶 Filhos encontrados:', filhosData.length);
+        setFilhos(filhosData.map(f => ({
+          nome: f.nome,
+          data_nascimento: f.data_nascimento,
+          sexo: f.sexo
+        })));
+      } else {
+        setFilhos([]);
+      }
+    } catch (error) {
+      console.log('⚠️ Erro ao carregar filhos (pode não existir):', error.message);
+      setFilhos([]);
+    }
 
     // Scroll para o topo
     window.scrollTo({ top: 0, behavior: 'smooth' });
