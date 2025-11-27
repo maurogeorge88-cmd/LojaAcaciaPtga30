@@ -182,17 +182,35 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         throw new Error('Email inválido');
       }
 
-      // Preparar dados do irmão
+      // Preparar dados do irmão (TODOS os campos)
       const dadosIrmao = {
-        ...irmaoForm,
-        cpf: limparCPF(irmaoForm.cpf),
-        telefone: limparTelefone(irmaoForm.telefone),
         cim: irmaoForm.cim.trim(),
         nome: irmaoForm.nome.trim(),
+        cpf: limparCPF(irmaoForm.cpf),
+        rg: irmaoForm.rg || null,
         data_nascimento: irmaoForm.data_nascimento || null,
+        email: irmaoForm.email || null,
+        telefone: limparTelefone(irmaoForm.telefone),
+        cep: irmaoForm.cep || null,
+        endereco: irmaoForm.endereco || null,
+        numero: irmaoForm.numero || null,
+        complemento: irmaoForm.complemento || null,
+        bairro: irmaoForm.bairro || null,
+        cidade: irmaoForm.cidade || null,
+        estado: irmaoForm.estado || null,
+        profissao: irmaoForm.profissao || null,
+        estado_civil: irmaoForm.estado_civil || 'solteiro',
+        escolaridade: irmaoForm.escolaridade || 'fundamental_incompleto',
+        foto_url: irmaoForm.foto_url || null,
         data_iniciacao: irmaoForm.data_iniciacao || null,
         data_elevacao: irmaoForm.data_elevacao || null,
-        data_exaltacao: irmaoForm.data_exaltacao || null
+        data_exaltacao: irmaoForm.data_exaltacao || null,
+        loja_origem: irmaoForm.loja_origem || null,
+        oriente: irmaoForm.oriente || null,
+        grande_oriente: irmaoForm.grande_oriente || null,
+        situacao: irmaoForm.situacao || 'regular',
+        observacoes: irmaoForm.observacoes || null,
+        status: irmaoForm.status || 'ativo'
       };
 
       let irmaoId;
@@ -614,18 +632,6 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.complemento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, complemento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bairro
-                </label>
-                <input
-                  type="text"
-                  value={irmaoForm.bairro}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, bairro: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
