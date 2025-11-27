@@ -101,7 +101,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
   };
 
   // Editar prancha
-  const handleEditar = (prancha) => {
+  const handleEditar = (pranchas) => {
     setModoEdicao(true);
     setPranchaEditando(prancha);
     setPranchaForm({
