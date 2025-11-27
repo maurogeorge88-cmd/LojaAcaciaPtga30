@@ -1,3 +1,7 @@
+// ===================================================================
+// VERSÃO FINAL - USA TABELAS ANTIGAS: esposas, pais, filhos
+// Data: 27/11/2025 - CONFIRME QUE ESTE COMENTÁRIO ESTÁ NO ARQUIVO!
+// ===================================================================
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
