@@ -75,21 +75,21 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
     try {
       // Carregar cônjuge
       const { data: conjugeData } = await supabase
-        .from('familiares_conjuge')
+        .from('esposas')
         .select('*')
         .eq('irmao_id', irmao.id)
         .single();
 
       // Carregar pais
       const { data: paisData } = await supabase
-        .from('familiares_pais')
+        .from('pais')
         .select('*')
         .eq('irmao_id', irmao.id)
         .single();
 
       // Carregar filhos
       const { data: filhosData } = await supabase
-        .from('familiares_filhos')
+        .from('filhos')
         .select('*')
         .eq('irmao_id', irmao.id)
         .order('data_nascimento', { ascending: true });
@@ -126,9 +126,9 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
     setLoading(true);
     try {
       // Deletar familiares (cascade não está configurado, então fazemos manualmente)
-      await supabase.from('familiares_conjuge').delete().eq('irmao_id', irmaoId);
-      await supabase.from('familiares_pais').delete().eq('irmao_id', irmaoId);
-      await supabase.from('familiares_filhos').delete().eq('irmao_id', irmaoId);
+      await supabase.from('esposas').delete().eq('irmao_id', irmaoId);
+      await supabase.from('pais').delete().eq('irmao_id', irmaoId);
+      await supabase.from('filhos').delete().eq('irmao_id', irmaoId);
 
       // Deletar irmão
       const { error } = await supabase
@@ -154,19 +154,19 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
     try {
       // Carregar familiares
       const { data: conjugeData } = await supabase
-        .from('familiares_conjuge')
+        .from('esposas')
         .select('*')
         .eq('irmao_id', irmao.id)
         .single();
 
       const { data: paisData } = await supabase
-        .from('familiares_pais')
+        .from('pais')
         .select('*')
         .eq('irmao_id', irmao.id)
         .single();
 
       const { data: filhosData } = await supabase
-        .from('familiares_filhos')
+        .from('filhos')
         .select('*')
         .eq('irmao_id', irmao.id)
         .order('data_nascimento', { ascending: true });
