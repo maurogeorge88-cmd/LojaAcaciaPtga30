@@ -142,20 +142,22 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       setMostrarConjuge(false);
     }
 
-    // Carregar pais
+    // Carregar pais (2 registros: tipo="pai" e tipo="mae")
     try {
       const { data: paisData } = await supabase
         .from('pais')
         .select('*')
-        .eq('irmao_id', irmao.id)
-        .single();
+        .eq('irmao_id', irmao.id);
 
-      if (paisData) {
+      if (paisData && paisData.length > 0) {
+        const pai = paisData.find(p => p.tipo === 'pai');
+        const mae = paisData.find(p => p.tipo === 'mae');
+        
         setPais({
-          nome_pai: paisData.nome_pai || '',
-          pai_vivo: paisData.pai_vivo !== false,
-          nome_mae: paisData.nome_mae || '',
-          mae_viva: paisData.mae_viva !== false
+          nome_pai: pai?.nome || '',
+          pai_vivo: pai ? !pai.falecido : true,
+          nome_mae: mae?.nome || '',
+          mae_viva: mae ? !mae.falecido : true
         });
       }
     } catch (error) {
@@ -321,32 +323,24 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             .eq('irmao_id', irmaoId);
         }
 
-        // Atualizar ou inserir pais
-        if (pais.nome_pai.trim() || pais.nome_mae.trim()) {
-          const dadosPais = {
+        // Atualizar ou inserir pais (deletar e reinserir)
+        await supabase.from('pais').delete().eq('irmao_id', irmaoId);
+        
+        if (pais.nome_pai.trim()) {
+          await supabase.from('pais').insert([{
             irmao_id: irmaoId,
-            nome_pai: pais.nome_pai.trim() || null,
-            pai_vivo: pais.pai_vivo,
-            nome_mae: pais.nome_mae.trim() || null,
-            mae_viva: pais.mae_viva
-          };
-
-          const { data: paisExistente } = await supabase
-            .from('pais')
-            .select('id')
-            .eq('irmao_id', irmaoId)
-            .single();
-
-          if (paisExistente) {
-            await supabase
-              .from('pais')
-              .update(dadosPais)
-              .eq('id', paisExistente.id);
-          } else {
-            await supabase
-              .from('pais')
-              .insert([dadosPais]);
-          }
+            tipo: 'pai',
+            nome: pais.nome_pai.trim(),
+            falecido: !pais.pai_vivo
+          }]);
+        }
+        if (pais.nome_mae.trim()) {
+          await supabase.from('pais').insert([{
+            irmao_id: irmaoId,
+            tipo: 'mae',
+            nome: pais.nome_mae.trim(),
+            falecido: !pais.mae_viva
+          }]);
         }
 
         // Atualizar filhos (remover todos e reinserir)
@@ -360,7 +354,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            sexo: filho.sexo
+            tipo: 'Filho'
           }));
 
           await supabase
@@ -395,19 +389,22 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             .insert([dadosConjuge]);
         }
 
-        // Inserir pais se preenchido
-        if (pais.nome_pai.trim() || pais.nome_mae.trim()) {
-          const dadosPais = {
+        // Inserir pai e mãe separadamente (estrutura: tipo="pai"/"mae")
+        if (pais.nome_pai.trim()) {
+          await supabase.from('pais').insert([{
             irmao_id: irmaoId,
-            nome_pai: pais.nome_pai.trim() || null,
-            pai_vivo: pais.pai_vivo,
-            nome_mae: pais.nome_mae.trim() || null,
-            mae_viva: pais.mae_viva
-          };
-
-          await supabase
-            .from('pais')
-            .insert([dadosPais]);
+            tipo: 'pai',
+            nome: pais.nome_pai.trim(),
+            falecido: !pais.pai_vivo
+          }]);
+        }
+        if (pais.nome_mae.trim()) {
+          await supabase.from('pais').insert([{
+            irmao_id: irmaoId,
+            tipo: 'mae',
+            nome: pais.nome_mae.trim(),
+            falecido: !pais.mae_viva
+          }]);
         }
 
         // Inserir filhos se houver
@@ -416,7 +413,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            sexo: filho.sexo
+            tipo: 'Filho'
           }));
 
           await supabase
