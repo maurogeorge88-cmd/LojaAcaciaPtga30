@@ -115,11 +115,69 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     });
     console.log('✅ Formulário carregado!');
 
-    // NÃO buscar familiares - adiciona manualmente na aba
-    setMostrarConjuge(false);
-    setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
-    setFilhos([]);
+    // Carregar esposa
+    try {
+      const { data: esposaData } = await supabase
+        .from('esposas')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      if (esposaData) {
+        setMostrarConjuge(true);
+        setConjuge({
+          nome: esposaData.nome || '',
+          cpf: esposaData.cpf || '',
+          data_nascimento: esposaData.data_nascimento || '',
+          profissao: esposaData.profissao || ''
+        });
+      } else {
+        setMostrarConjuge(false);
+      }
+    } catch (error) {
+      setMostrarConjuge(false);
+    }
+
+    // Carregar pais
+    try {
+      const { data: paisData } = await supabase
+        .from('pais')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      if (paisData) {
+        setPais({
+          nome_pai: paisData.nome_pai || '',
+          pai_vivo: paisData.pai_vivo !== false,
+          nome_mae: paisData.nome_mae || '',
+          mae_viva: paisData.mae_viva !== false
+        });
+      }
+    } catch (error) {
+      setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+    }
+
+    // Carregar filhos
+    try {
+      const { data: filhosData } = await supabase
+        .from('filhos')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .order('data_nascimento', { ascending: true });
+
+      if (filhosData && filhosData.length > 0) {
+        setFilhos(filhosData.map(f => ({
+          nome: f.nome,
+          data_nascimento: f.data_nascimento,
+          sexo: f.sexo
+        })));
+      } else {
+        setFilhos([]);
+      }
+    } catch (error) {
+      setFilhos([]);
+    }
 
     // Scroll para o topo
     window.scrollTo({ top: 0, behavior: 'smooth' });
