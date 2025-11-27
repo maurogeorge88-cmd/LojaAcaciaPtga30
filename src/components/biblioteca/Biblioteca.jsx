@@ -27,10 +27,6 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     data_emprestimo: new Date().toISOString().split('T')[0],
     data_devolucao_prevista: ''
   });
-  
-  // Estados de controle de empréstimo
-  const [modoEdicaoEmprestimo, setModoEdicaoEmprestimo] = useState(false);
-  const [emprestimoEditando, setEmprestimoEditando] = useState(null);
 
   // Limpar formulário de livro
   const limparFormularioLivro = () => {
@@ -132,92 +128,70 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     }
   };
 
-  // Registrar ou atualizar empréstimo
+  // Registrar empréstimo
   const registrarEmprestimo = async () => {
     if (!emprestimoForm.livro_id || !emprestimoForm.irmao_id) {
       showError('Selecione um livro e um irmão');
       return;
     }
 
-    if (!emprestimoForm.data_devolucao_prevista) {
-      showError('Informe a data de devolução prevista');
-      return;
-    }
+    // Validar compatibilidade de grau
+    const livro = livros.find(l => l.id === parseInt(emprestimoForm.livro_id));
+    const irmao = irmaos.find(i => i.id === parseInt(emprestimoForm.irmao_id));
 
-    // Validar compatibilidade de grau apenas para novos empréstimos
-    if (!modoEdicaoEmprestimo) {
-      const livro = livros.find(l => l.id === parseInt(emprestimoForm.livro_id));
-      const irmao = irmaos.find(i => i.id === parseInt(emprestimoForm.irmao_id));
+    if (livro && irmao) {
+      // Definir hierarquia de graus
+      const hierarquiaGraus = {
+        'Aprendiz': 1,
+        'Companheiro': 2,
+        'Mestre': 3
+      };
 
-      if (livro && irmao) {
-        // Definir hierarquia de graus
-        const hierarquiaGraus = {
-          'Aprendiz': 1,
-          'Companheiro': 2,
-          'Mestre': 3
-        };
+      const grauLivro = hierarquiaGraus[livro.grau] || 1;
+      const grauIrmao = hierarquiaGraus[irmao.grau_maconico] || 1;
 
-        const grauLivro = hierarquiaGraus[livro.grau] || 1;
-        const grauIrmao = hierarquiaGraus[irmao.grau_maconico] || 1;
-
-        // Irmão precisa ter grau igual ou superior ao do livro
-        if (grauIrmao < grauLivro) {
-          showError(`❌ Este livro é para o grau "${livro.grau}" e o irmão ${irmao.nome} é "${irmao.grau_maconico}". O grau do livro não é compatível com o grau do irmão.`);
-          return;
-        }
+      // Irmão precisa ter grau igual ou superior ao do livro
+      if (grauIrmao < grauLivro) {
+        showError(`❌ Este livro é para o grau "${livro.grau}" e o irmão ${irmao.nome} é "${irmao.grau_maconico}". O grau do livro não é compatível com o grau do irmão.`);
+        return;
       }
     }
 
     setLoading(true);
 
     try {
-      if (modoEdicaoEmprestimo) {
-        // ATUALIZAR empréstimo existente
-        const { error } = await supabase
-          .from('biblioteca_emprestimos')
-          .update({
-            data_emprestimo: emprestimoForm.data_emprestimo,
-            data_devolucao_prevista: emprestimoForm.data_devolucao_prevista
-          })
-          .eq('id', emprestimoEditando.id);
+      // Calcular data de devolução (15 dias)
+      const dataEmprestimo = new Date(emprestimoForm.data_emprestimo);
+      const dataDevolucao = new Date(dataEmprestimo);
+      dataDevolucao.setDate(dataDevolucao.getDate() + 15);
 
-        if (error) throw error;
-        showSuccess('✅ Empréstimo atualizado com sucesso!');
-      } else {
-        // INSERIR novo empréstimo
-        const { error } = await supabase
-          .from('biblioteca_emprestimos')
-          .insert([{
-            livro_id: emprestimoForm.livro_id,
-            irmao_id: emprestimoForm.irmao_id,
-            data_emprestimo: emprestimoForm.data_emprestimo,
-            data_devolucao_prevista: emprestimoForm.data_devolucao_prevista,
-            status: 'emprestado'
-          }]);
+      const { error } = await supabase
+        .from('biblioteca_emprestimos')
+        .insert([{
+          livro_id: emprestimoForm.livro_id,
+          irmao_id: emprestimoForm.irmao_id,
+          data_emprestimo: emprestimoForm.data_emprestimo,
+          data_devolucao_prevista: dataDevolucao.toISOString().split('T')[0],
+          status: 'emprestado'
+        }]);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        // Atualizar quantidade disponível
-        const livro = livros.find(l => l.id === parseInt(emprestimoForm.livro_id));
-        if (livro) {
-          await supabase
-            .from('biblioteca_livros')
-            .update({ quantidade_disponivel: livro.quantidade_disponivel - 1 })
-            .eq('id', livro.id);
-        }
-
-        showSuccess('✅ Empréstimo registrado com sucesso!');
+      // Atualizar quantidade disponível
+      if (livro) {
+        await supabase
+          .from('biblioteca_livros')
+          .update({ quantidade_disponivel: livro.quantidade_disponivel - 1 })
+          .eq('id', livro.id);
       }
 
-      // Limpar formulário
+      showSuccess('✅ Empréstimo registrado com sucesso!');
       setEmprestimoForm({
         livro_id: '',
         irmao_id: '',
         data_emprestimo: new Date().toISOString().split('T')[0],
         data_devolucao_prevista: ''
       });
-      setModoEdicaoEmprestimo(false);
-      setEmprestimoEditando(null);
       onUpdate();
 
     } catch (error) {
@@ -573,14 +547,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           <div className="bg-white rounded-xl shadow-md p-6 mb-6">
             <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Novo Empréstimo</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
                 <select
                   value={emprestimoForm.livro_id}
                   onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
-                  disabled={modoEdicaoEmprestimo}
                 >
                   <option value="">Selecione...</option>
                   {livrosDisponiveis.map(livro => (
@@ -597,7 +570,6 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   value={emprestimoForm.irmao_id}
                   onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
-                  disabled={modoEdicaoEmprestimo}
                 >
                   <option value="">Selecione...</option>
                   {irmaos.map(irmao => (
@@ -613,68 +585,20 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 <input
                   type="date"
                   value={emprestimoForm.data_emprestimo}
-                  onChange={(e) => {
-                    setEmprestimoForm({ ...emprestimoForm, data_emprestimo: e.target.value });
-                    // Auto-calcular data de devolução (+15 dias) apenas se não estiver em modo edição
-                    if (!modoEdicaoEmprestimo && e.target.value) {
-                      const dataEmp = new Date(e.target.value);
-                      dataEmp.setDate(dataEmp.getDate() + 15);
-                      setEmprestimoForm(prev => ({
-                        ...prev,
-                        data_devolucao_prevista: dataEmp.toISOString().split('T')[0]
-                      }));
-                    }
-                  }}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  disabled={modoEdicaoEmprestimo}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data Devolução Prevista *
-                  {!modoEdicaoEmprestimo && (
-                    <span className="text-xs text-gray-500 ml-2">(Padrão: +15 dias)</span>
-                  )}
-                </label>
-                <input
-                  type="date"
-                  value={emprestimoForm.data_devolucao_prevista}
-                  onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_devolucao_prevista: e.target.value })}
+                  onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_emprestimo: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
             </div>
 
-            <div className="flex gap-2 mt-4">
-              <button
-                type="button"
-                onClick={registrarEmprestimo}
-                disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-              >
-                {loading ? 'Processando...' : modoEdicaoEmprestimo ? '💾 Atualizar Empréstimo' : '➕ Registrar Empréstimo'}
-              </button>
-
-              {modoEdicaoEmprestimo && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModoEdicaoEmprestimo(false);
-                    setEmprestimoEditando(null);
-                    setEmprestimoForm({
-                      livro_id: '',
-                      irmao_id: '',
-                      data_emprestimo: new Date().toISOString().split('T')[0],
-                      data_devolucao_prevista: ''
-                    });
-                  }}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                >
-                  ❌ Cancelar
-                </button>
-              )}
-            </div>
+            <button
+              type="button"
+              onClick={registrarEmprestimo}
+              disabled={loading}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+            >
+              {loading ? 'Registrando...' : 'Registrar Empréstimo'}
+            </button>
           </div>
 
           {/* LISTAGEM DE EMPRÉSTIMOS ATIVOS */}
@@ -715,24 +639,6 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-center">
-                            <button
-                              onClick={() => {
-                                setModoEdicaoEmprestimo(true);
-                                setEmprestimoEditando(emprestimo);
-                                setEmprestimoForm({
-                                  livro_id: emprestimo.livro_id,
-                                  irmao_id: emprestimo.irmao_id,
-                                  data_emprestimo: emprestimo.data_emprestimo,
-                                  data_devolucao_prevista: emprestimo.data_devolucao_prevista
-                                });
-                                // Scroll para o formulário
-                                window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }}
-                              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                              title="Editar prazo"
-                            >
-                              ✏️
-                            </button>
                             <button
                               onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
                               className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
