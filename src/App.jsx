@@ -89,6 +89,7 @@ function App() {
   const [userData, setUserData] = useState(null);
   const [permissoes, setPermissoes] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -1318,9 +1319,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'cadastro' && (
           <CadastrarIrmao
             irmaos={irmaos}
+            irmaoParaEditar={irmaoParaEditar}
             onUpdate={loadIrmaos}
             showSuccess={showSuccess}
             showError={showError}
+            onCancelarEdicao={() => setIrmaoParaEditar(null)}
           />
         )}
 
@@ -1329,8 +1332,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <VisualizarIrmaos
             irmaos={irmaos}
             onEdit={(irmao) => {
-              // Disparar evento customizado para edição
-              window.dispatchEvent(new CustomEvent('editarIrmao', { detail: irmao }));
+              setIrmaoParaEditar(irmao);
               setCurrentPage('cadastro');
             }}
             onUpdate={loadIrmaos}
