@@ -1323,12 +1323,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'comissoes' && (
           <Comissoes
             comissoes={comissoes}
-            irmaos={irmaos}
-            onupdate={() => {
-              
-          {/*   onUpdate={loadComissoes}
+            irmaos={irmaos}              
+            onUpdate={loadComissoes}
             showSuccess={showSuccess}
-            showError={showError}  */}
+            showError={showError}
               
           />
         )}
