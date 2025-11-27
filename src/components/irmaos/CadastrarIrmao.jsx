@@ -115,60 +115,12 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     });
     console.log('✅ Formulário carregado!');
 
-    // Carregar cônjuge
-    const { data: conjugeData } = await supabase
-      .from('familiares_conjuge')
-      .select('*')
-      .eq('irmao_id', irmao.id)
-      .single();
-
-    if (conjugeData) {
-      setMostrarConjuge(true);
-      setConjuge({
-        nome: conjugeData.nome || '',
-        cpf: conjugeData.cpf || '',
-        data_nascimento: conjugeData.data_nascimento || '',
-        profissao: conjugeData.profissao || ''
-      });
-    } else {
-      setMostrarConjuge(false);
-      setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    }
-
-    // Carregar pais
-    const { data: paisData } = await supabase
-      .from('familiares_pais')
-      .select('*')
-      .eq('irmao_id', irmao.id)
-      .single();
-
-    if (paisData) {
-      setPais({
-        nome_pai: paisData.nome_pai || '',
-        pai_vivo: paisData.pai_vivo !== false,
-        nome_mae: paisData.nome_mae || '',
-        mae_viva: paisData.mae_viva !== false
-      });
-    } else {
-      setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
-    }
-
-    // Carregar filhos
-    const { data: filhosData } = await supabase
-      .from('familiares_filhos')
-      .select('*')
-      .eq('irmao_id', irmao.id)
-      .order('data_nascimento', { ascending: true });
-
-    if (filhosData && filhosData.length > 0) {
-      setFilhos(filhosData.map(f => ({
-        nome: f.nome,
-        data_nascimento: f.data_nascimento,
-        sexo: f.sexo
-      })));
-    } else {
-      setFilhos([]);
-    }
+    // TEMPORARIAMENTE desabilitado para evitar erro 404
+    // Carregar familiares será feito manualmente
+    setMostrarConjuge(false);
+    setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
+    setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+    setFilhos([]);
 
     // Scroll para o topo
     window.scrollTo({ top: 0, behavior: 'smooth' });
