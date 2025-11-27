@@ -14,7 +14,7 @@ import {
   STATUS_IRMAOS
 } from '../../utils/constants';
 
-const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
+const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showError, onCancelarEdicao }) => {
   // Estado do formulário principal
   const [irmaoForm, setIrmaoForm] = useState({
     cim: '',
@@ -75,24 +75,14 @@ const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
   const [mostrarConjuge, setMostrarConjuge] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('pessoal'); // pessoal, maconico, familiar
 
-  // useEffect para escutar evento de edição
+  // useEffect para carregar dados quando irmaoParaEditar mudar
   useEffect(() => {
-    const handleEditarEvent = (event) => {
-      console.log('🔔 Evento editarIrmao recebido!', event.detail);
-      if (event.detail) {
-        carregarParaEdicao(event.detail);
-      } else {
-        console.error('❌ Evento sem dados!');
-      }
-    };
-
-    console.log('✅ CadastrarIrmao montado - escutando evento editarIrmao');
-    window.addEventListener('editarIrmao', handleEditarEvent);
-    return () => {
-      console.log('🔴 CadastrarIrmao desmontado - removendo listener');
-      window.removeEventListener('editarIrmao', handleEditarEvent);
-    };
-  }, []);
+    console.log('🔍 useEffect - irmaoParaEditar mudou:', irmaoParaEditar);
+    if (irmaoParaEditar) {
+      console.log('📝 Carregando irmão para edição:', irmaoParaEditar);
+      carregarParaEdicao(irmaoParaEditar);
+    }
+  }, [irmaoParaEditar]);
 
   // Validar CIM único
   const validarCIM = (cim, idAtual = null) => {
@@ -456,6 +446,7 @@ const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
     setModoEdicao(false);
     setIrmaoEditando(null);
     setAbaSelecionada('pessoal');
+    if (onCancelarEdicao) onCancelarEdicao(); // Limpa o estado no App.jsx
   };
 
   // Cancelar edição
