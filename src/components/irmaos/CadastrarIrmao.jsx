@@ -306,6 +306,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             profissao: conjuge.profissao || null
           };
 
+          console.log('💾 SALVANDO ESPOSA:', dadosConjuge);
+
           // Verificar se já existe cônjuge
           const { data: conjugeExistente } = await supabase
             .from('esposas')
@@ -314,14 +316,18 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             .single();
 
           if (conjugeExistente) {
-            await supabase
+            console.log('♻️ Atualizando esposa existente ID:', conjugeExistente.id);
+            const result = await supabase
               .from('esposas')
               .update(dadosConjuge)
               .eq('id', conjugeExistente.id);
+            console.log('✅ Resultado update esposa:', result);
           } else {
-            await supabase
+            console.log('➕ Inserindo nova esposa');
+            const result = await supabase
               .from('esposas')
               .insert([dadosConjuge]);
+            console.log('✅ Resultado insert esposa:', result);
           }
         } else if (!mostrarConjuge) {
           // Remover cônjuge se desmarcou
@@ -366,7 +372,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            tipo: filho.sexo === 'M' ? 'Filho' : 'Filha'
+            sexo: filho.sexo
           }));
 
           await supabase
@@ -429,7 +435,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            tipo: filho.sexo === 'M' ? 'Filho' : 'Filha'
+            sexo: filho.sexo
           }));
 
           await supabase
