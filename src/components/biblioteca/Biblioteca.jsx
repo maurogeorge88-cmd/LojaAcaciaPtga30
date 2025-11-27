@@ -12,6 +12,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     titulo: '',
     autor: '',
     categoria: 'Ritualística',
+    grau: 'Aprendiz',
     localizacao: '',
     quantidade_total: 1,
     quantidade_disponivel: 1
@@ -33,6 +34,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       titulo: '',
       autor: '',
       categoria: 'Ritualística',
+      grau: 'Aprendiz',
       localizacao: '',
       quantidade_total: 1,
       quantidade_disponivel: 1
@@ -86,6 +88,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       titulo: livro.titulo,
       autor: livro.autor || '',
       categoria: livro.categoria,
+      grau: livro.grau || 'Aprendiz',
       localizacao: livro.localizacao || '',
       quantidade_total: livro.quantidade_total,
       quantidade_disponivel: livro.quantidade_disponivel
@@ -132,6 +135,28 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       return;
     }
 
+    // Validar compatibilidade de grau
+    const livro = livros.find(l => l.id === parseInt(emprestimoForm.livro_id));
+    const irmao = irmaos.find(i => i.id === parseInt(emprestimoForm.irmao_id));
+
+    if (livro && irmao) {
+      // Definir hierarquia de graus
+      const hierarquiaGraus = {
+        'Aprendiz': 1,
+        'Companheiro': 2,
+        'Mestre': 3
+      };
+
+      const grauLivro = hierarquiaGraus[livro.grau] || 1;
+      const grauIrmao = hierarquiaGraus[irmao.grau_maconico] || 1;
+
+      // Irmão precisa ter grau igual ou superior ao do livro
+      if (grauIrmao < grauLivro) {
+        showError(`❌ Este livro é para o grau "${livro.grau}" e o irmão ${irmao.nome} é "${irmao.grau_maconico}". O grau do livro não é compatível com o grau do irmão.`);
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -153,7 +178,6 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       if (error) throw error;
 
       // Atualizar quantidade disponível
-      const livro = livros.find(l => l.id === parseInt(emprestimoForm.livro_id));
       if (livro) {
         await supabase
           .from('biblioteca_livros')
@@ -161,7 +185,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           .eq('id', livro.id);
       }
 
-      showSuccess('Empréstimo registrado com sucesso!');
+      showSuccess('✅ Empréstimo registrado com sucesso!');
       setEmprestimoForm({
         livro_id: '',
         irmao_id: '',
@@ -369,6 +393,26 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               </div>
 
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Grau Maçônico * 
+                  <span className="text-xs text-gray-500 ml-2">(Grau mínimo para emprestar)</span>
+                </label>
+                <select
+                  value={livroForm.grau}
+                  onChange={(e) => setLivroForm({ ...livroForm, grau: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Aprendiz">Aprendiz</option>
+                  <option value="Companheiro">Companheiro</option>
+                  <option value="Mestre">Mestre</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Irmãos de graus superiores podem emprestar livros de graus inferiores
+                </p>
+              </div>
+
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
                 <input
                   type="text"
@@ -426,12 +470,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[800px]">
                 <thead className="bg-gray-100">
                   <tr>
                     <th className="px-4 py-3 text-left">Título</th>
                     <th className="px-4 py-3 text-left">Autor</th>
                     <th className="px-4 py-3 text-left">Categoria</th>
+                    <th className="px-4 py-3 text-center">Grau</th>
                     <th className="px-4 py-3 text-center">Disponível</th>
                     <th className="px-4 py-3 text-center">Ações</th>
                   </tr>
@@ -443,6 +488,17 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         <td className="px-4 py-3 font-semibold">{livro.titulo}</td>
                         <td className="px-4 py-3">{livro.autor || '-'}</td>
                         <td className="px-4 py-3">{livro.categoria}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            livro.grau === 'Aprendiz' 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : livro.grau === 'Companheiro'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-purple-100 text-purple-800'
+                          }`}>
+                            {livro.grau || 'Aprendiz'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-center">
                           <span className={`px-2 py-1 rounded ${
                             livro.quantidade_disponivel > 0 
@@ -472,7 +528,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
                         Nenhum livro cadastrado
                       </td>
                     </tr>
