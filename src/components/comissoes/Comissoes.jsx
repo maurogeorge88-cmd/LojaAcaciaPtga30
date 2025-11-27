@@ -40,6 +40,10 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
   const [comissaoEditando, setComissaoEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [integrantesTemp, setIntegrantesTemp] = useState([]);
+  
+  // Estados para visualização
+  const [modalVisualizar, setModalVisualizar] = useState(false);
+  const [comissaoVisualizar, setComissaoVisualizar] = useState(null);
 
   // Limpar formulário
   const limparFormulario = () => {
@@ -220,6 +224,12 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Visualizar comissão
+  const handleVisualizar = (comissao) => {
+    setComissaoVisualizar(comissao);
+    setModalVisualizar(true);
   };
 
   return (
@@ -430,16 +440,23 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
                   </div>
                   <div className="flex gap-2 ml-4">
                     <button
+                      onClick={() => handleVisualizar(comissao)}
+                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                      title="Visualizar detalhes"
+                    >
+                      👁️ Ver
+                    </button>
+                    <button
                       onClick={() => handleEditar(comissao)}
                       className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
                     >
-                      Editar
+                      ✏️ Editar
                     </button>
                     <button
                       onClick={() => handleExcluir(comissao.id)}
                       className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
                     >
-                      Excluir
+                      🗑️ Excluir
                     </button>
                   </div>
                 </div>
@@ -452,6 +469,154 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
           )}
         </div>
       </div>
+
+      {/* MODAL DE VISUALIZAÇÃO */}
+      {modalVisualizar && comissaoVisualizar && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header do Modal */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 rounded-t-xl">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">📋 {comissaoVisualizar.nome}</h3>
+                  <div className="flex gap-2 flex-wrap">
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                      comissaoVisualizar.status === 'em_andamento'
+                        ? 'bg-green-500'
+                        : comissaoVisualizar.status === 'concluida'
+                        ? 'bg-blue-500'
+                        : 'bg-gray-500'
+                    }`}>
+                      {comissaoVisualizar.status === 'em_andamento' ? '🔄 Em Andamento' : 
+                       comissaoVisualizar.status === 'concluida' ? '✅ Concluída' : '⏸️ Suspensa'}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-sm ${
+                      comissaoVisualizar.origem === 'interna' 
+                        ? 'bg-blue-400' 
+                        : 'bg-purple-400'
+                    }`}>
+                      {comissaoVisualizar.origem === 'interna' ? '🏢 Interna' : '🌐 Externa'}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalVisualizar(false)}
+                  className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
+                  title="Fechar"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 space-y-6">
+              {/* Informações Principais */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-1">📅 Data de Criação</p>
+                  <p className="text-lg font-semibold text-gray-800">
+                    {formatarData(comissaoVisualizar.data_criacao)}
+                  </p>
+                </div>
+
+                {comissaoVisualizar.data_inicio && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">🚀 Data de Início</p>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {formatarData(comissaoVisualizar.data_inicio)}
+                    </p>
+                  </div>
+                )}
+
+                {comissaoVisualizar.data_fim && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <p className="text-sm text-gray-600 mb-1">🏁 Data de Término</p>
+                    <p className="text-lg font-semibold text-gray-800">
+                      {formatarData(comissaoVisualizar.data_fim)}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Objetivo */}
+              {comissaoVisualizar.objetivo && (
+                <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600">
+                  <p className="text-sm text-gray-600 mb-2 font-semibold">🎯 Objetivo</p>
+                  <p className="text-gray-800 whitespace-pre-wrap">
+                    {comissaoVisualizar.objetivo}
+                  </p>
+                </div>
+              )}
+
+              {/* Integrantes */}
+              <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+                <h4 className="text-lg font-bold text-gray-800 mb-4">👥 Integrantes</h4>
+                {(() => {
+                  // Buscar integrantes desta comissão
+                  const integrantesComissao = comissoes
+                    .filter(c => c.id === comissaoVisualizar.id)
+                    .map(c => {
+                      // Parsear integrantes (assumindo que está como JSON ou array)
+                      try {
+                        return typeof c.integrantes === 'string' 
+                          ? JSON.parse(c.integrantes) 
+                          : c.integrantes;
+                      } catch {
+                        return [];
+                      }
+                    })
+                    .flat();
+
+                  return integrantesComissao && integrantesComissao.length > 0 ? (
+                    <div className="space-y-2">
+                      {integrantesComissao.map((integrante, index) => {
+                        const irmao = irmaos.find(i => i.id === integrante.irmao_id);
+                        return (
+                          <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                            <div>
+                              <p className="font-semibold text-gray-800">
+                                {irmao?.nome || 'Irmão não encontrado'}
+                              </p>
+                              {irmao?.cim && (
+                                <p className="text-sm text-gray-600">CIM: {irmao.cim}</p>
+                              )}
+                            </div>
+                            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                              {integrante.funcao}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-center py-4">Nenhum integrante cadastrado</p>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setModalVisualizar(false);
+                  handleEditar(comissaoVisualizar);
+                }}
+                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold"
+              >
+                ✏️ Editar
+              </button>
+              <button
+                onClick={() => setModalVisualizar(false)}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
