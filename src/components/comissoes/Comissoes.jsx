@@ -3,6 +3,27 @@ import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 
 const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
+  // Verificações de props
+  console.log('Comissoes - Props recebidas:', { 
+    comissoes: comissoes?.length, 
+    irmaos: irmaos?.length,
+    onUpdate: typeof onUpdate,
+    showSuccess: typeof showSuccess,
+    showError: typeof showError
+  });
+
+  // Verificar se as props essenciais existem
+  if (!comissoes || !irmaos) {
+    return (
+      <div className="bg-white rounded-xl shadow-md p-6">
+        <div className="text-center text-gray-500">
+          <p className="text-xl mb-4">⚠️ Carregando dados...</p>
+          <p className="text-sm">Se esta mensagem persistir, recarregue a página.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Estados do formulário
   const [comissaoForm, setComissaoForm] = useState({
     nome: '',
