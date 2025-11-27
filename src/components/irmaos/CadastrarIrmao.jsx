@@ -236,25 +236,25 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
           // Verificar se já existe cônjuge
           const { data: conjugeExistente } = await supabase
-            .from('familiares_conjuge')
+            .from('esposas')
             .select('id')
             .eq('irmao_id', irmaoId)
             .single();
 
           if (conjugeExistente) {
             await supabase
-              .from('familiares_conjuge')
+              .from('esposas')
               .update(dadosConjuge)
               .eq('id', conjugeExistente.id);
           } else {
             await supabase
-              .from('familiares_conjuge')
+              .from('esposas')
               .insert([dadosConjuge]);
           }
         } else if (!mostrarConjuge) {
           // Remover cônjuge se desmarcou
           await supabase
-            .from('familiares_conjuge')
+            .from('esposas')
             .delete()
             .eq('irmao_id', irmaoId);
         }
@@ -270,26 +270,26 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           };
 
           const { data: paisExistente } = await supabase
-            .from('familiares_pais')
+            .from('pais')
             .select('id')
             .eq('irmao_id', irmaoId)
             .single();
 
           if (paisExistente) {
             await supabase
-              .from('familiares_pais')
+              .from('pais')
               .update(dadosPais)
               .eq('id', paisExistente.id);
           } else {
             await supabase
-              .from('familiares_pais')
+              .from('pais')
               .insert([dadosPais]);
           }
         }
 
         // Atualizar filhos (remover todos e reinserir)
         await supabase
-          .from('familiares_filhos')
+          .from('filhos')
           .delete()
           .eq('irmao_id', irmaoId);
 
@@ -302,7 +302,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           }));
 
           await supabase
-            .from('familiares_filhos')
+            .from('filhos')
             .insert(dadosFilhos);
         }
 
@@ -329,7 +329,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           };
 
           await supabase
-            .from('familiares_conjuge')
+            .from('esposas')
             .insert([dadosConjuge]);
         }
 
@@ -344,7 +344,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           };
 
           await supabase
-            .from('familiares_pais')
+            .from('pais')
             .insert([dadosPais]);
         }
 
@@ -358,7 +358,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           }));
 
           await supabase
-            .from('familiares_filhos')
+            .from('filhos')
             .insert(dadosFilhos);
         }
 
