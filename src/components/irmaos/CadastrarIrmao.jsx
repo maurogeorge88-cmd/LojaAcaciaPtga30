@@ -78,13 +78,18 @@ const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
   // useEffect para escutar evento de edição
   useEffect(() => {
     const handleEditarEvent = (event) => {
+      console.log('🔔 Evento editarIrmao recebido!', event.detail);
       if (event.detail) {
         carregarParaEdicao(event.detail);
+      } else {
+        console.error('❌ Evento sem dados!');
       }
     };
 
+    console.log('✅ CadastrarIrmao montado - escutando evento editarIrmao');
     window.addEventListener('editarIrmao', handleEditarEvent);
     return () => {
+      console.log('🔴 CadastrarIrmao desmontado - removendo listener');
       window.removeEventListener('editarIrmao', handleEditarEvent);
     };
   }, []);
@@ -315,11 +320,13 @@ const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
 
   // Carregar dados para edição
   const carregarParaEdicao = async (irmao) => {
+    console.log('📝 Iniciando carregamento para edição:', irmao);
     setModoEdicao(true);
     setIrmaoEditando(irmao);
     setAbaSelecionada('pessoal');
 
     // Carregar dados do irmão
+    console.log('📋 Carregando dados do formulário...');
     setIrmaoForm({
       cim: irmao.cim || '',
       nome: irmao.nome || '',
@@ -349,6 +356,7 @@ const CadastrarIrmao = ({ irmaos, onUpdate, showSuccess, showError }) => {
       observacoes: irmao.observacoes || '',
       status: irmao.status || 'ativo'
     });
+    console.log('✅ Formulário carregado!');
 
     // Carregar cônjuge
     const { data: conjugeData } = await supabase
