@@ -131,6 +131,7 @@ export const Usuarios = ({ usuarios, userData, onUpdate, showSuccess, showError 
 
     try {
       console.log('💾 Atualizando usuário:', usuarioEditando.email);
+      console.log('📋 Dados completos:', usuarioEditando);
 
       const { error } = await supabase
         .from('usuarios')
@@ -143,22 +144,17 @@ export const Usuarios = ({ usuarios, userData, onUpdate, showSuccess, showError 
 
       if (error) throw error;
 
-      // Se tem nova senha, atualizar no Auth
-      if (usuarioForm.senha && usuarioEditando.auth_user_id) {
-        const { error: authError } = await supabase.auth.admin.updateUserById(
-          usuarioEditando.auth_user_id,
-          { password: usuarioForm.senha }
-        );
-        
-        if (authError) {
-          console.error('⚠️ Erro ao atualizar senha no Auth:', authError);
-          // Não lançar erro aqui, pois o usuário já foi atualizado na tabela
-          showError('Usuário atualizado, mas houve erro ao atualizar a senha: ' + authError.message);
-          return;
-        }
+      console.log('✅ Usuário atualizado na tabela');
+
+      // NOTA: Atualização de senha desabilitada temporariamente
+      // devido a problemas com auth_user_id
+      if (usuarioForm.senha) {
+        console.log('⚠️ Senha não será atualizada no Auth (funcionalidade desabilitada)');
+        showSuccess('✅ Usuário atualizado! (Nota: Atualização de senha desabilitada temporariamente)');
+      } else {
+        showSuccess('✅ Usuário atualizado com sucesso!');
       }
 
-      showSuccess('✅ Usuário atualizado com sucesso!');
       onUpdate();
       limparFormularioUsuario();
 
@@ -418,3 +414,5 @@ export const Usuarios = ({ usuarios, userData, onUpdate, showSuccess, showError 
     </div>
   );
 };
+
+export default Usuarios;
