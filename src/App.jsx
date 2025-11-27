@@ -6,7 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 // ========================================
 import { Dashboard } from './components/Dashboard';
 import { CorpoAdmin } from './components/administracao/CorpoAdmin';
-import { Usuarios } from './components/administracao/Usuarios';
+import Usuarios from './components/administracao/Usuarios';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
@@ -603,10 +603,25 @@ function App() {
 
       // Se tem nova senha, atualizar no Auth
       if (usuarioForm.senha) {
-        await supabase.auth.admin.updateUserById(
-          usuarioEditando.id,
-          { password: usuarioForm.senha }
-        );
+        // Buscar o usuário no Auth pelo email para obter o UUID correto
+        const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
+        
+        if (listError) throw listError;
+        
+        // Encontrar o usuário pelo email
+        const authUser = authUsers.users.find(u => u.email === usuarioEditando.email);
+        
+        if (authUser) {
+          // Usar o UUID correto do Auth
+          const { error: updateError } = await supabase.auth.admin.updateUserById(
+            authUser.id,  // UUID do auth.users
+            { password: usuarioForm.senha }
+          );
+          
+          if (updateError) throw updateError;
+        } else {
+          throw new Error('Usuário não encontrado no sistema de autenticação');
+        }
       }
 
       setSuccessMessage('Usuário atualizado com sucesso!');
@@ -1323,11 +1338,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'comissoes' && (
           <Comissoes
             comissoes={comissoes}
-            irmaos={irmaos}              
+            irmaos={irmaos}
             onUpdate={loadComissoes}
             showSuccess={showSuccess}
             showError={showError}
-              
           />
         )}
 
