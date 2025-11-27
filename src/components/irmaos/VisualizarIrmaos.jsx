@@ -84,12 +84,11 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
         .eq('irmao_id', irmao.id)
         .single();
 
-      // Carregar pais
+      // Carregar pais (2 registros separados)
       const { data: paisData } = await supabase
         .from('pais')
         .select('*')
-        .eq('irmao_id', irmao.id)
-        .single();
+        .eq('irmao_id', irmao.id);
 
       // Carregar filhos
       const { data: filhosData } = await supabase
@@ -98,9 +97,12 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
         .eq('irmao_id', irmao.id)
         .order('data_nascimento', { ascending: true });
 
+      const pai = paisData?.find(p => p.tipo === 'pai');
+      const mae = paisData?.find(p => p.tipo === 'mae');
+
       setFamiliaresSelecionado({
         conjuge: conjugeData || null,
-        pais: paisData || null,
+        pais: { pai, mae },
         filhos: filhosData || []
       });
 
@@ -687,17 +689,17 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
               )}
 
               {/* Pais */}
-              {familiaresSelecionado.pais && (
+              {(familiaresSelecionado.pais?.pai || familiaresSelecionado.pais?.mae) && (
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-bold text-lg text-indigo-900 mb-3 border-b pb-2">👨‍👩‍👦 Pais</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="font-semibold text-gray-700">Pai:</span>
                       <span className="ml-2 text-gray-600">
-                        {familiaresSelecionado.pais.nome_pai || 'Não informado'}
-                        {familiaresSelecionado.pais.nome_pai && (
-                          <span className={`ml-2 ${familiaresSelecionado.pais.pai_vivo ? 'text-green-600' : 'text-gray-500'}`}>
-                            {familiaresSelecionado.pais.pai_vivo ? '(Vivo)' : '(Falecido)'}
+                        {familiaresSelecionado.pais.pai?.nome || 'Não informado'}
+                        {familiaresSelecionado.pais.pai && (
+                          <span className={`ml-2 ${!familiaresSelecionado.pais.pai.falecido ? 'text-green-600' : 'text-gray-500'}`}>
+                            {!familiaresSelecionado.pais.pai.falecido ? '(Vivo)' : '(Falecido)'}
                           </span>
                         )}
                       </span>
@@ -705,10 +707,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
                     <div>
                       <span className="font-semibold text-gray-700">Mãe:</span>
                       <span className="ml-2 text-gray-600">
-                        {familiaresSelecionado.pais.nome_mae || 'Não informado'}
-                        {familiaresSelecionado.pais.nome_mae && (
-                          <span className={`ml-2 ${familiaresSelecionado.pais.mae_viva ? 'text-green-600' : 'text-gray-500'}`}>
-                            {familiaresSelecionado.pais.mae_viva ? '(Viva)' : '(Falecida)'}
+                        {familiaresSelecionado.pais.mae?.nome || 'Não informado'}
+                        {familiaresSelecionado.pais.mae && (
+                          <span className={`ml-2 ${!familiaresSelecionado.pais.mae.falecido ? 'text-green-600' : 'text-gray-500'}`}>
+                            {!familiaresSelecionado.pais.mae.falecido ? '(Viva)' : '(Falecida)'}
                           </span>
                         )}
                       </span>
