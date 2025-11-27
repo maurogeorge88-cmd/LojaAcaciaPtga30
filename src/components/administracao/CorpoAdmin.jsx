@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
-import { CARGOS_LOJA } from '../../utils/constants';
+import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 
 export const CorpoAdmin = ({ 
   corpoAdmin, 
@@ -26,7 +26,7 @@ export const CorpoAdmin = ({
   const [anoFiltroAdmin, setAnoFiltroAdmin] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const cargosAdministrativos = CARGOS_LOJA;
+  const cargosAdministrativos = CARGOS_ADMINISTRATIVOS;
 
   const limparFormularioCorpoAdmin = () => {
     setCorpoAdminForm({
@@ -245,7 +245,7 @@ export const CorpoAdmin = ({
                       .filter(ca => ca.ano_exercicio === ano)
                       .sort((a, b) => {
                         // Ordem por hierarquia maçônica
-                        const ordemHierarquica = CARGOS_LOJA;
+                        const ordemHierarquica = CARGOS_ADMINISTRATIVOS;
                         const indexA = ordemHierarquica.indexOf(a.cargo || '');
                         const indexB = ordemHierarquica.indexOf(b.cargo || '');
                         if (indexA === -1 && indexB === -1) return (a.cargo || '').localeCompare(b.cargo || '');
