@@ -573,13 +573,14 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           <div className="bg-white rounded-xl shadow-md p-6 mb-6">
             <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Novo Empréstimo</h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
                 <select
                   value={emprestimoForm.livro_id}
                   onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
+                  disabled={modoEdicaoEmprestimo}
                 >
                   <option value="">Selecione...</option>
                   {livrosDisponiveis.map(livro => (
@@ -596,6 +597,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   value={emprestimoForm.irmao_id}
                   onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg"
+                  disabled={modoEdicaoEmprestimo}
                 >
                   <option value="">Selecione...</option>
                   {irmaos.map(irmao => (
