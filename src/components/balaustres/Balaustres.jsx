@@ -517,5 +517,4 @@ const Balaustres = ({
     </div>
   );
 };
-
-export default Balaustres;
+export default Balaustres
