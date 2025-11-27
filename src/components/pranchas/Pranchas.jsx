@@ -101,7 +101,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
   };
 
   // Editar prancha
-  const handleEditar = (pranchas) => {
+  const handleEditar = (prancha) => {
     setModoEdicao(true);
     setPranchaEditando(prancha);
     setPranchaForm({
@@ -252,14 +252,14 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-100 border-b-2 border-blue-600">
               <tr>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Número</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Data</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Destinatário</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700 w-32">Número</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700 w-32">Data</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700 w-48">Destinatário</th>
                 <th className="px-4 py-3 text-left font-bold text-gray-700">Assunto</th>
-                <th className="px-4 py-3 text-center font-bold text-gray-700">Ações</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700 w-80">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -269,29 +269,29 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
                   .map((prancha) => (
                     <tr key={prancha.id} className="hover:bg-blue-50 transition">
                       <td className="px-4 py-3">
-                        <span className="font-semibold text-blue-900">{prancha.numero_prancha}</span>
+                        <span className="font-semibold text-blue-900 whitespace-nowrap">{prancha.numero_prancha}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{formatarData(prancha.data_prancha)}</td>
+                      <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{formatarData(prancha.data_prancha)}</td>
                       <td className="px-4 py-3 text-gray-700">{prancha.destinatario}</td>
                       <td className="px-4 py-3 text-gray-700">{prancha.assunto}</td>
                       <td className="px-4 py-3">
-                        <div className="flex justify-center gap-2">
+                        <div className="flex justify-center gap-2 flex-nowrap">
                           <button
                             onClick={() => handleVisualizar(prancha)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-semibold"
+                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-semibold whitespace-nowrap"
                             title="Visualizar detalhes"
                           >
                             👁️ Ver
                           </button>
                           <button
                             onClick={() => handleEditar(prancha)}
-                            className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-semibold"
+                            className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-semibold whitespace-nowrap"
                           >
                             ✏️ Editar
                           </button>
                           <button
                             onClick={() => handleExcluir(prancha.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-semibold"
+                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-semibold whitespace-nowrap"
                           >
                             🗑️ Excluir
                           </button>
