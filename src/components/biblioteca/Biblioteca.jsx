@@ -103,7 +103,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     setLoading(true);
     try {
       // Verificar se há empréstimos ativos deste livro
-      const emprestimosAtivosDoLivro = emprestimos.filter(e => e.livro_id === id && e.status === 'ativo');
+      const emprestimosAtivosDoLivro = emprestimos.filter(e => e.livro_id === id && e.status === 'emprestado');
       
       if (emprestimosAtivosDoLivro.length > 0) {
         showError('Não é possível excluir este livro pois há empréstimos ativos!');
@@ -172,7 +172,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           irmao_id: emprestimoForm.irmao_id,
           data_emprestimo: emprestimoForm.data_emprestimo,
           data_devolucao_prevista: dataDevolucao.toISOString().split('T')[0],
-          status: 'ativo'
+          status: 'emprestado'
         }]);
 
       if (error) throw error;
@@ -243,7 +243,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     setLoading(true);
     try {
       // Se o empréstimo estava ativo, devolver a quantidade ao livro
-      if (status === 'ativo') {
+      if (status === 'emprestado') {
         const livro = livros.find(l => l.id === livroId);
         if (livro) {
           await supabase
@@ -291,7 +291,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
   };
 
   // Filtrar empréstimos ativos e devolvidos
-  const emprestimosAtivos = emprestimos.filter(e => e.status === 'ativo');
+  const emprestimosAtivos = emprestimos.filter(e => e.status === 'emprestado');
   const emprestimosDevolvidos = emprestimos.filter(e => e.status === 'devolvido');
 
   // Filtrar livros disponíveis
@@ -303,7 +303,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     return {
       irmao,
       emprestimos: emprestimosDoIrmao,
-      ativos: emprestimosDoIrmao.filter(e => e.status === 'ativo').length,
+      ativos: emprestimosDoIrmao.filter(e => e.status === 'emprestado').length,
       total: emprestimosDoIrmao.length
     };
   }).filter(item => item.total > 0);
@@ -784,24 +784,24 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               <td className="px-4 py-2 text-sm">{obterTituloLivro(emprestimo.livro_id)}</td>
                               <td className="px-4 py-2 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
                               <td className="px-4 py-2 text-sm">
-                                {emprestimo.status === 'ativo' ? formatarData(emprestimo.data_devolucao_prevista) : '-'}
+                                {emprestimo.status === 'emprestado' ? formatarData(emprestimo.data_devolucao_prevista) : '-'}
                               </td>
                               <td className="px-4 py-2 text-center">
                                 <span className={`px-2 py-1 rounded text-xs ${
-                                  emprestimo.status === 'ativo'
+                                  emprestimo.status === 'emprestado'
                                     ? estaAtrasado(emprestimo.data_devolucao_prevista)
                                       ? 'bg-red-100 text-red-800'
                                       : 'bg-blue-100 text-blue-800'
                                     : 'bg-green-100 text-green-800'
                                 }`}>
-                                  {emprestimo.status === 'ativo' 
+                                  {emprestimo.status === 'emprestado' 
                                     ? (estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'Ativo')
                                     : 'Devolvido'
                                   }
                                 </span>
                               </td>
                               <td className="px-4 py-2 text-center">
-                                {emprestimo.status === 'ativo' ? (
+                                {emprestimo.status === 'emprestado' ? (
                                   <button
                                     onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
                                     className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
