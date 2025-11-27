@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import {
   formatarCPF,
@@ -75,6 +75,105 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const [mostrarConjuge, setMostrarConjuge] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('pessoal'); // pessoal, maconico, familiar
 
+  // Função para carregar dados do irmão para edição
+  const carregarParaEdicao = useCallback(async (irmao) => {
+    console.log('📝 Iniciando carregamento para edição:', irmao);
+    setModoEdicao(true);
+    setIrmaoEditando(irmao);
+    setAbaSelecionada('pessoal');
+
+    // Carregar dados do irmão
+    console.log('📋 Carregando dados do formulário...');
+    setIrmaoForm({
+      cim: irmao.cim || '',
+      nome: irmao.nome || '',
+      cpf: irmao.cpf || '',
+      rg: irmao.rg || '',
+      data_nascimento: irmao.data_nascimento || '',
+      email: irmao.email || '',
+      telefone: irmao.telefone || '',
+      cep: irmao.cep || '',
+      endereco: irmao.endereco || '',
+      numero: irmao.numero || '',
+      complemento: irmao.complemento || '',
+      bairro: irmao.bairro || '',
+      cidade: irmao.cidade || '',
+      estado: irmao.estado || '',
+      profissao: irmao.profissao || '',
+      estado_civil: irmao.estado_civil || 'solteiro',
+      escolaridade: irmao.escolaridade || 'fundamental_incompleto',
+      foto_url: irmao.foto_url || '',
+      data_iniciacao: irmao.data_iniciacao || '',
+      data_elevacao: irmao.data_elevacao || '',
+      data_exaltacao: irmao.data_exaltacao || '',
+      loja_origem: irmao.loja_origem || '',
+      oriente: irmao.oriente || '',
+      grande_oriente: irmao.grande_oriente || '',
+      situacao: irmao.situacao || 'regular',
+      observacoes: irmao.observacoes || '',
+      status: irmao.status || 'ativo'
+    });
+    console.log('✅ Formulário carregado!');
+
+    // Carregar cônjuge
+    const { data: conjugeData } = await supabase
+      .from('familiares_conjuge')
+      .select('*')
+      .eq('irmao_id', irmao.id)
+      .single();
+
+    if (conjugeData) {
+      setMostrarConjuge(true);
+      setConjuge({
+        nome: conjugeData.nome || '',
+        cpf: conjugeData.cpf || '',
+        data_nascimento: conjugeData.data_nascimento || '',
+        profissao: conjugeData.profissao || ''
+      });
+    } else {
+      setMostrarConjuge(false);
+      setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
+    }
+
+    // Carregar pais
+    const { data: paisData } = await supabase
+      .from('familiares_pais')
+      .select('*')
+      .eq('irmao_id', irmao.id)
+      .single();
+
+    if (paisData) {
+      setPais({
+        nome_pai: paisData.nome_pai || '',
+        pai_vivo: paisData.pai_vivo !== false,
+        nome_mae: paisData.nome_mae || '',
+        mae_viva: paisData.mae_viva !== false
+      });
+    } else {
+      setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
+    }
+
+    // Carregar filhos
+    const { data: filhosData } = await supabase
+      .from('familiares_filhos')
+      .select('*')
+      .eq('irmao_id', irmao.id)
+      .order('data_nascimento', { ascending: true });
+
+    if (filhosData && filhosData.length > 0) {
+      setFilhos(filhosData.map(f => ({
+        nome: f.nome,
+        data_nascimento: f.data_nascimento,
+        sexo: f.sexo
+      })));
+    } else {
+      setFilhos([]);
+    }
+
+    // Scroll para o topo
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []); // Sem dependências pois usa apenas props e setters
+
   // useEffect para carregar dados quando irmaoParaEditar mudar
   useEffect(() => {
     console.log('🔍 useEffect - irmaoParaEditar mudou:', irmaoParaEditar);
@@ -82,7 +181,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       console.log('📝 Carregando irmão para edição:', irmaoParaEditar);
       carregarParaEdicao(irmaoParaEditar);
     }
-  }, [irmaoParaEditar]);
+  }, [irmaoParaEditar, carregarParaEdicao]);
 
   // Validar CIM único
   const validarCIM = (cim, idAtual = null) => {
@@ -306,105 +405,6 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     } finally {
       setLoading(false);
     }
-  };
-
-  // Carregar dados para edição
-  const carregarParaEdicao = async (irmao) => {
-    console.log('📝 Iniciando carregamento para edição:', irmao);
-    setModoEdicao(true);
-    setIrmaoEditando(irmao);
-    setAbaSelecionada('pessoal');
-
-    // Carregar dados do irmão
-    console.log('📋 Carregando dados do formulário...');
-    setIrmaoForm({
-      cim: irmao.cim || '',
-      nome: irmao.nome || '',
-      cpf: irmao.cpf || '',
-      rg: irmao.rg || '',
-      data_nascimento: irmao.data_nascimento || '',
-      email: irmao.email || '',
-      telefone: irmao.telefone || '',
-      cep: irmao.cep || '',
-      endereco: irmao.endereco || '',
-      numero: irmao.numero || '',
-      complemento: irmao.complemento || '',
-      bairro: irmao.bairro || '',
-      cidade: irmao.cidade || '',
-      estado: irmao.estado || '',
-      profissao: irmao.profissao || '',
-      estado_civil: irmao.estado_civil || 'solteiro',
-      escolaridade: irmao.escolaridade || 'fundamental_incompleto',
-      foto_url: irmao.foto_url || '',
-      data_iniciacao: irmao.data_iniciacao || '',
-      data_elevacao: irmao.data_elevacao || '',
-      data_exaltacao: irmao.data_exaltacao || '',
-      loja_origem: irmao.loja_origem || '',
-      oriente: irmao.oriente || '',
-      grande_oriente: irmao.grande_oriente || '',
-      situacao: irmao.situacao || 'regular',
-      observacoes: irmao.observacoes || '',
-      status: irmao.status || 'ativo'
-    });
-    console.log('✅ Formulário carregado!');
-
-    // Carregar cônjuge
-    const { data: conjugeData } = await supabase
-      .from('familiares_conjuge')
-      .select('*')
-      .eq('irmao_id', irmao.id)
-      .single();
-
-    if (conjugeData) {
-      setMostrarConjuge(true);
-      setConjuge({
-        nome: conjugeData.nome || '',
-        cpf: conjugeData.cpf || '',
-        data_nascimento: conjugeData.data_nascimento || '',
-        profissao: conjugeData.profissao || ''
-      });
-    } else {
-      setMostrarConjuge(false);
-      setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    }
-
-    // Carregar pais
-    const { data: paisData } = await supabase
-      .from('familiares_pais')
-      .select('*')
-      .eq('irmao_id', irmao.id)
-      .single();
-
-    if (paisData) {
-      setPais({
-        nome_pai: paisData.nome_pai || '',
-        pai_vivo: paisData.pai_vivo !== false,
-        nome_mae: paisData.nome_mae || '',
-        mae_viva: paisData.mae_viva !== false
-      });
-    } else {
-      setPais({ nome_pai: '', pai_vivo: true, nome_mae: '', mae_viva: true });
-    }
-
-    // Carregar filhos
-    const { data: filhosData } = await supabase
-      .from('familiares_filhos')
-      .select('*')
-      .eq('irmao_id', irmao.id)
-      .order('data_nascimento', { ascending: true });
-
-    if (filhosData && filhosData.length > 0) {
-      setFilhos(filhosData.map(f => ({
-        nome: f.nome,
-        data_nascimento: f.data_nascimento,
-        sexo: f.sexo
-      })));
-    } else {
-      setFilhos([]);
-    }
-
-    // Scroll para o topo
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Limpar formulário
