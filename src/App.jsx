@@ -1324,9 +1324,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <Comissoes
             comissoes={comissoes}
             irmaos={irmaos}
-            onUpdate={loadComissoes}
-            showSuccess={showSuccess}
-            showError={showError}
+            onupdate={() => {
+         /   onUpdate={loadComissoes}
+         /   showSuccess={showSuccess}
+         /   showError={showError}
           />
         )}
 
