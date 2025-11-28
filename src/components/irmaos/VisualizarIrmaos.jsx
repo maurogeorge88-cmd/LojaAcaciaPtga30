@@ -700,14 +700,14 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
                       </div>
                       {familiaresSelecionado.pais.pai?.data_nascimento && (
                         <div className="text-xs text-gray-500">
-                          📅 Nascimento: {new Date(familiaresSelecionado.pais.pai.data_nascimento).toLocaleDateString('pt-BR')}
+                          📅 Nascimento: {familiaresSelecionado.pais.pai.data_nascimento.split('-').reverse().join('/') || ''}
                         </div>
                       )}
                       {familiaresSelecionado.pais.pai && (
                         <div className={`text-xs ${!familiaresSelecionado.pais.pai.falecido ? 'text-green-600' : 'text-gray-500'}`}>
                           {!familiaresSelecionado.pais.pai.falecido ? '✅ Vivo' : '⚰️ Falecido'}
                           {familiaresSelecionado.pais.pai.falecido && familiaresSelecionado.pais.pai.data_obito && (
-                            <span> - {new Date(familiaresSelecionado.pais.pai.data_obito).toLocaleDateString('pt-BR')}</span>
+                            <span> - {familiaresSelecionado.pais.pai.data_obito.split('-').reverse().join('/') || ''}</span>
                           )}
                         </div>
                       )}
@@ -719,14 +719,14 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
                       </div>
                       {familiaresSelecionado.pais.mae?.data_nascimento && (
                         <div className="text-xs text-gray-500">
-                          📅 Nascimento: {new Date(familiaresSelecionado.pais.mae.data_nascimento).toLocaleDateString('pt-BR')}
+                          📅 Nascimento: {familiaresSelecionado.pais.mae.data_nascimento.split('-').reverse().join('/') || ''}
                         </div>
                       )}
                       {familiaresSelecionado.pais.mae && (
                         <div className={`text-xs ${!familiaresSelecionado.pais.mae.falecido ? 'text-green-600' : 'text-gray-500'}`}>
                           {!familiaresSelecionado.pais.mae.falecido ? '✅ Viva' : '⚰️ Falecida'}
                           {familiaresSelecionado.pais.mae.falecido && familiaresSelecionado.pais.mae.data_obito && (
-                            <span> - {new Date(familiaresSelecionado.pais.mae.data_obito).toLocaleDateString('pt-BR')}</span>
+                            <span> - {familiaresSelecionado.pais.mae.data_obito.split('-').reverse().join('/') || ''}</span>
                           )}
                         </div>
                       )}
