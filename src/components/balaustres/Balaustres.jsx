@@ -197,8 +197,10 @@ const Balaustres = ({
     return tipo ? tipo.nome : 'N/A';
   };
 
-  // Filtrar balaustres por grau
-  const balaustresFiltrados = balaustres.filter(b => b.grau_sessao === grauSelecionado);
+  // Filtrar balaustres por grau (case-insensitive)
+  const balaustresFiltrados = balaustres.filter(b => 
+    b.grau_sessao?.toLowerCase() === grauSelecionado.toLowerCase()
+  );
 
   return (
     <div>
@@ -341,7 +343,7 @@ const Balaustres = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Aprendiz ({balaustres.filter(b => b.grau_sessao === 'Aprendiz').length})
+            Aprendiz ({balaustres.filter(b => b.grau_sessao?.toLowerCase() === 'aprendiz').length})
           </button>
           <button
             onClick={() => setGrauSelecionado('Companheiro')}
@@ -351,7 +353,7 @@ const Balaustres = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Companheiro ({balaustres.filter(b => b.grau_sessao === 'Companheiro').length})
+            Companheiro ({balaustres.filter(b => b.grau_sessao?.toLowerCase() === 'companheiro').length})
           </button>
           <button
             onClick={() => setGrauSelecionado('Mestre')}
@@ -361,7 +363,7 @@ const Balaustres = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Mestre ({balaustres.filter(b => b.grau_sessao === 'Mestre').length})
+            Mestre ({balaustres.filter(b => b.grau_sessao?.toLowerCase() === 'mestre').length})
           </button>
         </div>
       </div>
