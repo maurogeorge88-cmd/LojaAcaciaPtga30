@@ -14,6 +14,7 @@ import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
 import Biblioteca from './components/biblioteca/Biblioteca';
+import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1140,6 +1141,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
+            onClick={() => setCurrentPage('altos-graus')}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${
+              currentPage === 'altos-graus'
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <span className="text-xl">🔺</span>
+            <span className="font-medium">Altos Graus</span>
+          </button>
+          
+          <button
             onClick={() => setCurrentPage('visualizar')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'visualizar'
@@ -1198,7 +1211,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             <span className="text-base">📋</span>
             <span className="font-semibold">Comissões</span>
           </button>
-
+            
+              <span className="text-xl">🔺</span>
+              <span className="font-medium">Altos Graus</span>
+            </button>
           <button
             onClick={() => setCurrentPage('biblioteca')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
