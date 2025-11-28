@@ -399,7 +399,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                             <img
                               src={grau.imagem_url}
                               alt={grau.nome_grau}
-                              className="w-12 h-12 object-contain mx-auto rounded"
+                              className="w-16 h-16 object-contain mx-auto rounded"
                             />
                           ) : (
                             <span className="text-2xl">🔺</span>
