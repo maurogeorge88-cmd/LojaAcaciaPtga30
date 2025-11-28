@@ -184,7 +184,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         setFilhos(filhosData.map(f => ({
           nome: f.nome,
           data_nascimento: f.data_nascimento,
-          sexo: f.sexo
+          sexo: f.sexo || (f.tipo === 'Filho' ? 'M' : 'F')
         })));
       } else {
         setFilhos([]);
