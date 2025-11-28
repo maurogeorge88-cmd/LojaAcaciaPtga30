@@ -74,7 +74,6 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     nome: '',
     data_nascimento: '',
     sexo: 'M'
-    data_obito: ''; //incluido
   });
 
   // Estados de controle
