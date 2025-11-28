@@ -4,6 +4,7 @@
 // ===================================================================
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
+import VidaMaconica from '../vida-maconica/VidaMaconica';
 import {
   formatarCPF,
   formatarTelefone,
@@ -574,8 +575,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         >
           Dados Familiares
         </button>
-      </div>
 
+        <button
+        type="button"
+        onClick={() => setAbaSelecionada('vida-maconica')}
+        className={`px-4 py-2 rounded-t-lg transition-colors ${
+          abaSelecionada === 'vida-maconica'
+            ? 'bg-white text-blue-600 font-semibold border-b-2 border-blue-600'
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        }`}
+        >
+        🔺 Vida Maçônica
+      </button>
+        
+      </div>
+     
       {/* Formulário */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ABA: Dados Pessoais */}
@@ -954,6 +968,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   <span className="text-sm text-gray-700">Possui cônjuge</span>
                 </label>
               </div>
+
+              {abaSelecionada === 'vida-maconica' && (
+              <div className="bg-white p-6 rounded-lg shadow">
+                <VidaMaconica
+                  irmaoId={irmaoEditando?.id}
+                  showSuccess={showSuccess}
+                  showError={showError}
+                />
+              </div>
+              )}
 
               {mostrarConjuge && (
                 <div className="space-y-4">
