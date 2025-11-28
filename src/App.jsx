@@ -10,11 +10,13 @@ import Usuarios from './components/administracao/Usuarios';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
+import PerfilIrmao from './components/irmaos/PerfilIrmao';
 import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
 import Biblioteca from './components/biblioteca/Biblioteca';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
+import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -91,6 +93,7 @@ function App() {
   const [permissoes, setPermissoes] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
+  const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -1226,6 +1229,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
           {permissoes?.canManageUsers && (
             <button
+              onClick={() => setCurrentPage('gerenciar-graus')}
+              className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                currentPage === 'gerenciar-graus'
+                  ? 'bg-blue-700 border-l-4 border-white'
+                  : 'hover:bg-blue-800'
+              }`}
+            >
+              <span className="text-base">⚙️</span>
+              <span className="font-semibold">Gerenciar Graus</span>
+            </button>
+          )}
+
+          {permissoes?.canManageUsers && (
+            <button
               onClick={() => setCurrentPage('usuarios')}
               className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                 currentPage === 'usuarios'
@@ -1281,6 +1298,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
+                  {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
+                  {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
                 </h2>
               </div>
@@ -1348,6 +1367,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             onEdit={(irmao) => {
               setIrmaoParaEditar(irmao);
               setCurrentPage('cadastro');
+            }}
+            onViewProfile={(irmaoId) => {
+              setIrmaoParaPerfil(irmaoId);
+              setCurrentPage('perfil-irmao');
             }}
             onUpdate={loadIrmaos}
             showSuccess={showSuccess}
@@ -1445,6 +1468,27 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* ALTOS GRAUS */}
         {currentPage === 'altos-graus' && (
           <VisualizarAltosGraus />
+        )}
+
+        {/* GERENCIAR GRAUS */}
+        {currentPage === 'gerenciar-graus' && permissoes?.canManageUsers && (
+          <GerenciarGraus
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {/* PERFIL DO IRMÃO */}
+        {currentPage === 'perfil-irmao' && irmaoParaPerfil && (
+          <PerfilIrmao
+            irmaoId={irmaoParaPerfil}
+            onVoltar={() => {
+              setCurrentPage('visualizar');
+              setIrmaoParaPerfil(null);
+            }}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
