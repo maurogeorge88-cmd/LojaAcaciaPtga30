@@ -137,13 +137,24 @@ export default function VisualizarAltosGraus() {
                       {graus.map((grau) => (
                         <div
                           key={grau.numero_grau}
-                          className="group relative bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg p-3 hover:shadow-lg transition-all cursor-pointer"
+                          className="group relative bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg p-3 hover:shadow-lg transition-all cursor-pointer overflow-hidden"
                           onClick={() => setIrmaoSelecionado({ irmao: irmaoData.irmao, grau })}
                         >
-                          <div className="text-center">
-                            <div className="text-2xl font-bold mb-1">{grau.numero_grau}º</div>
-                            <div className="text-xs leading-tight">{grau.nome_grau}</div>
-                          </div>
+                          {grau.imagem_url ? (
+                            <div className="flex flex-col items-center">
+                              <img 
+                                src={grau.imagem_url} 
+                                alt={grau.nome_grau}
+                                className="w-12 h-12 object-contain mb-1"
+                              />
+                              <div className="text-xl font-bold">{grau.numero_grau}º</div>
+                            </div>
+                          ) : (
+                            <div className="text-center">
+                              <div className="text-2xl font-bold mb-1">{grau.numero_grau}º</div>
+                              <div className="text-xs leading-tight">{grau.nome_grau}</div>
+                            </div>
+                          )}
                           <div className="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all"></div>
                         </div>
                       ))}
@@ -188,7 +199,7 @@ export default function VisualizarAltosGraus() {
               {irmaoSelecionado.grau.data_conquista && (
                 <div>
                   <p className="text-sm text-gray-600">Data de Conquista</p>
-                  <p className="font-semibold text-gray-900">{new Date(irmaoSelecionado.grau.data_conquista).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-semibold text-gray-900">{irmaoSelecionado.grau.data_conquista.split('-').reverse().join('/')}</p>
                 </div>
               )}
 
