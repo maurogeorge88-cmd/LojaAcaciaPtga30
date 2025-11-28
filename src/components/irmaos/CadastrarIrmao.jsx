@@ -62,10 +62,12 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const [pais, setPais] = useState({
     nome_pai: '',
     pai_vivo: true,
-    data_nascimento: '',
-    data_obito: '',
+    data_nascimento_pai: '',
+    data_obito_pai: '',
     nome_mae: '',
-    mae_viva: true
+    mae_viva: true,
+    data_nascimento_mae: '',
+    data_obito_mae: ''
   });
 
   const [filhos, setFilhos] = useState([]);
@@ -160,16 +162,25 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         setPais({
           nome_pai: pai?.nome || '',
           pai_vivo: pai ? !pai.falecido : true,
-          data_nascimento: pai?.data_nascimento || '',
-          data_obito: pai?.data_obito || '',
+          data_nascimento_pai: pai?.data_nascimento || '',
+          data_obito_pai: pai?.data_obito || '',
           nome_mae: mae?.nome || '',
           mae_viva: mae ? !mae.falecido : true,
-          data_nascimento: mae?.data_nascimento || '',
-          data_obito: mae?.data_obito || ''
+          data_nascimento_mae: mae?.data_nascimento || '',
+          data_obito_mae: mae?.data_obito || ''
         });
       }
     } catch (error) {
-      setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true, data_nascimento: '', data_obito: '' });
+      setPais({ 
+        nome_pai: '', 
+        pai_vivo: true, 
+        data_nascimento_pai: '', 
+        data_obito_pai: '', 
+        nome_mae: '', 
+        mae_viva: true, 
+        data_nascimento_mae: '', 
+        data_obito_mae: '' 
+      });
     }
 
     // Carregar filhos
@@ -367,8 +378,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'pai',
             nome: pais.nome_pai.trim(),
             falecido: !pais.pai_vivo,
-            data_nascimento: pais.data_nascimento || null,
-            data_obito: pais.data_obito || null
+            data_nascimento: pais.data_nascimento_pai || null,
+            data_obito: pais.data_obito_pai || null
           }]);
         }
         if (pais.nome_mae.trim()) {
@@ -377,8 +388,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'mae',
             nome: pais.nome_mae.trim(),
             falecido: !pais.mae_viva,
-            data_nascimento: pais.data_nascimento || null,
-            data_obito: pais.data_obito || null
+            data_nascimento: pais.data_nascimento_mae || null,
+            data_obito: pais.data_obito_mae || null
           }]);
         }
 
@@ -435,8 +446,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'pai',
             nome: pais.nome_pai.trim(),
             falecido: !pais.pai_vivo,
-            data_nascimento: pais.data_nascimento || null,
-            data_obito: pais.data_obito || null
+            data_nascimento: pais.data_nascimento_pai || null,
+            data_obito: pais.data_obito_pai || null
           }]);
         }
         if (pais.nome_mae.trim()) {
@@ -445,8 +456,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'mae',
             nome: pais.nome_mae.trim(),
             falecido: !pais.mae_viva,
-            data_nascimento: pais.data_nascimento || null,
-            data_obito: pais.data_obito || null
+            data_nascimento: pais.data_nascimento_mae || null,
+            data_obito: pais.data_obito_mae || null
           }]);
         }
 
@@ -1053,8 +1064,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     </label>
                     <input
                       type="date"
-                      value={pais.data_nascimento}
-                      onChange={(e) => setPais({ ...pais, data_nascimento: e.target.value })}
+                      value={pais.data_nascimento_pai}
+                      onChange={(e) => setPais({ ...pais, data_nascimento_pai: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -1076,8 +1087,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       </label>
                       <input
                         type="date"
-                        value={pais.data_obito}
-                        onChange={(e) => setPais({ ...pais, data_obito: e.target.value })}
+                        value={pais.data_obito_pai}
+                        onChange={(e) => setPais({ ...pais, data_obito_pai: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -1102,7 +1113,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <input
                       type="date"
                       value={pais.data_nascimento}
-                      onChange={(e) => setPais({ ...pais, data_nascimento: e.target.value })}
+                      onChange={(e) => setPais({ ...pais, data_nascimento_mae: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -1124,8 +1135,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       </label>
                       <input
                         type="date"
-                        value={pais.data_obito}
-                        onChange={(e) => setPais({ ...pais, data_obito: e.target.value })}
+                        value={pais.data_obito_mae}
+                        onChange={(e) => setPais({ ...pais, data_obito_mae: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
