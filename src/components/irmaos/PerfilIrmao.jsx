@@ -8,10 +8,16 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError 
   const [modoEdicao, setModoEdicao] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('pessoal');
   const [irmaoForm, setIrmaoForm] = useState({});
+  const [familiares, setFamiliares] = useState({
+    conjuge: null,
+    pais: { pai: null, mae: null },
+    filhos: []
+  });
 
   useEffect(() => {
     if (irmaoId) {
       carregarIrmao();
+      carregarFamiliares();
     }
   }, [irmaoId]);
 
@@ -28,6 +34,37 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError 
       setIrmaoForm(data);
     }
     setLoading(false);
+  };
+
+  const carregarFamiliares = async () => {
+    // Carregar cônjuge
+    const { data: conjugeData } = await supabase
+      .from('esposas')
+      .select('*')
+      .eq('irmao_id', irmaoId)
+      .single();
+
+    // Carregar pais
+    const { data: paisData } = await supabase
+      .from('pais')
+      .select('*')
+      .eq('irmao_id', irmaoId);
+
+    const pai = paisData?.find(p => p.tipo === 'pai');
+    const mae = paisData?.find(p => p.tipo === 'mae');
+
+    // Carregar filhos
+    const { data: filhosData } = await supabase
+      .from('filhos')
+      .select('*')
+      .eq('irmao_id', irmaoId)
+      .order('data_nascimento', { ascending: true });
+
+    setFamiliares({
+      conjuge: conjugeData || null,
+      pais: { pai, mae },
+      filhos: filhosData || []
+    });
   };
 
   const handleSalvar = async () => {
@@ -604,8 +641,163 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError 
 
           {/* ABA: Dados Familiares */}
           {abaSelecionada === 'familiar' && (
-            <div className="text-center py-12 bg-gray-50 rounded-lg">
-              <p className="text-gray-600">Dados familiares em desenvolvimento</p>
+            <div className="space-y-6">
+              {/* Cônjuge */}
+              {familiares.conjuge && (
+                <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200">
+                  <h4 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+                    💑 Cônjuge
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="font-semibold text-gray-700">Nome:</span>
+                      <span className="ml-2 text-gray-900">{familiares.conjuge.nome}</span>
+                    </div>
+                    {familiares.conjuge.data_nascimento && (
+                      <div>
+                        <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                        <span className="ml-2 text-gray-900">
+                          {familiares.conjuge.data_nascimento.split('-').reverse().join('/')}
+                        </span>
+                      </div>
+                    )}
+                    {familiares.conjuge.cpf && (
+                      <div>
+                        <span className="font-semibold text-gray-700">CPF:</span>
+                        <span className="ml-2 text-gray-900">{familiares.conjuge.cpf}</span>
+                      </div>
+                    )}
+                    {familiares.conjuge.profissao && (
+                      <div>
+                        <span className="font-semibold text-gray-700">Profissão:</span>
+                        <span className="ml-2 text-gray-900">{familiares.conjuge.profissao}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Pais */}
+              {(familiares.pais.pai || familiares.pais.mae) && (
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+                  <h4 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
+                    👨‍👩‍👦 Pais
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Pai */}
+                    <div className="space-y-2">
+                      <h5 className="font-semibold text-gray-700 border-b pb-1">Pai</h5>
+                      {familiares.pais.pai ? (
+                        <>
+                          <div className="text-sm">
+                            <span className="font-medium">Nome:</span>
+                            <span className="ml-2">{familiares.pais.pai.nome}</span>
+                          </div>
+                          {familiares.pais.pai.data_nascimento && (
+                            <div className="text-sm">
+                              <span className="font-medium">Nascimento:</span>
+                              <span className="ml-2">
+                                {familiares.pais.pai.data_nascimento.split('-').reverse().join('/')}
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-sm">
+                            <span className={familiares.pais.pai.falecido ? 'text-gray-500' : 'text-green-600'}>
+                              {familiares.pais.pai.falecido ? '⚰️ Falecido' : '✅ Vivo'}
+                            </span>
+                            {familiares.pais.pai.falecido && familiares.pais.pai.data_obito && (
+                              <span className="ml-2 text-gray-600">
+                                ({familiares.pais.pai.data_obito.split('-').reverse().join('/')})
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500">Não informado</p>
+                      )}
+                    </div>
+
+                    {/* Mãe */}
+                    <div className="space-y-2">
+                      <h5 className="font-semibold text-gray-700 border-b pb-1">Mãe</h5>
+                      {familiares.pais.mae ? (
+                        <>
+                          <div className="text-sm">
+                            <span className="font-medium">Nome:</span>
+                            <span className="ml-2">{familiares.pais.mae.nome}</span>
+                          </div>
+                          {familiares.pais.mae.data_nascimento && (
+                            <div className="text-sm">
+                              <span className="font-medium">Nascimento:</span>
+                              <span className="ml-2">
+                                {familiares.pais.mae.data_nascimento.split('-').reverse().join('/')}
+                              </span>
+                            </div>
+                          )}
+                          <div className="text-sm">
+                            <span className={familiares.pais.mae.falecido ? 'text-gray-500' : 'text-green-600'}>
+                              {familiares.pais.mae.falecido ? '⚰️ Falecida' : '✅ Viva'}
+                            </span>
+                            {familiares.pais.mae.falecido && familiares.pais.mae.data_obito && (
+                              <span className="ml-2 text-gray-600">
+                                ({familiares.pais.mae.data_obito.split('-').reverse().join('/')})
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-sm text-gray-500">Não informado</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Filhos */}
+              {familiares.filhos.length > 0 && (
+                <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-200">
+                  <h4 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
+                    👶 Filhos ({familiares.filhos.length})
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {familiares.filhos.map((filho, index) => {
+                      const sexo = filho.sexo || (filho.tipo === 'Filho' ? 'M' : 'F');
+                      return (
+                        <div key={index} className="bg-white rounded-lg p-4 border border-green-200">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="text-3xl">{sexo === 'M' ? '👦' : '👧'}</span>
+                            <div>
+                              <h5 className="font-semibold text-gray-900">{filho.nome}</h5>
+                              <p className="text-xs text-gray-600">
+                                {sexo === 'M' ? 'Masculino' : 'Feminino'}
+                              </p>
+                            </div>
+                          </div>
+                          {filho.data_nascimento && (
+                            <div className="text-sm text-gray-700">
+                              <span className="font-medium">Nascimento:</span>
+                              <span className="ml-2">
+                                {filho.data_nascimento.split('-').reverse().join('/')}
+                              </span>
+                              <span className="ml-2 text-gray-500">
+                                ({calcularIdade(filho.data_nascimento)})
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Mensagem se não tiver familiares */}
+              {!familiares.conjuge && !familiares.pais.pai && !familiares.pais.mae && familiares.filhos.length === 0 && (
+                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                  <div className="text-6xl mb-4">👨‍👩‍👧‍👦</div>
+                  <p className="text-gray-600 text-lg font-medium">Nenhum familiar cadastrado</p>
+                </div>
+              )}
             </div>
           )}
 
