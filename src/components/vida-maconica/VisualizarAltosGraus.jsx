@@ -118,8 +118,12 @@ export default function VisualizarAltosGraus() {
                     <p className="text-sm text-gray-600">CIM: {irmaoData.irmao.cim}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-indigo-600">{irmaoData.graus.length}</div>
-                    <div className="text-xs text-gray-600">{irmaoData.graus.length === 1 ? 'grau' : 'graus'}</div>
+                    <div className="text-2xl font-bold text-indigo-600">{irmaoData.graus.length + 3}</div>
+                    <div className="text-xs text-gray-600">
+                      {irmaoData.graus.length + 3 === 1 ? 'grau' : 'graus'}
+                      <br />
+                      <span className="text-gray-500">({irmaoData.graus.length} altos + 3 simbólicos)</span>
+                    </div>
                   </div>
                 </div>
               </div>
