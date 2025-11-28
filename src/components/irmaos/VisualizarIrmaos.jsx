@@ -693,27 +693,43 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
                 <div className="bg-gray-50 rounded-lg p-4">
                   <h4 className="font-bold text-lg text-indigo-900 mb-3 border-b pb-2">👨‍👩‍👦 Pais</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <span className="font-semibold text-gray-700">Pai:</span>
-                      <span className="ml-2 text-gray-600">
-                        {familiaresSelecionado.pais.pai?.nome || 'Não informado'}
-                        {familiaresSelecionado.pais.pai && (
-                          <span className={`ml-2 ${!familiaresSelecionado.pais.pai.falecido ? 'text-green-600' : 'text-gray-500'}`}>
-                            {!familiaresSelecionado.pais.pai.falecido ? '(Vivo)' : '(Falecido)'}
-                          </span>
-                        )}
-                      </span>
+                    <div className="space-y-1">
+                      <div>
+                        <span className="font-semibold text-gray-700">Pai:</span>
+                        <span className="ml-2 text-gray-600">{familiaresSelecionado.pais.pai?.nome || 'Não informado'}</span>
+                      </div>
+                      {familiaresSelecionado.pais.pai?.data_nascimento && (
+                        <div className="text-xs text-gray-500">
+                          📅 Nascimento: {new Date(familiaresSelecionado.pais.pai.data_nascimento).toLocaleDateString('pt-BR')}
+                        </div>
+                      )}
+                      {familiaresSelecionado.pais.pai && (
+                        <div className={`text-xs ${!familiaresSelecionado.pais.pai.falecido ? 'text-green-600' : 'text-gray-500'}`}>
+                          {!familiaresSelecionado.pais.pai.falecido ? '✅ Vivo' : '⚰️ Falecido'}
+                          {familiaresSelecionado.pais.pai.falecido && familiaresSelecionado.pais.pai.data_obito && (
+                            <span> - {new Date(familiaresSelecionado.pais.pai.data_obito).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <span className="font-semibold text-gray-700">Mãe:</span>
-                      <span className="ml-2 text-gray-600">
-                        {familiaresSelecionado.pais.mae?.nome || 'Não informado'}
-                        {familiaresSelecionado.pais.mae && (
-                          <span className={`ml-2 ${!familiaresSelecionado.pais.mae.falecido ? 'text-green-600' : 'text-gray-500'}`}>
-                            {!familiaresSelecionado.pais.mae.falecido ? '(Viva)' : '(Falecida)'}
-                          </span>
-                        )}
-                      </span>
+                    <div className="space-y-1">
+                      <div>
+                        <span className="font-semibold text-gray-700">Mãe:</span>
+                        <span className="ml-2 text-gray-600">{familiaresSelecionado.pais.mae?.nome || 'Não informado'}</span>
+                      </div>
+                      {familiaresSelecionado.pais.mae?.data_nascimento && (
+                        <div className="text-xs text-gray-500">
+                          📅 Nascimento: {new Date(familiaresSelecionado.pais.mae.data_nascimento).toLocaleDateString('pt-BR')}
+                        </div>
+                      )}
+                      {familiaresSelecionado.pais.mae && (
+                        <div className={`text-xs ${!familiaresSelecionado.pais.mae.falecido ? 'text-green-600' : 'text-gray-500'}`}>
+                          {!familiaresSelecionado.pais.mae.falecido ? '✅ Viva' : '⚰️ Falecida'}
+                          {familiaresSelecionado.pais.mae.falecido && familiaresSelecionado.pais.mae.data_obito && (
+                            <span> - {new Date(familiaresSelecionado.pais.mae.data_obito).toLocaleDateString('pt-BR')}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -726,15 +742,17 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
                     👶 Filhos ({familiaresSelecionado.filhos.length})
                   </h4>
                   <div className="space-y-3">
-                    {familiaresSelecionado.filhos.map((filho, index) => (
+                    {familiaresSelecionado.filhos.map((filho, index) => {
+                      const sexo = filho.sexo || (filho.tipo === 'Filho' ? 'M' : 'F');
+                      return (
                       <div key={index} className="bg-white rounded p-3 border border-gray-200">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-2xl">{filho.sexo === 'M' ? '👦' : '👧'}</span>
+                          <span className="text-2xl">{sexo === 'M' ? '👦' : '👧'}</span>
                           <span className="font-semibold text-gray-800">{filho.nome}</span>
                         </div>
                         <div className="text-sm text-gray-600 space-y-1">
                           <div>
-                            <span className="font-semibold">Sexo:</span> {filho.sexo === 'M' ? 'Masculino' : 'Feminino'}
+                            <span className="font-semibold">Sexo:</span> {sexo === 'M' ? 'Masculino' : 'Feminino'}
                           </div>
                           <div>
                             <span className="font-semibold">Data Nascimento:</span> {filho.data_nascimento ? formatarData(filho.data_nascimento) : 'Não informado'}
@@ -746,7 +764,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onUpdate, showSuccess, showError, pe
                           )}
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
