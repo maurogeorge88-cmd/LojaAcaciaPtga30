@@ -41,10 +41,20 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
         *,
         grau:graus_maconicos(*)
       `)
-      .eq('irmao_id', irmaoId)
-      .order('data_conquista', { ascending: false });
+      .eq('irmao_id', irmaoId);
     
-    if (data) setGrausConquistados(data);
+    if (data) {
+      // Ordenar por rito e depois por número do grau
+      const grausOrdenados = data.sort((a, b) => {
+        // Primeiro por rito
+        if (a.grau.rito !== b.grau.rito) {
+          return a.grau.rito.localeCompare(b.grau.rito);
+        }
+        // Depois por número do grau (crescente)
+        return a.grau.numero_grau - b.grau.numero_grau;
+      });
+      setGrausConquistados(grausOrdenados);
+    }
   };
 
   const adicionarGrau = async () => {
