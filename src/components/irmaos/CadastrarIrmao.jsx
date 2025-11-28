@@ -64,12 +64,11 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     data_nascimento: '',
     data_obito: '',
     nome_mae: '',
-    mae_viva: true,
-    //data_nascimento_mae: '',
-    //data_obito_mae: ''
+    mae_viva: true
   });
 
   const [filhos, setFilhos] = useState([]);
+  const [filhoEditandoIndex, setFilhoEditandoIndex] = useState(null);
   const [filhoForm, setFilhoForm] = useState({
     nome: '',
     data_nascimento: '',
@@ -160,16 +159,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         setPais({
           nome_pai: pai?.nome || '',
           pai_vivo: pai ? !pai.falecido : true,
-          data_nascimento_pai: pai?.data_nascimento || '',
-          data_obito_pai: pai?.data_obito || '',
+          data_nascimento: pai?.data_nascimento || '',
+          data_obito: pai?.data_obito || '',
           nome_mae: mae?.nome || '',
           mae_viva: mae ? !mae.falecido : true,
-          data_nascimento_mae: mae?.data_nascimento || '',
-          data_obito_mae: mae?.data_obito || ''
+          : mae?.data_nascimento || '',
+          : mae?.data_obito || ''
         });
       }
     } catch (error) {
-      setPais({ nome_pai: '', pai_vivo: true, data_nascimento_pai: '', data_obito_pai: '', nome_mae: '', mae_viva: true, data_nascimento_mae: '', data_obito_mae: '' });
+      setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true, : '', : '' });
     }
 
     // Carregar filhos
@@ -222,14 +221,39 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       return;
     }
 
-    setFilhos([...filhos, { ...filhoForm }]);
+    if (filhoEditandoIndex !== null) {
+      // Editando filho existente
+      const novosFilhos = [...filhos];
+      novosFilhos[filhoEditandoIndex] = { ...filhoForm };
+      setFilhos(novosFilhos);
+      setFilhoEditandoIndex(null);
+      showSuccess('Filho atualizado');
+    } else {
+      // Adicionando novo filho
+      setFilhos([...filhos, { ...filhoForm }]);
+      showSuccess('Filho adicionado à lista');
+    }
+    
     setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
-    showSuccess('Filho adicionado à lista');
+  };
+
+  // Editar filho da lista
+  const editarFilho = (index) => {
+    setFilhoForm({ ...filhos[index] });
+    setFilhoEditandoIndex(index);
+  };
+
+  // Cancelar edição de filho
+  const cancelarEdicaoFilho = () => {
+    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
+    setFilhoEditandoIndex(null);
   };
 
   // Remover filho da lista
   const removerFilho = (index) => {
     setFilhos(filhos.filter((_, i) => i !== index));
+    setFilhoEditandoIndex(null);
+    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
     showSuccess('Filho removido da lista');
   };
 
@@ -346,8 +370,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'pai',
             nome: pais.nome_pai.trim(),
             falecido: !pais.pai_vivo,
-            data_nascimento: pais.data_nascimento_pai || null,
-            data_obito: pais.data_obito_pai || null
+            data_nascimento: pais.data_nascimento || null,
+            data_obito: pais.data_obito || null
           }]);
         }
         if (pais.nome_mae.trim()) {
@@ -356,8 +380,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'mae',
             nome: pais.nome_mae.trim(),
             falecido: !pais.mae_viva,
-            data_nascimento: pais.data_nascimento_mae || null,
-            data_obito: pais.data_obito_mae || null
+            data_nascimento: pais. || null,
+            data_obito: pais. || null
           }]);
         }
 
@@ -414,8 +438,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'pai',
             nome: pais.nome_pai.trim(),
             falecido: !pais.pai_vivo,
-            data_nascimento: pais.data_nascimento_pai || null,
-            data_obito: pais.data_obito_pai || null
+            data_nascimento: pais.data_nascimento || null,
+            data_obito: pais.data_obito || null
           }]);
         }
         if (pais.nome_mae.trim()) {
@@ -424,8 +448,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             tipo: 'mae',
             nome: pais.nome_mae.trim(),
             falecido: !pais.mae_viva,
-            data_nascimento: pais.data_nascimento_mae || null,
-            data_obito: pais.data_obito_mae || null
+            data_nascimento: pais. || null,
+            data_obito: pais. || null
           }]);
         }
 
@@ -489,7 +513,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       status: 'ativo'
     });
     setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    setPais({ nome_pai: '', pai_vivo: true, data_nascimento_pai: '', data_obito_pai: '', nome_mae: '', mae_viva: true, data_nascimento_mae: '', data_obito_mae: '' });
+    setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true, : '', : '' });
     setFilhos([]);
     setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
     setMostrarConjuge(false);
@@ -1020,8 +1044,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     </label>
                     <input
                       type="date"
-                      value={pais.data_nascimento_pai}
-                      onChange={(e) => setPais({ ...pais, data_nascimento_pai: e.target.value })}
+                      value={pais.data_nascimento}
+                      onChange={(e) => setPais({ ...pais, data_nascimento: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -1043,8 +1067,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       </label>
                       <input
                         type="date"
-                        value={pais.data_obito_pai}
-                        onChange={(e) => setPais({ ...pais, data_obito_pai: e.target.value })}
+                        value={pais.data_obito}
+                        onChange={(e) => setPais({ ...pais, data_obito: e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -1068,8 +1092,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     </label>
                     <input
                       type="date"
-                      value={pais.data_nascimento_mae}
-                      onChange={(e) => setPais({ ...pais, data_nascimento_mae: e.target.value })}
+                      value={pais.}
+                      onChange={(e) => setPais({ ...pais, : e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
@@ -1091,8 +1115,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       </label>
                       <input
                         type="date"
-                        value={pais.data_obito_mae}
-                        onChange={(e) => setPais({ ...pais, data_obito_mae: e.target.value })}
+                        value={pais.}
+                        onChange={(e) => setPais({ ...pais, : e.target.value })}
                         className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
@@ -1147,13 +1171,24 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={adicionarFilho}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                >
-                  ➕ Adicionar Filho
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={adicionarFilho}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                  >
+                    {filhoEditandoIndex !== null ? '💾 Salvar Alterações' : '➕ Adicionar Filho'}
+                  </button>
+                  {filhoEditandoIndex !== null && (
+                    <button
+                      type="button"
+                      onClick={cancelarEdicaoFilho}
+                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                    >
+                      ❌ Cancelar
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Lista de filhos adicionados */}
@@ -1175,13 +1210,22 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                           {filho.data_nascimento && ` - ${calcularIdade(filho.data_nascimento)} anos`}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removerFilho(index)}
-                        className="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                      >
-                        Remover
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editarFilho(index)}
+                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => removerFilho(index)}
+                          className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                        >
+                          🗑️ Remover
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
