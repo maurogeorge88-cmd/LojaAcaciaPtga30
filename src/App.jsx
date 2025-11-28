@@ -15,6 +15,7 @@ import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
 import Biblioteca from './components/biblioteca/Biblioteca';
+import Cronograma from './components/cronograma/Cronograma';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 
@@ -1216,6 +1217,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
+            onClick={() => setCurrentPage('cronograma')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'cronograma'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">📅</span>
+            <span className="font-semibold">Cronograma</span>
+          </button>
+
+          <button
             onClick={() => setCurrentPage('altos-graus')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'altos-graus'
@@ -1297,6 +1310,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
+                  {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
@@ -1462,6 +1476,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             }}
             showSuccess={showSuccess}
             showError={showError}
+          />
+        )}
+
+        {/* CRONOGRAMA */}
+        {currentPage === 'cronograma' && (
+          <Cronograma
+            showSuccess={showSuccess}
+            showError={showError}
+            userEmail={userData?.email}
           />
         )}
 
