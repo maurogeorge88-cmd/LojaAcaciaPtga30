@@ -149,7 +149,7 @@ export default function VisualizarAltosGraus() {
                               <img 
                                 src={grau.imagem_url} 
                                 alt={grau.nome_grau}
-                                className="w-12 h-12 object-contain mb-1"
+                                className="w-20 h-20 object-contain mb-1"
                               />
                               <div className="text-xl font-bold">{grau.numero_grau}º</div>
                             </div>
