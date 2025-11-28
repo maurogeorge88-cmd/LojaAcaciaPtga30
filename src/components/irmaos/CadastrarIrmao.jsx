@@ -61,12 +61,12 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const [pais, setPais] = useState({
     nome_pai: '',
     pai_vivo: true,
-    data_nascimento_pai: '',
-    data_obito_pai: '',
+    data_nascimento: '',
+    data_obito: '',
     nome_mae: '',
     mae_viva: true,
-    data_nascimento_mae: '',
-    data_obito_mae: ''
+    //data_nascimento_mae: '',
+    //data_obito_mae: ''
   });
 
   const [filhos, setFilhos] = useState([]);
