@@ -1,0 +1,547 @@
+import { useState, useEffect } from 'react';
+import { supabase } from '../../supabaseClient';
+
+export default function Cronograma({ showSuccess, showError, userEmail }) {
+  const [eventos, setEventos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [eventoEditando, setEventoEditando] = useState(null);
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroMes, setFiltroMes] = useState('');
+  const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' ou 'calendario'
+
+  const [eventoForm, setEventoForm] = useState({
+    titulo: '',
+    tipo: 'sessao',
+    descricao: '',
+    data_evento: '',
+    hora_inicio: '',
+    hora_fim: '',
+    local: '',
+    responsavel: '',
+    observacoes: '',
+    status: 'planejado',
+    cor_destaque: '#3b82f6'
+  });
+
+  const tiposEvento = [
+    { value: 'sessao', label: '📜 Sessão', cor: '#3b82f6' },
+    { value: 'trabalho_irmao', label: '📖 Trabalho de Irmão', cor: '#8b5cf6' },
+    { value: 'instrucao', label: '🎓 Instrução', cor: '#10b981' },
+    { value: 'sessao_magna', label: '👑 Sessão Magna', cor: '#ef4444' },
+    { value: 'evento_externo', label: '🌍 Evento Externo', cor: '#f59e0b' },
+    { value: 'outro', label: '📌 Outro', cor: '#6b7280' }
+  ];
+
+  const statusEvento = [
+    { value: 'planejado', label: '📋 Planejado', cor: 'bg-blue-100 text-blue-800' },
+    { value: 'confirmado', label: '✅ Confirmado', cor: 'bg-green-100 text-green-800' },
+    { value: 'realizado', label: '🎯 Realizado', cor: 'bg-purple-100 text-purple-800' },
+    { value: 'cancelado', label: '❌ Cancelado', cor: 'bg-red-100 text-red-800' }
+  ];
+
+  useEffect(() => {
+    carregarEventos();
+  }, []);
+
+  const carregarEventos = async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('cronograma')
+      .select('*')
+      .order('data_evento', { ascending: true });
+    
+    if (data) setEventos(data);
+    setLoading(false);
+  };
+
+  const limparFormulario = () => {
+    setEventoForm({
+      titulo: '',
+      tipo: 'sessao',
+      descricao: '',
+      data_evento: '',
+      hora_inicio: '',
+      hora_fim: '',
+      local: '',
+      responsavel: '',
+      observacoes: '',
+      status: 'planejado',
+      cor_destaque: '#3b82f6'
+    });
+    setEventoEditando(null);
+    setMostrarFormulario(false);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!eventoForm.titulo || !eventoForm.data_evento) {
+      showError('Preencha o título e a data do evento');
+      return;
+    }
+
+    const dados = {
+      ...eventoForm,
+      updated_at: new Date().toISOString(),
+      created_by: userEmail || 'sistema'
+    };
+
+    if (eventoEditando) {
+      const { error } = await supabase
+        .from('cronograma')
+        .update(dados)
+        .eq('id', eventoEditando.id);
+
+      if (error) {
+        showError('Erro ao atualizar evento');
+      } else {
+        showSuccess('Evento atualizado com sucesso!');
+        limparFormulario();
+        carregarEventos();
+      }
+    } else {
+      const { error } = await supabase
+        .from('cronograma')
+        .insert([dados]);
+
+      if (error) {
+        showError('Erro ao cadastrar evento');
+      } else {
+        showSuccess('Evento cadastrado com sucesso!');
+        limparFormulario();
+        carregarEventos();
+      }
+    }
+  };
+
+  const editarEvento = (evento) => {
+    setEventoForm(evento);
+    setEventoEditando(evento);
+    setMostrarFormulario(true);
+  };
+
+  const excluirEvento = async (id) => {
+    if (!confirm('Deseja excluir este evento?')) return;
+
+    const { error } = await supabase
+      .from('cronograma')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      showError('Erro ao excluir evento');
+    } else {
+      showSuccess('Evento excluído com sucesso!');
+      carregarEventos();
+    }
+  };
+
+  const eventosFiltrados = eventos.filter(e => {
+    const filtroTipoOk = !filtroTipo || e.tipo === filtroTipo;
+    const filtroMesOk = !filtroMes || e.data_evento.substring(0, 7) === filtroMes;
+    return filtroTipoOk && filtroMesOk;
+  });
+
+  const agruparPorMes = (eventos) => {
+    const grupos = {};
+    eventos.forEach(evento => {
+      const mes = evento.data_evento.substring(0, 7);
+      if (!grupos[mes]) grupos[mes] = [];
+      grupos[mes].push(evento);
+    });
+    return grupos;
+  };
+
+  const formatarData = (data) => {
+    return data.split('-').reverse().join('/');
+  };
+
+  const formatarHora = (hora) => {
+    if (!hora) return '';
+    return hora.substring(0, 5);
+  };
+
+  const obterIconeTipo = (tipo) => {
+    const tipoObj = tiposEvento.find(t => t.value === tipo);
+    return tipoObj ? tipoObj.label.split(' ')[0] : '📌';
+  };
+
+  const obterLabelStatus = (status) => {
+    const statusObj = statusEvento.find(s => s.value === status);
+    return statusObj ? statusObj.label : status;
+  };
+
+  const obterCorStatus = (status) => {
+    const statusObj = statusEvento.find(s => s.value === status);
+    return statusObj ? statusObj.cor : 'bg-gray-100 text-gray-800';
+  };
+
+  if (loading) {
+    return <div className="text-center py-12">Carregando cronograma...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg p-6 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold mb-2">📅 Cronograma Anual</h2>
+            <p className="text-indigo-100">Eventos, sessões e atividades da loja</p>
+          </div>
+          <button
+            onClick={() => {
+              limparFormulario();
+              setMostrarFormulario(!mostrarFormulario);
+            }}
+            className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold"
+          >
+            {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
+          </button>
+        </div>
+      </div>
+
+      {/* Formulário */}
+      {mostrarFormulario && (
+        <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-indigo-200">
+          <h3 className="text-xl font-bold text-gray-900 mb-4">
+            {eventoEditando ? '✏️ Editar Evento' : '➕ Cadastrar Novo Evento'}
+          </h3>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Título */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Título do Evento *
+                </label>
+                <input
+                  type="text"
+                  value={eventoForm.titulo}
+                  onChange={(e) => setEventoForm({ ...eventoForm, titulo: e.target.value })}
+                  placeholder="Ex: Sessão Ordinária de Aprendiz"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              {/* Tipo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo *
+                </label>
+                <select
+                  value={eventoForm.tipo}
+                  onChange={(e) => {
+                    const tipo = tiposEvento.find(t => t.value === e.target.value);
+                    setEventoForm({ 
+                      ...eventoForm, 
+                      tipo: e.target.value,
+                      cor_destaque: tipo ? tipo.cor : '#3b82f6'
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                >
+                  {tiposEvento.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={eventoForm.status}
+                  onChange={(e) => setEventoForm({ ...eventoForm, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                >
+                  {statusEvento.map(s => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Data */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data *
+                </label>
+                <input
+                  type="date"
+                  value={eventoForm.data_evento}
+                  onChange={(e) => setEventoForm({ ...eventoForm, data_evento: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  required
+                />
+              </div>
+
+              {/* Hora Início */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hora Início
+                </label>
+                <input
+                  type="time"
+                  value={eventoForm.hora_inicio}
+                  onChange={(e) => setEventoForm({ ...eventoForm, hora_inicio: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Hora Fim */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hora Fim
+                </label>
+                <input
+                  type="time"
+                  value={eventoForm.hora_fim}
+                  onChange={(e) => setEventoForm({ ...eventoForm, hora_fim: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Local */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Local
+                </label>
+                <input
+                  type="text"
+                  value={eventoForm.local}
+                  onChange={(e) => setEventoForm({ ...eventoForm, local: e.target.value })}
+                  placeholder="Ex: Templo Maçônico"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Responsável */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Responsável
+                </label>
+                <input
+                  type="text"
+                  value={eventoForm.responsavel}
+                  onChange={(e) => setEventoForm({ ...eventoForm, responsavel: e.target.value })}
+                  placeholder="Ex: Ir∴ João"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Cor Destaque */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Cor Destaque
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={eventoForm.cor_destaque}
+                    onChange={(e) => setEventoForm({ ...eventoForm, cor_destaque: e.target.value })}
+                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={eventoForm.cor_destaque}
+                    onChange={(e) => setEventoForm({ ...eventoForm, cor_destaque: e.target.value })}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              </div>
+
+              {/* Descrição */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição
+                </label>
+                <textarea
+                  value={eventoForm.descricao}
+                  onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
+                  rows={2}
+                  placeholder="Descrição detalhada do evento"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              {/* Observações */}
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Observações
+                </label>
+                <textarea
+                  value={eventoForm.observacoes}
+                  onChange={(e) => setEventoForm({ ...eventoForm, observacoes: e.target.value })}
+                  rows={2}
+                  placeholder="Observações adicionais"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              >
+                {eventoEditando ? '💾 Salvar Alterações' : '➕ Cadastrar Evento'}
+              </button>
+              <button
+                type="button"
+                onClick={limparFormulario}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                ❌ Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Filtros e Visualização */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+            <select
+              value={filtroTipo}
+              onChange={(e) => setFiltroTipo(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="">Todos os Tipos</option>
+              {tiposEvento.map(tipo => (
+                <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1 min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
+            <input
+              type="month"
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+            />
+          </div>
+
+          <div className="flex items-end gap-2">
+            <button
+              onClick={() => {
+                setFiltroTipo('');
+                setFiltroMes('');
+              }}
+              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+            >
+              🔄 Limpar
+            </button>
+          </div>
+
+          <div className="text-sm text-gray-600">
+            <strong>{eventosFiltrados.length}</strong> evento(s) encontrado(s)
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de Eventos */}
+      <div className="space-y-6">
+        {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => (
+          <div key={mes} className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div 
+              className="p-4"
+              style={{ background: 'linear-gradient(to right, #4f46e5, #7c3aed)' }}
+            >
+              <h3 className="text-xl font-bold text-white">
+                📆 {new Date(mes + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+              </h3>
+              <p className="text-indigo-100 text-sm">{eventosDoMes.length} evento(s)</p>
+            </div>
+
+            <div className="p-4 space-y-3">
+              {eventosDoMes.map((evento) => (
+                <div
+                  key={evento.id}
+                  className="border-l-4 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                  style={{ borderColor: evento.cor_destaque }}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className="text-3xl">{obterIconeTipo(evento.tipo)}</span>
+                        <div>
+                          <h4 className="text-lg font-bold text-gray-900">{evento.titulo}</h4>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${obterCorStatus(evento.status)}`}>
+                              {obterLabelStatus(evento.status)}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              📅 {formatarData(evento.data_evento)}
+                            </span>
+                            {evento.hora_inicio && (
+                              <span className="text-sm text-gray-600">
+                                🕐 {formatarHora(evento.hora_inicio)}
+                                {evento.hora_fim && ` - ${formatarHora(evento.hora_fim)}`}
+                              </span>
+                            )}
+                            {evento.local && (
+                              <span className="text-sm text-gray-600">
+                                📍 {evento.local}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {evento.descricao && (
+                        <p className="text-sm text-gray-700 mt-2">{evento.descricao}</p>
+                      )}
+
+                      {evento.responsavel && (
+                        <p className="text-sm text-gray-600 mt-1">
+                          <strong>Responsável:</strong> {evento.responsavel}
+                        </p>
+                      )}
+
+                      {evento.observacoes && (
+                        <p className="text-sm text-gray-500 italic mt-1">{evento.observacoes}</p>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => editarEvento(evento)}
+                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                        title="Editar"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => excluirEvento(evento.id)}
+                        className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                        title="Excluir"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+
+        {eventosFiltrados.length === 0 && (
+          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+            <div className="text-6xl mb-4">📅</div>
+            <p className="text-gray-600 text-lg font-medium">Nenhum evento cadastrado</p>
+            <p className="text-gray-500 text-sm mt-2">Clique em "Novo Evento" para começar</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
