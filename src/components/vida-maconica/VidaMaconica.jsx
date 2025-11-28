@@ -214,16 +214,25 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
           {/* Preview do Grau Selecionado */}
           {grauSelecionado && (
-            <div className="mt-4 p-4 bg-white rounded border border-indigo-200">
-              <p className="text-sm font-semibold text-indigo-900">
-                🔺 {grauSelecionado.numero_grau}º Grau - {grauSelecionado.nome_grau}
-              </p>
+            <div className="mt-4 p-4 bg-white rounded border border-indigo-200 flex gap-4">
+              {grauSelecionado.imagem_url && (
+                <img 
+                  src={grauSelecionado.imagem_url} 
+                  alt={grauSelecionado.nome_grau}
+                  className="w-20 h-20 object-contain rounded"
+                />
+              )}
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-indigo-900">
+                  🔺 {grauSelecionado.numero_grau}º Grau - {grauSelecionado.nome_grau}
+                </p>
               <p className="text-xs text-gray-600 mt-1">
                 Rito: {grauSelecionado.rito}
               </p>
               {grauSelecionado.descricao && (
                 <p className="text-xs text-gray-500 mt-1">{grauSelecionado.descricao}</p>
               )}
+              </div>
             </div>
           )}
 
@@ -249,7 +258,15 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
-                    <div className="text-3xl">🔺</div>
+                    {conquista.grau.imagem_url ? (
+                      <img 
+                        src={conquista.grau.imagem_url} 
+                        alt={conquista.grau.nome_grau}
+                        className="w-16 h-16 object-contain rounded"
+                      />
+                    ) : (
+                      <div className="text-3xl">🔺</div>
+                    )}
                     <div>
                       <h5 className="text-lg font-bold text-indigo-900">
                         {conquista.grau.numero_grau}º - {conquista.grau.nome_grau}
@@ -263,7 +280,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="font-semibold text-gray-700">Data:</span>{' '}
-                      {new Date(conquista.data_conquista).toLocaleDateString('pt-BR')}
+                      {conquista.data_conquista.split('-').reverse().join('/')}
                     </div>
                     {conquista.loja_conferente && (
                       <div>
