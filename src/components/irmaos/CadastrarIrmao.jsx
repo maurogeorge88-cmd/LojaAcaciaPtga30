@@ -577,19 +577,18 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         </button>
 
         <button
-        type="button"
-        onClick={() => setAbaSelecionada('vida-maconica')}
-        className={`px-4 py-2 rounded-t-lg transition-colors ${
-          abaSelecionada === 'vida-maconica'
-            ? 'bg-white text-blue-600 font-semibold border-b-2 border-blue-600'
-            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        }`}
+          type="button"
+          onClick={() => setAbaSelecionada('vida-maconica')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            abaSelecionada === 'vida-maconica'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
         >
-        🔺 Vida Maçônica
-      </button>
-        
+          🔺 Vida Maçônica
+        </button>
       </div>
-     
+
       {/* Formulário */}
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ABA: Dados Pessoais */}
@@ -969,16 +968,6 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 </label>
               </div>
 
-              {abaSelecionada === 'vida-maconica' && (
-              <div className="bg-white p-6 rounded-lg shadow">
-                <VidaMaconica
-                  irmaoId={irmaoEditando?.id}
-                  showSuccess={showSuccess}
-                  showError={showError}
-                />
-              </div>
-              )}
-
               {mostrarConjuge && (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1251,6 +1240,29 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ABA: Vida Maçônica */}
+        {abaSelecionada === 'vida-maconica' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            {irmaoEditando?.id ? (
+              <VidaMaconica
+                irmaoId={irmaoEditando.id}
+                showSuccess={showSuccess}
+                showError={showError}
+              />
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-6xl mb-4">🔺</div>
+                <p className="text-gray-600 text-lg font-medium">
+                  Salve o irmão primeiro para adicionar graus
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  A vida maçônica só pode ser cadastrada após criar o registro do irmão
+                </p>
+              </div>
+            )}
           </div>
         )}
 
