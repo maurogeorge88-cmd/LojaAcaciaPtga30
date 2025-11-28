@@ -162,6 +162,14 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
     return hora.substring(0, 5);
   };
 
+  const formatarMesAno = (mesString) => {
+    // mesString vem como "2026-01"
+    const [ano, mes] = mesString.split('-');
+    const meses = ['JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO', 
+                   'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'];
+    return `${meses[parseInt(mes) - 1]} ${ano}`;
+  };
+
   const obterIconeTipo = (tipo) => {
     const tipoObj = tiposEvento.find(t => t.value === tipo);
     return tipoObj ? tipoObj.label.split(' ')[0] : '📌';
@@ -456,7 +464,7 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
               style={{ background: 'linear-gradient(to right, #4f46e5, #7c3aed)' }}
             >
               <h3 className="text-xl font-bold text-white">
-                📆 {new Date(mes + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' }).toUpperCase()}
+                📆 {formatarMesAno(mes)}
               </h3>
               <p className="text-indigo-100 text-sm">{eventosDoMes.length} evento(s)</p>
             </div>
