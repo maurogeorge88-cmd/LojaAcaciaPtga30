@@ -14,15 +14,15 @@ export const Dashboard = ({ irmaos, balaustres }) => {
     return 'Não Iniciado';
   };
 
-  // Contagens por situação
-  const irmaosRegulares = irmaos.filter(i => i.situacao === 'Regular');
-  const irmaosIrregulares = irmaos.filter(i => i.situacao === 'Irregular');
-  const irmaosLicenciados = irmaos.filter(i => i.situacao === 'Licenciado');
-  const irmaosSuspensos = irmaos.filter(i => i.situacao === 'Suspenso');
-  const irmaosDesligados = irmaos.filter(i => i.situacao === 'Desligado');
-  const irmaosExcluidos = irmaos.filter(i => i.situacao === 'Excluído');
-  const irmaosFalecidos = irmaos.filter(i => i.situacao === 'Falecido');
-  const irmaosExOficio = irmaos.filter(i => i.situacao === 'Ex-Ofício');
+  // Contagens por situação (case-insensitive)
+  const irmaosRegulares = irmaos.filter(i => i.situacao?.toLowerCase() === 'regular');
+  const irmaosIrregulares = irmaos.filter(i => i.situacao?.toLowerCase() === 'irregular');
+  const irmaosLicenciados = irmaos.filter(i => i.situacao?.toLowerCase() === 'licenciado');
+  const irmaosSuspensos = irmaos.filter(i => i.situacao?.toLowerCase() === 'suspenso');
+  const irmaosDesligados = irmaos.filter(i => i.situacao?.toLowerCase() === 'desligado');
+  const irmaosExcluidos = irmaos.filter(i => i.situacao?.toLowerCase() === 'excluído');
+  const irmaosFalecidos = irmaos.filter(i => i.situacao?.toLowerCase() === 'falecido');
+  const irmaosExOficio = irmaos.filter(i => i.situacao?.toLowerCase() === 'ex-ofício');
   const totalIrmaos = irmaos.length;
 
   // Contagem por grau (apenas regulares)
