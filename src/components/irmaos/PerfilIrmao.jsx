@@ -53,6 +53,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError 
     const pai = paisData?.find(p => p.tipo === 'pai');
     const mae = paisData?.find(p => p.tipo === 'mae');
 
+    console.log('📊 DEBUG PAIS:', {
+      paisData,
+      pai,
+      mae
+    });
+
     // Carregar filhos
     const { data: filhosData } = await supabase
       .from('filhos')
