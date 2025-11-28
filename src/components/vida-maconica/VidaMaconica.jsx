@@ -229,7 +229,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 <img 
                   src={grauSelecionado.imagem_url} 
                   alt={grauSelecionado.nome_grau}
-                  className="w-20 h-20 object-contain rounded" //ajustado mauro
+                  className="w-20 h-20 object-contain rounded"
                 />
               )}
               <div className="flex-1">
@@ -272,7 +272,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                       <img 
                         src={conquista.grau.imagem_url} 
                         alt={conquista.grau.nome_grau}
-                        className="w-16 h-16 object-contain rounded"
+                        className="w-20 h-20 object-contain rounded"
                       />
                     ) : (
                       <div className="text-3xl">🔺</div>
