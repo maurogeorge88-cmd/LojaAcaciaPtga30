@@ -162,13 +162,11 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           data_nascimento: pai?.data_nascimento || '',
           data_obito: pai?.data_obito || '',
           nome_mae: mae?.nome || '',
-          mae_viva: mae ? !mae.falecido : true,
-          : mae?.data_nascimento || '',
-          : mae?.data_obito || ''
+          mae_viva: mae ? !mae.falecido : true
         });
       }
     } catch (error) {
-      setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true, : '', : '' });
+      setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true });
     }
 
     // Carregar filhos
@@ -513,7 +511,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       status: 'ativo'
     });
     setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true, : '', : '' });
+    setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true });
     setFilhos([]);
     setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
     setMostrarConjuge(false);
