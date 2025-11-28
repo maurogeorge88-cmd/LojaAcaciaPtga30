@@ -1141,18 +1141,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
-            onClick={() => setCurrentPage('altos-graus')}
-            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${
-              currentPage === 'altos-graus'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            <span className="text-xl">🔺</span>
-            <span className="font-medium">Altos Graus</span>
-          </button>
-          
-          <button
             onClick={() => setCurrentPage('visualizar')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'visualizar'
@@ -1211,10 +1199,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             <span className="text-base">📋</span>
             <span className="font-semibold">Comissões</span>
           </button>
-            
-              <span className="text-xl">🔺</span>
-              <span className="font-medium">Altos Graus</span>
-            </button>
+
           <button
             onClick={() => setCurrentPage('biblioteca')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -1225,6 +1210,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           >
             <span className="text-base">📚</span>
             <span className="font-semibold">Biblioteca</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('altos-graus')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'altos-graus'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">🔺</span>
+            <span className="font-semibold">Altos Graus</span>
           </button>
 
           {permissoes?.canManageUsers && (
@@ -1283,6 +1280,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
+                  {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
                 </h2>
               </div>
@@ -1442,6 +1440,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
           />
+        )}
+
+        {/* ALTOS GRAUS */}
+        {currentPage === 'altos-graus' && (
+          <VisualizarAltosGraus />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
