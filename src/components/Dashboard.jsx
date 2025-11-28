@@ -30,6 +30,18 @@ export const Dashboard = ({ irmaos, balaustres }) => {
   const irmaosCompanheiro = irmaosRegulares.filter(i => obterGrau(i) === 'Companheiro').length;
   const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
 
+  // Debug: Contar TODOS os aprendizes (independente da situação)
+  const todosAprendizes = irmaos.filter(i => obterGrau(i) === 'Aprendiz');
+  console.log('📊 DEBUG APRENDIZES:', {
+    regulares: irmaosAprendiz,
+    total: todosAprendizes.length,
+    aprendizes: todosAprendizes.map(a => ({ 
+      nome: a.nome, 
+      situacao: a.situacao,
+      grau: obterGrau(a)
+    }))
+  });
+
   return (
     <div>
       {/* Cards de Graus */}
