@@ -21,7 +21,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     descricao: '',
     valor: '',
     data_lancamento: new Date().toISOString().split('T')[0],
-    forma_pagamento: 'dinheiro',
+    tipo_pagamento: 'dinheiro',
     comprovante_url: '',
     observacoes: ''
   });
@@ -121,7 +121,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             descricao: formLancamento.descricao,
             valor: parseFloat(formLancamento.valor),
             data_lancamento: formLancamento.data_lancamento,
-            forma_pagamento: formLancamento.forma_pagamento,
+            tipo_pagamento: formLancamento.tipo_pagamento,
             comprovante_url: formLancamento.comprovante_url || null,
             observacoes: formLancamento.observacoes || null
           })
@@ -138,7 +138,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             descricao: formLancamento.descricao,
             valor: parseFloat(formLancamento.valor),
             data_lancamento: formLancamento.data_lancamento,
-            forma_pagamento: formLancamento.forma_pagamento,
+            tipo_pagamento: formLancamento.tipo_pagamento,
             comprovante_url: formLancamento.comprovante_url || null,
             observacoes: formLancamento.observacoes || null
           });
@@ -163,7 +163,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       descricao: lanc.descricao || '',
       valor: lanc.valor?.toString() || '',
       data_lancamento: lanc.data_lancamento || '',
-      forma_pagamento: lanc.forma_pagamento || 'dinheiro',
+      tipo_pagamento: lanc.tipo_pagamento || 'dinheiro',
       comprovante_url: lanc.comprovante_url || '',
       observacoes: lanc.observacoes || ''
     });
@@ -198,7 +198,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       descricao: '',
       valor: '',
       data_lancamento: new Date().toISOString().split('T')[0],
-      forma_pagamento: 'dinheiro',
+      tipo_pagamento: 'dinheiro',
       comprovante_url: '',
       observacoes: ''
     });
@@ -423,8 +423,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Forma de Pagamento *</label>
                 <select
-                  value={formLancamento.forma_pagamento}
-                  onChange={(e) => setFormLancamento({ ...formLancamento, forma_pagamento: e.target.value })}
+                  value={formLancamento.tipo_pagamento}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, tipo_pagamento: e.target.value })}
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
