@@ -231,6 +231,8 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
     { value: 'trabalho_irmao', label: '📖 Trabalho de Irmão', cor: '#8b5cf6' },
     { value: 'instrucao', label: '🎓 Instrução', cor: '#10b981' },
     { value: 'sessao_magna', label: '👑 Sessão Magna', cor: '#ef4444' },
+    { value: 'sessao_Posse', label: '📜 Sessão de Posse', cor: '#10b981' },
+    { value: 'sessao_Instalacao', label: '👑 Sessão de Instalação', cor: '#3b82f6' },
     { value: 'evento_externo', label: '🌍 Evento Externo', cor: '#f59e0b' },
     { value: 'outro', label: '📌 Outro', cor: '#6b7280' }
   ];
