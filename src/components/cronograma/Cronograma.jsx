@@ -11,24 +11,43 @@ const gerarRelatorioCronograma = async (eventos, periodo) => {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Header
+  // Header com fundo azul
   doc.setFillColor(79, 70, 229);
-  doc.rect(0, 0, pageWidth, 35, 'F');
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  
+  // Título principal - linha 1
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', pageWidth / 2, 15, { align: 'center' });
+  doc.text('ARLS Acacia de Paranatinga No 30', pageWidth / 2, 12, { align: 'center' });
+  
+  // Título secundário - linha 2
   doc.setFontSize(14);
-  doc.text(`Cronograma ${periodo}`, pageWidth / 2, 25, { align: 'center' });
-
-  // Info
-  let yPos = 45;
-  doc.setTextColor(0, 0, 0);
+  doc.text(`Cronograma ${periodo}`, pageWidth / 2, 22, { align: 'center' });
+  
+  // Linha separadora
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, yPos);
-  doc.text(`Total: ${eventos.length}`, pageWidth - 40, yPos);
-  yPos += 10;
+  doc.text('Mato Grosso - Brasil', pageWidth / 2, 32, { align: 'center' });
+
+  // Info do relatório
+  let yPos = 50;
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(9);
+  doc.text(`Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 14, yPos);
+  doc.text(`Total de eventos: ${eventos.length}`, pageWidth - 60, yPos);
+  
+  yPos += 8;
+
+  // Se não tiver eventos
+  if (eventos.length === 0) {
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text('Nenhum evento cadastrado para este periodo', pageWidth / 2, yPos + 30, { align: 'center' });
+    const nomeArquivo = `Cronograma_${periodo.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+    doc.save(nomeArquivo);
+    return;
+  }
 
   // Agrupar por mês
   const eventosPorMes = {};
@@ -46,27 +65,45 @@ const gerarRelatorioCronograma = async (eventos, periodo) => {
     }
 
     const [ano, mesNum] = mes.split('-');
-    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    const meses = ['Janeiro', 'Fevereiro', 'Marco', 'Abril', 'Maio', 'Junho',
                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
     const mesNome = `${meses[parseInt(mesNum) - 1]} ${ano}`;
 
+    // Header do mês
     doc.setFillColor(99, 102, 241);
-    doc.rect(14, yPos, pageWidth - 28, 10, 'F');
+    doc.rect(14, yPos, pageWidth - 28, 8, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
-    doc.text(mesNome.toUpperCase(), 16, yPos + 7);
+    doc.text(mesNome.toUpperCase(), 16, yPos + 6);
     doc.setTextColor(0, 0, 0);
-    yPos += 15;
+    yPos += 12;
 
     const dadosTabela = eventosDoMes.map(evento => {
       const data = evento.data_evento.split('-').reverse().join('/');
       const hora = evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '-';
-      const tipos = { 'sessao': 'Sessão', 'trabalho_irmao': 'Trabalho', 'instrucao': 'Instrução', 
-                      'sessao_magna': 'S. Magna', 'evento_externo': 'Ext.', 'outro': 'Outro' };
-      const statuses = { 'planejado': 'Plan.', 'confirmado': 'Conf.', 'realizado': 'Real.', 'cancelado': 'Canc.' };
-      return [data, hora, tipos[evento.tipo] || evento.tipo, evento.titulo, evento.local || '-', 
-              statuses[evento.status] || evento.status];
+      const tipos = { 
+        'sessao': 'Sessao', 
+        'trabalho_irmao': 'Trabalho', 
+        'instrucao': 'Instrucao', 
+        'sessao_magna': 'S. Magna', 
+        'evento_externo': 'Externo', 
+        'outro': 'Outro' 
+      };
+      const statuses = { 
+        'planejado': 'Planejado', 
+        'confirmado': 'Confirmado', 
+        'realizado': 'Realizado', 
+        'cancelado': 'Cancelado' 
+      };
+      return [
+        data, 
+        hora, 
+        tipos[evento.tipo] || evento.tipo, 
+        evento.titulo, 
+        evento.local || '-', 
+        statuses[evento.status] || evento.status
+      ];
     });
 
     doc.autoTable({
@@ -74,21 +111,47 @@ const gerarRelatorioCronograma = async (eventos, periodo) => {
       head: [['Data', 'Hora', 'Tipo', 'Evento', 'Local', 'Status']],
       body: dadosTabela,
       theme: 'striped',
-      headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
-      styles: { fontSize: 8, cellPadding: 3 },
-      columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 18 }, 2: { cellWidth: 28 }, 
-                      3: { cellWidth: 58 }, 4: { cellWidth: 35 }, 5: { cellWidth: 25 } },
+      headStyles: { 
+        fillColor: [79, 70, 229], 
+        textColor: [255, 255, 255], 
+        fontSize: 9, 
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      styles: { 
+        fontSize: 8, 
+        cellPadding: 2,
+        overflow: 'linebreak'
+      },
+      columnStyles: { 
+        0: { cellWidth: 20, halign: 'center' },
+        1: { cellWidth: 16, halign: 'center' },
+        2: { cellWidth: 22, halign: 'center' },
+        3: { cellWidth: 65 },
+        4: { cellWidth: 30 },
+        5: { cellWidth: 23, halign: 'center' }
+      },
       margin: { left: 14, right: 14 },
       didDrawPage: (data) => {
         const pageCount = doc.internal.getNumberOfPages();
         doc.setFontSize(8);
         doc.setTextColor(128);
-        doc.text(`Página ${data.pageNumber} de ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+        doc.text(`Pag ${data.pageNumber}/${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
       }
     });
 
-    yPos = doc.lastAutoTable.finalY + 10;
+    yPos = doc.lastAutoTable.finalY + 8;
   });
+
+  // Rodapé
+  const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : yPos;
+  if (finalY < pageHeight - 30) {
+    doc.setDrawColor(200, 200, 200);
+    doc.line(14, pageHeight - 20, pageWidth - 14, pageHeight - 20);
+    doc.setFontSize(8);
+    doc.setTextColor(100);
+    doc.text('TFA', pageWidth / 2, pageHeight - 14, { align: 'center' });
+  }
 
   const nomeArquivo = `Cronograma_${periodo.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(nomeArquivo);
