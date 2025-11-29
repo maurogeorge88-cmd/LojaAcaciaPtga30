@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 // Funções de geração de PDF (inline para evitar problemas de import)
-const gerarRelatorioCronograma = async (eventos, periodo) => {
+const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => {
   // Importar jsPDF dinamicamente
   const { jsPDF } = await import('jspdf');
   await import('jspdf-autotable');
@@ -14,6 +14,15 @@ const gerarRelatorioCronograma = async (eventos, periodo) => {
   // Header com fundo azul
   doc.setFillColor(79, 70, 229);
   doc.rect(0, 0, pageWidth, 40, 'F');
+  
+  // Logo (se fornecida)
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', 10, 8, 25, 25);
+    } catch (e) {
+      console.log('Erro ao adicionar logo');
+    }
+  }
   
   // Título principal - linha 1
   doc.setTextColor(255, 255, 255);
@@ -195,6 +204,13 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
   const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' ou 'calendario'
+  const [mostrarModalRelatorio, setMostrarModalRelatorio] = useState(false);
+  const [tipoRelatorio, setTipoRelatorio] = useState('mensal'); // 'mensal', 'semestral', 'anual'
+  const [relatorioForm, setRelatorioForm] = useState({
+    mes: new Date().getMonth() + 1,
+    ano: new Date().getFullYear(),
+    semestre: 1
+  });
 
   const [eventoForm, setEventoForm] = useState({
     titulo: '',
@@ -638,34 +654,31 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
           <div className="flex items-end gap-2">
             <button
               onClick={() => {
-                const mesAtual = new Date().getMonth() + 1;
-                const anoAtual = new Date().getFullYear();
-                gerarRelatorioMensal(eventos, mesAtual, anoAtual);
+                setTipoRelatorio('mensal');
+                setMostrarModalRelatorio(true);
               }}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
-              title="Gerar PDF do mês atual"
+              title="Gerar PDF mensal"
             >
               📄 Mensal
             </button>
             <button
               onClick={() => {
-                const mesAtual = new Date().getMonth() + 1;
-                const anoAtual = new Date().getFullYear();
-                const semestre = mesAtual <= 6 ? 1 : 2;
-                gerarRelatorioSemestral(eventos, semestre, anoAtual);
+                setTipoRelatorio('semestral');
+                setMostrarModalRelatorio(true);
               }}
               className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-              title="Gerar PDF do semestre atual"
+              title="Gerar PDF semestral"
             >
               📄 Semestral
             </button>
             <button
               onClick={() => {
-                const anoAtual = new Date().getFullYear();
-                gerarRelatorioAnual(eventos, anoAtual);
+                setTipoRelatorio('anual');
+                setMostrarModalRelatorio(true);
               }}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-              title="Gerar PDF do ano atual"
+              title="Gerar PDF anual"
             >
               📄 Anual
             </button>
@@ -676,6 +689,122 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
           </div>
         </div>
       </div>
+
+      {/* MODAL DE RELATÓRIO */}
+      {mostrarModalRelatorio && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">
+              📄 Gerar Relatório {tipoRelatorio === 'mensal' ? 'Mensal' : tipoRelatorio === 'semestral' ? 'Semestral' : 'Anual'}
+            </h3>
+
+            <div className="space-y-4">
+              {tipoRelatorio === 'mensal' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
+                    <select
+                      value={relatorioForm.mes}
+                      onChange={(e) => setRelatorioForm({ ...relatorioForm, mes: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="1">Janeiro</option>
+                      <option value="2">Fevereiro</option>
+                      <option value="3">Março</option>
+                      <option value="4">Abril</option>
+                      <option value="5">Maio</option>
+                      <option value="6">Junho</option>
+                      <option value="7">Julho</option>
+                      <option value="8">Agosto</option>
+                      <option value="9">Setembro</option>
+                      <option value="10">Outubro</option>
+                      <option value="11">Novembro</option>
+                      <option value="12">Dezembro</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                    <input
+                      type="number"
+                      value={relatorioForm.ano}
+                      onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
+                      min="2020"
+                      max="2050"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </>
+              )}
+
+              {tipoRelatorio === 'semestral' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <select
+                      value={relatorioForm.semestre}
+                      onChange={(e) => setRelatorioForm({ ...relatorioForm, semestre: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="1">1º Semestre (Jan-Jun)</option>
+                      <option value="2">2º Semestre (Jul-Dez)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                    <input
+                      type="number"
+                      value={relatorioForm.ano}
+                      onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
+                      min="2020"
+                      max="2050"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    />
+                  </div>
+                </>
+              )}
+
+              {tipoRelatorio === 'anual' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                  <input
+                    type="number"
+                    value={relatorioForm.ano}
+                    onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
+                    min="2020"
+                    max="2050"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={async () => {
+                  if (tipoRelatorio === 'mensal') {
+                    await gerarRelatorioMensal(eventos, relatorioForm.mes, relatorioForm.ano);
+                  } else if (tipoRelatorio === 'semestral') {
+                    await gerarRelatorioSemestral(eventos, relatorioForm.semestre, relatorioForm.ano);
+                  } else {
+                    await gerarRelatorioAnual(eventos, relatorioForm.ano);
+                  }
+                  setMostrarModalRelatorio(false);
+                  showSuccess('Relatório gerado com sucesso!');
+                }}
+                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+              >
+                📄 Gerar PDF
+              </button>
+              <button
+                onClick={() => setMostrarModalRelatorio(false)}
+                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lista de Eventos */}
       <div className="space-y-6">
