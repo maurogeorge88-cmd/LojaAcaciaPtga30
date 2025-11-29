@@ -121,6 +121,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             descricao: formLancamento.descricao,
             valor: parseFloat(formLancamento.valor),
             data_lancamento: formLancamento.data_lancamento,
+            data_vencimento: formLancamento.data_lancamento, // Mesma data do lançamento
             tipo_pagamento: formLancamento.tipo_pagamento,
             comprovante_url: formLancamento.comprovante_url || null,
             observacoes: formLancamento.observacoes || null
@@ -138,6 +139,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             descricao: formLancamento.descricao,
             valor: parseFloat(formLancamento.valor),
             data_lancamento: formLancamento.data_lancamento,
+            data_vencimento: formLancamento.data_lancamento, // Mesma data do lançamento
             tipo_pagamento: formLancamento.tipo_pagamento,
             comprovante_url: formLancamento.comprovante_url || null,
             observacoes: formLancamento.observacoes || null
