@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 
@@ -197,10 +197,46 @@ const Balaustres = ({
     return tipo ? tipo.nome : 'N/A';
   };
 
-  // Filtrar balaustres por grau (case-insensitive e trim)
-  const balaustresFiltrados = balaustres.filter(b => 
-    b.grau_sessao?.trim().toLowerCase() === grauSelecionado.trim().toLowerCase()
-  );
+  // Filtrar balaustres por grau (ULTRA ROBUSTO)
+  const balaustresFiltrados = balaustres.filter(b => {
+    const grauBanco = (b.grau_sessao || '').trim().toLowerCase();
+    const grauBusca = (grauSelecionado || '').trim().toLowerCase();
+    const match = grauBanco === grauBusca;
+    
+    // Debug individual
+    if (!match && grauBanco) {
+      console.log('❌ Não matched:', {
+        banco: grauBanco,
+        busca: grauBusca,
+        numero: b.numero_balaustre
+      });
+    }
+    
+    return match;
+  });
+
+  // DEBUG: Log completo
+  React.useEffect(() => {
+    console.log('🔍 DEBUG BALAUSTRES:', {
+      total: balaustres.length,
+      grauSelecionado: grauSelecionado,
+      filtrados: balaustresFiltrados.length,
+      todosOsGraus: balaustres.map(b => ({
+        id: b.id,
+        numero: b.numero_balaustre,
+        grau_original: b.grau_sessao,
+        grau_processado: (b.grau_sessao || '').trim().toLowerCase(),
+        match_aprendiz: (b.grau_sessao || '').trim().toLowerCase() === 'aprendiz',
+        match_companheiro: (b.grau_sessao || '').trim().toLowerCase() === 'companheiro',
+        match_mestre: (b.grau_sessao || '').trim().toLowerCase() === 'mestre'
+      })),
+      contadores: {
+        aprendizes: balaustres.filter(b => (b.grau_sessao || '').trim().toLowerCase() === 'aprendiz').length,
+        companheiros: balaustres.filter(b => (b.grau_sessao || '').trim().toLowerCase() === 'companheiro').length,
+        mestres: balaustres.filter(b => (b.grau_sessao || '').trim().toLowerCase() === 'mestre').length
+      }
+    });
+  }, [balaustres, grauSelecionado, balaustresFiltrados.length]);
 
   return (
     <div>
@@ -343,7 +379,10 @@ const Balaustres = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Aprendiz ({balaustres.filter(b => b.grau_sessao?.trim().toLowerCase() === 'aprendiz').length})
+            Aprendiz ({balaustres.filter(b => {
+              const grau = (b.grau_sessao || '').trim().toLowerCase();
+              return grau === 'aprendiz';
+            }).length})
           </button>
           <button
             onClick={() => setGrauSelecionado('Companheiro')}
@@ -353,7 +392,10 @@ const Balaustres = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Companheiro ({balaustres.filter(b => b.grau_sessao?.trim().toLowerCase() === 'companheiro').length})
+            Companheiro ({balaustres.filter(b => {
+              const grau = (b.grau_sessao || '').trim().toLowerCase();
+              return grau === 'companheiro';
+            }).length})
           </button>
           <button
             onClick={() => setGrauSelecionado('Mestre')}
@@ -363,7 +405,10 @@ const Balaustres = ({
                 : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
           >
-            Mestre ({balaustres.filter(b => b.grau_sessao?.trim().toLowerCase() === 'mestre').length})
+            Mestre ({balaustres.filter(b => {
+              const grau = (b.grau_sessao || '').trim().toLowerCase();
+              return grau === 'mestre';
+            }).length})
           </button>
         </div>
       </div>
