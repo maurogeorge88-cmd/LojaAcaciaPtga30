@@ -96,7 +96,9 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
         'sessao': 'Sessao', 
         'trabalho_irmao': 'Trabalho', 
         'instrucao': 'Instrucao', 
-        'sessao_magna': 'S. Magna', 
+        'sessao_magna': 'S. Magna',
+        'sessao_posse': 'S. Posse',
+        'sessao_instalacao': 'S. Instalacao',
         'evento_externo': 'Externo', 
         'outro': 'Outro' 
       };
@@ -236,8 +238,8 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
     { value: 'trabalho_irmao', label: '📖 Trabalho de Irmão', cor: '#8b5cf6' },
     { value: 'instrucao', label: '🎓 Instrução', cor: '#10b981' },
     { value: 'sessao_magna', label: '👑 Sessão Magna', cor: '#ef4444' },
-    { value: 'sessao_Posse', label: '📜 Sessão de Posse', cor: '#10b981' },
-    { value: 'sessao_Instalacao', label: '👑 Sessão de Instalação', cor: '#3b82f6' },
+    { value: 'sessao_posse', label: '📜 Sessão de Posse', cor: '#10b981' },
+    { value: 'sessao_instalacao', label: '👑 Sessão de Instalação', cor: '#3b82f6' },
     { value: 'evento_externo', label: '🌍 Evento Externo', cor: '#f59e0b' },
     { value: 'outro', label: '📌 Outro', cor: '#6b7280' }
   ];
