@@ -114,15 +114,13 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
         tipos[evento.tipo] || evento.tipo, 
         evento.titulo, 
         evento.descricao || '-',
-        evento.local || '-', 
-        evento.responsavel || '-',
-        statuses[evento.status] || evento.status
+        evento.local || '-'
       ];
     });
 
     doc.autoTable({
       startY: yPos,
-      head: [['Data', 'Hora', 'Tipo', 'Evento', 'Descricao', 'Local', 'Responsavel', 'Status']],
+      head: [['Data', 'Hora', 'Tipo', 'Evento', 'Descricao', 'Local']],
       body: dadosTabela,
       theme: 'striped',
       headStyles: { 
@@ -141,11 +139,9 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
         0: { cellWidth: 22, halign: 'center' },   // Data
         1: { cellWidth: 18, halign: 'center' },   // Hora
         2: { cellWidth: 28, halign: 'center' },   // Tipo
-        3: { cellWidth: 70 },                     // Evento (maior)
-        4: { cellWidth: 55 },                     // Descricao (novo)
-        5: { cellWidth: 35 },                     // Local
-        6: { cellWidth: 35 },                     // Responsavel (novo)
-        7: { cellWidth: 25, halign: 'center' }    // Status
+        3: { cellWidth: 80 },                     // Evento
+        4: { cellWidth: 100 },                    // Descricao (MUITO MAIOR)
+        5: { cellWidth: 40 }                      // Local
       },
       margin: { left: 10, right: 10 },
       didDrawPage: (data) => {
