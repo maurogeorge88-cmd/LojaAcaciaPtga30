@@ -1,6 +1,128 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { gerarRelatorioMensal, gerarRelatorioSemestral, gerarRelatorioAnual } from '../../utils/relatorioCronograma';
+
+// Funções de geração de PDF (inline para evitar problemas de import)
+const gerarRelatorioCronograma = async (eventos, periodo) => {
+  // Importar jsPDF dinamicamente
+  const { jsPDF } = await import('jspdf');
+  await import('jspdf-autotable');
+  
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  // Header
+  doc.setFillColor(79, 70, 229);
+  doc.rect(0, 0, pageWidth, 35, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', pageWidth / 2, 15, { align: 'center' });
+  doc.setFontSize(14);
+  doc.text(`Cronograma ${periodo}`, pageWidth / 2, 25, { align: 'center' });
+
+  // Info
+  let yPos = 45;
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, yPos);
+  doc.text(`Total: ${eventos.length}`, pageWidth - 40, yPos);
+  yPos += 10;
+
+  // Agrupar por mês
+  const eventosPorMes = {};
+  eventos.forEach(evento => {
+    const mes = evento.data_evento.substring(0, 7);
+    if (!eventosPorMes[mes]) eventosPorMes[mes] = [];
+    eventosPorMes[mes].push(evento);
+  });
+
+  // Processar cada mês
+  Object.entries(eventosPorMes).sort().forEach(([mes, eventosDoMes]) => {
+    if (yPos > pageHeight - 60) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    const [ano, mesNum] = mes.split('-');
+    const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    const mesNome = `${meses[parseInt(mesNum) - 1]} ${ano}`;
+
+    doc.setFillColor(99, 102, 241);
+    doc.rect(14, yPos, pageWidth - 28, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text(mesNome.toUpperCase(), 16, yPos + 7);
+    doc.setTextColor(0, 0, 0);
+    yPos += 15;
+
+    const dadosTabela = eventosDoMes.map(evento => {
+      const data = evento.data_evento.split('-').reverse().join('/');
+      const hora = evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '-';
+      const tipos = { 'sessao': 'Sessão', 'trabalho_irmao': 'Trabalho', 'instrucao': 'Instrução', 
+                      'sessao_magna': 'S. Magna', 'evento_externo': 'Ext.', 'outro': 'Outro' };
+      const statuses = { 'planejado': 'Plan.', 'confirmado': 'Conf.', 'realizado': 'Real.', 'cancelado': 'Canc.' };
+      return [data, hora, tipos[evento.tipo] || evento.tipo, evento.titulo, evento.local || '-', 
+              statuses[evento.status] || evento.status];
+    });
+
+    doc.autoTable({
+      startY: yPos,
+      head: [['Data', 'Hora', 'Tipo', 'Evento', 'Local', 'Status']],
+      body: dadosTabela,
+      theme: 'striped',
+      headStyles: { fillColor: [79, 70, 229], textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 3 },
+      columnStyles: { 0: { cellWidth: 22 }, 1: { cellWidth: 18 }, 2: { cellWidth: 28 }, 
+                      3: { cellWidth: 58 }, 4: { cellWidth: 35 }, 5: { cellWidth: 25 } },
+      margin: { left: 14, right: 14 },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.setTextColor(128);
+        doc.text(`Página ${data.pageNumber} de ${pageCount}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+      }
+    });
+
+    yPos = doc.lastAutoTable.finalY + 10;
+  });
+
+  const nomeArquivo = `Cronograma_${periodo.replace(/ /g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
+  doc.save(nomeArquivo);
+};
+
+const gerarRelatorioMensal = async (eventos, mes, ano) => {
+  const eventosMes = eventos.filter(e => 
+    e.data_evento.startsWith(`${ano}-${mes.toString().padStart(2, '0')}`)
+  );
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const periodo = `${meses[mes - 1]} ${ano}`;
+  await gerarRelatorioCronograma(eventosMes, periodo);
+};
+
+const gerarRelatorioSemestral = async (eventos, semestre, ano) => {
+  const mesesSemestre = semestre === 1 
+    ? ['01', '02', '03', '04', '05', '06']
+    : ['07', '08', '09', '10', '11', '12'];
+  const eventosSemestre = eventos.filter(e => {
+    const mes = e.data_evento.substring(5, 7);
+    return e.data_evento.startsWith(ano.toString()) && mesesSemestre.includes(mes);
+  });
+  const periodo = `${semestre}º Semestre ${ano}`;
+  await gerarRelatorioCronograma(eventosSemestre, periodo);
+};
+
+const gerarRelatorioAnual = async (eventos, ano) => {
+  const eventosAno = eventos.filter(e => 
+    e.data_evento.startsWith(ano.toString())
+  );
+  const periodo = `Anual ${ano}`;
+  await gerarRelatorioCronograma(eventosAno, periodo);
+};
 
 export default function Cronograma({ showSuccess, showError, userEmail }) {
   const [eventos, setEventos] = useState([]);
