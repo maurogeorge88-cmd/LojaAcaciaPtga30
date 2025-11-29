@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { gerarRelatorioMensal, gerarRelatorioSemestral, gerarRelatorioAnual } from '../../utils/relatorioCronograma';
 
 export default function Cronograma({ showSuccess, showError, userEmail }) {
   const [eventos, setEventos] = useState([]);
@@ -446,6 +447,42 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
             >
               🔄 Limpar
+            </button>
+          </div>
+
+          <div className="flex items-end gap-2">
+            <button
+              onClick={() => {
+                const mesAtual = new Date().getMonth() + 1;
+                const anoAtual = new Date().getFullYear();
+                gerarRelatorioMensal(eventos, mesAtual, anoAtual);
+              }}
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+              title="Gerar PDF do mês atual"
+            >
+              📄 Mensal
+            </button>
+            <button
+              onClick={() => {
+                const mesAtual = new Date().getMonth() + 1;
+                const anoAtual = new Date().getFullYear();
+                const semestre = mesAtual <= 6 ? 1 : 2;
+                gerarRelatorioSemestral(eventos, semestre, anoAtual);
+              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+              title="Gerar PDF do semestre atual"
+            >
+              📄 Semestral
+            </button>
+            <button
+              onClick={() => {
+                const anoAtual = new Date().getFullYear();
+                gerarRelatorioAnual(eventos, anoAtual);
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+              title="Gerar PDF do ano atual"
+            >
+              📄 Anual
             </button>
           </div>
 
