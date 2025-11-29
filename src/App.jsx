@@ -18,6 +18,7 @@ import Biblioteca from './components/biblioteca/Biblioteca';
 import Cronograma from './components/cronograma/Cronograma';
 import FinancasIrmaos from './components/financeiro/FinancasIrmaos';
 import FinancasLoja from './components/financeiro/FinancasLoja';
+import ConfigurarMensalidades from './components/financeiro/ConfigurarMensalidades';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 
@@ -1249,6 +1250,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
+            onClick={() => setCurrentPage('configurar-mensalidades')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'configurar-mensalidades'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">⚙️</span>
+            <span className="font-semibold">Config. Mensalidades</span>
+          </button>
+
+          <button
             onClick={() => setCurrentPage('altos-graus')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'altos-graus'
@@ -1333,6 +1346,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-irmaos' && '💰 Finanças dos Irmãos'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
+                  {currentPage === 'configurar-mensalidades' && '⚙️ Configurar Mensalidades'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
@@ -1525,6 +1539,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* CONFIGURAR MENSALIDADES */}
+        {currentPage === 'configurar-mensalidades' && (
+          <ConfigurarMensalidades
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
