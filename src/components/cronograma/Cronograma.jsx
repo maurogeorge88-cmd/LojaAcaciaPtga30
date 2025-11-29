@@ -7,18 +7,19 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
   const { jsPDF } = await import('jspdf');
   await import('jspdf-autotable');
   
-  const doc = new jsPDF();
+  // PDF em PAISAGEM (landscape)
+  const doc = new jsPDF('landscape');
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
   // Header com fundo azul
   doc.setFillColor(79, 70, 229);
-  doc.rect(0, 0, pageWidth, 40, 'F');
+  doc.rect(0, 0, pageWidth, 35, 'F');
   
   // Logo (se fornecida)
   if (logoBase64) {
     try {
-      doc.addImage(logoBase64, 'PNG', 10, 8, 25, 25);
+      doc.addImage(logoBase64, 'PNG', 10, 7, 22, 22);
     } catch (e) {
       console.log('Erro ao adicionar logo');
     }
@@ -26,27 +27,27 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
   
   // Título principal - linha 1
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(16);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
   doc.text('ARLS Acacia de Paranatinga No 30', pageWidth / 2, 12, { align: 'center' });
   
   // Título secundário - linha 2
-  doc.setFontSize(14);
+  doc.setFontSize(15);
   doc.text(`Cronograma ${periodo}`, pageWidth / 2, 22, { align: 'center' });
   
   // Linha separadora
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Mato Grosso - Brasil', pageWidth / 2, 32, { align: 'center' });
+  doc.text('Mato Grosso - Brasil', pageWidth / 2, 30, { align: 'center' });
 
   // Info do relatório
-  let yPos = 50;
+  let yPos = 42;
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(9);
   doc.text(`Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 14, yPos);
-  doc.text(`Total de eventos: ${eventos.length}`, pageWidth - 60, yPos);
+  doc.text(`Total de eventos: ${eventos.length}`, pageWidth - 50, yPos);
   
-  yPos += 8;
+  yPos += 5;
 
   // Se não tiver eventos
   if (eventos.length === 0) {
@@ -68,9 +69,9 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
 
   // Processar cada mês
   Object.entries(eventosPorMes).sort().forEach(([mes, eventosDoMes]) => {
-    if (yPos > pageHeight - 60) {
+    if (yPos > pageHeight - 50) {
       doc.addPage();
-      yPos = 20;
+      yPos = 15;
     }
 
     const [ano, mesNum] = mes.split('-');
@@ -110,14 +111,16 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
         hora, 
         tipos[evento.tipo] || evento.tipo, 
         evento.titulo, 
+        evento.descricao || '-',
         evento.local || '-', 
+        evento.responsavel || '-',
         statuses[evento.status] || evento.status
       ];
     });
 
     doc.autoTable({
       startY: yPos,
-      head: [['Data', 'Hora', 'Tipo', 'Evento', 'Local', 'Status']],
+      head: [['Data', 'Hora', 'Tipo', 'Evento', 'Descricao', 'Local', 'Responsavel', 'Status']],
       body: dadosTabela,
       theme: 'striped',
       headStyles: { 
@@ -129,18 +132,20 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
       },
       styles: { 
         fontSize: 8, 
-        cellPadding: 2,
+        cellPadding: 2.5,
         overflow: 'linebreak'
       },
       columnStyles: { 
-        0: { cellWidth: 20, halign: 'center' },
-        1: { cellWidth: 16, halign: 'center' },
-        2: { cellWidth: 22, halign: 'center' },
-        3: { cellWidth: 65 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 23, halign: 'center' }
+        0: { cellWidth: 22, halign: 'center' },   // Data
+        1: { cellWidth: 18, halign: 'center' },   // Hora
+        2: { cellWidth: 28, halign: 'center' },   // Tipo
+        3: { cellWidth: 70 },                     // Evento (maior)
+        4: { cellWidth: 55 },                     // Descricao (novo)
+        5: { cellWidth: 35 },                     // Local
+        6: { cellWidth: 35 },                     // Responsavel (novo)
+        7: { cellWidth: 25, halign: 'center' }    // Status
       },
-      margin: { left: 14, right: 14 },
+      margin: { left: 10, right: 10 },
       didDrawPage: (data) => {
         const pageCount = doc.internal.getNumberOfPages();
         doc.setFontSize(8);
