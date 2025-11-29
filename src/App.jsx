@@ -204,9 +204,9 @@ function App() {
   // Filtrar balaustres por grau
   useEffect(() => {
     if (currentPage === 'balaustres') {
-      loadBalaustres(grauSelecionado);
+      loadBalaustres();
     }
-  }, [grauSelecionado, currentPage]);
+  }, [currentPage]);  // Removido grauSelecionado - não precisa recarregar ao mudar grau
 
   // ========================================
   // FUNÇÕES HELPER PARA COMPONENTES
@@ -396,21 +396,15 @@ function App() {
     }
   };
 
-  const loadBalaustres = async (grau = null) => {
+  const loadBalaustres = async () => {
     try {
-      console.log('🔍 Carregando balaustres para o grau:', grau || 'todos');
+      console.log('🔍 Carregando TODOS os balaustres');
       
-      // Buscar balaustres SEM o JOIN
-      let query = supabase
+      // Buscar TODOS os balaustres (sem filtro de grau)
+      const { data: balaustreData, error: balaustreError } = await supabase
         .from('balaustres')
         .select('*')
         .order('numero_balaustre', { ascending: false });
-
-      if (grau) {
-        query = query.eq('grau_sessao', grau);
-      }
-
-      const { data: balaustreData, error: balaustreError } = await query;
       
       if (balaustreError) {
         console.error('❌ Erro ao carregar balaustres:', balaustreError);
@@ -1405,7 +1399,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             balaustres={balaustres}
             tiposSessao={tiposSessao}
             session={session}
-            onUpdate={() => loadBalaustres(grauSelecionado)}
+            onUpdate={() => loadBalaustres()}
             showSuccess={showSuccess}
             showError={showError}
           />
