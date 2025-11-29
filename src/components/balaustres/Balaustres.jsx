@@ -10,6 +10,17 @@ const Balaustres = ({
   showSuccess, 
   showError 
 }) => {
+  
+  // LOG INICIAL - Ver o que chega de props
+  console.log('🚀 BALAUSTRES COMPONENT MOUNTED:', {
+    totalRecebido: balaustres?.length || 0,
+    balaustresArray: balaustres,
+    primeiros3: balaustres?.slice(0, 3).map(b => ({
+      id: b.id,
+      numero: b.numero_balaustre,
+      grau_sessao: b.grau_sessao
+    }))
+  });
   // Estados do formulário
   const [balaustreForm, setBalaustreForm] = useState({
     grau_sessao: 'Aprendiz',
@@ -203,14 +214,17 @@ const Balaustres = ({
     const grauBusca = (grauSelecionado || '').trim().toLowerCase();
     const match = grauBanco === grauBusca;
     
-    // Debug individual
-    if (!match && grauBanco) {
-      console.log('❌ Não matched:', {
-        banco: grauBanco,
-        busca: grauBusca,
-        numero: b.numero_balaustre
-      });
-    }
+    // Debug individual com TODOS os detalhes
+    console.log(match ? '✅ MATCHED:' : '❌ NÃO MATCHED:', {
+      numero: b.numero_balaustre,
+      grau_banco_original: b.grau_sessao,
+      grau_banco_processado: grauBanco,
+      grau_busca: grauBusca,
+      comprimento_banco: grauBanco?.length,
+      comprimento_busca: grauBusca?.length,
+      sao_iguais: grauBanco === grauBusca,
+      obj_completo: b
+    });
     
     return match;
   });
