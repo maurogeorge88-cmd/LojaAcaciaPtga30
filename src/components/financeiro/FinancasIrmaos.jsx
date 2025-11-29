@@ -72,8 +72,7 @@ export default function FinancasIrmaos({ showSuccess, showError, userEmail }) {
         .select(`
           *,
           lancamentos_irmaos!inner(
-            mes_referencia,
-            ano_referencia,
+            referencia_mes_ano,
             data_vencimento
           ),
           irmaos(nome)
@@ -92,13 +91,13 @@ export default function FinancasIrmaos({ showSuccess, showError, userEmail }) {
   const gerarMensalidades = async () => {
     try {
       const { mes, ano } = mesAnoSelecionado;
+      const referenciaMesAno = `${mes.toString().padStart(2, '0')}/${ano}`;
       
       // Verificar se já existem mensalidades para este mês
       const { data: existentes, error: checkError } = await supabase
         .from('lancamentos_irmaos')
         .select('id')
-        .eq('mes_referencia', mes)
-        .eq('ano_referencia', ano);
+        .eq('referencia_mes_ano', referenciaMesAno);
 
       if (checkError) throw checkError;
 
@@ -131,8 +130,7 @@ export default function FinancasIrmaos({ showSuccess, showError, userEmail }) {
       const { data: lancamentoPrincipal, error: lancError } = await supabase
         .from('lancamentos_irmaos')
         .insert({
-          mes_referencia: mes,
-          ano_referencia: ano,
+          referencia_mes_ano: referenciaMesAno,
           data_vencimento: dataVencimento,
           observacoes: `Mensalidades de ${meses[mes - 1]}/${ano}`
         })
