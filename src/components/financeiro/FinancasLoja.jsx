@@ -148,6 +148,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     try {
       const dadosLancamento = {
+        tipo: formLancamento.tipo, // receita ou despesa
         categoria_id: parseInt(formLancamento.categoria_id),
         descricao: formLancamento.descricao,
         valor: parseFloat(formLancamento.valor),
@@ -200,6 +201,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       const lancamentosParaCriar = lancamentoIrmaos.irmaos_selecionados.map(irmaoId => {
         const irmao = irmaos.find(i => i.id === irmaoId);
         return {
+          tipo: 'receita', // Lançamento de irmãos é sempre RECEITA
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
           descricao: `${lancamentoIrmaos.descricao} - ${irmao.nome}`,
           valor: parseFloat(lancamentoIrmaos.valor),
