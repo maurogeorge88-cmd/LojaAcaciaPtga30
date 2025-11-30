@@ -926,8 +926,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       {/* LISTA DE LANÇAMENTOS */}
       {viewMode === 'lancamentos' && (
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="bg-white rounded-lg shadow">
+          <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
             Lançamentos de {meses[filtros.mes - 1]}/{filtros.ano}
           </h3>
@@ -1017,6 +1017,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </div>
           )}
         </div>
+      </div>
       )}
     </div>
   );
