@@ -50,8 +50,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     { value: 'dinheiro', label: '💵 Dinheiro' },
     { value: 'pix', label: '📱 PIX' },
     { value: 'transferencia', label: '🏦 Transferência' },
-    { value: 'boleto', label: '📄 Boleto' },
-    { value: 'cartao', label: '💳 Cartão' },
+    { value: 'debito', label: '💳 Débito' },
+    { value: 'credito', label: '💳 Crédito' },
     { value: 'cheque', label: '📝 Cheque' }
   ];
 
