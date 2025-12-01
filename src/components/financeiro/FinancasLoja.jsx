@@ -499,7 +499,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       data_pagamento: lancamento.data_pagamento || '',
       status: lancamento.status,
       comprovante_url: lancamento.comprovante_url || '',
-      observacoes: lancamento.observacoes || ''
+      observacoes: lancamento.observacoes || '',
+      origem_tipo: lancamento.origem_tipo || 'Loja', // ← ADICIONAR
+      origem_irmao_id: lancamento.origem_irmao_id || '' // ← ADICIONAR
     });
     setEditando(lancamento.id);
     setMostrarFormulario(true);
@@ -537,7 +539,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       data_pagamento: '',
       status: 'pendente',
       comprovante_url: '',
-      observacoes: ''
+      observacoes: '',
+      origem_tipo: 'Loja', // ← ADICIONAR
+      origem_irmao_id: '' // ← ADICIONAR
     });
     setEditando(null);
     setMostrarFormulario(false);
@@ -743,7 +747,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       {/* FILTROS */}
       <div className="bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
+          {/* Filtro Mês */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
             <select
@@ -751,22 +756,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               onChange={(e) => setFiltros({ ...filtros, mes: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
+              <option value={0}>Todos</option>
               {meses.map((mes, idx) => (
                 <option key={idx} value={idx + 1}>{mes}</option>
               ))}
             </select>
           </div>
 
+          {/* Filtro Ano */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
-            <input
-              type="number"
+            <select
               value={filtros.ano}
               onChange={(e) => setFiltros({ ...filtros, ano: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
+            >
+              <option value={0}>Todos</option>
+              {[2023, 2024, 2025, 2026, 2027, 2028].map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
 
+          {/* Filtro Tipo */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
             <select
@@ -780,6 +792,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </select>
           </div>
 
+          {/* Filtro Categoria */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
             <select
@@ -794,6 +807,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </select>
           </div>
 
+          {/* Filtro Status */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
@@ -808,6 +822,39 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <option value="cancelado">Cancelados</option>
             </select>
           </div>
+
+          {/* Filtro Origem */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Origem</label>
+            <select
+              value={filtros.origem_tipo}
+              onChange={(e) => {
+                setFiltros({ ...filtros, origem_tipo: e.target.value, origem_irmao_id: '' });
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Todas</option>
+              <option value="Loja">🏛️ Loja</option>
+              <option value="Irmao">👤 Irmãos</option>
+            </select>
+          </div>
+
+          {/* Filtro por Irmão (só aparece se origem = Irmão) */}
+          {filtros.origem_tipo === 'Irmao' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Irmão</label>
+              <select
+                value={filtros.origem_irmao_id}
+                onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Todos</option>
+                {irmaos.map(irmao => (
+                  <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 
@@ -853,6 +900,48 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     ))}
                 </select>
               </div>
+
+              {/* NOVO: Campo Origem */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Origem *
+                </label>
+                <select
+                  value={formLancamento.origem_tipo}
+                  onChange={(e) => {
+                    setFormLancamento({ 
+                      ...formLancamento, 
+                      origem_tipo: e.target.value,
+                      origem_irmao_id: '' // Limpar irmão ao mudar tipo
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Loja">🏛️ Loja</option>
+                  <option value="Irmao">👤 Irmão</option>
+                </select>
+              </div>
+
+              {/* NOVO: Campo Irmão (só aparece se origem = Irmão) */}
+              {formLancamento.origem_tipo === 'Irmao' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Irmão *
+                  </label>
+                  <select
+                    value={formLancamento.origem_irmao_id}
+                    onChange={(e) => setFormLancamento({ ...formLancamento, origem_irmao_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    {irmaos.map(irmao => (
+                      <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1501,6 +1590,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pagamento</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -1530,6 +1620,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
                       {lanc.descricao}
+                    </td>
+                    {/* NOVA COLUNA: Origem */}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {lanc.origem_tipo === 'Loja' ? (
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                          🏛️ Loja
+                        </span>
+                      ) : (
+                        <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
+                          👤 {lanc.irmaos?.nome || 'Irmão'}
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
