@@ -429,10 +429,36 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
                 </div>
 
                 {/* Badge de Situação */}
-                <div className="mt-3">
+                <div className="mt-3 flex gap-2 flex-wrap">
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${obterCorSituacao(situacao)}`}>
                     {irmao.situacao || 'Regular'}
                   </span>
+                  
+                  {/* ← NOVO: Periodicidade de Pagamento Editável */}
+                  <select
+                    value={irmao.periodicidade_pagamento || 'Mensal'}
+                    onChange={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const { error } = await supabase
+                          .from('irmaos')
+                          .update({ periodicidade_pagamento: e.target.value })
+                          .eq('id', irmao.id);
+                        
+                        if (error) throw error;
+                        showSuccess('Periodicidade atualizada!');
+                        onUpdate();
+                      } catch (error) {
+                        showError('Erro ao atualizar: ' + error.message);
+                      }
+                    }}
+                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium border border-gray-300 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                    title="Periodicidade de Pagamento"
+                  >
+                    <option value="Mensal">📅 Mensal</option>
+                    <option value="Semestral">📆 Semestral</option>
+                    <option value="Anual">📊 Anual</option>
+                  </select>
                 </div>
 
                 {/* Botões de Ação */}
