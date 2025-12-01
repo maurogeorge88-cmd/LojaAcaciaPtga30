@@ -47,6 +47,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     oriente: '',
     grande_oriente: '',
     situacao: 'regular',
+    periodicidade_pagamento: 'Mensal',  // ← NOVO CAMPO ADICIONADO
     observacoes: '',
     status: 'ativo'
   });
@@ -120,6 +121,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       oriente: irmao.oriente || '',
       grande_oriente: irmao.grande_oriente || '',
       situacao: irmao.situacao || 'regular',
+      periodicidade_pagamento: irmao.periodicidade_pagamento || 'Mensal',  // ← CARREGAR CAMPO
       observacoes: irmao.observacoes || '',
       status: irmao.status || 'ativo'
     });
@@ -312,6 +314,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         oriente: irmaoForm.oriente || null,
         grande_oriente: irmaoForm.grande_oriente || null,
         situacao: irmaoForm.situacao || 'regular',
+        periodicidade_pagamento: irmaoForm.periodicidade_pagamento || 'Mensal',  // ← ENVIAR AO BANCO
         observacoes: irmaoForm.observacoes || null,
         status: irmaoForm.status || 'ativo'
       };
@@ -517,6 +520,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       oriente: '',
       grande_oriente: '',
       situacao: 'regular',
+      periodicidade_pagamento: 'Mensal',  // ← ADICIONAR AO LIMPAR
       observacoes: '',
       status: 'ativo'
     });
@@ -943,6 +947,25 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <option key={status.value} value={status.value}>{status.label}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* ← NOVO CAMPO: PERIODICIDADE DE PAGAMENTO */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  💰 Periodicidade de Pagamento
+                </label>
+                <select
+                  value={irmaoForm.periodicidade_pagamento}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, periodicidade_pagamento: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="Mensal">📅 Mensal - Paga todo mês</option>
+                  <option value="Semestral">📆 Semestral - Paga a cada 6 meses</option>
+                  <option value="Anual">📊 Anual - Paga uma vez por ano</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Define a frequência de cobrança de mensalidades para este irmão
+                </p>
               </div>
             </div>
 
