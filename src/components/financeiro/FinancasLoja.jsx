@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -84,6 +84,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const carregarDados = async () => {
     setLoading(true);
     try {
+      console.log('🔄 Iniciando carregamento de dados...');
+      
       // Carregar categorias
       const { data: catData, error: catError } = await supabase
         .from('categorias_financeiras')
@@ -91,7 +93,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         .eq('ativo', true)
         .order('nome');
 
-      if (catError) throw catError;
+      if (catError) {
+        console.error('❌ Erro ao carregar categorias:', catError);
+        throw catError;
+      }
+      console.log('✅ Categorias carregadas:', catData?.length || 0);
       setCategorias(catData || []);
 
       // Carregar irmãos ativos
@@ -101,14 +107,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         .eq('situacao', 'Ativo')
         .order('nome');
 
-      if (irmaoError) throw irmaoError;
+      if (irmaoError) {
+        console.error('❌ Erro ao carregar irmãos:', irmaoError);
+        throw irmaoError;
+      }
+      console.log('✅ Irmãos carregados:', irmaoData?.length || 0, irmaoData);
       setIrmaos(irmaoData || []);
 
       // Carregar lançamentos
       await carregarLancamentos();
 
     } catch (error) {
-      console.error('Erro ao carregar dados:', error);
+      console.error('❌ Erro ao carregar dados:', error);
       showError('Erro ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
@@ -987,19 +997,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   </div>
                 </div>
                 <div className="border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                    {irmaos.map(irmao => (
-                      <label key={irmao.id} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
-                        <input
-                          type="checkbox"
-                          checked={lancamentoIrmaos.irmaos_selecionados.includes(irmao.id)}
-                          onChange={() => toggleIrmaoSelecionado(irmao.id)}
-                          className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{irmao.nome}</span>
-                      </label>
-                    ))}
-                  </div>
+                  {irmaos.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <p>⚠️ Nenhum irmão ativo encontrado</p>
+                      <p className="text-xs mt-2">Verifique se existem irmãos com situação "Ativo" no cadastro</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      {irmaos.map(irmao => (
+                        <label key={irmao.id} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
+                          <input
+                            type="checkbox"
+                            checked={lancamentoIrmaos.irmaos_selecionados.includes(irmao.id)}
+                            onChange={() => toggleIrmaoSelecionado(irmao.id)}
+                            className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                          <span className="ml-2 text-sm text-gray-700">{irmao.nome}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
