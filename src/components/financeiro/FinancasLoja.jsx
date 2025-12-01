@@ -1548,32 +1548,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               {lancamentos
                 .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
                 .map((lanc) => (
-      {viewMode === 'inadimplentes' && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos Inadimplentes</h3>
-              <p className="text-sm text-gray-600">Receitas pendentes de pagamento</p>
-            </div>
-            {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
-              <button
-                onClick={() => setMostrarModalQuitacaoLote(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-              >
-                💰 Quitar em Lote
-              </button>
-            )}
-          </div>
-          
-          {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              ✅ Nenhum irmão inadimplente neste período!
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {lancamentos
-                .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
-                .map((lanc) => (
                   <div key={lanc.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
                     {/* LINHA 1: Nome do Irmão */}
                     <div className="mb-3">
@@ -1625,7 +1599,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </div>
           )}
         </div>
-      )}
       )}
 
       {/* LISTA DE LANÇAMENTOS */}
