@@ -37,11 +37,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos' ou 'inadimplentes'
   
   const [filtros, setFiltros] = useState({
-    mes: new Date().getMonth() + 1,
-    ano: new Date().getFullYear(),
+    mes: 0, // 0 = Todos
+    ano: 0, // 0 = Todos
     tipo: '', // 'receita' ou 'despesa'
     categoria: '',
-    status: '' // 'pago', 'pendente', 'vencido', 'cancelado'
+    status: '', // 'pago', 'pendente', 'vencido', 'cancelado'
+    origem_tipo: '', // 'Loja' ou 'Irmao'
+    origem_irmao_id: '' // ID do irmão
   });
 
   const [formLancamento, setFormLancamento] = useState({
@@ -55,7 +57,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     data_pagamento: '',
     status: 'pendente', // CORRIGIDO: usar 'pendente' ou 'pago'
     comprovante_url: '',
-    observacoes: ''
+    observacoes: '',
+    origem_tipo: 'Loja', // ← NOVO: 'Loja' ou 'Irmao'
+    origem_irmao_id: '' // ← NOVO: ID do irmão se origem_tipo = 'Irmao'
   });
 
   // Para lançamento em lote de irmãos
@@ -209,36 +213,56 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   const carregarLancamentos = async () => {
     try {
-      const { mes, ano } = filtros;
-      const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
-      const ultimoDia = new Date(ano, mes, 0).getDate();
-      const ultimoDiaFormatado = `${ano}-${mes.toString().padStart(2, '0')}-${ultimoDia}`;
+      const { mes, ano, tipo, categoria, status, origem_tipo, origem_irmao_id } = filtros;
 
       let query = supabase
         .from('lancamentos_loja')
         .select(`
           *,
-          categorias_financeiras(nome, tipo)
+          categorias_financeiras(nome, tipo),
+          irmaos(nome)
         `)
-        .gte('data_lancamento', primeiroDia)
-        .lte('data_lancamento', ultimoDiaFormatado)
         .order('data_lancamento', { ascending: false });
 
-      if (filtros.tipo) {
+      // Filtro de MÊS e ANO (0 = Todos)
+      if (mes > 0 && ano > 0) {
+        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+        const ultimoDia = new Date(ano, mes, 0).getDate();
+        const ultimoDiaFormatado = `${ano}-${mes.toString().padStart(2, '0')}-${ultimoDia}`;
+        query = query.gte('data_lancamento', primeiroDia).lte('data_lancamento', ultimoDiaFormatado);
+      } else if (ano > 0) {
+        // Apenas ano selecionado
+        query = query.gte('data_lancamento', `${ano}-01-01`).lte('data_lancamento', `${ano}-12-31`);
+      }
+
+      // Filtro de TIPO (receita/despesa)
+      if (tipo) {
         const categoriasDoTipo = categorias
-          .filter(c => c.tipo === filtros.tipo)
+          .filter(c => c.tipo === tipo)
           .map(c => c.id);
         if (categoriasDoTipo.length > 0) {
           query = query.in('categoria_id', categoriasDoTipo);
         }
       }
 
-      if (filtros.categoria) {
-        query = query.eq('categoria_id', parseInt(filtros.categoria));
+      // Filtro de CATEGORIA específica
+      if (categoria) {
+        query = query.eq('categoria_id', parseInt(categoria));
       }
 
-      if (filtros.status) {
-        query = query.eq('status', filtros.status);
+      // Filtro de STATUS
+      if (status) {
+        query = query.eq('status', status);
+      }
+
+      // Filtro de ORIGEM (Loja ou Irmão)
+      if (origem_tipo) {
+        query = query.eq('origem_tipo', origem_tipo);
+      }
+
+      // Filtro de IRMÃO específico
+      if (origem_irmao_id) {
+        query = query.eq('origem_irmao_id', parseInt(origem_irmao_id));
       }
 
       const { data, error } = await query;
@@ -265,7 +289,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         data_pagamento: formLancamento.data_pagamento || null,
         status: formLancamento.status, // CORRIGIDO: usar 'pendente' ou 'pago'
         comprovante_url: formLancamento.comprovante_url || null,
-        observacoes: formLancamento.observacoes || null
+        observacoes: formLancamento.observacoes || null,
+        origem_tipo: formLancamento.origem_tipo || 'Loja', // ← NOVO
+        origem_irmao_id: formLancamento.origem_irmao_id ? parseInt(formLancamento.origem_irmao_id) : null // ← NOVO
       };
 
       if (editando) {
@@ -310,12 +336,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         return {
           tipo: 'receita',
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
-          descricao: `${lancamentoIrmaos.descricao} - ${irmao.nome}`,
+          descricao: lancamentoIrmaos.descricao, // ← REMOVER nome do irmão da descrição
           valor: parseFloat(lancamentoIrmaos.valor),
           data_lancamento: lancamentoIrmaos.data_lancamento,
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
-          status: 'pendente'
+          status: 'pendente',
+          origem_tipo: 'Irmao', // ← NOVO: marcar como origem Irmão
+          origem_irmao_id: irmaoId // ← NOVO: ID do irmão
         };
       });
 
