@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../App';
+import { supabase } from '../../supabaseClient';
 
 export default function GerenciarCategorias({ showSuccess, showError }) {
   const [categorias, setCategorias] = useState([]);
