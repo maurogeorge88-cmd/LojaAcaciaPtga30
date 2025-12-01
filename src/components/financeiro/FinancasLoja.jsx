@@ -1551,18 +1551,32 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   <div key={lanc.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
                     <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <p className="font-medium text-gray-900">{lanc.descricao}</p>
-                        <div className="text-sm text-gray-600 mt-1">
-                          <span>Vencimento: {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}</span>
-                          {' • '}
-                          <span>Categoria: {lanc.categorias_financeiras?.nome}</span>
+                        {/* Nome do Irmão */}
+                        <p className="font-bold text-lg text-gray-900">
+                          👤 {lanc.irmaos?.nome || lanc.descricao}
+                        </p>
+                        {/* Tipo e Categoria */}
+                        <div className="flex gap-2 mt-2">
+                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
+                            📈 Receita
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                            {lanc.categorias_financeiras?.nome}
+                          </span>
+                        </div>
+                        {/* Descrição e Vencimento */}
+                        <div className="text-sm text-gray-600 mt-2">
+                          <p className="font-medium">{lanc.descricao}</p>
+                          <p className="mt-1">
+                            <span className="text-red-600 font-medium">⏰ Vencimento:</span> {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}
+                          </p>
                         </div>
                       </div>
                       <div className="text-right ml-4">
-                        <p className="text-lg font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
                         <button
                           onClick={() => abrirModalQuitacao(lanc)}
-                          className="mt-2 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                          className="mt-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
                         >
                           💰 Quitar
                         </button>
