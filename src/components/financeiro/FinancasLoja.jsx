@@ -34,7 +34,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
   const [mostrarModalQuitacaoLote, setMostrarModalQuitacaoLote] = useState(false);
   const [editando, setEditando] = useState(null);
-  const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos' ou 'inadimplentes'
+  const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   
   const [filtros, setFiltros] = useState({
     mes: 0, // 0 = Todos
@@ -107,12 +107,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     carregarDados();
   }, [filtros.mes, filtros.ano]);
 
-  // Recarregar lançamentos quando mudar tipo, categoria ou status
+  // Recarregar lançamentos quando mudar filtros
   useEffect(() => {
     if (categorias.length > 0) {
       carregarLancamentos();
     }
-  }, [filtros.tipo, filtros.categoria, filtros.status]);
+  }, [filtros.tipo, filtros.categoria, filtros.status, filtros.origem_tipo, filtros.origem_irmao_id]); // ← ADICIONAR origem
 
   const carregarDados = async () => {
     setLoading(true);
@@ -694,6 +694,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             }`}
           >
             ⚠️ Inadimplentes
+          </button>
+          <button
+            onClick={() => setViewMode('categorias')}
+            className={`px-4 py-2 rounded-lg font-medium ${
+              viewMode === 'categorias'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            🏷️ Categorias
           </button>
         </div>
 
@@ -1698,6 +1708,257 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </div>
         </div>
       )}
+
+      {/* SEÇÃO: GERENCIAR CATEGORIAS */}
+      {viewMode === 'categorias' && (
+        <GerenciarCategorias 
+          categorias={categorias}
+          onUpdate={carregarDados}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// COMPONENTE: GERENCIAR CATEGORIAS
+// ============================================
+function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [formCategoria, setFormCategoria] = useState({
+    nome: '',
+    tipo: 'receita',
+    descricao: '',
+    ativo: true
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const dados = {
+        nome: formCategoria.nome.trim(),
+        tipo: formCategoria.tipo,
+        descricao: formCategoria.descricao.trim() || null,
+        ativo: formCategoria.ativo
+      };
+
+      if (editando) {
+        const { error } = await supabase
+          .from('categorias_financeiras')
+          .update(dados)
+          .eq('id', editando);
+
+        if (error) throw error;
+        showSuccess('Categoria atualizada!');
+      } else {
+        const { error } = await supabase
+          .from('categorias_financeiras')
+          .insert(dados);
+
+        if (error) throw error;
+        showSuccess('Categoria criada!');
+      }
+
+      limparFormulario();
+      await onUpdate();
+
+    } catch (error) {
+      showError('Erro: ' + error.message);
+    }
+  };
+
+  const editarCategoria = (categoria) => {
+    setFormCategoria({
+      nome: categoria.nome,
+      tipo: categoria.tipo,
+      descricao: categoria.descricao || '',
+      ativo: categoria.ativo !== false
+    });
+    setEditando(categoria.id);
+    setMostrarFormulario(true);
+  };
+
+  const toggleAtivo = async (id, ativoAtual) => {
+    try {
+      const { error } = await supabase
+        .from('categorias_financeiras')
+        .update({ ativo: !ativoAtual })
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess(`Categoria ${!ativoAtual ? 'ativada' : 'desativada'}!`);
+      await onUpdate();
+    } catch (error) {
+      showError('Erro: ' + error.message);
+    }
+  };
+
+  const excluirCategoria = async (id) => {
+    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('categorias_financeiras')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess('Categoria excluída!');
+      await onUpdate();
+    } catch (error) {
+      showError('Erro: ' + error.message);
+    }
+  };
+
+  const limparFormulario = () => {
+    setFormCategoria({ nome: '', tipo: 'receita', descricao: '', ativo: true });
+    setEditando(null);
+    setMostrarFormulario(false);
+  };
+
+  const categoriasReceita = categorias.filter(c => c.tipo === 'receita');
+  const categoriasDespesa = categorias.filter(c => c.tipo === 'despesa');
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">🏷️ Gerenciar Categorias</h2>
+        <button
+          onClick={() => setMostrarFormulario(!mostrarFormulario)}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+        >
+          {mostrarFormulario ? '❌ Cancelar' : '➕ Nova Categoria'}
+        </button>
+      </div>
+
+      {mostrarFormulario && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">
+            {editando ? '✏️ Editar Categoria' : '➕ Nova Categoria'}
+          </h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <input
+                  type="text"
+                  value={formCategoria.nome}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                <select
+                  value={formCategoria.tipo}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="receita">💰 Receita</option>
+                  <option value="despesa">💸 Despesa</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                <input
+                  type="text"
+                  value={formCategoria.descricao}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formCategoria.ativo}
+                    onChange={(e) => setFormCategoria({ ...formCategoria, ativo: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="ml-2 text-sm">Categoria ativa</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                {editando ? '✅ Salvar' : '➕ Criar'}
+              </button>
+              <button type="button" onClick={limparFormulario} className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* RECEITAS */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-green-700 mb-4">
+            💰 Receitas ({categoriasReceita.length})
+          </h3>
+          <div className="space-y-2">
+            {categoriasReceita.map(cat => (
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{cat.nome}</h4>
+                      {cat.ativo === false && <span className="text-xs px-2 py-1 bg-gray-200 rounded">Inativa</span>}
+                    </div>
+                    {cat.descricao && <p className="text-sm text-gray-600 mt-1">{cat.descricao}</p>}
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} className="p-1 text-yellow-600 hover:bg-yellow-100 rounded" title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
+                    <button onClick={() => excluirCategoria(cat.id)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Excluir">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {categoriasReceita.length === 0 && <p className="text-gray-500 text-sm">Nenhuma categoria</p>}
+          </div>
+        </div>
+
+        {/* DESPESAS */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-red-700 mb-4">
+            💸 Despesas ({categoriasDespesa.length})
+          </h3>
+          <div className="space-y-2">
+            {categoriasDespesa.map(cat => (
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{cat.nome}</h4>
+                      {cat.ativo === false && <span className="text-xs px-2 py-1 bg-gray-200 rounded">Inativa</span>}
+                    </div>
+                    {cat.descricao && <p className="text-sm text-gray-600 mt-1">{cat.descricao}</p>}
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} className="p-1 text-yellow-600 hover:bg-yellow-100 rounded" title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
+                    <button onClick={() => excluirCategoria(cat.id)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Excluir">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {categoriasDespesa.length === 0 && <p className="text-gray-500 text-sm">Nenhuma categoria</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Dica:</strong> Categorias inativas não aparecem nos formulários, mas lançamentos antigos continuam visíveis.
+        </p>
+      </div>
     </div>
   );
 }
