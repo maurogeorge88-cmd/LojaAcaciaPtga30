@@ -6,7 +6,7 @@ import { supabase } from './supabaseClient';
 // ============================================
 
 // Autenticação
-import Login from './components/Login';
+import { Login } from './components/Login';
 
 // Irmãos
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
