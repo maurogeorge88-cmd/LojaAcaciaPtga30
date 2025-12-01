@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -1548,35 +1548,73 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               {lancamentos
                 .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
                 .map((lanc) => (
+      {viewMode === 'inadimplentes' && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos Inadimplentes</h3>
+              <p className="text-sm text-gray-600">Receitas pendentes de pagamento</p>
+            </div>
+            {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
+              <button
+                onClick={() => setMostrarModalQuitacaoLote(true)}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              >
+                💰 Quitar em Lote
+              </button>
+            )}
+          </div>
+          
+          {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              ✅ Nenhum irmão inadimplente neste período!
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {lancamentos
+                .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
+                .map((lanc) => (
                   <div key={lanc.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1">
-                        {/* Nome do Irmão */}
-                        <p className="font-bold text-lg text-gray-900">
-                          👤 {lanc.irmaos?.nome || lanc.descricao}
-                        </p>
-                        {/* Tipo e Categoria */}
-                        <div className="flex gap-2 mt-2">
-                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
-                            📈 Receita
-                          </span>
-                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                            {lanc.categorias_financeiras?.nome}
-                          </span>
-                        </div>
-                        {/* Descrição e Vencimento */}
-                        <div className="text-sm text-gray-600 mt-2">
-                          <p className="font-medium">{lanc.descricao}</p>
-                          <p className="mt-1">
-                            <span className="text-red-600 font-medium">⏰ Vencimento:</span> {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}
-                          </p>
-                        </div>
+                    {/* LINHA 1: Nome do Irmão */}
+                    <div className="mb-3">
+                      <p className="font-bold text-lg text-gray-900">
+                        👤 {lanc.irmaos?.nome || lanc.descricao}
+                      </p>
+                    </div>
+
+                    {/* LINHA 2: Todas as outras informações */}
+                    <div className="flex justify-between items-center gap-4">
+                      {/* Tipo e Categoria */}
+                      <div className="flex gap-2">
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium whitespace-nowrap">
+                          📈 Receita
+                        </span>
+                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
+                          {lanc.categorias_financeiras?.nome}
+                        </span>
                       </div>
-                      <div className="text-right ml-4">
-                        <p className="text-2xl font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
+
+                      {/* Vencimento */}
+                      <div>
+                        <p className="text-sm">
+                          <span className="text-red-600 font-medium">⏰</span>{' '}
+                          {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+
+                      {/* Descrição */}
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-700 font-medium">{lanc.descricao}</p>
+                      </div>
+
+                      {/* Valor e Botão */}
+                      <div className="text-right flex items-center gap-4">
+                        <p className="text-2xl font-bold text-red-600">
+                          R$ {parseFloat(lanc.valor).toFixed(2)}
+                        </p>
                         <button
                           onClick={() => abrirModalQuitacao(lanc)}
-                          className="mt-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
+                          className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium transition whitespace-nowrap"
                         >
                           💰 Quitar
                         </button>
@@ -1587,6 +1625,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </div>
           )}
         </div>
+      )}
       )}
 
       {/* LISTA DE LANÇAMENTOS */}
