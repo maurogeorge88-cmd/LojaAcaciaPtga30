@@ -66,7 +66,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     data_lancamento: new Date().toISOString().split('T')[0],
     data_vencimento: new Date().toISOString().split('T')[0],
     tipo_pagamento: 'dinheiro',
-    irmaos_selecionados: []
+    irmaos_selecionados: [],
+    eh_mensalidade: false  // NOVO: indica se é mensalidade
   });
 
   // Para quitação individual
@@ -133,7 +134,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       
       const { data: todosIrmaos, error: irmaoError } = await supabase
         .from('irmaos')
-        .select('id, nome, situacao')
+        .select('id, nome, situacao, periodicidade_pagamento')
         .order('nome');
 
       if (irmaoError) {
@@ -522,7 +523,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       data_lancamento: new Date().toISOString().split('T')[0],
       data_vencimento: new Date().toISOString().split('T')[0],
       tipo_pagamento: 'dinheiro',
-      irmaos_selecionados: []
+      irmaos_selecionados: [],
+      eh_mensalidade: false
     });
   };
 
@@ -536,9 +538,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const selecionarTodosIrmaos = () => {
+    // Filtrar irmãos baseado se é mensalidade ou não
+    const irmaosDisponiveis = irmaos.filter(irmao => {
+      if (lancamentoIrmaos.eh_mensalidade) {
+        return irmao.periodicidade_pagamento === 'Mensal' || !irmao.periodicidade_pagamento;
+      }
+      return true;
+    });
+    
     setLancamentoIrmaos(prev => ({
       ...prev,
-      irmaos_selecionados: irmaos.map(i => i.id)
+      irmaos_selecionados: irmaosDisponiveis.map(i => i.id)
     }));
   };
 
@@ -982,6 +992,35 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   </select>
                 </div>
 
+                <div className="md:col-span-2">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={lancamentoIrmaos.eh_mensalidade}
+                        onChange={(e) => {
+                          setLancamentoIrmaos({ 
+                            ...lancamentoIrmaos, 
+                            eh_mensalidade: e.target.checked,
+                            irmaos_selecionados: [] // Limpa seleção ao mudar tipo
+                          });
+                        }}
+                        className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <div className="ml-3">
+                        <span className="text-sm font-medium text-blue-900">
+                          📅 Este lançamento é uma MENSALIDADE?
+                        </span>
+                        <p className="text-xs text-blue-700 mt-1">
+                          {lancamentoIrmaos.eh_mensalidade 
+                            ? '✅ Mostrando apenas irmãos com pagamento MENSAL' 
+                            : '📋 Mostrando TODOS os irmãos (para outras cobranças)'}
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Valor por Irmão (R$) *
@@ -1058,7 +1097,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Selecione os Irmãos * ({lancamentoIrmaos.irmaos_selecionados.length} selecionados)
+                    Selecione os Irmãos * ({lancamentoIrmaos.irmaos_selecionados.length} selecionados
+                    {lancamentoIrmaos.eh_mensalidade && (
+                      <span className="text-blue-600">
+                        {' '}de {irmaos.filter(i => i.periodicidade_pagamento === 'Mensal' || !i.periodicidade_pagamento).length} mensais
+                      </span>
+                    )})
                   </label>
                   <div className="flex gap-2">
                     <button
@@ -1085,7 +1129,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                      {irmaos.map(irmao => (
+                      {irmaos
+                        .filter(irmao => {
+                          // Se é mensalidade, mostra apenas quem paga mensalmente
+                          if (lancamentoIrmaos.eh_mensalidade) {
+                            return irmao.periodicidade_pagamento === 'Mensal' || 
+                                   !irmao.periodicidade_pagamento; // Se null, considera mensal
+                          }
+                          // Se não é mensalidade, mostra todos
+                          return true;
+                        })
+                        .map(irmao => (
                         <label key={irmao.id} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
                           <input
                             type="checkbox"
@@ -1093,7 +1147,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                             onChange={() => toggleIrmaoSelecionado(irmao.id)}
                             className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">{irmao.nome}</span>
+                          <span className="ml-2 text-sm text-gray-700">
+                            {irmao.nome}
+                            {irmao.periodicidade_pagamento && irmao.periodicidade_pagamento !== 'Mensal' && (
+                              <span className="ml-1 text-xs text-blue-600">
+                                ({irmao.periodicidade_pagamento})
+                              </span>
+                            )}
+                          </span>
                         </label>
                       ))}
                     </div>
