@@ -3,6 +3,27 @@ import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+// ========================================
+// ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
+// ========================================
+// Status dos irmãos da A∴R∴L∴S∴ Acácia de Paranatinga nº 30
+
+// Status que PODEM receber lançamentos financeiros
+const STATUS_PERMITIDOS = [
+  'Regular',      // Irmão em situação regular
+  'Irregular',    // Irmão irregular (precisa regularizar)
+  'Licenciado',   // Irmão licenciado (recebe lançamentos)
+];
+
+// Status que NÃO DEVEM receber lançamentos
+const STATUS_BLOQUEADOS = [
+  'Suspenso',     // Irmão suspenso
+  'Desligado',    // Irmão desligado
+  'Excluído',     // Irmão excluído
+  'Falecido',     // Irmão falecido
+  'Ex-Ofício',    // Ex-ofício
+];
+
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -81,6 +102,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     carregarDados();
   }, [filtros.mes, filtros.ano]);
 
+  // Recarregar lançamentos quando mudar tipo, categoria ou status
+  useEffect(() => {
+    if (categorias.length > 0) {
+      carregarLancamentos();
+    }
+  }, [filtros.tipo, filtros.categoria, filtros.status]);
+
   const carregarDados = async () => {
     setLoading(true);
     try {
@@ -100,19 +128,72 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       console.log('✅ Categorias carregadas:', catData?.length || 0);
       setCategorias(catData || []);
 
-      // Carregar irmãos ativos
-      const { data: irmaoData, error: irmaoError } = await supabase
+      // Carregar irmãos (com status permitidos)
+      console.log('🔍 Buscando irmãos...');
+      
+      const { data: todosIrmaos, error: irmaoError } = await supabase
         .from('irmaos')
-        .select('id, nome')
-        .eq('situacao', 'Ativo')
+        .select('id, nome, situacao')
         .order('nome');
 
       if (irmaoError) {
         console.error('❌ Erro ao carregar irmãos:', irmaoError);
         throw irmaoError;
       }
-      console.log('✅ Irmãos carregados:', irmaoData?.length || 0, irmaoData);
-      setIrmaos(irmaoData || []);
+      
+      console.log('📋 Total de irmãos cadastrados:', todosIrmaos?.length || 0);
+      
+      // Verificar quais status existem no banco
+      const statusUnicos = [...new Set(todosIrmaos?.map(i => i.situacao) || [])];
+      console.log('🏷️ Status encontrados no banco:', statusUnicos);
+      
+      // Contagem por status
+      const contagemStatus = {};
+      todosIrmaos?.forEach(i => {
+        const status = i.situacao || 'SEM STATUS';
+        contagemStatus[status] = (contagemStatus[status] || 0) + 1;
+      });
+      console.log('📊 Distribuição por status:', contagemStatus);
+      console.log('⚙️ Status permitidos (configuração):', STATUS_PERMITIDOS);
+      
+      // Filtrar irmãos com status permitidos (case-insensitive)
+      const irmaosDisponiveis = todosIrmaos?.filter(i => {
+        const status = (i.situacao || '').trim();
+        
+        // Verifica se está na lista de permitidos
+        const estaPermitido = STATUS_PERMITIDOS.some(sp => 
+          sp.toLowerCase() === status.toLowerCase()
+        );
+        
+        // Verifica se NÃO está na lista de bloqueados
+        const estaBloqueado = STATUS_BLOQUEADOS.some(sb => 
+          sb.toLowerCase() === status.toLowerCase()
+        );
+        
+        return estaPermitido && !estaBloqueado;
+      }) || [];
+      
+      console.log('✅ Irmãos disponíveis para lançamento:', irmaosDisponiveis.length);
+      
+      if (irmaosDisponiveis.length === 0) {
+        console.warn('⚠️ NENHUM IRMÃO DISPONÍVEL PARA LANÇAMENTO!');
+        console.warn('');
+        console.warn('🔍 DIAGNÓSTICO:');
+        console.warn('  • Status encontrados no banco:', statusUnicos);
+        console.warn('  • Status permitidos no código:', STATUS_PERMITIDOS);
+        console.warn('  • Status bloqueados:', STATUS_BLOQUEADOS);
+        console.warn('');
+        console.warn('💡 SOLUÇÃO:');
+        console.warn('  1. Verifique se os status do banco correspondem aos permitidos');
+        console.warn('  2. Ajuste STATUS_PERMITIDOS no início do arquivo FinancasLoja.jsx');
+        console.warn('  3. Adicione os status do seu banco na configuração');
+        console.warn('');
+        console.warn('📋 Primeiros 5 irmãos:', todosIrmaos?.slice(0, 5));
+      } else {
+        console.log('📝 Exemplo de irmãos carregados:', irmaosDisponiveis.slice(0, 3));
+      }
+      
+      setIrmaos(irmaosDisponiveis);
 
       // Carregar lançamentos
       await carregarLancamentos();
