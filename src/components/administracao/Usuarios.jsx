@@ -205,19 +205,32 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     setResetandoSenha(usuario.id);
 
     try {
-      // Tentar resetar senha via admin API
-      const { error } = await supabase.auth.admin.updateUserById(
-        usuario.auth_user_id,
-        { password: novaSenha }
-      );
+      // Salvar senha temporária na tabela para o usuário ver
+      const { error } = await supabase
+        .from('usuarios')
+        .update({ senha_temporaria: novaSenha })
+        .eq('id', usuario.id);
 
       if (error) throw error;
 
-      showSuccess(`✅ Senha resetada! Nova senha: ${novaSenha}`);
+      alert(`✅ Instruções para resetar senha de ${usuario.nome}:\n\n` +
+            `1. Vá no Supabase Dashboard\n` +
+            `2. Authentication → Users\n` +
+            `3. Encontre: ${usuario.email}\n` +
+            `4. Clique nos 3 pontos → Reset Password\n` +
+            `5. Digite a senha: ${novaSenha}\n\n` +
+            `OU peça para o usuário:\n` +
+            `1. Fazer logout\n` +
+            `2. Clicar em "Esqueci minha senha"\n` +
+            `3. Seguir instruções do email\n\n` +
+            `Senha salva no sistema para referência.`);
+      
+      showSuccess('💡 Senha temporária salva! Siga as instruções.');
+      onUpdate();
 
     } catch (error) {
       console.error('❌ Erro:', error);
-      showError('❌ Não foi possível resetar a senha. Use o método manual.');
+      showError('❌ Erro ao salvar: ' + error.message);
     } finally {
       setResetandoSenha(null);
     }
@@ -482,6 +495,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
                 <th className="px-4 py-2 text-left text-sm font-semibold">Email</th>
                 <th className="px-4 py-2 text-left text-sm font-semibold">Cargo</th>
                 <th className="px-4 py-2 text-center text-sm font-semibold">Permissões</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold">Senha Temp</th>
                 <th className="px-4 py-2 text-center text-sm font-semibold">Status</th>
                 <th className="px-4 py-2 text-center text-sm font-semibold">Ações</th>
               </tr>
@@ -515,6 +529,15 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
                         <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">👥</span>
                       )}
                     </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {usuario.senha_temporaria ? (
+                      <span className="font-mono text-xs bg-yellow-50 px-2 py-1 rounded border border-yellow-200">
+                        🔑 {usuario.senha_temporaria}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400 text-xs">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {usuario.ativo ? (
