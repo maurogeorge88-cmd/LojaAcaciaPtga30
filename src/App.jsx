@@ -27,9 +27,6 @@ import Comissoes from './components/comissoes/Comissoes';
 // Biblioteca
 import Biblioteca from './components/biblioteca/Biblioteca';
 
-// Outros módulos (se houver)
-// import OutroModulo from './components/outros/OutroModulo';
-
 function App() {
   // ============================================
   // ESTADOS
@@ -43,13 +40,11 @@ function App() {
   // EFEITOS
   // ============================================
   useEffect(() => {
-    // Verificar sessão atual
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setLoading(false);
     });
 
-    // Listener para mudanças na autenticação
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -94,15 +89,12 @@ function App() {
   // ============================================
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* ============================================ */}
-      {/* SIDEBAR - MENU LATERAL */}
-      {/* ============================================ */}
+      {/* SIDEBAR */}
       <aside
         className={`${
           menuAberto ? 'w-64' : 'w-20'
         } bg-blue-900 text-white transition-all duration-300 flex flex-col`}
       >
-        {/* CABEÇALHO */}
         <div className="p-4 border-b border-blue-800">
           <div className="flex items-center justify-between">
             {menuAberto && (
@@ -122,10 +114,8 @@ function App() {
           )}
         </div>
 
-        {/* MENU DE NAVEGAÇÃO */}
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="space-y-1 px-2">
-            {/* Dashboard */}
             <button
               onClick={() => setModulo('dashboard')}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
@@ -133,18 +123,14 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Dashboard"
             >
               <span className="text-xl">🏠</span>
               {menuAberto && <span>Dashboard</span>}
             </button>
 
-            {/* Irmãos */}
             <div className="pt-4 pb-2">
               {menuAberto && (
-                <p className="text-xs text-blue-400 px-3 uppercase tracking-wider">
-                  Irmãos
-                </p>
+                <p className="text-xs text-blue-400 px-3 uppercase">Irmãos</p>
               )}
             </div>
             
@@ -155,7 +141,6 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Cadastrar Irmão"
             >
               <span className="text-xl">➕</span>
               {menuAberto && <span>Cadastrar Irmão</span>}
@@ -168,18 +153,14 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Visualizar Irmãos"
             >
               <span className="text-xl">👥</span>
               {menuAberto && <span>Visualizar Irmãos</span>}
             </button>
 
-            {/* Financeiro */}
             <div className="pt-4 pb-2">
               {menuAberto && (
-                <p className="text-xs text-blue-400 px-3 uppercase tracking-wider">
-                  Financeiro
-                </p>
+                <p className="text-xs text-blue-400 px-3 uppercase">Financeiro</p>
               )}
             </div>
 
@@ -190,18 +171,14 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Finanças da Loja"
             >
               <span className="text-xl">💰</span>
               {menuAberto && <span>Finanças da Loja</span>}
             </button>
 
-            {/* Sessões */}
             <div className="pt-4 pb-2">
               {menuAberto && (
-                <p className="text-xs text-blue-400 px-3 uppercase tracking-wider">
-                  Sessões
-                </p>
+                <p className="text-xs text-blue-400 px-3 uppercase">Sessões</p>
               )}
             </div>
 
@@ -212,7 +189,6 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Balaustres"
             >
               <span className="text-xl">📋</span>
               {menuAberto && <span>Balaustres</span>}
@@ -225,18 +201,14 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Pranchas"
             >
               <span className="text-xl">📄</span>
               {menuAberto && <span>Pranchas</span>}
             </button>
 
-            {/* Comissões */}
             <div className="pt-4 pb-2">
               {menuAberto && (
-                <p className="text-xs text-blue-400 px-3 uppercase tracking-wider">
-                  Comissões
-                </p>
+                <p className="text-xs text-blue-400 px-3 uppercase">Comissões</p>
               )}
             </div>
 
@@ -247,18 +219,14 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Comissões"
             >
               <span className="text-xl">👔</span>
               {menuAberto && <span>Comissões</span>}
             </button>
 
-            {/* Biblioteca */}
             <div className="pt-4 pb-2">
               {menuAberto && (
-                <p className="text-xs text-blue-400 px-3 uppercase tracking-wider">
-                  Biblioteca
-                </p>
+                <p className="text-xs text-blue-400 px-3 uppercase">Biblioteca</p>
               )}
             </div>
 
@@ -269,7 +237,6 @@ function App() {
                   ? 'bg-blue-700'
                   : 'hover:bg-blue-800'
               }`}
-              title="Biblioteca"
             >
               <span className="text-xl">📚</span>
               {menuAberto && <span>Biblioteca</span>}
@@ -277,12 +244,10 @@ function App() {
           </div>
         </nav>
 
-        {/* RODAPÉ - LOGOUT */}
         <div className="p-4 border-t border-blue-800">
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
-            title="Sair"
           >
             <span className="text-xl">🚪</span>
             {menuAberto && <span>Sair</span>}
@@ -290,24 +255,18 @@ function App() {
         </div>
       </aside>
 
-      {/* ============================================ */}
       {/* CONTEÚDO PRINCIPAL */}
-      {/* ============================================ */}
       <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto p-6">
-          {/* DASHBOARD */}
           {modulo === 'dashboard' && (
             <div className="space-y-6">
               <div className="bg-white rounded-lg shadow p-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   🏛️ A∴R∴L∴S∴ Acácia de Paranatinga nº 30
                 </h1>
-                <p className="text-gray-600">
-                  Sistema de Gerenciamento Maçônico
-                </p>
+                <p className="text-gray-600">Sistema de Gerenciamento Maçônico</p>
               </div>
 
-              {/* Cards de Resumo */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
                   <div className="flex items-center gap-3">
@@ -350,11 +309,8 @@ function App() {
                 </div>
               </div>
 
-              {/* Acesso Rápido */}
               <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  ⚡ Acesso Rápido
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">⚡ Acesso Rápido</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => setModulo('cadastrar-irmao')}
@@ -387,28 +343,13 @@ function App() {
             </div>
           )}
 
-          {/* MÓDULO: CADASTRAR IRMÃO */}
           {modulo === 'cadastrar-irmao' && <CadastrarIrmao />}
-
-          {/* MÓDULO: VISUALIZAR IRMÃOS */}
           {modulo === 'visualizar-irmaos' && <VisualizarIrmaos />}
-
-          {/* MÓDULO: FINANÇAS DA LOJA (ÚNICO SISTEMA FINANCEIRO) */}
           {modulo === 'financas-loja' && <FinancasLoja />}
-
-          {/* MÓDULO: BALAUSTRES */}
           {modulo === 'balaustres' && <Balaustres />}
-
-          {/* MÓDULO: PRANCHAS */}
           {modulo === 'pranchas' && <Pranchas />}
-
-          {/* MÓDULO: COMISSÕES */}
           {modulo === 'comissoes' && <Comissoes />}
-
-          {/* MÓDULO: BIBLIOTECA */}
           {modulo === 'biblioteca' && <Biblioteca />}
-
-          {/* ADICIONE OUTROS MÓDULOS AQUI */}
         </div>
       </main>
     </div>
