@@ -1,11 +1,12 @@
 /**
- * COMPONENTE DE LOGIN COM RECUPERAÇÃO DE SENHA
+ * COMPONENTE DE LOGIN COM PRIMEIRO ACESSO INTEGRADO
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Alert } from './shared/Alert';
+import PrimeiroAcesso from './PrimeiroAcesso';
 
 const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
 const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
@@ -17,6 +18,7 @@ export const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
+  const [mostrarPrimeiroAcesso, setMostrarPrimeiroAcesso] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -61,6 +63,11 @@ export const Login = ({ onLogin }) => {
       setLoading(false);
     }
   };
+
+  // Se está mostrando primeiro acesso, renderiza esse componente
+  if (mostrarPrimeiroAcesso) {
+    return <PrimeiroAcesso onVoltar={() => setMostrarPrimeiroAcesso(false)} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
@@ -128,13 +135,21 @@ export const Login = ({ onLogin }) => {
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
 
-            <div className="text-center">
+            <div className="space-y-2">
               <button
                 type="button"
                 onClick={() => setMostrarRecuperacao(true)}
-                className="text-sm text-blue-600 hover:text-blue-800 underline"
+                className="w-full text-sm text-blue-600 hover:text-blue-800 underline"
               >
                 🔑 Esqueci minha senha
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => setMostrarPrimeiroAcesso(true)}
+                className="w-full text-sm text-green-600 hover:text-green-800 underline font-medium"
+              >
+                🆕 Primeiro Acesso? Defina sua senha aqui
               </button>
             </div>
           </form>
