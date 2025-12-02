@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
 
-export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError }) {
+export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError, permissoes, userEmail, userData }) {
   const [irmao, setIrmao] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modoEdicao, setModoEdicao] = useState(false);
@@ -840,12 +840,17 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError 
               </button>
             </>
           ) : (
-            <button
-              onClick={() => setModoEdicao(true)}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              ✏️ Editar
-            </button>
+            <>
+              {/* Só pode editar se: é o próprio perfil OU tem permissão */}
+              {(irmao?.email === userEmail || permissoes?.canEditMembers || permissoes?.canEdit) && (
+                <button
+                  onClick={() => setModoEdicao(true)}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  ✏️ Editar
+                </button>
+              )}
+            </>
           )}
         </div>
       )}
