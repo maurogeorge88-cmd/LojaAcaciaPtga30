@@ -116,13 +116,15 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     setLoading(true);
 
     try {
-      // 1. Criar usuário no Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // 1. Criar usuário no Auth usando signUp (não precisa de admin)
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: usuarioForm.email,
         password: usuarioForm.senha,
-        email_confirm: true, // Confirma email automaticamente
-        user_metadata: {
-          nome: usuarioForm.nome
+        options: {
+          data: {
+            nome: usuarioForm.nome
+          },
+          emailRedirectTo: window.location.origin + '/primeiro-acesso'
         }
       });
 
@@ -136,6 +138,9 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           nome: usuarioForm.nome,
           cargo: usuarioForm.cargo,
           ativo: usuarioForm.ativo,
+          senha_temporaria: usuarioForm.senha, // Salvar para referência
+          nivel_acesso: usuarioForm.cargo === 'irmao' ? 'irmao' : 
+                       (usuarioForm.cargo === 'veneravel' || usuarioForm.cargo === 'administrador') ? 'admin' : 'cargo',
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
           pode_editar_financeiro: usuarioForm.pode_editar_financeiro,
@@ -144,17 +149,32 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
 
       if (dbError) throw dbError;
 
-      showSuccess(`✅ Usuário criado! Email: ${usuarioForm.email} | Senha: ${usuarioForm.senha}`);
+      // Mostrar credenciais para o admin passar ao usuário
+      const mensagem = `
+✅ Usuário criado com sucesso!
+
+PASSE ESTAS INFORMAÇÕES PARA ${usuarioForm.nome}:
+
+📧 Email: ${usuarioForm.email}
+🔑 Senha temporária: ${usuarioForm.senha}
+🔗 Link: ${window.location.origin}/primeiro-acesso
+
+O usuário deve:
+1. Acessar o link acima
+2. Fazer login com email e senha temporária
+3. Será redirecionado para definir nova senha
+
+IMPORTANTE: Copie estas informações agora!
+      `;
+
+      alert(mensagem);
+      showSuccess('✅ Usuário criado! Copie as credenciais acima.');
       onUpdate();
       limparFormulario();
 
     } catch (error) {
       console.error('❌ Erro:', error);
-      if (error.message.includes('admin')) {
-        showError('❌ Erro: Você precisa de privilégios de administrador no Supabase. Use o método alternativo.');
-      } else {
-        showError('❌ Erro: ' + error.message);
-      }
+      showError('❌ Erro ao criar usuário: ' + error.message);
     } finally {
       setLoading(false);
     }
