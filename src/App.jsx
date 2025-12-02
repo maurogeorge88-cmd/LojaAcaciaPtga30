@@ -1154,6 +1154,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               <button
+                onClick={() => setCurrentPage('visualizar')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'visualizar'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+              >
+                <span className="text-base">👥</span>
+                <span className="font-semibold">Visualizar Irmãos</span>
+              </button>
+
+              <button
                 onClick={() => setCurrentPage('minhas-financas')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'minhas-financas'
@@ -1175,6 +1187,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               >
                 <span className="text-base">📜</span>
                 <span className="font-semibold">Balaustres</span>
+              </button>
+
+              <button
+                onClick={() => setCurrentPage('cronograma')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'cronograma'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+              >
+                <span className="text-base">📅</span>
+                <span className="font-semibold">Cronograma</span>
               </button>
 
               <button
@@ -1594,6 +1618,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+            permissoes={permissoes}
           />
         )}
 
