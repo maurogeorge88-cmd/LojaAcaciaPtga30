@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import PerfilIrmao from './irmaos/PerfilIrmao';
 
-export default function MeuCadastroWrapper({ userEmail, showSuccess, showError }) {
+export default function MeuCadastroWrapper({ userEmail, showSuccess, showError, userData, permissoes }) {
   const [irmaoId, setIrmaoId] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -67,6 +67,9 @@ export default function MeuCadastroWrapper({ userEmail, showSuccess, showError }
       onVoltar={() => {}} // Não precisa voltar
       showSuccess={showSuccess}
       showError={showError}
+      userEmail={userEmail}
+      permissoes={permissoes}
+      userData={userData}
     />
   );
 }
