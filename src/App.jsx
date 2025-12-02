@@ -1228,6 +1228,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               <button
+                onClick={() => setCurrentPage('pranchas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'pranchas'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+              >
+                <span className="text-base">📄</span>
+                <span className="font-semibold">Pranchas</span>
+              </button>
+
+              <button
                 onClick={() => setCurrentPage('cronograma')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'cronograma'
@@ -1576,6 +1588,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             onUpdate={() => loadBalaustres()}
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
@@ -1619,6 +1632,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             onUpdate={loadPranchas}
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
@@ -1646,6 +1660,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             onUpdate={loadComissoes}
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
@@ -1707,6 +1722,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             }}
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
+            userEmail={userData?.email}
+            userData={userData}
           />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
