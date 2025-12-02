@@ -1,12 +1,13 @@
 /**
  * COMPONENTE DE PRIMEIRO ACESSO
  * Permite usuário definir sua própria senha na primeira vez
+ * VERSÃO ALTERNATIVA: Usa parâmetro URL ao invés de rota
  */
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function PrimeiroAcesso() {
+export default function PrimeiroAcesso({ onVoltar }) {
   const [email, setEmail] = useState('');
   const [senhaTemporaria, setSenhaTemporaria] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -62,7 +63,7 @@ export default function PrimeiroAcesso() {
       
       // Redirecionar após 2 segundos
       setTimeout(() => {
-        window.location.reload();
+        window.location.href = '/';
       }, 2000);
 
     } catch (error) {
@@ -192,12 +193,21 @@ export default function PrimeiroAcesso() {
 
         {/* Link para Login */}
         <div className="mt-6 text-center">
-          <a
-            href="/"
-            className="text-sm text-blue-600 hover:text-blue-800 underline"
-          >
-            ← Voltar para Login
-          </a>
+          {onVoltar ? (
+            <button
+              onClick={onVoltar}
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              ← Voltar para Login
+            </button>
+          ) : (
+            <a
+              href="/"
+              className="text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              ← Voltar para Login
+            </a>
+          )}
         </div>
 
         {/* Instruções */}
