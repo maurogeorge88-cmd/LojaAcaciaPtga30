@@ -199,7 +199,7 @@ const gerarRelatorioAnual = async (eventos, ano) => {
   await gerarRelatorioCronograma(eventosAno, periodo);
 };
 
-export default function Cronograma({ showSuccess, showError, userEmail }) {
+export default function Cronograma({ showSuccess, showError, userEmail, permissoes }) {
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -405,15 +405,17 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
             <h2 className="text-3xl font-bold mb-2">📅 Cronograma Anual</h2>
             <p className="text-indigo-100">Eventos, sessões e atividades da loja</p>
           </div>
-          <button
-            onClick={() => {
-              limparFormulario();
-              setMostrarFormulario(!mostrarFormulario);
-            }}
-            className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold"
-          >
-            {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
-          </button>
+          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            <button
+              onClick={() => {
+                limparFormulario();
+                setMostrarFormulario(!mostrarFormulario);
+              }}
+              className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold"
+            >
+              {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -875,22 +877,24 @@ export default function Cronograma({ showSuccess, showError, userEmail }) {
                       )}
                     </div>
 
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => editarEvento(evento)}
-                        className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
-                        title="Editar"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => excluirEvento(evento.id)}
-                        className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                        title="Excluir"
-                      >
-                        🗑️
-                      </button>
-                    </div>
+                    {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                      <div className="flex gap-2 ml-4">
+                        <button
+                          onClick={() => editarEvento(evento)}
+                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                          title="Editar"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => excluirEvento(evento.id)}
+                          className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                          title="Excluir"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
