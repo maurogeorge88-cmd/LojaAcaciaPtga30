@@ -47,7 +47,7 @@ export default function MinhasFinancas({ userEmail }) {
           *,
           categorias_financeiras (nome, tipo)
         `)
-        .eq('irmao_id', irmao.id)
+        .eq('origem_irmao_id', irmao.id)
         .gte('data_vencimento', `${anoFiltro}-01-01`)
         .lte('data_vencimento', `${anoFiltro}-12-31`)
         .order('data_vencimento', { ascending: false });
