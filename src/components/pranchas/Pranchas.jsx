@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 
-const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
+const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes }) => {
   // Estados do formulário
   const [pranchaForm, setPranchaForm] = useState({
     numero_prancha: '',
@@ -152,11 +152,12 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
 
   return (
     <div>
-      {/* FORMULÁRIO DE CADASTRO */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-blue-900 mb-4">
-          {modoEdicao ? '✏️ Editar Prancha' : '➕ Registrar Nova Prancha'}
-        </h3>
+      {/* FORMULÁRIO DE CADASTRO - Só aparece para quem pode editar */}
+      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 className="text-xl font-bold text-blue-900 mb-4">
+            {modoEdicao ? '✏️ Editar Prancha' : '➕ Registrar Nova Prancha'}
+          </h3>
 
         <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,6 +229,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
           </div>
         </form>
       </div>
+      )}
 
       {/* BUSCA */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-6">
@@ -283,18 +285,22 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError }) => {
                           >
                             👁️ Ver
                           </button>
-                          <button
-                            onClick={() => handleEditar(prancha)}
-                            className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-semibold whitespace-nowrap"
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            onClick={() => handleExcluir(prancha.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-semibold whitespace-nowrap"
-                          >
-                            🗑️ Excluir
-                          </button>
+                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                            <>
+                              <button
+                                onClick={() => handleEditar(prancha)}
+                                className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-semibold whitespace-nowrap"
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button
+                                onClick={() => handleExcluir(prancha.id)}
+                                className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-semibold whitespace-nowrap"
+                              >
+                                🗑️ Excluir
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
