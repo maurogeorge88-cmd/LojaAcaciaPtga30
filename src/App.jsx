@@ -16,9 +16,12 @@ import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
 import Biblioteca from './components/biblioteca/Biblioteca';
 import Cronograma from './components/cronograma/Cronograma';
+import FinancasIrmaos from './components/financeiro/FinancasIrmaos';
 import FinancasLoja from './components/financeiro/FinancasLoja';
+import ConfigurarMensalidades from './components/financeiro/ConfigurarMensalidades';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
+import PrimeiroAcesso from './components/PrimeiroAcesso';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -87,8 +90,14 @@ const obterDiaSemana = (data) => {
 
 // ========================================
 // COMPONENTE PRINCIPAL
-// ========================================
 function App() {
+  // ========================================
+  // VERIFICAR ROTA DE PRIMEIRO ACESSO
+  // ========================================
+  if (window.location.pathname === '/primeiro-acesso') {
+    return <PrimeiroAcesso />;
+  }
+
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -1224,6 +1233,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           </button>
 
           <button
+            onClick={() => setCurrentPage('financas-irmaos')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'financas-irmaos'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">💰</span>
+            <span className="font-semibold">Finanças - Irmãos</span>
+          </button>
+
+          <button
             onClick={() => setCurrentPage('financas-loja')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'financas-loja'
@@ -1233,6 +1254,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           >
             <span className="text-base">🏦</span>
             <span className="font-semibold">Finanças - Loja</span>
+          </button>
+
+          <button
+            onClick={() => setCurrentPage('configurar-mensalidades')}
+            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+              currentPage === 'configurar-mensalidades'
+                ? 'bg-blue-700 border-l-4 border-white'
+                : 'hover:bg-blue-800'
+            }`}
+          >
+            <span className="text-base">⚙️</span>
+            <span className="font-semibold">Config. Mensalidades</span>
           </button>
 
           <button
@@ -1318,7 +1351,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
+                  {currentPage === 'financas-irmaos' && '💰 Finanças dos Irmãos'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
+                  {currentPage === 'configurar-mensalidades' && '⚙️ Configurar Mensalidades'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
@@ -1496,7 +1531,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
-
+        {/* FINANÇAS - IRMÃOS */}
+        {currentPage === 'financas-irmaos' && (
+          <FinancasIrmaos
+            showSuccess={showSuccess}
+            showError={showError}
+            userEmail={userData?.email}
+          />
+        )}
 
         {/* FINANÇAS - LOJA */}
         {currentPage === 'financas-loja' && (
@@ -1508,6 +1550,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {/* CONFIGURAR MENSALIDADES */}
+        {currentPage === 'configurar-mensalidades' && (
+          <ConfigurarMensalidades
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
         {/* ALTOS GRAUS */}
         {currentPage === 'altos-graus' && (
           <VisualizarAltosGraus />
