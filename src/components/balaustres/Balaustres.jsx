@@ -8,7 +8,8 @@ const Balaustres = ({
   session,
   onUpdate, 
   showSuccess, 
-  showError 
+  showError,
+  permissoes
 }) => {
   
   // LOG INICIAL - Ver o que chega de props
@@ -254,11 +255,12 @@ const Balaustres = ({
 
   return (
     <div>
-      {/* FORMULÁRIO */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-blue-900 mb-4">
-          {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
-        </h3>
+      {/* FORMULÁRIO - Só aparece para quem pode editar */}
+      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 className="text-xl font-bold text-blue-900 mb-4">
+            {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
+          </h3>
 
         <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -381,6 +383,7 @@ const Balaustres = ({
           </div>
         </form>
       </div>
+      )}
 
       {/* FILTRO POR GRAU */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-6">
@@ -465,18 +468,22 @@ const Balaustres = ({
                           >
                             👁️ Ver
                           </button>
-                          <button
-                            onClick={() => handleEditar(balaustre)}
-                            className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors text-sm whitespace-nowrap"
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            onClick={() => handleExcluir(balaustre.id)}
-                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm whitespace-nowrap"
-                          >
-                            🗑️ Excluir
-                          </button>
+                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                            <>
+                              <button
+                                onClick={() => handleEditar(balaustre)}
+                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors text-sm whitespace-nowrap"
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button
+                                onClick={() => handleExcluir(balaustre.id)}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm whitespace-nowrap"
+                              >
+                                🗑️ Excluir
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>
