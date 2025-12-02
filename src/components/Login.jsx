@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { Alert } from './shared/Alert';
-import PrimeiroAcesso from './PrimeiroAcesso';
+import TrocarSenha from './TrocarSenha';
 
 const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
 const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
@@ -18,7 +18,7 @@ export const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
-  const [mostrarPrimeiroAcesso, setMostrarPrimeiroAcesso] = useState(false);
+  const [mostrarTrocarSenha, setMostrarTrocarSenha] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,9 +64,9 @@ export const Login = ({ onLogin }) => {
     }
   };
 
-  // Se está mostrando primeiro acesso, renderiza esse componente
-  if (mostrarPrimeiroAcesso) {
-    return <PrimeiroAcesso onVoltar={() => setMostrarPrimeiroAcesso(false)} />;
+  // Se está mostrando trocar senha, renderiza esse componente
+  if (mostrarTrocarSenha) {
+    return <TrocarSenha onVoltar={() => setMostrarTrocarSenha(false)} />;
   }
 
   return (
@@ -146,10 +146,10 @@ export const Login = ({ onLogin }) => {
               
               <button
                 type="button"
-                onClick={() => setMostrarPrimeiroAcesso(true)}
+                onClick={() => setMostrarTrocarSenha(true)}
                 className="w-full text-sm text-green-600 hover:text-green-800 underline font-medium"
               >
-                🆕 Primeiro Acesso? Defina sua senha aqui
+                🆕 Primeiro Acesso? Trocar Senha Temporária
               </button>
             </div>
           </form>
