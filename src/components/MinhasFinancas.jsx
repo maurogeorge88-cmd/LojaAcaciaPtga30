@@ -42,7 +42,7 @@ export default function MinhasFinancas({ userEmail }) {
 
       // Buscar lançamentos financeiros do irmão
       let query = supabase
-        .from('lancamentos_financeiros')
+        .from('lancamentos_loja')
         .select(`
           *,
           categorias_financeiras (nome, tipo)
