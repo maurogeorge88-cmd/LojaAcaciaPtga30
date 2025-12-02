@@ -243,11 +243,49 @@ function App() {
 
     if (data) {
       setUserData(data);
-      setPermissoes({
-        canEdit: ['administrador', 'secretario'].includes(data.cargo),
-        canDelete: data.cargo === 'administrador',
-        canManageUsers: data.cargo === 'administrador'
-      });
+      
+      // Definir permissões baseadas no nível de acesso
+      if (data.nivel_acesso === 'irmao') {
+        // Irmão comum: apenas visualização
+        setPermissoes({
+          canEdit: false,
+          canEditMembers: false,
+          canDelete: false,
+          canManageUsers: false,
+          canViewFinancial: false,
+          canEditFinancial: false
+        });
+      } else if (data.nivel_acesso === 'admin') {
+        // Admin: acesso total
+        setPermissoes({
+          canEdit: true,
+          canEditMembers: true,
+          canDelete: true,
+          canManageUsers: true,
+          canViewFinancial: true,
+          canEditFinancial: true
+        });
+      } else if (data.nivel_acesso === 'cargo') {
+        // Cargo: baseado nas permissões específicas
+        setPermissoes({
+          canEdit: data.pode_editar_cadastros || false,
+          canEditMembers: data.pode_editar_cadastros || false,
+          canDelete: data.pode_editar_cadastros || false,
+          canManageUsers: data.pode_gerenciar_usuarios || false,
+          canViewFinancial: data.pode_visualizar_financeiro || false,
+          canEditFinancial: data.pode_editar_financeiro || false
+        });
+      } else {
+        // Padrão: sem permissões
+        setPermissoes({
+          canEdit: false,
+          canEditMembers: false,
+          canDelete: false,
+          canManageUsers: false,
+          canViewFinancial: false,
+          canEditFinancial: false
+        });
+      }
     }
   };
 
@@ -1338,7 +1376,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <span className="font-semibold">Cronograma</span>
               </button>
 
-              {permissoes?.canViewFinancial && (
+              {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
                 <button
                   onClick={() => setCurrentPage('financas-loja')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -1519,6 +1557,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
+            userEmail={userData?.email}
           />
         )}
 
@@ -1558,6 +1597,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'meu-cadastro' && (
           <MeuCadastroWrapper
             userEmail={userData?.email}
+            userData={userData}
+            permissoes={permissoes}
             showSuccess={showSuccess}
             showError={showError}
           />
