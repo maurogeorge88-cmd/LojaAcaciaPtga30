@@ -8,6 +8,7 @@ import { supabase } from '../supabaseClient';
 
 export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   const [meuCadastro, setMeuCadastro] = useState(null);
+  const [altosGraus, setAltosGraus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState(false);
   
@@ -40,6 +41,21 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
 
       if (data) {
         setMeuCadastro(data);
+        
+        // Buscar altos graus do irmão
+        const { data: graus, error: grausError } = await supabase
+          .from('irmaos_altos_graus')
+          .select(`
+            *,
+            altos_graus (nome, sigla, numero)
+          `)
+          .eq('irmao_id', data.id)
+          .order('data_recebimento', { ascending: false });
+
+        if (!grausError && graus) {
+          setAltosGraus(graus);
+        }
+
         // Preencher campos editáveis
         setTelefone(data.telefone || '');
         setEndereco(data.endereco || '');
@@ -386,6 +402,41 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
             </div>
           </div>
         </div>
+
+        {/* Altos Graus - SOMENTE LEITURA */}
+        {altosGraus.length > 0 && (
+          <div className="p-6 border-t bg-purple-50">
+            <h4 className="text-lg font-semibold text-gray-800 mb-4">🔺 Altos Graus (Somente Leitura)</h4>
+            <div className="space-y-3">
+              {altosGraus.map((grau) => (
+                <div key={grau.id} className="bg-white rounded-lg p-4 border-l-4 border-purple-500">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-gray-900">
+                        {grau.altos_graus?.nome || 'Grau não especificado'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {grau.altos_graus?.sigla && `${grau.altos_graus.sigla} - `}
+                        Grau {grau.altos_graus?.numero || grau.grau_numero}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gray-600">Recebido em</p>
+                      <p className="font-semibold text-purple-700">
+                        {formatarData(grau.data_recebimento)}
+                      </p>
+                    </div>
+                  </div>
+                  {grau.local && (
+                    <p className="text-sm text-gray-600 mt-2">
+                      📍 {grau.local}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
