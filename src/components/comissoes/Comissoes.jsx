@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 
-const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
+const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permissoes }) => {
   // Verificações de props
   console.log('Comissoes - Props recebidas:', { 
     comissoes: comissoes?.length, 
@@ -253,11 +253,12 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
 
   return (
     <div>
-      {/* FORMULÁRIO */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-blue-900 mb-4">
-          {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
-        </h3>
+      {/* FORMULÁRIO - Só aparece para quem pode editar */}
+      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 className="text-xl font-bold text-blue-900 mb-4">
+            {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
+          </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
@@ -420,6 +421,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
           )}
         </div>
       </div>
+      )}
 
       {/* LISTAGEM */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -465,18 +467,22 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError }) => {
                     >
                       👁️ Ver
                     </button>
-                    <button
-                      onClick={() => handleEditar(comissao)}
-                      className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                    >
-                      ✏️ Editar
-                    </button>
-                    <button
-                      onClick={() => handleExcluir(comissao.id)}
-                      className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                    >
-                      🗑️ Excluir
-                    </button>
+                    {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                      <>
+                        <button
+                          onClick={() => handleEditar(comissao)}
+                          className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => handleExcluir(comissao.id)}
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                        >
+                          🗑️ Excluir
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
