@@ -20,7 +20,7 @@ import FinancasLoja from './components/financeiro/FinancasLoja';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
-import MeuCadastro from './components/MeuCadastro';
+import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 
 // ========================================
@@ -1224,6 +1224,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <span className="text-base">📋</span>
                 <span className="font-semibold">Comissões</span>
               </button>
+
+              <button
+                onClick={() => setCurrentPage('altos-graus')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'altos-graus'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+              >
+                <span className="text-base">🔺</span>
+                <span className="font-semibold">Altos Graus</span>
+              </button>
             </>
           )}
 
@@ -1544,7 +1556,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* MEU CADASTRO - Irmão */}
         {currentPage === 'meu-cadastro' && (
-          <MeuCadastro
+          <MeuCadastroWrapper
             userEmail={userData?.email}
             showSuccess={showSuccess}
             showError={showError}
