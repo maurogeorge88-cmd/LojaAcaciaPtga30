@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
+import FilaEspera from './FilaEspera';
 
-const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showError }) => {
+const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showError, permissoes }) => {
   // Estados de controle
   const [abaAtiva, setAbaAtiva] = useState('livros');
   const [loading, setLoading] = useState(false);
@@ -343,6 +344,14 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           }`}
         >
           👤 Por Irmão ({emprestimosPorIrmao.length})
+        </button>
+        <button
+          onClick={() => setAbaAtiva('fila')}
+          className={`px-6 py-2 rounded-lg font-semibold transition ${
+            abaAtiva === 'fila' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+        >
+          ⏳ Fila de Espera
         </button>
       </div>
 
@@ -829,6 +838,15 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
             </div>
           </div>
         </div>
+      )}
+
+      {/* ABA FILA DE ESPERA */}
+      {abaAtiva === 'fila' && (
+        <FilaEspera
+          permissoes={permissoes}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
       )}
     </div>
   );
