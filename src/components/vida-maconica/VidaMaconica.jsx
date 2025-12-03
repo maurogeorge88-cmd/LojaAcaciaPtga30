@@ -6,6 +6,8 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
   const [grausConquistados, setGrausConquistados] = useState([]);
   const [filtroRito, setFiltroRito] = useState('');
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [modoEdicao, setModoEdicao] = useState(false);
+  const [grauEditando, setGrauEditando] = useState(null);
   
   const [grauForm, setGrauForm] = useState({
     grau_id: '',
@@ -63,26 +65,32 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
       return;
     }
 
-    const { error } = await supabase
-      .from('vida_maconica')
-      .insert([{
-        irmao_id: irmaoId,
-        ...grauForm
-      }]);
-
-    if (error) {
-      showError('Erro ao adicionar grau: ' + error.message);
+    if (modoEdicao) {
+      // Está editando
+      await salvarEdicaoGrau();
     } else {
-      showSuccess('Grau adicionado com sucesso!');
-      setGrauForm({
-        grau_id: '',
-        data_conquista: '',
-        loja_conferente: '',
-        oriente_conferente: '',
-        observacoes: ''
-      });
-      setMostrarFormulario(false);
-      carregarGrausConquistados();
+      // Está adicionando novo
+      const { error } = await supabase
+        .from('vida_maconica')
+        .insert([{
+          irmao_id: irmaoId,
+          ...grauForm
+        }]);
+
+      if (error) {
+        showError('Erro ao adicionar grau: ' + error.message);
+      } else {
+        showSuccess('Grau adicionado com sucesso!');
+        setGrauForm({
+          grau_id: '',
+          data_conquista: '',
+          loja_conferente: '',
+          oriente_conferente: '',
+          observacoes: ''
+        });
+        setMostrarFormulario(false);
+        carregarGrausConquistados();
+      }
     }
   };
 
@@ -100,6 +108,58 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
       showSuccess('Grau removido');
       carregarGrausConquistados();
     }
+  };
+
+  const editarGrau = (conquista) => {
+    setGrauForm({
+      grau_id: conquista.grau_id,
+      data_conquista: conquista.data_conquista,
+      loja_conferente: conquista.loja_conferente || '',
+      oriente_conferente: conquista.oriente_conferente || '',
+      observacoes: conquista.observacoes || ''
+    });
+    setGrauEditando(conquista);
+    setModoEdicao(true);
+    setMostrarFormulario(true);
+  };
+
+  const salvarEdicaoGrau = async () => {
+    if (!grauForm.grau_id || !grauForm.data_conquista) {
+      showError('Preencha o grau e a data de conquista');
+      return;
+    }
+
+    const { error } = await supabase
+      .from('vida_maconica')
+      .update({
+        grau_id: grauForm.grau_id,
+        data_conquista: grauForm.data_conquista,
+        loja_conferente: grauForm.loja_conferente,
+        oriente_conferente: grauForm.oriente_conferente,
+        observacoes: grauForm.observacoes
+      })
+      .eq('id', grauEditando.id);
+
+    if (error) {
+      showError('Erro ao atualizar grau: ' + error.message);
+    } else {
+      showSuccess('Grau atualizado com sucesso!');
+      cancelarEdicao();
+      carregarGrausConquistados();
+    }
+  };
+
+  const cancelarEdicao = () => {
+    setGrauForm({
+      grau_id: '',
+      data_conquista: '',
+      loja_conferente: '',
+      oriente_conferente: '',
+      observacoes: ''
+    });
+    setModoEdicao(false);
+    setGrauEditando(null);
+    setMostrarFormulario(false);
   };
 
   const grausFiltrados = filtroRito 
@@ -120,8 +180,13 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
         </div>
         <button
           type="button"
-          onClick={() => setMostrarFormulario(!mostrarFormulario)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          onClick={() => {
+            if (mostrarFormulario) {
+              cancelarEdicao(); // Limpa tudo ao cancelar
+            }
+            setMostrarFormulario(!mostrarFormulario);
+          }}
+          className={`px-4 py-2 ${modoEdicao ? 'bg-gray-600 hover:bg-gray-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg transition-colors`}
         >
           {mostrarFormulario ? '✖️ Cancelar' : '➕ Adicionar Grau'}
         </button>
@@ -129,8 +194,10 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div className="bg-blue-50 p-6 rounded-lg border-2 border-blue-200">
-          <h4 className="text-lg font-bold text-gray-900 mb-4">Adicionar Novo Grau</h4>
+        <div className={`p-6 rounded-lg border-2 ${modoEdicao ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200'}`}>
+          <h4 className="text-lg font-bold text-gray-900 mb-4">
+            {modoEdicao ? '✏️ Editar Grau' : '➕ Adicionar Novo Grau'}
+          </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Filtro de Rito */}
@@ -249,9 +316,11 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
           <button
             type="button"
             onClick={adicionarGrau}
-            className="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+            className={`mt-4 px-4 py-2 text-white rounded transition-colors ${
+              modoEdicao ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'
+            }`}
           >
-            💾 Salvar Grau
+            {modoEdicao ? '💾 Atualizar Grau' : '💾 Salvar Grau'}
           </button>
         </div>
       )}
@@ -313,13 +382,24 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                   )}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => removerGrau(conquista.id)}
-                  className="ml-4 px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
-                >
-                  🗑️ Remover
-                </button>
+                <div className="flex gap-2 ml-4">
+                  <button
+                    type="button"
+                    onClick={() => editarGrau(conquista)}
+                    className="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition-colors"
+                    title="Editar grau"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removerGrau(conquista.id)}
+                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                    title="Remover grau"
+                  >
+                    🗑️ Remover
+                  </button>
+                </div>
               </div>
             </div>
           ))}
