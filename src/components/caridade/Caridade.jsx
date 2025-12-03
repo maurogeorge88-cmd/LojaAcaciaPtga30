@@ -21,6 +21,8 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
   // Modal de nova ajuda
   const [modalNovaAjuda, setModalNovaAjuda] = useState(false);
   const [familiaParaAjuda, setFamiliaParaAjuda] = useState(null);
+  const [modoEdicaoAjuda, setModoEdicaoAjuda] = useState(false);
+  const [ajudaEditando, setAjudaEditando] = useState(null);
 
   // Formulário família
   const [familiaForm, setFamiliaForm] = useState({
@@ -126,16 +128,28 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
     e.preventDefault();
     
     try {
-      const { error } = await supabase
-        .from('ajudas_caridade')
-        .insert([{
-          ...ajudaForm,
-          familia_id: familiaParaAjuda.id
-        }]);
+      if (modoEdicaoAjuda) {
+        // EDITAR ajuda existente
+        const { error } = await supabase
+          .from('ajudas_caridade')
+          .update(ajudaForm)
+          .eq('id', ajudaEditando.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        showSuccess('Ajuda atualizada com sucesso!');
+      } else {
+        // CRIAR nova ajuda
+        const { error } = await supabase
+          .from('ajudas_caridade')
+          .insert([{
+            ...ajudaForm,
+            familia_id: familiaParaAjuda.id
+          }]);
+
+        if (error) throw error;
+        showSuccess('Ajuda registrada com sucesso!');
+      }
       
-      showSuccess('Ajuda registrada com sucesso!');
       setModalNovaAjuda(false);
       limparFormularioAjuda();
       
@@ -144,8 +158,8 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
         carregarAjudas(familiaParaAjuda.id);
       }
     } catch (error) {
-      console.error('Erro ao registrar ajuda:', error);
-      showError('Erro ao registrar ajuda');
+      console.error('Erro ao salvar ajuda:', error);
+      showError('Erro ao salvar ajuda');
     }
   };
 
@@ -194,6 +208,21 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
     }
   };
 
+  const handleEditarAjuda = (ajuda) => {
+    setAjudaForm({
+      data_ajuda: ajuda.data_ajuda,
+      tipo_ajuda: ajuda.tipo_ajuda,
+      descricao: ajuda.descricao || '',
+      valor_estimado: ajuda.valor_estimado || '',
+      quantidade: ajuda.quantidade || '',
+      responsavel_nome: ajuda.responsavel_nome || ''
+    });
+    setAjudaEditando(ajuda);
+    setModoEdicaoAjuda(true);
+    setFamiliaParaAjuda(modalFamilia);
+    setModalNovaAjuda(true);
+  };
+
   const handleVisualizarFamilia = async (familia) => {
     setModalFamilia(familia);
     await carregarAjudas(familia.id);
@@ -232,6 +261,8 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       quantidade: '',
       responsavel_nome: ''
     });
+    setModoEdicaoAjuda(false);
+    setAjudaEditando(null);
   };
 
   const abrirModalAjuda = (familia) => {
@@ -822,13 +853,22 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
                             )}
                           </div>
                           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
-                            <button
-                              onClick={() => handleExcluirAjuda(ajuda.id)}
-                              className="ml-2 px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                              title="Excluir ajuda"
-                            >
-                              🗑️
-                            </button>
+                            <div className="flex gap-2 ml-2">
+                              <button
+                                onClick={() => handleEditarAjuda(ajuda)}
+                                className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
+                                title="Editar ajuda"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleExcluirAjuda(ajuda.id)}
+                                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                title="Excluir ajuda"
+                              >
+                                🗑️
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -845,17 +885,22 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       {modalNovaAjuda && familiaParaAjuda && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className="bg-green-600 text-white p-6 rounded-t-lg">
+            <div className={`${modoEdicaoAjuda ? 'bg-yellow-600' : 'bg-green-600'} text-white p-6 rounded-t-lg`}>
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">➕ Registrar Nova Ajuda</h3>
+                <h3 className="text-xl font-bold">
+                  {modoEdicaoAjuda ? '✏️ Editar Ajuda' : '➕ Registrar Nova Ajuda'}
+                </h3>
                 <button
-                  onClick={() => setModalNovaAjuda(false)}
-                  className="text-white hover:bg-green-700 rounded-full p-2"
+                  onClick={() => {
+                    setModalNovaAjuda(false);
+                    limparFormularioAjuda();
+                  }}
+                  className={`text-white ${modoEdicaoAjuda ? 'hover:bg-yellow-700' : 'hover:bg-green-700'} rounded-full p-2`}
                 >
                   ✖️
                 </button>
               </div>
-              <p className="text-green-100 text-sm mt-2">
+              <p className={`${modoEdicaoAjuda ? 'text-yellow-100' : 'text-green-100'} text-sm mt-2`}>
                 Para: {familiaParaAjuda.nome_marido || familiaParaAjuda.nome_esposa}
               </p>
             </div>
@@ -942,14 +987,17 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold"
+                  className={`flex-1 px-6 py-2 ${modoEdicaoAjuda ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-semibold`}
                 >
-                  💾 Registrar Ajuda
+                  {modoEdicaoAjuda ? '💾 Atualizar Ajuda' : '💾 Registrar Ajuda'}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setModalNovaAjuda(false)}
+                  onClick={() => {
+                    setModalNovaAjuda(false);
+                    limparFormularioAjuda();
+                  }}
                   className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
                 >
                   ❌ Cancelar
