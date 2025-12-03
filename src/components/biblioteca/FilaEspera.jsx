@@ -1,16 +1,14 @@
 /**
  * FILA DE ESPERA - BIBLIOTECA
- * Versão com debug melhorado
+ * Versão que recebe livros e irmãos via props
  */
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function FilaEspera({ permissoes, showSuccess, showError }) {
+export default function FilaEspera({ permissoes, showSuccess, showError, livros, irmaos }) {
   const [loading, setLoading] = useState(true);
   const [filas, setFilas] = useState([]);
-  const [livros, setLivros] = useState([]);
-  const [irmaos, setIrmaos] = useState([]);
   
   // Modal adicionar
   const [modalAdicionar, setModalAdicionar] = useState(false);
@@ -25,23 +23,14 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
   const [filtroStatus, setFiltroStatus] = useState('aguardando');
 
   useEffect(() => {
-    console.log('🔍 FilaEspera: Componente montado');
-    carregarDados();
+    console.log('🔍 FilaEspera montado');
+    console.log('📚 Livros recebidos:', livros?.length || 0);
+    console.log('👥 Irmãos recebidos:', irmaos?.length || 0);
+    carregarFilas();
   }, []);
 
-  const carregarDados = async () => {
-    console.log('📦 Carregando dados...');
-    setLoading(true);
-    await Promise.all([
-      carregarFilas(),
-      carregarLivros(),
-      carregarIrmaos()
-    ]);
-    setLoading(false);
-    console.log('✅ Dados carregados');
-  };
-
   const carregarFilas = async () => {
+    setLoading(true);
     try {
       console.log('⏳ Carregando filas...');
       const { data, error } = await supabase
@@ -60,64 +49,8 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
     } catch (error) {
       console.error('❌ Erro ao carregar filas:', error);
       showError('Erro ao carregar fila de espera');
-    }
-  };
-
-  const carregarLivros = async () => {
-    try {
-      console.log('📚 Carregando livros...');
-      
-      // Tentar carregar de biblioteca_livros
-      const { data, error } = await supabase
-        .from('biblioteca_livros')
-        .select('id, titulo, autor')
-        .eq('ativo', true)
-        .order('titulo');
-
-      if (error) {
-        console.error('❌ Erro ao carregar de biblioteca_livros:', error);
-        // Tentar tabela alternativa
-        const { data: data2, error: error2 } = await supabase
-          .from('livros')
-          .select('id, titulo, autor')
-          .order('titulo');
-        
-        if (error2) {
-          console.error('❌ Erro ao carregar de livros:', error2);
-          throw error2;
-        }
-        
-        console.log('✅ Livros carregados de "livros":', data2?.length || 0);
-        setLivros(data2 || []);
-        return;
-      }
-      
-      console.log('✅ Livros carregados de "biblioteca_livros":', data?.length || 0);
-      console.log('📖 Livros:', data);
-      setLivros(data || []);
-    } catch (error) {
-      console.error('❌ Erro fatal ao carregar livros:', error);
-      showError('Erro ao carregar livros');
-    }
-  };
-
-  const carregarIrmaos = async () => {
-    try {
-      console.log('👥 Carregando irmãos...');
-      const { data, error } = await supabase
-        .from('irmaos')
-        .select('id, nome, cim')
-        .order('nome');
-
-      if (error) {
-        console.error('❌ Erro ao carregar irmãos:', error);
-        throw error;
-      }
-      
-      console.log('✅ Irmãos carregados:', data?.length || 0);
-      setIrmaos(data || []);
-    } catch (error) {
-      console.error('❌ Erro ao carregar irmãos:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -246,6 +179,10 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
     });
   };
 
+  // Usar livros e irmãos das props
+  const livrosDisponiveis = livros || [];
+  const irmaosDisponiveis = irmaos || [];
+
   // Filtrar filas
   const filasFiltradas = filas.filter(f => {
     const matchLivro = filtroLivro === 'todos' || f.livro_id.toString() === filtroLivro;
@@ -278,7 +215,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">⏳ Carregando dados...</div>
+        <div className="text-lg text-gray-600">⏳ Carregando fila de espera...</div>
       </div>
     );
   }
@@ -286,11 +223,11 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
   return (
     <div className="space-y-6">
       {/* DEBUG INFO */}
-      {livros.length === 0 && (
+      {livrosDisponiveis.length === 0 && (
         <div className="bg-yellow-50 border-2 border-yellow-400 p-4 rounded-lg">
-          <p className="text-yellow-800 font-bold">⚠️ DEBUG: Nenhum livro encontrado!</p>
+          <p className="text-yellow-800 font-bold">⚠️ Nenhum livro disponível!</p>
           <p className="text-sm text-yellow-700 mt-2">
-            Abra o Console (F12) para ver os logs de carregamento.
+            Cadastre livros na aba "📚 Livros" primeiro.
           </p>
         </div>
       )}
@@ -302,7 +239,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
             <h2 className="text-3xl font-bold mb-2">⏳ Fila de Espera</h2>
             <p className="text-orange-100">Controle de Reservas e Solicitações</p>
             <p className="text-orange-200 text-sm mt-1">
-              📚 {livros.length} livros • 👥 {irmaos.length} irmãos
+              📚 {livrosDisponiveis.length} livros • 👥 {irmaosDisponiveis.length} irmãos
             </p>
           </div>
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
@@ -360,7 +297,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
               className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
             >
               <option value="todos">Todos os livros</option>
-              {livros.map(livro => (
+              {livrosDisponiveis.map(livro => (
                 <option key={livro.id} value={livro.id}>
                   {livro.titulo}
                 </option>
@@ -522,16 +459,16 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
                 </button>
               </div>
               <p className="text-orange-100 text-sm mt-2">
-                📚 {livros.length} livros disponíveis
+                📚 {livrosDisponiveis.length} livros disponíveis
               </p>
             </div>
 
             <form onSubmit={handleAdicionar} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
-                {livros.length === 0 ? (
+                {livrosDisponiveis.length === 0 ? (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                    ❌ Nenhum livro cadastrado. Cadastre livros primeiro.
+                    ❌ Nenhum livro cadastrado. Cadastre livros na aba "📚 Livros" primeiro.
                   </div>
                 ) : (
                   <select
@@ -541,9 +478,9 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
                     required
                   >
                     <option value="">Selecione o livro</option>
-                    {livros.map(livro => (
+                    {livrosDisponiveis.map(livro => (
                       <option key={livro.id} value={livro.id}>
-                        {livro.titulo} - {livro.autor}
+                        {livro.titulo} - {livro.autor || 'Sem autor'}
                       </option>
                     ))}
                   </select>
@@ -559,7 +496,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
                   required
                 >
                   <option value="">Selecione o irmão</option>
-                  {irmaos.map(irmao => (
+                  {irmaosDisponiveis.map(irmao => (
                     <option key={irmao.id} value={irmao.id}>
                       {irmao.nome} - CIM: {irmao.cim}
                     </option>
@@ -581,7 +518,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  disabled={livros.length === 0}
+                  disabled={livrosDisponiveis.length === 0}
                   className="flex-1 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ➕ Adicionar à Fila
