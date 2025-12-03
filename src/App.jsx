@@ -108,6 +108,11 @@ function App() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Estados do menu colapsável
+  const [menuAberto, setMenuAberto] = useState(true);
+  const [submenuIrmaos, setSubmenuIrmaos] = useState(false);
+  const [submenuExpedientes, setSubmenuExpedientes] = useState(false);
+
   // Estados de login
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -1149,18 +1154,38 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* SIDEBAR LATERAL FIXA */}
-      <aside className="w-64 bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col">
+      {/* SIDEBAR LATERAL COLAPSÁVEL */}
+      <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
         {/* Logo e Título */}
-        <div className="p-6 border-b border-blue-700 flex-shrink-0">
-          <div className="flex flex-col items-center">
-            <img src={LOGO_URL} alt="Logo" className="w-20 h-20 rounded-full border-4 border-white mb-3" />
-            <h1 className="text-lg font-bold text-center leading-tight">{NOME_LOJA}</h1>
-            <p className="text-xs text-blue-200 mt-1">Gestão e Controle</p>
+        <div className="p-4 border-b border-blue-700 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            {menuAberto && (
+              <div className="flex flex-col items-center flex-1">
+                <img src={LOGO_URL} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white mb-2" />
+                <h1 className="text-sm font-bold text-center leading-tight">{NOME_LOJA}</h1>
+                <p className="text-xs text-blue-200 mt-1">Gestão e Controle</p>
+              </div>
+            )}
+            {!menuAberto && (
+              <img src={LOGO_URL} alt="Logo" className="w-10 h-10 rounded-full border-2 border-white mx-auto" />
+            )}
           </div>
+          {/* Botão Hamburger */}
+          <button
+            onClick={() => setMenuAberto(!menuAberto)}
+            className="absolute top-4 right-2 p-2 hover:bg-blue-800 rounded-lg transition"
+            title={menuAberto ? "Fechar menu" : "Abrir menu"}
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {menuAberto ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
         </div>
 
-        {/* Menu de Navegação */}
         {/* Menu de Navegação */}
         <nav className="py-2 flex-1 overflow-y-auto">
           {/* DASHBOARD - Todos */}
@@ -1171,9 +1196,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 ? 'bg-blue-700 border-l-4 border-white'
                 : 'hover:bg-blue-800'
             }`}
+            title="Dashboard"
           >
             <span className="text-base">📊</span>
-            <span className="font-semibold">Dashboard</span>
+            {menuAberto && <span className="font-semibold">Dashboard</span>}
           </button>
 
           {/* ===== MENU PARA IRMÃO COMUM ===== */}
@@ -1186,9 +1212,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Meu Cadastro"
               >
                 <span className="text-base">👤</span>
-                <span className="font-semibold">Meu Cadastro</span>
+                {menuAberto && <span className="font-semibold">Meu Cadastro</span>}
               </button>
 
               <button
@@ -1198,9 +1225,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Visualizar Irmãos"
               >
                 <span className="text-base">👥</span>
-                <span className="font-semibold">Visualizar Irmãos</span>
+                {menuAberto && <span className="font-semibold">Visualizar Irmãos</span>}
               </button>
 
               <button
@@ -1210,9 +1238,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Minhas Finanças"
               >
                 <span className="text-base">💰</span>
-                <span className="font-semibold">Minhas Finanças</span>
+                {menuAberto && <span className="font-semibold">Minhas Finanças</span>}
               </button>
 
               <button
@@ -1222,9 +1251,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Balaustres"
               >
                 <span className="text-base">📜</span>
-                <span className="font-semibold">Balaustres</span>
+                {menuAberto && <span className="font-semibold">Balaustres</span>}
               </button>
 
               <button
@@ -1234,9 +1264,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Pranchas"
               >
                 <span className="text-base">📄</span>
-                <span className="font-semibold">Pranchas</span>
+                {menuAberto && <span className="font-semibold">Pranchas</span>}
               </button>
 
               <button
@@ -1246,9 +1277,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Cronograma"
               >
                 <span className="text-base">📅</span>
-                <span className="font-semibold">Cronograma</span>
+                {menuAberto && <span className="font-semibold">Cronograma</span>}
               </button>
 
               <button
@@ -1258,9 +1290,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Administração"
               >
                 <span className="text-base">👔</span>
-                <span className="font-semibold">Administração</span>
+                {menuAberto && <span className="font-semibold">Administração</span>}
               </button>
 
               <button
@@ -1270,9 +1303,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Comissões"
               >
                 <span className="text-base">📋</span>
-                <span className="font-semibold">Comissões</span>
+                {menuAberto && <span className="font-semibold">Comissões</span>}
               </button>
 
               <button
@@ -1282,177 +1316,245 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     ? 'bg-blue-700 border-l-4 border-white'
                     : 'hover:bg-blue-800'
                 }`}
+                title="Altos Graus"
               >
                 <span className="text-base">🔺</span>
-                <span className="font-semibold">Altos Graus</span>
+                {menuAberto && <span className="font-semibold">Altos Graus</span>}
               </button>
             </>
           )}
 
-          {/* ===== MENU PARA ADMIN/CARGO ===== */}
+          {/* ===== MENU PARA ADMIN/CARGO COM SUBMENUS ===== */}
           {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo') && (
             <>
-              <button
-                onClick={() => setCurrentPage('cadastro')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'cadastro'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">➕</span>
-                <span className="font-semibold">Cadastrar Irmão</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('visualizar')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'visualizar'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">👥</span>
-                <span className="font-semibold">Visualizar Irmãos</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('quadro')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'quadro'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">📋</span>
-                <span className="font-semibold">Quadro de Irmãos</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('balaustres')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'balaustres'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">📜</span>
-                <span className="font-semibold">Balaustres</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('pranchas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'pranchas'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">📄</span>
-                <span className="font-semibold">Pranchas</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('comissoes')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'comissoes'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">📋</span>
-                <span className="font-semibold">Comissões</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('biblioteca')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'biblioteca'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">📚</span>
-                <span className="font-semibold">Biblioteca</span>
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('cronograma')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'cronograma'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">📅</span>
-                <span className="font-semibold">Cronograma</span>
-              </button>
-
-              {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
+              {/* SUBMENU: CONTROLE DE IRMÃOS */}
+              <div className="border-t border-blue-700 mt-2 pt-2">
                 <button
-                  onClick={() => setCurrentPage('financas-loja')}
+                  onClick={() => setSubmenuIrmaos(!submenuIrmaos)}
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  title="Controle de Irmãos"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">👥</span>
+                    {menuAberto && <span className="font-semibold">Controle de Irmãos</span>}
+                  </div>
+                  {menuAberto && (
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${submenuIrmaos ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Subitens do submenu */}
+                {(submenuIrmaos && menuAberto) && (
+                  <div className="bg-blue-950 bg-opacity-50">
+                    <button
+                      onClick={() => setCurrentPage('cadastro')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'cadastro'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>➕</span>
+                      <span>Cadastrar</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentPage('visualizar')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'visualizar'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>👁️</span>
+                      <span>Visualizar</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentPage('quadro')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'quadro'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>📋</span>
+                      <span>Quadro</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentPage('altos-graus')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'altos-graus'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>🔺</span>
+                      <span>Altos Graus</span>
+                    </button>
+
+                    {permissoes?.canManageUsers && (
+                      <button
+                        onClick={() => setCurrentPage('gerenciar-graus')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'gerenciar-graus'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                      >
+                        <span>⚙️</span>
+                        <span>Gerenciar Graus</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* SUBMENU: CONTROLE DE EXPEDIENTES */}
+              <div className="border-t border-blue-700 mt-2 pt-2">
+                <button
+                  onClick={() => setSubmenuExpedientes(!submenuExpedientes)}
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  title="Controle de Expedientes"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📑</span>
+                    {menuAberto && <span className="font-semibold">Expedientes</span>}
+                  </div>
+                  {menuAberto && (
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${submenuExpedientes ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Subitens do submenu */}
+                {(submenuExpedientes && menuAberto) && (
+                  <div className="bg-blue-950 bg-opacity-50">
+                    <button
+                      onClick={() => setCurrentPage('balaustres')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'balaustres'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>📜</span>
+                      <span>Balaustres</span>
+                    </button>
+
+                    <button
+                      onClick={() => setCurrentPage('pranchas')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'pranchas'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>📄</span>
+                      <span>Pranchas</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* ITENS INDIVIDUAIS */}
+              <div className="border-t border-blue-700 mt-2 pt-2">
+                <button
+                  onClick={() => setCurrentPage('comissoes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'financas-loja'
+                    currentPage === 'comissoes'
                       ? 'bg-blue-700 border-l-4 border-white'
                       : 'hover:bg-blue-800'
                   }`}
+                  title="Comissões"
                 >
-                  <span className="text-base">🏦</span>
-                  <span className="font-semibold">Finanças - Loja</span>
+                  <span className="text-base">📋</span>
+                  {menuAberto && <span className="font-semibold">Comissões</span>}
                 </button>
-              )}
 
-              <button
-                onClick={() => setCurrentPage('altos-graus')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'altos-graus'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">🔺</span>
-                <span className="font-semibold">Altos Graus</span>
-              </button>
-
-              {permissoes?.canManageUsers && (
                 <button
-                  onClick={() => setCurrentPage('gerenciar-graus')}
+                  onClick={() => setCurrentPage('biblioteca')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'gerenciar-graus'
+                    currentPage === 'biblioteca'
                       ? 'bg-blue-700 border-l-4 border-white'
                       : 'hover:bg-blue-800'
                   }`}
+                  title="Biblioteca"
                 >
-                  <span className="text-base">⚙️</span>
-                  <span className="font-semibold">Gerenciar Graus</span>
+                  <span className="text-base">📚</span>
+                  {menuAberto && <span className="font-semibold">Biblioteca</span>}
                 </button>
-              )}
 
-              {permissoes?.canManageUsers && (
                 <button
-                  onClick={() => setCurrentPage('usuarios')}
+                  onClick={() => setCurrentPage('cronograma')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'usuarios'
+                    currentPage === 'cronograma'
                       ? 'bg-blue-700 border-l-4 border-white'
                       : 'hover:bg-blue-800'
                   }`}
+                  title="Cronograma"
                 >
-                  <span className="text-base">👤</span>
-                  <span className="font-semibold">Gerenciar Usuários</span>
+                  <span className="text-base">📅</span>
+                  {menuAberto && <span className="font-semibold">Cronograma</span>}
                 </button>
-              )}
 
-              <button
-                onClick={() => setCurrentPage('corpo-admin')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'corpo-admin'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-              >
-                <span className="text-base">👔</span>
-                <span className="font-semibold">Administração</span>
-              </button>
+                {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
+                  <button
+                    onClick={() => setCurrentPage('financas-loja')}
+                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                      currentPage === 'financas-loja'
+                        ? 'bg-blue-700 border-l-4 border-white'
+                        : 'hover:bg-blue-800'
+                    }`}
+                    title="Finanças - Loja"
+                  >
+                    <span className="text-base">🏦</span>
+                    {menuAberto && <span className="font-semibold">Finanças - Loja</span>}
+                  </button>
+                )}
+
+                {permissoes?.canManageUsers && (
+                  <button
+                    onClick={() => setCurrentPage('usuarios')}
+                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                      currentPage === 'usuarios'
+                        ? 'bg-blue-700 border-l-4 border-white'
+                        : 'hover:bg-blue-800'
+                    }`}
+                    title="Gerenciar Usuários"
+                  >
+                    <span className="text-base">👤</span>
+                    {menuAberto && <span className="font-semibold">Gerenciar Usuários</span>}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setCurrentPage('corpo-admin')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'corpo-admin'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Administração"
+                >
+                  <span className="text-base">👔</span>
+                  {menuAberto && <span className="font-semibold">Administração</span>}
+                </button>
+              </div>
             </>
           )}
         </nav>
@@ -1470,7 +1572,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       </aside>
 
       {/* CONTEÚDO PRINCIPAL */}
-      <main className="flex-1 ml-64">
+      <main className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
         {/* HEADER SUPERIOR */}
         <header className="bg-white shadow-md border-b-2 border-blue-200 sticky top-0 z-40">
           <div className="px-8 py-4">
