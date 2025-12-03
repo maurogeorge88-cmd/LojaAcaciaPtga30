@@ -22,6 +22,7 @@ import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
+import Caridade from './components/caridade/Caridade';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1527,6 +1528,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </button>
                 )}
 
+                <button
+                  onClick={() => setCurrentPage('caridade')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'caridade'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Caridade"
+                >
+                  <span className="text-base">❤️</span>
+                  {menuAberto && <span className="font-semibold">Caridade</span>}
+                </button>
+
                 {permissoes?.canManageUsers && (
                   <button
                     onClick={() => setCurrentPage('usuarios')}
@@ -1592,6 +1606,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
+                  {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
@@ -1798,6 +1813,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* CARIDADE */}
+        {currentPage === 'caridade' && (
+          <Caridade
+            permissoes={permissoes}
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
