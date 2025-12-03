@@ -1,6 +1,6 @@
 /**
  * FILA DE ESPERA - BIBLIOTECA
- * Versão que recebe livros e irmãos via props
+ * Versão que não depende de view (busca direto das tabelas)
  */
 
 import { useState, useEffect } from 'react';
@@ -32,9 +32,11 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   const carregarFilas = async () => {
     setLoading(true);
     try {
-      console.log('⏳ Carregando filas...');
+      console.log('⏳ Carregando filas (sem view)...');
+      
+      // Buscar direto da tabela (sem view)
       const { data, error } = await supabase
-        .from('vw_fila_espera_completa')
+        .from('fila_espera_livros')
         .select('*')
         .order('livro_id')
         .order('posicao');
@@ -45,7 +47,25 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
       }
       
       console.log('✅ Filas carregadas:', data?.length || 0);
-      setFilas(data || []);
+      
+      // Enriquecer com dados de livros e irmãos
+      const filasEnriquecidas = data.map(fila => {
+        const livro = livros?.find(l => l.id === fila.livro_id);
+        const irmao = irmaos?.find(i => i.id === fila.irmao_id);
+        
+        return {
+          ...fila,
+          livro_titulo: livro?.titulo || 'Livro não encontrado',
+          livro_autor: livro?.autor || '',
+          livro_isbn: livro?.isbn || '',
+          irmao_nome: irmao?.nome || 'Irmão não encontrado',
+          irmao_email: irmao?.email || '',
+          irmao_telefone: irmao?.telefone || '',
+          irmao_cim: irmao?.cim || ''
+        };
+      });
+      
+      setFilas(filasEnriquecidas || []);
     } catch (error) {
       console.error('❌ Erro ao carregar filas:', error);
       showError('Erro ao carregar fila de espera');
@@ -70,7 +90,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
         .eq('livro_id', filaForm.livro_id)
         .eq('irmao_id', filaForm.irmao_id)
         .eq('status', 'aguardando')
-        .single();
+        .maybeSingle();
 
       if (jaExiste) {
         showError('Este irmão já está na fila de espera deste livro');
@@ -78,16 +98,17 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
       }
 
       // Calcular próxima posição
-      const { data: maxPosicao } = await supabase
+      const { data: filasDesseLivro } = await supabase
         .from('fila_espera_livros')
         .select('posicao')
         .eq('livro_id', filaForm.livro_id)
         .eq('status', 'aguardando')
         .order('posicao', { ascending: false })
-        .limit(1)
-        .single();
+        .limit(1);
 
-      const proximaPosicao = maxPosicao ? maxPosicao.posicao + 1 : 1;
+      const proximaPosicao = filasDesseLivro && filasDesseLivro.length > 0 
+        ? filasDesseLivro[0].posicao + 1 
+        : 1;
 
       // Inserir
       const { error } = await supabase
@@ -185,7 +206,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
 
   // Filtrar filas
   const filasFiltradas = filas.filter(f => {
-    const matchLivro = filtroLivro === 'todos' || f.livro_id.toString() === filtroLivro;
+    const matchLivro = filtroLivro === 'todos' || f.livro_id?.toString() === filtroLivro;
     const matchStatus = filtroStatus === 'todos' || f.status === filtroStatus;
     return matchLivro && matchStatus;
   });
