@@ -28,6 +28,9 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     data_emprestimo: new Date().toISOString().split('T')[0],
     data_devolucao_prevista: ''
   });
+  const [modalEditarPrazo, setModalEditarPrazo] = useState(false);
+  const [emprestimoEditando, setEmprestimoEditando] = useState(null);
+  const [novoPrazo, setNovoPrazo] = useState('');
 
   // Limpar formulário de livro
   const limparFormularioLivro = () => {
@@ -269,6 +272,42 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
     } catch (error) {
       showError('Erro ao excluir empréstimo: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Abrir modal de editar prazo
+  const abrirModalEditarPrazo = (emprestimo) => {
+    setEmprestimoEditando(emprestimo);
+    setNovoPrazo(emprestimo.data_devolucao_prevista);
+    setModalEditarPrazo(true);
+  };
+
+  // Salvar novo prazo
+  const salvarNovoPrazo = async () => {
+    if (!novoPrazo) {
+      showError('Selecione uma nova data de devolução');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('biblioteca_emprestimos')
+        .update({ data_devolucao_prevista: novoPrazo })
+        .eq('id', emprestimoEditando.id);
+
+      if (error) throw error;
+
+      showSuccess('✅ Prazo de devolução atualizado!');
+      setModalEditarPrazo(false);
+      setEmprestimoEditando(null);
+      setNovoPrazo('');
+      onUpdate();
+
+    } catch (error) {
+      showError('Erro ao atualizar prazo: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -651,6 +690,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         <td className="px-4 py-3">
                           <div className="flex gap-2 justify-center">
                             <button
+                              onClick={() => abrirModalEditarPrazo(emprestimo)}
+                              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                              title="Editar prazo"
+                            >
+                              📅 Prazo
+                            </button>
+                            <button
                               onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
                               className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
                             >
@@ -849,6 +895,77 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           showSuccess={showSuccess}
           showError={showError}
         />
+      )}
+
+      {/* MODAL EDITAR PRAZO */}
+      {modalEditarPrazo && emprestimoEditando && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="bg-yellow-600 text-white p-6 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold">📅 Editar Prazo de Devolução</h3>
+                <button
+                  onClick={() => {
+                    setModalEditarPrazo(false);
+                    setEmprestimoEditando(null);
+                    setNovoPrazo('');
+                  }}
+                  className="text-white hover:bg-yellow-700 rounded-full p-2"
+                >
+                  ✖️
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>Livro:</strong> {obterTituloLivro(emprestimoEditando.livro_id)}
+                </p>
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>Irmão:</strong> {obterNomeIrmao(emprestimoEditando.irmao_id)}
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  <strong>Prazo Atual:</strong> {formatarData(emprestimoEditando.data_devolucao_prevista)}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nova Data de Devolução *
+                </label>
+                <input
+                  type="date"
+                  value={novoPrazo}
+                  onChange={(e) => setNovoPrazo(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={salvarNovoPrazo}
+                  disabled={loading}
+                  className="flex-1 px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-semibold disabled:opacity-50"
+                >
+                  {loading ? 'Salvando...' : '💾 Salvar Novo Prazo'}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setModalEditarPrazo(false);
+                    setEmprestimoEditando(null);
+                    setNovoPrazo('');
+                  }}
+                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
