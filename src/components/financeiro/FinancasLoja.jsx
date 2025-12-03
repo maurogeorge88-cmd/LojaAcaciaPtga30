@@ -25,6 +25,21 @@ const STATUS_BLOQUEADOS = [
 ];
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
+  // ========================================
+  // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
+  // ========================================
+  const corrigirTimezone = (data) => {
+    if (!data) return '';
+    const d = new Date(data + 'T00:00:00'); // Força horário local
+    return d.toISOString().split('T')[0];
+  };
+
+  const formatarDataBR = (data) => {
+    if (!data) return '';
+    const d = new Date(data + 'T00:00:00');
+    return d.toLocaleDateString('pt-BR');
+  };
+
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [lancamentos, setLancamentos] = useState([]);
@@ -641,7 +656,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     // Tabela de lançamentos
     const dadosTabela = lancamentos.map(l => [
-      new Date(l.data_lancamento).toLocaleDateString('pt-BR'),
+      formatarDataBR(l.data_lancamento),
       l.categorias_financeiras?.tipo === 'receita' ? 'Receita' : 'Despesa',
       l.categorias_financeiras?.nome,
       l.descricao,
@@ -1474,7 +1489,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                                 <p className="font-medium text-gray-900">{lanc.descricao}</p>
                                 <p className="text-sm text-gray-600">
                                   {lanc.categorias_financeiras?.nome} • 
-                                  Venc: {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}
+                                  Venc: {formatarDataBR(lanc.data_vencimento)}
                                 </p>
                               </div>
                               <p className="text-lg font-bold text-green-600">
@@ -1549,46 +1564,34 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
                 .map((lanc) => (
                   <div key={lanc.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
-                    {/* LINHA 1: Nome do Irmão */}
-                    <div className="mb-3">
-                      <p className="font-bold text-lg text-gray-900">
-                        👤 {lanc.irmaos?.nome || lanc.descricao}
-                      </p>
-                    </div>
-
-                    {/* LINHA 2: Todas as outras informações */}
-                    <div className="flex justify-between items-center gap-4">
-                      {/* Tipo e Categoria */}
-                      <div className="flex gap-2">
-                        <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium whitespace-nowrap">
-                          📈 Receita
-                        </span>
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full whitespace-nowrap">
-                          {lanc.categorias_financeiras?.nome}
-                        </span>
-                      </div>
-
-                      {/* Vencimento */}
-                      <div>
-                        <p className="text-sm">
-                          <span className="text-red-600 font-medium">⏰</span>{' '}
-                          {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-
-                      {/* Descrição */}
+                    <div className="flex justify-between items-center">
                       <div className="flex-1">
-                        <p className="text-sm text-gray-700 font-medium">{lanc.descricao}</p>
-                      </div>
-
-                      {/* Valor e Botão */}
-                      <div className="text-right flex items-center gap-4">
-                        <p className="text-2xl font-bold text-red-600">
-                          R$ {parseFloat(lanc.valor).toFixed(2)}
+                        {/* Nome do Irmão */}
+                        <p className="font-bold text-lg text-gray-900">
+                          👤 {lanc.irmaos?.nome || lanc.descricao}
                         </p>
+                        {/* Tipo e Categoria */}
+                        <div className="flex gap-2 mt-2">
+                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
+                            📈 Receita
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                            {lanc.categorias_financeiras?.nome}
+                          </span>
+                        </div>
+                        {/* Descrição e Vencimento */}
+                        <div className="text-sm text-gray-600 mt-2">
+                          <p className="font-medium">{lanc.descricao}</p>
+                          <p className="mt-1">
+                            <span className="text-red-600 font-medium">⏰ Vencimento:</span> {formatarDataBR(lanc.data_vencimento)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right ml-4">
+                        <p className="text-2xl font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
                         <button
                           onClick={() => abrirModalQuitacao(lanc)}
-                          className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium transition whitespace-nowrap"
+                          className="mt-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
                         >
                           💰 Quitar
                         </button>
@@ -1637,10 +1640,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(lanc.data_lancamento).toLocaleDateString('pt-BR')}
+                      {formatarDataBR(lanc.data_lancamento)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {new Date(lanc.data_vencimento).toLocaleDateString('pt-BR')}
+                      {formatarDataBR(lanc.data_vencimento)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -1675,7 +1678,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {lanc.data_pagamento ? new Date(lanc.data_pagamento).toLocaleDateString('pt-BR') : '-'}
+                      {lanc.data_pagamento ? formatarDataBR(lanc.data_pagamento) : '-'}
                       <br />
                       <span className="text-xs text-gray-500">{lanc.tipo_pagamento}</span>
                     </td>
