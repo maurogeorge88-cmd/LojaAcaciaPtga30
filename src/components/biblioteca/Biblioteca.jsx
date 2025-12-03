@@ -148,12 +148,14 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         'Mestre': 3
       };
 
+      // Tentar pegar o grau do irmão (pode estar em grau_maconico ou grau)
+      const grauIrmaoTexto = irmao.grau_maconico || irmao.grau || 'Mestre';
       const grauLivro = hierarquiaGraus[livro.grau] || 1;
-      const grauIrmao = hierarquiaGraus[irmao.grau_maconico] || 1;
+      const grauIrmao = hierarquiaGraus[grauIrmaoTexto] || 3; // Default: Mestre
 
       // Irmão precisa ter grau igual ou superior ao do livro
       if (grauIrmao < grauLivro) {
-        showError(`❌ Este livro é para o grau "${livro.grau}" e o irmão ${irmao.nome} é "${irmao.grau_maconico}". O grau do livro não é compatível com o grau do irmão.`);
+        showError(`❌ Este livro é para o grau "${livro.grau}" e o irmão ${irmao.nome} é "${grauIrmaoTexto}". O grau do livro não é compatível com o grau do irmão.`);
         return;
       }
     }
