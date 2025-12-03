@@ -1,6 +1,6 @@
 /**
  * FILA DE ESPERA - BIBLIOTECA
- * Controle de Reservas e Espera por Livros
+ * Versão com debug melhorado
  */
 
 import { useState, useEffect } from 'react';
@@ -25,10 +25,12 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
   const [filtroStatus, setFiltroStatus] = useState('aguardando');
 
   useEffect(() => {
+    console.log('🔍 FilaEspera: Componente montado');
     carregarDados();
   }, []);
 
   const carregarDados = async () => {
+    console.log('📦 Carregando dados...');
     setLoading(true);
     await Promise.all([
       carregarFilas(),
@@ -36,51 +38,86 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
       carregarIrmaos()
     ]);
     setLoading(false);
+    console.log('✅ Dados carregados');
   };
 
   const carregarFilas = async () => {
     try {
+      console.log('⏳ Carregando filas...');
       const { data, error } = await supabase
         .from('vw_fila_espera_completa')
         .select('*')
         .order('livro_id')
         .order('posicao');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar filas:', error);
+        throw error;
+      }
+      
+      console.log('✅ Filas carregadas:', data?.length || 0);
       setFilas(data || []);
     } catch (error) {
-      console.error('Erro ao carregar filas:', error);
+      console.error('❌ Erro ao carregar filas:', error);
       showError('Erro ao carregar fila de espera');
     }
   };
 
   const carregarLivros = async () => {
     try {
+      console.log('📚 Carregando livros...');
+      
+      // Tentar carregar de biblioteca_livros
       const { data, error } = await supabase
         .from('biblioteca_livros')
         .select('id, titulo, autor')
         .eq('ativo', true)
         .order('titulo');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar de biblioteca_livros:', error);
+        // Tentar tabela alternativa
+        const { data: data2, error: error2 } = await supabase
+          .from('livros')
+          .select('id, titulo, autor')
+          .order('titulo');
+        
+        if (error2) {
+          console.error('❌ Erro ao carregar de livros:', error2);
+          throw error2;
+        }
+        
+        console.log('✅ Livros carregados de "livros":', data2?.length || 0);
+        setLivros(data2 || []);
+        return;
+      }
+      
+      console.log('✅ Livros carregados de "biblioteca_livros":', data?.length || 0);
+      console.log('📖 Livros:', data);
       setLivros(data || []);
     } catch (error) {
-      console.error('Erro ao carregar livros:', error);
+      console.error('❌ Erro fatal ao carregar livros:', error);
       showError('Erro ao carregar livros');
     }
   };
 
   const carregarIrmaos = async () => {
     try {
+      console.log('👥 Carregando irmãos...');
       const { data, error } = await supabase
         .from('irmaos')
         .select('id, nome, cim')
         .order('nome');
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro ao carregar irmãos:', error);
+        throw error;
+      }
+      
+      console.log('✅ Irmãos carregados:', data?.length || 0);
       setIrmaos(data || []);
     } catch (error) {
-      console.error('Erro ao carregar irmãos:', error);
+      console.error('❌ Erro ao carregar irmãos:', error);
     }
   };
 
@@ -149,7 +186,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
         .update({
           status: 'atendido',
           data_atendimento: new Date().toISOString(),
-          atendido_por: 'Sistema' // Pode pegar do usuário logado
+          atendido_por: 'Sistema'
         })
         .eq('id', filaId);
 
@@ -241,19 +278,32 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Carregando...</div>
+        <div className="text-lg text-gray-600">⏳ Carregando dados...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* DEBUG INFO */}
+      {livros.length === 0 && (
+        <div className="bg-yellow-50 border-2 border-yellow-400 p-4 rounded-lg">
+          <p className="text-yellow-800 font-bold">⚠️ DEBUG: Nenhum livro encontrado!</p>
+          <p className="text-sm text-yellow-700 mt-2">
+            Abra o Console (F12) para ver os logs de carregamento.
+          </p>
+        </div>
+      )}
+
       {/* HEADER */}
       <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold mb-2">⏳ Fila de Espera</h2>
             <p className="text-orange-100">Controle de Reservas e Solicitações</p>
+            <p className="text-orange-200 text-sm mt-1">
+              📚 {livros.length} livros • 👥 {irmaos.length} irmãos
+            </p>
           </div>
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
             <button
@@ -471,24 +521,33 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
                   ✖️
                 </button>
               </div>
+              <p className="text-orange-100 text-sm mt-2">
+                📚 {livros.length} livros disponíveis
+              </p>
             </div>
 
             <form onSubmit={handleAdicionar} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
-                <select
-                  value={filaForm.livro_id}
-                  onChange={(e) => setFilaForm({ ...filaForm, livro_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
-                  required
-                >
-                  <option value="">Selecione o livro</option>
-                  {livros.map(livro => (
-                    <option key={livro.id} value={livro.id}>
-                      {livro.titulo} - {livro.autor}
-                    </option>
-                  ))}
-                </select>
+                {livros.length === 0 ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    ❌ Nenhum livro cadastrado. Cadastre livros primeiro.
+                  </div>
+                ) : (
+                  <select
+                    value={filaForm.livro_id}
+                    onChange={(e) => setFilaForm({ ...filaForm, livro_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+                    required
+                  >
+                    <option value="">Selecione o livro</option>
+                    {livros.map(livro => (
+                      <option key={livro.id} value={livro.id}>
+                        {livro.titulo} - {livro.autor}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               <div>
@@ -522,7 +581,8 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold"
+                  disabled={livros.length === 0}
+                  className="flex-1 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   ➕ Adicionar à Fila
                 </button>
