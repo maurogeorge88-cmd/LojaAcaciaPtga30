@@ -57,14 +57,16 @@ export default function FilaEspera({ permissoes, showSuccess, showError }) {
   const carregarLivros = async () => {
     try {
       const { data, error } = await supabase
-        .from('livros')
+        .from('biblioteca_livros')
         .select('id, titulo, autor')
+        .eq('ativo', true)
         .order('titulo');
 
       if (error) throw error;
       setLivros(data || []);
     } catch (error) {
       console.error('Erro ao carregar livros:', error);
+      showError('Erro ao carregar livros');
     }
   };
 
