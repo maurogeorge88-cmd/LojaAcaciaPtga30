@@ -1794,6 +1794,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             }}
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
