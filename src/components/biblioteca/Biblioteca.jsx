@@ -894,6 +894,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           permissoes={permissoes}
           showSuccess={showSuccess}
           showError={showError}
+          livros={livros}
+          irmaos={irmaos}
         />
       )}
 
