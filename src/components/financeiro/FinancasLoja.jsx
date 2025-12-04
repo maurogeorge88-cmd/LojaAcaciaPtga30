@@ -26,14 +26,14 @@ const STATUS_BLOQUEADOS = [
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // ========================================
-  // 🔴 TESTE - ARQUIVO CORRETO CARREGADO
+  // ✅ VERSÃO COM PARCELAMENTO
   // ========================================
   console.log('');
   console.log('█████████████████████████████████████████████████████');
   console.log('█                                                   █');
-  console.log('█   ✅ ARQUIVO TESTE SIMPLES CARREGADO!             █');
+  console.log('█   ✅ ARQUIVO COM PARCELAMENTO CARREGADO!          █');
   console.log('█   📅 Data: 04/12/2024                             █');
-  console.log('█   📝 Versão: TESTE IDENTIFICAÇÃO                  █');
+  console.log('█   🔢 Funcionalidade: PARCELAMENTO                 █');
   console.log('█                                                   █');
   console.log('█████████████████████████████████████████████████████');
   console.log('');
@@ -53,6 +53,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     return d.toLocaleDateString('pt-BR');
   };
 
+  const gerarUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [lancamentos, setLancamentos] = useState([]);
@@ -63,6 +71,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [mostrarModalQuitacaoLote, setMostrarModalQuitacaoLote] = useState(false);
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
+  
+  const [mostrarModalParcelamento, setMostrarModalParcelamento] = useState(false);
+  const [formParcelamento, setFormParcelamento] = useState({
+    tipo: 'despesa',
+    categoria_id: '',
+    descricao: '',
+    valor_total: '',
+    num_parcelas: 2,
+    data_primeira_parcela: new Date().toISOString().split('T')[0],
+    tipo_pagamento: 'dinheiro',
+    origem_tipo: 'Loja',
+    origem_irmao_id: '',
+    observacoes: ''
+  });
   
   const [filtros, setFiltros] = useState({
     mes: 0, // 0 = Todos
@@ -747,6 +769,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
           >
             👥 Lançamento em Lote
+          </button>
+          <button
+            onClick={() => {
+              console.log('🔢 Botão Parcelar clicado!');
+              setFormParcelamento({
+                tipo: 'despesa',
+                categoria_id: '',
+                descricao: '',
+                valor_total: '',
+                num_parcelas: 2,
+                data_primeira_parcela: new Date().toISOString().split('T')[0],
+                tipo_pagamento: 'dinheiro',
+                origem_tipo: 'Loja',
+                origem_irmao_id: '',
+                observacoes: ''
+              });
+              setMostrarModalParcelamento(true);
+              console.log('✅ Modal deve abrir agora!');
+            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+          >
+            🔢 Parcelar
           </button>
           <button
             onClick={gerarPDF}
@@ -1712,7 +1756,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center flex-wrap">
+                        {lanc.eh_parcelado && (
+                          <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                            {lanc.parcela_numero}/{lanc.parcela_total}
+                          </span>
+                        )}
                         {lanc.status === 'pendente' && (
                           <button
                             onClick={() => abrirModalQuitacao(lanc)}
@@ -2001,6 +2050,190 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
           💡 <strong>Dica:</strong> Categorias inativas não aparecem nos formulários, mas lançamentos antigos continuam visíveis.
         </p>
       </div>
+
+      {mostrarModalParcelamento && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
+              <h3 className="text-xl font-bold">🔢 Parcelar Despesa/Receita</h3>
+              <p className="text-sm text-indigo-100">Dividir um valor em parcelas mensais</p>
+            </div>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              try {
+                const valorTotal = parseFloat(formParcelamento.valor_total);
+                const numParcelas = parseInt(formParcelamento.num_parcelas);
+                
+                if (valorTotal <= 0 || numParcelas < 2) {
+                  showError('Valor deve ser positivo e mínimo 2 parcelas');
+                  return;
+                }
+
+                const valorParcela = valorTotal / numParcelas;
+                const grupoParcelamento = gerarUUID();
+                
+                const parcelas = [];
+                for (let i = 0; i < numParcelas; i++) {
+                  const dataParcela = new Date(formParcelamento.data_primeira_parcela);
+                  dataParcela.setMonth(dataParcela.getMonth() + i);
+                  
+                  parcelas.push({
+                    tipo: formParcelamento.tipo,
+                    categoria_id: parseInt(formParcelamento.categoria_id),
+                    descricao: `${formParcelamento.descricao} (${i + 1}/${numParcelas})`,
+                    valor: valorParcela,
+                    data_lancamento: new Date().toISOString().split('T')[0],
+                    data_vencimento: dataParcela.toISOString().split('T')[0],
+                    tipo_pagamento: formParcelamento.tipo_pagamento,
+                    status: 'pendente',
+                    origem_tipo: formParcelamento.origem_tipo,
+                    origem_irmao_id: formParcelamento.origem_irmao_id || null,
+                    observacoes: formParcelamento.observacoes,
+                    eh_parcelado: true,
+                    parcela_numero: i + 1,
+                    parcela_total: numParcelas,
+                    grupo_parcelamento: grupoParcelamento
+                  });
+                }
+
+                const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
+                if (error) throw error;
+
+                showSuccess(`✅ ${numParcelas} parcelas criadas com sucesso!`);
+                setMostrarModalParcelamento(false);
+                carregarLancamentos();
+              } catch (error) {
+                console.error('Erro:', error);
+                showError('Erro ao parcelar: ' + error.message);
+              }
+            }} className="p-6 space-y-4">
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo *</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input type="radio" value="despesa" checked={formParcelamento.tipo === 'despesa'}
+                      onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })}
+                      className="mr-2" />
+                    <span>💸 Despesa</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input type="radio" value="receita" checked={formParcelamento.tipo === 'receita'}
+                      onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })}
+                      className="mr-2" />
+                    <span>💰 Receita</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoria *</label>
+                <select required value={formParcelamento.categoria_id}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  <option value="">Selecione...</option>
+                  {categorias.filter(c => c.tipo === formParcelamento.tipo).map(c => (
+                    <option key={c.id} value={c.id}>{c.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Descrição *</label>
+                <input type="text" required value={formParcelamento.descricao}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: Reforma do templo" />
+                <p className="text-xs text-gray-500 mt-1">Será adicionado (1/5), (2/5), etc.</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Valor Total *</label>
+                  <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
+                    onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Nº Parcelas *</label>
+                  <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
+                    onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" />
+                </div>
+              </div>
+
+              {formParcelamento.valor_total && formParcelamento.num_parcelas && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
+                  <p className="text-sm font-medium">
+                    💡 Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Vencimento 1ª Parcela *</label>
+                <input type="date" required value={formParcelamento.data_primeira_parcela}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg" />
+                <p className="text-xs text-gray-500 mt-1">As demais vencerão mensalmente</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Forma de Pagamento</label>
+                <select value={formParcelamento.tipo_pagamento}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  {tiposPagamento.map(tp => (
+                    <option key={tp.value} value={tp.value}>{tp.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Origem</label>
+                  <select value={formParcelamento.origem_tipo}
+                    onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_tipo: e.target.value, origem_irmao_id: '' })}
+                    className="w-full px-3 py-2 border rounded-lg">
+                    <option value="Loja">🏛️ Loja</option>
+                    <option value="Irmao">👤 Irmão</option>
+                  </select>
+                </div>
+                {formParcelamento.origem_tipo === 'Irmao' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Irmão</label>
+                    <select value={formParcelamento.origem_irmao_id}
+                      onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_irmao_id: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg">
+                      <option value="">Selecione...</option>
+                      {irmaos.map(irmao => (
+                        <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea value={formParcelamento.observacoes}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, observacoes: e.target.value })}
+                  rows="2" className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <button type="submit" 
+                  className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+                  🔢 Criar Parcelamento
+                </button>
+                <button type="button" onClick={() => setMostrarModalParcelamento(false)}
+                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
-  );
-}
+  );\n}
