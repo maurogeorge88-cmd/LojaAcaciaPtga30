@@ -40,6 +40,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     return d.toLocaleDateString('pt-BR');
   };
 
+  // Função para gerar UUID único para grupos de parcelamento
   const gerarUUID = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
@@ -59,7 +60,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   
-  // Estados para Parcelamento
+  // ========================================
+  // NOVOS ESTADOS - PARCELAMENTO
+  // ========================================
   const [mostrarModalParcelamento, setMostrarModalParcelamento] = useState(false);
   const [formParcelamento, setFormParcelamento] = useState({
     tipo: 'despesa',
@@ -74,7 +77,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     observacoes: ''
   });
 
-  // Estados para Pagamento Parcial
+  // ========================================
+  // NOVOS ESTADOS - PAGAMENTO PARCIAL
+  // ========================================
   const [mostrarModalPagamentoParcial, setMostrarModalPagamentoParcial] = useState(false);
   const [lancamentoPagamentoParcial, setLancamentoPagamentoParcial] = useState(null);
   const [formPagamentoParcial, setFormPagamentoParcial] = useState({
@@ -1753,14 +1758,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex gap-2 items-center flex-wrap">
-                        {/* Badge Parcela */}
+                        {/* Badge de Parcela */}
                         {lanc.eh_parcelado && (
                           <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
                             {lanc.parcela_numero}/{lanc.parcela_total}
                           </span>
                         )}
                         
-                        {/* Status Pagamento Parcial */}
+                        {/* Badge de Pagamento Parcial */}
                         {lanc.status === 'parcial' && lanc.valor_restante > 0 && (
                           <button
                             onClick={() => {
@@ -1780,11 +1785,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                           </button>
                         )}
                         
-                        {/* Habilitar/Pagar Parcial */}
+                        {/* Botão Habilitar/Pagar Parcial */}
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && (
                           <button
                             onClick={async () => {
                               if (lanc.permite_pagamento_parcial) {
+                                // Abrir modal de pagamento
                                 setLancamentoPagamentoParcial(lanc);
                                 setFormPagamentoParcial({
                                   valor_a_pagar: '',
@@ -1794,6 +1800,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                                 });
                                 setMostrarModalPagamentoParcial(true);
                               } else {
+                                // Habilitar pagamento parcial
                                 if (window.confirm('Deseja habilitar pagamento parcial para este lançamento?')) {
                                   try {
                                     const { error } = await supabase
@@ -1807,7 +1814,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                                       .eq('id', lanc.id);
                                     
                                     if (error) throw error;
-                                    showSuccess('✅ Pagamento parcial habilitado');
+                                    showSuccess('✅ Pagamento parcial habilitado!');
                                     carregarLancamentos();
                                   } catch (error) {
                                     showError('Erro: ' + error.message);
@@ -2112,30 +2119,16 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         </p>
       </div>
 
-      {/* MODAL PARCELAMENTO - TESTE SIMPLES */}
+      {/* ========================================
+          MODAL DE PARCELAMENTO
+          ======================================== */}
       {mostrarModalParcelamento && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '40px',
-            borderRadius: '10px',
-            maxWidth: '600px',
-            width: '90%',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: '#4F46E5' }}>🔢 Parcelar Despesa/Receita</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
+              <h3 className="text-xl font-bold">🔢 Parcelar Despesa/Receita</h3>
+              <p className="text-sm text-indigo-100">Dividir um valor em parcelas mensais</p>
+            </div>
             
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -2182,85 +2175,137 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                 const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
                 if (error) throw error;
 
-                showSuccess(`✅ Parcelamento: ${numParcelas}x de R$ ${valorParcela.toFixed(2)}`);
+                showSuccess(`✅ Parcelamento criado: ${numParcelas}x de R$ ${valorParcela.toFixed(2)}`);
                 setMostrarModalParcelamento(false);
                 carregarLancamentos();
               } catch (error) {
                 console.error('Erro:', error);
                 showError('Erro ao parcelar: ' + error.message);
               }
-            }}>
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Tipo *</label>
-                <div style={{ display: 'flex', gap: '15px' }}>
-                  <label style={{ cursor: 'pointer' }}>
+            }} className="p-6 space-y-4">
+              
+              <div>
+                <label className="block text-sm font-medium mb-1">Tipo *</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
                     <input type="radio" value="despesa" checked={formParcelamento.tipo === 'despesa'}
-                      onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })} />
-                    {' '}💸 Despesa
+                      onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })}
+                      className="mr-2" />
+                    <span>💸 Despesa</span>
                   </label>
-                  <label style={{ cursor: 'pointer' }}>
+                  <label className="flex items-center cursor-pointer">
                     <input type="radio" value="receita" checked={formParcelamento.tipo === 'receita'}
-                      onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })} />
-                    {' '}💰 Receita
+                      onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })}
+                      className="mr-2" />
+                    <span>💰 Receita</span>
                   </label>
                 </div>
               </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Categoria *</label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Categoria *</label>
                 <select required value={formParcelamento.categoria_id}
                   onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }}>
+                  className="w-full px-3 py-2 border rounded-lg">
                   <option value="">Selecione...</option>
                   {categorias.filter(c => c.tipo === formParcelamento.tipo).map(c => (
                     <option key={c.id} value={c.id}>{c.nome}</option>
                   ))}
                 </select>
               </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Descrição *</label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Descrição *</label>
                 <input type="text" required value={formParcelamento.descricao}
                   onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }}
+                  className="w-full px-3 py-2 border rounded-lg" 
                   placeholder="Ex: Reforma do templo" />
+                <p className="text-xs text-gray-500 mt-1">Será adicionado (1/5), (2/5), etc.</p>
               </div>
-              
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Valor Total *</label>
-                  <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
+                  <label className="block text-sm font-medium mb-1">Valor Total *</label>
+                  <input type="number" required step="0.01" min="0.01" 
+                    value={formParcelamento.valor_total}
                     onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                    className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
                 </div>
                 <div>
-                  <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nº Parcelas *</label>
-                  <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
+                  <label className="block text-sm font-medium mb-1">Nº Parcelas *</label>
+                  <input type="number" required min="2" max="24" 
+                    value={formParcelamento.num_parcelas}
                     onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
-                    style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                    className="w-full px-3 py-2 border rounded-lg" />
                 </div>
               </div>
-              
+
               {formParcelamento.valor_total && formParcelamento.num_parcelas && (
-                <div style={{ padding: '10px', backgroundColor: '#EEF2FF', borderRadius: '5px', marginBottom: '15px' }}>
-                  <strong>Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}</strong>
+                <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
+                  <p className="text-sm font-medium">
+                    Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
+                  </p>
                 </div>
               )}
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Vencimento 1ª Parcela *</label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Vencimento 1ª Parcela *</label>
                 <input type="date" required value={formParcelamento.data_primeira_parcela}
                   onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                  className="w-full px-3 py-2 border rounded-lg" />
+                <p className="text-xs text-gray-500 mt-1">As demais vencerão mensalmente</p>
               </div>
-              
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Forma de Pagamento</label>
+                <select value={formParcelamento.tipo_pagamento}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  {tiposPagamento.map(tp => (
+                    <option key={tp.value} value={tp.value}>{tp.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Origem</label>
+                  <select value={formParcelamento.origem_tipo}
+                    onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_tipo: e.target.value, origem_irmao_id: '' })}
+                    className="w-full px-3 py-2 border rounded-lg">
+                    <option value="Loja">🏛️ Loja</option>
+                    <option value="Irmao">👤 Irmão</option>
+                  </select>
+                </div>
+                {formParcelamento.origem_tipo === 'Irmao' && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Irmão</label>
+                    <select value={formParcelamento.origem_irmao_id}
+                      onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_irmao_id: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg">
+                      <option value="">Selecione...</option>
+                      {irmaos.map(irmao => (
+                        <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea value={formParcelamento.observacoes}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, observacoes: e.target.value })}
+                  rows="2" className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
                 <button type="submit" 
-                  style={{ flex: 1, padding: '10px 20px', backgroundColor: '#4F46E5', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
+                  className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
                   🔢 Criar Parcelamento
                 </button>
                 <button type="button" onClick={() => setMostrarModalParcelamento(false)}
-                  style={{ padding: '10px 20px', backgroundColor: '#6B7280', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
                   Cancelar
                 </button>
               </div>
@@ -2269,28 +2314,16 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         </div>
       )}
 
-      {/* MODAL PAGAMENTO PARCIAL */}
+      {/* ========================================
+          MODAL DE PAGAMENTO PARCIAL
+          ======================================== */}
       {mostrarModalPagamentoParcial && lancamentoPagamentoParcial && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'rgba(0, 0, 0, 0.9)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '40px',
-            borderRadius: '10px',
-            maxWidth: '500px',
-            width: '90%'
-          }}>
-            <h2 style={{ marginBottom: '20px', color: '#2563EB' }}>💰 Pagamento Parcial</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
+              <h3 className="text-xl font-bold">💰 Pagamento Parcial</h3>
+              <p className="text-sm text-blue-100">Pagar parte do valor pendente</p>
+            </div>
             
             <form onSubmit={async (e) => {
               e.preventDefault();
@@ -2319,7 +2352,8 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                     valor_restante: novoValorRestante,
                     status: novoStatus,
                     data_pagamento: novoStatus === 'pago' ? formPagamentoParcial.data_pagamento : null,
-                    tipo_pagamento: formPagamentoParcial.tipo_pagamento
+                    tipo_pagamento: formPagamentoParcial.tipo_pagamento,
+                    observacoes: formPagamentoParcial.observacoes || lanc.observacoes
                   })
                   .eq('id', lanc.id);
 
@@ -2338,62 +2372,91 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                 console.error('Erro:', error);
                 showError('Erro: ' + error.message);
               }
-            }}>
-              <div style={{ padding: '15px', backgroundColor: '#F3F4F6', borderRadius: '5px', marginBottom: '20px' }}>
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Descrição:</strong> {lancamentoPagamentoParcial.descricao}
+            }} className="p-6 space-y-4">
+              
+              <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Descrição:</span>
+                  <span className="font-medium">{lancamentoPagamentoParcial.descricao}</span>
                 </div>
-                <div style={{ marginBottom: '10px' }}>
-                  <strong>Valor Original:</strong> R$ {parseFloat(lancamentoPagamentoParcial.valor_original || lancamentoPagamentoParcial.valor).toFixed(2)}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Valor Original:</span>
+                  <span className="font-medium">R$ {parseFloat(lancamentoPagamentoParcial.valor_original || lancamentoPagamentoParcial.valor).toFixed(2)}</span>
                 </div>
-                <div style={{ marginBottom: '10px', color: '#059669' }}>
-                  <strong>Já Pago:</strong> R$ {parseFloat(lancamentoPagamentoParcial.valor_pago || 0).toFixed(2)}
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Já Pago:</span>
+                  <span className="font-medium text-green-600">R$ {parseFloat(lancamentoPagamentoParcial.valor_pago || 0).toFixed(2)}</span>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#DC2626' }}>
-                  <strong>Restante:</strong> R$ {parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor).toFixed(2)}
+                <div className="flex justify-between border-t pt-2">
+                  <span className="font-bold">Restante:</span>
+                  <span className="text-lg font-bold text-red-600">
+                    R$ {parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor).toFixed(2)}
+                  </span>
                 </div>
               </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Valor a Pagar *</label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Valor a Pagar *</label>
                 <input type="number" required step="0.01" min="0.01"
                   max={parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)}
                   value={formPagamentoParcial.valor_a_pagar}
                   onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, valor_a_pagar: e.target.value })}
-                  style={{ width: '100%', padding: '10px', border: '2px solid #2563EB', borderRadius: '5px', fontSize: '16px', fontWeight: 'bold' }} />
+                  className="w-full px-3 py-2 border rounded-lg text-lg font-bold" 
+                  placeholder="0.00" />
+                <p className="text-xs text-gray-500 mt-1">
+                  Máximo: R$ {parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor).toFixed(2)}
+                </p>
               </div>
-              
+
               {formPagamentoParcial.valor_a_pagar && (
-                <div style={{ padding: '10px', backgroundColor: '#DBEAFE', borderRadius: '5px', marginBottom: '15px', fontSize: '14px' }}>
-                  <div><strong>Após pagamento:</strong></div>
-                  <div>Pago: R$ {((parseFloat(lancamentoPagamentoParcial.valor_pago) || 0) + (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)).toFixed(2)}</div>
-                  <div>Resta: R$ {((parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)) - (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)).toFixed(2)}</div>
+                <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
+                  <p className="font-medium mb-1">Após este pagamento:</p>
+                  <p className="text-blue-700">
+                    • Pago: R$ {((parseFloat(lancamentoPagamentoParcial.valor_pago) || 0) + (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)).toFixed(2)}
+                  </p>
+                  <p className="text-blue-700">
+                    • Resta: R$ {((parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)) - (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)).toFixed(2)}
+                  </p>
+                  {((parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)) - (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)) === 0 && (
+                    <p className="text-green-700 font-bold mt-2">✅ Este pagamento quitará o lançamento!</p>
+                  )}
                 </div>
               )}
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Data *</label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Data do Pagamento *</label>
                 <input type="date" required value={formPagamentoParcial.data_pagamento}
                   onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, data_pagamento: e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }} />
+                  className="w-full px-3 py-2 border rounded-lg" />
               </div>
-              
-              <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Forma *</label>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
                 <select required value={formPagamentoParcial.tipo_pagamento}
                   onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, tipo_pagamento: e.target.value })}
-                  style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '5px' }}>
+                  className="w-full px-3 py-2 border rounded-lg">
                   {tiposPagamento.map(tp => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
                 </select>
               </div>
-              
-              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-                <button type="submit"
-                  style={{ flex: 1, padding: '10px 20px', backgroundColor: '#2563EB', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontWeight: 'bold' }}>
-                  💰 Registrar
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Observações</label>
+                <textarea value={formPagamentoParcial.observacoes}
+                  onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, observacoes: e.target.value })}
+                  rows="2" className="w-full px-3 py-2 border rounded-lg" />
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t">
+                <button type="submit" 
+                  className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                  💰 Registrar Pagamento
                 </button>
-                <button type="button" onClick={() => { setMostrarModalPagamentoParcial(false); setLancamentoPagamentoParcial(null); }}
-                  style={{ padding: '10px 20px', backgroundColor: '#6B7280', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>
+                <button type="button" 
+                  onClick={() => { 
+                    setMostrarModalPagamentoParcial(false); 
+                    setLancamentoPagamentoParcial(null); 
+                  }}
+                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
                   Cancelar
                 </button>
               </div>
