@@ -65,6 +65,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [modalParcelamentoAberto, setModalParcelamentoAberto] = useState(false);
   const [lancamentoParcelar, setLancamentoParcelar] = useState(null); // Lançamento para parcelar
 
+  // Estados para Pagamento Parcial
+  const [modalPagamentoParcialAberto, setModalPagamentoParcialAberto] = useState(false);
+  const [lancamentoPagamentoParcial, setLancamentoPagamentoParcial] = useState(null);
+  const [pagamentosDoLancamento, setPagamentosDoLancamento] = useState([]);
+
   const [formLancamento, setFormLancamento] = useState({
     tipo: 'receita',
     categoria_id: '',
@@ -543,6 +548,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     } catch (error) {
       console.error('Erro ao excluir lançamento:', error);
       showError('Erro ao excluir lançamento: ' + error.message);
+    }
+  };
+
+  const abrirModalPagamentoParcial = async (lancamento) => {
+    try {
+      // Buscar todos os pagamentos parciais deste lançamento
+      const { data: pagamentos, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*')
+        .eq('lancamento_principal_id', lancamento.id)
+        .eq('eh_pagamento_parcial', true)
+        .order('data_pagamento', { ascending: true });
+
+      if (error) throw error;
+
+      setPagamentosDoLancamento(pagamentos || []);
+      setLancamentoPagamentoParcial(lancamento);
+      setModalPagamentoParcialAberto(true);
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao carregar pagamentos: ' + error.message);
     }
   };
 
@@ -1710,12 +1736,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <div className="flex gap-2 items-center flex-wrap">
+                        {/* Badge de Parcela */}
                         {lanc.eh_parcelado && (
                           <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
                             {lanc.parcela_numero}/{lanc.parcela_total}
                           </span>
                         )}
-                        {lanc.status === 'pendente' && !lanc.eh_parcelado && (
+                        
+                        {/* Botão Parcelar */}
+                        {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => {
                               setLancamentoParcelar(lanc);
@@ -1727,15 +1756,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                             🔀
                           </button>
                         )}
-                        {lanc.status === 'pendente' && (
+                        
+                        {/* Botão Pagamento Parcial */}
+                        {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
+                          <button
+                            onClick={() => abrirModalPagamentoParcial(lanc)}
+                            className="text-amber-600 hover:text-amber-900"
+                            title="Fazer pagamento parcial"
+                          >
+                            💰
+                          </button>
+                        )}
+                        
+                        {/* Botão Quitar Total (apenas se não tiver pagamento parcial) */}
+                        {lanc.status === 'pendente' && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalQuitacao(lanc)}
                             className="text-green-600 hover:text-green-900"
                             title="Quitar"
                           >
-                            💰
+                            ✅
                           </button>
                         )}
+                        
                         <button
                           onClick={() => editarLancamento(lanc)}
                           className="text-blue-600 hover:text-blue-900"
@@ -1784,6 +1827,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           onClose={() => {
             setModalParcelamentoAberto(false);
             setLancamentoParcelar(null);
+          }}
+          onSuccess={carregarLancamentos}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
+      )}
+
+      {/* Modal de Pagamento Parcial */}
+      {modalPagamentoParcialAberto && (
+        <ModalPagamentoParcial
+          lancamento={lancamentoPagamentoParcial}
+          pagamentosExistentes={pagamentosDoLancamento}
+          onClose={() => {
+            setModalPagamentoParcialAberto(false);
+            setLancamentoPagamentoParcial(null);
+            setPagamentosDoLancamento([]);
           }}
           onSuccess={carregarLancamentos}
           showSuccess={showSuccess}
@@ -2265,6 +2324,204 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
             <button type="submit" 
               className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
               🔢 Criar Parcelamento
+            </button>
+            <button type="button" onClick={onClose}
+              className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// COMPONENTE: MODAL DE PAGAMENTO PARCIAL
+// ============================================
+function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSuccess, showSuccess, showError }) {
+  const [valorPagar, setValorPagar] = useState('');
+  const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().split('T')[0]);
+
+  // Calcular totais
+  const valorOriginal = lancamento.valor;
+  const totalPago = pagamentosExistentes.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
+  const valorRestante = valorOriginal - totalPago;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const valorAPagar = parseFloat(valorPagar);
+      
+      if (valorAPagar <= 0) {
+        showError('Valor deve ser maior que zero');
+        return;
+      }
+
+      if (valorAPagar > valorRestante) {
+        showError(`Valor não pode ser maior que o restante (R$ ${valorRestante.toFixed(2)})`);
+        return;
+      }
+
+      // Criar novo lançamento de pagamento parcial
+      const novoPagamento = {
+        tipo: lancamento.tipo, // Mantém o tipo (receita ou despesa)
+        categoria_id: lancamento.categoria_id,
+        descricao: `💰 Pagamento Parcial: ${lancamento.descricao}`,
+        valor: valorAPagar,
+        data_lancamento: dataPagamento,
+        data_vencimento: dataPagamento,
+        data_pagamento: dataPagamento,
+        tipo_pagamento: lancamento.tipo_pagamento,
+        status: 'pago', // Pagamento parcial já é pago
+        origem_tipo: lancamento.origem_tipo,
+        origem_irmao_id: lancamento.origem_irmao_id,
+        observacoes: `Pagamento parcial de R$ ${valorAPagar.toFixed(2)} do lançamento "${lancamento.descricao}" (R$ ${valorOriginal.toFixed(2)})`,
+        eh_pagamento_parcial: true,
+        lancamento_principal_id: lancamento.id
+      };
+
+      const { error: errorInsert } = await supabase
+        .from('lancamentos_loja')
+        .insert(novoPagamento);
+
+      if (errorInsert) throw errorInsert;
+
+      // Se pagou tudo, marcar lançamento principal como pago
+      const novoTotalPago = totalPago + valorAPagar;
+      const novoRestante = valorOriginal - novoTotalPago;
+
+      if (novoRestante === 0) {
+        const { error: errorUpdate } = await supabase
+          .from('lancamentos_loja')
+          .update({
+            status: 'pago',
+            data_pagamento: dataPagamento
+          })
+          .eq('id', lancamento.id);
+
+        if (errorUpdate) throw errorUpdate;
+        
+        showSuccess('✅ Pagamento registrado e lançamento quitado completamente!');
+      } else {
+        showSuccess(`✅ Pagamento de R$ ${valorAPagar.toFixed(2)} registrado! Resta: R$ ${novoRestante.toFixed(2)}`);
+      }
+      
+      onClose();
+      onSuccess();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao registrar pagamento: ' + error.message);
+    }
+  };
+
+  const previewTotalPago = valorPagar ? (totalPago + parseFloat(valorPagar)).toFixed(2) : totalPago.toFixed(2);
+  const previewRestante = valorPagar ? (valorRestante - parseFloat(valorPagar)).toFixed(2) : valorRestante.toFixed(2);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full my-8">
+        <div className="bg-amber-600 text-white px-6 py-4 rounded-t-lg">
+          <h3 className="text-xl font-bold">💰 Pagamento Parcial</h3>
+          <p className="text-sm text-amber-100">Cada pagamento gera um registro que entra no balanço mensal</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Informações do Lançamento */}
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="font-medium">Descrição:</span>
+              <span className="text-right">{lancamento.descricao}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-medium">Valor Original:</span>
+              <span className="font-bold">R$ {valorOriginal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium text-green-600">Total Pago:</span>
+              <span className="font-bold text-green-600">R$ {totalPago.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-medium text-red-600">Valor Restante:</span>
+              <span className="font-bold text-red-600">R$ {valorRestante.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Histórico de Pagamentos */}
+          {pagamentosExistentes.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h4 className="font-medium mb-2">📋 Pagamentos Anteriores:</h4>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {pagamentosExistentes.map((pag, idx) => (
+                  <div key={pag.id} className="flex justify-between text-sm">
+                    <span>#{idx + 1} - {new Date(pag.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    <span className="font-medium">R$ {parseFloat(pag.valor).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Formulário de Novo Pagamento */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Valor a Pagar *</label>
+              <input 
+                type="number" 
+                required 
+                step="0.01" 
+                min="0.01" 
+                max={valorRestante}
+                value={valorPagar}
+                onChange={(e) => setValorPagar(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-lg font-bold" 
+                placeholder="0.00"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">Máximo: R$ {valorRestante.toFixed(2)}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Data do Pagamento *</label>
+              <input 
+                type="date" 
+                required
+                value={dataPagamento}
+                onChange={(e) => setDataPagamento(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg" 
+              />
+              <p className="text-xs text-gray-500 mt-1">Entra no balanço desta data</p>
+            </div>
+          </div>
+
+          {/* Prévia */}
+          {valorPagar && parseFloat(valorPagar) > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-4 space-y-2">
+              <p className="text-sm font-medium text-blue-900">📊 Após este pagamento:</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-green-700">Total Pago:</span>
+                <span className="font-bold text-green-700">R$ {previewTotalPago}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-red-700">Restante:</span>
+                <span className="font-bold text-red-700">R$ {previewRestante}</span>
+              </div>
+              {parseFloat(previewRestante) === 0 && (
+                <div className="mt-2 p-2 bg-green-100 rounded text-green-800 text-sm font-medium text-center">
+                  ✅ Este pagamento quitará o lançamento completamente!
+                </div>
+              )}
+              <div className="mt-2 p-2 bg-amber-100 rounded text-amber-800 text-sm">
+                💡 Será criado um novo registro que entra no balanço de <strong>{new Date(dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Botões */}
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" 
+              className="flex-1 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">
+              💰 Registrar Pagamento
             </button>
             <button type="button" onClick={onClose}
               className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
