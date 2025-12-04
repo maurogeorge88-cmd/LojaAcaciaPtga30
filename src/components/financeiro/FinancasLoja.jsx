@@ -157,6 +157,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     carregarDados();
   }, [filtros.mes, filtros.ano]);
 
+  // Fechar modal de parcelamento ao mudar de view
+  useEffect(() => {
+    if (viewMode !== 'lancamentos') {
+      setMostrarModalParcelamento(false);
+    }
+  }, [viewMode]);
+
   // Recarregar lançamentos quando mudar filtros
   useEffect(() => {
     if (categorias.length > 0) {
