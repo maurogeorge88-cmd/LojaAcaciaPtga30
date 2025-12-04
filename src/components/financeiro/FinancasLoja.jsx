@@ -1687,7 +1687,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 <tr>
                   <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Data Lanç.</th>
                   <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Vencimento</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-20">Tipo</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
@@ -1706,13 +1706,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
                     </td>
-                    <td className="px-2 py-3 whitespace-nowrap w-20">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         lanc.categorias_financeiras?.tipo === 'receita'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {lanc.categorias_financeiras?.tipo === 'receita' ? '📈' : '📉'}
+                        {lanc.categorias_financeiras?.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
                       </span>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
