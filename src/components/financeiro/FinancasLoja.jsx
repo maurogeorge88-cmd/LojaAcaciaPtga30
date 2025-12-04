@@ -938,10 +938,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             🔢 Parcelar
           </button>
           <button
-            onClick={gerarPDF}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+            onClick={() => {
+              console.log('🔴 CLIQUE DETECTADO!');
+              alert('Botão foi clicado!');
+            }}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
           >
-            📄 Gerar PDF
+            🔴 TESTE CLIQUE
           </button>
         </div>
       </div>
