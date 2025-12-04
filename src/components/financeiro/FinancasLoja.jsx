@@ -63,6 +63,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   // Estado para Modal de Parcelamento
   const [modalParcelamentoAberto, setModalParcelamentoAberto] = useState(false);
+  const [lancamentoParcelar, setLancamentoParcelar] = useState(null); // Lançamento para parcelar
 
   const [formLancamento, setFormLancamento] = useState({
     tipo: 'receita',
@@ -1714,6 +1715,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                             {lanc.parcela_numero}/{lanc.parcela_total}
                           </span>
                         )}
+                        {lanc.status === 'pendente' && !lanc.eh_parcelado && (
+                          <button
+                            onClick={() => {
+                              setLancamentoParcelar(lanc);
+                              setModalParcelamentoAberto(true);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-900"
+                            title="Parcelar este lançamento"
+                          >
+                            🔀
+                          </button>
+                        )}
                         {lanc.status === 'pendente' && (
                           <button
                             onClick={() => abrirModalQuitacao(lanc)}
@@ -1767,7 +1780,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         <ModalParcelamento
           categorias={categorias}
           irmaos={irmaos}
-          onClose={() => setModalParcelamentoAberto(false)}
+          lancamentoExistente={lancamentoParcelar}
+          onClose={() => {
+            setModalParcelamentoAberto(false);
+            setLancamentoParcelar(null);
+          }}
           onSuccess={carregarLancamentos}
           showSuccess={showSuccess}
           showError={showError}
@@ -2021,18 +2038,18 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
 // ============================================
 // COMPONENTE: MODAL DE PARCELAMENTO
 // ============================================
-function ModalParcelamento({ categorias, irmaos, onClose, onSuccess, showSuccess, showError }) {
+function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, onSuccess, showSuccess, showError }) {
   const [formParcelamento, setFormParcelamento] = useState({
-    tipo: 'despesa',
-    categoria_id: '',
-    descricao: '',
-    valor_total: '',
+    tipo: lancamentoExistente?.tipo || 'despesa',
+    categoria_id: lancamentoExistente?.categoria_id || '',
+    descricao: lancamentoExistente?.descricao || '',
+    valor_total: lancamentoExistente?.valor || '',
     num_parcelas: 2,
     data_primeira_parcela: new Date().toISOString().split('T')[0],
-    tipo_pagamento: 'dinheiro',
-    origem_tipo: 'Loja',
-    origem_irmao_id: '',
-    observacoes: ''
+    tipo_pagamento: lancamentoExistente?.tipo_pagamento || 'dinheiro',
+    origem_tipo: lancamentoExistente?.origem_tipo || 'Loja',
+    origem_irmao_id: lancamentoExistente?.origem_irmao_id || '',
+    observacoes: lancamentoExistente?.observacoes || ''
   });
 
   const tiposPagamento = [
@@ -2091,10 +2108,24 @@ function ModalParcelamento({ categorias, irmaos, onClose, onSuccess, showSuccess
         });
       }
 
+      // Se estiver parcelando um lançamento existente, deletar o original
+      if (lancamentoExistente) {
+        const { error: deleteError } = await supabase
+          .from('lancamentos_loja')
+          .delete()
+          .eq('id', lancamentoExistente.id);
+        
+        if (deleteError) throw deleteError;
+      }
+
       const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
       if (error) throw error;
 
-      showSuccess(`✅ ${numParcelas} parcelas criadas com sucesso!`);
+      if (lancamentoExistente) {
+        showSuccess(`✅ Lançamento parcelado em ${numParcelas}x e original excluído!`);
+      } else {
+        showSuccess(`✅ ${numParcelas} parcelas criadas com sucesso!`);
+      }
       onClose();
       onSuccess();
     } catch (error) {
@@ -2107,8 +2138,14 @@ function ModalParcelamento({ categorias, irmaos, onClose, onSuccess, showSuccess
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
-          <h3 className="text-xl font-bold">🔢 Parcelar Despesa/Receita</h3>
-          <p className="text-sm text-indigo-100">Dividir um valor em parcelas mensais</p>
+          <h3 className="text-xl font-bold">
+            {lancamentoExistente ? '🔀 Parcelar Lançamento Existente' : '🔢 Parcelar Despesa/Receita'}
+          </h3>
+          <p className="text-sm text-indigo-100">
+            {lancamentoExistente 
+              ? 'Dividir este lançamento em parcelas (o original será excluído)' 
+              : 'Dividir um valor em parcelas mensais'}
+          </p>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
