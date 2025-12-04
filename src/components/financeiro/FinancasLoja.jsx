@@ -389,14 +389,39 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   // NOVA FUNÇÃO: Quitação individual rápida
-  const abrirModalQuitacao = (lancamento) => {
-    setQuitacaoForm({
-      lancamento_id: lancamento.id,
-      data_pagamento: new Date().toISOString().split('T')[0],
-      tipo_pagamento: lancamento.tipo_pagamento || 'dinheiro',
-      observacoes: lancamento.observacoes || ''
-    });
-    setMostrarModalQuitacao(true);
+  const abrirModalQuitacao = async (lancamento) => {
+    try {
+      // Buscar pagamentos parciais deste lançamento
+      const { data: pagamentos, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*')
+        .eq('lancamento_principal_id', lancamento.id)
+        .eq('eh_pagamento_parcial', true);
+
+      if (error) throw error;
+
+      const totalPago = pagamentos ? pagamentos.reduce((sum, pag) => sum + parseFloat(pag.valor), 0) : 0;
+      const valorRestante = lancamento.valor - totalPago;
+
+      // Se tem pagamentos parciais, abrir modal de pagamento parcial ao invés de quitação
+      if (pagamentos && pagamentos.length > 0) {
+        setPagamentosDoLancamento(pagamentos);
+        setLancamentoPagamentoParcial(lancamento);
+        setModalPagamentoParcialAberto(true);
+      } else {
+        // Quitação normal
+        setQuitacaoForm({
+          lancamento_id: lancamento.id,
+          data_pagamento: new Date().toISOString().split('T')[0],
+          tipo_pagamento: lancamento.tipo_pagamento || 'dinheiro',
+          observacoes: lancamento.observacoes || ''
+        });
+        setMostrarModalQuitacao(true);
+      }
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao abrir quitação: ' + error.message);
+    }
   };
 
   const handleQuitacao = async (e) => {
