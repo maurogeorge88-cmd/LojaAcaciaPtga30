@@ -932,19 +932,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             👥 Lançamento em Lote
           </button>
           <button
-            onClick={abrirModalParcelamento}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
-          >
-            🔢 Parcelar
-          </button>
-          <button
             onClick={() => {
-              console.log('🔴 CLIQUE DETECTADO!');
-              alert('Botão foi clicado!');
-            }}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium"
-          >
-            🔴 TESTE CLIQUE
+            console.log('Abrindo modal...');
+            // Criar função inline
+            const abrirModal = () => {
+              console.log('Função inline executada');
+              alert('Modal vai abrir aqui!');
+              // Aqui vai o código do modal
+            };
+            abrirModal();
+          }}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+        >
+          🔢 Parcelar
           </button>
         </div>
       </div>
