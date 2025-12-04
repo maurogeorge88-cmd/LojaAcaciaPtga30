@@ -1685,65 +1685,63 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data Lanç.</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimento</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pagamento</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Data Lanç.</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Vencimento</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-20">Tipo</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">Valor</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-20">Pgto</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-44">Ações</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_lancamento)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-2 py-3 whitespace-nowrap w-20">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         lanc.categorias_financeiras?.tipo === 'receita'
                           ? 'bg-green-100 text-green-800'
                           : 'bg-red-100 text-red-800'
                       }`}>
-                        {lanc.categorias_financeiras?.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
+                        {lanc.categorias_financeiras?.tipo === 'receita' ? '📈' : '📉'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                       {lanc.categorias_financeiras?.nome}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm text-gray-900">
                       {lanc.descricao}
                     </td>
                     {/* NOVA COLUNA: Origem */}
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {lanc.origem_tipo === 'Loja' ? (
                         <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                          🏛️ Loja
+                          🏛️
                         </span>
                       ) : (
                         <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-                          👤 {lanc.irmaos?.nome || 'Irmão'}
+                          👤
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28">
                       <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
                         R$ {parseFloat(lanc.valor).toFixed(2)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {lanc.data_pagamento ? formatarDataBR(lanc.data_pagamento) : '-'}
-                      <br />
-                      <span className="text-xs text-gray-500">{lanc.tipo_pagamento}</span>
+                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-900 w-20">
+                      {lanc.tipo_pagamento}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-2 py-3 whitespace-nowrap w-24">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         lanc.status === 'pago'
                           ? 'bg-green-100 text-green-800'
@@ -1759,8 +1757,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                         {lanc.status === 'cancelado' && '❌ Cancelado'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <div className="flex gap-2 items-center flex-wrap">
+                    <td className="px-4 py-3 text-sm w-44">
+                      <div className="flex gap-1 items-center flex-wrap max-w-[176px]">
                         {/* Badge de Parcela */}
                         {lanc.eh_parcelado && (
                           <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
@@ -1775,7 +1773,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                               setLancamentoParcelar(lanc);
                               setModalParcelamentoAberto(true);
                             }}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="text-indigo-600 hover:text-indigo-900 text-lg"
                             title="Parcelar este lançamento"
                           >
                             🔀
@@ -1786,7 +1784,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalPagamentoParcial(lanc)}
-                            className="text-amber-600 hover:text-amber-900"
+                            className="text-amber-600 hover:text-amber-900 text-lg"
                             title="Fazer pagamento parcial"
                           >
                             💰
@@ -1797,7 +1795,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                         {lanc.status === 'pendente' && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalQuitacao(lanc)}
-                            className="text-green-600 hover:text-green-900"
+                            className="text-green-600 hover:text-green-900 text-lg"
                             title="Quitar"
                           >
                             ✅
@@ -1806,14 +1804,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                         
                         <button
                           onClick={() => editarLancamento(lanc)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 text-lg"
                           title="Editar"
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="text-red-600 hover:text-red-900 text-lg"
                           title="Excluir"
                         >
                           🗑️
