@@ -2417,9 +2417,11 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
       const novoRestante = valorOriginal - novoTotalPago;
 
       if (novoRestante === 0) {
+        // CORRIGIR: Alterar o valor original para o valor deste último pagamento
         const { error: errorUpdate } = await supabase
           .from('lancamentos_loja')
           .update({
+            valor: valorAPagar, // ← ALTERADO: atualiza o valor para o restante pago
             status: 'pago',
             data_pagamento: dataPagamento
           })
