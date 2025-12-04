@@ -554,7 +554,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     if (!window.confirm('Deseja habilitar pagamento parcial para este lançamento?')) return;
 
     try {
-      const { error } = await supabase
+      console.log('Lançamento:', lancamento);
+      console.log('Valor a atualizar:', {
+        permite_pagamento_parcial: true,
+        valor_original: lancamento.valor,
+        valor_pago: 0,
+        valor_restante: lancamento.valor
+      });
+
+      const { data, error } = await supabase
         .from('lancamentos_loja')
         .update({
           permite_pagamento_parcial: true,
@@ -562,15 +570,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           valor_pago: 0,
           valor_restante: lancamento.valor
         })
-        .eq('id', lancamento.id);
+        .eq('id', lancamento.id)
+        .select();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro detalhado:', error);
+        throw error;
+      }
 
+      console.log('Atualizado com sucesso:', data);
       showSuccess('✅ Pagamento parcial habilitado!');
       await carregarLancamentos();
 
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro completo:', error);
       showError('Erro ao habilitar pagamento parcial: ' + error.message);
     }
   };
