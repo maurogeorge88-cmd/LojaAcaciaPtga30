@@ -933,18 +933,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </button>
           <button
             onClick={() => {
-            console.log('Abrindo modal...');
-            // Criar função inline
-            const abrirModal = () => {
-              console.log('Função inline executada');
-              alert('Modal vai abrir aqui!');
-              // Aqui vai o código do modal
-            };
-            abrirModal();
-          }}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
-        >
-          🔢 Parcelar
+              console.log('🔢 Abrindo parcelamento...');
+              
+              // Abrir modal diretamente
+              setMostrarModalParcelamento(true);
+              
+              // Resetar formulário
+              setFormParcelamento({
+                tipo: 'despesa',
+                categoria_id: '',
+                descricao: '',
+                valor_total: '',
+                num_parcelas: 2,
+                data_primeira_parcela: new Date().toISOString().split('T')[0],
+                tipo_pagamento: 'dinheiro',
+                origem_tipo: 'Loja',
+                origem_irmao_id: '',
+                observacoes: ''
+              });
+            }}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+          >
+            🔢 Parcelar
           </button>
         </div>
       </div>
@@ -1922,16 +1932,50 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                         )}
                         {/* 🆕 Habilitar/Pagar Parcial */}
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && (
-                          <button
-                            onClick={() => {
-                              if (lanc.permite_pagamento_parcial) {
-                                abrirModalPagamentoParcial(lanc);
-                              } else {
-                                if (window.confirm('Habilitar pagamento parcial?')) {
-                                  habilitarPagamentoParcial(lanc.id);
-                                }
+                        <button
+                          onClick={() => {
+                            if (lanc.permite_pagamento_parcial) {
+                              // Abrir modal de pagamento parcial
+                              setLancamentoPagamentoParcial(lanc);
+                              setFormPagamentoParcial({
+                                valor_a_pagar: '',
+                                data_pagamento: new Date().toISOString().split('T')[0],
+                                tipo_pagamento: 'dinheiro',
+                                observacoes: ''
+                              });
+                              setMostrarModalPagamentoParcial(true);
+                            } else {
+                              if (window.confirm('Habilitar pagamento parcial?')) {
+                                // Habilitar pagamento parcial inline
+                                const habilitar = async () => {
+                                  try {
+                                    const { error } = await supabase
+                                      .from('lancamentos_loja')
+                                      .update({
+                                        permite_pagamento_parcial: true,
+                                        valor_original: lanc.valor,
+                                        valor_pago: 0,
+                                        valor_restante: lanc.valor
+                                      })
+                                      .eq('id', lanc.id);
+                                    
+                                    if (error) throw error;
+                                    showSuccess('✅ Pagamento parcial habilitado');
+                                    carregarLancamentos();
+                                  } catch (error) {
+                                    showError('Erro: ' + error.message);
+                                  }
+                                };
+                                habilitar();
                               }
-                            }}
+                            }
+                          }}
+                          className="p-1 text-blue-600 hover:bg-blue-100 rounded text-lg"
+                          title={lanc.permite_pagamento_parcial ? 'Pagar' : 'Habilitar'}
+                        >
+                          {lanc.permite_pagamento_parcial ? '💰' : '🔓'}
+                        </button>
+                      )}
                             className="p-1 text-blue-600 hover:bg-blue-100 rounded text-lg"
                             title={lanc.permite_pagamento_parcial ? 'Pagar' : 'Habilitar'}
                           >
