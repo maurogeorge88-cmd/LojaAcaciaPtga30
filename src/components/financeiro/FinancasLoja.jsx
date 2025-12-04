@@ -72,7 +72,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   
-  const [mostrarModalParcelamento, setMostrarModalParcelamento] = useState(false);
+  const [exibirModalParcelamento, setMostrarModalParcelamento] = useState(false);
   const [formParcelamento, setFormParcelamento] = useState({
     tipo: 'despesa',
     categoria_id: '',
@@ -2058,7 +2058,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         </p>
       </div>
 
-      {mostrarModalParcelamento && (
+      {exibirModalParcelamento && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
