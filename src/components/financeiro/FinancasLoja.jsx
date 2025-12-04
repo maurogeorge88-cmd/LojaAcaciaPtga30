@@ -74,6 +74,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     observacoes: ''
   });
 
+  // Inicio do codigo de teste
+
+  // 🧪 DEBUG - MONITORAR ESTADO
+useEffect(() => {
+  console.log('👀 Estado Modal Parcelamento:', mostrarModalParcelamento);
+  if (mostrarModalParcelamento) {
+    console.log('🎉 MODAL DEVERIA ESTAR VISÍVEL!');
+  }
+}, [mostrarModalParcelamento]);
+
+useEffect(() => {
+  console.log('👀 Estado Modal Pagamento:', mostrarModalPagamentoParcial);
+  if (mostrarModalPagamentoParcial) {
+    console.log('🎉 MODAL PAGAMENTO DEVERIA ESTAR VISÍVEL!');
+    console.log('Lançamento:', lancamentoPagamentoParcial);
+  }
+}, [mostrarModalPagamentoParcial, lancamentoPagamentoParcial]);
+
+//Fim do codigo de teste
+
+  
   // 🆕 ESTADOS PAGAMENTO PARCIAL
   const [mostrarModalPagamentoParcial, setMostrarModalPagamentoParcial] = useState(false);
   const [lancamentoPagamentoParcial, setLancamentoPagamentoParcial] = useState(null);
