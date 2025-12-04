@@ -2236,4 +2236,5 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         </div>
       )}
     </div>
-  );\n}
+  );
+}
