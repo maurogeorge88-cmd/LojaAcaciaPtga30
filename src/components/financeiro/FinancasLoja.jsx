@@ -40,7 +40,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     return d.toLocaleDateString('pt-BR');
   };
 
-  // Função para gerar UUID único para grupos de parcelamento
+  // Gerar UUID para grupo de parcelamento
   const gerarUUID = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
@@ -60,9 +60,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   
-  // ========================================
-  // NOVOS ESTADOS - PARCELAMENTO
-  // ========================================
+  // ESTADOS PARCELAMENTO
   const [mostrarModalParcelamento, setMostrarModalParcelamento] = useState(false);
   const [formParcelamento, setFormParcelamento] = useState({
     tipo: 'despesa',
@@ -74,18 +72,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     tipo_pagamento: 'dinheiro',
     origem_tipo: 'Loja',
     origem_irmao_id: '',
-    observacoes: ''
-  });
-
-  // ========================================
-  // NOVOS ESTADOS - PAGAMENTO PARCIAL
-  // ========================================
-  const [mostrarModalPagamentoParcial, setMostrarModalPagamentoParcial] = useState(false);
-  const [lancamentoPagamentoParcial, setLancamentoPagamentoParcial] = useState(null);
-  const [formPagamentoParcial, setFormPagamentoParcial] = useState({
-    valor_a_pagar: '',
-    data_pagamento: new Date().toISOString().split('T')[0],
-    tipo_pagamento: 'dinheiro',
     observacoes: ''
   });
   
@@ -1765,70 +1751,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                           </span>
                         )}
                         
-                        {/* Badge de Pagamento Parcial */}
-                        {lanc.status === 'parcial' && lanc.valor_restante > 0 && (
-                          <button
-                            onClick={() => {
-                              setLancamentoPagamentoParcial(lanc);
-                              setFormPagamentoParcial({
-                                valor_a_pagar: '',
-                                data_pagamento: new Date().toISOString().split('T')[0],
-                                tipo_pagamento: 'dinheiro',
-                                observacoes: ''
-                              });
-                              setMostrarModalPagamentoParcial(true);
-                            }}
-                            className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200 font-medium"
-                            title="Continuar pagamento"
-                          >
-                            💰 R$ {parseFloat(lanc.valor_pago || 0).toFixed(2)} | Resta: R$ {parseFloat(lanc.valor_restante).toFixed(2)}
-                          </button>
-                        )}
-                        
-                        {/* Botão Habilitar/Pagar Parcial */}
-                        {lanc.status === 'pendente' && !lanc.eh_parcelado && (
-                          <button
-                            onClick={async () => {
-                              if (lanc.permite_pagamento_parcial) {
-                                // Abrir modal de pagamento
-                                setLancamentoPagamentoParcial(lanc);
-                                setFormPagamentoParcial({
-                                  valor_a_pagar: '',
-                                  data_pagamento: new Date().toISOString().split('T')[0],
-                                  tipo_pagamento: 'dinheiro',
-                                  observacoes: ''
-                                });
-                                setMostrarModalPagamentoParcial(true);
-                              } else {
-                                // Habilitar pagamento parcial
-                                if (window.confirm('Deseja habilitar pagamento parcial para este lançamento?')) {
-                                  try {
-                                    const { error } = await supabase
-                                      .from('lancamentos_loja')
-                                      .update({
-                                        permite_pagamento_parcial: true,
-                                        valor_original: lanc.valor,
-                                        valor_pago: 0,
-                                        valor_restante: lanc.valor
-                                      })
-                                      .eq('id', lanc.id);
-                                    
-                                    if (error) throw error;
-                                    showSuccess('✅ Pagamento parcial habilitado!');
-                                    carregarLancamentos();
-                                  } catch (error) {
-                                    showError('Erro: ' + error.message);
-                                  }
-                                }
-                              }
-                            }}
-                            className="p-1 text-blue-600 hover:bg-blue-100 rounded text-lg"
-                            title={lanc.permite_pagamento_parcial ? 'Pagar Parcialmente' : 'Habilitar Pagamento Parcial'}
-                          >
-                            {lanc.permite_pagamento_parcial ? '💰' : '🔓'}
-                          </button>
-                        )}
-                        
                         {/* Botões originais */}
                         {lanc.status === 'pendente' && (
                           <button
@@ -2119,9 +2041,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         </p>
       </div>
 
-      {/* ========================================
-          MODAL DE PARCELAMENTO
-          ======================================== */}
+      {/* MODAL DE PARCELAMENTO */}
       {mostrarModalParcelamento && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -2164,18 +2084,14 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                     eh_parcelado: true,
                     parcela_numero: i + 1,
                     parcela_total: numParcelas,
-                    grupo_parcelamento: grupoParcelamento,
-                    valor_original: valorParcela,
-                    valor_pago: 0,
-                    valor_restante: valorParcela,
-                    permite_pagamento_parcial: false
+                    grupo_parcelamento: grupoParcelamento
                   });
                 }
 
                 const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
                 if (error) throw error;
 
-                showSuccess(`✅ Parcelamento criado: ${numParcelas}x de R$ ${valorParcela.toFixed(2)}`);
+                showSuccess(`✅ ${numParcelas} parcelas criadas: ${numParcelas}x de R$ ${valorParcela.toFixed(2)}`);
                 setMostrarModalParcelamento(false);
                 carregarLancamentos();
               } catch (error) {
@@ -2243,7 +2159,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
               {formParcelamento.valor_total && formParcelamento.num_parcelas && (
                 <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
                   <p className="text-sm font-medium">
-                    Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
+                    💡 Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
                   </p>
                 </div>
               )}
@@ -2305,157 +2221,6 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                   🔢 Criar Parcelamento
                 </button>
                 <button type="button" onClick={() => setMostrarModalParcelamento(false)}
-                  className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================
-          MODAL DE PAGAMENTO PARCIAL
-          ======================================== */}
-      {mostrarModalPagamentoParcial && lancamentoPagamentoParcial && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
-            <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg">
-              <h3 className="text-xl font-bold">💰 Pagamento Parcial</h3>
-              <p className="text-sm text-blue-100">Pagar parte do valor pendente</p>
-            </div>
-            
-            <form onSubmit={async (e) => {
-              e.preventDefault();
-              try {
-                const valorAPagar = parseFloat(formPagamentoParcial.valor_a_pagar);
-                const lanc = lancamentoPagamentoParcial;
-                const valorRestante = parseFloat(lanc.valor_restante || lanc.valor);
-                
-                if (valorAPagar <= 0) {
-                  showError('Valor deve ser positivo');
-                  return;
-                }
-                if (valorAPagar > valorRestante) {
-                  showError(`Máximo: R$ ${valorRestante.toFixed(2)}`);
-                  return;
-                }
-
-                const novoValorPago = (parseFloat(lanc.valor_pago) || 0) + valorAPagar;
-                const novoValorRestante = valorRestante - valorAPagar;
-                const novoStatus = novoValorRestante === 0 ? 'pago' : 'parcial';
-
-                const { error } = await supabase
-                  .from('lancamentos_loja')
-                  .update({
-                    valor_pago: novoValorPago,
-                    valor_restante: novoValorRestante,
-                    status: novoStatus,
-                    data_pagamento: novoStatus === 'pago' ? formPagamentoParcial.data_pagamento : null,
-                    tipo_pagamento: formPagamentoParcial.tipo_pagamento,
-                    observacoes: formPagamentoParcial.observacoes || lanc.observacoes
-                  })
-                  .eq('id', lanc.id);
-
-                if (error) throw error;
-
-                if (novoStatus === 'pago') {
-                  showSuccess(`✅ Quitado! Total: R$ ${novoValorPago.toFixed(2)}`);
-                } else {
-                  showSuccess(`✅ Pago: R$ ${valorAPagar.toFixed(2)} | Resta: R$ ${novoValorRestante.toFixed(2)}`);
-                }
-
-                setMostrarModalPagamentoParcial(false);
-                setLancamentoPagamentoParcial(null);
-                carregarLancamentos();
-              } catch (error) {
-                console.error('Erro:', error);
-                showError('Erro: ' + error.message);
-              }
-            }} className="p-6 space-y-4">
-              
-              <div className="bg-gray-50 border rounded p-4 space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Descrição:</span>
-                  <span className="font-medium">{lancamentoPagamentoParcial.descricao}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Valor Original:</span>
-                  <span className="font-medium">R$ {parseFloat(lancamentoPagamentoParcial.valor_original || lancamentoPagamentoParcial.valor).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Já Pago:</span>
-                  <span className="font-medium text-green-600">R$ {parseFloat(lancamentoPagamentoParcial.valor_pago || 0).toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="font-bold">Restante:</span>
-                  <span className="text-lg font-bold text-red-600">
-                    R$ {parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Valor a Pagar *</label>
-                <input type="number" required step="0.01" min="0.01"
-                  max={parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)}
-                  value={formPagamentoParcial.valor_a_pagar}
-                  onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, valor_a_pagar: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg text-lg font-bold" 
-                  placeholder="0.00" />
-                <p className="text-xs text-gray-500 mt-1">
-                  Máximo: R$ {parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor).toFixed(2)}
-                </p>
-              </div>
-
-              {formPagamentoParcial.valor_a_pagar && (
-                <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
-                  <p className="font-medium mb-1">Após este pagamento:</p>
-                  <p className="text-blue-700">
-                    • Pago: R$ {((parseFloat(lancamentoPagamentoParcial.valor_pago) || 0) + (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)).toFixed(2)}
-                  </p>
-                  <p className="text-blue-700">
-                    • Resta: R$ {((parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)) - (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)).toFixed(2)}
-                  </p>
-                  {((parseFloat(lancamentoPagamentoParcial.valor_restante || lancamentoPagamentoParcial.valor)) - (parseFloat(formPagamentoParcial.valor_a_pagar) || 0)) === 0 && (
-                    <p className="text-green-700 font-bold mt-2">✅ Este pagamento quitará o lançamento!</p>
-                  )}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Data do Pagamento *</label>
-                <input type="date" required value={formPagamentoParcial.data_pagamento}
-                  onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, data_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg" />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Forma de Pagamento *</label>
-                <select required value={formPagamentoParcial.tipo_pagamento}
-                  onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, tipo_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg">
-                  {tiposPagamento.map(tp => <option key={tp.value} value={tp.value}>{tp.label}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Observações</label>
-                <textarea value={formPagamentoParcial.observacoes}
-                  onChange={(e) => setFormPagamentoParcial({ ...formPagamentoParcial, observacoes: e.target.value })}
-                  rows="2" className="w-full px-3 py-2 border rounded-lg" />
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t">
-                <button type="submit" 
-                  className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
-                  💰 Registrar Pagamento
-                </button>
-                <button type="button" 
-                  onClick={() => { 
-                    setMostrarModalPagamentoParcial(false); 
-                    setLancamentoPagamentoParcial(null); 
-                  }}
                   className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
                   Cancelar
                 </button>
