@@ -92,7 +92,7 @@ export default function Aniversariantes() {
       try {
         const { data: irmaos, error: erroIrmaos } = await supabase
           .from('irmaos')
-          .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url');
+          .select('*, irmaos(nome)');
 
         console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
         console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
@@ -147,11 +147,11 @@ export default function Aniversariantes() {
       // 2. Buscar ESPOSAS
       const { data: esposas } = await supabase
         .from('esposas')
-        .select('*, irmaos(nome)')
-        ;
+        .select('*, irmaos(nome)');
 
       if (esposas) {
         esposas.forEach(esposa => {
+          if (!esposa.data_nascimento) return;
           const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
@@ -184,11 +184,12 @@ export default function Aniversariantes() {
       // 3. Buscar FILHOS
       const { data: filhos } = await supabase
         .from('filhos')
-        .select('*, irmaos(nome)')
+        .select('*, irmaos(nome)');
         ;
 
       if (filhos) {
         filhos.forEach(filho => {
+          if (!filho.data_nascimento) return;
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
@@ -221,11 +222,12 @@ export default function Aniversariantes() {
       // 4. Buscar PAIS
       const { data: pais } = await supabase
         .from('pais')
-        .select('*, irmaos(nome)')
+        .select('*, irmaos(nome)');
         ;
 
       if (pais) {
         pais.forEach(pai => {
+          if (!pai.data_nascimento) return;
           const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
@@ -258,11 +260,12 @@ export default function Aniversariantes() {
       // 5. Buscar MÃES
       const { data: maes } = await supabase
         .from('maes')
-        .select('*, irmaos(nome)')
+        .select('*, irmaos(nome)');
         ;
 
       if (maes) {
         maes.forEach(mae => {
+          if (!mae.data_nascimento) return;
           const dataNasc = new Date(mae.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
