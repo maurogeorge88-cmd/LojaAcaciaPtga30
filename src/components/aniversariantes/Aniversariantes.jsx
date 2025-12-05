@@ -16,15 +16,14 @@ export default function Aniversariantes() {
       const hoje = new Date();
       const aniversariantesLista = [];
 
-      console.log('🎂 Carregando irmãos...');
+      console.log('🎂 Iniciando busca de aniversariantes...');
 
-      // Buscar APENAS IRMÃOS
-      const { data: irmaos, error } = await supabase
+      // ===== IRMÃOS =====
+      const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, cim, nome, data_nascimento, cargo, foto_url');
 
-      console.log('✅ Irmãos carregados:', irmaos?.length);
-      console.log('❌ Erro?', error);
+      console.log('✅ Irmãos:', irmaos?.length);
 
       if (irmaos) {
         irmaos.forEach(irmao => {
@@ -62,8 +61,7 @@ export default function Aniversariantes() {
         });
       }
 
-      // ESPOSAS
-      console.log('🎂 Carregando esposas...');
+      // ===== ESPOSAS =====
       const { data: esposas } = await supabase
         .from('esposas')
         .select('nome, data_nascimento, irmaos(nome)');
@@ -104,8 +102,7 @@ export default function Aniversariantes() {
         });
       }
 
-      // FILHOS
-      console.log('🎂 Carregando filhos...');
+      // ===== FILHOS =====
       const { data: filhos } = await supabase
         .from('filhos')
         .select('nome, data_nascimento, irmaos(nome)');
@@ -146,8 +143,10 @@ export default function Aniversariantes() {
         });
       }
 
+      // Ordenar e exibir
       aniversariantesLista.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
-      console.log('🎂 Total:', aniversariantesLista.length);
+      console.log('🎂 Total final:', aniversariantesLista.length);
+      console.log('📋 Lista:', aniversariantesLista);
 
       setAniversariantes(aniversariantesLista);
       setLoading(false);
@@ -171,48 +170,106 @@ export default function Aniversariantes() {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-4">🎂 Aniversariantes</h2>
         
-        <div className="flex gap-2 mb-6">
-          <button onClick={() => setFiltro('hoje')} className={`px-4 py-2 rounded ${filtro === 'hoje' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Hoje</button>
-          <button onClick={() => setFiltro('semana')} className={`px-4 py-2 rounded ${filtro === 'semana' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Próximos 7 Dias</button>
-          <button onClick={() => setFiltro('mes')} className={`px-4 py-2 rounded ${filtro === 'mes' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Este Mês</button>
-          <button onClick={() => setFiltro('todos')} className={`px-4 py-2 rounded ${filtro === 'todos' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Todos</button>
+        {/* Botões de filtro */}
+        <div className="flex gap-2 mb-6 flex-wrap">
+          <button 
+            onClick={() => setFiltro('hoje')} 
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              filtro === 'hoje' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            📅 Hoje
+          </button>
+          <button 
+            onClick={() => setFiltro('semana')} 
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              filtro === 'semana' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            📆 Próximos 7 Dias
+          </button>
+          <button 
+            onClick={() => setFiltro('mes')} 
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              filtro === 'mes' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            📊 Este Mês
+          </button>
+          <button 
+            onClick={() => setFiltro('todos')} 
+            className={`px-4 py-2 rounded-lg font-medium transition ${
+              filtro === 'todos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            📋 Todos
+          </button>
         </div>
 
+        {/* Lista de aniversariantes */}
         {aniversariantes.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🎂</div>
-            <p className="text-gray-600 text-lg">Nenhum aniversariante encontrado</p>
+            <p className="text-gray-600 text-lg font-medium">Nenhum aniversariante encontrado</p>
+            <p className="text-gray-500 text-sm mt-2">Tente outro filtro</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {aniversariantes.map((aniv, index) => (
-              <div key={index} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border-l-4 border-blue-500">
-                <div className="flex items-center gap-3">
-                  {aniv.foto_url ? (
-                    <img src={aniv.foto_url} alt={aniv.nome} className="w-16 h-16 rounded-full object-cover" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center text-3xl">
-                      {aniv.tipo === 'Irmão' ? '👤' : aniv.tipo === 'Esposa' ? '💑' : '👶'}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
-                      {aniv.proximo_aniversario.toDateString() === new Date().toDateString() && (
-                        <span className="text-2xl animate-bounce">🎉</span>
+            {aniversariantes.map((aniv, index) => {
+              const ehHoje = aniv.proximo_aniversario.toDateString() === new Date().toDateString();
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`rounded-lg p-4 border-l-4 ${
+                    ehHoje 
+                      ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400' 
+                      : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-500'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    {aniv.foto_url ? (
+                      <img 
+                        src={aniv.foto_url} 
+                        alt={aniv.nome} 
+                        className="w-16 h-16 rounded-full object-cover border-2 border-white shadow"
+                      />
+                    ) : (
+                      <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
+                        ehHoje ? 'bg-yellow-200' : 'bg-blue-200'
+                      }`}>
+                        {aniv.tipo === 'Irmão' ? '👤' : aniv.tipo === 'Esposa' ? '💑' : '👶'}
+                      </div>
+                    )}
+                    
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
+                        {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
+                      </div>
+                      
+                      <p className="text-sm text-gray-600 font-medium">{aniv.tipo} - {aniv.idade} anos</p>
+                      
+                      {aniv.cim && (
+                        <p className="text-xs text-gray-500">🔹 CIM: {aniv.cim}</p>
                       )}
+                      
+                      {aniv.cargo && (
+                        <p className="text-xs text-blue-600 font-medium">👔 {aniv.cargo}</p>
+                      )}
+                      
+                      {aniv.irmao_responsavel && (
+                        <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
+                      )}
+                      
+                      <p className="text-xs text-gray-600 mt-1 font-medium">
+                        📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
+                      </p>
                     </div>
-                    <p className="text-sm text-gray-600">{aniv.tipo} - {aniv.idade} anos</p>
-                    {aniv.cim && <p className="text-xs text-gray-500">CIM: {aniv.cim}</p>}
-                    {aniv.cargo && <p className="text-xs text-blue-600 font-medium">{aniv.cargo}</p>}
-                    {aniv.irmao_responsavel && <p className="text-xs text-gray-500">Irmão: {aniv.irmao_responsavel}</p>}
-                    <p className="text-xs text-gray-500 mt-1">
-                      📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
-                    </p>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
