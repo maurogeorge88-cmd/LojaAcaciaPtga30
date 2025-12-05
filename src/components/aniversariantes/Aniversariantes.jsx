@@ -62,6 +62,90 @@ export default function Aniversariantes() {
         });
       }
 
+      // ESPOSAS
+      console.log('🎂 Carregando esposas...');
+      const { data: esposas } = await supabase
+        .from('esposas')
+        .select('nome, data_nascimento, irmaos(nome)');
+
+      console.log('✅ Esposas:', esposas?.length);
+
+      if (esposas) {
+        esposas.forEach(esposa => {
+          if (!esposa.data_nascimento) return;
+
+          const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
+          const proximoAniv = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+          
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniv < hojeZerado) {
+            proximoAniv.setFullYear(hoje.getFullYear() + 1);
+          }
+
+          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
+                        proximoAniv.getMonth() === hoje.getMonth() &&
+                        proximoAniv.getFullYear() === hoje.getFullYear();
+
+          const deveMostrar = filtro === 'todos' || 
+            (filtro === 'hoje' && ehHoje) ||
+            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+
+          if (deveMostrar) {
+            const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            aniversariantesLista.push({
+              tipo: 'Esposa',
+              nome: esposa.nome,
+              proximo_aniversario: proximoAniv,
+              idade,
+              irmao_responsavel: esposa.irmaos?.nome
+            });
+          }
+        });
+      }
+
+      // FILHOS
+      console.log('🎂 Carregando filhos...');
+      const { data: filhos } = await supabase
+        .from('filhos')
+        .select('nome, data_nascimento, irmaos(nome)');
+
+      console.log('✅ Filhos:', filhos?.length);
+
+      if (filhos) {
+        filhos.forEach(filho => {
+          if (!filho.data_nascimento) return;
+
+          const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
+          const proximoAniv = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+          
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniv < hojeZerado) {
+            proximoAniv.setFullYear(hoje.getFullYear() + 1);
+          }
+
+          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
+                        proximoAniv.getMonth() === hoje.getMonth() &&
+                        proximoAniv.getFullYear() === hoje.getFullYear();
+
+          const deveMostrar = filtro === 'todos' || 
+            (filtro === 'hoje' && ehHoje) ||
+            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+
+          if (deveMostrar) {
+            const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            aniversariantesLista.push({
+              tipo: 'Filho(a)',
+              nome: filho.nome,
+              proximo_aniversario: proximoAniv,
+              idade,
+              irmao_responsavel: filho.irmaos?.nome
+            });
+          }
+        });
+      }
+
       aniversariantesLista.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
       console.log('🎂 Total:', aniversariantesLista.length);
 
@@ -107,15 +191,23 @@ export default function Aniversariantes() {
                   {aniv.foto_url ? (
                     <img src={aniv.foto_url} alt={aniv.nome} className="w-16 h-16 rounded-full object-cover" />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center text-3xl">👤</div>
+                    <div className="w-16 h-16 rounded-full bg-blue-200 flex items-center justify-center text-3xl">
+                      {aniv.tipo === 'Irmão' ? '👤' : aniv.tipo === 'Esposa' ? '💑' : '👶'}
+                    </div>
                   )}
                   <div className="flex-1">
-                    <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
-                    <p className="text-sm text-gray-600">{aniv.idade} anos</p>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
+                      {aniv.proximo_aniversario.toDateString() === new Date().toDateString() && (
+                        <span className="text-2xl animate-bounce">🎉</span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">{aniv.tipo} - {aniv.idade} anos</p>
                     {aniv.cim && <p className="text-xs text-gray-500">CIM: {aniv.cim}</p>}
                     {aniv.cargo && <p className="text-xs text-blue-600 font-medium">{aniv.cargo}</p>}
+                    {aniv.irmao_responsavel && <p className="text-xs text-gray-500">Irmão: {aniv.irmao_responsavel}</p>}
                     <p className="text-xs text-gray-500 mt-1">
-                      {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
+                      📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
                     </p>
                   </div>
                 </div>
