@@ -21,14 +21,14 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       // Buscar IRMÃOS
       const { data: irmaos, error: erroIrmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, cargo, foto_url')
-        .filter('data_nascimento', 'not.is', null);
+        .select('id, cim, nome, data_nascimento, cargo, foto_url');
 
       console.log('🎂 DEBUG: Total irmãos:', irmaos?.length);
       console.log('🎂 DEBUG: Erro?', erroIrmaos);
 
       if (irmaos) {
         irmaos.forEach(irmao => {
+          if (!irmao.data_nascimento) return; // Pular sem data
           const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
           const mesNasc = dataNasc.getMonth();
           const diaNasc = dataNasc.getDate();
@@ -56,10 +56,11 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: esposas } = await supabase
         .from('esposas')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (esposas) {
         esposas.forEach(esposa => {
+          if (!esposa.data_nascimento) return;
           const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             aniversariantesLista.push({
@@ -76,10 +77,11 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: filhos } = await supabase
         .from('filhos')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (filhos) {
         filhos.forEach(filho => {
+          if (!filho.data_nascimento) return;
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             aniversariantesLista.push({
@@ -96,10 +98,11 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: pais } = await supabase
         .from('pais')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (pais) {
         pais.forEach(pai => {
+          if (!pai.data_nascimento) return;
           const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             aniversariantesLista.push({
@@ -116,10 +119,11 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: maes } = await supabase
         .from('maes')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (maes) {
         maes.forEach(mae => {
+          if (!mae.data_nascimento) return;
           const dataNasc = new Date(mae.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             aniversariantesLista.push({
