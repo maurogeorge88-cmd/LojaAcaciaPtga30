@@ -15,29 +15,42 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const hoje = new Date();
       const aniversariantesLista = [];
 
+      console.log('🎂 DEBUG: Data de hoje:', hoje.toLocaleDateString('pt-BR'));
+      console.log('🎂 DEBUG: Mês:', hoje.getMonth(), 'Dia:', hoje.getDate());
+
       // Buscar IRMÃOS
-      const { data: irmaos } = await supabase
+      const { data: irmaos, error: erroIrmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, grau, cargo, foto_url')
+        .select('id, cim, nome, data_nascimento, cargo, foto_url')
         .not('data_nascimento', 'is', null);
+
+      console.log('🎂 DEBUG: Total irmãos:', irmaos?.length);
+      console.log('🎂 DEBUG: Erro?', erroIrmaos);
 
       if (irmaos) {
         irmaos.forEach(irmao => {
           const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
-          if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
+          const mesNasc = dataNasc.getMonth();
+          const diaNasc = dataNasc.getDate();
+          
+          console.log(`🎂 ${irmao.nome}: ${diaNasc}/${mesNasc + 1} - Hoje: ${hoje.getDate()}/${hoje.getMonth() + 1}`);
+          
+          if (mesNasc === hoje.getMonth() && diaNasc === hoje.getDate()) {
+            console.log('✅ ANIVERSARIANTE HOJE:', irmao.nome);
             aniversariantesLista.push({
               tipo: 'Irmão',
               nome: irmao.nome,
               cim: irmao.cim,
               data_nascimento: irmao.data_nascimento,
               idade: calcularIdade(dataNasc),
-              grau: irmao.grau,
               cargo: irmao.cargo,
               foto_url: irmao.foto_url
             });
           }
         });
       }
+
+      console.log('🎂 DEBUG: Aniversariantes encontrados:', aniversariantesLista.length);
 
       // Buscar ESPOSAS
       const { data: esposas } = await supabase
