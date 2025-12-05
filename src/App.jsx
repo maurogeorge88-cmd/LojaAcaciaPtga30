@@ -24,6 +24,7 @@ import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 import Caridade from './components/caridade/Caridade';
 import Aniversariantes from './components/aniversariantes/Aniversariantes';
+import Sobre from './components/Sobre';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
