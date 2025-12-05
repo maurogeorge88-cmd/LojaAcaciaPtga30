@@ -4,8 +4,9 @@
  */
 
 import React from 'react';
+import { CardAniversariantesDashboard } from './CardAniversariantesDashboard';
 
-export const Dashboard = ({ irmaos, balaustres }) => {
+export const Dashboard = ({ irmaos, balaustres, onNavegar }) => {
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
@@ -130,7 +131,12 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-md p-6">
+      {/* NOVO: Card de Aniversariantes Hoje */}
+      <CardAniversariantesDashboard 
+        onVerTodos={() => onNavegar && onNavegar('aniversariantes')}
+      />
+
+      <div className="bg-white rounded-xl shadow-md p-6 mt-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
         <p className="text-gray-600">
           Utilize o menu de navegação para acessar as diferentes funcionalidades do sistema.
