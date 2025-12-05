@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../App';
+import { supabase } from '../../App';
 
 export default function Aniversariantes() {
   const [aniversariantes, setAniversariantes] = useState([]);
