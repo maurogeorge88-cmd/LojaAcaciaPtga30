@@ -22,7 +22,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: irmaos, error: erroIrmaos } = await supabase
         .from('irmaos')
         .select('id, cim, nome, data_nascimento, cargo, foto_url')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       console.log('🎂 DEBUG: Total irmãos:', irmaos?.length);
       console.log('🎂 DEBUG: Erro?', erroIrmaos);
@@ -56,7 +56,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: esposas } = await supabase
         .from('esposas')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (esposas) {
         esposas.forEach(esposa => {
@@ -76,7 +76,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: filhos } = await supabase
         .from('filhos')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (filhos) {
         filhos.forEach(filho => {
@@ -96,7 +96,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: pais } = await supabase
         .from('pais')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (pais) {
         pais.forEach(pai => {
@@ -116,7 +116,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       const { data: maes } = await supabase
         .from('maes')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (maes) {
         maes.forEach(mae => {
