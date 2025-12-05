@@ -93,7 +93,7 @@ export default function Aniversariantes() {
         const { data: irmaos, error: erroIrmaos } = await supabase
           .from('irmaos')
           .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url')
-          .not('data_nascimento', 'is', null);
+          .filter('data_nascimento', 'not.is', null);
 
         console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
         console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
@@ -146,7 +146,7 @@ export default function Aniversariantes() {
       const { data: esposas } = await supabase
         .from('esposas')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (esposas) {
         esposas.forEach(esposa => {
@@ -183,7 +183,7 @@ export default function Aniversariantes() {
       const { data: filhos } = await supabase
         .from('filhos')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (filhos) {
         filhos.forEach(filho => {
@@ -220,7 +220,7 @@ export default function Aniversariantes() {
       const { data: pais } = await supabase
         .from('pais')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (pais) {
         pais.forEach(pai => {
@@ -257,7 +257,7 @@ export default function Aniversariantes() {
       const { data: maes } = await supabase
         .from('maes')
         .select('*, irmaos(nome)')
-        .not('data_nascimento', 'is', null);
+        .filter('data_nascimento', 'not.is', null);
 
       if (maes) {
         maes.forEach(mae => {
