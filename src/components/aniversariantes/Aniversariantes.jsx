@@ -19,18 +19,31 @@ export default function Aniversariantes() {
 
   const carregarUsuario = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.log('⚠️ Erro auth:', authError);
+        setUsuarioLogado(null);
+        return;
+      }
+
       if (user) {
-        const { data: perfil } = await supabase
+        const { data: perfil, error: perfilError } = await supabase
           .from('usuarios')
           .select('*, irmaos(cargo)')
-          .eq('id', user.id)
+          .eq('email', user.email)
           .single();
         
-        setUsuarioLogado(perfil);
+        if (perfilError) {
+          console.log('⚠️ Erro perfil:', perfilError);
+          setUsuarioLogado(null);
+        } else {
+          setUsuarioLogado(perfil);
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar usuário:', error);
+      setUsuarioLogado(null);
     }
   };
 
@@ -76,49 +89,57 @@ export default function Aniversariantes() {
       }
 
       // 1. Buscar IRMÃOS
-      const { data: irmaos, error: erroIrmaos } = await supabase
-        .from('irmaos')
-        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url')
-        .not('data_nascimento', 'is', null);
+      try {
+        const { data: irmaos, error: erroIrmaos } = await supabase
+          .from('irmaos')
+          .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url')
+          .not('data_nascimento', 'is', null);
 
-      console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
-      console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
+        console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
+        console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
 
-      if (irmaos) {
-        irmaos.forEach(irmao => {
-          const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
-          const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
-          
-          // Comparar apenas data sem horário
-          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-          if (proximoAniversario < hojeZerado) {
-            proximoAniversario.setFullYear(hoje.getFullYear() + 1);
-          }
+        if (erroIrmaos) {
+          console.error('❌ ERRO na busca de irmãos:', erroIrmaos);
+        }
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje(proximoAniversario)) ||
-            (filtro === 'semana' && proximoAniversario <= dataFim) ||
-            (filtro === 'mes' && proximoAniversario.getMonth() === hoje.getMonth());
+        if (irmaos) {
+          irmaos.forEach(irmao => {
+            const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
+            const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+            
+            // Comparar apenas data sem horário
+            const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            if (proximoAniversario < hojeZerado) {
+              proximoAniversario.setFullYear(hoje.getFullYear() + 1);
+            }
 
-          console.log(`🎂 ${irmao.nome}: Próximo aniv: ${proximoAniversario.toLocaleDateString('pt-BR')}, Deve mostrar: ${deveMostrar}`);
+            const deveMostrar = filtro === 'todos' || 
+              (filtro === 'hoje' && ehHoje(proximoAniversario)) ||
+              (filtro === 'semana' && proximoAniversario <= dataFim) ||
+              (filtro === 'mes' && proximoAniversario.getMonth() === hoje.getMonth());
 
-          if (deveMostrar) {
-            console.log('✅ ADICIONANDO:', irmao.nome);
-            aniversariantesLista.push({
-              tipo: 'Irmão',
-              nome: irmao.nome,
-              cim: irmao.cim,
-              data_nascimento: irmao.data_nascimento,
-              data_falecimento: irmao.data_falecimento,
-              proximo_aniversario: proximoAniversario,
-              idade: calcularIdade(dataNasc, irmao.data_falecimento),
-              cargo: irmao.cargo,
-              foto_url: irmao.foto_url,
-              irmao_responsavel: irmao.nome,
-              eh_falecido: !!irmao.data_falecimento
-            });
-          }
-        });
+            console.log(`🎂 ${irmao.nome}: Próximo aniv: ${proximoAniversario.toLocaleDateString('pt-BR')}, Deve mostrar: ${deveMostrar}`);
+
+            if (deveMostrar) {
+              console.log('✅ ADICIONANDO:', irmao.nome);
+              aniversariantesLista.push({
+                tipo: 'Irmão',
+                nome: irmao.nome,
+                cim: irmao.cim,
+                data_nascimento: irmao.data_nascimento,
+                data_falecimento: irmao.data_falecimento,
+                proximo_aniversario: proximoAniversario,
+                idade: calcularIdade(dataNasc, irmao.data_falecimento),
+                cargo: irmao.cargo,
+                foto_url: irmao.foto_url,
+                irmao_responsavel: irmao.nome,
+                eh_falecido: !!irmao.data_falecimento
+              });
+            }
+          });
+        }
+      } catch (erroIrmaos) {
+        console.error('❌ EXCEÇÃO ao buscar irmãos:', erroIrmaos);
       }
 
       // 2. Buscar ESPOSAS
@@ -278,7 +299,9 @@ export default function Aniversariantes() {
       setAniversariantes(aniversariantesLista);
       setLoading(false);
     } catch (error) {
-      console.error('Erro ao carregar aniversariantes:', error);
+      console.error('❌ ERRO ao carregar aniversariantes:', error);
+      console.error('❌ Detalhes:', error.message, error.stack);
+      setAniversariantes([]);
       setLoading(false);
     }
   };
