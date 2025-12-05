@@ -92,8 +92,7 @@ export default function Aniversariantes() {
       try {
         const { data: irmaos, error: erroIrmaos } = await supabase
           .from('irmaos')
-          .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url')
-          .filter('data_nascimento', 'not.is', null);
+          .select('*, irmaos(nome)');
 
         console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
         console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
@@ -104,6 +103,9 @@ export default function Aniversariantes() {
 
         if (irmaos) {
           irmaos.forEach(irmao => {
+            // Pular se não tem data de nascimento
+            if (!irmao.data_nascimento) return;
+            
             const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
             const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
             
@@ -146,7 +148,7 @@ export default function Aniversariantes() {
       const { data: esposas } = await supabase
         .from('esposas')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (esposas) {
         esposas.forEach(esposa => {
@@ -183,7 +185,7 @@ export default function Aniversariantes() {
       const { data: filhos } = await supabase
         .from('filhos')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (filhos) {
         filhos.forEach(filho => {
@@ -220,7 +222,7 @@ export default function Aniversariantes() {
       const { data: pais } = await supabase
         .from('pais')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (pais) {
         pais.forEach(pai => {
@@ -257,7 +259,7 @@ export default function Aniversariantes() {
       const { data: maes } = await supabase
         .from('maes')
         .select('*, irmaos(nome)')
-        .filter('data_nascimento', 'not.is', null);
+        ;
 
       if (maes) {
         maes.forEach(mae => {
