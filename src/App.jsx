@@ -1670,6 +1670,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <Dashboard 
             irmaos={irmaos}
             balaustres={balaustres}
+            onNavegar={setCurrentPage}
           />
         )}
 
