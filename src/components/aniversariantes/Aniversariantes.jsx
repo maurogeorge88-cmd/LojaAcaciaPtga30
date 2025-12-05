@@ -219,11 +219,11 @@ export default function Aniversariantes() {
         });
       }
 
-      // 4. Buscar PAIS
+      // 4. Buscar PAIS - DESABILITADO (tabela não existe)
+      /*
       const { data: pais } = await supabase
         .from('pais')
         .select('*, irmaos(nome)');
-        ;
 
       if (pais) {
         pais.forEach(pai => {
@@ -256,12 +256,13 @@ export default function Aniversariantes() {
           }
         });
       }
+      */
 
-      // 5. Buscar MÃES
+      // 5. Buscar MÃES - DESABILITADO (tabela não existe)
+      /*
       const { data: maes } = await supabase
         .from('maes')
         .select('*, irmaos(nome)');
-        ;
 
       if (maes) {
         maes.forEach(mae => {
@@ -294,6 +295,7 @@ export default function Aniversariantes() {
           }
         });
       }
+      */
 
       // Ordenar por próximo aniversário
       aniversariantesLista.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
