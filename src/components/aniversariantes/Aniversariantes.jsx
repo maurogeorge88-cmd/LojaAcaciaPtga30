@@ -59,6 +59,9 @@ export default function Aniversariantes() {
       const hoje = new Date();
       const aniversariantesLista = [];
 
+      console.log('🎂 ANIVERSARIANTES: Data de hoje:', hoje.toLocaleDateString('pt-BR'));
+      console.log('🎂 ANIVERSARIANTES: Filtro:', filtro);
+
       // Calcular datas de filtro
       let dataInicio, dataFim;
       
@@ -73,10 +76,13 @@ export default function Aniversariantes() {
       }
 
       // 1. Buscar IRMÃOS
-      const { data: irmaos } = await supabase
+      const { data: irmaos, error: erroIrmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, data_falecimento, grau, cargo, foto_url')
+        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url')
         .not('data_nascimento', 'is', null);
+
+      console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
+      console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
 
       if (irmaos) {
         irmaos.forEach(irmao => {
@@ -94,7 +100,10 @@ export default function Aniversariantes() {
             (filtro === 'semana' && proximoAniversario <= dataFim) ||
             (filtro === 'mes' && proximoAniversario.getMonth() === hoje.getMonth());
 
+          console.log(`🎂 ${irmao.nome}: Próximo aniv: ${proximoAniversario.toLocaleDateString('pt-BR')}, Deve mostrar: ${deveMostrar}`);
+
           if (deveMostrar) {
+            console.log('✅ ADICIONANDO:', irmao.nome);
             aniversariantesLista.push({
               tipo: 'Irmão',
               nome: irmao.nome,
@@ -103,7 +112,6 @@ export default function Aniversariantes() {
               data_falecimento: irmao.data_falecimento,
               proximo_aniversario: proximoAniversario,
               idade: calcularIdade(dataNasc, irmao.data_falecimento),
-              grau: irmao.grau,
               cargo: irmao.cargo,
               foto_url: irmao.foto_url,
               irmao_responsavel: irmao.nome,
@@ -263,6 +271,9 @@ export default function Aniversariantes() {
 
       // Ordenar por próximo aniversário
       aniversariantesLista.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
+
+      console.log('🎂 ANIVERSARIANTES: Total na lista final:', aniversariantesLista.length);
+      console.log('🎂 ANIVERSARIANTES: Lista:', aniversariantesLista.map(a => a.nome));
 
       setAniversariantes(aniversariantesLista);
       setLoading(false);
