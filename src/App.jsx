@@ -23,6 +23,7 @@ import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 import Caridade from './components/caridade/Caridade';
+import Aniversariantes from './components/aniversariantes/Aniversariantes';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1541,6 +1542,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Caridade</span>}
                 </button>
 
+                <button
+                  onClick={() => setCurrentPage('aniversariantes')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'aniversariantes'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Aniversariantes"
+                >
+                  <span className="text-base">🎂</span>
+                  {menuAberto && <span className="font-semibold">Aniversariantes</span>}
+                </button>
+
                 {permissoes?.canManageUsers && (
                   <button
                     onClick={() => setCurrentPage('usuarios')}
@@ -1607,6 +1621,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
+                  {currentPage === 'aniversariantes' && '🎂 Aniversariantes'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
@@ -1821,6 +1836,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'caridade' && (
           <Caridade
             permissoes={permissoes}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {/* ANIVERSARIANTES */}
+        {currentPage === 'aniversariantes' && (
+          <Aniversariantes
             showSuccess={showSuccess}
             showError={showError}
           />
