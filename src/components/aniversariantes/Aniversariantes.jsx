@@ -106,14 +106,15 @@ export default function Aniversariantes() {
       }
 
       // 2. Buscar ESPOSAS
-      const { data: esposas } = await supabase
-        .from('esposas')
-        .select('*, irmaos(nome)');
+      try {
+        const { data: esposas } = await supabase
+          .from('esposas')
+          .select('*, irmaos(nome)');
 
-      if (esposas) {
-        esposas.forEach(esposa => {
-          if (!esposa.data_nascimento) return;
-          const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
+        if (esposas) {
+          esposas.forEach(esposa => {
+            if (!esposa.data_nascimento) return;
+            const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
           // Comparar apenas data sem horário
@@ -141,14 +142,17 @@ export default function Aniversariantes() {
           }
         });
       }
+      } catch (erroEsposas) {
+        console.error('❌ EXCEÇÃO ao buscar esposas:', erroEsposas);
+      }
 
       // 3. Buscar FILHOS
-      const { data: filhos } = await supabase
-        .from('filhos')
-        .select('*, irmaos(nome)');
-        ;
+      try {
+        const { data: filhos } = await supabase
+          .from('filhos')
+          .select('*, irmaos(nome)');
 
-      if (filhos) {
+        if (filhos) {
         filhos.forEach(filho => {
           if (!filho.data_nascimento) return;
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
@@ -178,6 +182,9 @@ export default function Aniversariantes() {
             });
           }
         });
+      }
+      } catch (erroFilhos) {
+        console.error('❌ EXCEÇÃO ao buscar filhos:', erroFilhos);
       }
 
       // 4. Buscar PAIS - DESABILITADO (tabela não existe)
