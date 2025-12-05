@@ -92,7 +92,7 @@ export default function Aniversariantes() {
       try {
         const { data: irmaos, error: erroIrmaos } = await supabase
           .from('irmaos')
-          .select('*, irmaos(nome)');
+          .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url');
 
         console.log('🎂 ANIVERSARIANTES: Total irmãos:', irmaos?.length);
         console.log('🎂 ANIVERSARIANTES: Erro irmãos?', erroIrmaos);
