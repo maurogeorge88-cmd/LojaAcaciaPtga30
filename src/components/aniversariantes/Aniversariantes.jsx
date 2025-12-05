@@ -83,7 +83,9 @@ export default function Aniversariantes() {
           const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
-          if (proximoAniversario < hoje) {
+          // Comparar apenas data sem horário
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniversario < hojeZerado) {
             proximoAniversario.setFullYear(hoje.getFullYear() + 1);
           }
 
@@ -122,7 +124,9 @@ export default function Aniversariantes() {
           const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
-          if (proximoAniversario < hoje) {
+          // Comparar apenas data sem horário
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniversario < hojeZerado) {
             proximoAniversario.setFullYear(hoje.getFullYear() + 1);
           }
 
@@ -157,7 +161,9 @@ export default function Aniversariantes() {
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
-          if (proximoAniversario < hoje) {
+          // Comparar apenas data sem horário
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniversario < hojeZerado) {
             proximoAniversario.setFullYear(hoje.getFullYear() + 1);
           }
 
@@ -192,7 +198,9 @@ export default function Aniversariantes() {
           const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
-          if (proximoAniversario < hoje) {
+          // Comparar apenas data sem horário
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniversario < hojeZerado) {
             proximoAniversario.setFullYear(hoje.getFullYear() + 1);
           }
 
@@ -227,7 +235,9 @@ export default function Aniversariantes() {
           const dataNasc = new Date(mae.data_nascimento + 'T00:00:00');
           const proximoAniversario = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
           
-          if (proximoAniversario < hoje) {
+          // Comparar apenas data sem horário
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniversario < hojeZerado) {
             proximoAniversario.setFullYear(hoje.getFullYear() + 1);
           }
 
