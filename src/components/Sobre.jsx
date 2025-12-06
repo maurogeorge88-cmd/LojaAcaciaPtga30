@@ -17,18 +17,24 @@ export default function Sobre() {
   const carregarUsuario = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
+      console.log('🔑 Auth User:', user);
+      
       if (user) {
-        const { data: perfil } = await supabase
+        const { data: perfil, error } = await supabase
           .from('usuarios')
           .select('tipo, nivel_acesso, cargo')
           .eq('email', user.email)
           .single();
         
         console.log('👤 Usuário logado:', perfil);
-        setUsuarioLogado(perfil);
+        console.log('❌ Erro ao buscar:', error);
+        
+        if (perfil) {
+          setUsuarioLogado(perfil);
+        }
       }
     } catch (error) {
-      console.error('Erro ao carregar usuário:', error);
+      console.error('❌ Erro ao carregar usuário:', error);
     }
   };
 
@@ -87,10 +93,13 @@ export default function Sobre() {
   };
 
   const CampoEditavel = ({ chave, valor, multiline = false }) => {
-    // Aceita: 'administrador', 'admin', ou nivel_acesso === 'admin'
+    // Aceita múltiplas formas de identificar admin
     const eAdmin = usuarioLogado?.tipo === 'administrador' || 
                    usuarioLogado?.tipo === 'admin' ||
-                   usuarioLogado?.nivel_acesso === 'admin';
+                   usuarioLogado?.nivel_acesso === 'admin' ||
+                   usuarioLogado?.cargo === 'administrador' ||
+                   usuarioLogado?.cargo === 'admin';
+    
     const estaEditando = editandoCampo === chave;
 
     if (!eAdmin) {
@@ -157,7 +166,9 @@ export default function Sobre() {
 
   const eAdmin = usuarioLogado?.tipo === 'administrador' || 
                  usuarioLogado?.tipo === 'admin' ||
-                 usuarioLogado?.nivel_acesso === 'admin';
+                 usuarioLogado?.nivel_acesso === 'admin' ||
+                 usuarioLogado?.cargo === 'administrador' ||
+                 usuarioLogado?.cargo === 'admin';
 
   return (
     <div className="max-w-5xl mx-auto p-6">
