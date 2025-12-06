@@ -20,10 +20,11 @@ export default function Sobre() {
       if (user) {
         const { data: perfil } = await supabase
           .from('usuarios')
-          .select('tipo')
+          .select('tipo, nivel_acesso, cargo')
           .eq('email', user.email)
           .single();
         
+        console.log('👤 Usuário logado:', perfil);
         setUsuarioLogado(perfil);
       }
     } catch (error) {
@@ -86,7 +87,10 @@ export default function Sobre() {
   };
 
   const CampoEditavel = ({ chave, valor, multiline = false }) => {
-    const eAdmin = usuarioLogado?.tipo === 'administrador';
+    // Aceita: 'administrador', 'admin', ou nivel_acesso === 'admin'
+    const eAdmin = usuarioLogado?.tipo === 'administrador' || 
+                   usuarioLogado?.tipo === 'admin' ||
+                   usuarioLogado?.nivel_acesso === 'admin';
     const estaEditando = editandoCampo === chave;
 
     if (!eAdmin) {
@@ -151,7 +155,9 @@ export default function Sobre() {
     );
   }
 
-  const eAdmin = usuarioLogado?.tipo === 'administrador';
+  const eAdmin = usuarioLogado?.tipo === 'administrador' || 
+                 usuarioLogado?.tipo === 'admin' ||
+                 usuarioLogado?.nivel_acesso === 'admin';
 
   return (
     <div className="max-w-5xl mx-auto p-6">
