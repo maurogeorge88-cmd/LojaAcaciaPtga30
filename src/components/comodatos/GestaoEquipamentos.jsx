@@ -6,6 +6,7 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
   const [tipos, setTipos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalLote, setModalLote] = useState(false);
   const [modalTipo, setModalTipo] = useState(false);
   const [editando, setEditando] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
@@ -20,6 +21,19 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
     data_aquisicao: '',
     valor_aquisicao: '',
     status: 'disponivel',
+    observacoes: ''
+  });
+
+  // Form para cadastro em lote
+  const [formLote, setFormLote] = useState({
+    tipo_id: '',
+    prefixo_patrimonio: '',
+    quantidade: 1,
+    numero_inicial: 1,
+    descricao: '',
+    estado_conservacao: 'Novo',
+    data_aquisicao: '',
+    valor_aquisicao: '',
     observacoes: ''
   });
 
@@ -144,6 +158,80 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
     }
   };
 
+  // NOVO: Cadastro em lote
+  const salvarLote = async (e) => {
+    e.preventDefault();
+
+    if (!formLote.tipo_id || !formLote.prefixo_patrimonio || formLote.quantidade < 1) {
+      showError('Preencha os campos obrigatórios!');
+      return;
+    }
+
+    try {
+      const equipamentosLote = [];
+      
+      for (let i = 0; i < formLote.quantidade; i++) {
+        const numeroPatrimonio = `${formLote.prefixo_patrimonio}-${String(formLote.numero_inicial + i).padStart(3, '0')}`;
+        
+        equipamentosLote.push({
+          tipo_id: parseInt(formLote.tipo_id),
+          numero_patrimonio: numeroPatrimonio,
+          descricao: formLote.descricao,
+          estado_conservacao: formLote.estado_conservacao,
+          data_aquisicao: formLote.data_aquisicao || null,
+          valor_aquisicao: formLote.valor_aquisicao ? parseFloat(formLote.valor_aquisicao) : null,
+          status: 'disponivel',
+          observacoes: formLote.observacoes
+        });
+      }
+
+      const { error } = await supabase
+        .from('equipamentos')
+        .insert(equipamentosLote);
+
+      if (error) throw error;
+
+      showSuccess(`✅ ${formLote.quantidade} equipamento(s) cadastrado(s) com sucesso!`);
+      setModalLote(false);
+      setFormLote({
+        tipo_id: '',
+        prefixo_patrimonio: '',
+        quantidade: 1,
+        numero_inicial: 1,
+        descricao: '',
+        estado_conservacao: 'Novo',
+        data_aquisicao: '',
+        valor_aquisicao: '',
+        observacoes: ''
+      });
+      carregarDados();
+    } catch (error) {
+      console.error('Erro ao salvar lote:', error);
+      showError(error.message || 'Erro ao cadastrar equipamentos em lote');
+    }
+  };
+
+  // NOVO: Exclusão permanente
+  const excluirEquipamento = async (id) => {
+    if (!window.confirm('⚠️ ATENÇÃO! Esta ação NÃO pode ser desfeita.\n\nTem certeza que deseja EXCLUIR permanentemente este equipamento?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess('Equipamento excluído permanentemente!');
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao excluir equipamento: ' + error.message);
+    }
+  };
+
   const descartar = async (id) => {
     const motivo = prompt('Motivo do descarte:');
     if (!motivo) return;
@@ -256,6 +344,12 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               ➕ Novo Tipo
+            </button>
+            <button
+              onClick={() => setModalLote(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              📦 Cadastro em Lote
             </button>
             <button
               onClick={() => abrirModal()}
@@ -375,13 +469,22 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
               >
                 ✏️ Editar
               </button>
-              {equipamento.status !== 'descartado' && (
-                <button
-                  onClick={() => descartar(equipamento.id)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                >
-                  🗑️ Descartar
-                </button>
+              {equipamento.status !== 'descartado' && equipamento.status !== 'emprestado' && (
+                <>
+                  <button
+                    onClick={() => descartar(equipamento.id)}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                  >
+                    🗑️ Descartar
+                  </button>
+                  <button
+                    onClick={() => excluirEquipamento(equipamento.id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                    title="Excluir permanentemente"
+                  >
+                    ❌ Excluir
+                  </button>
+                </>
               )}
             </div>
           </div>
@@ -526,6 +629,180 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CADASTRO EM LOTE */}
+      {modalLote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-purple-600 text-white p-6 rounded-t-xl">
+              <h3 className="text-2xl font-bold">📦 Cadastro em Lote</h3>
+              <p className="text-purple-100 text-sm mt-1">
+                Cadastre vários equipamentos de uma vez
+              </p>
+            </div>
+
+            <form onSubmit={salvarLote} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tipo de Equipamento *
+                  </label>
+                  <select
+                    value={formLote.tipo_id}
+                    onChange={(e) => setFormLote({ ...formLote, tipo_id: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    {tipos.map(tipo => (
+                      <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Quantidade *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={formLote.quantidade}
+                    onChange={(e) => setFormLote({ ...formLote, quantidade: parseInt(e.target.value) })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Prefixo do Patrimônio *
+                  </label>
+                  <input
+                    type="text"
+                    value={formLote.prefixo_patrimonio}
+                    onChange={(e) => setFormLote({ ...formLote, prefixo_patrimonio: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    placeholder="Ex: CR (para Cadeira de Rodas)"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Exemplo: CR-001, CR-002, CR-003...
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Número Inicial *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formLote.numero_inicial}
+                    onChange={(e) => setFormLote({ ...formLote, numero_inicial: parseInt(e.target.value) })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Estado de Conservação
+                  </label>
+                  <select
+                    value={formLote.estado_conservacao}
+                    onChange={(e) => setFormLote({ ...formLote, estado_conservacao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
+                    <option value="Novo">Novo</option>
+                    <option value="Bom">Bom</option>
+                    <option value="Regular">Regular</option>
+                    <option value="Ruim">Ruim</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Data de Aquisição
+                  </label>
+                  <input
+                    type="date"
+                    value={formLote.data_aquisicao}
+                    onChange={(e) => setFormLote({ ...formLote, data_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Valor Unitário (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formLote.valor_aquisicao}
+                    onChange={(e) => setFormLote({ ...formLote, valor_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descrição (aplicada a todos)
+                </label>
+                <textarea
+                  value={formLote.descricao}
+                  onChange={(e) => setFormLote({ ...formLote, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Observações (aplicadas a todos)
+                </label>
+                <textarea
+                  value={formLote.observacoes}
+                  onChange={(e) => setFormLote({ ...formLote, observacoes: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              {/* PREVIEW */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-blue-900 mb-2">
+                  📋 Pré-visualização:
+                </p>
+                <p className="text-sm text-blue-800">
+                  Serão criados <strong>{formLote.quantidade}</strong> equipamento(s) numerados de{' '}
+                  <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial).padStart(3, '0')}</strong> até{' '}
+                  <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial + formLote.quantidade - 1).padStart(3, '0')}</strong>
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                >
+                  💾 Cadastrar {formLote.quantidade} Equipamento(s)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalLote(false)}
                   className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                 >
                   ❌ Cancelar
