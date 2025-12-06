@@ -92,8 +92,8 @@ export default function GestaoBeneficiarios({ showSuccess, showError }) {
   const salvarBeneficiario = async (e) => {
     e.preventDefault();
 
-    if (!form.nome || !form.cpf) {
-      showError('Nome e CPF são obrigatórios!');
+    if (!form.nome) {
+      showError('Nome é obrigatório!');
       return;
     }
 
@@ -139,8 +139,8 @@ export default function GestaoBeneficiarios({ showSuccess, showError }) {
   const salvarResponsavel = async (e) => {
     e.preventDefault();
 
-    if (!formResponsavel.nome || !formResponsavel.cpf) {
-      showError('Nome e CPF do responsável são obrigatórios!');
+    if (!formResponsavel.nome) {
+      showError('Nome do responsável é obrigatório!');
       return;
     }
 
@@ -333,14 +333,13 @@ export default function GestaoBeneficiarios({ showSuccess, showError }) {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    CPF *
+                    CPF
                   </label>
                   <input
                     type="text"
                     value={form.cpf}
                     onChange={(e) => setForm({ ...form, cpf: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
-                    required
                   />
                 </div>
 
@@ -552,14 +551,13 @@ export default function GestaoBeneficiarios({ showSuccess, showError }) {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    CPF *
+                    CPF
                   </label>
                   <input
                     type="text"
                     value={formResponsavel.cpf}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cpf: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
-                    required
                   />
                 </div>
 
