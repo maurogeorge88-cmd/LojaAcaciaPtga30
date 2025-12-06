@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
+import GestaoEquipamentos from './GestaoEquipamentos';
 
 export default function Comodatos({ permissoes, showSuccess, showError }) {
   const [view, setView] = useState('dashboard'); // dashboard, equipamentos, beneficiarios, comodatos
@@ -243,14 +244,10 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
 
       {/* OUTRAS VIEWS */}
       {view === 'equipamentos' && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            🛠️ Gestão de Equipamentos
-          </h2>
-          <p className="text-gray-600">
-            Componente de gerenciamento de equipamentos será implementado aqui.
-          </p>
-        </div>
+        <GestaoEquipamentos
+          showSuccess={showSuccess}
+          showError={showError}
+        />
       )}
 
       {view === 'beneficiarios' && (
