@@ -13,6 +13,13 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
     carregarEstatisticas();
   }, []);
 
+  // Recarregar ao voltar pro dashboard
+  useEffect(() => {
+    if (view === 'dashboard') {
+      carregarEstatisticas();
+    }
+  }, [view]);
+
   const carregarEstatisticas = async () => {
     try {
       const { data, error } = await supabase
@@ -24,7 +31,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       setStats(data);
       setLoading(false);
     } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
+      console.error('Erro:', error);
       setStats({
         equipamentos_disponiveis: 0,
         equipamentos_emprestados: 0,
@@ -113,7 +120,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       {/* CONTEÚDO */}
       {view === 'dashboard' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1 */}
           <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">✅</div>
@@ -125,7 +131,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-green-100 text-sm">Equipamentos prontos</p>
           </div>
 
-          {/* Card 2 */}
           <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">🔄</div>
@@ -137,7 +142,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-blue-100 text-sm">Em uso atualmente</p>
           </div>
 
-          {/* Card 3 */}
           <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">👥</div>
@@ -149,7 +153,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-purple-100 text-sm">Total cadastrado</p>
           </div>
 
-          {/* Card 4 */}
           <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">⚠️</div>
@@ -161,7 +164,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-red-100 text-sm">Precisa atenção</p>
           </div>
 
-          {/* Card 5 */}
           <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">🔧</div>
@@ -173,7 +175,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-yellow-100 text-sm">Em reparo</p>
           </div>
 
-          {/* Card 6 */}
           <div className="bg-gradient-to-br from-cyan-500 to-teal-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">📋</div>
@@ -185,7 +186,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-cyan-100 text-sm">Empréstimos em andamento</p>
           </div>
 
-          {/* Card 7 */}
           <div className="bg-gradient-to-br from-teal-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">✔️</div>
@@ -197,7 +197,6 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <p className="text-teal-100 text-sm">Total histórico</p>
           </div>
 
-          {/* Card 8 */}
           <div className="bg-gradient-to-br from-gray-500 to-slate-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
               <div className="text-5xl">🗑️</div>
