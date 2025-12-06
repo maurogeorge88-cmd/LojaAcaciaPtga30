@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import GestaoEquipamentos from './GestaoEquipamentos';
+import GestaoBeneficiarios from './GestaoBeneficiarios';
+import GestaoEmprestimos from './GestaoEmprestimos';
 
 export default function Comodatos({ permissoes, showSuccess, showError }) {
-  const [view, setView] = useState('dashboard'); // dashboard, equipamentos, beneficiarios, comodatos
+  const [view, setView] = useState('dashboard');
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +25,16 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       setLoading(false);
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
-      showError('Erro ao carregar estatísticas');
+      setStats({
+        equipamentos_disponiveis: 0,
+        equipamentos_emprestados: 0,
+        total_beneficiarios: 0,
+        emprestimos_vencidos: 0,
+        equipamentos_manutencao: 0,
+        emprestimos_ativos: 0,
+        emprestimos_devolvidos: 0,
+        equipamentos_descartados: 0
+      });
       setLoading(false);
     }
   };
@@ -31,7 +42,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
@@ -87,200 +98,138 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             👥 Beneficiários
           </button>
           <button
-            onClick={() => setView('comodatos')}
+            onClick={() => setView('emprestimos')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              view === 'comodatos'
+              view === 'emprestimos'
                 ? 'bg-emerald-600 text-white shadow-lg'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
             📋 Empréstimos
           </button>
-          <button
-            onClick={() => setView('relatorios')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              view === 'relatorios'
-                ? 'bg-emerald-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            📄 Relatórios
-          </button>
         </div>
       </div>
 
-      {/* DASHBOARD */}
+      {/* CONTEÚDO */}
       {view === 'dashboard' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card: Equipamentos Disponíveis */}
-          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+          {/* Card 1 */}
+          <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">✅</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Disponíveis
+              <div className="text-5xl">✅</div>
+              <div className="text-right">
+                <p className="text-green-100 text-sm font-medium">Disponíveis</p>
+                <p className="text-4xl font-bold">{stats?.equipamentos_disponiveis || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.equipamentos_disponiveis || 0}
-            </div>
-            <div className="text-green-100 text-sm">
-              Equipamentos prontos para empréstimo
-            </div>
+            <p className="text-green-100 text-sm">Equipamentos prontos</p>
           </div>
 
-          {/* Card: Equipamentos Emprestados */}
-          <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+          {/* Card 2 */}
+          <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">🔄</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Em Uso
+              <div className="text-5xl">🔄</div>
+              <div className="text-right">
+                <p className="text-blue-100 text-sm font-medium">Emprestados</p>
+                <p className="text-4xl font-bold">{stats?.equipamentos_emprestados || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.equipamentos_emprestados || 0}
-            </div>
-            <div className="text-blue-100 text-sm">
-              Equipamentos atualmente emprestados
-            </div>
+            <p className="text-blue-100 text-sm">Em uso atualmente</p>
           </div>
 
-          {/* Card: Total de Beneficiários */}
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+          {/* Card 3 */}
+          <div className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">👥</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Beneficiados
+              <div className="text-5xl">👥</div>
+              <div className="text-right">
+                <p className="text-purple-100 text-sm font-medium">Beneficiários</p>
+                <p className="text-4xl font-bold">{stats?.total_beneficiarios || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.total_beneficiarios || 0}
-            </div>
-            <div className="text-purple-100 text-sm">
-              Pessoas já atendidas (total histórico)
-            </div>
+            <p className="text-purple-100 text-sm">Total cadastrado</p>
           </div>
 
-          {/* Card: Empréstimos Vencidos */}
-          <div className="bg-gradient-to-br from-red-500 to-orange-600 rounded-xl shadow-xl p-6 text-white transform hover:scale-105 transition-transform">
+          {/* Card 4 */}
+          <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">⚠️</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Vencidos
+              <div className="text-5xl">⚠️</div>
+              <div className="text-right">
+                <p className="text-red-100 text-sm font-medium">Vencidos</p>
+                <p className="text-4xl font-bold">{stats?.emprestimos_vencidos || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.comodatos_vencidos || 0}
-            </div>
-            <div className="text-red-100 text-sm">
-              Empréstimos com prazo vencido
-            </div>
+            <p className="text-red-100 text-sm">Precisa atenção</p>
           </div>
 
-          {/* Card: Em Manutenção */}
-          <div className="bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl shadow-xl p-6 text-white">
+          {/* Card 5 */}
+          <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">🔧</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Manutenção
+              <div className="text-5xl">🔧</div>
+              <div className="text-right">
+                <p className="text-yellow-100 text-sm font-medium">Manutenção</p>
+                <p className="text-4xl font-bold">{stats?.equipamentos_manutencao || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.equipamentos_manutencao || 0}
-            </div>
-            <div className="text-yellow-100 text-sm">
-              Equipamentos em reparo
-            </div>
+            <p className="text-yellow-100 text-sm">Em reparo</p>
           </div>
 
-          {/* Card: Empréstimos Ativos */}
-          <div className="bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-xl p-6 text-white">
+          {/* Card 6 */}
+          <div className="bg-gradient-to-br from-cyan-500 to-teal-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">📋</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Ativos
+              <div className="text-5xl">📋</div>
+              <div className="text-right">
+                <p className="text-cyan-100 text-sm font-medium">Ativos</p>
+                <p className="text-4xl font-bold">{stats?.emprestimos_ativos || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.comodatos_ativos || 0}
-            </div>
-            <div className="text-cyan-100 text-sm">
-              Contratos ativos no momento
-            </div>
+            <p className="text-cyan-100 text-sm">Empréstimos em andamento</p>
           </div>
 
-          {/* Card: Devoluções */}
-          <div className="bg-gradient-to-br from-teal-500 to-green-600 rounded-xl shadow-xl p-6 text-white">
+          {/* Card 7 */}
+          <div className="bg-gradient-to-br from-teal-500 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">✔️</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Devolvidos
+              <div className="text-5xl">✔️</div>
+              <div className="text-right">
+                <p className="text-teal-100 text-sm font-medium">Devolvidos</p>
+                <p className="text-4xl font-bold">{stats?.emprestimos_devolvidos || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.comodatos_devolvidos || 0}
-            </div>
-            <div className="text-teal-100 text-sm">
-              Total de devoluções realizadas
-            </div>
+            <p className="text-teal-100 text-sm">Total histórico</p>
           </div>
 
-          {/* Card: Descartados */}
-          <div className="bg-gradient-to-br from-gray-500 to-slate-600 rounded-xl shadow-xl p-6 text-white">
+          {/* Card 8 */}
+          <div className="bg-gradient-to-br from-gray-500 to-slate-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-5xl opacity-80">🗑️</div>
-              <div className="bg-white bg-opacity-20 rounded-full px-3 py-1 text-sm font-semibold">
-                Descartados
+              <div className="text-5xl">🗑️</div>
+              <div className="text-right">
+                <p className="text-gray-100 text-sm font-medium">Descartados</p>
+                <p className="text-4xl font-bold">{stats?.equipamentos_descartados || 0}</p>
               </div>
             </div>
-            <div className="text-4xl font-bold mb-2">
-              {stats?.equipamentos_descartados || 0}
-            </div>
-            <div className="text-gray-100 text-sm">
-              Equipamentos descartados
-            </div>
+            <p className="text-gray-100 text-sm">Fora de uso</p>
           </div>
         </div>
       )}
 
-      {/* OUTRAS VIEWS */}
       {view === 'equipamentos' && (
-        <GestaoEquipamentos
+        <GestaoEquipamentos 
           showSuccess={showSuccess}
           showError={showError}
         />
       )}
 
       {view === 'beneficiarios' && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            👥 Gestão de Beneficiários
-          </h2>
-          <p className="text-gray-600">
-            Componente de gerenciamento de beneficiários será implementado aqui.
-          </p>
-        </div>
+        <GestaoBeneficiarios 
+          showSuccess={showSuccess}
+          showError={showError}
+        />
       )}
 
-      {view === 'comodatos' && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            📋 Gestão de Empréstimos
-          </h2>
-          <p className="text-gray-600">
-            Componente de gerenciamento de comodatos será implementado aqui.
-          </p>
-        </div>
-      )}
-
-      {view === 'relatorios' && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            📄 Relatórios
-          </h2>
-          <p className="text-gray-600">
-            Geração de relatórios e termos de comodato será implementado aqui.
-          </p>
-        </div>
+      {view === 'emprestimos' && (
+        <GestaoEmprestimos 
+          showSuccess={showSuccess}
+          showError={showError}
+        />
       )}
     </div>
   );
