@@ -24,7 +24,7 @@ import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 import Caridade from './components/caridade/Caridade';
 import Sobre from './components/Sobre';
-import Aniversariantes from './components/Aniversariantes';
+import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Comodatos from './components/comodatos/Comodatos';
 
 // ========================================
