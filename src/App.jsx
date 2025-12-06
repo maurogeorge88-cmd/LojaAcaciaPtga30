@@ -1544,6 +1544,32 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Caridade</span>}
                 </button>
 
+                <button
+                  onClick={() => setCurrentPage('aniversariantes')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'aniversariantes'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Aniversariantes"
+                >
+                  <span className="text-base">🎂</span>
+                  {menuAberto && <span className="font-semibold">Aniversariantes</span>}
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage('comodatos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'comodatos'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Comodatos"
+                >
+                  <span className="text-base">♿</span>
+                  {menuAberto && <span className="font-semibold">Comodatos</span>}
+                </button>
+
                 {permissoes?.canManageUsers && (
                   <button
                     onClick={() => setCurrentPage('usuarios')}
@@ -1570,6 +1596,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 >
                   <span className="text-base">👔</span>
                   {menuAberto && <span className="font-semibold">Administração</span>}
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage('sobre')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'sobre'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Sobre o Sistema"
+                >
+                  <span className="text-base">ℹ️</span>
+                  {menuAberto && <span className="font-semibold">Sobre</span>}
                 </button>
               </div>
             </>
@@ -1610,10 +1649,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
+                  {currentPage === 'aniversariantes' && '🎂 Aniversariantes'}
+                  {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
+                  {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
                 </h2>
               </div>
               <div className="flex items-center gap-4">
@@ -1858,11 +1900,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
-        {/* SOBRE O SISTEMA */}
-        {currentPage === 'sobre' && (
-          <Sobre />
-        )}
-
         {/* ANIVERSARIANTES */}
         {currentPage === 'aniversariantes' && (
           <Aniversariantes />
@@ -1875,6 +1912,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
           />
+        )}
+
+        {/* SOBRE O SISTEMA */}
+        {currentPage === 'sobre' && (
+          <Sobre />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
