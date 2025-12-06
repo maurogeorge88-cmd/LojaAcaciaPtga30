@@ -24,6 +24,8 @@ import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 import Caridade from './components/caridade/Caridade';
 import Sobre from './components/Sobre';
+import Aniversariantes from './components/Aniversariantes';
+import Comodatos from './components/comodatos/Comodatos';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1859,6 +1861,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* SOBRE O SISTEMA */}
         {currentPage === 'sobre' && (
           <Sobre />
+        )}
+
+        {/* ANIVERSARIANTES */}
+        {currentPage === 'aniversariantes' && (
+          <Aniversariantes />
+        )}
+
+        {/* COMODATOS */}
+        {currentPage === 'comodatos' && (
+          <Comodatos
+            permissoes={permissoes}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
