@@ -143,11 +143,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     try {
       console.log('🔄 Iniciando carregamento de dados...');
       
-      // Carregar categorias
+      // Carregar categorias (com hierarquia)
       const { data: catData, error: catError } = await supabase
         .from('categorias_financeiras')
         .select('*')
         .eq('ativo', true)
+        .order('tipo')
+        .order('nivel')
+        .order('ordem')
         .order('nome');
 
       if (catError) {
@@ -628,6 +631,47 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       irmaos_selecionados: [],
       eh_mensalidade: false
     });
+  };
+
+  // ========================================
+  // 🌳 HELPER: RENDERIZAR CATEGORIAS HIERÁRQUICAS
+  // ========================================
+  const renderizarOpcoesCategoria = (tipo) => {
+    const categoriasFiltradas = categorias.filter(c => c.tipo === tipo);
+    const principais = categoriasFiltradas.filter(c => c.nivel === 1 || !c.categoria_pai_id);
+    
+    const opcoes = [];
+    
+    principais.forEach(principal => {
+      // Adicionar categoria principal
+      opcoes.push(
+        <option key={principal.id} value={principal.id}>
+          {principal.nome}
+        </option>
+      );
+      
+      // Adicionar subcategorias
+      const subcategorias = categoriasFiltradas.filter(c => c.categoria_pai_id === principal.id);
+      subcategorias.forEach(sub => {
+        opcoes.push(
+          <option key={sub.id} value={sub.id}>
+            &nbsp;&nbsp;&nbsp;&nbsp;└─ {sub.nome}
+          </option>
+        );
+        
+        // Adicionar sub-subcategorias (nível 3)
+        const subSub = categoriasFiltradas.filter(c => c.categoria_pai_id === sub.id);
+        subSub.forEach(ss => {
+          opcoes.push(
+            <option key={ss.id} value={ss.id}>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ {ss.nome}
+            </option>
+          );
+        });
+      });
+    });
+    
+    return opcoes;
   };
 
   const toggleIrmaoSelecionado = (irmaoId) => {
@@ -1282,11 +1326,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   required
                 >
                   <option value="">Selecione...</option>
-                  {categorias
-                    .filter(c => c.tipo === formLancamento.tipo)
-                    .map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                    ))}
+                  {renderizarOpcoesCategoria(formLancamento.tipo)}
                 </select>
               </div>
 
@@ -1490,11 +1530,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     required
                   >
                     <option value="">Selecione...</option>
-                    {categorias
-                      .filter(c => c.tipo === 'receita')
-                      .map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                      ))}
+                    {renderizarOpcoesCategoria('receita')}
                   </select>
                 </div>
 
@@ -2568,9 +2604,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
               onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg">
               <option value="">Selecione...</option>
-              {categorias.filter(c => c.tipo === formParcelamento.tipo).map(c => (
-                <option key={c.id} value={c.id}>{c.nome}</option>
-              ))}
+              {renderizarOpcoesCategoria(formParcelamento.tipo)}
             </select>
           </div>
 
