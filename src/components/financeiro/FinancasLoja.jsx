@@ -730,6 +730,230 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.save(`relatorio-financeiro-${filtros.mes}-${filtros.ano}.pdf`);
   };
 
+  // ========================================
+  // 📊 RELATÓRIO RESUMIDO POR CATEGORIA
+  // ========================================
+  const gerarPDFResumido = () => {
+    const doc = new jsPDF();
+    
+    // Logo/Cabeçalho
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Acácia de Paranatinga nº 30', 105, 20, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Avenida Brasil, Paranatinga-MT', 105, 26, { align: 'center' });
+    
+    // Período
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`${meses[filtros.mes - 1].toUpperCase()}/${filtros.ano}`, 105, 35, { align: 'center' });
+    
+    // Linha separadora
+    doc.setDrawColor(100, 100, 100);
+    doc.setLineWidth(0.5);
+    doc.line(14, 40, 196, 40);
+
+    let yPos = 50;
+
+    // ========================================
+    // DESPESAS POR CATEGORIA
+    // ========================================
+    const despesasPorCategoria = {};
+    let totalDespesas = 0;
+
+    lancamentos
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa')
+      .forEach(lanc => {
+        const categoria = lanc.categorias_financeiras?.nome || 'Sem Categoria';
+        const valor = parseFloat(lanc.valor);
+        
+        if (!despesasPorCategoria[categoria]) {
+          despesasPorCategoria[categoria] = 0;
+        }
+        despesasPorCategoria[categoria] += valor;
+        totalDespesas += valor;
+      });
+
+    // Título Despesas
+    doc.setFillColor(76, 175, 80); // Verde
+    doc.rect(14, yPos, 182, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Despesa', 105, yPos + 5.5, { align: 'center' });
+    
+    yPos += 12;
+    doc.setTextColor(0, 0, 0);
+
+    // Categorias de Despesa
+    const categoriasOrdenadas = Object.keys(despesasPorCategoria).sort();
+    
+    categoriasOrdenadas.forEach(categoria => {
+      const valor = despesasPorCategoria[categoria];
+      
+      // Categoria (fundo azul claro)
+      doc.setFillColor(173, 216, 230);
+      doc.rect(14, yPos, 182, 6, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(categoria, 16, yPos + 4);
+      yPos += 8;
+
+      // Verificar quebra de página
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+    });
+
+    // Subtotal Despesas
+    doc.setFillColor(230, 230, 230);
+    doc.rect(14, yPos, 120, 6, 'F');
+    doc.rect(134, yPos, 62, 6, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sub Total Despesa', 16, yPos + 4);
+    doc.text(`R$ ${totalDespesas.toFixed(2)}`, 194, yPos + 4, { align: 'right' });
+    
+    yPos += 10;
+
+    // ========================================
+    // RECEITAS POR CATEGORIA
+    // ========================================
+    const receitasPorCategoria = {};
+    let totalReceitas = 0;
+
+    lancamentos
+      .filter(l => l.categorias_financeiras?.tipo === 'receita')
+      .forEach(lanc => {
+        const categoria = lanc.categorias_financeiras?.nome || 'Sem Categoria';
+        const valor = parseFloat(lanc.valor);
+        
+        if (!receitasPorCategoria[categoria]) {
+          receitasPorCategoria[categoria] = 0;
+        }
+        receitasPorCategoria[categoria] += valor;
+        totalReceitas += valor;
+      });
+
+    // Verificar quebra de página
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Título Receitas
+    doc.setFillColor(33, 150, 243); // Azul
+    doc.rect(14, yPos, 182, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Receita', 105, yPos + 5.5, { align: 'center' });
+    
+    yPos += 12;
+    doc.setTextColor(0, 0, 0);
+
+    // Categorias de Receita
+    const receitasOrdenadas = Object.keys(receitasPorCategoria).sort();
+    
+    receitasOrdenadas.forEach(categoria => {
+      const valor = receitasPorCategoria[categoria];
+      
+      // Categoria (fundo azul claro)
+      doc.setFillColor(173, 216, 230);
+      doc.rect(14, yPos, 182, 6, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(categoria, 16, yPos + 4);
+      yPos += 8;
+
+      // Verificar quebra de página
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+    });
+
+    // Subtotal Receitas
+    doc.setFillColor(230, 230, 230);
+    doc.rect(14, yPos, 120, 6, 'F');
+    doc.rect(134, yPos, 62, 6, 'F');
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sub Total Receita', 16, yPos + 4);
+    doc.text(`R$ ${totalReceitas.toFixed(2)}`, 194, yPos + 4, { align: 'right' });
+    
+    yPos += 12;
+
+    // ========================================
+    // TOTAL GERAL
+    // ========================================
+    const saldoTotal = totalReceitas - totalDespesas;
+    const corSaldo = saldoTotal >= 0 ? [76, 175, 80] : [244, 67, 54]; // Verde ou Vermelho
+
+    // Verificar quebra de página
+    if (yPos > 260) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Linha separadora
+    doc.setDrawColor(100, 100, 100);
+    doc.line(14, yPos, 196, yPos);
+    yPos += 8;
+
+    // Título
+    doc.setFillColor(100, 100, 100);
+    doc.rect(14, yPos, 182, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Geral de Receita e Despesa', 105, yPos + 5.5, { align: 'center' });
+    
+    yPos += 12;
+    doc.setTextColor(0, 0, 0);
+
+    // Total Receita
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('Total Receita', 16, yPos);
+    doc.text(`R$ ${totalReceitas.toFixed(2)}`, 194, yPos, { align: 'right' });
+    yPos += 6;
+
+    // Total Despesa
+    doc.text('Total Despesa', 16, yPos);
+    doc.text(`R$ ${totalDespesas.toFixed(2)}`, 194, yPos, { align: 'right' });
+    yPos += 8;
+
+    // Saldo Total (destaque)
+    doc.setFillColor(corSaldo[0], corSaldo[1], corSaldo[2]);
+    doc.rect(14, yPos, 120, 8, 'F');
+    doc.rect(134, yPos, 62, 8, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.text('Saldo Total', 16, yPos + 5.5);
+    doc.text(`${saldoTotal >= 0 ? '' : '-'}R$ ${Math.abs(saldoTotal).toFixed(2)}`, 194, yPos + 5.5, { align: 'right' });
+
+    // Rodapé
+    const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    doc.setTextColor(128, 128, 128);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text(dataGeracao, 14, 285);
+    doc.text(`Página ${doc.internal.getNumberOfPages()}`, 196, 285, { align: 'right' });
+
+    doc.save(`Rel_Fechamento_-_${filtros.mes}_${filtros.ano}.pdf`);
+  };
+
   const resumo = calcularResumo();
 
   if (loading) {
@@ -800,7 +1024,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             onClick={gerarPDF}
             className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
           >
-            📄 Gerar PDF
+            📄 Relatório Detalhado
+          </button>
+          <button
+            onClick={gerarPDFResumido}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          >
+            📊 Fechamento Mensal
           </button>
         </div>
       </div>
