@@ -56,7 +56,8 @@ export const Dashboard = ({ irmaos, balaustres }) => {
           tipo: tipo,
           irmaoNome: irmaoNome,
           idade,
-          id: `${tipo}-${pessoa.id}`
+          dataNasc: dataNasc,
+          id: `${tipo}-${pessoa.id || Math.random()}`
         });
       }
 
@@ -79,24 +80,31 @@ export const Dashboard = ({ irmaos, balaustres }) => {
           idade,
           diasRestantes: diffDias,
           dataAniversario: dataAnivEstano,
-          id: `${tipo}-${pessoa.id}`
+          dataNasc: dataNasc,
+          id: `${tipo}-${pessoa.id || Math.random()}`
         });
       }
     };
+
+    // DEBUG
+    console.log('🎂 Verificando aniversariantes...');
+    console.log('Total irmãos:', irmaos.length);
 
     // Irmãos
     irmaos.forEach(irmao => {
       verificarAniversario(irmao, 'Irmão');
 
       // Esposa
-      if (irmao.esposas && irmao.esposas.length > 0) {
+      if (irmao.esposas && Array.isArray(irmao.esposas)) {
+        console.log(`👰 ${irmao.nome} tem ${irmao.esposas.length} esposa(s)`);
         irmao.esposas.forEach(esposa => {
           verificarAniversario(esposa, 'Esposa', irmao.nome);
         });
       }
 
       // Pais
-      if (irmao.pais && irmao.pais.length > 0) {
+      if (irmao.pais && Array.isArray(irmao.pais)) {
+        console.log(`👪 ${irmao.nome} tem ${irmao.pais.length} pai/mãe`);
         irmao.pais.forEach(pai => {
           const tipoPai = pai.tipo === 'pai' ? 'Pai' : 'Mãe';
           verificarAniversario(pai, tipoPai, irmao.nome);
@@ -104,7 +112,8 @@ export const Dashboard = ({ irmaos, balaustres }) => {
       }
 
       // Filhos
-      if (irmao.filhos && irmao.filhos.length > 0) {
+      if (irmao.filhos && Array.isArray(irmao.filhos)) {
+        console.log(`👶 ${irmao.nome} tem ${irmao.filhos.length} filho(s)`);
         irmao.filhos.forEach(filho => {
           verificarAniversario(filho, 'Filho(a)', irmao.nome);
         });
@@ -113,6 +122,9 @@ export const Dashboard = ({ irmaos, balaustres }) => {
 
     // Ordenar próximos 7 dias por data
     proximos7Dias.sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+    console.log('📅 Aniversariantes hoje:', aniversariantesHoje.length);
+    console.log('📅 Próximos 7 dias:', proximos7Dias.length);
 
     return { aniversariantesHoje, proximos7Dias };
   }, [irmaos]);
@@ -166,7 +178,7 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         </div>
       </div>
 
-      {/* ANIVERSARIANTES */}
+      {/* ANIVERSARIANTES - LAYOUT COMPACTO */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* ANIVERSARIANTES DO DIA */}
         <div className="bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-xl shadow-lg p-6">
@@ -176,35 +188,36 @@ export const Dashboard = ({ irmaos, balaustres }) => {
           </div>
           
           {aniversariantes.aniversariantesHoje.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {aniversariantes.aniversariantesHoje.map(pessoa => (
                 <div 
                   key={pessoa.id}
-                  className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30"
+                  className="bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-white/30"
                 >
-                  <div className="font-bold text-lg">{pessoa.nome}</div>
-                  <div className="text-sm opacity-90">
-                    {pessoa.tipo === 'Irmão' ? '👤' : 
-                     pessoa.tipo === 'Esposa' ? '💑' :
-                     pessoa.tipo === 'Pai' ? '👨' :
-                     pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
-                    {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
-                  </div>
-                  <div className="text-sm opacity-90">
-                    🎂 {pessoa.idade} anos hoje!
+                  <div className="font-bold text-base">{pessoa.nome}</div>
+                  <div className="flex items-center gap-3 text-sm opacity-90">
+                    <span>
+                      {pessoa.tipo === 'Irmão' ? '👤' : 
+                       pessoa.tipo === 'Esposa' ? '💑' :
+                       pessoa.tipo === 'Pai' ? '👨' :
+                       pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                      {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                    </span>
+                    <span>•</span>
+                    <span>🎂 {pessoa.idade} anos hoje</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 bg-white/10 rounded-lg">
-              <div className="text-4xl mb-2">📅</div>
-              <p className="text-white/80">Nenhum aniversariante hoje</p>
+            <div className="text-center py-6 bg-white/10 rounded-lg">
+              <div className="text-3xl mb-2">📅</div>
+              <p className="text-white/80 text-sm">Nenhum aniversariante hoje</p>
             </div>
           )}
         </div>
 
-        {/* PRÓXIMOS 7 DIAS */}
+        {/* PRÓXIMOS 7 DIAS - LAYOUT COMPACTO */}
         <div className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold">📅 Próximos 7 Dias</h3>
@@ -212,43 +225,41 @@ export const Dashboard = ({ irmaos, balaustres }) => {
           </div>
           
           {aniversariantes.proximos7Dias.length > 0 ? (
-            <div className="space-y-3 max-h-[280px] overflow-y-auto">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
               {aniversariantes.proximos7Dias.map(pessoa => (
                 <div 
                   key={pessoa.id}
-                  className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30"
+                  className="bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-white/30"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="font-bold text-lg">{pessoa.nome}</div>
-                      <div className="text-sm opacity-90">
-                        {pessoa.tipo === 'Irmão' ? '👤' : 
-                         pessoa.tipo === 'Esposa' ? '💑' :
-                         pessoa.tipo === 'Pai' ? '👨' :
-                         pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
-                        {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
-                      </div>
-                      <div className="text-sm opacity-90">
-                        🎂 Fará {pessoa.idade} anos
-                      </div>
-                      <div className="text-sm opacity-90">
-                        📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
-                          day: '2-digit', 
-                          month: 'long' 
-                        })}
-                      </div>
-                    </div>
-                    <div className="bg-white/30 rounded-full px-3 py-1 text-sm font-bold">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="font-bold text-base flex-1">{pessoa.nome}</div>
+                    <div className="bg-white/30 rounded-full px-2 py-0.5 text-xs font-bold ml-2">
                       {pessoa.diasRestantes} {pessoa.diasRestantes === 1 ? 'dia' : 'dias'}
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm opacity-90 flex-wrap">
+                    <span>
+                      {pessoa.tipo === 'Irmão' ? '👤' : 
+                       pessoa.tipo === 'Esposa' ? '💑' :
+                       pessoa.tipo === 'Pai' ? '👨' :
+                       pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                      {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                    </span>
+                    <span>•</span>
+                    <span>🎂 {pessoa.idade} anos</span>
+                    <span>•</span>
+                    <span>📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
+                      day: '2-digit', 
+                      month: 'long' 
+                    })}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 bg-white/10 rounded-lg">
-              <div className="text-4xl mb-2">📅</div>
-              <p className="text-white/80">Nenhum aniversário nos próximos 7 dias</p>
+            <div className="text-center py-6 bg-white/10 rounded-lg">
+              <div className="text-3xl mb-2">📅</div>
+              <p className="text-white/80 text-sm">Nenhum aniversário nos próximos 7 dias</p>
             </div>
           )}
         </div>
