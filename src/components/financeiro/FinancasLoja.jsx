@@ -749,8 +749,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     
     // Período
     doc.setFillColor(173, 216, 230);
-    doc.rect(14, 36, 90, 8, 'F');
-    doc.rect(104, 36, 92, 8, 'F');
+    doc.rect(10, 36, 90, 8, 'F');
+    doc.rect(100, 36, 100, 8, 'F');
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -781,7 +781,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     // Título Despesas
     doc.setFillColor(154, 205, 50); // Verde
-    doc.rect(14, yPos, 182, 8, 'F');
+    doc.rect(10, yPos, 190, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -805,20 +805,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       // Nome da Categoria (fundo azul claro)
       doc.setFillColor(173, 216, 230);
-      doc.rect(14, yPos, 182, 6, 'F');
+      doc.rect(10, yPos, 190, 6, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(categoria, 16, yPos + 4);
+      doc.text(categoria, 12, yPos + 4);
       yPos += 8;
 
-      // Cabeçalho da tabela
+      // Cabeçalho da tabela (margem 10mm = 1cm)
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('DataLanc', 16, yPos);
-      doc.text('Interessado', 38, yPos);
-      doc.text('Descrição', 85, yPos);
-      doc.text('Obs', 135, yPos);
-      doc.text('Despesa', 194, yPos, { align: 'right' });
+      doc.text('DataLanc', 10, yPos);
+      doc.text('Interessado', 32, yPos);
+      doc.text('Descrição', 80, yPos);
+      doc.text('Obs', 140, yPos);
+      doc.text('Despesa', 200, yPos, { align: 'right' });
       yPos += 4;
 
       // Lançamentos da categoria
@@ -832,29 +832,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         const dataLanc = formatarDataBR(lanc.data_lancamento);
         const interessado = lanc.origem_tipo === 'Loja' ? 
-          (lanc.descricao.substring(0, 20)) : 
+          (lanc.descricao.substring(0, 22)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 25) || '';
-        const obs = (lanc.observacoes || '').substring(0, 30);
+        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+        const obs = (lanc.observacoes || '').substring(0, 35);
         const valor = parseFloat(lanc.valor);
 
-        doc.text(dataLanc, 16, yPos);
-        doc.text(interessado.substring(0, 20), 38, yPos);
-        doc.text(descricao, 85, yPos);
-        doc.text(obs, 135, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 194, yPos, { align: 'right' });
+        doc.text(dataLanc, 10, yPos);
+        doc.text(interessado.substring(0, 22), 32, yPos);
+        doc.text(descricao, 80, yPos);
+        doc.text(obs, 140, yPos);
+        doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
         
         yPos += 4;
       });
 
-      // Subtotal da categoria
+      // Subtotal da categoria (só despesa)
       yPos += 2;
       doc.setFont('helvetica', 'bold');
-      doc.text('Sub Total Receita', 145, yPos, { align: 'right' });
-      doc.text('R$ 0,00', 194, yPos, { align: 'right' });
-      yPos += 4;
-      doc.text('Sub Total Despesa', 145, yPos, { align: 'right' });
-      doc.text(`R$ ${subtotal.toFixed(2)}`, 194, yPos, { align: 'right' });
+      doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
+      doc.text(`R$ ${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
       
       yPos += 8;
     });
@@ -886,7 +883,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     // Título Receitas
     doc.setFillColor(33, 150, 243); // Azul
-    doc.rect(14, yPos, 182, 8, 'F');
+    doc.rect(10, yPos, 190, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -910,55 +907,68 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       // Nome da Categoria
       doc.setFillColor(173, 216, 230);
-      doc.rect(14, yPos, 182, 6, 'F');
+      doc.rect(10, yPos, 190, 6, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(categoria, 16, yPos + 4);
+      doc.text(categoria, 12, yPos + 4);
       yPos += 8;
 
       // Cabeçalho da tabela
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('DataLanc', 16, yPos);
-      doc.text('Interessado', 38, yPos);
-      doc.text('Descrição', 85, yPos);
-      doc.text('Obs', 135, yPos);
-      doc.text('Receita', 194, yPos, { align: 'right' });
+      doc.text('DataLanc', 10, yPos);
+      doc.text('Interessado', 32, yPos);
+      doc.text('Descrição', 80, yPos);
+      doc.text('Obs', 140, yPos);
+      doc.text('Receita', 200, yPos, { align: 'right' });
       yPos += 4;
 
-      // Lançamentos
-      doc.setFont('helvetica', 'normal');
-      lancamentosCategoria.forEach(lanc => {
-        if (yPos > 275) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        const dataLanc = formatarDataBR(lanc.data_lancamento);
-        const interessado = lanc.origem_tipo === 'Loja' ? 
-          'Irmãos - Acacia Paranatinga nº 30' : 
-          (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-        const descricao = lanc.descricao?.substring(0, 25) || '';
-        const obs = (lanc.observacoes || '').substring(0, 30);
-        const valor = parseFloat(lanc.valor);
-
-        doc.text(dataLanc, 16, yPos);
-        doc.text(interessado.substring(0, 20), 38, yPos);
-        doc.text(descricao, 85, yPos);
-        doc.text(obs, 135, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 194, yPos, { align: 'right' });
+      // AGRUPAR "Mensalidade e Peculio"
+      if (categoria === 'Mensalidade e Peculio') {
+        doc.setFont('helvetica', 'normal');
         
+        const dataLanc = lancamentosCategoria.length > 0 ? 
+          formatarDataBR(lancamentosCategoria[0].data_lancamento) : '';
+        
+        doc.text(dataLanc, 10, yPos);
+        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
+        doc.text('', 140, yPos);
+        doc.text(`R$${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
         yPos += 4;
-      });
+        
+      } else {
+        // Lançamentos normais
+        doc.setFont('helvetica', 'normal');
+        lancamentosCategoria.forEach(lanc => {
+          if (yPos > 275) {
+            doc.addPage();
+            yPos = 20;
+          }
 
-      // Subtotal
+          const dataLanc = formatarDataBR(lanc.data_lancamento);
+          const interessado = lanc.origem_tipo === 'Loja' ? 
+            'Irmãos - Acacia Paranatinga nº 30' : 
+            (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
+          const descricao = lanc.descricao?.substring(0, 28) || '';
+          const obs = (lanc.observacoes || '').substring(0, 35);
+          const valor = parseFloat(lanc.valor);
+
+          doc.text(dataLanc, 10, yPos);
+          doc.text(interessado.substring(0, 22), 32, yPos);
+          doc.text(descricao, 80, yPos);
+          doc.text(obs, 140, yPos);
+          doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+          
+          yPos += 4;
+        });
+      }
+
+      // Subtotal (só receita)
       yPos += 2;
       doc.setFont('helvetica', 'bold');
-      doc.text('Sub Total Receita', 145, yPos, { align: 'right' });
-      doc.text(`R$ ${subtotal.toFixed(2)}`, 194, yPos, { align: 'right' });
-      yPos += 4;
-      doc.text('Sub Total Despesa', 145, yPos, { align: 'right' });
-      doc.text('R$ 0,00', 194, yPos, { align: 'right' });
+      doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
+      doc.text(`R$ ${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
       
       yPos += 8;
     });
@@ -975,7 +985,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     yPos += 4;
     doc.setFillColor(100, 100, 100);
-    doc.rect(14, yPos, 182, 8, 'F');
+    doc.rect(10, yPos, 190, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
     doc.setFont('helvetica', 'bold');
@@ -985,18 +995,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.setTextColor(0, 0, 0);
 
     doc.setFontSize(10);
-    doc.text('Total Receita', 135, yPos, { align: 'right' });
-    doc.text(`R$ ${totalReceitas.toFixed(2)}`, 194, yPos, { align: 'right' });
+    doc.text('Total Receita', 150, yPos, { align: 'right' });
+    doc.text(`R$ ${totalReceitas.toFixed(2)}`, 200, yPos, { align: 'right' });
     yPos += 5;
     
-    doc.text('Total Despesa', 135, yPos, { align: 'right' });
-    doc.text(`R$ ${totalDespesas.toFixed(2)}`, 194, yPos, { align: 'right' });
+    doc.text('Total Despesa', 150, yPos, { align: 'right' });
+    doc.text(`R$ ${totalDespesas.toFixed(2)}`, 200, yPos, { align: 'right' });
     yPos += 6;
 
     const corSaldo = saldoTotal >= 0 ? [0, 0, 0] : [255, 0, 0];
     doc.setTextColor(corSaldo[0], corSaldo[1], corSaldo[2]);
-    doc.text('Saldo Total', 135, yPos, { align: 'right' });
-    doc.text(`${saldoTotal >= 0 ? '' : '-'}R$ ${Math.abs(saldoTotal).toFixed(2)}`, 194, yPos, { align: 'right' });
+    doc.text('Saldo Total', 150, yPos, { align: 'right' });
+    doc.text(`${saldoTotal >= 0 ? '' : '-'}R$ ${Math.abs(saldoTotal).toFixed(2)}`, 200, yPos, { align: 'right' });
 
     // Rodapé
     const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
@@ -1009,8 +1019,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
-    doc.text(dataGeracao, 14, 285);
-    doc.text(`Página ${doc.internal.getNumberOfPages()} de ${doc.internal.getNumberOfPages()}`, 196, 285, { align: 'right' });
+    doc.text(dataGeracao, 10, 285);
+    doc.text(`Página ${doc.internal.getNumberOfPages()} de ${doc.internal.getNumberOfPages()}`, 200, 285, { align: 'right' });
 
     doc.save(`Rel_Fechamento_-_${filtros.mes}_${filtros.ano}.pdf`);
   };
