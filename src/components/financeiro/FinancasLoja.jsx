@@ -923,11 +923,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text('Receita', 200, yPos, { align: 'right' });
       yPos += 4;
 
-      // AGRUPAR "Mensalidade e Peculio" - TODOS OS IRMÃOS EM UMA LINHA
-      if (categoria === 'Mensalidade e Peculio') {
+      // AGRUPAR "Mensalidade" - TODOS OS IRMÃOS EM UMA LINHA
+      if (categoria === 'Mensalidade') {
         doc.setFont('helvetica', 'normal');
         
-        // Pega a data do primeiro lançamento
+        // Pega a data do último lançamento
         const dataLanc = lancamentosCategoria.length > 0 ? 
           formatarDataBR(lancamentosCategoria[lancamentosCategoria.length - 1].data_lancamento) : '';
         
@@ -936,7 +936,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
         doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
         doc.text('', 140, yPos);
-        doc.text('R$0,00', 175, yPos, { align: 'right' });
         doc.text(`R$${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
         yPos += 4;
         
@@ -961,7 +960,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           doc.text(interessado.substring(0, 22), 32, yPos);
           doc.text(descricao, 80, yPos);
           doc.text(obs, 140, yPos);
-          doc.text('R$0,00', 175, yPos, { align: 'right' });
           doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
           
           yPos += 4;
