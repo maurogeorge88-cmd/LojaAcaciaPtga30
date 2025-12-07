@@ -1722,15 +1722,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       {lanc.descricao}
                     </td>
                     {/* NOVA COLUNA: Origem */}
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
                       {lanc.origem_tipo === 'Loja' ? (
-                        <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                          🏛️
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-blue-600">🏛️</span>
+                          <span className="text-gray-900 font-medium">Loja</span>
+                        </div>
                       ) : (
-                        <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-                          👤
-                        </span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-purple-600">👤</span>
+                          <span className="text-gray-900 font-medium">
+                            {(() => {
+                              const nomeCompleto = lanc.irmaos?.nome || 'Irmão';
+                              const partes = nomeCompleto.split(' ');
+                              return partes.length > 2 
+                                ? `${partes[0]} ${partes[1]}`
+                                : nomeCompleto;
+                            })()}
+                          </span>
+                        </div>
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28">
