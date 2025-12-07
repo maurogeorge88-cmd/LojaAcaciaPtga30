@@ -815,10 +815,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('DataLanc', 16, yPos);
-      doc.text('Interessado', 45, yPos);
-      doc.text('Descrição', 95, yPos);
+      doc.text('Interessado', 38, yPos);
+      doc.text('Descrição', 85, yPos);
       doc.text('Obs', 135, yPos);
-      doc.text('Despesa', 175, yPos, { align: 'right' });
+      doc.text('Despesa', 194, yPos, { align: 'right' });
       yPos += 4;
 
       // Lançamentos da categoria
@@ -832,18 +832,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         const dataLanc = formatarDataBR(lanc.data_lancamento);
         const interessado = lanc.origem_tipo === 'Loja' ? 
-          (lanc.descricao.substring(0, 25)) : 
+          (lanc.descricao.substring(0, 20)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 20) || '';
-        const obs = (lanc.observacoes || '').substring(0, 20);
+        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 25) || '';
+        const obs = (lanc.observacoes || '').substring(0, 30);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 16, yPos);
-        doc.text(interessado.substring(0, 22), 45, yPos);
-        doc.text(descricao, 95, yPos);
+        doc.text(interessado.substring(0, 20), 38, yPos);
+        doc.text(descricao, 85, yPos);
         doc.text(obs, 135, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 175, yPos, { align: 'right' });
-        doc.text('R$0,00', 194, yPos, { align: 'right' });
+        doc.text(`R$${valor.toFixed(2)}`, 194, yPos, { align: 'right' });
         
         yPos += 4;
       });
@@ -851,11 +850,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       // Subtotal da categoria
       yPos += 2;
       doc.setFont('helvetica', 'bold');
-      doc.text('Sub Total Receita', 135, yPos, { align: 'right' });
-      doc.text('R$ 0,00', 175, yPos, { align: 'right' });
+      doc.text('Sub Total Receita', 145, yPos, { align: 'right' });
+      doc.text('R$ 0,00', 194, yPos, { align: 'right' });
       yPos += 4;
-      doc.text('Sub Total Despesa', 135, yPos, { align: 'right' });
-      doc.text(`R$ ${subtotal.toFixed(2)}`, 175, yPos, { align: 'right' });
+      doc.text('Sub Total Despesa', 145, yPos, { align: 'right' });
+      doc.text(`R$ ${subtotal.toFixed(2)}`, 194, yPos, { align: 'right' });
       
       yPos += 8;
     });
@@ -921,10 +920,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('DataLanc', 16, yPos);
-      doc.text('Interessado', 45, yPos);
-      doc.text('Descrição', 95, yPos);
+      doc.text('Interessado', 38, yPos);
+      doc.text('Descrição', 85, yPos);
       doc.text('Obs', 135, yPos);
-      doc.text('Receita', 175, yPos, { align: 'right' });
+      doc.text('Receita', 194, yPos, { align: 'right' });
       yPos += 4;
 
       // Lançamentos
@@ -939,15 +938,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         const interessado = lanc.origem_tipo === 'Loja' ? 
           'Irmãos - Acacia Paranatinga nº 30' : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-        const descricao = lanc.descricao?.substring(0, 20) || '';
-        const obs = (lanc.observacoes || '').substring(0, 20);
+        const descricao = lanc.descricao?.substring(0, 25) || '';
+        const obs = (lanc.observacoes || '').substring(0, 30);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 16, yPos);
-        doc.text(interessado.substring(0, 22), 45, yPos);
-        doc.text(descricao, 95, yPos);
+        doc.text(interessado.substring(0, 20), 38, yPos);
+        doc.text(descricao, 85, yPos);
         doc.text(obs, 135, yPos);
-        doc.text('R$0,00', 175, yPos, { align: 'right' });
         doc.text(`R$${valor.toFixed(2)}`, 194, yPos, { align: 'right' });
         
         yPos += 4;
@@ -956,11 +954,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       // Subtotal
       yPos += 2;
       doc.setFont('helvetica', 'bold');
-      doc.text('Sub Total Receita', 135, yPos, { align: 'right' });
-      doc.text(`R$ ${subtotal.toFixed(2)}`, 175, yPos, { align: 'right' });
+      doc.text('Sub Total Receita', 145, yPos, { align: 'right' });
+      doc.text(`R$ ${subtotal.toFixed(2)}`, 194, yPos, { align: 'right' });
       yPos += 4;
-      doc.text('Sub Total Despesa', 135, yPos, { align: 'right' });
-      doc.text('R$ 0,00', 175, yPos, { align: 'right' });
+      doc.text('Sub Total Despesa', 145, yPos, { align: 'right' });
+      doc.text('R$ 0,00', 194, yPos, { align: 'right' });
       
       yPos += 8;
     });
