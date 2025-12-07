@@ -301,7 +301,12 @@ function App() {
   const loadIrmaos = async () => {
     const { data, error } = await supabase
       .from('irmaos')
-      .select('*')
+      .select(`
+        *,
+        esposas (*),
+        pais (*),
+        filhos (*)
+      `)
       .order('nome');
     
     if (data) {
