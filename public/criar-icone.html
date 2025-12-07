@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gerador de Ícone</title>
+</head>
+<body>
+    <canvas id="canvas192" width="192" height="192"></canvas>
+    <canvas id="canvas512" width="512" height="512"></canvas>
+    
+    <script>
+        function criarIcone(canvas, tamanho) {
+            const ctx = canvas.getContext('2d');
+            
+            // Fundo azul
+            ctx.fillStyle = '#1e40af';
+            ctx.fillRect(0, 0, tamanho, tamanho);
+            
+            // Texto branco
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${tamanho * 0.25}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('A∴R∴L∴S∴', tamanho/2, tamanho/2);
+        }
+        
+        criarIcone(document.getElementById('canvas192'), 192);
+        criarIcone(document.getElementById('canvas512'), 512);
+        
+        console.log('Clique com botão direito nas imagens e escolha "Salvar imagem como..."');
+        console.log('Salve como icon-192.png e icon-512.png');
+    </script>
+    
+    <p>Clique com botão direito em cada imagem e escolha "Salvar imagem como..."</p>
+    <p>Salve a primeira como <strong>icon-192.png</strong></p>
+    <p>Salve a segunda como <strong>icon-512.png</strong></p>
+</body>
+</html>
