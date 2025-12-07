@@ -31,7 +31,7 @@ export const Dashboard = ({ irmaos, balaustres }) => {
   const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
 
   // ========================================
-  // ANIVERSARIANTES
+  // ANIVERSARIANTES - INCLUINDO FAMILIARES
   // ========================================
   const aniversariantes = useMemo(() => {
     const hoje = new Date();
@@ -41,10 +41,10 @@ export const Dashboard = ({ irmaos, balaustres }) => {
     const aniversariantesHoje = [];
     const proximos7Dias = [];
 
-    irmaos.forEach(irmao => {
-      if (!irmao.data_nascimento) return;
+    const verificarAniversario = (pessoa, tipo, irmaoNome = null) => {
+      if (!pessoa.data_nascimento) return;
 
-      const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
+      const dataNasc = new Date(pessoa.data_nascimento + 'T00:00:00');
       const diaNasc = dataNasc.getDate();
       const mesNasc = dataNasc.getMonth() + 1;
 
@@ -52,8 +52,11 @@ export const Dashboard = ({ irmaos, balaustres }) => {
       if (diaNasc === diaHoje && mesNasc === mesHoje) {
         const idade = hoje.getFullYear() - dataNasc.getFullYear();
         aniversariantesHoje.push({
-          ...irmao,
-          idade
+          nome: pessoa.nome,
+          tipo: tipo,
+          irmaoNome: irmaoNome,
+          idade,
+          id: `${tipo}-${pessoa.id}`
         });
       }
 
@@ -70,10 +73,40 @@ export const Dashboard = ({ irmaos, balaustres }) => {
       if (diffDias > 0 && diffDias <= 7) {
         const idade = dataAnivEstano.getFullYear() - dataNasc.getFullYear();
         proximos7Dias.push({
-          ...irmao,
+          nome: pessoa.nome,
+          tipo: tipo,
+          irmaoNome: irmaoNome,
           idade,
           diasRestantes: diffDias,
-          dataAniversario: dataAnivEstano
+          dataAniversario: dataAnivEstano,
+          id: `${tipo}-${pessoa.id}`
+        });
+      }
+    };
+
+    // Irmãos
+    irmaos.forEach(irmao => {
+      verificarAniversario(irmao, 'Irmão');
+
+      // Esposa
+      if (irmao.esposas && irmao.esposas.length > 0) {
+        irmao.esposas.forEach(esposa => {
+          verificarAniversario(esposa, 'Esposa', irmao.nome);
+        });
+      }
+
+      // Pais
+      if (irmao.pais && irmao.pais.length > 0) {
+        irmao.pais.forEach(pai => {
+          const tipoPai = pai.tipo === 'pai' ? 'Pai' : 'Mãe';
+          verificarAniversario(pai, tipoPai, irmao.nome);
+        });
+      }
+
+      // Filhos
+      if (irmao.filhos && irmao.filhos.length > 0) {
+        irmao.filhos.forEach(filho => {
+          verificarAniversario(filho, 'Filho(a)', irmao.nome);
         });
       }
     });
@@ -144,14 +177,21 @@ export const Dashboard = ({ irmaos, balaustres }) => {
           
           {aniversariantes.aniversariantesHoje.length > 0 ? (
             <div className="space-y-3">
-              {aniversariantes.aniversariantesHoje.map(irmao => (
+              {aniversariantes.aniversariantesHoje.map(pessoa => (
                 <div 
-                  key={irmao.id}
+                  key={pessoa.id}
                   className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30"
                 >
-                  <div className="font-bold text-lg">{irmao.nome}</div>
+                  <div className="font-bold text-lg">{pessoa.nome}</div>
                   <div className="text-sm opacity-90">
-                    🎂 {irmao.idade} anos hoje!
+                    {pessoa.tipo === 'Irmão' ? '👤' : 
+                     pessoa.tipo === 'Esposa' ? '💑' :
+                     pessoa.tipo === 'Pai' ? '👨' :
+                     pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                    {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                  </div>
+                  <div className="text-sm opacity-90">
+                    🎂 {pessoa.idade} anos hoje!
                   </div>
                 </div>
               ))}
@@ -173,26 +213,33 @@ export const Dashboard = ({ irmaos, balaustres }) => {
           
           {aniversariantes.proximos7Dias.length > 0 ? (
             <div className="space-y-3 max-h-[280px] overflow-y-auto">
-              {aniversariantes.proximos7Dias.map(irmao => (
+              {aniversariantes.proximos7Dias.map(pessoa => (
                 <div 
-                  key={irmao.id}
+                  key={pessoa.id}
                   className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="font-bold text-lg">{irmao.nome}</div>
+                      <div className="font-bold text-lg">{pessoa.nome}</div>
                       <div className="text-sm opacity-90">
-                        🎂 Fará {irmao.idade} anos
+                        {pessoa.tipo === 'Irmão' ? '👤' : 
+                         pessoa.tipo === 'Esposa' ? '💑' :
+                         pessoa.tipo === 'Pai' ? '👨' :
+                         pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                        {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
                       </div>
                       <div className="text-sm opacity-90">
-                        📆 {irmao.dataAniversario.toLocaleDateString('pt-BR', { 
+                        🎂 Fará {pessoa.idade} anos
+                      </div>
+                      <div className="text-sm opacity-90">
+                        📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
                           day: '2-digit', 
                           month: 'long' 
                         })}
                       </div>
                     </div>
                     <div className="bg-white/30 rounded-full px-3 py-1 text-sm font-bold">
-                      {irmao.diasRestantes} {irmao.diasRestantes === 1 ? 'dia' : 'dias'}
+                      {pessoa.diasRestantes} {pessoa.diasRestantes === 1 ? 'dia' : 'dias'}
                     </div>
                   </div>
                 </div>
