@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../App';
 
-export default function GerenciarCategorias({ showSuccess, showError }) {
+export default function CategoriasFinanceiras({ showSuccess, showError }) {
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
@@ -10,119 +10,143 @@ export default function GerenciarCategorias({ showSuccess, showError }) {
   const [formCategoria, setFormCategoria] = useState({
     nome: '',
     tipo: 'receita',
-    descricao: '',
+    categoria_pai_id: null,
+    nivel: 1,
+    ordem: 0,
     ativo: true
   });
 
-  useEffect(() => {
-    carregarCategorias();
-  }, []);
-
-  const carregarCategorias = async () => {
+  // ========================================
+  // 📊 CARREGAR CATEGORIAS
+  // ========================================
+  const loadCategorias = async () => {
     try {
       const { data, error } = await supabase
         .from('categorias_financeiras')
         .select('*')
         .order('tipo')
+        .order('nivel')
+        .order('ordem')
         .order('nome');
 
       if (error) throw error;
       setCategorias(data || []);
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
       showError('Erro ao carregar categorias: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadCategorias();
+  }, []);
+
+  // ========================================
+  // 🌳 CONSTRUIR ÁRVORE HIERÁRQUICA
+  // ========================================
+  const construirArvore = (categoriasLista, tipo) => {
+    const categoriasPorTipo = categoriasLista.filter(c => c.tipo === tipo);
+    const principais = categoriasPorTipo.filter(c => c.nivel === 1 || !c.categoria_pai_id);
+    
+    const construirFilhos = (pai) => {
+      const filhos = categoriasPorTipo.filter(c => c.categoria_pai_id === pai.id);
+      return filhos.map(filho => ({
+        ...filho,
+        filhos: construirFilhos(filho)
+      }));
+    };
+    
+    return principais.map(cat => ({
+      ...cat,
+      filhos: construirFilhos(cat)
+    }));
+  };
+
+  // ========================================
+  // 💾 SALVAR CATEGORIA
+  // ========================================
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    
     try {
-      const dados = {
-        nome: formCategoria.nome.trim(),
-        tipo: formCategoria.tipo,
-        descricao: formCategoria.descricao.trim() || null,
-        ativo: formCategoria.ativo
+      // Calcular nível automaticamente
+      let nivel = 1;
+      if (formCategoria.categoria_pai_id) {
+        const pai = categorias.find(c => c.id === parseInt(formCategoria.categoria_pai_id));
+        nivel = pai ? pai.nivel + 1 : 1;
+      }
+
+      const dadosCategoria = {
+        ...formCategoria,
+        nivel,
+        categoria_pai_id: formCategoria.categoria_pai_id ? parseInt(formCategoria.categoria_pai_id) : null
       };
 
       if (editando) {
-        // Atualizar
         const { error } = await supabase
           .from('categorias_financeiras')
-          .update(dados)
-          .eq('id', editando);
-
+          .update(dadosCategoria)
+          .eq('id', editando.id);
+        
         if (error) throw error;
         showSuccess('Categoria atualizada com sucesso!');
       } else {
-        // Criar
         const { error } = await supabase
           .from('categorias_financeiras')
-          .insert(dados);
-
+          .insert([dadosCategoria]);
+        
         if (error) throw error;
         showSuccess('Categoria criada com sucesso!');
       }
-
+      
       limparFormulario();
-      await carregarCategorias();
-
+      loadCategorias();
     } catch (error) {
-      console.error('Erro ao salvar categoria:', error);
       showError('Erro ao salvar categoria: ' + error.message);
     }
   };
 
-  const editarCategoria = (categoria) => {
+  // ========================================
+  // ✏️ EDITAR CATEGORIA
+  // ========================================
+  const handleEditar = (categoria) => {
+    setEditando(categoria);
     setFormCategoria({
       nome: categoria.nome,
       tipo: categoria.tipo,
-      descricao: categoria.descricao || '',
+      categoria_pai_id: categoria.categoria_pai_id || null,
+      nivel: categoria.nivel,
+      ordem: categoria.ordem,
       ativo: categoria.ativo
     });
-    setEditando(categoria.id);
     setMostrarFormulario(true);
   };
 
-  const toggleAtivo = async (id, ativoAtual) => {
-    try {
-      const { error } = await supabase
-        .from('categorias_financeiras')
-        .update({ ativo: !ativoAtual })
-        .eq('id', id);
-
-      if (error) throw error;
-
-      showSuccess(`Categoria ${!ativoAtual ? 'ativada' : 'desativada'} com sucesso!`);
-      await carregarCategorias();
-
-    } catch (error) {
-      console.error('Erro ao atualizar categoria:', error);
-      showError('Erro ao atualizar categoria: ' + error.message);
-    }
-  };
-
-  const excluirCategoria = async (id) => {
-    if (!window.confirm('Deseja realmente excluir esta categoria?\n\nAtenção: Isso pode afetar lançamentos existentes que usam esta categoria.')) {
+  // ========================================
+  // 🗑️ EXCLUIR CATEGORIA
+  // ========================================
+  const handleExcluir = async (id) => {
+    // Verificar se tem subcategorias
+    const temFilhos = categorias.some(c => c.categoria_pai_id === id);
+    if (temFilhos) {
+      showError('Não é possível excluir categoria com subcategorias!');
       return;
     }
 
+    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
+    
     try {
       const { error } = await supabase
         .from('categorias_financeiras')
         .delete()
         .eq('id', id);
-
+      
       if (error) throw error;
-
       showSuccess('Categoria excluída com sucesso!');
-      await carregarCategorias();
-
+      loadCategorias();
     } catch (error) {
-      console.error('Erro ao excluir categoria:', error);
-      showError('Erro ao excluir: ' + error.message);
+      showError('Erro ao excluir categoria: ' + error.message);
     }
   };
 
@@ -130,15 +154,82 @@ export default function GerenciarCategorias({ showSuccess, showError }) {
     setFormCategoria({
       nome: '',
       tipo: 'receita',
-      descricao: '',
+      categoria_pai_id: null,
+      nivel: 1,
+      ordem: 0,
       ativo: true
     });
     setEditando(null);
     setMostrarFormulario(false);
   };
 
-  const categoriasReceita = categorias.filter(c => c.tipo === 'receita');
-  const categoriasDespesa = categorias.filter(c => c.tipo === 'despesa');
+  // ========================================
+  // 🎨 RENDERIZAR ÁRVORE
+  // ========================================
+  const renderizarArvore = (categorias, profundidade = 0) => {
+    return categorias.map(cat => (
+      <React.Fragment key={cat.id}>
+        <tr className="hover:bg-gray-50">
+          <td className="px-6 py-3 text-sm" style={{ paddingLeft: `${24 + profundidade * 32}px` }}>
+            {profundidade > 0 && (
+              <span className="text-gray-400 mr-2">
+                {'└─ '}
+              </span>
+            )}
+            <span className={profundidade === 0 ? 'font-bold' : ''}>
+              {cat.nome}
+            </span>
+          </td>
+          <td className="px-6 py-3 text-sm">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              cat.tipo === 'receita' 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              {cat.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
+            </span>
+          </td>
+          <td className="px-6 py-3 text-sm text-center">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              cat.nivel === 1 ? 'bg-blue-100 text-blue-800' :
+              cat.nivel === 2 ? 'bg-purple-100 text-purple-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              Nível {cat.nivel}
+            </span>
+          </td>
+          <td className="px-6 py-3 text-sm text-center">
+            <span className={`px-2 py-1 text-xs rounded-full ${
+              cat.ativo 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-gray-100 text-gray-800'
+            }`}>
+              {cat.ativo ? '✅ Ativo' : '⏸️ Inativo'}
+            </span>
+          </td>
+          <td className="px-6 py-3 text-sm">
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleEditar(cat)}
+                className="text-blue-600 hover:text-blue-900"
+                title="Editar"
+              >
+                ✏️
+              </button>
+              <button
+                onClick={() => handleExcluir(cat.id)}
+                className="text-red-600 hover:text-red-900"
+                title="Excluir"
+              >
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+        {cat.filhos && cat.filhos.length > 0 && renderizarArvore(cat.filhos, profundidade + 1)}
+      </React.Fragment>
+    ));
+  };
 
   if (loading) {
     return (
@@ -148,30 +239,33 @@ export default function GerenciarCategorias({ showSuccess, showError }) {
     );
   }
 
+  const arvoreReceitas = construirArvore(categorias, 'receita');
+  const arvoreDespesas = construirArvore(categorias, 'despesa');
+  const categoriasPrincipais = categorias.filter(c => c.nivel === 1 && c.tipo === formCategoria.tipo);
+
   return (
     <div className="space-y-6">
       {/* CABEÇALHO */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">
-          📊 Gerenciar Categorias Financeiras
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-900">🏷️ Categorias Financeiras</h2>
         <button
-          onClick={() => setMostrarFormulario(!mostrarFormulario)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+          onClick={() => setMostrarFormulario(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
         >
-          {mostrarFormulario ? '❌ Cancelar' : '➕ Nova Categoria'}
+          ➕ Nova Categoria
         </button>
       </div>
 
       {/* FORMULÁRIO */}
       {mostrarFormulario && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h3 className="text-lg font-semibold mb-4">
             {editando ? '✏️ Editar Categoria' : '➕ Nova Categoria'}
           </h3>
-
+          
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Nome */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nome da Categoria *
@@ -181,58 +275,83 @@ export default function GerenciarCategorias({ showSuccess, showError }) {
                   value={formCategoria.nome}
                   onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ex: Mensalidade, Água, Energia"
                   required
                 />
               </div>
 
+              {/* Tipo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tipo *
                 </label>
                 <select
                   value={formCategoria.tipo}
-                  onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value })}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value, categoria_pai_id: null })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
                 >
-                  <option value="receita">💰 Receita</option>
-                  <option value="despesa">💸 Despesa</option>
+                  <option value="receita">📈 Receita</option>
+                  <option value="despesa">📉 Despesa</option>
                 </select>
               </div>
 
-              <div className="md:col-span-2">
+              {/* Categoria Pai */}
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descrição
+                  Categoria Pai (opcional)
                 </label>
-                <input
-                  type="text"
-                  value={formCategoria.descricao}
-                  onChange={(e) => setFormCategoria({ ...formCategoria, descricao: e.target.value })}
+                <select
+                  value={formCategoria.categoria_pai_id || ''}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, categoria_pai_id: e.target.value || null })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="Descrição opcional da categoria"
-                />
+                >
+                  <option value="">Principal (sem categoria pai)</option>
+                  {categoriasPrincipais.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.nome}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Deixe vazio para criar categoria principal
+                </p>
               </div>
 
+              {/* Ordem */}
               <div>
-                <label className="flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={formCategoria.ativo}
-                    onChange={(e) => setFormCategoria({ ...formCategoria, ativo: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Categoria ativa</span>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ordem de Exibição
                 </label>
+                <input
+                  type="number"
+                  value={formCategoria.ordem}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, ordem: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  min="0"
+                />
               </div>
             </div>
 
+            {/* Ativo */}
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="ativo"
+                checked={formCategoria.ativo}
+                onChange={(e) => setFormCategoria({ ...formCategoria, ativo: e.target.checked })}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <label htmlFor="ativo" className="text-sm font-medium text-gray-700">
+                Categoria Ativa
+              </label>
+            </div>
+
+            {/* Botões */}
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
               >
-                {editando ? '✅ Salvar Alterações' : '➕ Criar Categoria'}
+                {editando ? '💾 Salvar Alterações' : '➕ Criar Categoria'}
               </button>
               <button
                 type="button"
@@ -246,143 +365,50 @@ export default function GerenciarCategorias({ showSuccess, showError }) {
         </div>
       )}
 
-      {/* LISTA DE CATEGORIAS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* RECEITAS */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-green-700 mb-4 flex items-center">
-            💰 Receitas ({categoriasReceita.length})
-          </h3>
-          
-          <div className="space-y-2">
-            {categoriasReceita.length === 0 ? (
-              <p className="text-gray-500 text-sm">Nenhuma categoria de receita cadastrada</p>
-            ) : (
-              categoriasReceita.map(categoria => (
-                <div
-                  key={categoria.id}
-                  className={`p-3 rounded-lg border ${
-                    categoria.ativo 
-                      ? 'bg-green-50 border-green-200' 
-                      : 'bg-gray-50 border-gray-200 opacity-60'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900">{categoria.nome}</h4>
-                        {!categoria.ativo && (
-                          <span className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded">
-                            Inativa
-                          </span>
-                        )}
-                      </div>
-                      {categoria.descricao && (
-                        <p className="text-sm text-gray-600 mt-1">{categoria.descricao}</p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-1 ml-2">
-                      <button
-                        onClick={() => editarCategoria(categoria)}
-                        className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-                        title="Editar"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => toggleAtivo(categoria.id, categoria.ativo)}
-                        className="p-1 text-yellow-600 hover:bg-yellow-100 rounded"
-                        title={categoria.ativo ? 'Desativar' : 'Ativar'}
-                      >
-                        {categoria.ativo ? '👁️' : '👁️‍🗨️'}
-                      </button>
-                      <button
-                        onClick={() => excluirCategoria(categoria.id)}
-                        className="p-1 text-red-600 hover:bg-red-100 rounded"
-                        title="Excluir"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+      {/* LISTA DE RECEITAS */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">📈 Receitas</h3>
         </div>
-
-        {/* DESPESAS */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-red-700 mb-4 flex items-center">
-            💸 Despesas ({categoriasDespesa.length})
-          </h3>
-          
-          <div className="space-y-2">
-            {categoriasDespesa.length === 0 ? (
-              <p className="text-gray-500 text-sm">Nenhuma categoria de despesa cadastrada</p>
-            ) : (
-              categoriasDespesa.map(categoria => (
-                <div
-                  key={categoria.id}
-                  className={`p-3 rounded-lg border ${
-                    categoria.ativo 
-                      ? 'bg-red-50 border-red-200' 
-                      : 'bg-gray-50 border-gray-200 opacity-60'
-                  }`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-medium text-gray-900">{categoria.nome}</h4>
-                        {!categoria.ativo && (
-                          <span className="text-xs px-2 py-1 bg-gray-200 text-gray-600 rounded">
-                            Inativa
-                          </span>
-                        )}
-                      </div>
-                      {categoria.descricao && (
-                        <p className="text-sm text-gray-600 mt-1">{categoria.descricao}</p>
-                      )}
-                    </div>
-
-                    <div className="flex gap-1 ml-2">
-                      <button
-                        onClick={() => editarCategoria(categoria)}
-                        className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-                        title="Editar"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => toggleAtivo(categoria.id, categoria.ativo)}
-                        className="p-1 text-yellow-600 hover:bg-yellow-100 rounded"
-                        title={categoria.ativo ? 'Desativar' : 'Ativar'}
-                      >
-                        {categoria.ativo ? '👁️' : '👁️‍🗨️'}
-                      </button>
-                      <button
-                        onClick={() => excluirCategoria(categoria.id)}
-                        className="p-1 text-red-600 hover:bg-red-100 rounded"
-                        title="Excluir"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nível</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {renderizarArvore(arvoreReceitas)}
+            </tbody>
+          </table>
         </div>
       </div>
 
-      {/* ESTATÍSTICAS */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>💡 Dica:</strong> Categorias inativas não aparecem nos formulários de lançamento,
-          mas os lançamentos antigos que usam essas categorias continuam visíveis.
-        </p>
+      {/* LISTA DE DESPESAS */}
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">📉 Despesas</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nível</th>
+                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {renderizarArvore(arvoreDespesas)}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
