@@ -3,10 +3,9 @@
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-import React from 'react';
-import { CardAniversariantesDashboard } from './CardAniversariantesDashboard';
+import React, { useMemo } from 'react';
 
-export const Dashboard = ({ irmaos, balaustres, onNavegar }) => {
+export const Dashboard = ({ irmaos, balaustres }) => {
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
@@ -31,17 +30,59 @@ export const Dashboard = ({ irmaos, balaustres, onNavegar }) => {
   const irmaosCompanheiro = irmaosRegulares.filter(i => obterGrau(i) === 'Companheiro').length;
   const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
 
-  // Debug: Contar TODOS os aprendizes (independente da situação)
-  const todosAprendizes = irmaos.filter(i => obterGrau(i) === 'Aprendiz');
-  console.log('📊 DEBUG APRENDIZES:', {
-    regulares: irmaosAprendiz,
-    total: todosAprendizes.length,
-    aprendizes: todosAprendizes.map(a => ({ 
-      nome: a.nome, 
-      situacao: a.situacao,
-      grau: obterGrau(a)
-    }))
-  });
+  // ========================================
+  // ANIVERSARIANTES
+  // ========================================
+  const aniversariantes = useMemo(() => {
+    const hoje = new Date();
+    const diaHoje = hoje.getDate();
+    const mesHoje = hoje.getMonth() + 1;
+
+    const aniversariantesHoje = [];
+    const proximos7Dias = [];
+
+    irmaos.forEach(irmao => {
+      if (!irmao.data_nascimento) return;
+
+      const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
+      const diaNasc = dataNasc.getDate();
+      const mesNasc = dataNasc.getMonth() + 1;
+
+      // Aniversariante de hoje
+      if (diaNasc === diaHoje && mesNasc === mesHoje) {
+        const idade = hoje.getFullYear() - dataNasc.getFullYear();
+        aniversariantesHoje.push({
+          ...irmao,
+          idade
+        });
+      }
+
+      // Próximos 7 dias
+      const dataAnivEstano = new Date(hoje.getFullYear(), mesNasc - 1, diaNasc);
+      
+      // Se o aniversário já passou este ano, considera o próximo ano
+      if (dataAnivEstano < hoje) {
+        dataAnivEstano.setFullYear(hoje.getFullYear() + 1);
+      }
+
+      const diffDias = Math.ceil((dataAnivEstano - hoje) / (1000 * 60 * 60 * 24));
+
+      if (diffDias > 0 && diffDias <= 7) {
+        const idade = dataAnivEstano.getFullYear() - dataNasc.getFullYear();
+        proximos7Dias.push({
+          ...irmao,
+          idade,
+          diasRestantes: diffDias,
+          dataAniversario: dataAnivEstano
+        });
+      }
+    });
+
+    // Ordenar próximos 7 dias por data
+    proximos7Dias.sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+    return { aniversariantesHoje, proximos7Dias };
+  }, [irmaos]);
 
   return (
     <div>
@@ -92,6 +133,80 @@ export const Dashboard = ({ irmaos, balaustres, onNavegar }) => {
         </div>
       </div>
 
+      {/* ANIVERSARIANTES */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* ANIVERSARIANTES DO DIA */}
+        <div className="bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">🎂 Aniversariantes do Dia</h3>
+            <div className="text-4xl">🎉</div>
+          </div>
+          
+          {aniversariantes.aniversariantesHoje.length > 0 ? (
+            <div className="space-y-3">
+              {aniversariantes.aniversariantesHoje.map(irmao => (
+                <div 
+                  key={irmao.id}
+                  className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30"
+                >
+                  <div className="font-bold text-lg">{irmao.nome}</div>
+                  <div className="text-sm opacity-90">
+                    🎂 {irmao.idade} anos hoje!
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-white/10 rounded-lg">
+              <div className="text-4xl mb-2">📅</div>
+              <p className="text-white/80">Nenhum aniversariante hoje</p>
+            </div>
+          )}
+        </div>
+
+        {/* PRÓXIMOS 7 DIAS */}
+        <div className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">📅 Próximos 7 Dias</h3>
+            <div className="text-4xl">🎁</div>
+          </div>
+          
+          {aniversariantes.proximos7Dias.length > 0 ? (
+            <div className="space-y-3 max-h-[280px] overflow-y-auto">
+              {aniversariantes.proximos7Dias.map(irmao => (
+                <div 
+                  key={irmao.id}
+                  className="bg-white/20 backdrop-blur-sm rounded-lg p-4 border border-white/30"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="font-bold text-lg">{irmao.nome}</div>
+                      <div className="text-sm opacity-90">
+                        🎂 Fará {irmao.idade} anos
+                      </div>
+                      <div className="text-sm opacity-90">
+                        📆 {irmao.dataAniversario.toLocaleDateString('pt-BR', { 
+                          day: '2-digit', 
+                          month: 'long' 
+                        })}
+                      </div>
+                    </div>
+                    <div className="bg-white/30 rounded-full px-3 py-1 text-sm font-bold">
+                      {irmao.diasRestantes} {irmao.diasRestantes === 1 ? 'dia' : 'dias'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-white/10 rounded-lg">
+              <div className="text-4xl mb-2">📅</div>
+              <p className="text-white/80">Nenhum aniversário nos próximos 7 dias</p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Cards de Situações */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
@@ -131,12 +246,7 @@ export const Dashboard = ({ irmaos, balaustres, onNavegar }) => {
         </div>
       </div>
 
-      {/* NOVO: Card de Aniversariantes Hoje */}
-      <CardAniversariantesDashboard 
-        onVerTodos={() => onNavegar && onNavegar('aniversariantes')}
-      />
-
-      <div className="bg-white rounded-xl shadow-md p-6 mt-6">
+      <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
         <p className="text-gray-600">
           Utilize o menu de navegação para acessar as diferentes funcionalidades do sistema.
