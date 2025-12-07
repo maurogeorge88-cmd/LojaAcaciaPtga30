@@ -17,6 +17,7 @@ import Comissoes from './components/comissoes/Comissoes';
 import Biblioteca from './components/biblioteca/Biblioteca';
 import Cronograma from './components/cronograma/Cronograma';
 import FinancasLoja from './components/financeiro/FinancasLoja';
+import CategoriasFinanceiras from './components/financeiro/CategoriasFinanceiras';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
@@ -1536,6 +1537,21 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </button>
                 )}
 
+                {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
+                  <button
+                    onClick={() => setCurrentPage('categorias-financeiras')}
+                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                      currentPage === 'categorias-financeiras'
+                        ? 'bg-blue-700 border-l-4 border-white'
+                        : 'hover:bg-blue-800'
+                    }`}
+                    title="Categorias Financeiras"
+                  >
+                    <span className="text-base">🏷️</span>
+                    {menuAberto && <span className="font-semibold">Categorias</span>}
+                  </button>
+                )}
+
                 <button
                   onClick={() => setCurrentPage('caridade')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -1653,6 +1669,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
+                  {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'aniversariantes' && '🎂 Aniversariantes'}
                   {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
@@ -1864,6 +1881,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* CATEGORIAS FINANCEIRAS */}
+        {currentPage === 'categorias-financeiras' && (
+          <CategoriasFinanceiras
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
