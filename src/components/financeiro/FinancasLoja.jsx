@@ -697,7 +697,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     
     // Período
     doc.setFontSize(12);
-    doc.text(`Período: ${meses[filtros.mes - 1]}/${filtros.ano}`, 14, 30);
+    const mesNome = filtros.mes > 0 ? meses[filtros.mes - 1] : 'Todos os meses';
+    doc.text(`Período: ${mesNome}/${filtros.ano}`, 14, 30);
     
     // Resumo
     doc.setFontSize(14);
@@ -748,7 +749,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // Período
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${meses[filtros.mes - 1].toUpperCase()}/${filtros.ano}`, 105, 35, { align: 'center' });
+    const mesNome = filtros.mes > 0 ? meses[filtros.mes - 1] : 'Todos os meses';
+    doc.text(`${mesNome.toUpperCase()}/${filtros.ano}`, 105, 35, { align: 'center' });
     
     // Linha separadora
     doc.setDrawColor(100, 100, 100);
