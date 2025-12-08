@@ -990,6 +990,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     // Processar cada categoria principal de receitas
     receitasHierarquia.forEach(catPrincipal => {
+      console.log('📊 Processando categoria:', catPrincipal.categoria.nome);
+      console.log('   - Lançamentos diretos:', catPrincipal.lancamentosDiretos.length);
+      console.log('   - Subcategorias:', catPrincipal.subcategorias.length);
+      console.log('   - Subtotal total:', catPrincipal.subtotalTotal);
+      
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
@@ -1005,11 +1010,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       // AGRUPAR SE FOR MENSALIDADE/AGAPE/PECULIO
       if (catPrincipal.categoria.nome === 'Mensalidade/Agape/Peculio') {
+        console.log('✅ DETECTOU Mensalidade/Agape/Peculio!');
+        
         // Buscar data do último lançamento (pode estar nas subcategorias)
         let ultimaData = null;
         
         // Verificar subcategorias
         catPrincipal.subcategorias.forEach(sub => {
+          console.log('   - Subcategoria:', sub.categoria.nome, '| Lançamentos:', sub.lancamentos.length);
           if (sub.lancamentos.length > 0) {
             ultimaData = sub.lancamentos[sub.lancamentos.length - 1].data_lancamento;
           }
@@ -1019,6 +1027,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         if (!ultimaData && catPrincipal.lancamentosDiretos.length > 0) {
           ultimaData = catPrincipal.lancamentosDiretos[catPrincipal.lancamentosDiretos.length - 1].data_lancamento;
         }
+        
+        console.log('   - Última data encontrada:', ultimaData);
+        console.log('   - Subtotal total:', catPrincipal.subtotalTotal);
         
         if (ultimaData) {
           const dataLanc = formatarDataBR(ultimaData);
