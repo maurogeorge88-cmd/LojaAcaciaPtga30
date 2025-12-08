@@ -2453,21 +2453,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           )}
         </div>
       )}
-                            onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors"
-                          >
-                            📄 Gerar PDF Individual
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* LISTA DE LANÇAMENTOS */}
       {viewMode === 'lancamentos' && (
