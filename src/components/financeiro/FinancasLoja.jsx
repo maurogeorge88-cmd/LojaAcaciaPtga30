@@ -3075,66 +3075,28 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Categoria *</label>
-            <select required value={formParcelamento.categoria_id}
-              onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg">
-              <option value="">Selecione...</option>
-              {renderizarOpcoesCategoria(formParcelamento.tipo)}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Descrição *</label>
-            <input type="text" required value={formParcelamento.descricao}
-              onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: Reforma do templo" />
-            <p className="text-xs text-gray-500 mt-1">Será adicionado (1/5), (2/5), etc.</p>
-          </div>
-
+          {/* Linha 1: Categoria e Descrição */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Valor Total *</label>
-              <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
-                onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
+              <label className="block text-sm font-medium mb-1">Categoria *</label>
+              <select required value={formParcelamento.categoria_id}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg">
+                <option value="">Selecione...</option>
+                {renderizarOpcoesCategoria(formParcelamento.tipo)}
+              </select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium mb-1">Nº Parcelas *</label>
-              <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
-                onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg" />
+              <label className="block text-sm font-medium mb-1">Descrição *</label>
+              <input type="text" required value={formParcelamento.descricao}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: Reforma do templo" />
             </div>
           </div>
+          <p className="text-xs text-gray-500 -mt-2">Será adicionado (1/5), (2/5), etc.</p>
 
-          {formParcelamento.valor_total && formParcelamento.num_parcelas && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
-              <p className="text-sm font-medium">
-                💡 Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
-              </p>
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Vencimento 1ª Parcela *</label>
-            <input type="date" required value={formParcelamento.data_primeira_parcela}
-              onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg" />
-            <p className="text-xs text-gray-500 mt-1">As demais vencerão mensalmente</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-1">Forma de Pagamento</label>
-            <select value={formParcelamento.tipo_pagamento}
-              onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg">
-              {tiposPagamento.map(tp => (
-                <option key={tp.value} value={tp.value}>{tp.label}</option>
-              ))}
-            </select>
-          </div>
-
+          {/* Linha 2: Origem */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Origem</label>
@@ -3158,6 +3120,48 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
                 </select>
               </div>
             )}
+          </div>
+
+          {/* Linha 3: Valor Total, Nº Parcelas e Data Vencimento */}
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Valor Total *</label>
+              <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Nº Parcelas *</label>
+              <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Vencimento 1ª Parcela *</label>
+              <input type="date" required value={formParcelamento.data_primeira_parcela}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 -mt-2">As demais vencerão mensalmente</p>
+
+          {formParcelamento.valor_total && formParcelamento.num_parcelas && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
+              <p className="text-sm font-medium">
+                💡 Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Forma de Pagamento</label>
+            <select value={formParcelamento.tipo_pagamento}
+              onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg">
+              {tiposPagamento.map(tp => (
+                <option key={tp.value} value={tp.value}>{tp.label}</option>
+              ))}
+            </select>
           </div>
 
           <div>
