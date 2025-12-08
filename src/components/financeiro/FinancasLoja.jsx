@@ -1004,25 +1004,42 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       yPos += 8;
 
       // AGRUPAR SE FOR MENSALIDADE/AGAPE/PECULIO
-      if (catPrincipal.categoria.nome === 'Mensalidade/Agape/Peculio' && catPrincipal.lancamentosDiretos.length > 0) {
-        const dataLanc = formatarDataBR(catPrincipal.lancamentosDiretos[catPrincipal.lancamentosDiretos.length - 1].data_lancamento);
+      if (catPrincipal.categoria.nome === 'Mensalidade/Agape/Peculio') {
+        // Buscar data do último lançamento (pode estar nas subcategorias)
+        let ultimaData = null;
         
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DataLanc', 10, yPos);
-        doc.text('Interessado', 32, yPos);
-        doc.text('Descrição', 80, yPos);
-        doc.text('Obs', 140, yPos);
-        doc.text('Receita', 200, yPos, { align: 'right' });
-        yPos += 4;
+        // Verificar subcategorias
+        catPrincipal.subcategorias.forEach(sub => {
+          if (sub.lancamentos.length > 0) {
+            ultimaData = sub.lancamentos[sub.lancamentos.length - 1].data_lancamento;
+          }
+        });
+        
+        // Ou lançamentos diretos
+        if (!ultimaData && catPrincipal.lancamentosDiretos.length > 0) {
+          ultimaData = catPrincipal.lancamentosDiretos[catPrincipal.lancamentosDiretos.length - 1].data_lancamento;
+        }
+        
+        if (ultimaData) {
+          const dataLanc = formatarDataBR(ultimaData);
+          
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'bold');
+          doc.text('DataLanc', 10, yPos);
+          doc.text('Interessado', 32, yPos);
+          doc.text('Descrição', 80, yPos);
+          doc.text('Obs', 140, yPos);
+          doc.text('Receita', 200, yPos, { align: 'right' });
+          yPos += 4;
 
-        doc.setFont('helvetica', 'normal');
-        doc.text(dataLanc, 10, yPos);
-        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
-        doc.text('Mensalidade/Agape/Peculio - Irmao', 80, yPos);
-        doc.text('', 140, yPos);
-        doc.text(`R$${catPrincipal.subtotalDireto.toFixed(2)}`, 200, yPos, { align: 'right' });
-        yPos += 4;
+          doc.setFont('helvetica', 'normal');
+          doc.text(dataLanc, 10, yPos);
+          doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+          doc.text('Mensalidade/Agape/Peculio - Irmao', 80, yPos);
+          doc.text('', 140, yPos);
+          doc.text(`R$${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+          yPos += 4;
+        }
       } else if (catPrincipal.lancamentosDiretos.length > 0) {
         // Cabeçalho e lançamentos normais
         doc.setFontSize(8);
@@ -1058,29 +1075,32 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }
 
       // Subcategorias (direto, sem linha separada)
-      catPrincipal.subcategorias.forEach(subcat => {
-        doc.setFont('helvetica', 'normal');
-        subcat.lancamentos.forEach(lanc => {
-          if (yPos > 275) {
-            doc.addPage();
-            yPos = 20;
-          }
+      // NÃO mostrar individualmente se for Mensalidade/Agape/Peculio (já foi agrupado)
+      if (catPrincipal.categoria.nome !== 'Mensalidade/Agape/Peculio') {
+        catPrincipal.subcategorias.forEach(subcat => {
+          doc.setFont('helvetica', 'normal');
+          subcat.lancamentos.forEach(lanc => {
+            if (yPos > 275) {
+              doc.addPage();
+              yPos = 20;
+            }
 
-          const dataLanc = formatarDataBR(lanc.data_lancamento);
-          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-          const obs = (lanc.observacoes || '').substring(0, 35);
-          const valor = parseFloat(lanc.valor);
+            const dataLanc = formatarDataBR(lanc.data_lancamento);
+            const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+            const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+            const obs = (lanc.observacoes || '').substring(0, 35);
+            const valor = parseFloat(lanc.valor);
 
-          doc.text(dataLanc, 10, yPos);
-          doc.text(interessado.substring(0, 22), 32, yPos);
-          doc.text(descricao, 80, yPos);
-          doc.text(obs, 140, yPos);
-          doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
-          
-          yPos += 4;
+            doc.text(dataLanc, 10, yPos);
+            doc.text(interessado.substring(0, 22), 32, yPos);
+            doc.text(descricao, 80, yPos);
+            doc.text(obs, 140, yPos);
+            doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+            
+            yPos += 4;
+          });
         });
-      });
+      }
 
       // Subtotal
       yPos += 2;
