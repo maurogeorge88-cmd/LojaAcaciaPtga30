@@ -1132,8 +1132,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.text(`Página ${doc.internal.getNumberOfPages()} de ${doc.internal.getNumberOfPages()}`, 200, 285, { align: 'right' });
 
     doc.save(`Rel_Fechamento_-_${filtros.mes}_${filtros.ano}.pdf`);
-  };
-
   // ========================================
   // 📊 RELATÓRIO INDIVIDUAL - DESPESAS PENDENTES POR IRMÃO
   // ========================================
@@ -1452,9 +1450,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       showError('Erro ao gerar relatórios: ' + error.message);
     }
   };
+  };
 
-// Final Codigo PDF individual para Irmão
-  
   const resumo = calcularResumo();
 
   if (loading) {
@@ -2318,14 +2315,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos Inadimplentes</h3>
               <p className="text-sm text-gray-600">Receitas pendentes de pagamento</p>
             </div>
-            {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
-              <button
-                onClick={() => setMostrarModalQuitacaoLote(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-              >
-                💰 Quitar em Lote
-              </button>
-            )}
+            <div className="flex gap-2">
+              {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
+                <>
+                  <button
+                    onClick={gerarRelatoriosEmLote}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium"
+                  >
+                    📧 PDFs (Todos)
+                  </button>
+                  <button
+                    onClick={() => setMostrarModalQuitacaoLote(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  >
+                    💰 Quitar em Lote
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           
           {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length === 0 ? (
@@ -2363,12 +2370,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       </div>
                       <div className="text-right ml-4">
                         <p className="text-2xl font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
-                        <button
-                          onClick={() => abrirModalQuitacao(lanc)}
-                          className="mt-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
-                        >
-                          💰 Quitar
-                        </button>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => gerarRelatorioIndividual(lanc.origem_irmao_id)}
+                            className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium"
+                            title="Gerar PDF Individual"
+                          >
+                            📄 PDF
+                          </button>
+                          <button
+                            onClick={() => abrirModalQuitacao(lanc)}
+                            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
+                          >
+                            💰 Quitar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
