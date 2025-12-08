@@ -805,26 +805,59 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     let yPos = 52;
 
     // ========================================
-    // DESPESAS POR CATEGORIA
+    // ORGANIZAR POR HIERARQUIA
     // ========================================
-    const despesasPorCategoria = {};
-    let totalDespesas = 0;
+    const organizarHierarquia = (tipo) => {
+      // Pegar categorias principais (nível 1)
+      const catsPrincipais = categorias.filter(c => 
+        c.tipo === tipo && 
+        (c.nivel === 1 || !c.categoria_pai_id)
+      );
 
-    lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa')
-      .forEach(lanc => {
-        const categoria = lanc.categorias_financeiras?.nome || 'Sem Categoria';
+      // Para cada principal, buscar subcategorias e lançamentos
+      return catsPrincipais.map(principal => {
+        // Subcategorias desta principal
+        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
         
-        if (!despesasPorCategoria[categoria]) {
-          despesasPorCategoria[categoria] = [];
-        }
+        // Lançamentos diretos na principal
+        const lancsDiretos = lancamentos.filter(l => 
+          l.categoria_id === principal.id &&
+          l.categorias_financeiras?.tipo === tipo
+        );
         
-        despesasPorCategoria[categoria].push(lanc);
-        totalDespesas += parseFloat(lanc.valor);
-      });
+        // Subcategorias com lançamentos
+        const subcatsComLancs = subcats.map(sub => {
+          const lancsSubcat = lancamentos.filter(l => 
+            l.categoria_id === sub.id &&
+            l.categorias_financeiras?.tipo === tipo
+          );
+          return {
+            categoria: sub,
+            lancamentos: lancsSubcat,
+            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
+          };
+        }).filter(sc => sc.lancamentos.length > 0);
+
+        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
+
+        return {
+          principal,
+          lancamentosDiretos: lancsDiretos,
+          subcategorias: subcatsComLancs,
+          subtotalTotal: subtotalDireto + subtotalSubs
+        };
+      }).filter(cp => cp.subtotalTotal > 0); // Só mostrar se tiver valores
+    };
+
+    // ========================================
+    // DESPESAS HIERÁRQUICAS
+    // ========================================
+    const despesasHierarquia = organizarHierarquia('despesa');
+    const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     // Título Despesas
-    doc.setFillColor(154, 205, 50); // Verde
+    doc.setFillColor(154, 205, 50);
     doc.rect(10, yPos, 190, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
@@ -834,28 +867,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     yPos += 12;
     doc.setTextColor(0, 0, 0);
 
-    // Processar cada categoria
-    const categoriasOrdenadas = Object.keys(despesasPorCategoria).sort();
-    
-    categoriasOrdenadas.forEach(categoria => {
-      const lancamentosCategoria = despesasPorCategoria[categoria];
-      const subtotal = lancamentosCategoria.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      // Verificar quebra de página
+    // Para cada categoria principal
+    despesasHierarquia.forEach(catPrincipal => {
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
       }
 
-      // Nome da Categoria (fundo azul claro)
+      // Nome da Categoria Principal
       doc.setFillColor(173, 216, 230);
       doc.rect(10, yPos, 190, 6, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(categoria, 12, yPos + 4);
+      doc.text(catPrincipal.principal.nome, 12, yPos + 4);
       yPos += 8;
 
-      // Cabeçalho da tabela (margem 10mm = 1cm)
+      // Cabeçalho da tabela
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('DataLanc', 10, yPos);
@@ -865,10 +892,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text('Despesa', 200, yPos, { align: 'right' });
       yPos += 4;
 
-      // Lançamentos da categoria
+      // Lançamentos diretos na principal
       doc.setFont('helvetica', 'normal');
-      lancamentosCategoria.forEach(lanc => {
-        // Verificar quebra de página
+      catPrincipal.lancamentosDiretos.forEach(lanc => {
         if (yPos > 275) {
           doc.addPage();
           yPos = 20;
@@ -891,102 +917,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         yPos += 4;
       });
 
-      // Subtotal da categoria (só despesa)
-      yPos += 2;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-      doc.text(`R$ ${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
-      
-      yPos += 8;
-    });
-
-    // ========================================
-    // RECEITAS POR CATEGORIA
-    // ========================================
-    const receitasPorCategoria = {};
-    let totalReceitas = 0;
-
-    lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita')
-      .forEach(lanc => {
-        const categoria = lanc.categorias_financeiras?.nome || 'Sem Categoria';
-        
-        if (!receitasPorCategoria[categoria]) {
-          receitasPorCategoria[categoria] = [];
-        }
-        
-        receitasPorCategoria[categoria].push(lanc);
-        totalReceitas += parseFloat(lanc.valor);
-      });
-
-    // Verificar quebra de página
-    if (yPos > 240) {
-      doc.addPage();
-      yPos = 20;
-    }
-
-    // Título Receitas
-    doc.setFillColor(33, 150, 243); // Azul
-    doc.rect(10, yPos, 190, 8, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Receita', 105, yPos + 5.5, { align: 'center' });
-    
-    yPos += 12;
-    doc.setTextColor(0, 0, 0);
-
-    // Processar cada categoria de receita
-    const receitasOrdenadas = Object.keys(receitasPorCategoria).sort();
-    
-    receitasOrdenadas.forEach(categoria => {
-      const lancamentosCategoria = receitasPorCategoria[categoria];
-      const subtotal = lancamentosCategoria.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      // Verificar quebra de página
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      // Nome da Categoria
-      doc.setFillColor(173, 216, 230);
-      doc.rect(10, yPos, 190, 6, 'F');
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text(categoria, 12, yPos + 4);
-      yPos += 8;
-
-      // Cabeçalho da tabela
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DataLanc', 10, yPos);
-      doc.text('Interessado', 32, yPos);
-      doc.text('Descrição', 80, yPos);
-      doc.text('Obs', 140, yPos);
-      doc.text('Receita', 200, yPos, { align: 'right' });
-      yPos += 4;
-
-      // AGRUPAR "Mensalidade" - TODOS OS IRMÃOS EM UMA LINHA
-      if (categoria === 'Mensalidade') {
-        doc.setFont('helvetica', 'normal');
-        
-        // Pega a data do último lançamento
-        const dataLanc = lancamentosCategoria.length > 0 ? 
-          formatarDataBR(lancamentosCategoria[lancamentosCategoria.length - 1].data_lancamento) : '';
-        
-        // Linha única com total
-        doc.text(dataLanc, 10, yPos);
-        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
-        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
-        doc.text('', 140, yPos);
-        doc.text(`R$${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
-        yPos += 4;
-        
-      } else {
-        // Lançamentos normais
-        doc.setFont('helvetica', 'normal');
-        lancamentosCategoria.forEach(lanc => {
+      // Subcategorias
+      catPrincipal.subcategorias.forEach(subcat => {
+        subcat.lancamentos.forEach(lanc => {
           if (yPos > 275) {
             doc.addPage();
             yPos = 20;
@@ -994,9 +927,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
           const dataLanc = formatarDataBR(lanc.data_lancamento);
           const interessado = lanc.origem_tipo === 'Loja' ? 
-            'Irmãos - Acacia Paranatinga nº 30' : 
+            (lanc.descricao.substring(0, 22)) : 
             (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-          const descricao = lanc.descricao?.substring(0, 28) || '';
+          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
           const obs = (lanc.observacoes || '').substring(0, 35);
           const valor = parseFloat(lanc.valor);
 
@@ -1008,13 +941,143 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           
           yPos += 4;
         });
+      });
+
+      // Subtotal da categoria principal
+      yPos += 2;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
+      doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+      
+      yPos += 8;
+    });
+
+    // ========================================
+    // RECEITAS HIERÁRQUICAS
+    // ========================================
+    const receitasHierarquia = organizarHierarquia('receita');
+    const totalReceitas = receitasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
+
+    if (yPos > 240) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Título Receitas
+    doc.setFillColor(33, 150, 243);
+    doc.rect(10, yPos, 190, 8, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Receita', 105, yPos + 5.5, { align: 'center' });
+    
+    yPos += 12;
+    doc.setTextColor(0, 0, 0);
+
+    // Para cada categoria principal de receitas
+    receitasHierarquia.forEach(catPrincipal => {
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
       }
 
-      // Subtotal (só receita)
+      // Nome da Categoria Principal
+      doc.setFillColor(173, 216, 230);
+      doc.rect(10, yPos, 190, 6, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(catPrincipal.principal.nome, 12, yPos + 4);
+      yPos += 8;
+
+      // AGRUPAR subcategoria "Mensalidade" em uma linha
+      const subcatMensalidade = catPrincipal.subcategorias.find(s => s.categoria.nome === 'Mensalidade');
+      
+      if (subcatMensalidade && subcatMensalidade.lancamentos.length > 0) {
+        const dataLanc = formatarDataBR(subcatMensalidade.lancamentos[subcatMensalidade.lancamentos.length - 1].data_lancamento);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DataLanc', 10, yPos);
+        doc.text('Interessado', 32, yPos);
+        doc.text('Descrição', 80, yPos);
+        doc.text('Obs', 140, yPos);
+        doc.text('Receita', 200, yPos, { align: 'right' });
+        yPos += 4;
+
+        doc.setFont('helvetica', 'normal');
+        doc.text(dataLanc, 10, yPos);
+        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
+        doc.text('', 140, yPos);
+        doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+        yPos += 4;
+        
+        // Remover Mensalidade para não mostrar depois
+        catPrincipal.subcategorias = catPrincipal.subcategorias.filter(s => s.categoria.nome !== 'Mensalidade');
+      } else if (catPrincipal.lancamentosDiretos.length > 0 || catPrincipal.subcategorias.length > 0) {
+        // Cabeçalho para outras categorias
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DataLanc', 10, yPos);
+        doc.text('Interessado', 32, yPos);
+        doc.text('Descrição', 80, yPos);
+        doc.text('Obs', 140, yPos);
+        doc.text('Receita', 200, yPos, { align: 'right' });
+        yPos += 4;
+      }
+
+      // Lançamentos diretos
+      doc.setFont('helvetica', 'normal');
+      catPrincipal.lancamentosDiretos.forEach(lanc => {
+        if (yPos > 275) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        const dataLanc = formatarDataBR(lanc.data_lancamento);
+        const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+        const obs = (lanc.observacoes || '').substring(0, 35);
+        const valor = parseFloat(lanc.valor);
+
+        doc.text(dataLanc, 10, yPos);
+        doc.text(interessado.substring(0, 22), 32, yPos);
+        doc.text(descricao, 80, yPos);
+        doc.text(obs, 140, yPos);
+        doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+        
+        yPos += 4;
+      });
+
+      // Outras subcategorias
+      catPrincipal.subcategorias.forEach(subcat => {
+        subcat.lancamentos.forEach(lanc => {
+          if (yPos > 275) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          const dataLanc = formatarDataBR(lanc.data_lancamento);
+          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+          const obs = (lanc.observacoes || '').substring(0, 35);
+          const valor = parseFloat(lanc.valor);
+
+          doc.text(dataLanc, 10, yPos);
+          doc.text(interessado.substring(0, 22), 32, yPos);
+          doc.text(descricao, 80, yPos);
+          doc.text(obs, 140, yPos);
+          doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+          
+          yPos += 4;
+        });
+      });
+
+      // Subtotal
       yPos += 2;
       doc.setFont('helvetica', 'bold');
       doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
-      doc.text(`R$ ${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
       
       yPos += 8;
     });
