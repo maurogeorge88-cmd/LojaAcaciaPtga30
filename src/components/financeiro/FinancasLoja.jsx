@@ -931,28 +931,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       // Subcategorias
       catPrincipal.subcategorias.forEach(subcat => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        // Nome da Subcategoria (indentada)
-        yPos += 2;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`  └─ ${subcat.categoria.nome}`, 12, yPos);
-        yPos += 4;
-
-        // Cabeçalho
-        doc.setFontSize(8);
-        doc.text('DataLanc', 10, yPos);
-        doc.text('Interessado', 32, yPos);
-        doc.text('Descrição', 80, yPos);
-        doc.text('Obs', 140, yPos);
-        doc.text('Despesa', 200, yPos, { align: 'right' });
-        yPos += 4;
-
-        // Lançamentos da subcategoria
+        // Lançamentos da subcategoria (direto, sem linha separada)
         doc.setFont('helvetica', 'normal');
         subcat.lancamentos.forEach(lanc => {
           if (yPos > 275) {
@@ -1078,27 +1057,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         });
       }
 
-      // Subcategorias
+      // Subcategorias (direto, sem linha separada)
       catPrincipal.subcategorias.forEach(subcat => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-
-        yPos += 2;
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.text(`  └─ ${subcat.categoria.nome}`, 12, yPos);
-        yPos += 4;
-
-        doc.setFontSize(8);
-        doc.text('DataLanc', 10, yPos);
-        doc.text('Interessado', 32, yPos);
-        doc.text('Descrição', 80, yPos);
-        doc.text('Obs', 140, yPos);
-        doc.text('Receita', 200, yPos, { align: 'right' });
-        yPos += 4;
-
         doc.setFont('helvetica', 'normal');
         subcat.lancamentos.forEach(lanc => {
           if (yPos > 275) {
@@ -1108,7 +1068,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
           const dataLanc = formatarDataBR(lanc.data_lancamento);
           const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-          const descricao = lanc.descricao?.substring(0, 28) || '';
+          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
           const obs = (lanc.observacoes || '').substring(0, 35);
           const valor = parseFloat(lanc.valor);
 
