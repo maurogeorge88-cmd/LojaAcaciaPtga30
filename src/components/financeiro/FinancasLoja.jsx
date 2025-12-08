@@ -1008,9 +1008,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text(catPrincipal.categoria.nome, 12, yPos + 4);
       yPos += 8;
 
-      // AGRUPAR SE FOR MENSALIDADE/AGAPE/PECULIO
-      if (catPrincipal.categoria.nome === 'Mensalidade/Agape/Peculio') {
-        console.log('✅ DETECTOU Mensalidade/Agape/Peculio!');
+      // AGRUPAR SE FOR MENSALIDADE/AGAPE/PECULIO OU CRÉDITO À LOJA (pagamentos dos irmãos)
+      const categoriasParaAgrupar = ['Crédito à Loja', 'Mensalidade/Agape/Peculio'];
+      
+      if (categoriasParaAgrupar.includes(catPrincipal.categoria.nome)) {
+        console.log('✅ DETECTOU categoria para agrupar:', catPrincipal.categoria.nome);
         
         // Buscar data do último lançamento (pode estar nas subcategorias)
         let ultimaData = null;
@@ -1086,8 +1088,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }
 
       // Subcategorias (direto, sem linha separada)
-      // NÃO mostrar individualmente se for Mensalidade/Agape/Peculio (já foi agrupado)
-      if (catPrincipal.categoria.nome !== 'Mensalidade/Agape/Peculio') {
+      // NÃO mostrar individualmente se for Crédito à Loja ou Mensalidade/Agape/Peculio (já foram agrupados)
+      const categoriasAgrupadas = ['Crédito à Loja', 'Mensalidade/Agape/Peculio'];
+      if (!categoriasAgrupadas.includes(catPrincipal.categoria.nome)) {
         catPrincipal.subcategorias.forEach(subcat => {
           doc.setFont('helvetica', 'normal');
           subcat.lancamentos.forEach(lanc => {
