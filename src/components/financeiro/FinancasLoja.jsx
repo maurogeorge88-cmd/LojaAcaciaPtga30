@@ -2266,10 +2266,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos Inadimplentes</h3>
-              <p className="text-sm text-gray-600">Receitas pendentes de pagamento</p>
+              <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos com Pendências Financeiras</h3>
+              <p className="text-sm text-gray-600">Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
             </div>
-            {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
+            {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length > 0 && (
               <button
                 onClick={() => setMostrarModalQuitacaoLote(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
@@ -2279,16 +2279,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             )}
           </div>
           
-          {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length === 0 ? (
+          {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              ✅ Nenhum irmão inadimplente neste período!
+              ✅ Nenhuma pendência financeira com irmãos neste período!
             </div>
           ) : (
             <div className="space-y-4">
               {(() => {
-                // Agrupar lançamentos por irmão
+                // Agrupar lançamentos por irmão (incluindo receitas E despesas)
                 const lancamentosPorIrmao = lancamentos
-                  .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
+                  .filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao')
                   .reduce((acc, lanc) => {
                     const irmaoId = lanc.origem_irmao_id || 'sem_irmao';
                     const irmaoNome = lanc.irmaos?.nome || lanc.descricao || 'Não identificado';
@@ -2310,94 +2310,149 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   .sort((a, b) => a.irmaoNome.localeCompare(b.irmaoNome));
 
                 return irmaosComLancamentos.map((irmaoData) => {
-                  const totalDevido = irmaoData.lancamentos.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+                  // Calcular totais separados
+                  const receitas = irmaoData.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita');
+                  const despesas = irmaoData.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+                  
+                  const totalReceitas = receitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+                  const totalDespesas = despesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+                  const saldoLiquido = totalReceitas - totalDespesas;
+                  
                   const quantidadeLancamentos = irmaoData.lancamentos.length;
+                  
+                  // Definir cor do cabeçalho baseado no saldo
+                  const corCabecalho = saldoLiquido > 0 ? 'bg-red-600' : saldoLiquido < 0 ? 'bg-blue-600' : 'bg-gray-600';
 
                   return (
-                    <div key={irmaoData.irmaoId} className="border-2 border-red-300 rounded-lg overflow-hidden bg-white shadow-md">
+                    <div key={irmaoData.irmaoId} className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
                       {/* CABEÇALHO DO IRMÃO */}
-                      <div className="bg-red-600 text-white p-4">
+                      <div className={`${corCabecalho} text-white p-4`}>
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
                             <h4 className="text-xl font-bold flex items-center gap-2">
                               👤 {irmaoData.irmaoNome}
                             </h4>
-                            <p className="text-red-100 text-sm mt-1">
+                            <p className="text-white text-opacity-90 text-sm mt-1">
                               {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-red-100">Total devido:</p>
-                            <p className="text-3xl font-bold">R$ {totalDevido.toFixed(2)}</p>
+                            {totalReceitas > 0 && (
+                              <div className="mb-1">
+                                <p className="text-xs text-white text-opacity-80">Irmão deve:</p>
+                                <p className="text-xl font-bold">R$ {totalReceitas.toFixed(2)}</p>
+                              </div>
+                            )}
+                            {totalDespesas > 0 && (
+                              <div className="mb-1">
+                                <p className="text-xs text-white text-opacity-80">Loja deve:</p>
+                                <p className="text-xl font-bold">R$ {totalDespesas.toFixed(2)}</p>
+                              </div>
+                            )}
+                            {totalReceitas > 0 && totalDespesas > 0 && (
+                              <div className="mt-2 pt-2 border-t border-white border-opacity-30">
+                                <p className="text-xs text-white text-opacity-80">Saldo:</p>
+                                <p className="text-2xl font-bold">
+                                  R$ {Math.abs(saldoLiquido).toFixed(2)}
+                                </p>
+                                <p className="text-xs">
+                                  {saldoLiquido > 0 ? '(Irmão deve)' : saldoLiquido < 0 ? '(Loja deve)' : '(Quitado)'}
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
 
                       {/* LISTA DE LANÇAMENTOS DO IRMÃO */}
                       <div className="divide-y divide-gray-200">
-                        {irmaoData.lancamentos.map((lanc, index) => (
-                          <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                {/* Badges de Categoria */}
-                                <div className="flex gap-2 mb-2">
-                                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
-                                    📈 Receita
-                                  </span>
-                                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                    {lanc.categorias_financeiras?.nome}
-                                  </span>
-                                  {lanc.eh_parcelado && (
-                                    <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
-                                      📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
+                        {irmaoData.lancamentos.map((lanc, index) => {
+                          const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                          
+                          return (
+                            <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  {/* Badges de Categoria */}
+                                  <div className="flex gap-2 mb-2">
+                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                      ehReceita ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
+                                      {ehReceita ? '📈 Receita' : '📉 Despesa'}
                                     </span>
-                                  )}
-                                  {lanc.eh_mensalidade && (
-                                    <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
-                                      📅 Mensalidade
+                                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                      {lanc.categorias_financeiras?.nome}
                                     </span>
-                                  )}
-                                </div>
-                                
-                                {/* Descrição */}
-                                <p className="font-medium text-gray-900 mb-1">{lanc.descricao}</p>
-                                
-                                {/* Informações detalhadas */}
-                                <div className="text-sm text-gray-600 space-y-1">
-                                  <p>
-                                    <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_lancamento)}
-                                  </p>
-                                  <p>
-                                    <span className="text-red-600 font-medium">⏰ Vencimento:</span> {formatarDataBR(lanc.data_vencimento)}
-                                  </p>
-                                  {lanc.observacoes && (
-                                    <p className="text-gray-500 italic">
-                                      💬 {lanc.observacoes}
+                                    {lanc.eh_parcelado && (
+                                      <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                                        📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
+                                      </span>
+                                    )}
+                                    {lanc.eh_mensalidade && (
+                                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                                        📅 Mensalidade
+                                      </span>
+                                    )}
+                                  </div>
+                                  
+                                  {/* Descrição */}
+                                  <p className="font-medium text-gray-900 mb-1">{lanc.descricao}</p>
+                                  
+                                  {/* Informações detalhadas - DATAS NA MESMA LINHA */}
+                                  <div className="text-sm text-gray-600">
+                                    <p className="mb-1">
+                                      <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_lancamento)}
+                                      <span className="mx-2">•</span>
+                                      <span className={`font-medium ${ehReceita ? 'text-red-600' : 'text-blue-600'}`}>
+                                        ⏰ Vencimento:
+                                      </span> {formatarDataBR(lanc.data_vencimento)}
                                     </p>
-                                  )}
+                                    {lanc.observacoes && (
+                                      <p className="text-gray-500 italic">
+                                        💬 {lanc.observacoes}
+                                      </p>
+                                    )}
+                                  </div>
                                 </div>
-                              </div>
-                              
-                              <div className="text-right ml-4">
-                                <p className="text-2xl font-bold text-red-600 mb-3">
-                                  R$ {parseFloat(lanc.valor).toFixed(2)}
-                                </p>
-                                <button
-                                  onClick={() => abrirModalQuitacao(lanc)}
-                                  className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium transition-colors"
-                                >
-                                  💰 Quitar
-                                </button>
+                                
+                                <div className="text-right ml-4">
+                                  <p className={`text-2xl font-bold mb-3 ${
+                                    ehReceita ? 'text-red-600' : 'text-blue-600'
+                                  }`}>
+                                    R$ {parseFloat(lanc.valor).toFixed(2)}
+                                  </p>
+                                  <button
+                                    onClick={() => abrirModalQuitacao(lanc)}
+                                    className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium transition-colors"
+                                  >
+                                    💰 Quitar
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {/* RODAPÉ COM AÇÕES GERAIS DO IRMÃO */}
                       <div className="bg-gray-50 p-4 border-t border-gray-200">
                         <div className="flex justify-end gap-2">
                           <button
+                            onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                          >
+                            📄 Gerar PDF Individual
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          )}
+        </div>
+      )}
                             onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
                             className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors"
                           >
