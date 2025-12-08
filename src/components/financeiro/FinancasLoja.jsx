@@ -2284,54 +2284,131 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               ✅ Nenhum irmão inadimplente neste período!
             </div>
           ) : (
-            <div className="space-y-3">
-              {lancamentos
-                .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
-                .map((lanc) => (
-                  <div key={lanc.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
-                    <div className="flex justify-between items-center">
-                      <div className="flex-1">
-                        {/* Nome do Irmão */}
-                        <p className="font-bold text-lg text-gray-900">
-                          👤 {lanc.irmaos?.nome || lanc.descricao}
-                        </p>
-                        {/* Tipo e Categoria */}
-                        <div className="flex gap-2 mt-2">
-                          <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
-                            📈 Receita
-                          </span>
-                          <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                            {lanc.categorias_financeiras?.nome}
-                          </span>
-                        </div>
-                        {/* Descrição e Vencimento */}
-                        <div className="text-sm text-gray-600 mt-2">
-                          <p className="font-medium">{lanc.descricao}</p>
-                          <p className="mt-1">
-                            <span className="text-red-600 font-medium">⏰ Vencimento:</span> {formatarDataBR(lanc.data_vencimento)}
-                          </p>
+            <div className="space-y-4">
+              {(() => {
+                // Agrupar lançamentos por irmão
+                const lancamentosPorIrmao = lancamentos
+                  .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
+                  .reduce((acc, lanc) => {
+                    const irmaoId = lanc.origem_irmao_id || 'sem_irmao';
+                    const irmaoNome = lanc.irmaos?.nome || lanc.descricao || 'Não identificado';
+                    
+                    if (!acc[irmaoId]) {
+                      acc[irmaoId] = {
+                        irmaoId,
+                        irmaoNome,
+                        lancamentos: []
+                      };
+                    }
+                    
+                    acc[irmaoId].lancamentos.push(lanc);
+                    return acc;
+                  }, {});
+
+                // Converter para array e ordenar por nome
+                const irmaosComLancamentos = Object.values(lancamentosPorIrmao)
+                  .sort((a, b) => a.irmaoNome.localeCompare(b.irmaoNome));
+
+                return irmaosComLancamentos.map((irmaoData) => {
+                  const totalDevido = irmaoData.lancamentos.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+                  const quantidadeLancamentos = irmaoData.lancamentos.length;
+
+                  return (
+                    <div key={irmaoData.irmaoId} className="border-2 border-red-300 rounded-lg overflow-hidden bg-white shadow-md">
+                      {/* CABEÇALHO DO IRMÃO */}
+                      <div className="bg-red-600 text-white p-4">
+                        <div className="flex justify-between items-center">
+                          <div className="flex-1">
+                            <h4 className="text-xl font-bold flex items-center gap-2">
+                              👤 {irmaoData.irmaoNome}
+                            </h4>
+                            <p className="text-red-100 text-sm mt-1">
+                              {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-red-100">Total devido:</p>
+                            <p className="text-3xl font-bold">R$ {totalDevido.toFixed(2)}</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right ml-4">
-                        <p className="text-2xl font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
-                        <div className="flex gap-2 mt-2 justify-end">
+
+                      {/* LISTA DE LANÇAMENTOS DO IRMÃO */}
+                      <div className="divide-y divide-gray-200">
+                        {irmaoData.lancamentos.map((lanc, index) => (
+                          <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                {/* Badges de Categoria */}
+                                <div className="flex gap-2 mb-2">
+                                  <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
+                                    📈 Receita
+                                  </span>
+                                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                                    {lanc.categorias_financeiras?.nome}
+                                  </span>
+                                  {lanc.eh_parcelado && (
+                                    <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                                      📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
+                                    </span>
+                                  )}
+                                  {lanc.eh_mensalidade && (
+                                    <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                                      📅 Mensalidade
+                                    </span>
+                                  )}
+                                </div>
+                                
+                                {/* Descrição */}
+                                <p className="font-medium text-gray-900 mb-1">{lanc.descricao}</p>
+                                
+                                {/* Informações detalhadas */}
+                                <div className="text-sm text-gray-600 space-y-1">
+                                  <p>
+                                    <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_lancamento)}
+                                  </p>
+                                  <p>
+                                    <span className="text-red-600 font-medium">⏰ Vencimento:</span> {formatarDataBR(lanc.data_vencimento)}
+                                  </p>
+                                  {lanc.observacoes && (
+                                    <p className="text-gray-500 italic">
+                                      💬 {lanc.observacoes}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              <div className="text-right ml-4">
+                                <p className="text-2xl font-bold text-red-600 mb-3">
+                                  R$ {parseFloat(lanc.valor).toFixed(2)}
+                                </p>
+                                <button
+                                  onClick={() => abrirModalQuitacao(lanc)}
+                                  className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium transition-colors"
+                                >
+                                  💰 Quitar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* RODAPÉ COM AÇÕES GERAIS DO IRMÃO */}
+                      <div className="bg-gray-50 p-4 border-t border-gray-200">
+                        <div className="flex justify-end gap-2">
                           <button
-                            onClick={() => gerarRelatorioIndividual(lanc.origem_irmao_id)}
-                            className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium"
+                            onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
+                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors"
                           >
-                            📄 PDF
-                          </button>
-                          <button
-                            onClick={() => abrirModalQuitacao(lanc)}
-                            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
-                          >
-                            💰 Quitar
+                            📄 Gerar PDF Individual
                           </button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                });
+              })()}
             </div>
           )}
         </div>
