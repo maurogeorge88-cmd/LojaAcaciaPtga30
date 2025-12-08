@@ -1133,6 +1133,324 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     doc.save(`Rel_Fechamento_-_${filtros.mes}_${filtros.ano}.pdf`);
   };
+  // ========================================
+  // 📊 RELATÓRIO INDIVIDUAL - DESPESAS PENDENTES POR IRMÃO
+  // ========================================
+  const gerarRelatorioIndividual = async (irmaoId) => {
+    try {
+      // Buscar dados do irmão
+      const { data: irmaoData, error: irmaoError } = await supabase
+        .from('irmaos')
+        .select('nome, cpf, cim')
+        .eq('id', irmaoId)
+        .single();
+
+      if (irmaoError) throw irmaoError;
+
+      // Buscar lançamentos PENDENTES do irmão
+      const { data: lancsData, error: lancsError } = await supabase
+        .from('lancamentos_loja')
+        .select(`
+          *,
+          categorias_financeiras(nome, tipo)
+        `)
+        .eq('origem_irmao_id', irmaoId)
+        .eq('status', 'pendente')
+        .order('data_vencimento');
+
+      if (lancsError) throw lancsError;
+
+      if (!lancsData || lancsData.length === 0) {
+        showError('Este irmão não possui lançamentos pendentes!');
+        return;
+      }
+
+      // Organizar por mês/ano
+      const lancsPorMes = {};
+      lancsData.forEach(lanc => {
+        const data = new Date(lanc.data_vencimento + 'T00:00:00');
+        const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
+        const mesNome = meses[data.getMonth()];
+        
+        if (!lancsPorMes[mesAno]) {
+          lancsPorMes[mesAno] = {
+            mesNome,
+            mes: data.getMonth() + 1,
+            ano: data.getFullYear(),
+            lancamentos: []
+          };
+        }
+        
+        lancsPorMes[mesAno].lancamentos.push(lanc);
+      });
+
+      // Criar PDF
+      const doc = new jsPDF();
+      let yPos = 20;
+
+      // Logo/Cabeçalho
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório de Despesas Pendentes', 105, yPos, { align: 'center' });
+      yPos += 6;
+
+      doc.setFontSize(11);
+      doc.text('Grande Loja do Estado de Mato Grosso - GLEMT', 105, yPos, { align: 'center' });
+      yPos += 5;
+      doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
+      yPos += 10;
+
+      // Dados do Irmão
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Nome', 15, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text(irmaoData.nome, 35, yPos);
+      yPos += 5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.text('CPF', 15, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text(irmaoData.cpf || 'Não informado', 35, yPos);
+      yPos += 5;
+
+      doc.setFont('helvetica', 'normal');
+      doc.text('CIM', 15, yPos);
+      doc.setFont('helvetica', 'bold');
+      doc.text(irmaoData.cim || 'Não informado', 35, yPos);
+      yPos += 10;
+
+      // Totalizadores
+      let totalGeralDespesas = 0;
+      let totalGeralReceitas = 0;
+
+      // Para cada mês
+      const mesesOrdenados = Object.keys(lancsPorMes).sort((a, b) => {
+        const [mesA, anoA] = a.split('/').map(Number);
+        const [mesB, anoB] = b.split('/').map(Number);
+        return anoA !== anoB ? anoA - anoB : mesA - mesB;
+      });
+
+      mesesOrdenados.forEach(mesAno => {
+        const mesInfo = lancsPorMes[mesAno];
+        
+        // Verificar quebra de página
+        if (yPos > 240) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        // Título do Mês
+        doc.setFillColor(173, 216, 230);
+        doc.rect(15, yPos, 180, 7, 'F');
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.text(mesInfo.mesNome, 17, yPos + 5);
+        yPos += 9;
+
+        // Cabeçalho da tabela
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DtLanc', 15, yPos);
+        doc.text('Descrição', 40, yPos);
+        doc.text('Despesa', 130, yPos, { align: 'right' });
+        doc.text('Receita', 160, yPos, { align: 'right' });
+        doc.text('Saldo', 190, yPos, { align: 'right' });
+        yPos += 4;
+
+        // Lançamentos do mês
+        let subtotalDespesas = 0;
+        let subtotalReceitas = 0;
+
+        doc.setFont('helvetica', 'normal');
+        mesInfo.lancamentos.forEach(lanc => {
+          if (yPos > 275) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          const dataLanc = formatarDataBR(lanc.data_vencimento);
+          const descricao = lanc.descricao?.substring(0, 40) || '';
+          const valor = parseFloat(lanc.valor);
+          const tipo = lanc.categorias_financeiras?.tipo;
+
+          let valorDespesa = 0;
+          let valorReceita = 0;
+          let saldo = 0;
+
+          if (tipo === 'despesa') {
+            valorDespesa = valor;
+            saldo = valor;
+            subtotalDespesas += valor;
+            totalGeralDespesas += valor;
+          } else {
+            valorReceita = valor;
+            saldo = valor;
+            subtotalReceitas += valor;
+            totalGeralReceitas += valor;
+          }
+
+          doc.text(dataLanc, 15, yPos);
+          doc.text(descricao, 40, yPos);
+          doc.text(valorDespesa > 0 ? `R$ ${valorDespesa.toFixed(2)}` : '', 130, yPos, { align: 'right' });
+          doc.text(valorReceita > 0 ? `R$ ${valorReceita.toFixed(2)}` : '', 160, yPos, { align: 'right' });
+          
+          // Saldo em vermelho
+          doc.setTextColor(255, 0, 0);
+          doc.text(`R$ ${saldo.toFixed(2)}`, 190, yPos, { align: 'right' });
+          doc.setTextColor(0, 0, 0);
+          
+          yPos += 4;
+        });
+
+        // Subtotal do mês
+        yPos += 2;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Sub Total', 110, yPos, { align: 'right' });
+        doc.setTextColor(255, 0, 0);
+        doc.text(`R$ ${(subtotalDespesas + subtotalReceitas).toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        yPos += 8;
+      });
+
+      // Dados Bancários
+      if (yPos > 220) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFillColor(240, 240, 240);
+      doc.rect(15, yPos, 80, 30, 'F');
+      yPos += 5;
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Dados Bancários', 55, yPos, { align: 'center' });
+      yPos += 5;
+
+      doc.setFontSize(8);
+      doc.setTextColor(0, 100, 180);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Cooperativa de Crédito Sicredi', 55, yPos, { align: 'center' });
+      yPos += 4;
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Ag.: 0802 - C.C.: 86.913-9', 55, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text('PIX.: 03.250.704/0001-00', 55, yPos, { align: 'center' });
+
+      // Total Geral (lado direito)
+      yPos -= 13;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total Despesa', 150, yPos, { align: 'right' });
+      doc.setTextColor(255, 0, 0);
+      doc.text(`R$ ${totalGeralDespesas.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      yPos += 5;
+
+      doc.text('Total Receita', 150, yPos, { align: 'right' });
+      doc.text(`R$ ${totalGeralReceitas.toFixed(2)}`, 190, yPos, { align: 'right' });
+      yPos += 5;
+
+      doc.text('Saldo', 150, yPos, { align: 'right' });
+      doc.setTextColor(255, 0, 0);
+      const saldoFinal = totalGeralDespesas + totalGeralReceitas;
+      doc.text(`R$ ${saldoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
+
+      // Rodapé da segunda página
+      if (doc.internal.getNumberOfPages() > 1) {
+        doc.setPage(2);
+      } else {
+        doc.addPage();
+      }
+      
+      yPos = 80;
+      doc.setTextColor(0, 0, 0);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Tesouraria - Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
+      yPos += 5;
+      doc.text('Mauro George', 105, yPos, { align: 'center' });
+      yPos += 8;
+
+      doc.setFontSize(9);
+      doc.setTextColor(0, 100, 180);
+      doc.setFont('helvetica', 'italic');
+      doc.text('"Irmãos, o cumprimento de nossas obrigações financeiras é um ato de honra', 105, yPos, { align: 'center' });
+      yPos += 5;
+      doc.text('e compromisso com a nossa Loja, bem como com os ideais que nos unem."', 105, yPos, { align: 'center' });
+
+      // Rodapé com data
+      const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      
+      for (let i = 1; i <= doc.internal.getNumberOfPages(); i++) {
+        doc.setPage(i);
+        doc.setTextColor(128, 128, 128);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(dataGeracao, 15, 285);
+        doc.text(`Página ${i} de ${doc.internal.getNumberOfPages()}`, 190, 285, { align: 'right' });
+      }
+
+      doc.save(`Relatorio_Pendencias_${irmaoData.nome.replace(/\s/g, '_')}.pdf`);
+      showSuccess('Relatório individual gerado com sucesso!');
+
+    } catch (error) {
+      console.error('Erro ao gerar relatório individual:', error);
+      showError('Erro ao gerar relatório: ' + error.message);
+    }
+  };
+
+  // ========================================
+  // 🔄 GERAR RELATÓRIOS PARA TODOS OS IRMÃOS COM PENDÊNCIAS
+  // ========================================
+  const gerarRelatoriosEmLote = async () => {
+    try {
+      if (!window.confirm('Deseja gerar relatórios individuais para TODOS os irmãos com pendências? Isso pode demorar alguns segundos.')) {
+        return;
+      }
+
+      // Buscar irmãos com lançamentos pendentes
+      const { data: irmaosPendentes, error } = await supabase
+        .from('lancamentos_loja')
+        .select('origem_irmao_id, irmaos(nome)')
+        .eq('origem_tipo', 'Irmao')
+        .eq('status', 'pendente')
+        .not('origem_irmao_id', 'is', null);
+
+      if (error) throw error;
+
+      // Irmãos únicos
+      const irmaoIds = [...new Set(irmaosPendentes.map(l => l.origem_irmao_id))];
+      
+      if (irmaoIds.length === 0) {
+        showError('Nenhum irmão com pendências encontrado!');
+        return;
+      }
+
+      showSuccess(`Gerando ${irmaoIds.length} relatórios... Aguarde!`);
+
+      // Gerar relatório para cada irmão
+      for (const irmaoId of irmaoIds) {
+        await gerarRelatorioIndividual(irmaoId);
+        // Pequeno delay entre relatórios
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      showSuccess(`${irmaoIds.length} relatórios gerados com sucesso!`);
+
+    } catch (error) {
+      console.error('Erro ao gerar relatórios em lote:', error);
+      showError('Erro ao gerar relatórios: ' + error.message);
+    }
+  };
 
   const resumo = calcularResumo();
 
@@ -1997,14 +2315,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos Inadimplentes</h3>
               <p className="text-sm text-gray-600">Receitas pendentes de pagamento</p>
             </div>
-            {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
-              <button
-                onClick={() => setMostrarModalQuitacaoLote(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-              >
-                💰 Quitar em Lote
-              </button>
-            )}
+            <div className="flex gap-2">
+              {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length > 0 && (
+                <>
+                  <button
+                    onClick={gerarRelatoriosEmLote}
+                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium"
+                  >
+                    📧 PDFs (Todos)
+                  </button>
+                  <button
+                    onClick={() => setMostrarModalQuitacaoLote(true)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  >
+                    💰 Quitar em Lote
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           
           {lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente').length === 0 ? (
@@ -2042,12 +2370,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       </div>
                       <div className="text-right ml-4">
                         <p className="text-2xl font-bold text-red-600">R$ {parseFloat(lanc.valor).toFixed(2)}</p>
-                        <button
-                          onClick={() => abrirModalQuitacao(lanc)}
-                          className="mt-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
-                        >
-                          💰 Quitar
-                        </button>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            onClick={() => gerarRelatorioIndividual(lanc.origem_irmao_id)}
+                            className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium"
+                            title="Gerar PDF Individual"
+                          >
+                            📄 PDF
+                          </button>
+                          <button
+                            onClick={() => abrirModalQuitacao(lanc)}
+                            className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium"
+                          >
+                            💰 Quitar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
