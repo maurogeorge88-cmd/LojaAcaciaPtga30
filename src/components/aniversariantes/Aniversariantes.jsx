@@ -12,7 +12,7 @@ export default function Aniversariantes() {
     carregarAniversariantes();
   }, [filtro]);
 
-  const gerarRelatorioPDF = () => {
+  const gerarRelatorioPDF = async () => {
     const doc = new jsPDF();
     const hoje = new Date();
     
@@ -57,49 +57,131 @@ export default function Aniversariantes() {
       doc.setTextColor(150);
       doc.text('Nenhum aniversariante encontrado neste período.', 105, 60, { align: 'center' });
     } else {
+      // Buscar dados adicionais para irmãos (pais e filhos falecidos)
+      const irmaosIds = aniversariantes
+        .filter(a => a.tipo === 'Irmão' && a.irmao_id)
+        .map(a => a.irmao_id);
+      
+      let paisFalecidosMap = {};
+      let filhosFalecidosMap = {};
+      
+      if (irmaosIds.length > 0) {
+        // Buscar pais falecidos
+        const { data: paisFalecidos } = await supabase
+          .from('pais')
+          .select('irmao_id, nome, data_falecimento')
+          .in('irmao_id', irmaosIds)
+          .eq('falecido', true);
+        
+        if (paisFalecidos) {
+          paisFalecidos.forEach(pai => {
+            if (!paisFalecidosMap[pai.irmao_id]) {
+              paisFalecidosMap[pai.irmao_id] = [];
+            }
+            paisFalecidosMap[pai.irmao_id].push({
+              nome: pai.nome,
+              data: pai.data_falecimento
+            });
+          });
+        }
+        
+        // Buscar filhos falecidos
+        const { data: filhosFalecidos } = await supabase
+          .from('filhos')
+          .select('irmao_id, nome, data_falecimento')
+          .in('irmao_id', irmaosIds)
+          .eq('falecido', true);
+        
+        if (filhosFalecidos) {
+          filhosFalecidos.forEach(filho => {
+            if (!filhosFalecidosMap[filho.irmao_id]) {
+              filhosFalecidosMap[filho.irmao_id] = [];
+            }
+            filhosFalecidosMap[filho.irmao_id].push({
+              nome: filho.nome,
+              data: filho.data_falecimento
+            });
+          });
+        }
+      }
+      
       // Preparar dados para a tabela
       const tableData = aniversariantes.map(aniv => {
         const ehHoje = aniv.proximo_aniversario.toDateString() === hoje.toDateString();
-        return [
-          aniv.nome,
-          aniv.tipo,
-          `${aniv.idade} anos`,
-          aniv.proximo_aniversario.toLocaleDateString('pt-BR'),
-          aniv.cim || '-',
-          aniv.cargo || aniv.irmao_responsavel || '-',
-          ehHoje ? '🎉 HOJE' : ''
-        ];
+        const dataNascFormatada = aniv.data_nascimento.toLocaleDateString('pt-BR');
+        
+        if (aniv.tipo === 'Irmão') {
+          // Para IRMÃOS: Nome, Tipo, Idade, Dt Nascimento, Se Pais Falecidos, Filhos Falecidos com Data
+          const paisFalecidos = paisFalecidosMap[aniv.irmao_id] || [];
+          const filhosFalecidos = filhosFalecidosMap[aniv.irmao_id] || [];
+          
+          let paisTexto = '';
+          if (paisFalecidos.length > 0) {
+            paisTexto = paisFalecidos.map(p => 
+              `${p.nome}${p.data ? ' (' + new Date(p.data + 'T00:00:00').toLocaleDateString('pt-BR') + ')' : ''}`
+            ).join(', ');
+          }
+          
+          let filhosTexto = '';
+          if (filhosFalecidos.length > 0) {
+            filhosTexto = filhosFalecidos.map(f => 
+              `${f.nome}${f.data ? ' (' + new Date(f.data + 'T00:00:00').toLocaleDateString('pt-BR') + ')' : ''}`
+            ).join(', ');
+          }
+          
+          return [
+            aniv.nome,
+            aniv.tipo,
+            `${aniv.idade} anos`,
+            dataNascFormatada,
+            paisTexto || '-',
+            filhosTexto || '-',
+            ehHoje ? '🎉' : ''
+          ];
+        } else {
+          // Para PAIS, FILHOS, ESPOSA: Nome, Tipo, Idade, Dt Nascimento, Nome do Irmão
+          return [
+            aniv.nome,
+            aniv.tipo,
+            `${aniv.idade} anos`,
+            dataNascFormatada,
+            aniv.irmao_responsavel || '-',
+            '',
+            ehHoje ? '🎉' : ''
+          ];
+        }
       });
       
       doc.autoTable({
         startY: 48,
-        head: [['Nome', 'Tipo', 'Idade', 'Data', 'CIM', 'Info', 'Status']],
+        head: [['Nome', 'Tipo', 'Idade', 'Dt Nasc.', 'Pais Falec./Irmão', 'Filhos Falec.', '']],
         body: tableData,
         styles: {
-          fontSize: 9,
-          cellPadding: 3,
+          fontSize: 8,
+          cellPadding: 2,
         },
         headStyles: {
           fillColor: [41, 128, 185],
           textColor: 255,
           fontStyle: 'bold',
-          halign: 'center'
+          halign: 'center',
+          fontSize: 8
         },
         columnStyles: {
-          0: { cellWidth: 45 }, // Nome
-          1: { cellWidth: 22, halign: 'center' }, // Tipo
-          2: { cellWidth: 20, halign: 'center' }, // Idade
-          3: { cellWidth: 25, halign: 'center' }, // Data
-          4: { cellWidth: 20, halign: 'center' }, // CIM
-          5: { cellWidth: 35 }, // Info
-          6: { cellWidth: 18, halign: 'center', fontStyle: 'bold' } // Status
+          0: { cellWidth: 40 }, // Nome
+          1: { cellWidth: 20, halign: 'center' }, // Tipo
+          2: { cellWidth: 18, halign: 'center' }, // Idade
+          3: { cellWidth: 22, halign: 'center' }, // Dt Nascimento
+          4: { cellWidth: 42, fontSize: 7 }, // Pais Falecidos ou Irmão
+          5: { cellWidth: 42, fontSize: 7 }, // Filhos Falecidos
+          6: { cellWidth: 10, halign: 'center', fontStyle: 'bold' } // Status
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245]
         },
         didParseCell: function(data) {
           // Destacar linhas de aniversariantes de hoje
-          if (data.row.index >= 0 && data.column.index === 6 && data.cell.raw === '🎉 HOJE') {
+          if (data.row.index >= 0 && data.column.index === 6 && data.cell.raw === '🎉') {
             data.row.cells.forEach(cell => {
               cell.styles.fillColor = [255, 243, 205]; // Amarelo claro
               cell.styles.fontStyle = 'bold';
@@ -120,6 +202,7 @@ export default function Aniversariantes() {
       doc.setFontSize(9);
       
       const totalIrmaos = aniversariantes.filter(a => a.tipo === 'Irmão').length;
+      const totalPais = aniversariantes.filter(a => a.tipo === 'Pai/Mãe').length;
       const totalEsposas = aniversariantes.filter(a => a.tipo === 'Esposa').length;
       const totalFilhos = aniversariantes.filter(a => a.tipo === 'Filho(a)').length;
       const totalHoje = aniversariantes.filter(a => 
@@ -128,10 +211,11 @@ export default function Aniversariantes() {
       
       doc.text(`• Total de Aniversariantes: ${aniversariantes.length}`, 15, finalY + 6);
       doc.text(`• Irmãos: ${totalIrmaos}`, 15, finalY + 11);
-      doc.text(`• Esposas: ${totalEsposas}`, 15, finalY + 16);
-      doc.text(`• Filhos: ${totalFilhos}`, 15, finalY + 21);
+      doc.text(`• Pais: ${totalPais}`, 15, finalY + 16);
+      doc.text(`• Esposas: ${totalEsposas}`, 15, finalY + 21);
+      doc.text(`• Filhos: ${totalFilhos}`, 15, finalY + 26);
       if (filtro !== 'hoje') {
-        doc.text(`• Aniversariantes de Hoje: ${totalHoje}`, 15, finalY + 26);
+        doc.text(`• Aniversariantes de Hoje: ${totalHoje}`, 15, finalY + 31);
       }
     }
     
@@ -153,10 +237,11 @@ export default function Aniversariantes() {
 
       console.log('🎂 Iniciando busca de aniversariantes...');
 
-      // ===== IRMÃOS =====
+      // ===== IRMÃOS (excluir falecidos) =====
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, cargo, foto_url');
+        .select('id, cim, nome, data_nascimento, cargo, foto_url, status')
+        .neq('status', 'Falecido'); // Excluir irmãos falecidos
 
       console.log('✅ Irmãos:', irmaos?.length);
 
@@ -188,23 +273,77 @@ export default function Aniversariantes() {
               nome: irmao.nome,
               cim: irmao.cim,
               proximo_aniversario: proximoAniv,
+              data_nascimento: dataNasc,
               idade,
               cargo: irmao.cargo,
-              foto_url: irmao.foto_url
+              foto_url: irmao.foto_url,
+              irmao_id: irmao.id
             });
           }
         });
       }
 
-      // ===== ESPOSAS =====
+      // IDs dos irmãos vivos (para filtrar familiares)
+      const irmaoVivosIds = irmaos?.map(i => i.id) || [];
+
+      // ===== PAIS (apenas de irmãos vivos) =====
+      const { data: pais } = await supabase
+        .from('pais')
+        .select('nome, data_nascimento, falecido, data_falecimento, irmao_id, irmaos(nome, status)')
+        .in('irmao_id', irmaoVivosIds)
+        .neq('falecido', true); // Excluir pais falecidos
+
+      console.log('✅ Pais:', pais?.length);
+
+      if (pais) {
+        pais.forEach(pai => {
+          // Verificar se o irmão responsável ainda está vivo
+          if (pai.irmaos?.status === 'Falecido') return;
+          if (!pai.data_nascimento) return;
+
+          const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
+          const proximoAniv = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+          
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniv < hojeZerado) {
+            proximoAniv.setFullYear(hoje.getFullYear() + 1);
+          }
+
+          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
+                        proximoAniv.getMonth() === hoje.getMonth() &&
+                        proximoAniv.getFullYear() === hoje.getFullYear();
+
+          const deveMostrar = filtro === 'todos' || 
+            (filtro === 'hoje' && ehHoje) ||
+            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+
+          if (deveMostrar) {
+            const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            aniversariantesLista.push({
+              tipo: 'Pai/Mãe',
+              nome: pai.nome,
+              proximo_aniversario: proximoAniv,
+              data_nascimento: dataNasc,
+              idade,
+              irmao_responsavel: pai.irmaos?.nome
+            });
+          }
+        });
+      }
+
+      // ===== ESPOSAS (apenas de irmãos vivos) =====
       const { data: esposas } = await supabase
         .from('esposas')
-        .select('nome, data_nascimento, irmaos(nome)');
+        .select('nome, data_nascimento, irmao_id, irmaos(nome, status)')
+        .in('irmao_id', irmaoVivosIds);
 
       console.log('✅ Esposas:', esposas?.length);
 
       if (esposas) {
         esposas.forEach(esposa => {
+          // Verificar se o irmão responsável ainda está vivo
+          if (esposa.irmaos?.status === 'Falecido') return;
           if (!esposa.data_nascimento) return;
 
           const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
@@ -230,6 +369,7 @@ export default function Aniversariantes() {
               tipo: 'Esposa',
               nome: esposa.nome,
               proximo_aniversario: proximoAniv,
+              data_nascimento: dataNasc,
               idade,
               irmao_responsavel: esposa.irmaos?.nome
             });
@@ -237,15 +377,19 @@ export default function Aniversariantes() {
         });
       }
 
-      // ===== FILHOS =====
+      // ===== FILHOS (apenas de irmãos vivos e filhos vivos) =====
       const { data: filhos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, irmaos(nome)');
+        .select('nome, data_nascimento, falecido, data_falecimento, irmao_id, irmaos(nome, status)')
+        .in('irmao_id', irmaoVivosIds)
+        .neq('falecido', true); // Excluir filhos falecidos
 
       console.log('✅ Filhos:', filhos?.length);
 
       if (filhos) {
         filhos.forEach(filho => {
+          // Verificar se o irmão responsável ainda está vivo
+          if (filho.irmaos?.status === 'Falecido') return;
           if (!filho.data_nascimento) return;
 
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
@@ -271,6 +415,7 @@ export default function Aniversariantes() {
               tipo: 'Filho(a)',
               nome: filho.nome,
               proximo_aniversario: proximoAniv,
+              data_nascimento: dataNasc,
               idade,
               irmao_responsavel: filho.irmaos?.nome
             });
