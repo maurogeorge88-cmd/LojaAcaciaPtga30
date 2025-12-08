@@ -2205,12 +2205,3 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     </div>
   );
 }
-
-// ============================================
-// COMPONENTE: GERENCIAR CATEGORIAS
-// ============================================
-function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [editando, setEditando] = useState(null);
-  const [formCategoria, setFormCategoria] = useState({
-    nome: '',
