@@ -1624,7 +1624,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </h3>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Linha 1: Tipo, Categoria e Descrição */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tipo *
@@ -1655,7 +1656,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 </select>
               </div>
 
-              {/* NOVO: Campo Origem */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição *
+                </label>
+                <input
+                  type="text"
+                  value={formLancamento.descricao}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Linha 2: Origem e Irmão */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Origem *
@@ -1677,7 +1693,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 </select>
               </div>
 
-              {/* NOVO: Campo Irmão (só aparece se origem = Irmão) */}
               {formLancamento.origem_tipo === 'Irmao' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1696,20 +1711,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   </select>
                 </div>
               )}
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descrição *
-                </label>
-                <input
-                  type="text"
-                  value={formLancamento.descricao}
-                  onChange={(e) => setFormLancamento({ ...formLancamento, descricao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
+            {/* Linha 3: Valor, Data Lançamento e Data Vencimento */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Valor (R$) *
@@ -1749,7 +1754,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   required
                 />
               </div>
+            </div>
 
+            {/* Linha 4: Tipo de Pagamento e Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tipo de Pagamento
@@ -1787,8 +1795,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   <option value="cancelado">❌ Cancelado</option>
                 </select>
               </div>
+            </div>
 
-              {formLancamento.status === 'pago' && (
+            {/* Data Pagamento (condicional) */}
+            {formLancamento.status === 'pago' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Data Pagamento
@@ -1800,19 +1811,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-              )}
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observações
-                </label>
-                <textarea
-                  value={formLancamento.observacoes}
-                  onChange={(e) => setFormLancamento({ ...formLancamento, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  rows="3"
-                />
               </div>
+            )}
+
+            {/* Observações - altura reduzida */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observações
+              </label>
+              <textarea
+                value={formLancamento.observacoes}
+                onChange={(e) => setFormLancamento({ ...formLancamento, observacoes: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                rows="2"
+              />
             </div>
 
             <div className="flex gap-3 pt-4">
