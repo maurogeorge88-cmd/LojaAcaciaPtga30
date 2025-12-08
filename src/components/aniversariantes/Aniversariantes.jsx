@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../App';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function Aniversariantes() {
   const [aniversariantes, setAniversariantes] = useState([]);
@@ -9,6 +11,139 @@ export default function Aniversariantes() {
   useEffect(() => {
     carregarAniversariantes();
   }, [filtro]);
+
+  const gerarRelatorioPDF = () => {
+    const doc = new jsPDF();
+    const hoje = new Date();
+    
+    // Cabeçalho
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.text('🎂 Relatório de Aniversariantes', 105, 25, { align: 'center' });
+    
+    // Subtítulo baseado no filtro
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    let subtitulo = '';
+    switch(filtro) {
+      case 'hoje':
+        subtitulo = `Aniversariantes de Hoje - ${hoje.toLocaleDateString('pt-BR')}`;
+        break;
+      case 'semana':
+        subtitulo = 'Aniversariantes dos Próximos 7 Dias';
+        break;
+      case 'mes':
+        subtitulo = `Aniversariantes do Mês - ${hoje.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`;
+        break;
+      case 'todos':
+        subtitulo = 'Todos os Aniversariantes';
+        break;
+    }
+    doc.text(subtitulo, 105, 32, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.text(`Gerado em: ${hoje.toLocaleDateString('pt-BR')} às ${hoje.toLocaleTimeString('pt-BR')}`, 105, 38, { align: 'center' });
+    
+    // Linha separadora
+    doc.setDrawColor(200);
+    doc.line(15, 42, 195, 42);
+    
+    if (aniversariantes.length === 0) {
+      doc.setFontSize(12);
+      doc.setTextColor(150);
+      doc.text('Nenhum aniversariante encontrado neste período.', 105, 60, { align: 'center' });
+    } else {
+      // Preparar dados para a tabela
+      const tableData = aniversariantes.map(aniv => {
+        const ehHoje = aniv.proximo_aniversario.toDateString() === hoje.toDateString();
+        return [
+          aniv.nome,
+          aniv.tipo,
+          `${aniv.idade} anos`,
+          aniv.proximo_aniversario.toLocaleDateString('pt-BR'),
+          aniv.cim || '-',
+          aniv.cargo || aniv.irmao_responsavel || '-',
+          ehHoje ? '🎉 HOJE' : ''
+        ];
+      });
+      
+      doc.autoTable({
+        startY: 48,
+        head: [['Nome', 'Tipo', 'Idade', 'Data', 'CIM', 'Info', 'Status']],
+        body: tableData,
+        styles: {
+          fontSize: 9,
+          cellPadding: 3,
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center'
+        },
+        columnStyles: {
+          0: { cellWidth: 45 }, // Nome
+          1: { cellWidth: 22, halign: 'center' }, // Tipo
+          2: { cellWidth: 20, halign: 'center' }, // Idade
+          3: { cellWidth: 25, halign: 'center' }, // Data
+          4: { cellWidth: 20, halign: 'center' }, // CIM
+          5: { cellWidth: 35 }, // Info
+          6: { cellWidth: 18, halign: 'center', fontStyle: 'bold' } // Status
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245]
+        },
+        didParseCell: function(data) {
+          // Destacar linhas de aniversariantes de hoje
+          if (data.row.index >= 0 && data.column.index === 6 && data.cell.raw === '🎉 HOJE') {
+            data.row.cells.forEach(cell => {
+              cell.styles.fillColor = [255, 243, 205]; // Amarelo claro
+              cell.styles.fontStyle = 'bold';
+            });
+          }
+        }
+      });
+      
+      // Rodapé com totalizadores
+      const finalY = doc.lastAutoTable.finalY + 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0);
+      doc.text('Resumo:', 15, finalY);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      
+      const totalIrmaos = aniversariantes.filter(a => a.tipo === 'Irmão').length;
+      const totalEsposas = aniversariantes.filter(a => a.tipo === 'Esposa').length;
+      const totalFilhos = aniversariantes.filter(a => a.tipo === 'Filho(a)').length;
+      const totalHoje = aniversariantes.filter(a => 
+        a.proximo_aniversario.toDateString() === hoje.toDateString()
+      ).length;
+      
+      doc.text(`• Total de Aniversariantes: ${aniversariantes.length}`, 15, finalY + 6);
+      doc.text(`• Irmãos: ${totalIrmaos}`, 15, finalY + 11);
+      doc.text(`• Esposas: ${totalEsposas}`, 15, finalY + 16);
+      doc.text(`• Filhos: ${totalFilhos}`, 15, finalY + 21);
+      if (filtro !== 'hoje') {
+        doc.text(`• Aniversariantes de Hoje: ${totalHoje}`, 15, finalY + 26);
+      }
+    }
+    
+    // Rodapé da página
+    doc.setFontSize(8);
+    doc.setTextColor(150);
+    doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, 285, { align: 'center' });
+    
+    // Salvar
+    const nomeArquivo = `Aniversariantes_${filtro}_${hoje.toISOString().split('T')[0]}.pdf`;
+    doc.save(nomeArquivo);
+  };
 
   const carregarAniversariantes = async () => {
     setLoading(true);
@@ -168,7 +303,19 @@ export default function Aniversariantes() {
   return (
     <div className="max-w-7xl mx-auto">
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">🎂 Aniversariantes</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">🎂 Aniversariantes</h2>
+          
+          {/* Botão de Gerar Relatório */}
+          <button
+            onClick={gerarRelatorioPDF}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition flex items-center gap-2"
+            disabled={loading}
+          >
+            <span>📄</span>
+            <span>Gerar Relatório PDF</span>
+          </button>
+        </div>
         
         {/* Botões de filtro */}
         <div className="flex gap-2 mb-6 flex-wrap">
