@@ -2732,6 +2732,42 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
     { value: 'cheque', label: '📝 Cheque' }
   ];
 
+  // Função para renderizar categorias hierárquicas
+  const renderizarOpcoesCategoria = (tipo) => {
+    const categoriasFiltradas = categorias.filter(c => c.tipo === tipo);
+    const principais = categoriasFiltradas.filter(c => c.nivel === 1 || !c.categoria_pai_id);
+    
+    const opcoes = [];
+    
+    principais.forEach(principal => {
+      opcoes.push(
+        <option key={principal.id} value={principal.id}>
+          {principal.nome}
+        </option>
+      );
+      
+      const subcategorias = categoriasFiltradas.filter(c => c.categoria_pai_id === principal.id);
+      subcategorias.forEach(sub => {
+        opcoes.push(
+          <option key={sub.id} value={sub.id}>
+            &nbsp;&nbsp;&nbsp;&nbsp;└─ {sub.nome}
+          </option>
+        );
+        
+        const subSub = categoriasFiltradas.filter(c => c.categoria_pai_id === sub.id);
+        subSub.forEach(ss => {
+          opcoes.push(
+            <option key={ss.id} value={ss.id}>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└─ {ss.nome}
+            </option>
+          );
+        });
+      });
+    });
+    
+    return opcoes;
+  };
+
   const gerarUUID = () => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
