@@ -1224,7 +1224,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       yPos += 10;
 
       // Totalizadores
-      let totalGeral = 0;
+      let totalGeralDespesa = 0;
+      let totalGeralCredito = 0;
 
       // Para cada mês
       const mesesOrdenados = Object.keys(lancsPorMes).sort((a, b) => {
@@ -1253,13 +1254,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.setFontSize(8);
         doc.text('DtLanc', 15, yPos);
         doc.text('Descrição', 40, yPos);
-        doc.text('Despesa', 130, yPos, { align: 'right' });
-        doc.text('Receita', 160, yPos, { align: 'right' });
+        doc.text('Despesa', 120, yPos, { align: 'right' });
+        doc.text('Crédito', 150, yPos, { align: 'right' });
         doc.text('Saldo', 190, yPos, { align: 'right' });
         yPos += 4;
 
         // Lançamentos
-        let subtotal = 0;
+        let subtotalDespesa = 0;  // O que o irmão DEVE
+        let subtotalCredito = 0;  // O que o irmão TEM A RECEBER
         doc.setFont('helvetica', 'normal');
         
         mesInfo.lancamentos.forEach(lanc => {
@@ -1271,29 +1273,47 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           const dataLanc = formatarDataBR(lanc.data_vencimento);
           const descricao = lanc.descricao?.substring(0, 40) || '';
           const valor = parseFloat(lanc.valor);
+          const tipo = lanc.categorias_financeiras?.tipo;
+
+          let valorDespesa = 0;
+          let valorCredito = 0;
+
+          // LÓGICA CORRETA:
+          // - Se é RECEITA (ex: mensalidade) → Irmão DEVE (coluna Despesa)
+          // - Se é DESPESA (ex: irmão pagou água) → Irmão TEM CRÉDITO (coluna Crédito)
+          if (tipo === 'receita') {
+            valorDespesa = valor;
+            subtotalDespesa += valor;
+          } else if (tipo === 'despesa') {
+            valorCredito = valor;
+            subtotalCredito += valor;
+          }
 
           doc.text(dataLanc, 15, yPos);
           doc.text(descricao, 40, yPos);
-          doc.text(`R$ ${valor.toFixed(2)}`, 130, yPos, { align: 'right' });
-          doc.text('R$ 0,00', 160, yPos, { align: 'right' });
+          doc.text(valorDespesa > 0 ? `R$ ${valorDespesa.toFixed(2)}` : '', 120, yPos, { align: 'right' });
+          doc.text(valorCredito > 0 ? `R$ ${valorCredito.toFixed(2)}` : '', 150, yPos, { align: 'right' });
           
-          doc.setTextColor(255, 0, 0);
-          doc.text(`R$ ${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
+          // Saldo parcial (despesa - crédito até aqui)
+          const saldoParcial = subtotalDespesa - subtotalCredito;
+          doc.setTextColor(saldoParcial > 0 ? 255 : 0, 0, 0);
+          doc.text(`R$ ${Math.abs(saldoParcial).toFixed(2)}`, 190, yPos, { align: 'right' });
           doc.setTextColor(0, 0, 0);
           
-          subtotal += valor;
           yPos += 4;
         });
 
-        // Subtotal
+        // Subtotal do mês
+        const saldoMes = subtotalDespesa - subtotalCredito;
         yPos += 2;
         doc.setFont('helvetica', 'bold');
-        doc.text('Sub Total', 110, yPos, { align: 'right' });
+        doc.text('Sub Total', 100, yPos, { align: 'right' });
         doc.setTextColor(255, 0, 0);
-        doc.text(`R$ ${subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.text(`R$ ${Math.abs(saldoMes).toFixed(2)}`, 190, yPos, { align: 'right' });
         doc.setTextColor(0, 0, 0);
         
-        totalGeral += subtotal;
+        totalGeralDespesa += subtotalDespesa;
+        totalGeralCredito += subtotalCredito;
         yPos += 8;
       });
 
@@ -1303,12 +1323,49 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         yPos = 20;
       }
 
-      yPos += 10;
+      // Dados Bancários
+      doc.setFillColor(240, 240, 240);
+      doc.rect(15, yPos, 80, 30, 'F');
+      yPos += 5;
+
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total Despesa', 150, yPos, { align: 'right' });
+      doc.text('Dados Bancários', 55, yPos, { align: 'center' });
+      yPos += 5;
+
+      doc.setFontSize(8);
+      doc.setTextColor(0, 100, 180);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Cooperativa de Crédito Sicredi', 55, yPos, { align: 'center' });
+      yPos += 4;
+
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Ag.: 0802 - C.C.: 86.913-9', 55, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text('PIX.: 03.250.704/0001-00', 55, yPos, { align: 'center' });
+
+      // Total (lado direito)
+      yPos -= 13;
+      const saldoFinal = totalGeralDespesa - totalGeralCredito;
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Total Despesa', 145, yPos, { align: 'right' });
       doc.setTextColor(255, 0, 0);
-      doc.text(`R$ ${totalGeral.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.text(`R$ ${totalGeralDespesa.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      yPos += 5;
+
+      doc.text('Total Crédito', 145, yPos, { align: 'right' });
+      doc.setTextColor(0, 150, 0);
+      doc.text(`R$ ${totalGeralCredito.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.setTextColor(0, 0, 0);
+      yPos += 5;
+
+      doc.text('Saldo', 145, yPos, { align: 'right' });
+      doc.setTextColor(saldoFinal > 0 ? 255 : 0, 0, 0);
+      doc.text(`R$ ${Math.abs(saldoFinal).toFixed(2)}`, 190, yPos, { align: 'right' });
       doc.setTextColor(0, 0, 0);
 
       // Salvar
