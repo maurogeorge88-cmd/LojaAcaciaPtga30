@@ -1189,8 +1189,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       // Criar PDF
       const doc = new jsPDF();
-      let yPos = 20;
+      let yPos = 15;
 
+      // Logo (se disponível - você pode carregar como base64)
+      // Por enquanto, vou deixar espaço para a logo
+      // TODO: Adicionar logo em base64 aqui
+      
       // Cabeçalho
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
@@ -1201,27 +1205,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text('Grande Loja do Estado de Mato Grosso - GLEMT', 105, yPos, { align: 'center' });
       yPos += 5;
       doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
-      yPos += 10;
+      yPos += 12;
 
-      // Dados do Irmão
+      // Dados do Irmão em um box
+      doc.setFillColor(240, 240, 240);
+      doc.rect(15, yPos, 180, 18, 'F');
+      yPos += 5;
+
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('Nome', 15, yPos);
+      doc.text('Nome', 20, yPos);
       doc.setFont('helvetica', 'bold');
-      doc.text(irmaoData.nome, 35, yPos);
+      doc.text(irmaoData.nome, 40, yPos);
       yPos += 5;
 
       doc.setFont('helvetica', 'normal');
-      doc.text('CPF', 15, yPos);
+      doc.text('CPF', 20, yPos);
       doc.setFont('helvetica', 'bold');
-      doc.text(irmaoData.cpf || 'Não informado', 35, yPos);
+      doc.text(irmaoData.cpf || 'Não informado', 40, yPos);
       yPos += 5;
 
       doc.setFont('helvetica', 'normal');
-      doc.text('CIM', 15, yPos);
+      doc.text('CIM', 20, yPos);
       doc.setFont('helvetica', 'bold');
-      doc.text(irmaoData.cim || 'Não informado', 35, yPos);
-      yPos += 10;
+      doc.text(irmaoData.cim || 'Não informado', 40, yPos);
+      yPos += 12;
 
       // Totalizadores
       let totalGeralDespesa = 0;
@@ -1289,32 +1297,58 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             subtotalCredito += valor;
           }
 
+          doc.setTextColor(0, 0, 0);
           doc.text(dataLanc, 15, yPos);
           doc.text(descricao, 40, yPos);
-          doc.text(valorDespesa > 0 ? `R$ ${valorDespesa.toFixed(2)}` : '', 120, yPos, { align: 'right' });
-          doc.text(valorCredito > 0 ? `R$ ${valorCredito.toFixed(2)}` : '', 150, yPos, { align: 'right' });
           
-          // Saldo parcial (despesa - crédito até aqui)
+          // Despesa em VERMELHO
+          if (valorDespesa > 0) {
+            doc.setTextColor(255, 0, 0);
+            doc.text(`R$ ${valorDespesa.toFixed(2)}`, 120, yPos, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+          }
+          
+          // Crédito em AZUL
+          if (valorCredito > 0) {
+            doc.setTextColor(0, 100, 255);
+            doc.text(`R$ ${valorCredito.toFixed(2)}`, 150, yPos, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+          }
+          
+          // Saldo parcial em VERMELHO
           const saldoParcial = subtotalDespesa - subtotalCredito;
-          doc.setTextColor(saldoParcial > 0 ? 255 : 0, 0, 0);
+          doc.setTextColor(255, 0, 0);
           doc.text(`R$ ${Math.abs(saldoParcial).toFixed(2)}`, 190, yPos, { align: 'right' });
           doc.setTextColor(0, 0, 0);
           
-          yPos += 4;
+          yPos += 5;
         });
 
-        // Subtotal do mês
+        // Linha amarela separadora ANTES do subtotal
+        yPos += 1;
+        doc.setDrawColor(255, 200, 0); // Amarelo
+        doc.setLineWidth(0.8);
+        doc.line(15, yPos, 195, yPos);
+        yPos += 4;
+
+        // Subtotal do mês - alinhado com coluna Crédito
         const saldoMes = subtotalDespesa - subtotalCredito;
-        yPos += 2;
         doc.setFont('helvetica', 'bold');
-        doc.text('Sub Total', 100, yPos, { align: 'right' });
+        doc.setTextColor(0, 0, 0);
+        doc.text('Sub Total', 150, yPos, { align: 'right' });
         doc.setTextColor(255, 0, 0);
         doc.text(`R$ ${Math.abs(saldoMes).toFixed(2)}`, 190, yPos, { align: 'right' });
         doc.setTextColor(0, 0, 0);
         
+        // Linha amarela separadora DEPOIS do subtotal
+        yPos += 3;
+        doc.setDrawColor(255, 200, 0);
+        doc.setLineWidth(0.8);
+        doc.line(15, yPos, 195, yPos);
+        
         totalGeralDespesa += subtotalDespesa;
         totalGeralCredito += subtotalCredito;
-        yPos += 8;
+        yPos += 10;
       });
 
       // Total Final
