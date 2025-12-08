@@ -776,7 +776,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   // ========================================
-  // 📊 RELATÓRIO RESUMIDO POR CATEGORIA HIERÁRQUICA
+  // 📊 RELATÓRIO RESUMIDO POR CATEGORIA
   // ========================================
   const gerarPDFResumido = () => {
     const doc = new jsPDF();
@@ -805,68 +805,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     let yPos = 52;
 
     // ========================================
-    // FUNÇÃO HELPER: ORGANIZAR HIERARQUIA
+    // DESPESAS POR CATEGORIA
     // ========================================
-    const organizarHierarquia = (lancamentosFiltrados, tipo) => {
-      // Mapear lançamentos por categoria_id
-      const lancamentosPorCatId = {};
-      let totalGeral = 0;
-      
-      lancamentosFiltrados.forEach(lanc => {
-        const catId = lanc.categoria_id;
-        if (!lancamentosPorCatId[catId]) {
-          lancamentosPorCatId[catId] = [];
-        }
-        lancamentosPorCatId[catId].push(lanc);
-        totalGeral += parseFloat(lanc.valor);
-      });
+    const despesasPorCategoria = {};
+    let totalDespesas = 0;
 
-      // Obter categorias principais (nivel 1)
-      const catsPrincipais = categorias.filter(c => 
-        c.tipo === tipo && 
-        (c.nivel === 1 || !c.categoria_pai_id) &&
-        lancamentosPorCatId[c.id]
-      );
-
-      // Construir estrutura hierárquica
-      const estrutura = catsPrincipais.map(principal => {
-        const lancamentosPrincipal = lancamentosPorCatId[principal.id] || [];
+    lancamentos
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa')
+      .forEach(lanc => {
+        const categoria = lanc.categorias_financeiras?.nome || 'Sem Categoria';
         
-        // Buscar subcategorias
-        const subcats = categorias.filter(c => 
-          c.categoria_pai_id === principal.id &&
-          lancamentosPorCatId[c.id]
-        );
-
-        const subcategoriasComDados = subcats.map(sub => ({
-          categoria: sub,
-          lancamentos: lancamentosPorCatId[sub.id] || [],
-          subtotal: (lancamentosPorCatId[sub.id] || []).reduce((sum, l) => sum + parseFloat(l.valor), 0)
-        }));
-
-        const subtotalPrincipal = lancamentosPrincipal.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-        const subtotalSubcategorias = subcategoriasComDados.reduce((sum, sc) => sum + sc.subtotal, 0);
-
-        return {
-          categoria: principal,
-          lancamentosDiretos: lancamentosPrincipal,
-          subcategorias: subcategoriasComDados,
-          subtotalDireto: subtotalPrincipal,
-          subtotalTotal: subtotalPrincipal + subtotalSubcategorias
-        };
+        if (!despesasPorCategoria[categoria]) {
+          despesasPorCategoria[categoria] = [];
+        }
+        
+        despesasPorCategoria[categoria].push(lanc);
+        totalDespesas += parseFloat(lanc.valor);
       });
-
-      return { estrutura, totalGeral };
-    };
-
-    // ========================================
-    // DESPESAS HIERÁRQUICAS
-    // ========================================
-    const lancamentosDespesas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa');
-    const { estrutura: despesasHierarquia, totalGeral: totalDespesas } = organizarHierarquia(lancamentosDespesas, 'despesa');
 
     // Título Despesas
-    doc.setFillColor(154, 205, 50);
+    doc.setFillColor(154, 205, 50); // Verde
     doc.rect(10, yPos, 190, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
@@ -876,109 +834,99 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     yPos += 12;
     doc.setTextColor(0, 0, 0);
 
-    // Processar cada categoria principal
-    despesasHierarquia.forEach(catPrincipal => {
+    // Processar cada categoria
+    const categoriasOrdenadas = Object.keys(despesasPorCategoria).sort();
+    
+    categoriasOrdenadas.forEach(categoria => {
+      const lancamentosCategoria = despesasPorCategoria[categoria];
+      const subtotal = lancamentosCategoria.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Verificar quebra de página
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
       }
 
-      // Nome da Categoria Principal (fundo azul claro)
+      // Nome da Categoria (fundo azul claro)
       doc.setFillColor(173, 216, 230);
       doc.rect(10, yPos, 190, 6, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(catPrincipal.categoria.nome, 12, yPos + 4);
+      doc.text(categoria, 12, yPos + 4);
       yPos += 8;
 
-      // Se tem lançamentos diretos na principal, mostrar
-      if (catPrincipal.lancamentosDiretos.length > 0) {
-        // Cabeçalho
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DataLanc', 10, yPos);
-        doc.text('Interessado', 32, yPos);
-        doc.text('Descrição', 80, yPos);
-        doc.text('Obs', 140, yPos);
-        doc.text('Despesa', 200, yPos, { align: 'right' });
+      // Cabeçalho da tabela (margem 10mm = 1cm)
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DataLanc', 10, yPos);
+      doc.text('Interessado', 32, yPos);
+      doc.text('Descrição', 80, yPos);
+      doc.text('Obs', 140, yPos);
+      doc.text('Despesa', 200, yPos, { align: 'right' });
+      yPos += 4;
+
+      // Lançamentos da categoria
+      doc.setFont('helvetica', 'normal');
+      lancamentosCategoria.forEach(lanc => {
+        // Verificar quebra de página
+        if (yPos > 275) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        const dataLanc = formatarDataBR(lanc.data_lancamento);
+        const interessado = lanc.origem_tipo === 'Loja' ? 
+          (lanc.descricao.substring(0, 22)) : 
+          (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
+        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+        const obs = (lanc.observacoes || '').substring(0, 35);
+        const valor = parseFloat(lanc.valor);
+
+        doc.text(dataLanc, 10, yPos);
+        doc.text(interessado.substring(0, 22), 32, yPos);
+        doc.text(descricao, 80, yPos);
+        doc.text(obs, 140, yPos);
+        doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+        
         yPos += 4;
-
-        // Lançamentos
-        doc.setFont('helvetica', 'normal');
-        catPrincipal.lancamentosDiretos.forEach(lanc => {
-          if (yPos > 275) {
-            doc.addPage();
-            yPos = 20;
-          }
-
-          const dataLanc = formatarDataBR(lanc.data_lancamento);
-          const interessado = lanc.origem_tipo === 'Loja' ? 
-            (lanc.descricao.substring(0, 22)) : 
-            (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-          const obs = (lanc.observacoes || '').substring(0, 35);
-          const valor = parseFloat(lanc.valor);
-
-          doc.text(dataLanc, 10, yPos);
-          doc.text(interessado.substring(0, 22), 32, yPos);
-          doc.text(descricao, 80, yPos);
-          doc.text(obs, 140, yPos);
-          doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
-          
-          yPos += 4;
-        });
-      }
-
-      // Subcategorias
-      catPrincipal.subcategorias.forEach(subcat => {
-        // Lançamentos da subcategoria (direto, sem linha separada)
-        doc.setFont('helvetica', 'normal');
-        subcat.lancamentos.forEach(lanc => {
-          if (yPos > 275) {
-            doc.addPage();
-            yPos = 20;
-          }
-
-          const dataLanc = formatarDataBR(lanc.data_lancamento);
-          const interessado = lanc.origem_tipo === 'Loja' ? 
-            (lanc.descricao.substring(0, 22)) : 
-            (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-          const obs = (lanc.observacoes || '').substring(0, 35);
-          const valor = parseFloat(lanc.valor);
-
-          doc.text(dataLanc, 10, yPos);
-          doc.text(interessado.substring(0, 22), 32, yPos);
-          doc.text(descricao, 80, yPos);
-          doc.text(obs, 140, yPos);
-          doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
-          
-          yPos += 4;
-        });
       });
 
-      // Subtotal da categoria principal
+      // Subtotal da categoria (só despesa)
       yPos += 2;
       doc.setFont('helvetica', 'bold');
       doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-      doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text(`R$ ${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
       
       yPos += 8;
     });
 
     // ========================================
-    // RECEITAS HIERÁRQUICAS
+    // RECEITAS POR CATEGORIA
     // ========================================
-    const lancamentosReceitas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita');
-    const { estrutura: receitasHierarquia, totalGeral: totalReceitas } = organizarHierarquia(lancamentosReceitas, 'receita');
+    const receitasPorCategoria = {};
+    let totalReceitas = 0;
 
+    lancamentos
+      .filter(l => l.categorias_financeiras?.tipo === 'receita')
+      .forEach(lanc => {
+        const categoria = lanc.categorias_financeiras?.nome || 'Sem Categoria';
+        
+        if (!receitasPorCategoria[categoria]) {
+          receitasPorCategoria[categoria] = [];
+        }
+        
+        receitasPorCategoria[categoria].push(lanc);
+        totalReceitas += parseFloat(lanc.valor);
+      });
+
+    // Verificar quebra de página
     if (yPos > 240) {
       doc.addPage();
       yPos = 20;
     }
 
     // Título Receitas
-    doc.setFillColor(33, 150, 243);
+    doc.setFillColor(33, 150, 243); // Azul
     doc.rect(10, yPos, 190, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(12);
@@ -988,91 +936,66 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     yPos += 12;
     doc.setTextColor(0, 0, 0);
 
-    // Processar cada categoria principal de receitas
-    receitasHierarquia.forEach(catPrincipal => {
-      console.log('📊 Processando categoria:', catPrincipal.categoria.nome);
-      console.log('   - Lançamentos diretos:', catPrincipal.lancamentosDiretos.length);
-      console.log('   - Subcategorias:', catPrincipal.subcategorias.length);
-      console.log('   - Subtotal total:', catPrincipal.subtotalTotal);
-      
+    // Processar cada categoria de receita
+    const receitasOrdenadas = Object.keys(receitasPorCategoria).sort();
+    
+    receitasOrdenadas.forEach(categoria => {
+      const lancamentosCategoria = receitasPorCategoria[categoria];
+      const subtotal = lancamentosCategoria.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Verificar quebra de página
       if (yPos > 250) {
         doc.addPage();
         yPos = 20;
       }
 
-      // Nome da Categoria Principal
+      // Nome da Categoria
       doc.setFillColor(173, 216, 230);
       doc.rect(10, yPos, 190, 6, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text(catPrincipal.categoria.nome, 12, yPos + 4);
+      doc.text(categoria, 12, yPos + 4);
       yPos += 8;
 
-      // AGRUPAR SE FOR MENSALIDADE/AGAPE/PECULIO OU CRÉDITO À LOJA (pagamentos dos irmãos)
-      const categoriasParaAgrupar = ['Crédito à Loja', 'Mensalidade/Agape/Peculio'];
-      
-      if (categoriasParaAgrupar.includes(catPrincipal.categoria.nome)) {
-        console.log('✅ DETECTOU categoria para agrupar:', catPrincipal.categoria.nome);
-        
-        // Buscar data do último lançamento (pode estar nas subcategorias)
-        let ultimaData = null;
-        
-        // Verificar subcategorias
-        catPrincipal.subcategorias.forEach(sub => {
-          console.log('   - Subcategoria:', sub.categoria.nome, '| Lançamentos:', sub.lancamentos.length);
-          if (sub.lancamentos.length > 0) {
-            ultimaData = sub.lancamentos[sub.lancamentos.length - 1].data_lancamento;
-          }
-        });
-        
-        // Ou lançamentos diretos
-        if (!ultimaData && catPrincipal.lancamentosDiretos.length > 0) {
-          ultimaData = catPrincipal.lancamentosDiretos[catPrincipal.lancamentosDiretos.length - 1].data_lancamento;
-        }
-        
-        console.log('   - Última data encontrada:', ultimaData);
-        console.log('   - Subtotal total:', catPrincipal.subtotalTotal);
-        
-        if (ultimaData) {
-          const dataLanc = formatarDataBR(ultimaData);
-          
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'bold');
-          doc.text('DataLanc', 10, yPos);
-          doc.text('Interessado', 32, yPos);
-          doc.text('Descrição', 80, yPos);
-          doc.text('Obs', 140, yPos);
-          doc.text('Receita', 200, yPos, { align: 'right' });
-          yPos += 4;
+      // Cabeçalho da tabela
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DataLanc', 10, yPos);
+      doc.text('Interessado', 32, yPos);
+      doc.text('Descrição', 80, yPos);
+      doc.text('Obs', 140, yPos);
+      doc.text('Receita', 200, yPos, { align: 'right' });
+      yPos += 4;
 
-          doc.setFont('helvetica', 'normal');
-          doc.text(dataLanc, 10, yPos);
-          doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
-          doc.text('Mensalidade/Agape/Peculio - Irmao', 80, yPos);
-          doc.text('', 140, yPos);
-          doc.text(`R$${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
-          yPos += 4;
-        }
-      } else if (catPrincipal.lancamentosDiretos.length > 0) {
-        // Cabeçalho e lançamentos normais
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DataLanc', 10, yPos);
-        doc.text('Interessado', 32, yPos);
-        doc.text('Descrição', 80, yPos);
-        doc.text('Obs', 140, yPos);
-        doc.text('Receita', 200, yPos, { align: 'right' });
-        yPos += 4;
-
+      // AGRUPAR "Mensalidade" - TODOS OS IRMÃOS EM UMA LINHA
+      if (categoria === 'Mensalidade') {
         doc.setFont('helvetica', 'normal');
-        catPrincipal.lancamentosDiretos.forEach(lanc => {
+        
+        // Pega a data do último lançamento
+        const dataLanc = lancamentosCategoria.length > 0 ? 
+          formatarDataBR(lancamentosCategoria[lancamentosCategoria.length - 1].data_lancamento) : '';
+        
+        // Linha única com total
+        doc.text(dataLanc, 10, yPos);
+        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
+        doc.text('', 140, yPos);
+        doc.text(`R$${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+        yPos += 4;
+        
+      } else {
+        // Lançamentos normais
+        doc.setFont('helvetica', 'normal');
+        lancamentosCategoria.forEach(lanc => {
           if (yPos > 275) {
             doc.addPage();
             yPos = 20;
           }
 
           const dataLanc = formatarDataBR(lanc.data_lancamento);
-          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+          const interessado = lanc.origem_tipo === 'Loja' ? 
+            'Irmãos - Acacia Paranatinga nº 30' : 
+            (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
           const descricao = lanc.descricao?.substring(0, 28) || '';
           const obs = (lanc.observacoes || '').substring(0, 35);
           const valor = parseFloat(lanc.valor);
@@ -1087,40 +1010,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         });
       }
 
-      // Subcategorias (direto, sem linha separada)
-      // NÃO mostrar individualmente se for Crédito à Loja ou Mensalidade/Agape/Peculio (já foram agrupados)
-      const categoriasAgrupadas = ['Crédito à Loja', 'Mensalidade/Agape/Peculio'];
-      if (!categoriasAgrupadas.includes(catPrincipal.categoria.nome)) {
-        catPrincipal.subcategorias.forEach(subcat => {
-          doc.setFont('helvetica', 'normal');
-          subcat.lancamentos.forEach(lanc => {
-            if (yPos > 275) {
-              doc.addPage();
-              yPos = 20;
-            }
-
-            const dataLanc = formatarDataBR(lanc.data_lancamento);
-            const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-            const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-            const obs = (lanc.observacoes || '').substring(0, 35);
-            const valor = parseFloat(lanc.valor);
-
-            doc.text(dataLanc, 10, yPos);
-            doc.text(interessado.substring(0, 22), 32, yPos);
-            doc.text(descricao, 80, yPos);
-            doc.text(obs, 140, yPos);
-            doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
-            
-            yPos += 4;
-          });
-        });
-      }
-
-      // Subtotal
+      // Subtotal (só receita)
       yPos += 2;
       doc.setFont('helvetica', 'bold');
       doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
-      doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text(`R$ ${subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
       
       yPos += 8;
     });
@@ -2308,6 +2202,688 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           showError={showError}
         />
       )}
+    </div>
+  );
+}
+
+// ============================================
+// COMPONENTE: GERENCIAR CATEGORIAS
+// ============================================
+function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [editando, setEditando] = useState(null);
+  const [formCategoria, setFormCategoria] = useState({
+    nome: '',
+    tipo: 'receita',
+    descricao: '',
+    ativo: true
+  });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    try {
+      const dados = {
+        nome: formCategoria.nome.trim(),
+        tipo: formCategoria.tipo,
+        descricao: formCategoria.descricao.trim() || null,
+        ativo: formCategoria.ativo
+      };
+
+      if (editando) {
+        const { error } = await supabase
+          .from('categorias_financeiras')
+          .update(dados)
+          .eq('id', editando);
+
+        if (error) throw error;
+        showSuccess('Categoria atualizada!');
+      } else {
+        const { error } = await supabase
+          .from('categorias_financeiras')
+          .insert(dados);
+
+        if (error) throw error;
+        showSuccess('Categoria criada!');
+      }
+
+      limparFormulario();
+      await onUpdate();
+
+    } catch (error) {
+      showError('Erro: ' + error.message);
+    }
+  };
+
+  const editarCategoria = (categoria) => {
+    setFormCategoria({
+      nome: categoria.nome,
+      tipo: categoria.tipo,
+      descricao: categoria.descricao || '',
+      ativo: categoria.ativo !== false
+    });
+    setEditando(categoria.id);
+    setMostrarFormulario(true);
+  };
+
+  const toggleAtivo = async (id, ativoAtual) => {
+    try {
+      const { error } = await supabase
+        .from('categorias_financeiras')
+        .update({ ativo: !ativoAtual })
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess(`Categoria ${!ativoAtual ? 'ativada' : 'desativada'}!`);
+      await onUpdate();
+    } catch (error) {
+      showError('Erro: ' + error.message);
+    }
+  };
+
+  const excluirCategoria = async (id) => {
+    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('categorias_financeiras')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess('Categoria excluída!');
+      await onUpdate();
+    } catch (error) {
+      showError('Erro: ' + error.message);
+    }
+  };
+
+  const limparFormulario = () => {
+    setFormCategoria({ nome: '', tipo: 'receita', descricao: '', ativo: true });
+    setEditando(null);
+    setMostrarFormulario(false);
+  };
+
+  const categoriasReceita = categorias.filter(c => c.tipo === 'receita');
+  const categoriasDespesa = categorias.filter(c => c.tipo === 'despesa');
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold text-gray-900">🏷️ Gerenciar Categorias</h2>
+        <button
+          onClick={() => setMostrarFormulario(!mostrarFormulario)}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+        >
+          {mostrarFormulario ? '❌ Cancelar' : '➕ Nova Categoria'}
+        </button>
+      </div>
+
+      {mostrarFormulario && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">
+            {editando ? '✏️ Editar Categoria' : '➕ Nova Categoria'}
+          </h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <input
+                  type="text"
+                  value={formCategoria.nome}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                <select
+                  value={formCategoria.tipo}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                >
+                  <option value="receita">💰 Receita</option>
+                  <option value="despesa">💸 Despesa</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                <input
+                  type="text"
+                  value={formCategoria.descricao}
+                  onChange={(e) => setFormCategoria({ ...formCategoria, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formCategoria.ativo}
+                    onChange={(e) => setFormCategoria({ ...formCategoria, ativo: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <span className="ml-2 text-sm">Categoria ativa</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                {editando ? '✅ Salvar' : '➕ Criar'}
+              </button>
+              <button type="button" onClick={limparFormulario} className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* RECEITAS */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-green-700 mb-4">
+            💰 Receitas ({categoriasReceita.length})
+          </h3>
+          <div className="space-y-2">
+            {categoriasReceita.map(cat => (
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{cat.nome}</h4>
+                      {cat.ativo === false && <span className="text-xs px-2 py-1 bg-gray-200 rounded">Inativa</span>}
+                    </div>
+                    {cat.descricao && <p className="text-sm text-gray-600 mt-1">{cat.descricao}</p>}
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} className="p-1 text-yellow-600 hover:bg-yellow-100 rounded" title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
+                    <button onClick={() => excluirCategoria(cat.id)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Excluir">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {categoriasReceita.length === 0 && <p className="text-gray-500 text-sm">Nenhuma categoria</p>}
+          </div>
+        </div>
+
+        {/* DESPESAS */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-red-700 mb-4">
+            💸 Despesas ({categoriasDespesa.length})
+          </h3>
+          <div className="space-y-2">
+            {categoriasDespesa.map(cat => (
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-medium">{cat.nome}</h4>
+                      {cat.ativo === false && <span className="text-xs px-2 py-1 bg-gray-200 rounded">Inativa</span>}
+                    </div>
+                    {cat.descricao && <p className="text-sm text-gray-600 mt-1">{cat.descricao}</p>}
+                  </div>
+                  <div className="flex gap-1 ml-2">
+                    <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} className="p-1 text-yellow-600 hover:bg-yellow-100 rounded" title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
+                    <button onClick={() => excluirCategoria(cat.id)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Excluir">🗑️</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {categoriasDespesa.length === 0 && <p className="text-gray-500 text-sm">Nenhuma categoria</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Dica:</strong> Categorias inativas não aparecem nos formulários, mas lançamentos antigos continuam visíveis.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// COMPONENTE: MODAL DE PARCELAMENTO
+// ============================================
+function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, onSuccess, showSuccess, showError }) {
+  const [formParcelamento, setFormParcelamento] = useState({
+    tipo: lancamentoExistente?.tipo || 'despesa',
+    categoria_id: lancamentoExistente?.categoria_id || '',
+    descricao: lancamentoExistente?.descricao || '',
+    valor_total: lancamentoExistente?.valor || '',
+    num_parcelas: 2,
+    data_primeira_parcela: new Date().toISOString().split('T')[0],
+    tipo_pagamento: lancamentoExistente?.tipo_pagamento || 'dinheiro',
+    origem_tipo: lancamentoExistente?.origem_tipo || 'Loja',
+    origem_irmao_id: lancamentoExistente?.origem_irmao_id || '',
+    observacoes: lancamentoExistente?.observacoes || ''
+  });
+
+  const tiposPagamento = [
+    { value: 'dinheiro', label: '💵 Dinheiro' },
+    { value: 'pix', label: '📱 PIX' },
+    { value: 'transferencia', label: '🏦 Transferência' },
+    { value: 'cartao_credito', label: '💳 Cartão Crédito' },
+    { value: 'cartao_debito', label: '💳 Cartão Débito' },
+    { value: 'boleto', label: '📄 Boleto' },
+    { value: 'cheque', label: '📝 Cheque' }
+  ];
+
+  const gerarUUID = () => {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const valorTotal = parseFloat(formParcelamento.valor_total);
+      const numParcelas = parseInt(formParcelamento.num_parcelas);
+      
+      if (valorTotal <= 0 || numParcelas < 2) {
+        showError('Valor deve ser positivo e mínimo 2 parcelas');
+        return;
+      }
+
+      const valorParcela = valorTotal / numParcelas;
+      const grupoParcelamento = gerarUUID();
+      
+      const parcelas = [];
+      for (let i = 0; i < numParcelas; i++) {
+        const dataParcela = new Date(formParcelamento.data_primeira_parcela);
+        dataParcela.setMonth(dataParcela.getMonth() + i);
+        
+        parcelas.push({
+          tipo: formParcelamento.tipo,
+          categoria_id: parseInt(formParcelamento.categoria_id),
+          descricao: `${formParcelamento.descricao} (${i + 1}/${numParcelas})`,
+          valor: valorParcela,
+          data_lancamento: new Date().toISOString().split('T')[0],
+          data_vencimento: dataParcela.toISOString().split('T')[0],
+          tipo_pagamento: formParcelamento.tipo_pagamento,
+          status: 'pendente',
+          origem_tipo: formParcelamento.origem_tipo,
+          origem_irmao_id: formParcelamento.origem_irmao_id || null,
+          observacoes: formParcelamento.observacoes,
+          eh_parcelado: true,
+          parcela_numero: i + 1,
+          parcela_total: numParcelas,
+          grupo_parcelamento: grupoParcelamento
+        });
+      }
+
+      // Se estiver parcelando um lançamento existente, deletar o original
+      if (lancamentoExistente) {
+        const { error: deleteError } = await supabase
+          .from('lancamentos_loja')
+          .delete()
+          .eq('id', lancamentoExistente.id);
+        
+        if (deleteError) throw deleteError;
+      }
+
+      const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
+      if (error) throw error;
+
+      if (lancamentoExistente) {
+        showSuccess(`✅ Lançamento parcelado em ${numParcelas}x e original excluído!`);
+      } else {
+        showSuccess(`✅ ${numParcelas} parcelas criadas com sucesso!`);
+      }
+      onClose();
+      onSuccess();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao parcelar: ' + error.message);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
+          <h3 className="text-xl font-bold">
+            {lancamentoExistente ? '🔀 Parcelar Lançamento Existente' : '🔢 Parcelar Despesa/Receita'}
+          </h3>
+          <p className="text-sm text-indigo-100">
+            {lancamentoExistente 
+              ? 'Dividir este lançamento em parcelas (o original será excluído)' 
+              : 'Dividir um valor em parcelas mensais'}
+          </p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Tipo *</label>
+            <div className="flex gap-4">
+              <label className="flex items-center cursor-pointer">
+                <input type="radio" value="despesa" checked={formParcelamento.tipo === 'despesa'}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })}
+                  className="mr-2" />
+                <span>💸 Despesa</span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input type="radio" value="receita" checked={formParcelamento.tipo === 'receita'}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo: e.target.value, categoria_id: '' })}
+                  className="mr-2" />
+                <span>💰 Receita</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Categoria *</label>
+            <select required value={formParcelamento.categoria_id}
+              onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Selecione...</option>
+              {renderizarOpcoesCategoria(formParcelamento.tipo)}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Descrição *</label>
+            <input type="text" required value={formParcelamento.descricao}
+              onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: Reforma do templo" />
+            <p className="text-xs text-gray-500 mt-1">Será adicionado (1/5), (2/5), etc.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Valor Total *</label>
+              <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Nº Parcelas *</label>
+              <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg" />
+            </div>
+          </div>
+
+          {formParcelamento.valor_total && formParcelamento.num_parcelas && (
+            <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
+              <p className="text-sm font-medium">
+                💡 Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
+              </p>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Vencimento 1ª Parcela *</label>
+            <input type="date" required value={formParcelamento.data_primeira_parcela}
+              onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg" />
+            <p className="text-xs text-gray-500 mt-1">As demais vencerão mensalmente</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Forma de Pagamento</label>
+            <select value={formParcelamento.tipo_pagamento}
+              onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg">
+              {tiposPagamento.map(tp => (
+                <option key={tp.value} value={tp.value}>{tp.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Origem</label>
+              <select value={formParcelamento.origem_tipo}
+                onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_tipo: e.target.value, origem_irmao_id: '' })}
+                className="w-full px-3 py-2 border rounded-lg">
+                <option value="Loja">🏛️ Loja</option>
+                <option value="Irmao">👤 Irmão</option>
+              </select>
+            </div>
+            {formParcelamento.origem_tipo === 'Irmao' && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Irmão</label>
+                <select value={formParcelamento.origem_irmao_id}
+                  onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_irmao_id: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  <option value="">Selecione...</option>
+                  {irmaos.map(irmao => (
+                    <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Observações</label>
+            <textarea value={formParcelamento.observacoes}
+              onChange={(e) => setFormParcelamento({ ...formParcelamento, observacoes: e.target.value })}
+              rows="2" className="w-full px-3 py-2 border rounded-lg" />
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" 
+              className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+              🔢 Criar Parcelamento
+            </button>
+            <button type="button" onClick={onClose}
+              className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ============================================
+// COMPONENTE: MODAL DE PAGAMENTO PARCIAL
+// ============================================
+function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSuccess, showSuccess, showError }) {
+  const [valorPagar, setValorPagar] = useState('');
+  const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().split('T')[0]);
+
+  // Calcular totais
+  const valorOriginal = lancamento.valor;
+  const totalPago = pagamentosExistentes.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
+  const valorRestante = valorOriginal - totalPago;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const valorAPagar = parseFloat(valorPagar);
+      
+      if (valorAPagar <= 0) {
+        showError('Valor deve ser maior que zero');
+        return;
+      }
+
+      if (valorAPagar > valorRestante) {
+        showError(`Valor não pode ser maior que o restante (R$ ${valorRestante.toFixed(2)})`);
+        return;
+      }
+
+      // Calcular se vai quitar tudo
+      const novoTotalPago = totalPago + valorAPagar;
+      const novoRestante = valorOriginal - novoTotalPago;
+
+      if (novoRestante === 0) {
+        // ÚLTIMO PAGAMENTO: Não criar registro separado, apenas atualizar o original
+        const { error: errorUpdate } = await supabase
+          .from('lancamentos_loja')
+          .update({
+            valor: valorAPagar, // Altera o valor para o restante
+            status: 'pago',
+            data_pagamento: dataPagamento,
+            tipo_pagamento: lancamento.tipo_pagamento
+          })
+          .eq('id', lancamento.id);
+
+        if (errorUpdate) throw errorUpdate;
+        
+        showSuccess('✅ Lançamento quitado completamente!');
+      } else {
+        // PAGAMENTO PARCIAL: Criar registro separado
+        const novoPagamento = {
+          tipo: lancamento.tipo,
+          categoria_id: lancamento.categoria_id,
+          descricao: `💰 Pagamento Parcial: ${lancamento.descricao}`,
+          valor: valorAPagar,
+          data_lancamento: dataPagamento,
+          data_vencimento: dataPagamento,
+          data_pagamento: dataPagamento,
+          tipo_pagamento: lancamento.tipo_pagamento,
+          status: 'pago',
+          origem_tipo: lancamento.origem_tipo,
+          origem_irmao_id: lancamento.origem_irmao_id,
+          observacoes: `Pagamento parcial de R$ ${valorAPagar.toFixed(2)} do lançamento "${lancamento.descricao}" (R$ ${valorOriginal.toFixed(2)})`,
+          eh_pagamento_parcial: true,
+          lancamento_principal_id: lancamento.id
+        };
+
+        const { error: errorInsert } = await supabase
+          .from('lancamentos_loja')
+          .insert(novoPagamento);
+
+        if (errorInsert) throw errorInsert;
+
+        showSuccess(`✅ Pagamento de R$ ${valorAPagar.toFixed(2)} registrado! Resta: R$ ${novoRestante.toFixed(2)}`);
+      }
+      
+      onClose();
+      onSuccess();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao registrar pagamento: ' + error.message);
+    }
+  };
+
+  const previewTotalPago = valorPagar ? (totalPago + parseFloat(valorPagar)).toFixed(2) : totalPago.toFixed(2);
+  const previewRestante = valorPagar ? (valorRestante - parseFloat(valorPagar)).toFixed(2) : valorRestante.toFixed(2);
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full my-8">
+        <div className="bg-amber-600 text-white px-6 py-4 rounded-t-lg">
+          <h3 className="text-xl font-bold">💰 Pagamento Parcial</h3>
+          <p className="text-sm text-amber-100">Cada pagamento gera um registro que entra no balanço mensal</p>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Informações do Lançamento */}
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between">
+              <span className="font-medium">Descrição:</span>
+              <span className="text-right">{lancamento.descricao}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-medium">Valor Original:</span>
+              <span className="font-bold">R$ {valorOriginal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="font-medium text-green-600">Total Pago:</span>
+              <span className="font-bold text-green-600">R$ {totalPago.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-medium text-red-600">Valor Restante:</span>
+              <span className="font-bold text-red-600">R$ {valorRestante.toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Histórico de Pagamentos */}
+          {pagamentosExistentes.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4">
+              <h4 className="font-medium mb-2">📋 Pagamentos Anteriores:</h4>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {pagamentosExistentes.map((pag, idx) => (
+                  <div key={pag.id} className="flex justify-between text-sm">
+                    <span>#{idx + 1} - {new Date(pag.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    <span className="font-medium">R$ {parseFloat(pag.valor).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Formulário de Novo Pagamento */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Valor a Pagar *</label>
+              <input 
+                type="number" 
+                required 
+                step="0.01" 
+                min="0.01" 
+                max={valorRestante}
+                value={valorPagar}
+                onChange={(e) => setValorPagar(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-lg font-bold" 
+                placeholder="0.00"
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">Máximo: R$ {valorRestante.toFixed(2)}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Data do Pagamento *</label>
+              <input 
+                type="date" 
+                required
+                value={dataPagamento}
+                onChange={(e) => setDataPagamento(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg" 
+              />
+              <p className="text-xs text-gray-500 mt-1">Entra no balanço desta data</p>
+            </div>
+          </div>
+
+          {/* Prévia */}
+          {valorPagar && parseFloat(valorPagar) > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded p-4 space-y-2">
+              <p className="text-sm font-medium text-blue-900">📊 Após este pagamento:</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-green-700">Total Pago:</span>
+                <span className="font-bold text-green-700">R$ {previewTotalPago}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-red-700">Restante:</span>
+                <span className="font-bold text-red-700">R$ {previewRestante}</span>
+              </div>
+              {parseFloat(previewRestante) === 0 && (
+                <div className="mt-2 p-2 bg-green-100 rounded text-green-800 text-sm font-medium text-center">
+                  ✅ Este pagamento quitará o lançamento completamente!
+                </div>
+              )}
+              <div className="mt-2 p-2 bg-amber-100 rounded text-amber-800 text-sm">
+                💡 Será criado um novo registro que entra no balanço de <strong>{new Date(dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</strong>
+              </div>
+            </div>
+          )}
+
+          {/* Botões */}
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" 
+              className="flex-1 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">
+              💰 Registrar Pagamento
+            </button>
+            <button type="button" onClick={onClose}
+              className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
