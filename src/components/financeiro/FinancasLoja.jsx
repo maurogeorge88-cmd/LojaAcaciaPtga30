@@ -1003,8 +1003,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text(catPrincipal.categoria.nome, 12, yPos + 4);
       yPos += 8;
 
-      // AGRUPAR SE FOR MENSALIDADE
-      if (catPrincipal.categoria.nome === 'Mensalidade' && catPrincipal.lancamentosDiretos.length > 0) {
+      // AGRUPAR SE FOR MENSALIDADE/AGAPE/PECULIO
+      if (catPrincipal.categoria.nome === 'Mensalidade/Agape/Peculio' && catPrincipal.lancamentosDiretos.length > 0) {
         const dataLanc = formatarDataBR(catPrincipal.lancamentosDiretos[catPrincipal.lancamentosDiretos.length - 1].data_lancamento);
         
         doc.setFontSize(8);
@@ -1019,7 +1019,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.setFont('helvetica', 'normal');
         doc.text(dataLanc, 10, yPos);
         doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
-        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
+        doc.text('Mensalidade/Agape/Peculio - Irmao', 80, yPos);
         doc.text('', 140, yPos);
         doc.text(`R$${catPrincipal.subtotalDireto.toFixed(2)}`, 200, yPos, { align: 'right' });
         yPos += 4;
