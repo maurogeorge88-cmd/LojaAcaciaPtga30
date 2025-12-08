@@ -1324,10 +1324,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           yPos += 5;
         });
 
-        // Linha amarela separadora ANTES do subtotal
+        // Linha preta separadora ANTES do subtotal
         yPos += 1;
-        doc.setDrawColor(255, 200, 0); // Amarelo
-        doc.setLineWidth(0.8);
+        doc.setDrawColor(0, 0, 0); // Preto
+        doc.setLineWidth(0.5);
         doc.line(15, yPos, 195, yPos);
         yPos += 4;
 
@@ -1339,12 +1339,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.setTextColor(255, 0, 0);
         doc.text(`R$ ${Math.abs(saldoMes).toFixed(2)}`, 190, yPos, { align: 'right' });
         doc.setTextColor(0, 0, 0);
-        
-        // Linha amarela separadora DEPOIS do subtotal
-        yPos += 3;
-        doc.setDrawColor(255, 200, 0);
-        doc.setLineWidth(0.8);
-        doc.line(15, yPos, 195, yPos);
         
         totalGeralDespesa += subtotalDespesa;
         totalGeralCredito += subtotalCredito;
@@ -1383,22 +1377,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       yPos -= 13;
       const saldoFinal = totalGeralDespesa - totalGeralCredito;
       
-      doc.setFontSize(9);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Total Despesa', 145, yPos, { align: 'right' });
+      doc.text('Total Despesa', 140, yPos, { align: 'right' });
       doc.setTextColor(255, 0, 0);
       doc.text(`R$ ${totalGeralDespesa.toFixed(2)}`, 190, yPos, { align: 'right' });
       doc.setTextColor(0, 0, 0);
-      yPos += 5;
+      yPos += 7;
 
-      doc.text('Total Crédito', 145, yPos, { align: 'right' });
-      doc.setTextColor(0, 150, 0);
+      doc.text('Total Crédito', 140, yPos, { align: 'right' });
+      doc.setTextColor(0, 100, 255);
       doc.text(`R$ ${totalGeralCredito.toFixed(2)}`, 190, yPos, { align: 'right' });
       doc.setTextColor(0, 0, 0);
-      yPos += 5;
+      yPos += 7;
 
-      doc.text('Saldo', 145, yPos, { align: 'right' });
-      doc.setTextColor(saldoFinal > 0 ? 255 : 0, 0, 0);
+      doc.text('Saldo', 140, yPos, { align: 'right' });
+      doc.setTextColor(255, 0, 0);
       doc.text(`R$ ${Math.abs(saldoFinal).toFixed(2)}`, 190, yPos, { align: 'right' });
       doc.setTextColor(0, 0, 0);
 
