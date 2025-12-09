@@ -57,6 +57,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     nome: '',
     cpf: '',
     data_nascimento: '',
+    data_casamento: '',
     profissao: ''
   });
 
@@ -141,6 +142,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           nome: esposaData.nome || '',
           cpf: esposaData.cpf || '',
           data_nascimento: esposaData.data_nascimento || '',
+          data_casamento: esposaData.data_casamento || '',
           profissao: esposaData.profissao || ''
         });
       } else {
@@ -338,6 +340,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             nome: conjuge.nome.trim(),
             cpf: limparCPF(conjuge.cpf),
             data_nascimento: conjuge.data_nascimento || null,
+            data_casamento: conjuge.data_casamento || null,
             profissao: conjuge.profissao || null
           };
 
@@ -1045,6 +1048,23 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       {conjuge.data_nascimento && (
                         <span className="text-xs text-gray-500 mt-1">
                           Idade: {calcularIdade(conjuge.data_nascimento)} anos
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        💑 Data de Casamento
+                      </label>
+                      <input
+                        type="date"
+                        value={conjuge.data_casamento}
+                        onChange={(e) => setConjuge({ ...conjuge, data_casamento: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                      {conjuge.data_casamento && (
+                        <span className="text-xs text-gray-500 mt-1">
+                          Anos de união: {calcularIdade(conjuge.data_casamento)} anos
                         </span>
                       )}
                     </div>
