@@ -572,14 +572,18 @@ export default function Aniversariantes() {
       // ===== NÍVEL 3: IN MEMORIAM =====
       
       // IRMÃOS FALECIDOS
-      const { data: irmaosFalecidos, error: errorIrmaosFalecidos } = await supabase
+      let { data: irmaosFalecidos, error: errorIrmaosFalecidos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url, status')
-        .eq('status', 'Falecido');
+        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url, status');
 
       if (errorIrmaosFalecidos) {
         console.error('❌ Erro ao buscar irmãos falecidos:', errorIrmaosFalecidos);
+        irmaosFalecidos = [];
       }
+      
+      // Filtrar apenas os falecidos (status = 'Falecido')
+      irmaosFalecidos = irmaosFalecidos?.filter(i => i.status === 'Falecido') || [];
+      
       console.log('✅ Irmãos falecidos:', irmaosFalecidos?.length);
 
       if (irmaosFalecidos) {
@@ -624,15 +628,19 @@ export default function Aniversariantes() {
       }
 
       // PAIS FALECIDOS de irmãos VIVOS
-      const { data: paisFalecidos, error: errorPaisFalecidos } = await supabase
+      let { data: paisFalecidos, error: errorPaisFalecidos } = await supabase
         .from('pais')
-        .select('nome, data_nascimento, data_falecimento, irmao_id, irmaos(nome, status)')
-        .in('irmao_id', irmaoVivosIds)
-        .eq('falecido', true);
+        .select('nome, data_nascimento, data_falecimento, irmao_id, falecido, irmaos(nome, status)')
+        .in('irmao_id', irmaoVivosIds);
 
       if (errorPaisFalecidos) {
         console.error('❌ Erro ao buscar pais falecidos:', errorPaisFalecidos);
+        paisFalecidos = [];
       }
+      
+      // Filtrar apenas os falecidos (falecido = true)
+      paisFalecidos = paisFalecidos?.filter(p => p.falecido === true) || [];
+      
       console.log('✅ Pais falecidos:', paisFalecidos?.length);
 
       if (paisFalecidos) {
@@ -675,15 +683,19 @@ export default function Aniversariantes() {
       }
 
       // FILHOS FALECIDOS de irmãos VIVOS
-      const { data: filhosFalecidos, error: errorFilhosFalecidos } = await supabase
+      let { data: filhosFalecidos, error: errorFilhosFalecidos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, data_falecimento, irmao_id, irmaos(nome, status)')
-        .in('irmao_id', irmaoVivosIds)
-        .eq('falecido', true);
+        .select('nome, data_nascimento, data_falecimento, irmao_id, falecido, irmaos(nome, status)')
+        .in('irmao_id', irmaoVivosIds);
 
       if (errorFilhosFalecidos) {
         console.error('❌ Erro ao buscar filhos falecidos:', errorFilhosFalecidos);
+        filhosFalecidos = [];
       }
+      
+      // Filtrar apenas os falecidos (falecido = true)
+      filhosFalecidos = filhosFalecidos?.filter(f => f.falecido === true) || [];
+      
       console.log('✅ Filhos falecidos:', filhosFalecidos?.length);
 
       if (filhosFalecidos) {
