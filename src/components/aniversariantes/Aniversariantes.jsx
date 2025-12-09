@@ -9,7 +9,7 @@ export default function Aniversariantes() {
   const [loading, setLoading] = useState(true);
 
   // Eventos fixos maçônicos e cívicos (dia/mês)
-  const eventosFix os = [
+  const eventosFixos = [
     { nome: 'Dia de São João Batista', dia: 24, mes: 6, tipo: 'Maçônico', descricao: 'Padroeiro da Maçonaria' },
     { nome: 'Dia do Maçom', dia: 20, mes: 8, tipo: 'Maçônico', descricao: 'Dia do Maçom Brasileiro' },
     { nome: 'Aniversário de Paranatinga', dia: 13, mes: 5, tipo: 'Cívico', descricao: 'Fundação da cidade' },
@@ -811,7 +811,7 @@ export default function Aniversariantes() {
       const aniversariantesEventos = [];
       
       // Processar eventos fixos
-      eventosFix os.forEach(evento => {
+      eventosFixos.forEach(evento => {
         const proximoEvento = new Date(hoje.getFullYear(), evento.mes - 1, evento.dia);
         
         const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
