@@ -7,6 +7,7 @@ export default function Aniversariantes() {
   const [aniversariantes, setAniversariantes] = useState([]);
   const [filtro, setFiltro] = useState('hoje');
   const [loading, setLoading] = useState(true);
+  const [modalEventos, setModalEventos] = useState(false);
 
   // Eventos fixos maçônicos e cívicos (dia/mês)
   const eventosFixos = [
@@ -883,48 +884,53 @@ export default function Aniversariantes() {
         console.log('ℹ️ Tabela eventos_comemorativos não encontrada (será criada futuramente)');
       }
       
-      // Buscar ANIVERSÁRIOS DE CASAMENTO das esposas
-      const { data: esposasCasamento } = await supabase
-        .from('esposas')
-        .select('nome, data_casamento, irmao_id, irmaos(nome, status)')
-        .in('irmao_id', irmaoVivosIds);
-      
-      if (esposasCasamento) {
-        esposasCasamento.forEach(esposa => {
-          if (esposa.irmaos?.status === 'Falecido') return;
-          if (!esposa.data_casamento) return;
+      // Buscar ANIVERSÁRIOS DE CASAMENTO das esposas (se o campo existir)
+      try {
+        const { data: esposasCasamento } = await supabase
+          .from('esposas')
+          .select('nome, data_casamento, irmao_id, irmaos(nome, status)')
+          .in('irmao_id', irmaoVivosIds);
+        
+        if (esposasCasamento) {
+          esposasCasamento.forEach(esposa => {
+            if (esposa.irmaos?.status === 'Falecido') return;
+            if (!esposa.data_casamento) return;
 
-          const dataCas = new Date(esposa.data_casamento + 'T00:00:00');
-          const proximoAniv = new Date(hoje.getFullYear(), dataCas.getMonth(), dataCas.getDate());
-          
-          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-          if (proximoAniv < hojeZerado) {
-            proximoAniv.setFullYear(hoje.getFullYear() + 1);
-          }
+            const dataCas = new Date(esposa.data_casamento + 'T00:00:00');
+            const proximoAniv = new Date(hoje.getFullYear(), dataCas.getMonth(), dataCas.getDate());
+            
+            const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            if (proximoAniv < hojeZerado) {
+              proximoAniv.setFullYear(hoje.getFullYear() + 1);
+            }
 
-          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
-                        proximoAniv.getMonth() === hoje.getMonth() &&
-                        proximoAniv.getFullYear() === hoje.getFullYear();
+            const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
+                          proximoAniv.getMonth() === hoje.getMonth() &&
+                          proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            const deveMostrar = filtro === 'todos' || 
+              (filtro === 'hoje' && ehHoje) ||
+              (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+              (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
 
-          if (deveMostrar) {
-            const anosDeUniao = hoje.getFullYear() - dataCas.getFullYear();
-            aniversariantesFamiliares.push({
-              tipo: 'Bodas',
-              nome: `${esposa.irmaos?.nome} & ${esposa.nome}`,
-              proximo_aniversario: proximoAniv,
-              data_nascimento: dataCas,
-              idade: anosDeUniao,
-              irmao_responsavel: esposa.irmaos?.nome,
-              nivel: 2,
-              icone: '💑'
-            });
-          }
-        });
+            if (deveMostrar) {
+              const anosDeUniao = hoje.getFullYear() - dataCas.getFullYear();
+              aniversariantesFamiliares.push({
+                tipo: 'Bodas',
+                nome: `${esposa.irmaos?.nome} & ${esposa.nome}`,
+                proximo_aniversario: proximoAniv,
+                data_nascimento: dataCas,
+                idade: anosDeUniao,
+                irmao_responsavel: esposa.irmaos?.nome,
+                nivel: 2,
+                icone: '💑'
+              });
+            }
+          });
+        }
+      } catch (error) {
+        // Campo data_casamento ainda não existe na tabela esposas
+        console.log('ℹ️ Campo data_casamento não encontrado (adicione na tabela esposas futuramente)');
       }
       
       // Reordenar familiares após adicionar bodas
@@ -968,15 +974,37 @@ export default function Aniversariantes() {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">📅 Datas Comemorativas</h2>
           
-          {/* Botão de Gerar Relatório */}
-          <button
-            onClick={gerarRelatorioPDF}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition flex items-center gap-2"
-            disabled={loading}
-          >
-            <span>📄</span>
-            <span>Gerar Relatório PDF</span>
-          </button>
+          <div className="flex gap-2">
+            {/* Botão de Gerenciar Eventos */}
+            <button
+              onClick={() => setModalEventos(true)}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition flex items-center gap-2"
+            >
+              <span>⚙️</span>
+              <span>Gerenciar Eventos</span>
+            </button>
+            
+            {/* Botão de Gerar Relatório */}
+            <button
+              onClick={gerarRelatorioPDF}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition flex items-center gap-2"
+              disabled={loading}
+            >
+              <span>📄</span>
+              <span>Gerar Relatório PDF</span>
+            </button>
+          </div>
+        </div>
+        
+        {/* Informações sobre configurações */}
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
+          <p className="text-sm text-blue-800">
+            💡 <strong>Configurações pendentes:</strong>
+          </p>
+          <ul className="text-xs text-blue-700 mt-2 ml-4 list-disc">
+            <li>Adicione o campo <code className="bg-blue-100 px-1 rounded">data_casamento</code> na tabela <strong>esposas</strong> para registrar aniversários de casamento</li>
+            <li>Crie a tabela <code className="bg-blue-100 px-1 rounded">eventos_comemorativos</code> para cadastrar eventos personalizados</li>
+          </ul>
         </div>
         
         {/* Botões de filtro */}
@@ -1259,6 +1287,101 @@ export default function Aniversariantes() {
           </div>
         )}
       </div>
+      
+      {/* Modal de Gerenciar Eventos */}
+      {modalEventos && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-purple-600 text-white p-6 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">⚙️ Gerenciar Eventos</h3>
+                <button
+                  onClick={() => setModalEventos(false)}
+                  className="text-white hover:text-gray-200 text-3xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6">
+              {/* Eventos Fixos */}
+              <div className="mb-6">
+                <h4 className="text-lg font-bold text-gray-800 mb-3">🔷 Eventos Fixos (pré-cadastrados)</h4>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-200">
+                      <tr>
+                        <th className="p-2 text-left">Evento</th>
+                        <th className="p-2 text-center">Data</th>
+                        <th className="p-2 text-center">Tipo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {eventosFixos.map((evento, index) => (
+                        <tr key={index} className="border-b">
+                          <td className="p-2">{evento.nome}</td>
+                          <td className="p-2 text-center">{evento.dia}/{evento.mes}</td>
+                          <td className="p-2 text-center">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              evento.tipo === 'Maçônico' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {evento.tipo}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              
+              {/* Instruções para criar tabela */}
+              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
+                <h4 className="text-lg font-bold text-yellow-800 mb-2">📋 Como adicionar eventos personalizados:</h4>
+                <p className="text-sm text-yellow-700 mb-3">
+                  Para cadastrar eventos personalizados, crie a tabela no Supabase:
+                </p>
+                <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+{`CREATE TABLE eventos_comemorativos (
+  id BIGSERIAL PRIMARY KEY,
+  nome TEXT NOT NULL,
+  tipo TEXT,
+  descricao TEXT,
+  dia INTEGER NOT NULL CHECK (dia >= 1 AND dia <= 31),
+  mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
+  created_at TIMESTAMP DEFAULT NOW()
+);`}
+                </pre>
+              </div>
+              
+              {/* Instruções para data de casamento */}
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
+                <h4 className="text-lg font-bold text-blue-800 mb-2">💑 Como adicionar aniversários de casamento:</h4>
+                <p className="text-sm text-blue-700 mb-3">
+                  Para registrar aniversários de casamento, adicione o campo na tabela esposas:
+                </p>
+                <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+{`ALTER TABLE esposas 
+ADD COLUMN data_casamento DATE;`}
+                </pre>
+                <p className="text-xs text-blue-600 mt-2">
+                  Depois, edite cada esposa e adicione a data de casamento no formato DD/MM/AAAA
+                </p>
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setModalEventos(false)}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
