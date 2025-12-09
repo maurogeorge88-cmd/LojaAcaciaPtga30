@@ -74,7 +74,7 @@ export default function Aniversariantes() {
         // Buscar pais falecidos
         const { data: paisFalecidos } = await supabase
           .from('pais')
-          .select('irmao_id, nome, data_falecimento')
+          .select('irmao_id, nome')
           .in('irmao_id', irmaosIds)
           .eq('falecido', true);
         
@@ -84,8 +84,7 @@ export default function Aniversariantes() {
               paisFalecidosMap[pai.irmao_id] = [];
             }
             paisFalecidosMap[pai.irmao_id].push({
-              nome: pai.nome,
-              data: pai.data_falecimento
+              nome: pai.nome
             });
           });
         }
@@ -93,7 +92,7 @@ export default function Aniversariantes() {
         // Buscar filhos falecidos
         const { data: filhosFalecidos } = await supabase
           .from('filhos')
-          .select('irmao_id, nome, data_falecimento')
+          .select('irmao_id, nome')
           .in('irmao_id', irmaosIds)
           .eq('falecido', true);
         
@@ -103,8 +102,7 @@ export default function Aniversariantes() {
               filhosFalecidosMap[filho.irmao_id] = [];
             }
             filhosFalecidosMap[filho.irmao_id].push({
-              nome: filho.nome,
-              data: filho.data_falecimento
+              nome: filho.nome
             });
           });
         }
@@ -127,16 +125,12 @@ export default function Aniversariantes() {
           
           let paisTexto = '';
           if (paisFalecidos.length > 0) {
-            paisTexto = paisFalecidos.map(p => 
-              `${p.nome}${p.data ? ' (†' + new Date(p.data + 'T00:00:00').toLocaleDateString('pt-BR') + ')' : ''}`
-            ).join(', ');
+            paisTexto = paisFalecidos.map(p => p.nome).join(', ');
           }
           
           let filhosTexto = '';
           if (filhosFalecidos.length > 0) {
-            filhosTexto = filhosFalecidos.map(f => 
-              `${f.nome}${f.data ? ' (†' + new Date(f.data + 'T00:00:00').toLocaleDateString('pt-BR') + ')' : ''}`
-            ).join(', ');
+            filhosTexto = filhosFalecidos.map(f => f.nome).join(', ');
           }
           
           return [
@@ -270,14 +264,12 @@ export default function Aniversariantes() {
         const tableData3 = nivel3.map(aniv => {
           const ehHoje = aniv.proximo_aniversario.toDateString() === hoje.toDateString();
           const dataNascFormatada = aniv.data_nascimento.toLocaleDateString('pt-BR');
-          const dataFalecFormatada = aniv.data_falecimento ? new Date(aniv.data_falecimento + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
           
           return [
             aniv.nome,
             aniv.tipo,
             `${aniv.idade} anos`,
             dataNascFormatada,
-            dataFalecFormatada,
             aniv.irmao_responsavel || '-',
             ehHoje ? '🎉' : ''
           ];
@@ -285,7 +277,7 @@ export default function Aniversariantes() {
         
         doc.autoTable({
           startY: currentY,
-          head: [['Nome', 'Tipo', 'Idade', 'Dt Nasc.', '† Falec.', 'Irmão', '']],
+          head: [['Nome', 'Tipo', 'Idade', 'Dt Nasc.', 'Irmão', '']],
           body: tableData3,
           styles: {
             fontSize: 8,
@@ -299,19 +291,18 @@ export default function Aniversariantes() {
             fontSize: 8
           },
           columnStyles: {
-            0: { cellWidth: 45 },
-            1: { cellWidth: 22, halign: 'center' },
-            2: { cellWidth: 18, halign: 'center' },
-            3: { cellWidth: 22, halign: 'center' },
-            4: { cellWidth: 22, halign: 'center' },
-            5: { cellWidth: 38 },
-            6: { cellWidth: 10, halign: 'center', fontStyle: 'bold' }
+            0: { cellWidth: 50 },
+            1: { cellWidth: 25, halign: 'center' },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 25, halign: 'center' },
+            4: { cellWidth: 50 },
+            5: { cellWidth: 10, halign: 'center', fontStyle: 'bold' }
           },
           alternateRowStyles: {
             fillColor: [245, 245, 245]
           },
           didParseCell: function(data) {
-            if (data.row.index >= 0 && data.column.index === 6 && data.cell.raw === '🎉') {
+            if (data.row.index >= 0 && data.column.index === 5 && data.cell.raw === '🎉') {
               data.row.cells.forEach(cell => {
                 cell.styles.fillColor = [255, 243, 205];
                 cell.styles.fontStyle = 'bold';
@@ -574,7 +565,7 @@ export default function Aniversariantes() {
       // IRMÃOS FALECIDOS
       let { data: irmaosFalecidos, error: errorIrmaosFalecidos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url, status');
+        .select('id, cim, nome, data_nascimento, cargo, foto_url, status');
 
       if (errorIrmaosFalecidos) {
         console.error('❌ Erro ao buscar irmãos falecidos:', errorIrmaosFalecidos);
@@ -615,7 +606,6 @@ export default function Aniversariantes() {
               cim: irmao.cim,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
-              data_falecimento: irmao.data_falecimento,
               idade,
               cargo: irmao.cargo,
               foto_url: irmao.foto_url,
@@ -630,7 +620,7 @@ export default function Aniversariantes() {
       // PAIS FALECIDOS de irmãos VIVOS
       let { data: paisFalecidos, error: errorPaisFalecidos } = await supabase
         .from('pais')
-        .select('nome, data_nascimento, data_falecimento, irmao_id, falecido, irmaos(nome, status)')
+        .select('nome, data_nascimento, irmao_id, falecido, irmaos(nome, status)')
         .in('irmao_id', irmaoVivosIds);
 
       if (errorPaisFalecidos) {
@@ -672,7 +662,6 @@ export default function Aniversariantes() {
               nome: pai.nome,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
-              data_falecimento: pai.data_falecimento,
               idade,
               irmao_responsavel: pai.irmaos?.nome,
               nivel: 3,
@@ -685,7 +674,7 @@ export default function Aniversariantes() {
       // FILHOS FALECIDOS de irmãos VIVOS
       let { data: filhosFalecidos, error: errorFilhosFalecidos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, data_falecimento, irmao_id, falecido, irmaos(nome, status)')
+        .select('nome, data_nascimento, irmao_id, falecido, irmaos(nome, status)')
         .in('irmao_id', irmaoVivosIds);
 
       if (errorFilhosFalecidos) {
@@ -727,7 +716,6 @@ export default function Aniversariantes() {
               nome: filho.nome,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
-              data_falecimento: filho.data_falecimento,
               idade,
               irmao_responsavel: filho.irmaos?.nome,
               nivel: 3,
@@ -999,12 +987,6 @@ export default function Aniversariantes() {
                             
                             {aniv.irmao_responsavel && (
                               <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
-                            )}
-                            
-                            {aniv.data_falecimento && (
-                              <p className="text-xs text-red-600 font-medium">
-                                † {new Date(aniv.data_falecimento + 'T00:00:00').toLocaleDateString('pt-BR')}
-                              </p>
                             )}
                             
                             <p className="text-xs text-gray-600 mt-1 font-medium">
