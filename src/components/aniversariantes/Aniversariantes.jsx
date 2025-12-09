@@ -1291,40 +1291,46 @@ export default function Aniversariantes() {
       {/* Modal de Gerenciar Eventos */}
       {modalEventos && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-purple-600 text-white p-6 rounded-t-lg">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Cabeçalho */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-t-lg">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">⚙️ Gerenciar Eventos</h3>
+                <h3 className="text-xl font-bold">⚙️ Gerenciar Eventos e Datas Especiais</h3>
                 <button
                   onClick={() => setModalEventos(false)}
-                  className="text-white hover:text-gray-200 text-3xl font-bold"
+                  className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
                 >
                   ×
                 </button>
               </div>
             </div>
             
-            <div className="p-6">
+            <div className="p-6 space-y-6">
               {/* Eventos Fixos */}
-              <div className="mb-6">
-                <h4 className="text-lg font-bold text-gray-800 mb-3">🔷 Eventos Fixos (pré-cadastrados)</h4>
-                <div className="bg-gray-50 rounded-lg p-4">
+              <div>
+                <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                  <span>🔷</span>
+                  <span>Eventos Fixos (pré-cadastrados)</span>
+                </h4>
+                <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-200">
+                    <thead className="bg-gray-100">
                       <tr>
-                        <th className="p-2 text-left">Evento</th>
-                        <th className="p-2 text-center">Data</th>
-                        <th className="p-2 text-center">Tipo</th>
+                        <th className="p-3 text-left font-semibold text-gray-700">Evento</th>
+                        <th className="p-3 text-center font-semibold text-gray-700">Data</th>
+                        <th className="p-3 text-center font-semibold text-gray-700">Tipo</th>
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y">
                       {eventosFixos.map((evento, index) => (
-                        <tr key={index} className="border-b">
-                          <td className="p-2">{evento.nome}</td>
-                          <td className="p-2 text-center">{evento.dia}/{evento.mes}</td>
-                          <td className="p-2 text-center">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              evento.tipo === 'Maçônico' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="p-3">{evento.nome}</td>
+                          <td className="p-3 text-center font-medium">{evento.dia}/{evento.mes}</td>
+                          <td className="p-3 text-center">
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              evento.tipo === 'Maçônico' 
+                                ? 'bg-purple-100 text-purple-700' 
+                                : 'bg-blue-100 text-blue-700'
                             }`}>
                               {evento.tipo}
                             </span>
@@ -1337,12 +1343,16 @@ export default function Aniversariantes() {
               </div>
               
               {/* Instruções para criar tabela */}
-              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4">
-                <h4 className="text-lg font-bold text-yellow-800 mb-2">📋 Como adicionar eventos personalizados:</h4>
-                <p className="text-sm text-yellow-700 mb-3">
-                  Para cadastrar eventos personalizados, crie a tabela no Supabase:
+              <div className="border-l-4 border-yellow-400 bg-yellow-50 p-4 rounded-r-lg">
+                <h4 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
+                  <span>📋</span>
+                  <span>Como adicionar eventos personalizados</span>
+                </h4>
+                <p className="text-sm text-gray-700 mb-3">
+                  Execute este comando SQL no Supabase para criar a tabela de eventos:
                 </p>
-                <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                  <pre className="text-green-400 text-xs font-mono">
 {`CREATE TABLE eventos_comemorativos (
   id BIGSERIAL PRIMARY KEY,
   nome TEXT NOT NULL,
@@ -1352,28 +1362,38 @@ export default function Aniversariantes() {
   mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
   created_at TIMESTAMP DEFAULT NOW()
 );`}
-                </pre>
+                  </pre>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  💡 Depois de criar a tabela, você poderá cadastrar eventos diretamente no Supabase
+                </p>
               </div>
               
               {/* Instruções para data de casamento */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
-                <h4 className="text-lg font-bold text-blue-800 mb-2">💑 Como adicionar aniversários de casamento:</h4>
-                <p className="text-sm text-blue-700 mb-3">
-                  Para registrar aniversários de casamento, adicione o campo na tabela esposas:
+              <div className="border-l-4 border-pink-400 bg-pink-50 p-4 rounded-r-lg">
+                <h4 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
+                  <span>💑</span>
+                  <span>Como adicionar aniversários de casamento</span>
+                </h4>
+                <p className="text-sm text-gray-700 mb-3">
+                  Execute este comando SQL no Supabase para adicionar o campo na tabela esposas:
                 </p>
-                <pre className="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">
+                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                  <pre className="text-green-400 text-xs font-mono">
 {`ALTER TABLE esposas 
 ADD COLUMN data_casamento DATE;`}
-                </pre>
-                <p className="text-xs text-blue-600 mt-2">
-                  Depois, edite cada esposa e adicione a data de casamento no formato DD/MM/AAAA
+                  </pre>
+                </div>
+                <p className="text-xs text-gray-600 mt-2">
+                  💡 Depois, edite cada esposa no sistema e adicione a data de casamento
                 </p>
               </div>
               
-              <div className="mt-6 flex justify-end">
+              {/* Botão de fechar */}
+              <div className="flex justify-end pt-4 border-t">
                 <button
                   onClick={() => setModalEventos(false)}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition"
                 >
                   Fechar
                 </button>
