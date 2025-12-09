@@ -8,6 +8,15 @@ export default function Aniversariantes() {
   const [filtro, setFiltro] = useState('hoje');
   const [loading, setLoading] = useState(true);
   const [modalEventos, setModalEventos] = useState(false);
+  const [eventosCustomizados, setEventosCustomizados] = useState([]);
+  const [novoEvento, setNovoEvento] = useState({
+    nome: '',
+    tipo: 'Maçônico',
+    descricao: '',
+    dia: '',
+    mes: ''
+  });
+  const [salvandoEvento, setSalvandoEvento] = useState(false);
 
   // Eventos fixos maçônicos e cívicos (dia/mês)
   const eventosFixos = [
@@ -21,6 +30,90 @@ export default function Aniversariantes() {
   useEffect(() => {
     carregarAniversariantes();
   }, [filtro]);
+
+  useEffect(() => {
+    if (modalEventos) {
+      carregarEventosCustomizados();
+    }
+  }, [modalEventos]);
+
+  const carregarEventosCustomizados = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('eventos_comemorativos')
+        .select('*')
+        .order('mes', { ascending: true })
+        .order('dia', { ascending: true });
+      
+      if (error) throw error;
+      setEventosCustomizados(data || []);
+    } catch (error) {
+      console.log('ℹ️ Tabela eventos_comemorativos não existe ainda');
+      setEventosCustomizados([]);
+    }
+  };
+
+  const salvarEvento = async () => {
+    if (!novoEvento.nome || !novoEvento.dia || !novoEvento.mes) {
+      alert('Preencha todos os campos obrigatórios!');
+      return;
+    }
+
+    if (novoEvento.dia < 1 || novoEvento.dia > 31) {
+      alert('Dia deve estar entre 1 e 31');
+      return;
+    }
+
+    if (novoEvento.mes < 1 || novoEvento.mes > 12) {
+      alert('Mês deve estar entre 1 e 12');
+      return;
+    }
+
+    setSalvandoEvento(true);
+    try {
+      const { error } = await supabase
+        .from('eventos_comemorativos')
+        .insert([{
+          nome: novoEvento.nome,
+          tipo: novoEvento.tipo,
+          descricao: novoEvento.descricao,
+          dia: parseInt(novoEvento.dia),
+          mes: parseInt(novoEvento.mes)
+        }]);
+
+      if (error) throw error;
+
+      alert('Evento cadastrado com sucesso!');
+      setNovoEvento({ nome: '', tipo: 'Maçônico', descricao: '', dia: '', mes: '' });
+      carregarEventosCustomizados();
+      carregarAniversariantes(); // Recarregar para mostrar o novo evento
+    } catch (error) {
+      console.error('Erro ao salvar evento:', error);
+      alert('Erro ao salvar evento. Verifique se a tabela eventos_comemorativos existe no Supabase.');
+    } finally {
+      setSalvandoEvento(false);
+    }
+  };
+
+  const excluirEvento = async (id) => {
+    if (!confirm('Deseja realmente excluir este evento?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('eventos_comemorativos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      alert('Evento excluído com sucesso!');
+      carregarEventosCustomizados();
+      carregarAniversariantes();
+    } catch (error) {
+      console.error('Erro ao excluir evento:', error);
+      alert('Erro ao excluir evento.');
+    }
+  };
 
   const gerarRelatorioPDF = async () => {
     const doc = new jsPDF();
@@ -1291,7 +1384,7 @@ export default function Aniversariantes() {
       {/* Modal de Gerenciar Eventos */}
       {modalEventos && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             {/* Cabeçalho */}
             <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-t-lg">
               <div className="flex justify-between items-center">
@@ -1306,6 +1399,106 @@ export default function Aniversariantes() {
             </div>
             
             <div className="p-6 space-y-6">
+              {/* Formulário de Novo Evento */}
+              <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg">
+                <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <span>➕</span>
+                  <span>Cadastrar Novo Evento</span>
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nome do Evento *
+                    </label>
+                    <input
+                      type="text"
+                      value={novoEvento.nome}
+                      onChange={(e) => setNovoEvento({...novoEvento, nome: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="Ex: Aniversário da Loja"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo *
+                    </label>
+                    <select
+                      value={novoEvento.tipo}
+                      onChange={(e) => setNovoEvento({...novoEvento, tipo: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="Maçônico">Maçônico</option>
+                      <option value="Cívico">Cívico</option>
+                      <option value="Loja">Loja</option>
+                      <option value="Outro">Outro</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Dia *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={novoEvento.dia}
+                      onChange={(e) => setNovoEvento({...novoEvento, dia: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="1-31"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Mês *
+                    </label>
+                    <select
+                      value={novoEvento.mes}
+                      onChange={(e) => setNovoEvento({...novoEvento, mes: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    >
+                      <option value="">Selecione...</option>
+                      <option value="1">Janeiro</option>
+                      <option value="2">Fevereiro</option>
+                      <option value="3">Março</option>
+                      <option value="4">Abril</option>
+                      <option value="5">Maio</option>
+                      <option value="6">Junho</option>
+                      <option value="7">Julho</option>
+                      <option value="8">Agosto</option>
+                      <option value="9">Setembro</option>
+                      <option value="10">Outubro</option>
+                      <option value="11">Novembro</option>
+                      <option value="12">Dezembro</option>
+                    </select>
+                  </div>
+                  
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Descrição
+                    </label>
+                    <input
+                      type="text"
+                      value={novoEvento.descricao}
+                      onChange={(e) => setNovoEvento({...novoEvento, descricao: e.target.value})}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      placeholder="Descrição opcional do evento"
+                    />
+                  </div>
+                </div>
+                
+                <button
+                  onClick={salvarEvento}
+                  disabled={salvandoEvento}
+                  className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition disabled:opacity-50"
+                >
+                  {salvandoEvento ? 'Salvando...' : '💾 Salvar Evento'}
+                </button>
+              </div>
+
               {/* Eventos Fixos */}
               <div>
                 <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
@@ -1342,41 +1535,62 @@ export default function Aniversariantes() {
                 </div>
               </div>
               
-              {/* Instruções para criar tabela */}
-              <div className="border-l-4 border-yellow-400 bg-yellow-50 p-4 rounded-r-lg">
-                <h4 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
-                  <span>📋</span>
-                  <span>Como adicionar eventos personalizados</span>
-                </h4>
-                <p className="text-sm text-gray-700 mb-3">
-                  Execute este comando SQL no Supabase para criar a tabela de eventos:
-                </p>
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                  <pre className="text-green-400 text-xs font-mono">
-{`CREATE TABLE eventos_comemorativos (
-  id BIGSERIAL PRIMARY KEY,
-  nome TEXT NOT NULL,
-  tipo TEXT,
-  descricao TEXT,
-  dia INTEGER NOT NULL CHECK (dia >= 1 AND dia <= 31),
-  mes INTEGER NOT NULL CHECK (mes >= 1 AND mes <= 12),
-  created_at TIMESTAMP DEFAULT NOW()
-);`}
-                  </pre>
+              {/* Eventos Customizados */}
+              {eventosCustomizados.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <span>📅</span>
+                    <span>Eventos Personalizados ({eventosCustomizados.length})</span>
+                  </h4>
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="p-3 text-left font-semibold text-gray-700">Evento</th>
+                          <th className="p-3 text-center font-semibold text-gray-700">Data</th>
+                          <th className="p-3 text-center font-semibold text-gray-700">Tipo</th>
+                          <th className="p-3 text-center font-semibold text-gray-700">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {eventosCustomizados.map((evento) => (
+                          <tr key={evento.id} className="hover:bg-gray-50">
+                            <td className="p-3">
+                              <div className="font-medium">{evento.nome}</div>
+                              {evento.descricao && (
+                                <div className="text-xs text-gray-500">{evento.descricao}</div>
+                              )}
+                            </td>
+                            <td className="p-3 text-center font-medium">{evento.dia}/{evento.mes}</td>
+                            <td className="p-3 text-center">
+                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                                {evento.tipo || 'Evento'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              <button
+                                onClick={() => excluirEvento(evento.id)}
+                                className="text-red-600 hover:text-red-800 font-medium text-xs"
+                              >
+                                🗑️ Excluir
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-                <p className="text-xs text-gray-600 mt-2">
-                  💡 Depois de criar a tabela, você poderá cadastrar eventos diretamente no Supabase
-                </p>
-              </div>
+              )}
               
               {/* Instruções para data de casamento */}
               <div className="border-l-4 border-pink-400 bg-pink-50 p-4 rounded-r-lg">
                 <h4 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
                   <span>💑</span>
-                  <span>Como adicionar aniversários de casamento</span>
+                  <span>Aniversários de Casamento</span>
                 </h4>
                 <p className="text-sm text-gray-700 mb-3">
-                  Execute este comando SQL no Supabase para adicionar o campo na tabela esposas:
+                  Para habilitar aniversários de casamento, execute este comando no Supabase:
                 </p>
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                   <pre className="text-green-400 text-xs font-mono">
