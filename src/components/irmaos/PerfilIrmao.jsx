@@ -667,6 +667,14 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         </span>
                       </div>
                     )}
+                    {familiares.conjuge.data_casamento && (
+                      <div>
+                        <span className="font-semibold text-gray-700">💑 Data de Casamento:</span>
+                        <span className="ml-2 text-gray-900">
+                          {familiares.conjuge.data_casamento.split('-').reverse().join('/')}
+                        </span>
+                      </div>
+                    )}
                     {familiares.conjuge.cpf && (
                       <div>
                         <span className="font-semibold text-gray-700">CPF:</span>
