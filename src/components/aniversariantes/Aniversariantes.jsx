@@ -8,6 +8,15 @@ export default function Aniversariantes() {
   const [filtro, setFiltro] = useState('hoje');
   const [loading, setLoading] = useState(true);
 
+  // Eventos fixos maçônicos e cívicos (dia/mês)
+  const eventosFix os = [
+    { nome: 'Dia de São João Batista', dia: 24, mes: 6, tipo: 'Maçônico', descricao: 'Padroeiro da Maçonaria' },
+    { nome: 'Dia do Maçom', dia: 20, mes: 8, tipo: 'Maçônico', descricao: 'Dia do Maçom Brasileiro' },
+    { nome: 'Aniversário de Paranatinga', dia: 13, mes: 5, tipo: 'Cívico', descricao: 'Fundação da cidade' },
+    { nome: 'Dia da Fraternidade Universal', dia: 21, mes: 3, tipo: 'Maçônico', descricao: 'Equinócio de Outono' },
+    { nome: 'Dia do Grão-Mestre', dia: 23, mes: 10, tipo: 'Maçônico', descricao: 'Homenagem ao Grão-Mestre' },
+  ];
+
   useEffect(() => {
     carregarAniversariantes();
   }, [filtro]);
@@ -22,7 +31,7 @@ export default function Aniversariantes() {
     doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
     
     doc.setFontSize(14);
-    doc.text('🎂 Relatório de Aniversariantes', 105, 25, { align: 'center' });
+    doc.text('📅 Relatório de Datas Comemorativas', 105, 25, { align: 'center' });
     
     // Subtítulo baseado no filtro
     doc.setFontSize(11);
@@ -248,6 +257,71 @@ export default function Aniversariantes() {
         currentY = doc.lastAutoTable.finalY + 10;
       }
       
+      // ===== NÍVEL 4: EVENTOS MAÇÔNICOS E CÍVICOS =====
+      const nivel4 = aniversariantes.filter(a => a.nivel === 4);
+      
+      if (nivel4.length > 0) {
+        if (currentY > 240) {
+          doc.addPage();
+          currentY = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(128, 0, 128);
+        doc.text(`4. EVENTOS MAÇÔNICOS E CÍVICOS (${nivel4.length})`, 15, currentY);
+        currentY += 5;
+        
+        const tableData4 = nivel4.map(aniv => {
+          const ehHoje = aniv.proximo_aniversario.toDateString() === hoje.toDateString();
+          
+          return [
+            aniv.nome,
+            aniv.tipo,
+            aniv.descricao || '-',
+            aniv.proximo_aniversario.toLocaleDateString('pt-BR'),
+            ehHoje ? '🎉' : ''
+          ];
+        });
+        
+        doc.autoTable({
+          startY: currentY,
+          head: [['Evento', 'Tipo', 'Descrição', 'Data', '']],
+          body: tableData4,
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [128, 0, 128],
+            textColor: 255,
+            fontStyle: 'bold',
+            halign: 'center',
+            fontSize: 8
+          },
+          columnStyles: {
+            0: { cellWidth: 50 },
+            1: { cellWidth: 30, halign: 'center' },
+            2: { cellWidth: 70, fontSize: 7 },
+            3: { cellWidth: 25, halign: 'center' },
+            4: { cellWidth: 10, halign: 'center', fontStyle: 'bold' }
+          },
+          alternateRowStyles: {
+            fillColor: [245, 230, 255]
+          },
+          didParseCell: function(data) {
+            if (data.row.index >= 0 && data.column.index === 4 && data.cell.raw === '🎉') {
+              data.row.cells.forEach(cell => {
+                cell.styles.fillColor = [255, 243, 205];
+                cell.styles.fontStyle = 'bold';
+              });
+            }
+          }
+        });
+        
+        currentY = doc.lastAutoTable.finalY + 10;
+      }
+      
       // ===== NÍVEL 3: IN MEMORIAM =====
       if (nivel3.length > 0) {
         if (currentY > 240) {
@@ -330,20 +404,23 @@ export default function Aniversariantes() {
       
       const totalIrmaos = nivel1.length;
       const totalFamiliares = nivel2.length;
+      const totalEventos = nivel4.length;
       const totalInMemoriam = nivel3.length;
       const totalPais = aniversariantes.filter(a => a.tipo === 'Pai/Mãe').length;
       const totalEsposas = aniversariantes.filter(a => a.tipo === 'Esposa').length;
+      const totalBodas = aniversariantes.filter(a => a.tipo === 'Bodas').length;
       const totalFilhos = aniversariantes.filter(a => a.tipo === 'Filho(a)').length;
       const totalHoje = aniversariantes.filter(a => 
         a.proximo_aniversario.toDateString() === hoje.toDateString()
       ).length;
       
-      doc.text(`• Total de Aniversariantes: ${aniversariantes.length}`, 15, currentY + 6);
+      doc.text(`• Total de Datas Comemorativas: ${aniversariantes.length}`, 15, currentY + 6);
       doc.text(`• Irmãos Vivos: ${totalIrmaos}`, 15, currentY + 11);
-      doc.text(`• Familiares (Pais: ${totalPais}, Esposas: ${totalEsposas}, Filhos: ${totalFilhos})`, 15, currentY + 16);
-      doc.text(`• In Memoriam: ${totalInMemoriam}`, 15, currentY + 21);
+      doc.text(`• Familiares (Pais: ${totalPais}, Esposas: ${totalEsposas}, Bodas: ${totalBodas}, Filhos: ${totalFilhos})`, 15, currentY + 16);
+      doc.text(`• Eventos Maçônicos e Cívicos: ${totalEventos}`, 15, currentY + 21);
+      doc.text(`• In Memoriam: ${totalInMemoriam}`, 15, currentY + 26);
       if (filtro !== 'hoje') {
-        doc.text(`• Aniversariantes de Hoje: ${totalHoje}`, 15, currentY + 26);
+        doc.text(`• Datas de Hoje: ${totalHoje}`, 15, currentY + 31);
       }
     }
     
@@ -730,15 +807,141 @@ export default function Aniversariantes() {
       aniversariantesFamiliares.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
       aniversariantesInMemoriam.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
 
+      // ===== NÍVEL 4: EVENTOS MAÇÔNICOS E CÍVICOS =====
+      const aniversariantesEventos = [];
+      
+      // Processar eventos fixos
+      eventosFix os.forEach(evento => {
+        const proximoEvento = new Date(hoje.getFullYear(), evento.mes - 1, evento.dia);
+        
+        const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+        if (proximoEvento < hojeZerado) {
+          proximoEvento.setFullYear(hoje.getFullYear() + 1);
+        }
+
+        const ehHoje = proximoEvento.getDate() === hoje.getDate() && 
+                      proximoEvento.getMonth() === hoje.getMonth() &&
+                      proximoEvento.getFullYear() === hoje.getFullYear();
+
+        const deveMostrar = filtro === 'todos' || 
+          (filtro === 'hoje' && ehHoje) ||
+          (filtro === 'semana' && proximoEvento <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+          (filtro === 'mes' && proximoEvento.getMonth() === hoje.getMonth());
+
+        if (deveMostrar) {
+          aniversariantesEventos.push({
+            tipo: evento.tipo,
+            nome: evento.nome,
+            descricao: evento.descricao,
+            proximo_aniversario: proximoEvento,
+            nivel: 4,
+            icone: evento.tipo === 'Maçônico' ? '🔷' : '🏛️'
+          });
+        }
+      });
+      
+      // Buscar eventos cadastrados (futura implementação)
+      try {
+        const { data: eventosCustomizados } = await supabase
+          .from('eventos_comemorativos')
+          .select('*');
+        
+        if (eventosCustomizados && eventosCustomizados.length > 0) {
+          eventosCustomizados.forEach(evento => {
+            if (!evento.dia || !evento.mes) return;
+            
+            const proximoEvento = new Date(hoje.getFullYear(), evento.mes - 1, evento.dia);
+            
+            const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+            if (proximoEvento < hojeZerado) {
+              proximoEvento.setFullYear(hoje.getFullYear() + 1);
+            }
+
+            const ehHoje = proximoEvento.getDate() === hoje.getDate() && 
+                          proximoEvento.getMonth() === hoje.getMonth() &&
+                          proximoEvento.getFullYear() === hoje.getFullYear();
+
+            const deveMostrar = filtro === 'todos' || 
+              (filtro === 'hoje' && ehHoje) ||
+              (filtro === 'semana' && proximoEvento <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+              (filtro === 'mes' && proximoEvento.getMonth() === hoje.getMonth());
+
+            if (deveMostrar) {
+              aniversariantesEventos.push({
+                tipo: evento.tipo || 'Evento',
+                nome: evento.nome,
+                descricao: evento.descricao,
+                proximo_aniversario: proximoEvento,
+                nivel: 4,
+                icone: '📅'
+              });
+            }
+          });
+        }
+      } catch (error) {
+        // Tabela ainda não existe, ignorar
+        console.log('ℹ️ Tabela eventos_comemorativos não encontrada (será criada futuramente)');
+      }
+      
+      // Buscar ANIVERSÁRIOS DE CASAMENTO das esposas
+      const { data: esposasCasamento } = await supabase
+        .from('esposas')
+        .select('nome, data_casamento, irmao_id, irmaos(nome, status)')
+        .in('irmao_id', irmaoVivosIds);
+      
+      if (esposasCasamento) {
+        esposasCasamento.forEach(esposa => {
+          if (esposa.irmaos?.status === 'Falecido') return;
+          if (!esposa.data_casamento) return;
+
+          const dataCas = new Date(esposa.data_casamento + 'T00:00:00');
+          const proximoAniv = new Date(hoje.getFullYear(), dataCas.getMonth(), dataCas.getDate());
+          
+          const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          if (proximoAniv < hojeZerado) {
+            proximoAniv.setFullYear(hoje.getFullYear() + 1);
+          }
+
+          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
+                        proximoAniv.getMonth() === hoje.getMonth() &&
+                        proximoAniv.getFullYear() === hoje.getFullYear();
+
+          const deveMostrar = filtro === 'todos' || 
+            (filtro === 'hoje' && ehHoje) ||
+            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+
+          if (deveMostrar) {
+            const anosDeUniao = hoje.getFullYear() - dataCas.getFullYear();
+            aniversariantesFamiliares.push({
+              tipo: 'Bodas',
+              nome: `${esposa.irmaos?.nome} & ${esposa.nome}`,
+              proximo_aniversario: proximoAniv,
+              data_nascimento: dataCas,
+              idade: anosDeUniao,
+              irmao_responsavel: esposa.irmaos?.nome,
+              nivel: 2,
+              icone: '💑'
+            });
+          }
+        });
+      }
+      
+      // Reordenar familiares após adicionar bodas
+      aniversariantesFamiliares.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
+      aniversariantesEventos.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
+
       // Combinar todos em uma lista única mantendo os níveis
       const todosAniversariantes = [
         ...aniversariantesIrmaos,
         ...aniversariantesFamiliares,
+        ...aniversariantesEventos,
         ...aniversariantesInMemoriam
       ];
 
       console.log('🎂 Total Irmãos:', aniversariantesIrmaos.length);
       console.log('🎂 Total Familiares:', aniversariantesFamiliares.length);
+      console.log('🎂 Total Eventos:', aniversariantesEventos.length);
       console.log('🎂 Total In Memoriam:', aniversariantesInMemoriam.length);
       console.log('🎂 Total Final:', todosAniversariantes.length);
 
@@ -763,7 +966,7 @@ export default function Aniversariantes() {
     <div className="max-w-7xl mx-auto">
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">🎂 Aniversariantes</h2>
+          <h2 className="text-2xl font-bold text-gray-800">📅 Datas Comemorativas</h2>
           
           {/* Botão de Gerar Relatório */}
           <button
@@ -908,7 +1111,7 @@ export default function Aniversariantes() {
                           <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
                             ehHoje ? 'bg-yellow-200' : 'bg-green-200'
                           }`}>
-                            {aniv.tipo === 'Esposa' ? '💑' : aniv.tipo === 'Filho(a)' ? '👶' : '👴'}
+                            {aniv.tipo === 'Bodas' ? '💑' : aniv.tipo === 'Esposa' ? '💑' : aniv.tipo === 'Filho(a)' ? '👶' : '👴'}
                           </div>
                           
                           <div className="flex-1">
@@ -917,10 +1120,63 @@ export default function Aniversariantes() {
                               {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
                             </div>
                             
-                            <p className="text-sm text-gray-600 font-medium">{aniv.tipo} - {aniv.idade} anos</p>
+                            <p className="text-sm text-gray-600 font-medium">
+                              {aniv.tipo === 'Bodas' ? `${aniv.tipo} - ${aniv.idade} anos de união` : `${aniv.tipo} - ${aniv.idade} anos`}
+                            </p>
                             
                             {aniv.irmao_responsavel && (
                               <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
+                            )}
+                            
+                            <p className="text-xs text-gray-600 mt-1 font-medium">
+                              📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* NÍVEL 4: EVENTOS MAÇÔNICOS E CÍVICOS */}
+            {aniversariantes.filter(a => a.nivel === 4).length > 0 && (
+              <div>
+                <h3 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
+                  <span className="text-2xl">🔷</span>
+                  <span>Eventos Maçônicos e Cívicos ({aniversariantes.filter(a => a.nivel === 4).length})</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {aniversariantes.filter(a => a.nivel === 4).map((aniv, index) => {
+                    const ehHoje = aniv.proximo_aniversario.toDateString() === new Date().toDateString();
+                    
+                    return (
+                      <div 
+                        key={`nivel4-${index}`} 
+                        className={`rounded-lg p-4 border-l-4 ${
+                          ehHoje 
+                            ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400' 
+                            : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-500'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
+                            ehHoje ? 'bg-yellow-200' : 'bg-purple-200'
+                          }`}>
+                            {aniv.icone || '📅'}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
+                              {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
+                            </div>
+                            
+                            <p className="text-sm text-purple-700 font-medium">{aniv.tipo}</p>
+                            
+                            {aniv.descricao && (
+                              <p className="text-xs text-gray-600 mt-1">{aniv.descricao}</p>
                             )}
                             
                             <p className="text-xs text-gray-600 mt-1 font-medium">
