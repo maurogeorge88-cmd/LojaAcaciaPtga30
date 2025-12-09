@@ -102,19 +102,25 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         });
       }
 
-      // Pais
+      // Pais (apenas VIVOS)
       if (irmao.pais && Array.isArray(irmao.pais)) {
         console.log(`👪 ${irmao.nome} tem ${irmao.pais.length} pai/mãe`);
         irmao.pais.forEach(pai => {
+          // Não mostrar pais falecidos
+          if (pai.falecido === true) return;
+          
           const tipoPai = pai.tipo === 'pai' ? 'Pai' : 'Mãe';
           verificarAniversario(pai, tipoPai, irmao.nome);
         });
       }
 
-      // Filhos
+      // Filhos (apenas VIVOS)
       if (irmao.filhos && Array.isArray(irmao.filhos)) {
         console.log(`👶 ${irmao.nome} tem ${irmao.filhos.length} filho(s)`);
         irmao.filhos.forEach(filho => {
+          // Não mostrar filhos falecidos
+          if (filho.falecido === true) return;
+          
           verificarAniversario(filho, 'Filho(a)', irmao.nome);
         });
       }
