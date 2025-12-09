@@ -16,6 +16,7 @@ export default function Aniversariantes() {
     dia: '',
     mes: ''
   });
+  const [eventoEditando, setEventoEditando] = useState(null);
   const [salvandoEvento, setSalvandoEvento] = useState(false);
 
   // Eventos fixos maçônicos e cívicos (dia/mês)
@@ -90,6 +91,64 @@ export default function Aniversariantes() {
     } catch (error) {
       console.error('Erro ao salvar evento:', error);
       alert('Erro ao salvar evento. Verifique se a tabela eventos_comemorativos existe no Supabase.');
+    } finally {
+      setSalvandoEvento(false);
+    }
+  };
+
+  const editarEvento = (evento) => {
+    setEventoEditando({
+      id: evento.id,
+      nome: evento.nome,
+      tipo: evento.tipo || 'Maçônico',
+      descricao: evento.descricao || '',
+      dia: evento.dia.toString(),
+      mes: evento.mes.toString()
+    });
+  };
+
+  const cancelarEdicao = () => {
+    setEventoEditando(null);
+  };
+
+  const atualizarEvento = async () => {
+    if (!eventoEditando.nome || !eventoEditando.dia || !eventoEditando.mes) {
+      alert('Preencha todos os campos obrigatórios!');
+      return;
+    }
+
+    if (eventoEditando.dia < 1 || eventoEditando.dia > 31) {
+      alert('Dia deve estar entre 1 e 31');
+      return;
+    }
+
+    if (eventoEditando.mes < 1 || eventoEditando.mes > 12) {
+      alert('Mês deve estar entre 1 e 12');
+      return;
+    }
+
+    setSalvandoEvento(true);
+    try {
+      const { error } = await supabase
+        .from('eventos_comemorativos')
+        .update({
+          nome: eventoEditando.nome,
+          tipo: eventoEditando.tipo,
+          descricao: eventoEditando.descricao,
+          dia: parseInt(eventoEditando.dia),
+          mes: parseInt(eventoEditando.mes)
+        })
+        .eq('id', eventoEditando.id);
+
+      if (error) throw error;
+
+      alert('Evento atualizado com sucesso!');
+      setEventoEditando(null);
+      carregarEventosCustomizados();
+      carregarAniversariantes();
+    } catch (error) {
+      console.error('Erro ao atualizar evento:', error);
+      alert('Erro ao atualizar evento.');
     } finally {
       setSalvandoEvento(false);
     }
@@ -1557,17 +1616,143 @@ export default function Aniversariantes() {
                               </span>
                             </td>
                             <td className="p-3 text-center">
-                              <button
-                                onClick={() => excluirEvento(evento.id)}
-                                className="text-red-600 hover:text-red-800 font-medium text-xs"
-                              >
-                                🗑️ Excluir
-                              </button>
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => editarEvento(evento)}
+                                  className="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 transition"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => excluirEvento(evento.id)}
+                                  className="text-red-600 hover:text-red-800 font-medium text-xs bg-red-50 px-3 py-1 rounded hover:bg-red-100 transition"
+                                >
+                                  🗑️ Excluir
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+              
+              {/* Modal de Edição de Evento */}
+              {eventoEditando && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-lg">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold">✏️ Editar Evento</h3>
+                        <button
+                          onClick={cancelarEdicao}
+                          className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="p-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nome do Evento *
+                          </label>
+                          <input
+                            type="text"
+                            value={eventoEditando.nome}
+                            onChange={(e) => setEventoEditando({...eventoEditando, nome: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Tipo *
+                          </label>
+                          <select
+                            value={eventoEditando.tipo}
+                            onChange={(e) => setEventoEditando({...eventoEditando, tipo: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="Maçônico">Maçônico</option>
+                            <option value="Cívico">Cívico</option>
+                            <option value="Loja">Loja</option>
+                            <option value="Outro">Outro</option>
+                          </select>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Dia *
+                          </label>
+                          <input
+                            type="number"
+                            min="1"
+                            max="31"
+                            value={eventoEditando.dia}
+                            onChange={(e) => setEventoEditando({...eventoEditando, dia: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Mês *
+                          </label>
+                          <select
+                            value={eventoEditando.mes}
+                            onChange={(e) => setEventoEditando({...eventoEditando, mes: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          >
+                            <option value="">Selecione...</option>
+                            <option value="1">Janeiro</option>
+                            <option value="2">Fevereiro</option>
+                            <option value="3">Março</option>
+                            <option value="4">Abril</option>
+                            <option value="5">Maio</option>
+                            <option value="6">Junho</option>
+                            <option value="7">Julho</option>
+                            <option value="8">Agosto</option>
+                            <option value="9">Setembro</option>
+                            <option value="10">Outubro</option>
+                            <option value="11">Novembro</option>
+                            <option value="12">Dezembro</option>
+                          </select>
+                        </div>
+                        
+                        <div className="md:col-span-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Descrição
+                          </label>
+                          <input
+                            type="text"
+                            value={eventoEditando.descricao}
+                            onChange={(e) => setEventoEditando({...eventoEditando, descricao: e.target.value})}
+                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="mt-6 flex justify-end gap-2">
+                        <button
+                          onClick={cancelarEdicao}
+                          className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium transition"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={atualizarEvento}
+                          disabled={salvandoEvento}
+                          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50"
+                        >
+                          {salvandoEvento ? 'Salvando...' : '💾 Salvar Alterações'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
