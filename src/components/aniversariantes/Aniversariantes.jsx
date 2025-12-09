@@ -19,15 +19,6 @@ export default function Aniversariantes() {
   const [eventoEditando, setEventoEditando] = useState(null);
   const [salvandoEvento, setSalvandoEvento] = useState(false);
 
-  // Eventos fixos maçônicos e cívicos (dia/mês)
-  const eventosFixos = [
-    { nome: 'Dia de São João Batista', dia: 24, mes: 6, tipo: 'Maçônico', descricao: 'Padroeiro da Maçonaria' },
-    { nome: 'Dia do Maçom', dia: 20, mes: 8, tipo: 'Maçônico', descricao: 'Dia do Maçom Brasileiro' },
-    { nome: 'Aniversário de Paranatinga', dia: 13, mes: 5, tipo: 'Cívico', descricao: 'Fundação da cidade' },
-    { nome: 'Dia da Fraternidade Universal', dia: 21, mes: 3, tipo: 'Maçônico', descricao: 'Equinócio de Outono' },
-    { nome: 'Dia do Grão-Mestre', dia: 23, mes: 10, tipo: 'Maçônico', descricao: 'Homenagem ao Grão-Mestre' },
-  ];
-
   useEffect(() => {
     carregarAniversariantes();
   }, [filtro]);
@@ -963,37 +954,7 @@ export default function Aniversariantes() {
       // ===== NÍVEL 4: EVENTOS MAÇÔNICOS E CÍVICOS =====
       const aniversariantesEventos = [];
       
-      // Processar eventos fixos
-      eventosFixos.forEach(evento => {
-        const proximoEvento = new Date(hoje.getFullYear(), evento.mes - 1, evento.dia);
-        
-        const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-        if (proximoEvento < hojeZerado) {
-          proximoEvento.setFullYear(hoje.getFullYear() + 1);
-        }
-
-        const ehHoje = proximoEvento.getDate() === hoje.getDate() && 
-                      proximoEvento.getMonth() === hoje.getMonth() &&
-                      proximoEvento.getFullYear() === hoje.getFullYear();
-
-        const deveMostrar = filtro === 'todos' || 
-          (filtro === 'hoje' && ehHoje) ||
-          (filtro === 'semana' && proximoEvento <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-          (filtro === 'mes' && proximoEvento.getMonth() === hoje.getMonth());
-
-        if (deveMostrar) {
-          aniversariantesEventos.push({
-            tipo: evento.tipo,
-            nome: evento.nome,
-            descricao: evento.descricao,
-            proximo_aniversario: proximoEvento,
-            nivel: 4,
-            icone: evento.tipo === 'Maçônico' ? '🔷' : '🏛️'
-          });
-        }
-      });
-      
-      // Buscar eventos cadastrados (futura implementação)
+      // Buscar eventos cadastrados
       try {
         const { data: eventosCustomizados } = await supabase
           .from('eventos_comemorativos')
@@ -1547,48 +1508,12 @@ export default function Aniversariantes() {
                 </button>
               </div>
 
-              {/* Eventos Fixos */}
-              <div>
-                <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <span>🔷</span>
-                  <span>Eventos Fixos (pré-cadastrados)</span>
-                </h4>
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        <th className="p-3 text-left font-semibold text-gray-700">Evento</th>
-                        <th className="p-3 text-center font-semibold text-gray-700">Data</th>
-                        <th className="p-3 text-center font-semibold text-gray-700">Tipo</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
-                      {eventosFixos.map((evento, index) => (
-                        <tr key={index} className="hover:bg-gray-50">
-                          <td className="p-3">{evento.nome}</td>
-                          <td className="p-3 text-center font-medium">{evento.dia}/{evento.mes}</td>
-                          <td className="p-3 text-center">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              evento.tipo === 'Maçônico' 
-                                ? 'bg-purple-100 text-purple-700' 
-                                : 'bg-blue-100 text-blue-700'
-                            }`}>
-                              {evento.tipo}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-              
-              {/* Eventos Customizados */}
-              {eventosCustomizados.length > 0 && (
+              {/* Eventos Cadastrados */}
+              {eventosCustomizados.length > 0 ? (
                 <div>
                   <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
                     <span>📅</span>
-                    <span>Eventos Personalizados ({eventosCustomizados.length})</span>
+                    <span>Eventos Cadastrados ({eventosCustomizados.length})</span>
                   </h4>
                   <div className="border rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
@@ -1636,6 +1561,16 @@ export default function Aniversariantes() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                  <div className="text-gray-400 text-5xl mb-3">📅</div>
+                  <h4 className="text-lg font-semibold text-gray-600 mb-2">
+                    Nenhum evento cadastrado
+                  </h4>
+                  <p className="text-sm text-gray-500">
+                    Use o formulário acima para cadastrar seus eventos personalizados
+                  </p>
                 </div>
               )}
               
