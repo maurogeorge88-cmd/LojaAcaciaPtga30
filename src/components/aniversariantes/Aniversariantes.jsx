@@ -1089,17 +1089,6 @@ export default function Aniversariantes() {
           </div>
         </div>
         
-        {/* Informações sobre configurações */}
-        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
-          <p className="text-sm text-blue-800">
-            💡 <strong>Configurações pendentes:</strong>
-          </p>
-          <ul className="text-xs text-blue-700 mt-2 ml-4 list-disc">
-            <li>Adicione o campo <code className="bg-blue-100 px-1 rounded">data_casamento</code> na tabela <strong>esposas</strong> para registrar aniversários de casamento</li>
-            <li>Crie a tabela <code className="bg-blue-100 px-1 rounded">eventos_comemorativos</code> para cadastrar eventos personalizados</li>
-          </ul>
-        </div>
-        
         {/* Botões de filtro */}
         <div className="flex gap-2 mb-6 flex-wrap">
           <button 
@@ -1582,26 +1571,6 @@ export default function Aniversariantes() {
                   </div>
                 </div>
               )}
-              
-              {/* Instruções para data de casamento */}
-              <div className="border-l-4 border-pink-400 bg-pink-50 p-4 rounded-r-lg">
-                <h4 className="text-base font-bold text-gray-800 mb-2 flex items-center gap-2">
-                  <span>💑</span>
-                  <span>Aniversários de Casamento</span>
-                </h4>
-                <p className="text-sm text-gray-700 mb-3">
-                  Para habilitar aniversários de casamento, execute este comando no Supabase:
-                </p>
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                  <pre className="text-green-400 text-xs font-mono">
-{`ALTER TABLE esposas 
-ADD COLUMN data_casamento DATE;`}
-                  </pre>
-                </div>
-                <p className="text-xs text-gray-600 mt-2">
-                  💡 Depois, edite cada esposa no sistema e adicione a data de casamento
-                </p>
-              </div>
               
               {/* Botão de fechar */}
               <div className="flex justify-end pt-4 border-t">
