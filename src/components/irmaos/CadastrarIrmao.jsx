@@ -86,6 +86,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const [loading, setLoading] = useState(false);
   const [mostrarConjuge, setMostrarConjuge] = useState(false);
   const [abaSelecionada, setAbaSelecionada] = useState('pessoal'); // pessoal, maconico, familiar
+  
+  // Estados para histórico de cargos
+  const [historicoCargos, setHistoricoCargos] = useState([]);
+  const [cargoEditandoIndex, setCargoEditandoIndex] = useState(null);
+  const [cargoForm, setCargoForm] = useState({
+    ano: new Date().getFullYear(),
+    cargo: ''
+  });
 
   // Função para carregar dados do irmão para edição
   const carregarParaEdicao = useCallback(async (irmao) => {
@@ -206,6 +214,27 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       }
     } catch (error) {
       setFilhos([]);
+    }
+
+    // Carregar histórico de cargos
+    try {
+      const { data: cargosData } = await supabase
+        .from('historico_cargos')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .order('ano', { ascending: false });
+
+      if (cargosData && cargosData.length > 0) {
+        setHistoricoCargos(cargosData.map(c => ({
+          ano: c.ano,
+          cargo: c.cargo
+        })));
+      } else {
+        setHistoricoCargos([]);
+      }
+    } catch (error) {
+      console.log('ℹ️ Tabela historico_cargos não existe ainda ou sem cargos');
+      setHistoricoCargos([]);
     }
 
     // Scroll para o topo
@@ -481,6 +510,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             .insert(dadosFilhos);
         }
 
+        // Salvar histórico de cargos
+        if (historicoCargos.length > 0) {
+          const dadosCargos = historicoCargos.map(cargo => ({
+            irmao_id: irmaoId,
+            ano: parseInt(cargo.ano),
+            cargo: cargo.cargo.trim()
+          }));
+
+          await supabase
+            .from('historico_cargos')
+            .insert(dadosCargos);
+        }
+
         showSuccess('Irmão cadastrado com sucesso!');
       }
 
@@ -527,10 +569,13 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       observacoes: '',
       status: 'ativo'
     });
-    setConjuge({ nome: '', cpf: '', data_nascimento: '', profissao: '' });
-    setPais({ nome_pai: '', pai_vivo: true, data_nascimento: '', data_obito: '', nome_mae: '', mae_viva: true, data_nascimento: '', data_obito: '' });
+    setConjuge({ nome: '', cpf: '', data_nascimento: '', data_casamento: '', profissao: '' });
+    setPais({ nome_pai: '', pai_vivo: true, data_nascimento_pai: '', data_obito_pai: '', nome_mae: '', mae_viva: true, data_nascimento_mae: '', data_obito_mae: '' });
     setFilhos([]);
     setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
+    setHistoricoCargos([]);
+    setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
+    setCargoEditandoIndex(null);
     setMostrarConjuge(false);
     setModoEdicao(false);
     setIrmaoEditando(null);
@@ -616,21 +661,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               Informações Pessoais
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CIM * <span className="text-xs text-gray-500">(número único)</span>
-                </label>
-                <input
-                  type="text"
-                  value={irmaoForm.cim}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, cim: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nome Completo *
                 </label>
@@ -855,11 +887,44 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
         {/* ABA: Dados Maçônicos */}
         {abaSelecionada === 'maconico' && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
+          <div className="bg-white p-6 rounded-lg shadow space-y-6">
             <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
               Informações Maçônicas
             </h3>
 
+            {/* LINHA 1: CIM e Situação */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  CIM * <span className="text-xs text-gray-500">(número único)</span>
+                </label>
+                <input
+                  type="text"
+                  value={irmaoForm.cim}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, cim: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: 123456"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Situação *
+                </label>
+                <select
+                  value={irmaoForm.situacao}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  {STATUS_IRMAOS.map(status => (
+                    <option key={status.value} value={status.value}>{status.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -898,7 +963,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* LINHA 3: Loja Origem, Oriente e Potência */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Loja de Origem
@@ -908,6 +974,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={irmaoForm.loja_origem}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, loja_origem: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Acácia de Paranatinga nº 30"
                 />
               </div>
 
@@ -920,39 +987,26 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={irmaoForm.oriente}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, oriente: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Paranatinga"
                 />
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Grande Oriente
+                  Potência
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.grande_oriente}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, grande_oriente: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Ex: Grande Loja do Estado de Mato Grosso"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Situação
-                </label>
-                <select
-                  value={irmaoForm.situacao}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  {STATUS_IRMAOS.map(status => (
-                    <option key={status.value} value={status.value}>{status.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* ← NOVO CAMPO: PERIODICIDADE DE PAGAMENTO */}
+            {/* LINHA 4: Periodicidade de Pagamento */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   💰 Periodicidade de Pagamento
@@ -972,6 +1026,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </div>
             </div>
 
+            {/* LINHA 5: Observações */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Observações
@@ -979,10 +1034,157 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               <textarea
                 value={irmaoForm.observacoes}
                 onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
-                rows="4"
+                rows="3"
                 className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Observações adicionais sobre o irmão..."
               />
+            </div>
+
+            {/* HISTÓRICO DE CARGOS */}
+            <div className="border-t pt-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                <span>🏛️</span>
+                <span>Histórico de Cargos na Loja</span>
+              </h4>
+
+              {/* Formulário para adicionar/editar cargo */}
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ano
+                    </label>
+                    <input
+                      type="number"
+                      min="1900"
+                      max="2100"
+                      value={cargoForm.ano}
+                      onChange={(e) => setCargoForm({ ...cargoForm, ano: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: 2024"
+                    />
+                  </div>
+
+                  <div className="md:col-span-7">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Cargo
+                    </label>
+                    <input
+                      type="text"
+                      value={cargoForm.cargo}
+                      onChange={(e) => setCargoForm({ ...cargoForm, cargo: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Ex: Venerável Mestre, 1º Vigilante, Orador..."
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 flex items-end">
+                    {cargoEditandoIndex !== null ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const novosCargas = [...historicoCargos];
+                            novosCargas[cargoEditandoIndex] = cargoForm;
+                            setHistoricoCargos(novosCargas);
+                            setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
+                            setCargoEditandoIndex(null);
+                          }}
+                          className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm mr-1"
+                        >
+                          ✓ Salvar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
+                            setCargoEditandoIndex(null);
+                          }}
+                          className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium text-sm"
+                        >
+                          ✕
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!cargoForm.ano || !cargoForm.cargo.trim()) {
+                            alert('Preencha o ano e o cargo!');
+                            return;
+                          }
+                          setHistoricoCargos([...historicoCargos, { ...cargoForm }]);
+                          setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
+                        }}
+                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
+                      >
+                        ➕ Adicionar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Lista de cargos cadastrados */}
+              {historicoCargos.length > 0 ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ano</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {historicoCargos
+                        .sort((a, b) => b.ano - a.ano) // Ordenar por ano decrescente
+                        .map((cargo, index) => {
+                          const indexOriginal = historicoCargos.findIndex(c => c === cargo);
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {cargo.ano}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {cargo.cargo}
+                              </td>
+                              <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setCargoForm(cargo);
+                                    setCargoEditandoIndex(indexOriginal);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 font-medium mr-3"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (confirm('Deseja realmente excluir este cargo?')) {
+                                      setHistoricoCargos(historicoCargos.filter((_, i) => i !== indexOriginal));
+                                    }
+                                  }}
+                                  className="text-red-600 hover:text-red-800 font-medium"
+                                >
+                                  🗑️ Excluir
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500 text-sm">
+                    Nenhum cargo cadastrado ainda. Use o formulário acima para adicionar.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
