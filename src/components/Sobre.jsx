@@ -301,6 +301,54 @@ export default function Sobre() {
               <p className="text-sm text-gray-600">Controle de aniversários de irmãos e familiares</p>
             </div>
           </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">📅</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Cronograma</h3>
+              <p className="text-sm text-gray-600">Planejamento e organização de atividades da loja</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">👔</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Administração</h3>
+              <p className="text-sm text-gray-600">Gestão do corpo administrativo e cargos da loja</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">📋</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Comissões</h3>
+              <p className="text-sm text-gray-600">Controle de comissões e seus membros</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">🔺</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Altos Graus</h3>
+              <p className="text-sm text-gray-600">Registro de progressão em Altos Graus</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">♿</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Comodatos</h3>
+              <p className="text-sm text-gray-600">Gestão de empréstimos de equipamentos</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">❤️</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Caridade</h3>
+              <p className="text-sm text-gray-600">Registro de ações beneficentes e filantrópicas</p>
+            </div>
+          </div>
         </div>
       </div>
 
