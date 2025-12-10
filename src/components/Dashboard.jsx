@@ -184,10 +184,49 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         </div>
       </div>
 
+
+      {/* Cards de Situações */}
+      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
+            <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
+            <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
+          </div>
+          <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
+            <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
+            <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
+          </div>
+          <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
+            <div className="text-blue-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
+            <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
+          </div>
+          <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
+            <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
+            <div className="text-3xl font-bold text-orange-700">{irmaosSuspensos.length}</div>
+          </div>
+          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg">
+            <div className="text-gray-600 text-sm font-semibold mb-1">↩️ Desligados</div>
+            <div className="text-3xl font-bold text-gray-700">{irmaosDesligados.length}</div>
+          </div>
+          <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg">
+            <div className="text-red-600 text-sm font-semibold mb-1">❌ Excluídos</div>
+            <div className="text-3xl font-bold text-red-700">{irmaosExcluidos.length}</div>
+          </div>
+          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg">
+            <div className="text-purple-600 text-sm font-semibold mb-1">🕊️ Falecidos</div>
+            <div className="text-3xl font-bold text-purple-700">{irmaosFalecidos.length}</div>
+          </div>
+          <div className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg">
+            <div className="text-indigo-600 text-sm font-semibold mb-1">👔 Ex-Ofício</div>
+            <div className="text-3xl font-bold text-indigo-700">{irmaosExOficio.length}</div>
+          </div>
+        </div>
+      </div>
       {/* ANIVERSARIANTES - LAYOUT COMPACTO */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-        {/* ANIVERSARIANTES DO DIA */}
-        <div className="bg-gradient-to-br from-pink-500 to-rose-600 text-white rounded-xl shadow-lg p-6">
+        {/* ANIVERSARIANTES DO DIA - COR MAIS CLARA */}
+        <div className="bg-gradient-to-br from-pink-300 to-rose-400 text-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold">🎂 Aniversariantes do Dia</h3>
             <div className="text-4xl">🎉</div>
@@ -268,45 +307,6 @@ export const Dashboard = ({ irmaos, balaustres }) => {
               <p className="text-white/80 text-sm">Nenhum aniversário nos próximos 7 dias</p>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Cards de Situações */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
-            <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
-            <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
-          </div>
-          <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
-            <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
-            <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
-          </div>
-          <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
-            <div className="text-blue-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
-            <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
-          </div>
-          <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
-            <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
-            <div className="text-3xl font-bold text-orange-700">{irmaosSuspensos.length}</div>
-          </div>
-          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg">
-            <div className="text-gray-600 text-sm font-semibold mb-1">↩️ Desligados</div>
-            <div className="text-3xl font-bold text-gray-700">{irmaosDesligados.length}</div>
-          </div>
-          <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg">
-            <div className="text-red-600 text-sm font-semibold mb-1">❌ Excluídos</div>
-            <div className="text-3xl font-bold text-red-700">{irmaosExcluidos.length}</div>
-          </div>
-          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg">
-            <div className="text-purple-600 text-sm font-semibold mb-1">🕊️ Falecidos</div>
-            <div className="text-3xl font-bold text-purple-700">{irmaosFalecidos.length}</div>
-          </div>
-          <div className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg">
-            <div className="text-indigo-600 text-sm font-semibold mb-1">👔 Ex-Ofício</div>
-            <div className="text-3xl font-bold text-indigo-700">{irmaosExOficio.length}</div>
-          </div>
         </div>
       </div>
 
