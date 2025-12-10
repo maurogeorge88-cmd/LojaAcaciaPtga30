@@ -1256,16 +1256,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text(mesInfo.mesNome, 17, yPos + 5);
-        yPos += 9;
+        yPos += 10; // 3mm de espaço após o mês
 
-        // Cabeçalho
+        // Cabeçalho das colunas com faixa azul clara
+        doc.setFillColor(200, 230, 245); // Azul mais claro (tom sobre tom)
+        doc.rect(15, yPos, 180, 6, 'F');
         doc.setFontSize(8);
-        doc.text('DtLanc', 15, yPos);
-        doc.text('Descrição', 40, yPos);
-        doc.text('Despesa', 120, yPos, { align: 'right' });
-        doc.text('Crédito', 150, yPos, { align: 'right' });
-        doc.text('Saldo', 190, yPos, { align: 'right' });
-        yPos += 4;
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DtLanc', 17, yPos + 4);
+        doc.text('Descrição', 40, yPos + 4);
+        doc.text('Despesa', 120, yPos + 4, { align: 'right' });
+        doc.text('Crédito', 150, yPos + 4, { align: 'right' });
+        doc.text('Saldo', 190, yPos + 4, { align: 'right' });
+        yPos += 8; // 2mm de espaço após o cabeçalho
 
         // Lançamentos
         let subtotalDespesa = 0;  // O que o irmão DEVE
@@ -1351,17 +1355,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         yPos = 20;
       }
 
-      // Dados Bancários e QR Code
+      // Dados Bancários
       doc.setFillColor(240, 240, 240);
       doc.rect(15, yPos, 85, 40, 'F'); // Dados bancários
-      
-      // QR Code (área reservada)
-      doc.rect(105, yPos, 45, 40); // Borda do QR Code
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
-      doc.text('QR CODE PIX', 127.5, yPos + 20, { align: 'center' });
-      doc.text('(Cole aqui a imagem', 127.5, yPos + 24, { align: 'center' });
-      doc.text('do QR Code do banco)', 127.5, yPos + 28, { align: 'center' });
       
       yPos += 5;
 
@@ -1387,7 +1383,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.setTextColor(100, 100, 100);
       doc.text('CNPJ: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
       yPos += 4;
-      doc.text('Fav.: ARLSACACIA P ARANATINGA 30', 57.5, yPos, { align: 'center' });
+      doc.text('Fav.: ARLSACACIA PARANATINGA 30', 57.5, yPos, { align: 'center' });
 
       // Total (lado direito)
       yPos -= 21;
@@ -1411,6 +1407,32 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.setTextColor(255, 0, 0);
       doc.text(`R$ ${Math.abs(saldoFinal).toFixed(2)}`, 190, yPos, { align: 'right' });
       doc.setTextColor(0, 0, 0);
+      
+      yPos += 15; // Espaço de 3+ linhas
+      
+      // Mensagem da Tesouraria
+      if (yPos > 250) {
+        doc.addPage();
+        yPos = 20;
+      }
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('Tesouraria - Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
+      yPos += 7;
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(0, 0, 139); // Azul escuro
+      
+      // Quebrar o texto em múltiplas linhas
+      const mensagem = '"Irmãos, o cumprimento de nossas obrigações financeiras é um ato de honra';
+      const mensagem2 = 'e compromisso com a nossa Loja, bem como com os ideais que nos unem."';
+      
+      doc.text(mensagem, 105, yPos, { align: 'center', maxWidth: 170 });
+      yPos += 5;
+      doc.text(mensagem2, 105, yPos, { align: 'center', maxWidth: 170 });
 
       // Salvar
       doc.save(`Relatorio_${irmaoData.nome.replace(/\s/g, '_')}.pdf`);
