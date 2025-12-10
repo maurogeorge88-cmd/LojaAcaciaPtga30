@@ -1359,6 +1359,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <span className="text-base">🎉</span>
                 {menuAberto && <span className="font-semibold">Festividades</span>}
               </button>
+
+              <button
+                onClick={() => setCurrentPage('sobre')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'sobre'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Sobre"
+              >
+                <span className="text-base">ℹ️</span>
+                {menuAberto && <span className="font-semibold">Sobre</span>}
+              </button>
             </>
           )}
 
