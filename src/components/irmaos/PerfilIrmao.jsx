@@ -666,10 +666,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
               {/* HISTÓRICO DE CARGOS */}
               <div className="border-t pt-6">
-                <h4 className="text-md font-semibold text-gray-700 mb-4 flex items-center gap-2">
-                  <span>🏛️</span>
-                  <span>Histórico de Cargos na Loja</span>
-                </h4>
+                <div className="bg-blue-100 p-3 rounded-lg mb-4">
+                  <h4 className="text-md font-semibold text-gray-700 flex items-center gap-2">
+                    <span>🏛️</span>
+                    <span>Histórico de Cargos na Loja</span>
+                  </h4>
+                </div>
 
                 {historicoCargos.length > 0 ? (
                   <div className="border rounded-lg overflow-hidden">
@@ -683,10 +685,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       <tbody className="bg-white divide-y divide-gray-200">
                         {historicoCargos.map((cargo, index) => (
                           <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
                               {cargo.ano}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700">
+                            <td className="px-4 py-3 text-sm font-bold text-gray-900">
                               {cargo.cargo}
                             </td>
                           </tr>
