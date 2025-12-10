@@ -1333,6 +1333,32 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <span className="text-base">🔺</span>
                 {menuAberto && <span className="font-semibold">Altos Graus</span>}
               </button>
+
+              <button
+                onClick={() => setCurrentPage('biblioteca')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'biblioteca'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Biblioteca"
+              >
+                <span className="text-base">📚</span>
+                {menuAberto && <span className="font-semibold">Biblioteca</span>}
+              </button>
+
+              <button
+                onClick={() => setCurrentPage('aniversariantes')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'aniversariantes'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Festividades"
+              >
+                <span className="text-base">🎉</span>
+                {menuAberto && <span className="font-semibold">Festividades</span>}
+              </button>
             </>
           )}
 
