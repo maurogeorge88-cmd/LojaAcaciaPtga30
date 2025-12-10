@@ -447,6 +447,24 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             .insert(dadosFilhos);
         }
 
+        // Atualizar histórico de cargos (remover todos e reinserir)
+        await supabase
+          .from('historico_cargos')
+          .delete()
+          .eq('irmao_id', irmaoId);
+
+        if (historicoCargos.length > 0) {
+          const dadosCargos = historicoCargos.map(cargo => ({
+            irmao_id: irmaoId,
+            ano: parseInt(cargo.ano),
+            cargo: cargo.cargo.trim()
+          }));
+
+          await supabase
+            .from('historico_cargos')
+            .insert(dadosCargos);
+        }
+
         showSuccess('Irmão atualizado com sucesso!');
       } else {
         // Inserir novo irmão
