@@ -13,11 +13,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     pais: { pai: null, mae: null },
     filhos: []
   });
+  const [historicoCargos, setHistoricoCargos] = useState([]);
 
   useEffect(() => {
     if (irmaoId) {
       carregarIrmao();
       carregarFamiliares();
+      carregarHistoricoCargos();
     }
   }, [irmaoId]);
 
@@ -71,6 +73,21 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
       pais: { pai, mae },
       filhos: filhosData || []
     });
+  };
+
+  const carregarHistoricoCargos = async () => {
+    try {
+      const { data: cargosData } = await supabase
+        .from('historico_cargos')
+        .select('*')
+        .eq('irmao_id', irmaoId)
+        .order('ano', { ascending: false });
+
+      setHistoricoCargos(cargosData || []);
+    } catch (error) {
+      console.log('ℹ️ Tabela historico_cargos não existe ainda ou sem cargos');
+      setHistoricoCargos([]);
+    }
   };
 
   const handleSalvar = async () => {
@@ -492,8 +509,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {/* ABA: Dados Maçônicos */}
           {abaSelecionada === 'maconico' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* CIM */}
+              {/* LINHA 1: CIM e Situação */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">CIM</label>
                   {modoEdicao ? (
@@ -504,11 +521,31 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">{irmao.cim || 'Não informado'}</p>
+                    <p className="text-gray-900 font-medium text-lg">{irmao.cim || 'Não informado'}</p>
                   )}
                 </div>
 
-                {/* Data de Iniciação */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Situação</label>
+                  {modoEdicao ? (
+                    <select
+                      value={irmaoForm.situacao || ''}
+                      onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="regular">Regular</option>
+                      <option value="irregular">Irregular</option>
+                      <option value="remido">Remido</option>
+                      <option value="falecido">Falecido</option>
+                    </select>
+                  ) : (
+                    <p className="text-gray-900 capitalize text-lg">{irmao.situacao || 'Regular'}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">🔨 Data de Iniciação</label>
                   {modoEdicao ? (
@@ -530,7 +567,6 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )}
                 </div>
 
-                {/* Data de Elevação */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">📐 Data de Elevação</label>
                   {modoEdicao ? (
@@ -547,7 +583,6 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )}
                 </div>
 
-                {/* Data de Exaltação */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">🏛️ Data de Exaltação</label>
                   {modoEdicao ? (
@@ -563,9 +598,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     </p>
                   )}
                 </div>
+              </div>
 
-                {/* Loja de Origem */}
-                <div className="md:col-span-2">
+              {/* LINHA 3: Loja Origem, Oriente e Potência */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Loja de Origem</label>
                   {modoEdicao ? (
                     <input
@@ -579,7 +616,6 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )}
                 </div>
 
-                {/* Oriente */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Oriente</label>
                   {modoEdicao ? (
@@ -594,9 +630,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )}
                 </div>
 
-                {/* Grande Oriente */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Grande Oriente</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Potência</label>
                   {modoEdicao ? (
                     <input
                       type="text"
@@ -608,39 +643,60 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <p className="text-gray-900">{irmao.grande_oriente || 'Não informado'}</p>
                   )}
                 </div>
+              </div>
 
-                {/* Situação */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Situação</label>
-                  {modoEdicao ? (
-                    <select
-                      value={irmaoForm.situacao || ''}
-                      onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="regular">Regular</option>
-                      <option value="irregular">Irregular</option>
-                      <option value="remido">Remido</option>
-                    </select>
-                  ) : (
-                    <p className="text-gray-900 capitalize">{irmao.situacao || 'Regular'}</p>
-                  )}
-                </div>
+              {/* LINHA 4: Observações */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                {modoEdicao ? (
+                  <textarea
+                    value={irmaoForm.observacoes || ''}
+                    onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                  />
+                ) : (
+                  <p className="text-gray-900">{irmao.observacoes || 'Nenhuma observação'}</p>
+                )}
+              </div>
 
-                {/* Observações */}
-                <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                  {modoEdicao ? (
-                    <textarea
-                      value={irmaoForm.observacoes || ''}
-                      onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-900">{irmao.observacoes || 'Nenhuma observação'}</p>
-                  )}
-                </div>
+              {/* HISTÓRICO DE CARGOS */}
+              <div className="border-t pt-6">
+                <h4 className="text-md font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                  <span>🏛️</span>
+                  <span>Histórico de Cargos na Loja</span>
+                </h4>
+
+                {historicoCargos.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ano</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {historicoCargos.map((cargo, index) => (
+                          <tr key={index} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {cargo.ano}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {cargo.cargo}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-500 text-sm">
+                      Nenhum cargo registrado no histórico.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           )}
