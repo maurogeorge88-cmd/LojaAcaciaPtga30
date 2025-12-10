@@ -1196,15 +1196,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       // TODO: Adicionar logo em base64 aqui
       
       // Cabeçalho
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ARLS ACACIA DE PARANATINGA Nº 30', 105, yPos, { align: 'center' });
+      yPos += 6;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Jurisdicionada a', 105, yPos, { align: 'center' });
+      yPos += 5;
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('Grande Loja Maçônica do Estado de Mato Grosso', 105, yPos, { align: 'center' });
+      yPos += 10;
+
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Relatório de Despesas Pendentes', 105, yPos, { align: 'center' });
-      yPos += 6;
-
-      doc.setFontSize(11);
-      doc.text('Grande Loja do Estado de Mato Grosso - GLEMT', 105, yPos, { align: 'center' });
-      yPos += 5;
-      doc.text('ARLS Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
       yPos += 12;
 
       // Dados do Irmão em um box
@@ -1261,7 +1269,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         // Cabeçalho das colunas com faixa azul clara
         doc.setFillColor(200, 230, 245); // Azul mais claro (tom sobre tom)
         doc.rect(15, yPos, 180, 6, 'F');
-        doc.setFontSize(8);
+        doc.setFontSize(9); // Aumentado de 8 para 9
         doc.setTextColor(0, 0, 0);
         doc.setFont('helvetica', 'bold');
         doc.text('DtLanc', 17, yPos + 4);
@@ -1274,6 +1282,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         // Lançamentos
         let subtotalDespesa = 0;  // O que o irmão DEVE
         let subtotalCredito = 0;  // O que o irmão TEM A RECEBER
+        doc.setFontSize(9); // Aumentado de 8 para 9
         doc.setFont('helvetica', 'normal');
         
         mesInfo.lancamentos.forEach(lanc => {
@@ -1337,6 +1346,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         // Subtotal do mês - alinhado com coluna Crédito
         const saldoMes = subtotalDespesa - subtotalCredito;
+        doc.setFontSize(11); // Aumentado para 11 (2 a mais que 9 dos lançamentos)
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
         doc.text('Sub Total', 150, yPos, { align: 'right' });
@@ -1355,31 +1365,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         yPos = 20;
       }
 
-      // Dados Bancários (sem fundo cinza)
+      // Dados Bancários (sem fundo cinza) - deslocado mais para esquerda
       yPos += 5;
 
-      doc.setFontSize(9);
+      doc.setFontSize(10); // Aumentado de 9 para 10
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(0, 0, 0);
-      doc.text('Dados Bancários', 57.5, yPos, { align: 'center' });
+      doc.text('Dados Bancários', 45, yPos, { align: 'center' }); // Mudado de 57.5 para 45
       yPos += 5;
 
-      doc.setFontSize(8);
+      doc.setFontSize(9); // Aumentado de 8 para 9
       doc.setTextColor(0, 100, 180);
       doc.setFont('helvetica', 'bold');
-      doc.text('Cooperativa de Crédito Sicredi', 57.5, yPos, { align: 'center' });
+      doc.text('Cooperativa de Crédito Sicredi', 45, yPos, { align: 'center' });
       yPos += 4;
 
       doc.setTextColor(0, 0, 0); // Preto
       doc.setFont('helvetica', 'normal');
-      doc.text('Ag.: 0802 - C.C.: 86.913-9', 57.5, yPos, { align: 'center' });
+      doc.text('Ag.: 0802 - C.C.: 86.913-9', 45, yPos, { align: 'center' });
       yPos += 4;
-      doc.text('PIX.: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
+      doc.text('PIX.: 03.250.704/0001-00', 45, yPos, { align: 'center' });
       yPos += 4;
-      doc.setFontSize(7);
-      doc.text('CNPJ: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
+      doc.setFontSize(8); // Aumentado de 7 para 8
+      doc.text('CNPJ: 03.250.704/0001-00', 45, yPos, { align: 'center' });
       yPos += 4;
-      doc.text('Fav.: ARLSACACIA PARANATINGA 30', 57.5, yPos, { align: 'center' });
+      doc.text('Fav.: ARLSACACIA PARANATINGA 30', 45, yPos, { align: 'center' });
 
       // Total (lado direito)
       yPos -= 21;
