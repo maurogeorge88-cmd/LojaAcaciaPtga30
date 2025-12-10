@@ -399,11 +399,12 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {/* ABA LIVROS */}
       {abaAtiva === 'livros' && (
         <div>
-          {/* FORMULÁRIO LIVROS */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h3 className="text-xl font-bold text-blue-900 mb-4">
-              {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
-            </h3>
+          {/* FORMULÁRIO LIVROS - SÓ PARA ADMIN/BIBLIOTECÁRIO */}
+          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+              <h3 className="text-xl font-bold text-blue-900 mb-4">
+                {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
+              </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -511,6 +512,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               )}
             </div>
           </div>
+          )}
 
           {/* LISTAGEM DE LIVROS */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -559,20 +561,22 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-2 justify-center">
-                            <button
-                              onClick={() => editarLivro(livro)}
-                              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => excluirLivro(livro.id)}
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                            >
-                              Excluir
-                            </button>
-                          </div>
+                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={() => editarLivro(livro)}
+                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => excluirLivro(livro.id)}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
