@@ -40,7 +40,48 @@ export default function MinhasFinancas({ userEmail }) {
         return;
       }
 
-      // Buscar lançamentos financeiros do irmão
+      // PRIMEIRO: Buscar TODOS os lançamentos do ano para calcular totais corretos
+      const { data: todosLancamentos, error: erroTodos } = await supabase
+        .from('lancamentos_loja')
+        .select(`
+          *,
+          categorias_financeiras (nome, tipo)
+        `)
+        .eq('origem_irmao_id', irmao.id)
+        .eq('origem_tipo', 'Irmao')
+        .gte('data_vencimento', `${anoFiltro}-01-01`)
+        .lte('data_vencimento', `${anoFiltro}-12-31`);
+
+      if (erroTodos) throw erroTodos;
+
+      // Calcular totais GERAIS (independente do filtro)
+      const todasReceitas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente'
+      );
+      const todasDespesas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente'
+      );
+      const receitasPagas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago'
+      );
+      const despesasPagas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago'
+      );
+
+      const totalReceitasPendentes = todasReceitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesasPendentes = todasDespesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalReceitasPagas = receitasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesasPagas = despesasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      // SALDO FINAL CORRETO:
+      // Você deve (receitas pendentes) - Você já pagou (receitas pagas) + Loja deve (despesas pendentes) - Loja já pagou (despesas pagas)
+      const saldoFinal = totalReceitasPendentes - totalDespesasPendentes;
+
+      setTotalReceitas(totalReceitasPendentes);
+      setTotalDespesas(totalDespesasPendentes);
+      setSaldoLiquido(saldoFinal);
+
+      // SEGUNDO: Buscar lançamentos FILTRADOS para exibição
       let query = supabase
         .from('lancamentos_loja')
         .select(`
@@ -49,7 +90,6 @@ export default function MinhasFinancas({ userEmail }) {
         `)
         .eq('origem_irmao_id', irmao.id)
         .eq('origem_tipo', 'Irmao')
-        .eq('status', 'pendente')
         .gte('data_vencimento', `${anoFiltro}-01-01`)
         .lte('data_vencimento', `${anoFiltro}-12-31`)
         .order('data_vencimento', { ascending: false });
@@ -59,39 +99,14 @@ export default function MinhasFinancas({ userEmail }) {
         query = query.eq('status', 'pendente');
       } else if (filtro === 'pagos') {
         query = query.eq('status', 'pago');
-      } else {
-        // todos - não filtrar por status
-        query = supabase
-          .from('lancamentos_loja')
-          .select(`
-            *,
-            categorias_financeiras (nome, tipo)
-          `)
-          .eq('origem_irmao_id', irmao.id)
-          .eq('origem_tipo', 'Irmao')
-          .gte('data_vencimento', `${anoFiltro}-01-01`)
-          .lte('data_vencimento', `${anoFiltro}-12-31`)
-          .order('data_vencimento', { ascending: false });
       }
+      // Se filtro === 'todos', não aplica filtro de status
 
       const { data, error } = await query;
 
       if (error) throw error;
 
       setLancamentos(data || []);
-
-      // Calcular estatísticas - LÓGICA CORRETA
-      // RECEITA = Irmão DEVE para a loja
-      // DESPESA = Loja DEVE para o irmão (crédito)
-      const receitas = (data || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
-      const despesas = (data || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
-
-      const totalRec = receitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalDesp = despesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-
-      setTotalReceitas(totalRec);
-      setTotalDespesas(totalDesp);
-      setSaldoLiquido(totalRec - totalDesp);
 
     } catch (error) {
       console.error('Erro ao carregar finanças:', error);
