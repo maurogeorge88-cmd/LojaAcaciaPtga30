@@ -1362,7 +1362,7 @@ export default function Aniversariantes() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <h3 className="font-bold text-lg text-gray-700">{aniv.nome}</h3>
-                              {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
+                              {ehHoje && <span className="text-2xl animate-bounce">🙏</span>}
                             </div>
                             
                             <p className="text-sm text-gray-600 font-medium">{aniv.tipo} - {aniv.idade} anos</p>
