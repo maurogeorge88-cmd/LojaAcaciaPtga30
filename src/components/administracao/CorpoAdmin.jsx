@@ -112,85 +112,87 @@ export const CorpoAdmin = ({
 
   return (
     <div>
-      {/* FORMULÁRIO DE CADASTRO */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-blue-900 mb-4">
-          {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
-        </h3>
+      {/* FORMULÁRIO DE CADASTRO - SÓ PARA ADMIN */}
+      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <h3 className="text-xl font-bold text-blue-900 mb-4">
+            {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
+          </h3>
 
-        <form onSubmit={modoEdicaoCorpoAdmin ? handleAtualizarCorpoAdmin : handleSubmitCorpoAdmin}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
-              <select
-                value={corpoAdminForm.irmao_id}
-                onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, irmao_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-              >
-                <option value="">Selecione um irmão</option>
-                {irmaos
-                  .filter(i => i.status === 'ativo')
-                  .map(irmao => (
-                    <option key={irmao.id} value={irmao.id}>
-                      {irmao.nome} - CIM {irmao.cim}
+          <form onSubmit={modoEdicaoCorpoAdmin ? handleAtualizarCorpoAdmin : handleSubmitCorpoAdmin}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                <select
+                  value={corpoAdminForm.irmao_id}
+                  onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, irmao_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  required
+                >
+                  <option value="">Selecione um irmão</option>
+                  {irmaos
+                    .filter(i => i.status === 'ativo')
+                    .map(irmao => (
+                      <option key={irmao.id} value={irmao.id}>
+                        {irmao.nome} - CIM {irmao.cim}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
+                <select
+                  value={corpoAdminForm.cargo}
+                  onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  required
+                >
+                  <option value="">Selecione um cargo</option>
+                  {cargosAdministrativos.map((cargo) => (
+                    <option key={cargo} value={cargo}>
+                      {cargo}
                     </option>
                   ))}
-              </select>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ano de Exercício *</label>
+                <input
+                  type="text"
+                  value={corpoAdminForm.ano_exercicio}
+                  onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, ano_exercicio: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Ex: 2024"
+                  required
+                  pattern="[0-9]{4}"
+                  title="Digite um ano válido (4 dígitos)"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
-              <select
-                value={corpoAdminForm.cargo}
-                onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-              >
-                <option value="">Selecione um cargo</option>
-                {cargosAdministrativos.map((cargo) => (
-                  <option key={cargo} value={cargo}>
-                    {cargo}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Ano de Exercício *</label>
-              <input
-                type="text"
-                value={corpoAdminForm.ano_exercicio}
-                onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, ano_exercicio: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                placeholder="Ex: 2024"
-                required
-                pattern="[0-9]{4}"
-                title="Digite um ano válido (4 dígitos)"
-              />
-            </div>
-          </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            {modoEdicaoCorpoAdmin && (
+            <div className="flex justify-end gap-4 mt-6">
+              {modoEdicaoCorpoAdmin && (
+                <button
+                  type="button"
+                  onClick={limparFormularioCorpoAdmin}
+                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                >
+                  Cancelar
+                </button>
+              )}
               <button
-                type="button"
-                onClick={limparFormularioCorpoAdmin}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                type="submit"
+                disabled={loading}
+                className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
               >
-                Cancelar
+                {loading ? 'Salvando...' : modoEdicaoCorpoAdmin ? '💾 Atualizar Cargo' : '💾 Registrar Cargo'}
               </button>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
-            >
-              {loading ? 'Salvando...' : modoEdicaoCorpoAdmin ? '💾 Atualizar Cargo' : '💾 Registrar Cargo'}
-            </button>
-          </div>
-        </form>
-      </div>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* FILTRO POR ANO */}
       <div className="bg-white rounded-xl shadow-md p-4 mb-6">
