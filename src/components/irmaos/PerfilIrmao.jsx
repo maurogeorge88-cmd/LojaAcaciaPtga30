@@ -77,15 +77,19 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
   const carregarHistoricoCargos = async () => {
     try {
-      const { data: cargosData } = await supabase
+      console.log('🔍 Carregando cargos para irmão ID:', irmaoId);
+      const { data: cargosData, error } = await supabase
         .from('historico_cargos')
         .select('*')
         .eq('irmao_id', irmaoId)
         .order('ano', { ascending: false });
 
+      console.log('📊 Cargos retornados:', cargosData);
+      console.log('❌ Erro (se houver):', error);
+
       setHistoricoCargos(cargosData || []);
     } catch (error) {
-      console.log('ℹ️ Tabela historico_cargos não existe ainda ou sem cargos');
+      console.log('ℹ️ Erro ao carregar cargos:', error.message);
       setHistoricoCargos([]);
     }
   };
