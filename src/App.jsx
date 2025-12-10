@@ -117,6 +117,8 @@ function App() {
   const [menuAberto, setMenuAberto] = useState(true);
   const [submenuIrmaos, setSubmenuIrmaos] = useState(false);
   const [submenuExpedientes, setSubmenuExpedientes] = useState(false);
+  const [submenuFinanceiro, setSubmenuFinanceiro] = useState(false);
+  const [submenuFilantropia, setSubmenuFilantropia] = useState(false);
 
   // Estados de login
   const [email, setEmail] = useState('');
@@ -1523,47 +1525,114 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
-                  <button
-                    onClick={() => setCurrentPage('financas-loja')}
-                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                      currentPage === 'financas-loja'
-                        ? 'bg-blue-700 border-l-4 border-white'
-                        : 'hover:bg-blue-800'
-                    }`}
-                    title="Finanças - Loja"
-                  >
-                    <span className="text-base">🏦</span>
-                    {menuAberto && <span className="font-semibold">Finanças - Loja</span>}
-                  </button>
-                )}
+                  <>
+                    {/* SUBMENU: CONTROLE FINANCEIRO */}
+                    <div className="border-t border-blue-700 mt-2 pt-2">
+                      <button
+                        onClick={() => setSubmenuFinanceiro(!submenuFinanceiro)}
+                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                        title="Controle Financeiro"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">💰</span>
+                          {menuAberto && <span className="font-semibold">Controle Financeiro</span>}
+                        </div>
+                        {menuAberto && (
+                          <svg 
+                            className={`w-4 h-4 transition-transform ${submenuFinanceiro ? 'rotate-180' : ''}`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        )}
+                      </button>
 
-                {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
-                  <button
-                    onClick={() => setCurrentPage('categorias-financeiras')}
-                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                      currentPage === 'categorias-financeiras'
-                        ? 'bg-blue-700 border-l-4 border-white'
-                        : 'hover:bg-blue-800'
-                    }`}
-                    title="Categorias Financeiras"
-                  >
-                    <span className="text-base">🏷️</span>
-                    {menuAberto && <span className="font-semibold">Categorias</span>}
-                  </button>
-                )}
+                      {/* Subitens do submenu */}
+                      {(submenuFinanceiro && menuAberto) && (
+                        <div className="bg-blue-950 bg-opacity-50">
+                          <button
+                            onClick={() => setCurrentPage('financas-loja')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'financas-loja'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>🏦</span>
+                            <span>Finanças - Loja</span>
+                          </button>
 
-                <button
-                  onClick={() => setCurrentPage('caridade')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'caridade'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
-                  }`}
-                  title="Caridade"
-                >
-                  <span className="text-base">❤️</span>
-                  {menuAberto && <span className="font-semibold">Caridade</span>}
-                </button>
+                          <button
+                            onClick={() => setCurrentPage('categorias-financeiras')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'categorias-financeiras'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>🏷️</span>
+                            <span>Categorias</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* SUBMENU: FILANTROPIA */}
+                    <div className="border-t border-blue-700 mt-2 pt-2">
+                      <button
+                        onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
+                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                        title="Filantropia"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">🤝</span>
+                          {menuAberto && <span className="font-semibold">Filantropia</span>}
+                        </div>
+                        {menuAberto && (
+                          <svg 
+                            className={`w-4 h-4 transition-transform ${submenuFilantropia ? 'rotate-180' : ''}`} 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        )}
+                      </button>
+
+                      {/* Subitens do submenu */}
+                      {(submenuFilantropia && menuAberto) && (
+                        <div className="bg-blue-950 bg-opacity-50">
+                          <button
+                            onClick={() => setCurrentPage('comodatos')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'comodatos'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>♿</span>
+                            <span>Comodatos</span>
+                          </button>
+
+                          <button
+                            onClick={() => setCurrentPage('caridade')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'caridade'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>❤️</span>
+                            <span>Caridade</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <button
                   onClick={() => setCurrentPage('aniversariantes')}
@@ -1572,23 +1641,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       ? 'bg-blue-700 border-l-4 border-white'
                       : 'hover:bg-blue-800'
                   }`}
-                  title="Aniversariantes"
+                  title="Festividades"
                 >
-                  <span className="text-base">🎂</span>
-                  {menuAberto && <span className="font-semibold">Aniversariantes</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('comodatos')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'comodatos'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
-                  }`}
-                  title="Comodatos"
-                >
-                  <span className="text-base">♿</span>
-                  {menuAberto && <span className="font-semibold">Comodatos</span>}
+                  <span className="text-base">🎉</span>
+                  {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
 
                 {permissoes?.canManageUsers && (
@@ -1671,7 +1727,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
-                  {currentPage === 'aniversariantes' && '🎂 Aniversariantes'}
+                  {currentPage === 'aniversariantes' && '🎉 Festividades'}
                   {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
