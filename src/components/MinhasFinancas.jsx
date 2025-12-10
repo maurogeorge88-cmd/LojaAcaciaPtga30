@@ -14,9 +14,9 @@ export default function MinhasFinancas({ userEmail }) {
   const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
 
   // Estatísticas
-  const [totalPago, setTotalPago] = useState(0);
-  const [totalPendente, setTotalPendente] = useState(0);
-  const [totalAno, setTotalAno] = useState(0);
+  const [totalReceitas, setTotalReceitas] = useState(0); // O que o irmão DEVE
+  const [totalDespesas, setTotalDespesas] = useState(0); // O que a loja DEVE (créditos)
+  const [saldoLiquido, setSaldoLiquido] = useState(0);
 
   useEffect(() => {
     carregarMinhasFinancas();
@@ -48,15 +48,30 @@ export default function MinhasFinancas({ userEmail }) {
           categorias_financeiras (nome, tipo)
         `)
         .eq('origem_irmao_id', irmao.id)
+        .eq('origem_tipo', 'Irmao')
+        .eq('status', 'pendente')
         .gte('data_vencimento', `${anoFiltro}-01-01`)
         .lte('data_vencimento', `${anoFiltro}-12-31`)
         .order('data_vencimento', { ascending: false });
 
       // Aplicar filtro de status
       if (filtro === 'pendentes') {
-        query = query.is('data_pagamento', null);
+        query = query.eq('status', 'pendente');
       } else if (filtro === 'pagos') {
-        query = query.not('data_pagamento', 'is', null);
+        query = query.eq('status', 'pago');
+      } else {
+        // todos - não filtrar por status
+        query = supabase
+          .from('lancamentos_loja')
+          .select(`
+            *,
+            categorias_financeiras (nome, tipo)
+          `)
+          .eq('origem_irmao_id', irmao.id)
+          .eq('origem_tipo', 'Irmao')
+          .gte('data_vencimento', `${anoFiltro}-01-01`)
+          .lte('data_vencimento', `${anoFiltro}-12-31`)
+          .order('data_vencimento', { ascending: false });
       }
 
       const { data, error } = await query;
@@ -65,13 +80,18 @@ export default function MinhasFinancas({ userEmail }) {
 
       setLancamentos(data || []);
 
-      // Calcular estatísticas
-      const pagos = (data || []).filter(l => l.data_pagamento);
-      const pendentes = (data || []).filter(l => !l.data_pagamento);
+      // Calcular estatísticas - LÓGICA CORRETA
+      // RECEITA = Irmão DEVE para a loja
+      // DESPESA = Loja DEVE para o irmão (crédito)
+      const receitas = (data || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const despesas = (data || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
 
-      setTotalPago(pagos.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0));
-      setTotalPendente(pendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0));
-      setTotalAno((data || []).reduce((sum, l) => sum + parseFloat(l.valor || 0), 0));
+      const totalRec = receitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDesp = despesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      setTotalReceitas(totalRec);
+      setTotalDespesas(totalDesp);
+      setSaldoLiquido(totalRec - totalDesp);
 
     } catch (error) {
       console.error('Erro ao carregar finanças:', error);
@@ -140,181 +160,176 @@ export default function MinhasFinancas({ userEmail }) {
     <div className="p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">💰 Minhas Finanças</h2>
 
-      {/* Cards de resumo */}
+      {/* Cards de resumo - NOVO LAYOUT */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Pago em {anoFiltro}</p>
-              <p className="text-3xl font-bold mt-2">{formatarMoeda(totalPago)}</p>
-            </div>
-            <div className="text-5xl opacity-80">✅</div>
-          </div>
+        <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-lg p-4 text-white shadow-lg">
+          <p className="text-sm opacity-90">Você Deve</p>
+          <p className="text-2xl font-bold mt-1">{formatarMoeda(totalReceitas)}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Pendente em {anoFiltro}</p>
-              <p className="text-3xl font-bold mt-2">{formatarMoeda(totalPendente)}</p>
-            </div>
-            <div className="text-5xl opacity-80">⏳</div>
-          </div>
+        <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg p-4 text-white shadow-lg">
+          <p className="text-sm opacity-90">Loja Deve (Créditos)</p>
+          <p className="text-2xl font-bold mt-1">{formatarMoeda(totalDespesas)}</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm opacity-90">Total {anoFiltro}</p>
-              <p className="text-3xl font-bold mt-2">{formatarMoeda(totalAno)}</p>
-            </div>
-            <div className="text-5xl opacity-80">📊</div>
-          </div>
+        <div className={`rounded-lg p-4 text-white shadow-lg ${
+          saldoLiquido > 0 ? 'bg-gradient-to-br from-orange-400 to-orange-500' : 
+          saldoLiquido < 0 ? 'bg-gradient-to-br from-green-400 to-green-500' : 
+          'bg-gradient-to-br from-gray-400 to-gray-500'
+        }`}>
+          <p className="text-sm opacity-90">Saldo Final</p>
+          <p className="text-2xl font-bold mt-1">{formatarMoeda(Math.abs(saldoLiquido))}</p>
+          <p className="text-xs mt-1">
+            {saldoLiquido > 0 ? '(Você deve)' : saldoLiquido < 0 ? '(Você tem crédito)' : '(Quitado)'}
+          </p>
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex flex-wrap gap-4">
-          {/* Filtro de status */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setFiltro('todos')}
-                className={`px-4 py-2 rounded-lg transition ${
-                  filtro === 'todos'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Todos
-              </button>
-              <button
-                onClick={() => setFiltro('pendentes')}
-                className={`px-4 py-2 rounded-lg transition ${
-                  filtro === 'pendentes'
-                    ? 'bg-yellow-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Pendentes
-              </button>
-              <button
-                onClick={() => setFiltro('pagos')}
-                className={`px-4 py-2 rounded-lg transition ${
-                  filtro === 'pagos'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                }`}
-              >
-                Pagos
-              </button>
-            </div>
-          </div>
-
-          {/* Filtro de ano */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Ano</label>
-            <select
-              value={anoFiltro}
-              onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
-              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              {anosDisponiveis().map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
+      {/* Filtros - COMPACTO */}
+      <div className="bg-white rounded-lg shadow p-3 mb-4 flex flex-wrap gap-3 items-center">
+        {/* Filtro de status */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFiltro('todos')}
+            className={`px-3 py-1.5 text-sm rounded-lg transition ${
+              filtro === 'todos'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            onClick={() => setFiltro('pendentes')}
+            className={`px-3 py-1.5 text-sm rounded-lg transition ${
+              filtro === 'pendentes'
+                ? 'bg-yellow-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Pendentes
+          </button>
+          <button
+            onClick={() => setFiltro('pagos')}
+            className={`px-3 py-1.5 text-sm rounded-lg transition ${
+              filtro === 'pagos'
+                ? 'bg-green-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Pagos
+          </button>
         </div>
+
+        {/* Filtro de ano */}
+        <select
+          value={anoFiltro}
+          onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
+          className="px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
+        >
+          {anosDisponiveis().map(ano => (
+            <option key={ano} value={ano}>{ano}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Lista de lançamentos */}
+      {/* Lista de lançamentos - LAYOUT INADIMPLENTES */}
       {lancamentos.length === 0 ? (
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
           <div className="flex items-center">
-            <span className="text-4xl mr-4">ℹ️</span>
+            <span className="text-3xl mr-3">ℹ️</span>
             <div>
               <p className="font-semibold text-blue-800">Nenhum lançamento encontrado</p>
-              <p className="text-sm text-blue-600 mt-1">
-                Não há registros financeiros para o filtro selecionado.
-              </p>
+              <p className="text-sm text-blue-600">Não há registros financeiros para o filtro selecionado.</p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {lancamentos.map((lanc) => (
-            <div
-              key={lanc.id}
-              className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{lanc.descricao}</h3>
-                  <p className="text-sm text-gray-600">
-                    {lanc.categorias_financeiras?.nome || 'Sem categoria'}
-                  </p>
-                </div>
-                {getStatusBadge(lanc)}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Vencimento</p>
-                  <p className="font-semibold text-gray-900">
-                    📅 {formatarData(lanc.data_vencimento)}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Valor</p>
-                  <p className="font-semibold text-gray-900 text-lg">
-                    💵 {formatarMoeda(lanc.valor)}
-                  </p>
-                </div>
-
-                {lanc.data_pagamento && (
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Data de Pagamento</p>
-                    <p className="font-semibold text-green-600">
-                      ✅ {formatarData(lanc.data_pagamento)}
-                    </p>
+        <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
+          {/* LISTA DE LANÇAMENTOS */}
+          <div className="divide-y divide-gray-200">
+            {lancamentos.map((lanc) => {
+              const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+              
+              return (
+                <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      {/* Badges de Categoria */}
+                      <div className="flex gap-2 mb-2 flex-wrap">
+                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                          ehReceita ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {ehReceita ? '📈 Você Deve' : '💰 Loja Deve'}
+                        </span>
+                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
+                          {lanc.categorias_financeiras?.nome}
+                        </span>
+                        {lanc.eh_parcelado && (
+                          <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                            📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
+                          </span>
+                        )}
+                        {lanc.eh_mensalidade && (
+                          <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                            📅 Mensalidade
+                          </span>
+                        )}
+                        {getStatusBadge(lanc)}
+                      </div>
+                      
+                      {/* Descrição */}
+                      <p className="font-medium text-gray-900 mb-2">{lanc.descricao}</p>
+                      
+                      {/* Informações - DATAS NA MESMA LINHA */}
+                      <div className="text-sm text-gray-600">
+                        <p>
+                          <span className="font-medium">Vencimento:</span> {formatarData(lanc.data_vencimento)}
+                          {lanc.data_pagamento && (
+                            <>
+                              <span className="mx-2">•</span>
+                              <span className="font-medium text-green-600">Pago em:</span> {formatarData(lanc.data_pagamento)}
+                            </>
+                          )}
+                          {lanc.tipo_pagamento && (
+                            <>
+                              <span className="mx-2">•</span>
+                              <span className="font-medium">Forma:</span> {lanc.tipo_pagamento}
+                            </>
+                          )}
+                        </p>
+                        {lanc.observacoes && (
+                          <p className="text-gray-500 italic mt-1">
+                            💬 {lanc.observacoes}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="text-right ml-4">
+                      <p className={`text-2xl font-bold ${
+                        ehReceita ? 'text-red-600' : 'text-blue-600'
+                      }`}>
+                        {formatarMoeda(lanc.valor)}
+                      </p>
+                    </div>
                   </div>
-                )}
-
-                {lanc.metodo_pagamento && (
-                  <div>
-                    <p className="text-xs text-gray-600 mb-1">Método</p>
-                    <p className="font-semibold text-gray-900 capitalize">
-                      {lanc.metodo_pagamento}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {lanc.observacoes && (
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs text-gray-600 mb-1">Observações</p>
-                  <p className="text-sm text-gray-700">{lanc.observacoes}</p>
                 </div>
-              )}
-            </div>
-          ))}
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Informações importantes */}
-      <div className="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+      {/* Informações importantes - COMPACTO */}
+      <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
         <div className="flex">
-          <span className="text-3xl mr-4">💡</span>
+          <span className="text-2xl mr-3">💡</span>
           <div>
-            <h4 className="font-semibold text-yellow-800 mb-2">Informações Importantes</h4>
-            <ul className="text-sm text-yellow-700 space-y-1">
-              <li>• Você pode visualizar apenas suas próprias finanças</li>
+            <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Informações Importantes</h4>
+            <ul className="text-xs text-yellow-700 space-y-1">
               <li>• Para efetuar pagamentos, entre em contato com o Tesoureiro</li>
               <li>• Mantenha suas mensalidades em dia para regularidade</li>
-              <li>• Em caso de dúvidas, procure a administração da loja</li>
             </ul>
           </div>
         </div>
