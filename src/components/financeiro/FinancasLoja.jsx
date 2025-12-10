@@ -1351,30 +1351,46 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         yPos = 20;
       }
 
-      // Dados Bancários
+      // Dados Bancários e QR Code
       doc.setFillColor(240, 240, 240);
-      doc.rect(15, yPos, 80, 30, 'F');
+      doc.rect(15, yPos, 85, 40, 'F'); // Dados bancários
+      
+      // QR Code (área reservada)
+      doc.rect(105, yPos, 45, 40); // Borda do QR Code
+      doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
+      doc.text('QR CODE PIX', 127.5, yPos + 20, { align: 'center' });
+      doc.text('(Cole aqui a imagem', 127.5, yPos + 24, { align: 'center' });
+      doc.text('do QR Code do banco)', 127.5, yPos + 28, { align: 'center' });
+      
       yPos += 5;
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text('Dados Bancários', 55, yPos, { align: 'center' });
+      doc.setTextColor(0, 0, 0);
+      doc.text('Dados Bancários', 57.5, yPos, { align: 'center' });
       yPos += 5;
 
       doc.setFontSize(8);
       doc.setTextColor(0, 100, 180);
       doc.setFont('helvetica', 'bold');
-      doc.text('Cooperativa de Crédito Sicredi', 55, yPos, { align: 'center' });
+      doc.text('Cooperativa de Crédito Sicredi', 57.5, yPos, { align: 'center' });
       yPos += 4;
 
       doc.setTextColor(0, 0, 0);
       doc.setFont('helvetica', 'normal');
-      doc.text('Ag.: 0802 - C.C.: 86.913-9', 55, yPos, { align: 'center' });
+      doc.text('Ag.: 0802 - C.C.: 86.913-9', 57.5, yPos, { align: 'center' });
       yPos += 4;
-      doc.text('PIX.: 03.250.704/0001-00', 55, yPos, { align: 'center' });
+      doc.text('PIX.: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
+      yPos += 4;
+      doc.setFontSize(7);
+      doc.setTextColor(100, 100, 100);
+      doc.text('CNPJ: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text('Fav.: ARLSACACIA P ARANATINGA 30', 57.5, yPos, { align: 'center' });
 
       // Total (lado direito)
-      yPos -= 13;
+      yPos -= 21;
       const saldoFinal = totalGeralDespesa - totalGeralCredito;
       
       doc.setFontSize(14);
@@ -1403,6 +1419,66 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     } catch (error) {
       console.error('Erro:', error);
       showError('Erro ao gerar relatório: ' + error.message);
+    }
+  };
+
+  const gerarRelatorioDeTodos = async () => {
+    try {
+      showSuccess('Gerando relatórios de todos os inadimplentes...');
+      
+      // Buscar todos os irmãos com pendências
+      const lancamentosPendentes = lancamentos.filter(
+        l => l.status === 'pendente' && l.origem_tipo === 'Irmao'
+      );
+
+      if (lancamentosPendentes.length === 0) {
+        showError('Nenhum irmão com pendências financeiras!');
+        return;
+      }
+
+      // Agrupar por irmão
+      const irmaosComPendencias = {};
+      lancamentosPendentes.forEach(lanc => {
+        const irmaoId = lanc.origem_irmao_id;
+        if (!irmaosComPendencias[irmaoId]) {
+          irmaosComPendencias[irmaoId] = true;
+        }
+      });
+
+      const irmaoIds = Object.keys(irmaosComPendencias);
+      
+      if (irmaoIds.length === 0) {
+        showError('Nenhum irmão identificado com pendências!');
+        return;
+      }
+
+      showSuccess(`Gerando ${irmaoIds.length} relatórios... Por favor, aguarde.`);
+
+      // Gerar PDF para cada irmão
+      let sucessos = 0;
+      let erros = 0;
+
+      for (const irmaoId of irmaoIds) {
+        try {
+          await gerarRelatorioIndividual(parseInt(irmaoId));
+          sucessos++;
+          // Pequeno delay entre PDFs para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`Erro ao gerar PDF do irmão ${irmaoId}:`, error);
+          erros++;
+        }
+      }
+
+      if (erros === 0) {
+        showSuccess(`✅ ${sucessos} relatórios gerados com sucesso!`);
+      } else {
+        showError(`⚠️ ${sucessos} relatórios gerados com sucesso. ${erros} com erro.`);
+      }
+
+    } catch (error) {
+      console.error('Erro geral:', error);
+      showError('Erro ao gerar relatórios em lote: ' + error.message);
     }
   };
 
@@ -2282,12 +2358,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <p className="text-sm text-gray-600">Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
             </div>
             {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length > 0 && (
-              <button
-                onClick={() => setMostrarModalQuitacaoLote(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
-              >
-                💰 Quitar em Lote
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => gerarRelatorioDeTodos()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  📄 Gerar PDFs de Todos
+                </button>
+                <button
+                  onClick={() => setMostrarModalQuitacaoLote(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                >
+                  💰 Quitar em Lote
+                </button>
+              </div>
             )}
           </div>
           
@@ -2333,7 +2417,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                   const quantidadeLancamentos = irmaoData.lancamentos.length;
                   
                   // Definir cor do cabeçalho baseado no saldo
-                  const corCabecalho = saldoLiquido > 0 ? 'bg-red-600' : saldoLiquido < 0 ? 'bg-blue-600' : 'bg-gray-600';
+                  const corCabecalho = saldoLiquido > 0 ? 'bg-red-400' : saldoLiquido < 0 ? 'bg-blue-400' : 'bg-gray-500';
 
                   return (
                     <div key={irmaoData.irmaoId} className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
