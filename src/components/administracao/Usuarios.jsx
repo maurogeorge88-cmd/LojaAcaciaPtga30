@@ -31,6 +31,16 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [resetandoSenha, setResetandoSenha] = useState(null);
 
+  // Função para formatar cargo para exibição
+  const formatarCargo = (cargo) => {
+    if (!cargo) return '';
+    return cargo
+      .replace(/_/g, ' ')
+      .split(' ')
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1))
+      .join(' ');
+  };
+
   // Sugestões de permissões por cargo (não fixas!)
   const SUGESTOES_PERMISSOES = {
     'irmao': {
@@ -53,6 +63,24 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
     },
     'chanceler': {
       pode_editar_cadastros: true,
+      pode_visualizar_financeiro: true,
+      pode_editar_financeiro: false,
+      pode_gerenciar_usuarios: false
+    },
+    'primeiro_vigilante': {
+      pode_editar_cadastros: true,
+      pode_visualizar_financeiro: true,
+      pode_editar_financeiro: false,
+      pode_gerenciar_usuarios: false
+    },
+    'segundo_vigilante': {
+      pode_editar_cadastros: true,
+      pode_visualizar_financeiro: true,
+      pode_editar_financeiro: false,
+      pode_gerenciar_usuarios: false
+    },
+    'orador': {
+      pode_editar_cadastros: false,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
       pode_gerenciar_usuarios: false
@@ -393,6 +421,9 @@ IMPORTANTE: Copie estas informações agora!
                 <option value="secretario">Secretário</option>
                 <option value="tesoureiro">Tesoureiro</option>
                 <option value="chanceler">Chanceler</option>
+                <option value="primeiro_vigilante">Primeiro Vigilante</option>
+                <option value="segundo_vigilante">Segundo Vigilante</option>
+                <option value="orador">Orador</option>
                 <option value="veneravel">Venerável</option>
                 <option value="administrador">Administrador</option>
               </select>
@@ -531,7 +562,7 @@ IMPORTANTE: Copie estas informações agora!
                   </td>
                   <td className="px-4 py-3">
                     <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                      {usuario.cargo}
+                      {formatarCargo(usuario.cargo)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
