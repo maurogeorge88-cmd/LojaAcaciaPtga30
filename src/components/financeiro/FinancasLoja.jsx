@@ -52,8 +52,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   
   const [filtros, setFiltros] = useState({
-    mes: 0, // 0 = Todos
-    ano: 0, // 0 = Todos
+    mes: new Date().getMonth() + 1, // Mês atual (1-12)
+    ano: new Date().getFullYear(), // Ano atual
     tipo: '', // 'receita' ou 'despesa'
     categoria: '',
     status: '', // 'pago', 'pendente', 'vencido', 'cancelado'
