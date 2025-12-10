@@ -1204,7 +1204,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.setFontSize(11);
       doc.text('Grande Loja do Estado de Mato Grosso - GLEMT', 105, yPos, { align: 'center' });
       yPos += 5;
-      doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
+      doc.text('ARLS Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
       yPos += 12;
 
       // Dados do Irmão em um box
@@ -1269,7 +1269,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.text('Despesa', 120, yPos + 4, { align: 'right' });
         doc.text('Crédito', 150, yPos + 4, { align: 'right' });
         doc.text('Saldo', 190, yPos + 4, { align: 'right' });
-        yPos += 8; // 2mm de espaço após o cabeçalho
+        yPos += 11; // 5mm de espaço total após o cabeçalho (2mm anterior + 3mm adicional)
 
         // Lançamentos
         let subtotalDespesa = 0;  // O que o irmão DEVE
@@ -1355,10 +1355,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         yPos = 20;
       }
 
-      // Dados Bancários
-      doc.setFillColor(240, 240, 240);
-      doc.rect(15, yPos, 85, 40, 'F'); // Dados bancários
-      
+      // Dados Bancários (sem fundo cinza)
       yPos += 5;
 
       doc.setFontSize(9);
@@ -1373,14 +1370,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text('Cooperativa de Crédito Sicredi', 57.5, yPos, { align: 'center' });
       yPos += 4;
 
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(0, 0, 0); // Preto
       doc.setFont('helvetica', 'normal');
       doc.text('Ag.: 0802 - C.C.: 86.913-9', 57.5, yPos, { align: 'center' });
       yPos += 4;
       doc.text('PIX.: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
       yPos += 4;
       doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
       doc.text('CNPJ: 03.250.704/0001-00', 57.5, yPos, { align: 'center' });
       yPos += 4;
       doc.text('Fav.: ARLSACACIA PARANATINGA 30', 57.5, yPos, { align: 'center' });
@@ -1408,7 +1404,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       doc.text(`R$ ${Math.abs(saldoFinal).toFixed(2)}`, 190, yPos, { align: 'right' });
       doc.setTextColor(0, 0, 0);
       
-      yPos += 15; // Espaço de 3+ linhas
+      yPos += 35; // Espaço de 2cm (~20mm = 35 pontos)
       
       // Mensagem da Tesouraria
       if (yPos > 250) {
@@ -1418,13 +1414,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
+      doc.setTextColor(0, 0, 0); // Preto
       doc.text('Tesouraria - Acácia de Paranatinga nº 30', 105, yPos, { align: 'center' });
       yPos += 7;
       
       doc.setFontSize(9);
       doc.setFont('helvetica', 'italic');
-      doc.setTextColor(0, 0, 139); // Azul escuro
+      doc.setTextColor(0, 0, 0); // Preto
       
       // Quebrar o texto em múltiplas linhas
       const mensagem = '"Irmãos, o cumprimento de nossas obrigações financeiras é um ato de honra';
