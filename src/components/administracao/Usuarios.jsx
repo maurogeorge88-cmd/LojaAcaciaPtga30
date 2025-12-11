@@ -47,55 +47,118 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: false,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false
     },
     'secretario': {
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: true,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: true,
+      pode_editar_pranchas: true,
+      pode_editar_comissoes: true,
+      pode_editar_corpo_admin: true
     },
     'tesoureiro': {
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: true,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: true,
+      pode_editar_balaustres: false,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false
     },
     'chanceler': {
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: true,
+      pode_editar_pranchas: true,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false
     },
     'primeiro_vigilante': {
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: true,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: true,
+      pode_editar_corpo_admin: false
     },
     'segundo_vigilante': {
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: true,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: true,
+      pode_editar_corpo_admin: false
     },
     'orador': {
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: false,
+      pode_editar_pranchas: true,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false
     },
     'veneravel': {
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: true,
-      pode_gerenciar_usuarios: true
+      pode_gerenciar_usuarios: true,
+      pode_editar_biblioteca: true,
+      pode_editar_comodatos: true,
+      pode_editar_caridade: true,
+      pode_editar_balaustres: true,
+      pode_editar_pranchas: true,
+      pode_editar_comissoes: true,
+      pode_editar_corpo_admin: true
     },
     'administrador': {
       pode_editar_cadastros: true,
       pode_visualizar_financeiro: true,
       pode_editar_financeiro: true,
-      pode_gerenciar_usuarios: true
+      pode_gerenciar_usuarios: true,
+      pode_editar_biblioteca: true,
+      pode_editar_comodatos: true,
+      pode_editar_caridade: true,
+      pode_editar_balaustres: true,
+      pode_editar_pranchas: true,
+      pode_editar_comissoes: true,
+      pode_editar_corpo_admin: true
     }
   };
 
@@ -117,7 +180,14 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_cadastros: false,
       pode_visualizar_financeiro: false,
       pode_editar_financeiro: false,
-      pode_gerenciar_usuarios: false
+      pode_gerenciar_usuarios: false,
+      pode_editar_biblioteca: false,
+      pode_editar_comodatos: false,
+      pode_editar_caridade: false,
+      pode_editar_balaustres: false,
+      pode_editar_pranchas: false,
+      pode_editar_comissoes: false,
+      pode_editar_corpo_admin: false
     });
     setModoEdicao(false);
     setUsuarioEditando(null);
@@ -507,6 +577,110 @@ IMPORTANTE: Copie estas informações agora!
                   <p className="text-xs text-gray-600">Criar/editar usuários</p>
                 </div>
               </label>
+            </div>
+
+            {/* PERMISSÕES POR MÓDULO */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <span>📋</span>
+                Permissões por Módulo
+              </h4>
+              <p className="text-xs text-blue-700 mb-4">
+                Defina quais módulos específicos este usuário pode editar
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_biblioteca}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_biblioteca: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">📚 Biblioteca</span>
+                    <p className="text-xs text-gray-600">Gerenciar livros e empréstimos</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_comodatos}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_comodatos: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">♿ Comodatos</span>
+                    <p className="text-xs text-gray-600">Gerenciar equipamentos</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_caridade}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_caridade: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">❤️ Caridade</span>
+                    <p className="text-xs text-gray-600">Gerenciar famílias e ajudas</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_balaustres}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_balaustres: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">📜 Balaustres</span>
+                    <p className="text-xs text-gray-600">Criar/editar balaustres</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_pranchas}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_pranchas: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">📄 Pranchas</span>
+                    <p className="text-xs text-gray-600">Criar/editar pranchas</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_comissoes}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_comissoes: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">📋 Comissões</span>
+                    <p className="text-xs text-gray-600">Gerenciar comissões</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_corpo_admin}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_corpo_admin: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">👔 Corpo Administrativo</span>
+                    <p className="text-xs text-gray-600">Gerenciar cargos admin</p>
+                  </div>
+                </label>
+              </div>
             </div>
           </div>
 
