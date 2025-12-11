@@ -355,101 +355,104 @@ export default function LancamentosLote({ showSuccess, showError }) {
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Tipo */}
+                <div className="grid grid-cols-1 gap-4">
+                  {/* LINHA 1: Tipo, Categoria, Valor, Parcelas */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    {/* Tipo */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                      <select
+                        value={item.tipo}
+                        onChange={(e) => {
+                          atualizarItem(item.id, 'tipo', e.target.value);
+                          atualizarItem(item.id, 'categoria_id', '');
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      >
+                        <option value="receita">💰 Receita</option>
+                        <option value="despesa">💸 Despesa</option>
+                      </select>
+                    </div>
+
+                    {/* Categoria */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
+                      <select
+                        value={item.categoria_id}
+                        onChange={(e) => atualizarItem(item.id, 'categoria_id', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        required
+                      >
+                        <option value="">Selecione...</option>
+                        {(item.tipo === 'receita' ? categoriasReceita : categoriasDespesa).map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Valor */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Valor *</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={item.valor}
+                        onChange={(e) => atualizarItem(item.id, 'valor', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+
+                    {/* Parcelas */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={item.parcelas}
+                        onChange={(e) => atualizarItem(item.id, 'parcelas', parseInt(e.target.value) || 1)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                      {item.parcelas > 1 && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          {item.parcelas}x de {formatarMoeda(parseFloat(item.valor || 0) / item.parcelas)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* LINHA 2: Descrição, Vencimento */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Descrição */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label>
+                      <input
+                        type="text"
+                        value={item.descricao}
+                        onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        placeholder="Ex: Ágape Dia das Mães"
+                        required
+                      />
+                    </div>
+
+                    {/* Data Vencimento */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento *</label>
+                      <input
+                        type="date"
+                        value={item.data_vencimento}
+                        onChange={(e) => atualizarItem(item.id, 'data_vencimento', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  {/* LINHA 3: Observações */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-                    <select
-                      value={item.tipo}
-                      onChange={(e) => {
-                        atualizarItem(item.id, 'tipo', e.target.value);
-                        atualizarItem(item.id, 'categoria_id', '');
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="receita">💰 Receita (Irmão deve)</option>
-                      <option value="despesa">💸 Despesa (Crédito)</option>
-                    </select>
-                  </div>
-
-                  {/* Categoria */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
-                    <select
-                      value={item.categoria_id}
-                      onChange={(e) => atualizarItem(item.id, 'categoria_id', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                    >
-                      <option value="">Selecione...</option>
-                      {(item.tipo === 'receita' ? categoriasReceita : categoriasDespesa).map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Valor */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Valor *</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={item.valor}
-                      onChange={(e) => atualizarItem(item.id, 'valor', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-
-                  {/* Descrição */}
-                  <div className="lg:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label>
-                    <input
-                      type="text"
-                      value={item.descricao}
-                      onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      placeholder="Ex: Ágape Dia das Mães"
-                      required
-                    />
-                  </div>
-
-                  {/* Data Vencimento */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento *</label>
-                    <input
-                      type="date"
-                      value={item.data_vencimento}
-                      onChange={(e) => atualizarItem(item.id, 'data_vencimento', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      required
-                    />
-                  </div>
-
-                  {/* Parcelas */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Parcelas
-                      <span className="text-xs text-gray-500 ml-1">(opcional)</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={item.parcelas}
-                      onChange={(e) => atualizarItem(item.id, 'parcelas', parseInt(e.target.value) || 1)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                    {item.parcelas > 1 && (
-                      <p className="text-xs text-gray-600 mt-1">
-                        {item.parcelas}x de {formatarMoeda(parseFloat(item.valor || 0) / item.parcelas)}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Observações */}
-                  <div className="lg:col-span-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
                     <textarea
                       value={item.observacoes}
@@ -502,13 +505,13 @@ export default function LancamentosLote({ showSuccess, showError }) {
               placeholder="🔍 Buscar por nome ou CIM..."
               value={buscarIrmao}
               onChange={(e) => setBuscarIrmao(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
             />
           </div>
 
           {/* Selecionar Todos */}
           <div className="mb-4">
-            <label className="flex items-center gap-3 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition">
+            <label className="flex items-center gap-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition">
               <input
                 type="checkbox"
                 checked={selectAll}
@@ -591,22 +594,22 @@ export default function LancamentosLote({ showSuccess, showError }) {
           <h3 className="text-xl font-bold text-gray-800 mb-6">📊 Resumo Final - Confirme os Dados</h3>
 
           {/* Cards de Resumo */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 bg-blue-50 rounded-lg border-2 border-blue-200 text-center">
-              <p className="text-sm text-blue-700 mb-1">Irmãos</p>
-              <p className="text-4xl font-bold text-blue-900">{irmaosSelecionados.length}</p>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <div className="p-3 bg-blue-50 rounded-lg border-2 border-blue-200 text-center">
+              <p className="text-xs text-blue-700 mb-1">Irmãos</p>
+              <p className="text-3xl font-bold text-blue-900">{irmaosSelecionados.length}</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg border-2 border-green-200 text-center">
-              <p className="text-sm text-green-700 mb-1">Itens</p>
-              <p className="text-4xl font-bold text-green-900">{itens.length}</p>
+            <div className="p-3 bg-green-50 rounded-lg border-2 border-green-200 text-center">
+              <p className="text-xs text-green-700 mb-1">Itens</p>
+              <p className="text-3xl font-bold text-green-900">{itens.length}</p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg border-2 border-purple-200 text-center">
-              <p className="text-sm text-purple-700 mb-1">Lançamentos</p>
-              <p className="text-4xl font-bold text-purple-900">{quantidadeLancamentos}</p>
+            <div className="p-3 bg-purple-50 rounded-lg border-2 border-purple-200 text-center">
+              <p className="text-xs text-purple-700 mb-1">Lançamentos</p>
+              <p className="text-3xl font-bold text-purple-900">{quantidadeLancamentos}</p>
             </div>
-            <div className="p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200 text-center">
-              <p className="text-sm text-yellow-700 mb-1">Valor Total</p>
-              <p className="text-2xl font-bold text-yellow-900">{formatarMoeda(totalLancamentos)}</p>
+            <div className="p-3 bg-yellow-50 rounded-lg border-2 border-yellow-200 text-center">
+              <p className="text-xs text-yellow-700 mb-1">Valor Total</p>
+              <p className="text-xl font-bold text-yellow-900">{formatarMoeda(totalLancamentos)}</p>
             </div>
           </div>
 
