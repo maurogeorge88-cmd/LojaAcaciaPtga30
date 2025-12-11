@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 
-export default function GestaoEquipamentos({ showSuccess, showError }) {
+export default function GestaoEquipamentos({ showSuccess, showError, permissoes }) {
   const [equipamentos, setEquipamentos] = useState([]);
   const [tipos, setTipos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -338,26 +338,28 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
           <h2 className="text-2xl font-bold text-gray-800">
             🛠️ Gestão de Equipamentos
           </h2>
-          <div className="flex gap-2">
-            <button
-              onClick={() => setModalTipo(true)}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              ➕ Novo Tipo
-            </button>
-            <button
-              onClick={() => setModalLote(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              📦 Cadastro em Lote
-            </button>
-            <button
-              onClick={() => abrirModal()}
-              className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
-            >
-              ➕ Novo Equipamento
-            </button>
-          </div>
+          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setModalTipo(true)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                ➕ Novo Tipo
+              </button>
+              <button
+                onClick={() => setModalLote(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                📦 Cadastro em Lote
+              </button>
+              <button
+                onClick={() => abrirModal()}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                ➕ Novo Equipamento
+              </button>
+            </div>
+          )}
         </div>
 
         {/* FILTROS */}
@@ -461,32 +463,34 @@ export default function GestaoEquipamentos({ showSuccess, showError }) {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => abrirModal(equipamento)}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                disabled={equipamento.status === 'descartado'}
-              >
-                ✏️ Editar
-              </button>
-              {equipamento.status !== 'descartado' && equipamento.status !== 'emprestado' && (
-                <>
-                  <button
-                    onClick={() => descartar(equipamento.id)}
-                    className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
-                  >
-                    🗑️ Descartar
-                  </button>
-                  <button
-                    onClick={() => excluirEquipamento(equipamento.id)}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                    title="Excluir permanentemente"
-                  >
-                    ❌ Excluir
-                  </button>
-                </>
-              )}
-            </div>
+            {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => abrirModal(equipamento)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  disabled={equipamento.status === 'descartado'}
+                >
+                  ✏️ Editar
+                </button>
+                {equipamento.status !== 'descartado' && equipamento.status !== 'emprestado' && (
+                  <>
+                    <button
+                      onClick={() => descartar(equipamento.id)}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                    >
+                      🗑️ Descartar
+                    </button>
+                    <button
+                      onClick={() => excluirEquipamento(equipamento.id)}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                      title="Excluir permanentemente"
+                    >
+                      ❌ Excluir
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         ))}
       </div>
