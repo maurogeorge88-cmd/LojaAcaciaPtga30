@@ -265,83 +265,89 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
             {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
           </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Comissão *</label>
-            <input
-              type="text"
-              value={comissaoForm.nome}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, nome: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
+        <div className="space-y-4 mb-4">
+          {/* LINHA 1: Nome, Data Criação, Origem, Status */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Comissão *</label>
+              <input
+                type="text"
+                value={comissaoForm.nome}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, nome: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Data de Criação *</label>
+              <input
+                type="date"
+                value={comissaoForm.data_criacao}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, data_criacao: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Origem *</label>
+              <select
+                value={comissaoForm.origem}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, origem: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="interna">Interna</option>
+                <option value="externa">Externa</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+              <select
+                value={comissaoForm.status}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, status: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              >
+                <option value="em_andamento">Em Andamento</option>
+                <option value="encerrada">Encerrada</option>
+              </select>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Data de Criação *</label>
-            <input
-              type="date"
-              value={comissaoForm.data_criacao}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, data_criacao: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
+          {/* LINHA 2: Data Início, Data Fim, Objetivo */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Data Início *</label>
+              <input
+                type="date"
+                value={comissaoForm.data_inicio}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, data_inicio: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Origem *</label>
-            <select
-              value={comissaoForm.origem}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, origem: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="interna">Interna</option>
-              <option value="externa">Externa</option>
-            </select>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
+              <input
+                type="date"
+                value={comissaoForm.data_fim}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, data_fim: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status *</label>
-            <select
-              value={comissaoForm.status}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="em_andamento">Em Andamento</option>
-              <option value="encerrada">Encerrada</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Data Início *</label>
-            <input
-              type="date"
-              value={comissaoForm.data_inicio}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, data_inicio: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Data Fim</label>
-            <input
-              type="date"
-              value={comissaoForm.data_fim}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, data_fim: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Objetivo *</label>
-            <textarea
-              value={comissaoForm.objetivo}
-              onChange={(e) => setComissaoForm({ ...comissaoForm, objetivo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              rows="2"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Objetivo *</label>
+              <textarea
+                value={comissaoForm.objetivo}
+                onChange={(e) => setComissaoForm({ ...comissaoForm, objetivo: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                rows="1"
+                required
+              />
+            </div>
           </div>
         </div>
 
