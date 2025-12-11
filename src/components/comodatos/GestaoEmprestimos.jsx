@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 
-export default function GestaoEmprestimos({ showSuccess, showError }) {
+export default function GestaoEmprestimos({ showSuccess, showError, permissoes }) {
   const [emprestimos, setEmprestimos] = useState([]);
   const [equipamentos, setEquipamentos] = useState([]);
   const [beneficiarios, setBeneficiarios] = useState([]);
@@ -284,12 +284,14 @@ export default function GestaoEmprestimos({ showSuccess, showError }) {
           <h2 className="text-2xl font-bold text-gray-800">
             📋 Empréstimos
           </h2>
-          <button
-            onClick={abrirModal}
-            className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
-          >
-            ➕ Novo Empréstimo
-          </button>
+          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            <button
+              onClick={abrirModal}
+              className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
+            >
+              ➕ Novo Empréstimo
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -442,22 +444,24 @@ export default function GestaoEmprestimos({ showSuccess, showError }) {
                 </div>
               )}
 
-              <div className="flex gap-2">
-                {emprestimo.status === 'ativo' && (
+              {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                <div className="flex gap-2">
+                  {emprestimo.status === 'ativo' && (
+                    <button
+                      onClick={() => abrirModalDevolucao(emprestimo)}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                    >
+                      ✅ Registrar Devolução
+                    </button>
+                  )}
                   <button
-                    onClick={() => abrirModalDevolucao(emprestimo)}
-                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                    onClick={() => excluir(emprestimo.id)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
                   >
-                    ✅ Registrar Devolução
+                    ❌ Excluir
                   </button>
-                )}
-                <button
-                  onClick={() => excluir(emprestimo.id)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                >
-                  ❌ Excluir
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           );
         })}
