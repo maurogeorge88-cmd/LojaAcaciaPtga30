@@ -9,7 +9,8 @@ const Balaustres = ({
   onUpdate, 
   showSuccess, 
   showError,
-  permissoes
+  permissoes,
+  grauUsuario
 }) => {
   
   // Estados do formulário
@@ -208,6 +209,29 @@ const Balaustres = ({
     return match;
   });
 
+  // CONTROLE DE ACESSO POR GRAU
+  // Aprendiz: só vê Aprendiz
+  // Companheiro: vê Companheiro e Aprendiz
+  // Mestre: vê tudo
+  const balaustresFiltradosPorAcesso = balaustresFiltrados.filter(b => {
+    if (!grauUsuario) return true; // Se não tiver grau definido, mostra tudo (admin)
+    
+    const grauBalaustre = (b.grau_sessao || '').trim().toLowerCase();
+    const grauUser = grauUsuario.toLowerCase();
+    
+    if (grauUser === 'mestre') return true; // Mestre vê tudo
+    
+    if (grauUser === 'companheiro') {
+      return grauBalaustre === 'companheiro' || grauBalaustre === 'aprendiz';
+    }
+    
+    if (grauUser === 'aprendiz') {
+      return grauBalaustre === 'aprendiz';
+    }
+    
+    return false;
+  });
+
   return (
     <div>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
@@ -400,8 +424,8 @@ const Balaustres = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {balaustresFiltrados.length > 0 ? (
-                balaustresFiltrados
+              {balaustresFiltradosPorAcesso.length > 0 ? (
+                balaustresFiltradosPorAcesso
                   .sort((a, b) => b.numero_balaustre - a.numero_balaustre)
                   .map((balaustre) => (
                     <tr key={balaustre.id} className="hover:bg-gray-50">
