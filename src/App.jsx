@@ -286,7 +286,14 @@ function App() {
           canDelete: false,
           canManageUsers: false,
           canViewFinancial: false,
-          canEditFinancial: false
+          canEditFinancial: false,
+          pode_editar_biblioteca: false,
+          pode_editar_comodatos: false,
+          pode_editar_caridade: false,
+          pode_editar_balaustres: false,
+          pode_editar_pranchas: false,
+          pode_editar_comissoes: false,
+          pode_editar_corpo_admin: false
         });
       } else if (data.nivel_acesso === 'admin') {
         // Admin: acesso total
@@ -296,7 +303,14 @@ function App() {
           canDelete: true,
           canManageUsers: true,
           canViewFinancial: true,
-          canEditFinancial: true
+          canEditFinancial: true,
+          pode_editar_biblioteca: true,
+          pode_editar_comodatos: true,
+          pode_editar_caridade: true,
+          pode_editar_balaustres: true,
+          pode_editar_pranchas: true,
+          pode_editar_comissoes: true,
+          pode_editar_corpo_admin: true
         });
       } else if (data.nivel_acesso === 'cargo') {
         // Cargo: baseado nas permissões específicas
@@ -306,7 +320,14 @@ function App() {
           canDelete: data.pode_editar_cadastros || false,
           canManageUsers: data.pode_gerenciar_usuarios || false,
           canViewFinancial: data.pode_visualizar_financeiro || false,
-          canEditFinancial: data.pode_editar_financeiro || false
+          canEditFinancial: data.pode_editar_financeiro || false,
+          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
+          pode_editar_comodatos: data.pode_editar_comodatos || false,
+          pode_editar_caridade: data.pode_editar_caridade || false,
+          pode_editar_balaustres: data.pode_editar_balaustres || false,
+          pode_editar_pranchas: data.pode_editar_pranchas || false,
+          pode_editar_comissoes: data.pode_editar_comissoes || false,
+          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false
         });
       } else {
         // Padrão: sem permissões
@@ -316,7 +337,14 @@ function App() {
           canDelete: false,
           canManageUsers: false,
           canViewFinancial: false,
-          canEditFinancial: false
+          canEditFinancial: false,
+          pode_editar_biblioteca: false,
+          pode_editar_comodatos: false,
+          pode_editar_caridade: false,
+          pode_editar_balaustres: false,
+          pode_editar_pranchas: false,
+          pode_editar_comissoes: false,
+          pode_editar_corpo_admin: false
         });
       }
     }
