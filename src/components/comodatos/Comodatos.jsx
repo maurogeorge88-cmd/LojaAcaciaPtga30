@@ -214,6 +214,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
         <GestaoEquipamentos 
           showSuccess={showSuccess}
           showError={showError}
+          permissoes={permissoes}
         />
       )}
 
@@ -221,6 +222,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
         <GestaoBeneficiarios 
           showSuccess={showSuccess}
           showError={showError}
+          permissoes={permissoes}
         />
       )}
 
@@ -228,6 +230,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
         <GestaoEmprestimos 
           showSuccess={showSuccess}
           showError={showError}
+          permissoes={permissoes}
         />
       )}
     </div>
