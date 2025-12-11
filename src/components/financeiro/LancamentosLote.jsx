@@ -38,11 +38,11 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
   const carregarDados = async () => {
     try {
-      // Carregar irmãos ativos (Regular e Licenciado)
+      // Carregar irmãos ativos (testando variações de status)
       const { data: irmaosData, error: irmaosError } = await supabase
         .from('irmaos')
         .select('id, nome, cim, status')
-        .in('status', ['regular', 'licenciado'])
+        .or('status.eq.Regular,status.eq.regular,status.eq.Licenciado,status.eq.licenciado,status.eq.ativo,status.eq.Ativo')
         .order('nome');
 
       if (irmaosError) throw irmaosError;
