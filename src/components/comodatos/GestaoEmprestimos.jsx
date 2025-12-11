@@ -284,7 +284,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
           <h2 className="text-2xl font-bold text-gray-800">
             📋 Empréstimos
           </h2>
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {permissoes?.pode_editar_comodatos && (
             <button
               onClick={abrirModal}
               className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 transition-colors"
@@ -444,7 +444,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
                 </div>
               )}
 
-              {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+              {permissoes?.pode_editar_comodatos && (
                 <div className="flex gap-2">
                   {emprestimo.status === 'ativo' && (
                     <button
