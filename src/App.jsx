@@ -106,6 +106,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [grauUsuarioLogado, setGrauUsuarioLogado] = useState(null);
   const [permissoes, setPermissoes] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
@@ -255,6 +256,26 @@ function App() {
 
     if (data) {
       setUserData(data);
+      
+      // Buscar grau do irmão logado (se for irmão)
+      if (data.nivel_acesso === 'irmao') {
+        const { data: irmaoData } = await supabase
+          .from('irmaos')
+          .select('data_iniciacao, data_elevacao, data_exaltacao')
+          .eq('email', userEmail)
+          .single();
+        
+        if (irmaoData) {
+          let grau = 'Não Iniciado';
+          if (irmaoData.data_exaltacao) grau = 'Mestre';
+          else if (irmaoData.data_elevacao) grau = 'Companheiro';
+          else if (irmaoData.data_iniciacao) grau = 'Aprendiz';
+          setGrauUsuarioLogado(grau);
+        }
+      } else {
+        // Admin e cargos têm acesso total (Mestre)
+        setGrauUsuarioLogado('Mestre');
+      }
       
       // Definir permissões baseadas no nível de acesso
       if (data.nivel_acesso === 'irmao') {
@@ -1868,6 +1889,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
+            grauUsuario={grauUsuarioLogado}
           />
         )}
 
@@ -1912,6 +1934,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
+            grauUsuario={grauUsuarioLogado}
           />
         )}
 
