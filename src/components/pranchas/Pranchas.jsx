@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 
-const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes }) => {
+const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grauUsuario }) => {
   // Estados do formulário
   const [pranchaForm, setPranchaForm] = useState({
     numero_prancha: '',
@@ -149,6 +149,26 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes }) =>
     p.assunto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.destinatario?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // CONTROLE DE ACESSO POR GRAU
+  // Aprendizes e Companheiros NÃO podem acessar Pranchas
+  // Apenas Mestres podem visualizar
+  if (grauUsuario && (grauUsuario.toLowerCase() === 'aprendiz' || grauUsuario.toLowerCase() === 'companheiro')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-center bg-yellow-50 border-2 border-yellow-400 rounded-lg p-8 max-w-md">
+          <div className="text-6xl mb-4">🔒</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">Acesso Restrito</h2>
+          <p className="text-gray-700 mb-2">
+            Pranchas são documentos oficiais de nível <strong>Mestre</strong>.
+          </p>
+          <p className="text-gray-600 text-sm">
+            Você precisa ser Mestre Maçom para acessar esta seção.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
