@@ -431,26 +431,69 @@ const Balaustres = ({
       </div>
 
       {/* LISTAGEM */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
-            <thead className="bg-blue-900 text-white">
-              <tr>
-                <th className="px-4 py-3 text-left w-20">Nº</th>
-                <th className="px-4 py-3 text-left w-32">Data</th>
-                <th className="px-4 py-3 text-left w-32">Dia</th>
-                <th className="px-4 py-3 text-left w-40">Tipo</th>
-                <th className="px-4 py-3 text-left">Ordem do Dia</th>
-                <th className="px-4 py-3 text-center w-80">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {balaustresFiltradosPorAcesso.length > 0 ? (
-                balaustresFiltradosPorAcesso
-                  .sort((a, b) => {
-                    // Ordenar por ano desc, depois por número desc
-                    if (b.ano_balaustre !== a.ano_balaustre) {
-                      return b.ano_balaustre - a.ano_balaustre;
+      {/* Verificar se usuário tem permissão para ver esta aba */}
+      {(() => {
+        const grauUser = grauUsuario?.toLowerCase() || '';
+        const grauAba = grauSelecionado.toLowerCase();
+        
+        // Aprendiz tentando ver Companheiro
+        if (grauUser === 'aprendiz' && grauAba === 'companheiro') {
+          return (
+            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+              <div className="text-6xl mb-4">🔒</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
+              <p className="text-gray-600 mb-1">Balaustres de <strong>Companheiro</strong> são restritos.</p>
+              <p className="text-gray-500 text-sm">Você precisa ser <strong>Companheiro</strong> ou superior para acessar.</p>
+            </div>
+          );
+        }
+        
+        // Aprendiz tentando ver Mestre
+        if (grauUser === 'aprendiz' && grauAba === 'mestre') {
+          return (
+            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+              <div className="text-6xl mb-4">🔒</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
+              <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
+              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre</strong> para acessar.</p>
+            </div>
+          );
+        }
+        
+        // Companheiro tentando ver Mestre
+        if (grauUser === 'companheiro' && grauAba === 'mestre') {
+          return (
+            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+              <div className="text-6xl mb-4">🔒</div>
+              <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
+              <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
+              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre</strong> para acessar.</p>
+            </div>
+          );
+        }
+        
+        // Se passou nas verificações, mostrar a listagem normal
+        return (
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px]">
+                <thead className="bg-blue-900 text-white">
+                  <tr>
+                    <th className="px-4 py-3 text-left w-20">Nº</th>
+                    <th className="px-4 py-3 text-left w-32">Data</th>
+                    <th className="px-4 py-3 text-left w-32">Dia</th>
+                    <th className="px-4 py-3 text-left w-40">Tipo</th>
+                    <th className="px-4 py-3 text-left">Ordem do Dia</th>
+                    <th className="px-4 py-3 text-center w-80">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {balaustresFiltradosPorAcesso.length > 0 ? (
+                    balaustresFiltradosPorAcesso
+                      .sort((a, b) => {
+                        // Ordenar por ano desc, depois por número desc
+                        if (b.ano_balaustre !== a.ano_balaustre) {
+                          return b.ano_balaustre - a.ano_balaustre;
                     }
                     return b.numero_balaustre - a.numero_balaustre;
                   })
@@ -507,6 +550,8 @@ const Balaustres = ({
           </table>
         </div>
       </div>
+        );
+      })()}
 
       {/* MODAL DE VISUALIZAÇÃO */}
       {modalVisualizar && balaustreVisualizando && (
