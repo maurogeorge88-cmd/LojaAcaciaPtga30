@@ -235,7 +235,7 @@ const Balaustres = ({
   return (
     <div>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
-      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+      {permissoes?.pode_editar_balaustres && (
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
           <h3 className="text-xl font-bold text-blue-900 mb-4">
             {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
@@ -447,7 +447,7 @@ const Balaustres = ({
                           >
                             👁️ Ver
                           </button>
-                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                          {permissoes?.pode_editar_balaustres && (
                             <>
                               <button
                                 onClick={() => handleEditar(balaustre)}
