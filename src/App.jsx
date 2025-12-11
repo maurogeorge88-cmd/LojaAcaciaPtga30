@@ -17,6 +17,7 @@ import Comissoes from './components/comissoes/Comissoes';
 import Biblioteca from './components/biblioteca/Biblioteca';
 import Cronograma from './components/cronograma/Cronograma';
 import FinancasLoja from './components/financeiro/FinancasLoja';
+import LancamentosLote from './components/financeiro/LancamentosLote';
 import CategoriasFinanceiras from './components/financeiro/CategoriasFinanceiras';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
@@ -1679,6 +1680,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           </button>
 
                           <button
+                            onClick={() => setCurrentPage('lancamentos-lote')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'lancamentos-lote'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>📦</span>
+                            <span>Lançamentos em Lote</span>
+                          </button>
+
+                          <button
                             onClick={() => setCurrentPage('categorias-financeiras')}
                             className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                               currentPage === 'categorias-financeiras'
@@ -1839,6 +1852,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
+                  {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2053,6 +2067,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* LANÇAMENTOS EM LOTE */}
+        {currentPage === 'lancamentos-lote' && (
+          <LancamentosLote
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
