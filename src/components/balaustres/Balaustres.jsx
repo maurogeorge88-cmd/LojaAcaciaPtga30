@@ -17,6 +17,7 @@ const Balaustres = ({
   const [balaustreForm, setBalaustreForm] = useState({
     grau_sessao: 'Aprendiz',
     numero_balaustre: '',
+    ano_balaustre: new Date().getFullYear(),
     data_sessao: '',
     dia_semana: '',
     tipo_sessao_id: '',
@@ -40,19 +41,20 @@ const Balaustres = ({
     return dias[date.getDay()];
   };
 
-  // Carregar próximo número de balaustre
-  const carregarProximoNumero = async (grau) => {
+  // Carregar próximo número de balaustre (por ano e grau)
+  const carregarProximoNumero = async (grau, ano) => {
     try {
       const { data, error } = await supabase
         .from('balaustres')
-        .select('numero_balaustre')
+        .select('numero_balaustre, ano_balaustre')
         .eq('grau_sessao', grau)
+        .eq('ano_balaustre', ano)
         .order('numero_balaustre', { ascending: false })
         .limit(1);
 
       if (error) throw error;
 
-      const proximoNumero = data && data.length > 0 ? data[0].numero_balaustre + 1 : 1;
+      const proximoNumero = data && data.length > 0 ? parseInt(data[0].numero_balaustre) + 1 : 1;
       setBalaustreForm(prev => ({ ...prev, numero_balaustre: proximoNumero }));
     } catch (error) {
       console.error('Erro ao carregar próximo número:', error);
@@ -67,25 +69,27 @@ const Balaustres = ({
     }
   }, [balaustreForm.data_sessao]);
 
-  // Carregar próximo número quando grau mudar
+  // Carregar próximo número quando grau ou ano mudar
   useEffect(() => {
     if (!modoEdicao) {
-      carregarProximoNumero(balaustreForm.grau_sessao);
+      carregarProximoNumero(balaustreForm.grau_sessao, balaustreForm.ano_balaustre);
     }
-  }, [balaustreForm.grau_sessao, modoEdicao]);
+  }, [balaustreForm.grau_sessao, balaustreForm.ano_balaustre, modoEdicao]);
 
   // Carregar próximo número ao montar componente
   useEffect(() => {
     if (!modoEdicao) {
-      carregarProximoNumero(grauSelecionado);
+      carregarProximoNumero(grauSelecionado, new Date().getFullYear());
     }
   }, [grauSelecionado, modoEdicao]);
 
   // Limpar formulário
   const limparFormulario = () => {
+    const anoAtual = new Date().getFullYear();
     setBalaustreForm({
       grau_sessao: grauSelecionado,
       numero_balaustre: '',
+      ano_balaustre: anoAtual,
       data_sessao: '',
       dia_semana: '',
       tipo_sessao_id: '',
@@ -94,7 +98,7 @@ const Balaustres = ({
     });
     setModoEdicao(false);
     setBalaustreEditando(null);
-    carregarProximoNumero(grauSelecionado);
+    carregarProximoNumero(grauSelecionado, anoAtual);
   };
 
   // Cadastrar balaustre
@@ -156,6 +160,7 @@ const Balaustres = ({
     setBalaustreForm({
       grau_sessao: balaustre.grau_sessao,
       numero_balaustre: balaustre.numero_balaustre,
+      ano_balaustre: balaustre.ano_balaustre || new Date().getFullYear(),
       data_sessao: balaustre.data_sessao,
       dia_semana: balaustre.dia_semana,
       tipo_sessao_id: balaustre.tipo_sessao_id,
@@ -258,21 +263,37 @@ const Balaustres = ({
               </select>
             </div>
 
-            {/* Número do Balaustre */}
+            {/* Número do Balaustre com Ano */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Número do Balaustre * 
-                <span className="text-xs text-gray-500 ml-2">(editável)</span>
+                Número do Balaustre *
+                <span className="text-xs text-gray-500 ml-2">(Formato: N/ANO)</span>
               </label>
-              <input
-                type="number"
-                value={balaustreForm.numero_balaustre}
-                onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: parseInt(e.target.value) || '' })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-                min="1"
-                placeholder="Número automático (pode alterar)"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={balaustreForm.numero_balaustre}
+                  onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: parseInt(e.target.value) || '' })}
+                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  required
+                  min="1"
+                  placeholder="Nº"
+                />
+                <span className="flex items-center text-gray-500 text-lg font-bold">/</span>
+                <input
+                  type="number"
+                  value={balaustreForm.ano_balaustre}
+                  onChange={(e) => setBalaustreForm({ ...balaustreForm, ano_balaustre: parseInt(e.target.value) || new Date().getFullYear() })}
+                  className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  required
+                  min="2020"
+                  max="2099"
+                  placeholder="Ano"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Ex: {balaustreForm.numero_balaustre || '1'}/{balaustreForm.ano_balaustre || new Date().getFullYear()}
+              </p>
             </div>
 
             {/* Data da Sessão */}
@@ -426,10 +447,18 @@ const Balaustres = ({
             <tbody className="divide-y divide-gray-200">
               {balaustresFiltradosPorAcesso.length > 0 ? (
                 balaustresFiltradosPorAcesso
-                  .sort((a, b) => b.numero_balaustre - a.numero_balaustre)
+                  .sort((a, b) => {
+                    // Ordenar por ano desc, depois por número desc
+                    if (b.ano_balaustre !== a.ano_balaustre) {
+                      return b.ano_balaustre - a.ano_balaustre;
+                    }
+                    return b.numero_balaustre - a.numero_balaustre;
+                  })
                   .map((balaustre) => (
                     <tr key={balaustre.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-semibold">{balaustre.numero_balaustre}</td>
+                      <td className="px-4 py-3 font-semibold">
+                        {balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}
+                      </td>
                       <td className="px-4 py-3 whitespace-nowrap">{formatarData(balaustre.data_sessao)}</td>
                       <td className="px-4 py-3 whitespace-nowrap">{balaustre.dia_semana}</td>
                       <td className="px-4 py-3">{obterNomeTipoSessao(balaustre.tipo_sessao_id)}</td>
