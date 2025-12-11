@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 
-export default function GestaoBeneficiarios({ showSuccess, showError }) {
+export default function GestaoBeneficiarios({ showSuccess, showError, permissoes }) {
   const [beneficiarios, setBeneficiarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
@@ -203,12 +203,14 @@ export default function GestaoBeneficiarios({ showSuccess, showError }) {
           <h2 className="text-2xl font-bold text-gray-800">
             👥 Beneficiários
           </h2>
-          <button
-            onClick={() => abrirModal()}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-          >
-            ➕ Novo Beneficiário
-          </button>
+          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            <button
+              onClick={() => abrirModal()}
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              ➕ Novo Beneficiário
+            </button>
+          )}
         </div>
 
         <input
@@ -276,26 +278,28 @@ export default function GestaoBeneficiarios({ showSuccess, showError }) {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => abrirModal(beneficiario)}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-              >
-                ✏️ Editar
-              </button>
-              <button
-                onClick={() => abrirModalResponsavel(beneficiario)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-              >
-                👤 Responsável
-              </button>
-              <button
-                onClick={() => excluir(beneficiario.id)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-              >
-                ❌
-              </button>
-            </div>
+            {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => abrirModal(beneficiario)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  onClick={() => abrirModalResponsavel(beneficiario)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                >
+                  👤 Responsável
+                </button>
+                <button
+                  onClick={() => excluir(beneficiario.id)}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                >
+                  ❌
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
