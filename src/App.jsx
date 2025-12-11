@@ -1382,6 +1382,32 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               <button
+                onClick={() => setCurrentPage('comodatos')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'comodatos'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Comodatos"
+              >
+                <span className="text-base">♿</span>
+                {menuAberto && <span className="font-semibold">Comodatos</span>}
+              </button>
+
+              <button
+                onClick={() => setCurrentPage('caridade')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'caridade'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Caridade"
+              >
+                <span className="text-base">❤️</span>
+                {menuAberto && <span className="font-semibold">Caridade</span>}
+              </button>
+
+              <button
                 onClick={() => setCurrentPage('sobre')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'sobre'
