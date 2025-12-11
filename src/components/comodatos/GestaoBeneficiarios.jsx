@@ -203,7 +203,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           <h2 className="text-2xl font-bold text-gray-800">
             👥 Beneficiários
           </h2>
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {permissoes?.pode_editar_comodatos && (
             <button
               onClick={() => abrirModal()}
               className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
@@ -278,7 +278,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               </div>
             )}
 
-            {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            {permissoes?.pode_editar_comodatos && (
               <div className="flex gap-2">
                 <button
                   onClick={() => abrirModal(beneficiario)}
