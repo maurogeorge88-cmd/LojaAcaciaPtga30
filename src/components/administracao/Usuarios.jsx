@@ -242,7 +242,14 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
           pode_editar_financeiro: usuarioForm.pode_editar_financeiro,
-          pode_gerenciar_usuarios: usuarioForm.pode_gerenciar_usuarios
+          pode_gerenciar_usuarios: usuarioForm.pode_gerenciar_usuarios,
+          pode_editar_biblioteca: usuarioForm.pode_editar_biblioteca,
+          pode_editar_comodatos: usuarioForm.pode_editar_comodatos,
+          pode_editar_caridade: usuarioForm.pode_editar_caridade,
+          pode_editar_balaustres: usuarioForm.pode_editar_balaustres,
+          pode_editar_pranchas: usuarioForm.pode_editar_pranchas,
+          pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
+          pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin
         }]);
 
       if (dbError) throw dbError;
@@ -293,7 +300,14 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_cadastros: usuarioForm.pode_editar_cadastros,
           pode_visualizar_financeiro: usuarioForm.pode_visualizar_financeiro,
           pode_editar_financeiro: usuarioForm.pode_editar_financeiro,
-          pode_gerenciar_usuarios: usuarioForm.pode_gerenciar_usuarios
+          pode_gerenciar_usuarios: usuarioForm.pode_gerenciar_usuarios,
+          pode_editar_biblioteca: usuarioForm.pode_editar_biblioteca,
+          pode_editar_comodatos: usuarioForm.pode_editar_comodatos,
+          pode_editar_caridade: usuarioForm.pode_editar_caridade,
+          pode_editar_balaustres: usuarioForm.pode_editar_balaustres,
+          pode_editar_pranchas: usuarioForm.pode_editar_pranchas,
+          pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
+          pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin
         })
         .eq('id', usuarioEditando.id);
 
