@@ -597,9 +597,10 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {/* ABA EMPRÉSTIMOS ATIVOS */}
       {abaAtiva === 'emprestimos' && (
         <div>
-          {/* FORMULÁRIO EMPRÉSTIMO */}
-          <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-            <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Novo Empréstimo</h3>
+          {/* FORMULÁRIO EMPRÉSTIMO - SÓ PARA ADMIN/BIBLIOTECÁRIO */}
+          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+              <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Novo Empréstimo</h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
@@ -654,6 +655,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               {loading ? 'Registrando...' : 'Registrar Empréstimo'}
             </button>
           </div>
+          )}
 
           {/* LISTAGEM DE EMPRÉSTIMOS ATIVOS */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -692,27 +694,29 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="flex gap-2 justify-center">
-                            <button
-                              onClick={() => abrirModalEditarPrazo(emprestimo)}
-                              className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                              title="Editar prazo"
-                            >
-                              📅 Prazo
-                            </button>
-                            <button
-                              onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-                            >
-                              Devolver
-                            </button>
-                            <button
-                              onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                            >
-                              Excluir
-                            </button>
-                          </div>
+                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={() => abrirModalEditarPrazo(emprestimo)}
+                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                                title="Editar prazo"
+                              >
+                                📅 Prazo
+                              </button>
+                              <button
+                                onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                              >
+                                Devolver
+                              </button>
+                              <button
+                                onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
@@ -863,12 +867,16 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               </td>
                               <td className="px-4 py-2 text-center">
                                 {emprestimo.status === 'emprestado' ? (
-                                  <button
-                                    onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                                    className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
-                                  >
-                                    Devolver
-                                  </button>
+                                  (permissoes?.canEdit || permissoes?.canEditMembers) ? (
+                                    <button
+                                      onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                                      className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                                    >
+                                      Devolver
+                                    </button>
+                                  ) : (
+                                    <span className="text-xs text-blue-600 font-medium">Em uso</span>
+                                  )
                                 ) : (
                                   <span className="text-xs text-gray-500">
                                     {formatarData(emprestimo.data_devolucao_real)}
