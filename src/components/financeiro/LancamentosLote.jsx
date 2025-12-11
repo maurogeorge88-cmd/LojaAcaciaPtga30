@@ -211,9 +211,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                 status: 'pendente',
                 origem_tipo: 'Irmao',
                 origem_irmao_id: irmaoId,
-                observacoes: item.observacoes || null,
-                parcela_atual: p,
-                total_parcelas: numParcelas
+                observacoes: item.observacoes || null
               });
             }
           } else {
