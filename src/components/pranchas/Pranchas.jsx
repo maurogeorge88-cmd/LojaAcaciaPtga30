@@ -173,7 +173,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
   return (
     <div>
       {/* FORMULÁRIO DE CADASTRO - Só aparece para quem pode editar */}
-      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+      {permissoes?.pode_editar_pranchas && (
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
           <h3 className="text-xl font-bold text-blue-900 mb-4">
             {modoEdicao ? '✏️ Editar Prancha' : '➕ Registrar Nova Prancha'}
@@ -305,7 +305,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
                           >
                             👁️ Ver
                           </button>
-                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                          {permissoes?.pode_editar_pranchas && (
                             <>
                               <button
                                 onClick={() => handleEditar(prancha)}
