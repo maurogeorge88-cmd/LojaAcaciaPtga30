@@ -380,7 +380,14 @@ IMPORTANTE: Copie estas informações agora!
       pode_editar_cadastros: usuario.pode_editar_cadastros || false,
       pode_visualizar_financeiro: usuario.pode_visualizar_financeiro || false,
       pode_editar_financeiro: usuario.pode_editar_financeiro || false,
-      pode_gerenciar_usuarios: usuario.pode_gerenciar_usuarios || false
+      pode_gerenciar_usuarios: usuario.pode_gerenciar_usuarios || false,
+      pode_editar_biblioteca: usuario.pode_editar_biblioteca || false,
+      pode_editar_comodatos: usuario.pode_editar_comodatos || false,
+      pode_editar_caridade: usuario.pode_editar_caridade || false,
+      pode_editar_balaustres: usuario.pode_editar_balaustres || false,
+      pode_editar_pranchas: usuario.pode_editar_pranchas || false,
+      pode_editar_comissoes: usuario.pode_editar_comissoes || false,
+      pode_editar_corpo_admin: usuario.pode_editar_corpo_admin || false
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
