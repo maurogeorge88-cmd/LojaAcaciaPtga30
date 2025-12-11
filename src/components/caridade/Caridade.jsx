@@ -314,7 +314,7 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
             <h2 className="text-3xl font-bold mb-2">❤️ Caridade</h2>
             <p className="text-purple-100">Controle de Famílias Carentes</p>
           </div>
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {permissoes?.pode_editar_caridade && (
             <button
               onClick={() => {
                 limparFormulario();
@@ -362,7 +362,7 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       </div>
 
       {/* FORMULÁRIO */}
-      {(mostrarForm && (permissoes?.canEdit || permissoes?.canEditMembers)) && (
+      {(mostrarForm && permissoes?.pode_editar_caridade) && (
         <div className="bg-white rounded-xl shadow-lg p-6">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
             {modoEdicao ? '✏️ Editar Família' : '➕ Cadastrar Nova Família'}
@@ -695,7 +695,7 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
                   👁️ Ver Detalhes
                 </button>
 
-                {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                {permissoes?.pode_editar_caridade && (
                   <>
                     <button
                       onClick={() => abrirModalAjuda(familia)}
@@ -804,7 +804,7 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h4 className="text-lg font-bold text-gray-800">🎁 Histórico de Ajudas</h4>
-                  {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                  {permissoes?.pode_editar_caridade && (
                     <button
                       onClick={() => {
                         setFamiliaParaAjuda(modalFamilia);
@@ -852,7 +852,7 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
                               </p>
                             )}
                           </div>
-                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                          {permissoes?.pode_editar_caridade && (
                             <div className="flex gap-2 ml-2">
                               <button
                                 onClick={() => handleEditarAjuda(ajuda)}
