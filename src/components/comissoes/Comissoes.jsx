@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
+import AtividadesComissao from './AtividadesComissao';
 
 const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permissoes }) => {
   // Verificações de props
@@ -45,6 +46,10 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   const [modalVisualizar, setModalVisualizar] = useState(false);
   const [comissaoVisualizar, setComissaoVisualizar] = useState(null);
   const [integrantesVisualizar, setIntegrantesVisualizar] = useState([]);
+  
+  // Estados para atividades
+  const [modalAtividades, setModalAtividades] = useState(false);
+  const [comissaoAtividades, setComissaoAtividades] = useState(null);
 
   // Limpar formulário
   const limparFormulario = () => {
@@ -467,6 +472,16 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     >
                       👁️ Ver
                     </button>
+                    <button
+                      onClick={() => {
+                        setComissaoAtividades(comissao);
+                        setModalAtividades(true);
+                      }}
+                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                      title="Gerenciar atividades"
+                    >
+                      📋 Atividades
+                    </button>
                     {permissoes?.pode_editar_comissoes && (
                       <>
                         <button
@@ -624,6 +639,20 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL DE ATIVIDADES */}
+      {modalAtividades && comissaoAtividades && (
+        <AtividadesComissao
+          comissao={comissaoAtividades}
+          onClose={() => {
+            setModalAtividades(false);
+            setComissaoAtividades(null);
+          }}
+          showSuccess={showSuccess}
+          showError={showError}
+          permissoes={permissoes}
+        />
       )}
     </div>
   );
