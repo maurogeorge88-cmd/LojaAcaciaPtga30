@@ -400,7 +400,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {abaAtiva === 'livros' && (
         <div>
           {/* FORMULÁRIO LIVROS - SÓ PARA ADMIN/BIBLIOTECÁRIO */}
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {permissoes?.pode_editar_biblioteca && (
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">
                 {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
@@ -561,7 +561,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                          {permissoes?.pode_editar_biblioteca && (
                             <div className="flex gap-2 justify-center">
                               <button
                                 onClick={() => editarLivro(livro)}
@@ -598,7 +598,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {abaAtiva === 'emprestimos' && (
         <div>
           {/* FORMULÁRIO EMPRÉSTIMO - SÓ PARA ADMIN/BIBLIOTECÁRIO */}
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {permissoes?.pode_editar_biblioteca && (
             <div className="bg-white rounded-xl shadow-md p-6 mb-6">
               <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Novo Empréstimo</h3>
 
@@ -694,7 +694,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                           </span>
                         </td>
                         <td className="px-4 py-3">
-                          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                          {permissoes?.pode_editar_biblioteca && (
                             <div className="flex gap-2 justify-center">
                               <button
                                 onClick={() => abrirModalEditarPrazo(emprestimo)}
@@ -867,7 +867,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               </td>
                               <td className="px-4 py-2 text-center">
                                 {emprestimo.status === 'emprestado' ? (
-                                  (permissoes?.canEdit || permissoes?.canEditMembers) ? (
+                                  permissoes?.pode_editar_biblioteca ? (
                                     <button
                                       onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
                                       className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
