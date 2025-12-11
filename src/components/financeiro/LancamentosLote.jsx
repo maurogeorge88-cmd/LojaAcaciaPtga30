@@ -23,7 +23,6 @@ export default function LancamentosLote({ showSuccess, showError }) {
       valor: '',
       data_vencimento: new Date().toISOString().split('T')[0],
       parcelas: 1,
-      forma_pagamento: '',
       observacoes: ''
     }
   ]);
@@ -39,11 +38,11 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
   const carregarDados = async () => {
     try {
-      // Carregar irmãos ativos
+      // Carregar irmãos ativos (Regular e Licenciado)
       const { data: irmaosData, error: irmaosError } = await supabase
         .from('irmaos')
         .select('id, nome, cim, status')
-        .neq('status', 'Falecido')
+        .in('status', ['regular', 'licenciado'])
         .order('nome');
 
       if (irmaosError) throw irmaosError;
@@ -74,7 +73,6 @@ export default function LancamentosLote({ showSuccess, showError }) {
       valor: '',
       data_vencimento: new Date().toISOString().split('T')[0],
       parcelas: 1,
-      forma_pagamento: '',
       observacoes: ''
     }]);
   };
@@ -212,7 +210,6 @@ export default function LancamentosLote({ showSuccess, showError }) {
                 status: 'pendente',
                 origem_tipo: 'Irmao',
                 origem_irmao_id: irmaoId,
-                forma_pagamento: item.forma_pagamento || null,
                 observacoes: item.observacoes || null,
                 parcela_atual: p,
                 total_parcelas: numParcelas
@@ -229,7 +226,6 @@ export default function LancamentosLote({ showSuccess, showError }) {
               status: 'pendente',
               origem_tipo: 'Irmao',
               origem_irmao_id: irmaoId,
-              forma_pagamento: item.forma_pagamento || null,
               observacoes: item.observacoes || null
             });
           }
@@ -254,7 +250,6 @@ export default function LancamentosLote({ showSuccess, showError }) {
         valor: '',
         data_vencimento: new Date().toISOString().split('T')[0],
         parcelas: 1,
-        forma_pagamento: '',
         observacoes: ''
       }]);
       setIrmaosSelecionados([]);
@@ -285,47 +280,47 @@ export default function LancamentosLote({ showSuccess, showError }) {
   return (
     <div className="space-y-6 p-6">
       {/* HEADER COM PROGRESSO */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">
+      <div className="bg-white rounded-lg shadow-md p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold text-gray-800">
             📦 Lançamentos em Lote
           </h2>
-          <span className="text-sm text-gray-600">
+          <span className="text-xs text-gray-600">
             Crie múltiplos lançamentos para vários irmãos de uma vez
           </span>
         </div>
         
         {/* Stepper */}
-        <div className="flex items-center justify-center gap-4 mt-6">
+        <div className="flex items-center justify-center gap-4 mt-4">
           <div className={`flex items-center gap-2 ${etapa >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
               etapa >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
               1
             </div>
-            <span className="font-medium hidden sm:inline">Itens</span>
+            <span className="font-medium text-sm hidden sm:inline">Itens</span>
           </div>
           
-          <div className={`w-20 h-1 ${etapa >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+          <div className={`w-16 h-0.5 ${etapa >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
           
           <div className={`flex items-center gap-2 ${etapa >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
               etapa >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
               2
             </div>
-            <span className="font-medium hidden sm:inline">Irmãos</span>
+            <span className="font-medium text-sm hidden sm:inline">Irmãos</span>
           </div>
           
-          <div className={`w-20 h-1 ${etapa >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+          <div className={`w-16 h-0.5 ${etapa >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
           
           <div className={`flex items-center gap-2 ${etapa >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
               etapa >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
               3
             </div>
-            <span className="font-medium hidden sm:inline">Resumo</span>
+            <span className="font-medium text-sm hidden sm:inline">Resumo</span>
           </div>
         </div>
       </div>
@@ -451,25 +446,6 @@ export default function LancamentosLote({ showSuccess, showError }) {
                     )}
                   </div>
 
-                  {/* Forma Pagamento */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Forma Pagamento
-                      <span className="text-xs text-gray-500 ml-1">(opcional)</span>
-                    </label>
-                    <select
-                      value={item.forma_pagamento}
-                      onChange={(e) => atualizarItem(item.id, 'forma_pagamento', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="">Não definido</option>
-                      <option value="dinheiro">💵 Dinheiro</option>
-                      <option value="pix">📱 PIX</option>
-                      <option value="cartao">💳 Cartão</option>
-                      <option value="transferencia">🏦 Transferência</option>
-                    </select>
-                  </div>
-
                   {/* Observações */}
                   <div className="lg:col-span-3">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
@@ -545,11 +521,11 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
           {/* Lista de Irmãos */}
           <div className="border-2 border-gray-200 rounded-lg p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
               {irmaosFiltrados.map(irmao => (
                 <label
                   key={irmao.id}
-                  className={`flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
+                  className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
                     irmaosSelecionados.includes(irmao.id)
                       ? 'bg-blue-50 border-blue-400'
                       : 'bg-white border-gray-200 hover:bg-gray-50'
@@ -559,10 +535,10 @@ export default function LancamentosLote({ showSuccess, showError }) {
                     type="checkbox"
                     checked={irmaosSelecionados.includes(irmao.id)}
                     onChange={() => toggleIrmao(irmao.id)}
-                    className="w-4 h-4 cursor-pointer"
+                    className="w-4 h-4 cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-800 truncate">{irmao.nome}</p>
+                    <p className="text-sm font-medium text-gray-800 truncate">{irmao.nome}</p>
                     <p className="text-xs text-gray-600">CIM: {irmao.cim}</p>
                   </div>
                 </label>
