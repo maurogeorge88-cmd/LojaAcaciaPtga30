@@ -338,7 +338,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
           <h2 className="text-2xl font-bold text-gray-800">
             🛠️ Gestão de Equipamentos
           </h2>
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {permissoes?.pode_editar_comodatos && (
             <div className="flex gap-2">
               <button
                 onClick={() => setModalTipo(true)}
@@ -463,7 +463,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
               </div>
             )}
 
-            {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+            {permissoes?.pode_editar_comodatos && (
               <div className="flex gap-2">
                 <button
                   onClick={() => abrirModal(equipamento)}
