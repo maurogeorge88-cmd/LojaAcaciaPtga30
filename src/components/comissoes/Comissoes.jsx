@@ -265,13 +265,18 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
         .order('data_atividade', { ascending: false });
       
       if (error) {
-        console.error('Erro ao buscar atividades:', error);
+        // Se for erro 404, a tabela não existe - apenas log sem quebrar
+        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
+          console.log('Tabela comissoes_atividades não encontrada - funcionalidade desabilitada');
+        } else {
+          console.error('Erro ao buscar atividades:', error);
+        }
         setAtividadesVisualizar([]);
       } else {
         setAtividadesVisualizar(data || []);
       }
     } catch (err) {
-      console.error('Erro ao buscar atividades:', err);
+      console.log('Não foi possível carregar atividades:', err.message);
       setAtividadesVisualizar([]);
     }
   };
