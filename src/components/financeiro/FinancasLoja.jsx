@@ -59,6 +59,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   const [saldoAnterior, setSaldoAnterior] = useState(0);
+  const [totalRegistros, setTotalRegistros] = useState(0);
   
   const [filtros, setFiltros] = useState({
     mes: new Date().getMonth() + 1, // Mês atual (1-12)
@@ -139,6 +140,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   useEffect(() => {
     carregarDados();
     calcularSaldoAnterior();
+    buscarTotalRegistros();
   }, [filtros.mes, filtros.ano]);
 
   // Recarregar lançamentos quando mudar filtros
@@ -826,6 +828,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     } catch (error) {
       console.error('Erro ao calcular saldo anterior:', error);
       setSaldoAnterior(0);
+    }
+  };
+
+  // Buscar total de registros (independente de filtros)
+  const buscarTotalRegistros = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*', { count: 'exact', head: true })
+        .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais
+
+      if (error) throw error;
+      setTotalRegistros(count || 0);
+    } catch (error) {
+      console.error('Erro ao buscar total de registros:', error);
+      setTotalRegistros(0);
     }
   };
 
@@ -1652,7 +1670,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </button>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
+          {/* Badge de Total de Registros */}
+          <div className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2">
+            <p className="text-xs text-gray-600 font-medium">Total de Registros</p>
+            <p className="text-xl font-bold text-gray-800">{totalRegistros}</p>
+          </div>
+          
           <button
             onClick={() => setMostrarFormulario(!mostrarFormulario)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
@@ -1687,13 +1711,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       </div>
 
       {/* RESUMO FINANCEIRO */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <p className="text-sm text-purple-600 font-medium">💰 Saldo Anterior</p>
-          <p className={`text-2xl font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+          <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
+          <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
             {formatarMoeda(saldoAnterior)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-[10px] text-gray-500 mt-0.5">
             {filtros.mes > 0 && filtros.ano > 0 
               ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
               : filtros.ano > 0 
@@ -1701,39 +1725,35 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               : 'Período base'}
           </p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-600 font-medium">Receitas Pagas</p>
-          <p className="text-2xl font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <p className="text-xs text-green-600 font-medium">Receitas Pagas</p>
+          <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-600 font-medium">Despesas Pagas</p>
-          <p className="text-2xl font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-xs text-red-600 font-medium">Despesas Pagas</p>
+          <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
         </div>
-        <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
-          <p className="text-sm text-cyan-600 font-medium">Saldo do Período</p>
-          <p className={`text-2xl font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
+        <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
+          <p className="text-xs text-cyan-600 font-medium">Saldo do Período</p>
+          <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
             {formatarMoeda(resumo.saldoPeriodo)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Apenas este período</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">Apenas este período</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-600 font-medium">💎 Saldo Total</p>
-          <p className={`text-2xl font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
+          <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
             {formatarMoeda(resumo.saldoTotal)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">Acumulado total</p>
+          <p className="text-[10px] text-gray-500 mt-0.5">Acumulado total</p>
         </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-600 font-medium">Receitas Pendentes</p>
-          <p className="text-2xl font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <p className="text-xs text-yellow-600 font-medium">Receitas Pendentes</p>
+          <p className="text-lg font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
         </div>
-      </div>
-      
-      {/* CARD DE DESPESAS PENDENTES - Linha separada */}
-      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <p className="text-sm text-orange-600 font-medium">Despesas Pendentes</p>
-          <p className="text-2xl font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+          <p className="text-xs text-orange-600 font-medium">Despesas Pendentes</p>
+          <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
         </div>
       </div>
 
