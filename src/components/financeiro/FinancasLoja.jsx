@@ -1670,13 +1670,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </button>
         </div>
 
-        <div className="flex gap-3 items-center">
-          {/* Badge de Total de Registros */}
-          <div className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2">
-            <p className="text-xs text-gray-600 font-medium">Total de Registros</p>
-            <p className="text-xl font-bold text-gray-800">{totalRegistros}</p>
-          </div>
-          
+        <div className="flex gap-3">
           <button
             onClick={() => setMostrarFormulario(!mostrarFormulario)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
@@ -1690,10 +1684,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             👥 Lançamento em Lote
           </button>
           <button
-            onClick={() => setModalParcelamentoAberto(true)}
+            onClick={() => {
+              setLancamentoParcelar(null);
+              setModalParcelamentoAberto(true);
+            }}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
           >
-            🔢 Parcelar
+            🔀 Parcelar
           </button>
           <button
             onClick={gerarPDF}
@@ -1707,6 +1704,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           >
             📊 Fechamento Mensal
           </button>
+          
+          {/* Badge de Total de Registros */}
+          <div className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 flex flex-col justify-center">
+            <p className="text-[10px] text-gray-600 font-medium leading-tight">Total de Registros</p>
+            <p className="text-lg font-bold text-gray-800 leading-tight">{totalRegistros}</p>
+          </div>
         </div>
       </div>
 
