@@ -3815,7 +3815,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
     }
     try {
       const dataCompensacao = new Date().toISOString().split('T')[0];
-      const { supabase } = await import('../../App');
       
       // Processar todos os débitos e créditos selecionados
       const promises = [];
