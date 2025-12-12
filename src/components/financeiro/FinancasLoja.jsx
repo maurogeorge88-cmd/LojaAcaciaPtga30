@@ -764,10 +764,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente')
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
+    // Saldo do período (sem incluir saldo anterior)
+    const saldoPeriodo = receitas - despesas;
+    
+    // Saldo total (incluindo saldo anterior)
+    const saldoTotal = saldoAnterior + receitas - despesas;
+
     return {
       receitas,
       despesas,
-      saldo: receitas - despesas,
+      saldoPeriodo,      // Saldo apenas do período
+      saldoTotal,        // Saldo acumulado total
       receitasPendentes,
       despesasPendentes
     };
@@ -839,11 +846,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.setFontSize(14);
     doc.text('Resumo', 14, 40);
     doc.setFontSize(10);
-    doc.text(`Receitas Pagas: R$ ${resumo.receitas.toFixed(2)}`, 14, 48);
-    doc.text(`Despesas Pagas: R$ ${resumo.despesas.toFixed(2)}`, 14, 54);
-    doc.text(`Saldo: R$ ${resumo.saldo.toFixed(2)}`, 14, 60);
-    doc.text(`Receitas Pendentes: R$ ${resumo.receitasPendentes.toFixed(2)}`, 14, 66);
-    doc.text(`Despesas Pendentes: R$ ${resumo.despesasPendentes.toFixed(2)}`, 14, 72);
+    doc.text(`Saldo Anterior: R$ ${saldoAnterior.toFixed(2)}`, 14, 48);
+    doc.text(`Receitas Pagas: R$ ${resumo.receitas.toFixed(2)}`, 14, 54);
+    doc.text(`Despesas Pagas: R$ ${resumo.despesas.toFixed(2)}`, 14, 60);
+    doc.text(`Saldo do Período: R$ ${resumo.saldoPeriodo.toFixed(2)}`, 14, 66);
+    doc.text(`Saldo Total: R$ ${resumo.saldoTotal.toFixed(2)}`, 14, 72);
+    doc.text(`Receitas Pendentes: R$ ${resumo.receitasPendentes.toFixed(2)}`, 14, 78);
+    doc.text(`Despesas Pendentes: R$ ${resumo.despesasPendentes.toFixed(2)}`, 14, 84);
 
     // Tabela de lançamentos
     const dadosTabela = lancamentos.map(l => [
@@ -858,7 +867,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.autoTable({
       head: [['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Status']],
       body: dadosTabela,
-      startY: 80,
+      startY: 92,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [41, 128, 185] }
     });
@@ -1686,10 +1695,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {filtros.mes > 0 && filtros.ano > 0 
-              ? `Até ${meses[filtros.mes - 1]}/${filtros.ano}`
+              ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
               : filtros.ano > 0 
-              ? `Até ${filtros.ano}`
-              : 'Todos os períodos'}
+              ? `Antes de ${filtros.ano}`
+              : 'Período base'}
           </p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -1700,16 +1709,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           <p className="text-sm text-red-600 font-medium">Despesas Pagas</p>
           <p className="text-2xl font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
         </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-600 font-medium">Saldo do Período</p>
-          <p className={`text-2xl font-bold ${resumo.saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-            {formatarMoeda(resumo.saldo)}
+        <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+          <p className="text-sm text-cyan-600 font-medium">Saldo do Período</p>
+          <p className={`text-2xl font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
+            {formatarMoeda(resumo.saldoPeriodo)}
           </p>
+          <p className="text-xs text-gray-500 mt-1">Apenas este período</p>
+        </div>
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-600 font-medium">💎 Saldo Total</p>
+          <p className={`text-2xl font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+            {formatarMoeda(resumo.saldoTotal)}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">Acumulado total</p>
         </div>
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <p className="text-sm text-yellow-600 font-medium">Receitas Pendentes</p>
           <p className="text-2xl font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
         </div>
+      </div>
+      
+      {/* CARD DE DESPESAS PENDENTES - Linha separada */}
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-sm text-orange-600 font-medium">Despesas Pendentes</p>
           <p className="text-2xl font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
