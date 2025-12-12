@@ -259,24 +259,19 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     // Buscar atividades desta comissão
     try {
       const { data, error } = await supabase
-        .from('comissoes_atividades')
+        .from('atividades_comissoes')
         .select('*')
         .eq('comissao_id', comissao.id)
         .order('data_atividade', { ascending: false });
       
       if (error) {
-        // Se for erro 404, a tabela não existe - apenas log sem quebrar
-        if (error.code === 'PGRST116' || error.message?.includes('does not exist')) {
-          console.log('Tabela comissoes_atividades não encontrada - funcionalidade desabilitada');
-        } else {
-          console.error('Erro ao buscar atividades:', error);
-        }
+        console.error('Erro ao buscar atividades:', error);
         setAtividadesVisualizar([]);
       } else {
         setAtividadesVisualizar(data || []);
       }
     } catch (err) {
-      console.log('Não foi possível carregar atividades:', err.message);
+      console.error('Erro ao buscar atividades:', err);
       setAtividadesVisualizar([]);
     }
   };
