@@ -53,13 +53,11 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         const idade = hoje.getFullYear() - dataNasc.getFullYear();
         aniversariantesHoje.push({
           nome: pessoa.nome,
-          cpf: pessoa.cpf || null, // Para identificar duplicatas
           tipo: tipo,
           irmaoNome: irmaoNome,
           idade,
           dataNasc: dataNasc,
-          id: `${tipo}-${pessoa.id || Math.random()}`,
-          relacionamento: { tipo, irmaoNome } // Novo campo
+          id: `${tipo}-${pessoa.id || Math.random()}`
         });
       }
 
@@ -77,15 +75,13 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         const idade = dataAnivEstano.getFullYear() - dataNasc.getFullYear();
         proximos7Dias.push({
           nome: pessoa.nome,
-          cpf: pessoa.cpf || null, // Para identificar duplicatas
           tipo: tipo,
           irmaoNome: irmaoNome,
           idade,
           diasRestantes: diffDias,
           dataAniversario: dataAnivEstano,
           dataNasc: dataNasc,
-          id: `${tipo}-${pessoa.id || Math.random()}`,
-          relacionamento: { tipo, irmaoNome } // Novo campo
+          id: `${tipo}-${pessoa.id || Math.random()}`
         });
       }
     };
@@ -130,52 +126,13 @@ export const Dashboard = ({ irmaos, balaustres }) => {
       }
     });
 
-    // Função para agrupar pessoas duplicadas
-    const agruparDuplicatas = (lista) => {
-      const mapa = new Map();
-      
-      lista.forEach(pessoa => {
-        // Normalizar nome para comparação
-        const nomeNormalizado = pessoa.nome?.toLowerCase().trim();
-        const dataNascStr = pessoa.dataNasc?.toISOString() || '';
-        
-        // Usar CPF se disponível, senão nome normalizado + data
-        const chave = pessoa.cpf || `${nomeNormalizado}-${dataNascStr}`;
-        
-        console.log('🔑 Dashboard - Chave:', chave, '| Nome:', pessoa.nome);
-        
-        if (mapa.has(chave)) {
-          // Pessoa já existe - adicionar relacionamento
-          console.log('✅ Dashboard - DUPLICATA:', pessoa.nome);
-          const existente = mapa.get(chave);
-          existente.relacionamentos.push(pessoa.relacionamento);
-        } else {
-          // Primeira ocorrência - criar entrada
-          mapa.set(chave, {
-            ...pessoa,
-            relacionamentos: [pessoa.relacionamento]
-          });
-        }
-      });
-      
-      console.log('📊 Dashboard - Total antes:', lista.length, '| Depois:', mapa.size);
-      return Array.from(mapa.values());
-    };
-
-    // Agrupar duplicatas
-    const aniversariantesHojeAgrupados = agruparDuplicatas(aniversariantesHoje);
-    const proximos7DiasAgrupados = agruparDuplicatas(proximos7Dias);
-
     // Ordenar próximos 7 dias por data
-    proximos7DiasAgrupados.sort((a, b) => a.diasRestantes - b.diasRestantes);
+    proximos7Dias.sort((a, b) => a.diasRestantes - b.diasRestantes);
 
-    console.log('📅 Aniversariantes hoje:', aniversariantesHojeAgrupados.length);
-    console.log('📅 Próximos 7 dias:', proximos7DiasAgrupados.length);
+    console.log('📅 Aniversariantes hoje:', aniversariantesHoje.length);
+    console.log('📅 Próximos 7 dias:', proximos7Dias.length);
 
-    return { 
-      aniversariantesHoje: aniversariantesHojeAgrupados, 
-      proximos7Dias: proximos7DiasAgrupados 
-    };
+    return { aniversariantesHoje, proximos7Dias };
   }, [irmaos]);
 
   return (
@@ -282,26 +239,17 @@ export const Dashboard = ({ irmaos, balaustres }) => {
                   key={pessoa.id}
                   className="bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-white/30"
                 >
-                  <div className="font-bold text-base mb-1">{pessoa.nome}</div>
-                  <div className="text-sm opacity-90 mb-2">
+                  <div className="font-bold text-base">{pessoa.nome}</div>
+                  <div className="flex items-center gap-3 text-sm opacity-90">
+                    <span>
+                      {pessoa.tipo === 'Irmão' ? '👤' : 
+                       pessoa.tipo === 'Esposa' ? '💑' :
+                       pessoa.tipo === 'Pai' ? '👨' :
+                       pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                      {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                    </span>
+                    <span>•</span>
                     <span>🎂 {pessoa.idade} anos hoje</span>
-                  </div>
-                  {/* Mostrar todos os relacionamentos */}
-                  <div className="space-y-1">
-                    {pessoa.relacionamentos.map((rel, idx) => (
-                      <div key={idx} className="text-xs opacity-80 flex items-center gap-1">
-                        <span>
-                          {rel.tipo === 'Irmão' ? '👤' : 
-                           rel.tipo === 'Esposa' ? '💑' :
-                           rel.tipo === 'Pai' ? '👨' :
-                           rel.tipo === 'Mãe' ? '👩' : '👶'}
-                        </span>
-                        <span>
-                          {rel.tipo}
-                          {rel.irmaoNome && ` de ${rel.irmaoNome}`}
-                        </span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               ))}
@@ -334,30 +282,21 @@ export const Dashboard = ({ irmaos, balaustres }) => {
                       {pessoa.diasRestantes} {pessoa.diasRestantes === 1 ? 'dia' : 'dias'}
                     </div>
                   </div>
-                  <div className="text-sm opacity-90 mb-2">
+                  <div className="flex items-center gap-2 text-sm opacity-90 flex-wrap">
+                    <span>
+                      {pessoa.tipo === 'Irmão' ? '👤' : 
+                       pessoa.tipo === 'Esposa' ? '💑' :
+                       pessoa.tipo === 'Pai' ? '👨' :
+                       pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                      {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                    </span>
+                    <span>•</span>
                     <span>🎂 {pessoa.idade} anos</span>
-                    <span> • </span>
+                    <span>•</span>
                     <span>📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
                       day: '2-digit', 
                       month: 'long' 
                     })}</span>
-                  </div>
-                  {/* Mostrar todos os relacionamentos */}
-                  <div className="space-y-1">
-                    {pessoa.relacionamentos.map((rel, idx) => (
-                      <div key={idx} className="text-xs opacity-80 flex items-center gap-1">
-                        <span>
-                          {rel.tipo === 'Irmão' ? '👤' : 
-                           rel.tipo === 'Esposa' ? '💑' :
-                           rel.tipo === 'Pai' ? '👨' :
-                           rel.tipo === 'Mãe' ? '👩' : '👶'}
-                        </span>
-                        <span>
-                          {rel.tipo}
-                          {rel.irmaoNome && ` de ${rel.irmaoNome}`}
-                        </span>
-                      </div>
-                    ))}
                   </div>
                 </div>
               ))}
