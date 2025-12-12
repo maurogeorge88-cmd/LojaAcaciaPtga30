@@ -682,6 +682,7 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: pai.irmaos?.nome,
+              irmao_nome: pai.irmaos?.nome, // Para agrupamento
               nivel: 2
             });
           }
@@ -727,6 +728,7 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: esposa.irmaos?.nome,
+              irmao_nome: esposa.irmaos?.nome, // Para agrupamento
               nivel: 2
             });
           }
@@ -775,6 +777,7 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: filho.irmaos?.nome,
+              irmao_nome: filho.irmaos?.nome, // Para agrupamento
               nivel: 2
             });
           }
@@ -1058,13 +1061,52 @@ export default function Aniversariantes() {
         ...aniversariantesInMemoriam
       ];
 
+      // ===== AGRUPAR PESSOAS DUPLICADAS =====
+      const agruparDuplicatas = (lista) => {
+        const mapa = new Map();
+        
+        lista.forEach(pessoa => {
+          // Usar nome + data de nascimento como chave única
+          const chave = `${pessoa.nome}-${pessoa.data_nascimento?.toISOString()}`;
+          
+          if (mapa.has(chave)) {
+            // Pessoa já existe - adicionar relacionamento
+            const existente = mapa.get(chave);
+            if (!existente.relacionamentos) {
+              existente.relacionamentos = [{
+                tipo: existente.tipo,
+                irmao_nome: existente.irmao_nome
+              }];
+            }
+            existente.relacionamentos.push({
+              tipo: pessoa.tipo,
+              irmao_nome: pessoa.irmao_nome
+            });
+          } else {
+            // Primeira ocorrência - criar entrada
+            mapa.set(chave, {
+              ...pessoa,
+              relacionamentos: [{
+                tipo: pessoa.tipo,
+                irmao_nome: pessoa.irmao_nome
+              }]
+            });
+          }
+        });
+        
+        return Array.from(mapa.values());
+      };
+
+      const todosAniversariantesAgrupados = agruparDuplicatas(todosAniversariantes);
+
       console.log('🎂 Total Irmãos:', aniversariantesIrmaos.length);
       console.log('🎂 Total Familiares:', aniversariantesFamiliares.length);
       console.log('🎂 Total Eventos:', aniversariantesEventos.length);
       console.log('🎂 Total In Memoriam:', aniversariantesInMemoriam.length);
-      console.log('🎂 Total Final:', todosAniversariantes.length);
+      console.log('🎂 Total Final (antes agrupamento):', todosAniversariantes.length);
+      console.log('🎂 Total Final (após agrupamento):', todosAniversariantesAgrupados.length);
 
-      setAniversariantes(todosAniversariantes);
+      setAniversariantes(todosAniversariantesAgrupados);
       setLoading(false);
     } catch (error) {
       console.error('❌ ERRO:', error);
@@ -1254,8 +1296,20 @@ export default function Aniversariantes() {
                               {aniv.tipo === 'Bodas' ? `${aniv.tipo} - ${aniv.idade} anos de união` : `${aniv.tipo} - ${aniv.idade} anos`}
                             </p>
                             
-                            {aniv.irmao_responsavel && (
-                              <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
+                            {/* Mostrar todos os relacionamentos */}
+                            {aniv.relacionamentos && aniv.relacionamentos.length > 0 ? (
+                              <div className="mt-1 space-y-0.5">
+                                {aniv.relacionamentos.map((rel, idx) => (
+                                  <p key={idx} className="text-xs text-gray-500">
+                                    {rel.tipo === 'Irmão' ? '👤' : 
+                                     rel.tipo === 'Esposa' ? '💑' :
+                                     rel.tipo === 'Pai/Mãe' ? '👴' : '👶'} {rel.tipo}
+                                    {rel.irmao_nome && ` de ${rel.irmao_nome}`}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : aniv.irmao_responsavel && (
+                              <p className="text-xs text-gray-500 mt-1">👤 Irmão: {aniv.irmao_responsavel}</p>
                             )}
                             
                             <p className="text-xs text-gray-600 mt-1 font-medium">
