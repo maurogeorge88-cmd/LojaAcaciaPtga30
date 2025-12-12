@@ -3855,15 +3855,8 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           if (error) throw error;
         } else {
           // Compensação parcial do débito
-          const novoValor = valorDebito - valorACompensar;
-          
-          // Atualizar valor do lançamento original
-          const { error: errorUpdate } = await supabase
-            .from('lancamentos_loja')
-            .update({ valor: novoValor })
-            .eq('id', debitoId);
-            
-          if (errorUpdate) throw errorUpdate;
+          // NÃO reduzir valor no banco - apenas criar registro de pagamento parcial
+          // O sistema já recalcula automaticamente ao carregar
           
           // Criar registro de pagamento parcial
           const { error: errorInsert } = await supabase
@@ -3911,15 +3904,8 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           if (error) throw error;
         } else {
           // Compensação parcial do crédito
-          const novoValor = valorCredito - valorACompensar;
-          
-          // Atualizar valor do lançamento original
-          const { error: errorUpdate } = await supabase
-            .from('lancamentos_loja')
-            .update({ valor: novoValor })
-            .eq('id', creditoId);
-            
-          if (errorUpdate) throw errorUpdate;
+          // NÃO reduzir valor no banco - apenas criar registro de pagamento parcial
+          // O sistema já recalcula automaticamente ao carregar
           
           // Criar registro de pagamento parcial
           const { error: errorInsert } = await supabase
