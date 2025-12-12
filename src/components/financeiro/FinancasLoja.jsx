@@ -3813,29 +3813,120 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
       showError('Não há valor a compensar');
       return;
     }
+    
     try {
       const dataCompensacao = new Date().toISOString().split('T')[0];
       
-      // Processar todos os débitos e créditos selecionados
-      const promises = [];
-      
-      [...debitosSelecionados, ...creditosSelecionados].forEach(id => {
-        promises.push(
+      // Se os valores são iguais, quitar tudo diretamente
+      if (Math.abs(totalDebitos - totalCreditos) < 0.01) {
+        // Valores praticamente iguais - quitar tudo
+        const promises = [...debitosSelecionados, ...creditosSelecionados].map(id =>
           supabase.from('lancamentos_loja').update({
             status: 'pago',
             data_pagamento: dataCompensacao,
-            tipo_pagamento: 'compensacao',
-            observacoes: 'Quitado por compensação'
+            tipo_pagamento: 'compensacao'
           }).eq('id', id)
         );
-      });
-
-      await Promise.all(promises);
-      showSuccess(`✅ Compensação realizada! Valor: ${formatarMoeda(valorCompensar)}`);
+        
+        await Promise.all(promises);
+        showSuccess(`✅ Compensação total realizada! Valor: ${formatarMoeda(valorCompensar)}`);
+      } else {
+        // Compensação parcial - processar proporcionalmente
+        let valorRestanteCompensar = valorCompensar;
+        
+        // Processar débitos
+        for (const debitoId of debitosSelecionados) {
+          const debito = debitos.find(d => d.id === debitoId);
+          if (!debito || valorRestanteCompensar <= 0) continue;
+          
+          const valorDebito = parseFloat(debito.valor);
+          const valorACompensar = Math.min(valorDebito, valorRestanteCompensar);
+          
+          if (valorACompensar >= valorDebito) {
+            // Quitar completamente
+            await supabase.from('lancamentos_loja').update({
+              status: 'pago',
+              data_pagamento: dataCompensacao,
+              tipo_pagamento: 'compensacao'
+            }).eq('id', debitoId);
+          } else {
+            // Compensação parcial - reduzir valor
+            await supabase.from('lancamentos_loja').update({
+              valor: valorDebito - valorACompensar
+            }).eq('id', debitoId);
+            
+            // Criar registro do pagamento parcial
+            await supabase.from('lancamentos_loja').insert({
+              tipo: debito.tipo,
+              categoria_id: debito.categoria_id,
+              descricao: `💰 Compensação: ${debito.descricao}`,
+              valor: valorACompensar,
+              data_lancamento: dataCompensacao,
+              data_vencimento: dataCompensacao,
+              data_pagamento: dataCompensacao,
+              tipo_pagamento: 'compensacao',
+              status: 'pago',
+              origem_tipo: debito.origem_tipo,
+              origem_irmao_id: debito.origem_irmao_id,
+              eh_pagamento_parcial: true,
+              lancamento_principal_id: debitoId
+            });
+          }
+          
+          valorRestanteCompensar -= valorACompensar;
+        }
+        
+        // Processar créditos
+        valorRestanteCompensar = valorCompensar;
+        for (const creditoId of creditosSelecionados) {
+          const credito = creditos.find(c => c.id === creditoId);
+          if (!credito || valorRestanteCompensar <= 0) continue;
+          
+          const valorCredito = parseFloat(credito.valor);
+          const valorACompensar = Math.min(valorCredito, valorRestanteCompensar);
+          
+          if (valorACompensar >= valorCredito) {
+            // Quitar completamente
+            await supabase.from('lancamentos_loja').update({
+              status: 'pago',
+              data_pagamento: dataCompensacao,
+              tipo_pagamento: 'compensacao'
+            }).eq('id', creditoId);
+          } else {
+            // Compensação parcial - reduzir valor
+            await supabase.from('lancamentos_loja').update({
+              valor: valorCredito - valorACompensar
+            }).eq('id', creditoId);
+            
+            // Criar registro do pagamento parcial
+            await supabase.from('lancamentos_loja').insert({
+              tipo: credito.tipo,
+              categoria_id: credito.categoria_id,
+              descricao: `💰 Compensação: ${credito.descricao}`,
+              valor: valorACompensar,
+              data_lancamento: dataCompensacao,
+              data_vencimento: dataCompensacao,
+              data_pagamento: dataCompensacao,
+              tipo_pagamento: 'compensacao',
+              status: 'pago',
+              origem_tipo: credito.origem_tipo,
+              origem_irmao_id: credito.origem_irmao_id,
+              eh_pagamento_parcial: true,
+              lancamento_principal_id: creditoId
+            });
+          }
+          
+          valorRestanteCompensar -= valorACompensar;
+        }
+        
+        showSuccess(`✅ Compensação realizada! Valor compensado: ${formatarMoeda(valorCompensar)}`);
+      }
+      
       onClose();
       onSuccess();
+      
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro ao compensar:', error);
       showError('Erro ao realizar compensação: ' + error.message);
     }
   };
