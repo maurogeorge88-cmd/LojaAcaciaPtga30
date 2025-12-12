@@ -236,7 +236,20 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   };
 
   const emprestimosFiltrados = emprestimos.filter(emp => {
-    const matchStatus = filtroStatus === 'todos' || emp.status === filtroStatus;
+    // Calcular se está vencido
+    const diasRestantes = calcularDiasRestantes(emp.data_devolucao_prevista);
+    const vencido = diasRestantes !== null && diasRestantes < 0 && emp.status === 'ativo';
+    
+    // Verificar correspondência de status
+    let matchStatus = false;
+    if (filtroStatus === 'todos') {
+      matchStatus = true;
+    } else if (filtroStatus === 'vencido') {
+      matchStatus = vencido; // Mostrar apenas vencidos
+    } else {
+      matchStatus = emp.status === filtroStatus && !vencido; // Ativos = não vencidos
+    }
+    
     const matchBusca = emp.beneficiarios?.nome.toLowerCase().includes(busca.toLowerCase()) ||
                        emp.equipamentos?.numero_patrimonio.toLowerCase().includes(busca.toLowerCase());
     return matchStatus && matchBusca;
