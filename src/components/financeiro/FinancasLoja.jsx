@@ -3370,7 +3370,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
         
         showSuccess('✅ Lançamento quitado completamente!');
       } else {
-        // PAGAMENTO PARCIAL: Criar registro separado
+        // PAGAMENTO PARCIAL: Criar registro separado E atualizar valor original
         const novoPagamento = {
           tipo: lancamento.tipo,
           categoria_id: lancamento.categoria_id,
@@ -3383,7 +3383,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
           status: 'pago',
           origem_tipo: lancamento.origem_tipo,
           origem_irmao_id: lancamento.origem_irmao_id,
-          observacoes: `Pagamento parcial de R$ ${valorAPagar.toFixed(2)} do lançamento "${lancamento.descricao}" (R$ ${valorOriginal.toFixed(2)})`,
+          observacoes: `Pagamento parcial de R$ ${valorAPagar.toFixed(2)} do lançamento "${lancamento.descricao}" (Valor original: R$ ${valorOriginal.toFixed(2)})`,
           eh_pagamento_parcial: true,
           lancamento_principal_id: lancamento.id
         };
@@ -3393,6 +3393,17 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
           .insert(novoPagamento);
 
         if (errorInsert) throw errorInsert;
+
+        // ATUALIZAR o valor do lançamento original para refletir apenas o saldo restante
+        const { error: errorUpdate } = await supabase
+          .from('lancamentos_loja')
+          .update({
+            valor: novoRestante,
+            observacoes: `${lancamento.observacoes || ''}\n[Valor original: R$ ${valorOriginal.toFixed(2)} | Já pago: R$ ${novoTotalPago.toFixed(2)}]`.trim()
+          })
+          .eq('id', lancamento.id);
+
+        if (errorUpdate) throw errorUpdate;
 
         showSuccess(`✅ Pagamento de R$ ${valorAPagar.toFixed(2)} registrado! Resta: R$ ${novoRestante.toFixed(2)}`);
       }
