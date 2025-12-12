@@ -303,7 +303,39 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setLancamentos(data || []);
+
+      // RECALCULAR valores considerando pagamentos parciais
+      const lancamentosProcessados = await Promise.all((data || []).map(async (lanc) => {
+        // Ignorar os próprios registros de pagamento parcial
+        if (lanc.eh_pagamento_parcial) {
+          return lanc;
+        }
+
+        // Buscar pagamentos parciais deste lançamento
+        const { data: pagamentosParcias, error: errPag } = await supabase
+          .from('lancamentos_loja')
+          .select('valor')
+          .eq('lancamento_principal_id', lanc.id)
+          .eq('eh_pagamento_parcial', true);
+
+        if (!errPag && pagamentosParcias && pagamentosParcias.length > 0) {
+          // Calcular total pago
+          const totalPago = pagamentosParcias.reduce((sum, p) => sum + parseFloat(p.valor), 0);
+          
+          // Retornar lançamento com valor ajustado e informação extra
+          return {
+            ...lanc,
+            valor_original: lanc.valor,
+            valor: lanc.valor - totalPago, // Valor restante
+            total_pago_parcial: totalPago,
+            tem_pagamento_parcial: true
+          };
+        }
+
+        return lanc;
+      }));
+
+      setLancamentos(lancamentosProcessados);
     } catch (error) {
       console.error('Erro ao carregar lançamentos:', error);
     }
@@ -2669,9 +2701,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28">
-                      <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
-                        {formatarMoeda(parseFloat(lanc.valor))}
-                      </span>
+                      <div>
+                        <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
+                          {formatarMoeda(parseFloat(lanc.valor))}
+                        </span>
+                        {lanc.tem_pagamento_parcial && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            <div>Original: {formatarMoeda(lanc.valor_original)}</div>
+                            <div className="text-green-600">Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-900 w-20">
                       {lanc.tipo_pagamento}
