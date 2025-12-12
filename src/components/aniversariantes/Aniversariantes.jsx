@@ -1065,7 +1065,9 @@ export default function Aniversariantes() {
       const agruparDuplicatas = (lista) => {
         const mapa = new Map();
         
-        lista.forEach(pessoa => {
+        console.log('🔄 Iniciando agrupamento com', lista.length, 'pessoas');
+        
+        lista.forEach((pessoa, index) => {
           // Normalizar nome (remover espaços extras, colocar em minúsculas)
           const nomeNormalizado = pessoa.nome?.toLowerCase().trim();
           
@@ -1073,12 +1075,15 @@ export default function Aniversariantes() {
           const dataNascStr = pessoa.data_nascimento?.toISOString() || '';
           const chave = `${nomeNormalizado}-${dataNascStr}`;
           
-          console.log('🔑 Chave:', chave);
+          console.log(`[${index}] 🔑 Chave:`, chave);
+          console.log(`[${index}] 👤 Pessoa:`, pessoa.nome, '| Tipo:', pessoa.tipo);
+          console.log(`[${index}] 🔍 Map já tem essa chave?`, mapa.has(chave));
           
           if (mapa.has(chave)) {
             // Pessoa já existe - adicionar relacionamento
             const existente = mapa.get(chave);
-            console.log('✅ DUPLICATA ENCONTRADA:', pessoa.nome);
+            console.log(`[${index}] ✅ DUPLICATA ENCONTRADA:`, pessoa.nome);
+            console.log(`[${index}] 📝 Relacionamentos existentes:`, existente.relacionamentos);
             
             if (!existente.relacionamentos) {
               existente.relacionamentos = [{
@@ -1091,8 +1096,11 @@ export default function Aniversariantes() {
               tipo: pessoa.tipo,
               irmao_nome: pessoa.irmao_responsavel || pessoa.irmao_nome
             });
+            
+            console.log(`[${index}] 📝 Relacionamentos APÓS:`, existente.relacionamentos);
           } else {
             // Primeira ocorrência - criar entrada
+            console.log(`[${index}] ➕ Primeira ocorrência - adicionando ao Map`);
             mapa.set(chave, {
               ...pessoa,
               relacionamentos: [{
@@ -1100,10 +1108,14 @@ export default function Aniversariantes() {
                 irmao_nome: pessoa.irmao_responsavel || pessoa.irmao_nome
               }]
             });
+            console.log(`[${index}] 📊 Tamanho do Map agora:`, mapa.size);
           }
         });
         
-        return Array.from(mapa.values());
+        console.log('✅ Agrupamento finalizado. Map size:', mapa.size);
+        const resultado = Array.from(mapa.values());
+        console.log('✅ Array final size:', resultado.length);
+        return resultado;
       };
 
       const todosAniversariantesAgrupados = agruparDuplicatas(todosAniversariantes);
