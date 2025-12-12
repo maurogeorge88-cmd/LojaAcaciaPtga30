@@ -12,6 +12,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [emprestimoSelecionado, setEmprestimoSelecionado] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
   const [busca, setBusca] = useState('');
+  const [modoEdicao, setModoEdicao] = useState(false);
 
   const [form, setForm] = useState({
     equipamento_id: '',
@@ -158,26 +159,77 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         data_emprestimo: form.data_emprestimo,
         data_devolucao_prevista: form.prazo_tipo === 'determinado' ? form.data_devolucao_prevista : null,
         prazo_tipo: form.prazo_tipo,
-        status: 'ativo',
         termo_responsabilidade_assinado: form.termo_responsabilidade_assinado,
         numero_termo: form.numero_termo || null,
         observacoes_entrega: form.observacoes_entrega || null,
         estado_equipamento_entrega: form.estado_equipamento_entrega
       };
 
-      const { error } = await supabase
-        .from('comodatos')
-        .insert([dados]);
+      if (modoEdicao && emprestimoSelecionado) {
+        // EDITAR empréstimo existente
+        const { error } = await supabase
+          .from('comodatos')
+          .update(dados)
+          .eq('id', emprestimoSelecionado.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        showSuccess('Empréstimo atualizado com sucesso!');
+      } else {
+        // CRIAR novo empréstimo
+        dados.status = 'ativo';
+        
+        const { error } = await supabase
+          .from('comodatos')
+          .insert([dados]);
 
-      showSuccess('Empréstimo registrado com sucesso!');
-      setModalAberto(false);
+        if (error) throw error;
+        showSuccess('Empréstimo registrado com sucesso!');
+      }
+
+      fecharModal();
       carregarDados();
     } catch (error) {
       console.error('Erro:', error);
-      showError(error.message || 'Erro ao registrar empréstimo');
+      showError(error.message || 'Erro ao salvar empréstimo');
     }
+  };
+
+  // Função para abrir modal em modo de edição
+  const abrirEdicao = (emprestimo) => {
+    setModoEdicao(true);
+    setEmprestimoSelecionado(emprestimo);
+    setForm({
+      equipamento_id: emprestimo.equipamento_id,
+      beneficiario_id: emprestimo.beneficiario_id,
+      responsavel_id: emprestimo.responsavel_id || '',
+      data_emprestimo: emprestimo.data_emprestimo,
+      data_devolucao_prevista: emprestimo.data_devolucao_prevista || '',
+      prazo_tipo: emprestimo.prazo_tipo,
+      termo_responsabilidade_assinado: emprestimo.termo_responsabilidade_assinado,
+      numero_termo: emprestimo.numero_termo || '',
+      observacoes_entrega: emprestimo.observacoes_entrega || '',
+      estado_equipamento_entrega: emprestimo.estado_equipamento_entrega
+    });
+    setModalAberto(true);
+  };
+
+  // Função para fechar modal e limpar estados
+  const fecharModal = () => {
+    setModalAberto(false);
+    setModoEdicao(false);
+    setEmprestimoSelecionado(null);
+    setForm({
+      equipamento_id: '',
+      beneficiario_id: '',
+      responsavel_id: '',
+      data_emprestimo: new Date().toISOString().split('T')[0],
+      data_devolucao_prevista: '',
+      prazo_tipo: 'determinado',
+      termo_responsabilidade_assinado: false,
+      numero_termo: '',
+      observacoes_entrega: '',
+      estado_equipamento_entrega: 'Bom'
+    });
   };
 
   const abrirModalDevolucao = (emprestimo) => {
@@ -344,9 +396,18 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
             <div
               key={emprestimo.id}
               className={`bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow ${
-                vencido && emprestimo.status === 'ativo' ? 'border-l-4 border-red-500' : ''
+                vencido && emprestimo.status === 'ativo' 
+                  ? 'border-l-4 border-red-500 bg-red-50' 
+                  : ''
               }`}
             >
+              {/* Badge de alerta para vencidos */}
+              {vencido && emprestimo.status === 'ativo' && (
+                <div className="bg-red-600 text-white px-3 py-1 rounded-full text-xs font-bold inline-block mb-3">
+                  ⚠️ EMPRÉSTIMO VENCIDO - {Math.abs(diasRestantes)} DIA(S) ATRASADO
+                </div>
+              )}
+              
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -460,12 +521,20 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
               {permissoes?.pode_editar_comodatos && (
                 <div className="flex gap-2">
                   {emprestimo.status === 'ativo' && (
-                    <button
-                      onClick={() => abrirModalDevolucao(emprestimo)}
-                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                    >
-                      ✅ Registrar Devolução
-                    </button>
+                    <>
+                      <button
+                        onClick={() => abrirEdicao(emprestimo)}
+                        className="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm font-medium"
+                      >
+                        ✏️ Editar
+                      </button>
+                      <button
+                        onClick={() => abrirModalDevolucao(emprestimo)}
+                        className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                      >
+                        ✅ Registrar Devolução
+                      </button>
+                    </>
                   )}
                   <button
                     onClick={() => excluir(emprestimo.id)}
@@ -490,8 +559,10 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       {modalAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-cyan-600 text-white p-6 rounded-t-xl">
-              <h3 className="text-2xl font-bold">➕ Novo Empréstimo</h3>
+            <div className={`text-white p-6 rounded-t-xl ${modoEdicao ? 'bg-yellow-600' : 'bg-cyan-600'}`}>
+              <h3 className="text-2xl font-bold">
+                {modoEdicao ? '✏️ Editar Empréstimo' : '➕ Novo Empréstimo'}
+              </h3>
             </div>
 
             <form onSubmit={salvarEmprestimo} className="p-6 space-y-4">
@@ -655,13 +726,15 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 bg-cyan-600 text-white px-6 py-3 rounded-lg hover:bg-cyan-700 transition-colors font-semibold"
+                  className={`flex-1 text-white px-6 py-3 rounded-lg transition-colors font-semibold ${
+                    modoEdicao ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-cyan-600 hover:bg-cyan-700'
+                  }`}
                 >
-                  💾 Registrar Empréstimo
+                  💾 {modoEdicao ? 'Atualizar' : 'Registrar'} Empréstimo
                 </button>
                 <button
                   type="button"
-                  onClick={() => setModalAberto(false)}
+                  onClick={fecharModal}
                   className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
                 >
                   ❌ Cancelar
