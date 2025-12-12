@@ -46,6 +46,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   const [modalVisualizar, setModalVisualizar] = useState(false);
   const [comissaoVisualizar, setComissaoVisualizar] = useState(null);
   const [integrantesVisualizar, setIntegrantesVisualizar] = useState([]);
+  const [atividadesVisualizar, setAtividadesVisualizar] = useState([]);
   
   // Estados para atividades
   const [modalAtividades, setModalAtividades] = useState(false);
@@ -253,6 +254,25 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     } catch (err) {
       console.error('Erro ao buscar integrantes:', err);
       setIntegrantesVisualizar([]);
+    }
+
+    // Buscar atividades desta comissão
+    try {
+      const { data, error } = await supabase
+        .from('comissoes_atividades')
+        .select('*')
+        .eq('comissao_id', comissao.id)
+        .order('data_atividade', { ascending: false });
+      
+      if (error) {
+        console.error('Erro ao buscar atividades:', error);
+        setAtividadesVisualizar([]);
+      } else {
+        setAtividadesVisualizar(data || []);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar atividades:', err);
+      setAtividadesVisualizar([]);
     }
   };
 
@@ -621,6 +641,56 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                   </div>
                 ) : (
                   <p className="text-gray-500 text-center py-4">Nenhum integrante cadastrado</p>
+                )}
+              </div>
+
+              {/* Atividades */}
+              <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h4 className="text-lg font-bold text-gray-800">📋 Atividades</h4>
+                  <button
+                    onClick={() => {
+                      setModalVisualizar(false);
+                      setComissaoAtividades(comissaoVisualizar);
+                      setModalAtividades(true);
+                    }}
+                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                    title="Gerenciar atividades"
+                  >
+                    ➕ Adicionar Atividade
+                  </button>
+                </div>
+                {atividadesVisualizar && atividadesVisualizar.length > 0 ? (
+                  <div className="space-y-3">
+                    {atividadesVisualizar.map((atividade, index) => (
+                      <div key={index} className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
+                        <div className="flex justify-between items-start mb-2">
+                          <h5 className="font-semibold text-gray-800">{atividade.titulo}</h5>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            atividade.status === 'concluida' 
+                              ? 'bg-green-100 text-green-800' 
+                              : atividade.status === 'em_andamento'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {atividade.status === 'concluida' ? '✅ Concluída' : 
+                             atividade.status === 'em_andamento' ? '🔄 Em Andamento' : '📝 Pendente'}
+                          </span>
+                        </div>
+                        {atividade.descricao && (
+                          <p className="text-sm text-gray-600 mb-2">{atividade.descricao}</p>
+                        )}
+                        <div className="flex gap-4 text-xs text-gray-500">
+                          <span>📅 {formatarData(atividade.data_atividade)}</span>
+                          {atividade.data_conclusao && (
+                            <span>✓ Concluída em {formatarData(atividade.data_conclusao)}</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Nenhuma atividade cadastrada</p>
                 )}
               </div>
             </div>
