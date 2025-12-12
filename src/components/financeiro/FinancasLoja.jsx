@@ -3853,6 +3853,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           const { error: errorInsert } = await supabase
             .from('lancamentos_loja')
             .insert({
+              tipo: 'receita', // Débito é sempre receita
               categoria_id: debito.categoria_id,
               descricao: `💰 Compensação: ${debito.descricao}`,
               valor: valorACompensar,
@@ -3908,6 +3909,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           const { error: errorInsert } = await supabase
             .from('lancamentos_loja')
             .insert({
+              tipo: 'despesa', // Crédito é sempre despesa
               categoria_id: credito.categoria_id,
               descricao: `💰 Compensação: ${credito.descricao}`,
               valor: valorACompensar,
