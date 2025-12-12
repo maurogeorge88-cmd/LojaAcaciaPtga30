@@ -682,7 +682,6 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: pai.irmaos?.nome,
-              irmao_nome: pai.irmaos?.nome, // Para agrupamento
               nivel: 2
             });
           }
@@ -728,7 +727,6 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: esposa.irmaos?.nome,
-              irmao_nome: esposa.irmaos?.nome, // Para agrupamento
               nivel: 2
             });
           }
@@ -777,7 +775,6 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: filho.irmaos?.nome,
-              irmao_nome: filho.irmaos?.nome, // Para agrupamento
               nivel: 2
             });
           }
@@ -1061,73 +1058,13 @@ export default function Aniversariantes() {
         ...aniversariantesInMemoriam
       ];
 
-      // ===== AGRUPAR PESSOAS DUPLICADAS =====
-      const agruparDuplicatas = (lista) => {
-        const mapa = new Map();
-        
-        console.log('🔄 Iniciando agrupamento com', lista.length, 'pessoas');
-        
-        lista.forEach((pessoa, index) => {
-          // Normalizar nome (remover espaços extras, colocar em minúsculas)
-          const nomeNormalizado = pessoa.nome?.toLowerCase().trim();
-          
-          // Usar nome normalizado + data de nascimento como chave única
-          const dataNascStr = pessoa.data_nascimento?.toISOString() || '';
-          const chave = `${nomeNormalizado}-${dataNascStr}`;
-          
-          console.log(`[${index}] 🔑 Chave:`, chave);
-          console.log(`[${index}] 👤 Pessoa:`, pessoa.nome, '| Tipo:', pessoa.tipo);
-          console.log(`[${index}] 🔍 Map já tem essa chave?`, mapa.has(chave));
-          
-          if (mapa.has(chave)) {
-            // Pessoa já existe - adicionar relacionamento
-            const existente = mapa.get(chave);
-            console.log(`[${index}] ✅ DUPLICATA ENCONTRADA:`, pessoa.nome);
-            console.log(`[${index}] 📝 Relacionamentos existentes:`, existente.relacionamentos);
-            
-            if (!existente.relacionamentos) {
-              existente.relacionamentos = [{
-                tipo: existente.tipo,
-                irmao_nome: existente.irmao_responsavel || existente.irmao_nome
-              }];
-            }
-            
-            existente.relacionamentos.push({
-              tipo: pessoa.tipo,
-              irmao_nome: pessoa.irmao_responsavel || pessoa.irmao_nome
-            });
-            
-            console.log(`[${index}] 📝 Relacionamentos APÓS:`, existente.relacionamentos);
-          } else {
-            // Primeira ocorrência - criar entrada
-            console.log(`[${index}] ➕ Primeira ocorrência - adicionando ao Map`);
-            mapa.set(chave, {
-              ...pessoa,
-              relacionamentos: [{
-                tipo: pessoa.tipo,
-                irmao_nome: pessoa.irmao_responsavel || pessoa.irmao_nome
-              }]
-            });
-            console.log(`[${index}] 📊 Tamanho do Map agora:`, mapa.size);
-          }
-        });
-        
-        console.log('✅ Agrupamento finalizado. Map size:', mapa.size);
-        const resultado = Array.from(mapa.values());
-        console.log('✅ Array final size:', resultado.length);
-        return resultado;
-      };
-
-      const todosAniversariantesAgrupados = agruparDuplicatas(todosAniversariantes);
-
       console.log('🎂 Total Irmãos:', aniversariantesIrmaos.length);
       console.log('🎂 Total Familiares:', aniversariantesFamiliares.length);
       console.log('🎂 Total Eventos:', aniversariantesEventos.length);
       console.log('🎂 Total In Memoriam:', aniversariantesInMemoriam.length);
-      console.log('🎂 Total Final (antes agrupamento):', todosAniversariantes.length);
-      console.log('🎂 Total Final (após agrupamento):', todosAniversariantesAgrupados.length);
+      console.log('🎂 Total Final:', todosAniversariantes.length);
 
-      setAniversariantes(todosAniversariantesAgrupados);
+      setAniversariantes(todosAniversariantes);
       setLoading(false);
     } catch (error) {
       console.error('❌ ERRO:', error);
@@ -1317,20 +1254,8 @@ export default function Aniversariantes() {
                               {aniv.tipo === 'Bodas' ? `${aniv.tipo} - ${aniv.idade} anos de união` : `${aniv.tipo} - ${aniv.idade} anos`}
                             </p>
                             
-                            {/* Mostrar todos os relacionamentos */}
-                            {aniv.relacionamentos && aniv.relacionamentos.length > 0 ? (
-                              <div className="mt-1 space-y-0.5">
-                                {aniv.relacionamentos.map((rel, idx) => (
-                                  <p key={idx} className="text-xs text-gray-500">
-                                    {rel.tipo === 'Irmão' ? '👤' : 
-                                     rel.tipo === 'Esposa' ? '💑' :
-                                     rel.tipo === 'Pai/Mãe' ? '👴' : '👶'} {rel.tipo}
-                                    {rel.irmao_nome && ` de ${rel.irmao_nome}`}
-                                  </p>
-                                ))}
-                              </div>
-                            ) : aniv.irmao_responsavel && (
-                              <p className="text-xs text-gray-500 mt-1">👤 Irmão: {aniv.irmao_responsavel}</p>
+                            {aniv.irmao_responsavel && (
+                              <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
                             )}
                             
                             <p className="text-xs text-gray-600 mt-1 font-medium">
