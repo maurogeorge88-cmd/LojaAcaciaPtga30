@@ -80,6 +80,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [lancamentoPagamentoParcial, setLancamentoPagamentoParcial] = useState(null);
   const [pagamentosDoLancamento, setPagamentosDoLancamento] = useState([]);
 
+  // Estados para Compensação
+  const [modalCompensacaoAberto, setModalCompensacaoAberto] = useState(false);
+  const [irmaoCompensacao, setIrmaoCompensacao] = useState(null);
+  const [debitosIrmao, setDebitosIrmao] = useState([]);
+  const [creditosIrmao, setCreditosIrmao] = useState([]);
+
   const [formLancamento, setFormLancamento] = useState({
     tipo: 'receita',
     categoria_id: '',
@@ -129,7 +135,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     { value: 'transferencia', label: '🏦 Transferência' },
     { value: 'debito', label: '💳 Débito' },
     { value: 'credito', label: '💳 Crédito' },
-    { value: 'cheque', label: '📝 Cheque' }
+    { value: 'cheque', label: '📝 Cheque' },
+    { value: 'compensacao', label: '🔄 Compensação' }
   ];
 
   const meses = [
@@ -662,6 +669,53 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
     setEditando(null);
     setMostrarFormulario(false);
+  };
+
+  // Função para abrir modal de compensação
+  const abrirModalCompensacao = async (irmaoId) => {
+    try {
+      const irmao = irmaos.find(i => i.id === irmaoId);
+      if (!irmao) {
+        showError('Irmão não encontrado');
+        return;
+      }
+
+      // Buscar débitos do irmão (receitas pendentes)
+      const { data: debitos, error: errorDebitos } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('status', 'pendente')
+        .in('tipo', ['receita']) // Irmão deve à loja
+        .order('data_vencimento', { ascending: true });
+
+      if (errorDebitos) throw errorDebitos;
+
+      // Buscar créditos do irmão (despesas pendentes)
+      const { data: creditos, error: errorCreditos } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('status', 'pendente')
+        .in('tipo', ['despesa']) // Loja deve ao irmão
+        .order('data_vencimento', { ascending: true });
+
+      if (errorCreditos) throw errorCreditos;
+
+      if ((!debitos || debitos.length === 0) && (!creditos || creditos.length === 0)) {
+        showError('Não há débitos ou créditos pendentes para compensar');
+        return;
+      }
+
+      setIrmaoCompensacao(irmao);
+      setDebitosIrmao(debitos || []);
+      setCreditosIrmao(creditos || []);
+      setModalCompensacaoAberto(true);
+
+    } catch (error) {
+      console.error('Erro ao carregar compensação:', error);
+      showError('Erro ao carregar dados de compensação: ' + error.message);
+    }
   };
 
   const limparLancamentoIrmaos = () => {
@@ -2611,6 +2665,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                             <p className="text-white text-opacity-90 text-sm mt-1">
                               {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
                             </p>
+                            {/* Botão Compensar - aparece se houver débitos E créditos */}
+                            {totalReceitas > 0 && totalDespesas > 0 && (
+                              <button
+                                onClick={() => abrirModalCompensacao(irmaoData.irmaoId)}
+                                className="mt-2 px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                              >
+                                🔄 Compensar Valores
+                              </button>
+                            )}
                           </div>
                           <div className="text-right">
                             {totalReceitas > 0 && (
@@ -2940,6 +3003,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             setModalPagamentoParcialAberto(false);
             setLancamentoPagamentoParcial(null);
             setPagamentosDoLancamento([]);
+          }}
+          onSuccess={carregarLancamentos}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
+      )}
+
+      {/* Modal de Compensação */}
+      {modalCompensacaoAberto && (
+        <ModalCompensacao
+          irmao={irmaoCompensacao}
+          debitos={debitosIrmao}
+          creditos={creditosIrmao}
+          onClose={() => {
+            setModalCompensacaoAberto(false);
+            setIrmaoCompensacao(null);
+            setDebitosIrmao([]);
+            setCreditosIrmao([]);
           }}
           onSuccess={carregarLancamentos}
           showSuccess={showSuccess}
@@ -3676,6 +3757,149 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
               className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
               Cancelar
             </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ========================================
+// 🔄 MODAL DE COMPENSAÇÃO
+// ========================================
+function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSuccess, showError }) {
+  const [debitosSelecionados, setDebitosSelecionados] = useState([]);
+  const [creditosSelecionados, setCreditosSelecionados] = useState([]);
+
+  const formatarMoeda = (valor) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
+  };
+
+  const formatarDataBR = (data) => {
+    if (!data) return '';
+    const d = new Date(data + 'T00:00:00');
+    return d.toLocaleDateString('pt-BR');
+  };
+
+  // Calcular totais
+  const totalDebitos = debitosSelecionados.reduce((sum, id) => {
+    const debito = debitos.find(d => d.id === id);
+    return sum + (debito ? parseFloat(debito.valor) : 0);
+  }, 0);
+
+  const totalCreditos = creditosSelecionados.reduce((sum, id) => {
+    const credito = creditos.find(c => c.id === id);
+    return sum + (credito ? parseFloat(credito.valor) : 0);
+  }, 0);
+
+  const valorCompensar = Math.min(totalDebitos, totalCreditos);
+  const saldoFinal = totalDebitos - totalCreditos;
+
+  const toggleDebito = (id) => {
+    setDebitosSelecionados(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const toggleCredito = (id) => {
+    setCreditosSelecionados(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleCompensar = async (e) => {
+    e.preventDefault();
+    if (debitosSelecionados.length === 0 || creditosSelecionados.length === 0) {
+      showError('Selecione pelo menos um débito e um crédito para compensar');
+      return;
+    }
+    if (valorCompensar === 0) {
+      showError('Não há valor a compensar');
+      return;
+    }
+    try {
+      const dataCompensacao = new Date().toISOString().split('T')[0];
+      const { supabase } = await import('../../App');
+      
+      // Processar todos os débitos e créditos selecionados
+      const promises = [];
+      
+      [...debitosSelecionados, ...creditosSelecionados].forEach(id => {
+        promises.push(
+          supabase.from('lancamentos_loja').update({
+            status: 'pago',
+            data_pagamento: dataCompensacao,
+            tipo_pagamento: 'compensacao',
+            observacoes: 'Quitado por compensação'
+          }).eq('id', id)
+        );
+      });
+
+      await Promise.all(promises);
+      showSuccess(`✅ Compensação realizada! Valor: ${formatarMoeda(valorCompensar)}`);
+      onClose();
+      onSuccess();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao realizar compensação: ' + error.message);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full my-8">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-t-lg">
+          <h3 className="text-xl font-bold">🔄 Compensação de Valores</h3>
+          <p className="text-sm text-purple-100">Irmão: {irmao?.nome}</p>
+        </div>
+        <form onSubmit={handleCompensar} className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* DÉBITOS */}
+            <div>
+              <h4 className="font-bold text-red-700 mb-3">📤 Débitos (Ele deve)</h4>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {debitos.length > 0 ? debitos.map(d => (
+                  <div key={d.id} onClick={() => toggleDebito(d.id)}
+                    className={`p-3 border-2 rounded-lg cursor-pointer ${debitosSelecionados.includes(d.id) ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}>
+                    <div className="flex justify-between">
+                      <div><p className="font-medium text-sm">{d.descricao}</p><p className="text-xs text-gray-500">Venc: {formatarDataBR(d.data_vencimento)}</p></div>
+                      <p className="font-bold text-red-600">{formatarMoeda(d.valor)}</p>
+                    </div>
+                  </div>
+                )) : <p className="text-gray-500 text-center py-4">Sem débitos</p>}
+              </div>
+              <div className="mt-3 p-3 bg-red-50 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-red-700">{formatarMoeda(totalDebitos)}</p></div>
+            </div>
+            {/* CRÉDITOS */}
+            <div>
+              <h4 className="font-bold text-green-700 mb-3">📥 Créditos (Loja deve)</h4>
+              <div className="space-y-2 max-h-80 overflow-y-auto">
+                {creditos.length > 0 ? creditos.map(c => (
+                  <div key={c.id} onClick={() => toggleCredito(c.id)}
+                    className={`p-3 border-2 rounded-lg cursor-pointer ${creditosSelecionados.includes(c.id) ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+                    <div className="flex justify-between">
+                      <div><p className="font-medium text-sm">{c.descricao}</p><p className="text-xs text-gray-500">Venc: {formatarDataBR(c.data_vencimento)}</p></div>
+                      <p className="font-bold text-green-600">{formatarMoeda(c.valor)}</p>
+                    </div>
+                  </div>
+                )) : <p className="text-gray-500 text-center py-4">Sem créditos</p>}
+              </div>
+              <div className="mt-3 p-3 bg-green-50 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-green-700">{formatarMoeda(totalCreditos)}</p></div>
+            </div>
+          </div>
+          {/* RESUMO */}
+          {(debitosSelecionados.length > 0 || creditosSelecionados.length > 0) && (
+            <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+              <h4 className="font-bold mb-3">📊 Resumo</h4>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div><p className="text-sm">Compensar</p><p className="text-2xl font-bold text-purple-700">{formatarMoeda(valorCompensar)}</p></div>
+                <div><p className="text-sm">Saldo Final</p><p className={`text-2xl font-bold ${saldoFinal > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatarMoeda(Math.abs(saldoFinal))}</p></div>
+                <div><p className="text-sm">Status</p><p className="text-lg font-bold">{saldoFinal === 0 ? '✅ Quitado' : '⚖️ Compensado'}</p></div>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" disabled={debitosSelecionados.length === 0 || creditosSelecionados.length === 0}
+              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold disabled:bg-gray-300">
+              🔄 Compensar
+            </button>
+            <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400">Cancelar</button>
           </div>
         </form>
       </div>
