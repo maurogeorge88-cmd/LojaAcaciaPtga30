@@ -135,11 +135,18 @@ export const Dashboard = ({ irmaos, balaustres }) => {
       const mapa = new Map();
       
       lista.forEach(pessoa => {
-        // Usar CPF se disponível, senão usar nome + data nascimento
-        const chave = pessoa.cpf || `${pessoa.nome}-${pessoa.dataNasc.toISOString()}`;
+        // Normalizar nome para comparação
+        const nomeNormalizado = pessoa.nome?.toLowerCase().trim();
+        const dataNascStr = pessoa.dataNasc?.toISOString() || '';
+        
+        // Usar CPF se disponível, senão nome normalizado + data
+        const chave = pessoa.cpf || `${nomeNormalizado}-${dataNascStr}`;
+        
+        console.log('🔑 Dashboard - Chave:', chave, '| Nome:', pessoa.nome);
         
         if (mapa.has(chave)) {
           // Pessoa já existe - adicionar relacionamento
+          console.log('✅ Dashboard - DUPLICATA:', pessoa.nome);
           const existente = mapa.get(chave);
           existente.relacionamentos.push(pessoa.relacionamento);
         } else {
@@ -151,6 +158,7 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         }
       });
       
+      console.log('📊 Dashboard - Total antes:', lista.length, '| Depois:', mapa.size);
       return Array.from(mapa.values());
     };
 
