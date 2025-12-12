@@ -287,6 +287,15 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
     }
   };
 
+  // Função para calcular dias restantes (precisa estar ANTES do filtro)
+  const calcularDiasRestantes = (dataPrevista) => {
+    if (!dataPrevista) return null;
+    const hoje = new Date();
+    const prevista = new Date(dataPrevista + 'T00:00:00');
+    const diff = Math.ceil((prevista - hoje) / (1000 * 60 * 60 * 24));
+    return diff;
+  };
+
   const emprestimosFiltrados = emprestimos.filter(emp => {
     // Calcular se está vencido
     const diasRestantes = calcularDiasRestantes(emp.data_devolucao_prevista);
@@ -323,14 +332,6 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         {labels[status] || status}
       </span>
     );
-  };
-
-  const calcularDiasRestantes = (dataPrevista) => {
-    if (!dataPrevista) return null;
-    const hoje = new Date();
-    const prevista = new Date(dataPrevista + 'T00:00:00');
-    const diff = Math.ceil((prevista - hoje) / (1000 * 60 * 60 * 24));
-    return diff;
   };
 
   if (loading) {
