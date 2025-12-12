@@ -801,12 +801,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const calcularResumo = () => {
+    // Receitas pagas - EXCLUINDO compensações (não movimentam caixa)
     const receitas = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago')
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && 
+        l.status === 'pago' &&
+        l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+      )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
+    // Despesas pagas - EXCLUINDO compensações (não movimentam caixa)
     const despesas = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago')
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && 
+        l.status === 'pago' &&
+        l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+      )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitasPendentes = lancamentos
@@ -864,13 +874,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       if (error) throw error;
 
-      // Calcular saldo anterior (receitas - despesas)
+      // Calcular saldo anterior (receitas - despesas) - EXCLUINDO compensações
       const receitasAnteriores = (data || [])
-        .filter(l => l.categorias_financeiras?.tipo === 'receita')
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       const despesasAnteriores = (data || [])
-        .filter(l => l.categorias_financeiras?.tipo === 'despesa')
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       const saldo = receitasAnteriores - despesasAnteriores;
