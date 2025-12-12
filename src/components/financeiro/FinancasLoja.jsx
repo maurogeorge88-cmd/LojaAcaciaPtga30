@@ -58,6 +58,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [mostrarModalQuitacaoLote, setMostrarModalQuitacaoLote] = useState(false);
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
+  const [saldoAnterior, setSaldoAnterior] = useState(0);
   
   const [filtros, setFiltros] = useState({
     mes: new Date().getMonth() + 1, // Mês atual (1-12)
@@ -137,6 +138,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   useEffect(() => {
     carregarDados();
+    calcularSaldoAnterior();
   }, [filtros.mes, filtros.ano]);
 
   // Recarregar lançamentos quando mudar filtros
@@ -769,6 +771,55 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       receitasPendentes,
       despesasPendentes
     };
+  };
+
+  // Calcular saldo anterior (todos os lançamentos pagos antes do período selecionado)
+  const calcularSaldoAnterior = async () => {
+    try {
+      const { mes, ano } = filtros;
+
+      // Se não há filtro de período, saldo anterior é zero
+      if (mes === 0 && ano === 0) {
+        setSaldoAnterior(0);
+        return;
+      }
+
+      // Definir a data limite (início do período selecionado)
+      let dataLimite;
+      if (mes > 0 && ano > 0) {
+        // Mês e ano específicos
+        dataLimite = `${ano}-${mes.toString().padStart(2, '0')}-01`;
+      } else if (ano > 0) {
+        // Apenas ano
+        dataLimite = `${ano}-01-01`;
+      }
+
+      // Buscar todos os lançamentos pagos ANTES do período selecionado
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(tipo)')
+        .eq('status', 'pago')
+        .lt('data_lancamento', dataLimite)
+        .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais duplicados
+
+      if (error) throw error;
+
+      // Calcular saldo anterior (receitas - despesas)
+      const receitasAnteriores = (data || [])
+        .filter(l => l.categorias_financeiras?.tipo === 'receita')
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      const despesasAnteriores = (data || [])
+        .filter(l => l.categorias_financeiras?.tipo === 'despesa')
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      const saldo = receitasAnteriores - despesasAnteriores;
+      setSaldoAnterior(saldo);
+
+    } catch (error) {
+      console.error('Erro ao calcular saldo anterior:', error);
+      setSaldoAnterior(0);
+    }
   };
 
   const gerarPDF = () => {
@@ -1627,7 +1678,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       </div>
 
       {/* RESUMO FINANCEIRO */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+          <p className="text-sm text-purple-600 font-medium">💰 Saldo Anterior</p>
+          <p className={`text-2xl font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+            {formatarMoeda(saldoAnterior)}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            {filtros.mes > 0 && filtros.ano > 0 
+              ? `Até ${meses[filtros.mes - 1]}/${filtros.ano}`
+              : filtros.ano > 0 
+              ? `Até ${filtros.ano}`
+              : 'Todos os períodos'}
+          </p>
+        </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
           <p className="text-sm text-green-600 font-medium">Receitas Pagas</p>
           <p className="text-2xl font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
@@ -1637,7 +1701,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           <p className="text-2xl font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
         </div>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-600 font-medium">Saldo</p>
+          <p className="text-sm text-blue-600 font-medium">Saldo do Período</p>
           <p className={`text-2xl font-bold ${resumo.saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
             {formatarMoeda(resumo.saldo)}
           </p>
