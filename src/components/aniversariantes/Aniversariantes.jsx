@@ -1066,21 +1066,30 @@ export default function Aniversariantes() {
         const mapa = new Map();
         
         lista.forEach(pessoa => {
-          // Usar nome + data de nascimento como chave única
-          const chave = `${pessoa.nome}-${pessoa.data_nascimento?.toISOString()}`;
+          // Normalizar nome (remover espaços extras, colocar em minúsculas)
+          const nomeNormalizado = pessoa.nome?.toLowerCase().trim();
+          
+          // Usar nome normalizado + data de nascimento como chave única
+          const dataNascStr = pessoa.data_nascimento?.toISOString() || '';
+          const chave = `${nomeNormalizado}-${dataNascStr}`;
+          
+          console.log('🔑 Chave:', chave);
           
           if (mapa.has(chave)) {
             // Pessoa já existe - adicionar relacionamento
             const existente = mapa.get(chave);
+            console.log('✅ DUPLICATA ENCONTRADA:', pessoa.nome);
+            
             if (!existente.relacionamentos) {
               existente.relacionamentos = [{
                 tipo: existente.tipo,
-                irmao_nome: existente.irmao_nome
+                irmao_nome: existente.irmao_responsavel || existente.irmao_nome
               }];
             }
+            
             existente.relacionamentos.push({
               tipo: pessoa.tipo,
-              irmao_nome: pessoa.irmao_nome
+              irmao_nome: pessoa.irmao_responsavel || pessoa.irmao_nome
             });
           } else {
             // Primeira ocorrência - criar entrada
@@ -1088,7 +1097,7 @@ export default function Aniversariantes() {
               ...pessoa,
               relacionamentos: [{
                 tipo: pessoa.tipo,
-                irmao_nome: pessoa.irmao_nome
+                irmao_nome: pessoa.irmao_responsavel || pessoa.irmao_nome
               }]
             });
           }
