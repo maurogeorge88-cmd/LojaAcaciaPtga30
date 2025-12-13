@@ -325,13 +325,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         // Buscar pagamentos parciais deste lançamento
         const { data: pagamentosParcias, error: errPag } = await supabase
           .from('lancamentos_loja')
-          .select('valor')
+          .select('valor, tipo_pagamento')
           .eq('lancamento_principal_id', lanc.id)
           .eq('eh_pagamento_parcial', true);
 
         if (!errPag && pagamentosParcias && pagamentosParcias.length > 0) {
-          // Calcular total pago
-          const totalPago = pagamentosParcias.reduce((sum, p) => sum + parseFloat(p.valor), 0);
+          // Calcular total pago (EXCLUINDO compensações, pois elas já ajustaram o valor no banco)
+          const pagamentosReais = pagamentosParcias.filter(p => p.tipo_pagamento !== 'compensacao');
+          const totalPago = pagamentosReais.reduce((sum, p) => sum + parseFloat(p.valor), 0);
           
           // Retornar lançamento com valor ajustado e informação extra
           return {
