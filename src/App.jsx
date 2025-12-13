@@ -25,6 +25,7 @@ import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
 import Caridade from './components/caridade/Caridade';
+import Eventos from './components/filantropia/Eventos';
 import Sobre from './components/Sobre';
 import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Comodatos from './components/comodatos/Comodatos';
@@ -1437,6 +1438,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               <button
+                onClick={() => setCurrentPage('eventos')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'eventos'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Eventos"
+              >
+                <span className="text-base">🎉</span>
+                {menuAberto && <span className="font-semibold">Eventos</span>}
+              </button>
+
+              <button
                 onClick={() => setCurrentPage('sobre')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'sobre'
@@ -1755,6 +1769,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                             <span>❤️</span>
                             <span>Caridade</span>
                           </button>
+
+                          <button
+                            onClick={() => setCurrentPage('eventos')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'eventos'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>🎉</span>
+                            <span>Eventos</span>
+                          </button>
                         </div>
                       )}
                     </div>
@@ -1855,6 +1881,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
+                  {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
                   {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
@@ -2094,6 +2121,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showError={showError}
           />
         )}
+
+        {/* EVENTOS */}
+        {currentPage === 'eventos' && <Eventos />}
 
         {/* ALTOS GRAUS */}
         {currentPage === 'altos-graus' && (
