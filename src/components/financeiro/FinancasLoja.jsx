@@ -3573,8 +3573,10 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
   const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().split('T')[0]);
 
   // Calcular totais
+  // IMPORTANTE: Excluir compensações do cálculo pois elas já reduziram o valor original
   const valorOriginal = lancamento.valor;
-  const totalPago = pagamentosExistentes.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
+  const pagamentosReais = pagamentosExistentes.filter(pag => pag.tipo_pagamento !== 'compensacao');
+  const totalPago = pagamentosReais.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
   const valorRestante = valorOriginal - totalPago;
 
   const handleSubmit = async (e) => {
@@ -3691,11 +3693,11 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
           </div>
 
           {/* Histórico de Pagamentos */}
-          {pagamentosExistentes.length > 0 && (
+          {pagamentosReais.length > 0 && (
             <div className="bg-blue-50 rounded-lg p-4">
               <h4 className="font-medium mb-2">📋 Pagamentos Anteriores:</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
-                {pagamentosExistentes.map((pag, idx) => (
+                {pagamentosReais.map((pag, idx) => (
                   <div key={pag.id} className="flex justify-between text-sm">
                     <span>#{idx + 1} - {new Date(pag.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     <span className="font-medium">R$ {parseFloat(pag.valor).toFixed(2)}</span>
