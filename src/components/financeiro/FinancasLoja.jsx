@@ -1220,36 +1220,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     
     lancamentos.filter(l => 
       l.status === 'pago' && 
-      l.tipo_pagamento !== 'compensacao'  // ← APENAS EXCLUIR compensações (pagamentos parciais podem entrar!)
+      l.tipo_pagamento !== 'compensacao'
     ).forEach(lanc => {
+      const descricao = lanc.descricao || '';
       const categoria = lanc.categorias_financeiras?.nome || '';
-      const categoriaLower = categoria.toLowerCase();
       
-      // Agrupar por CATEGORIA (não por descrição!)
-      // MENSALIDADE (categoria principal)
-      if (categoria === 'Mensalidade' || categoriaLower.includes('mensalidade')) {
+      // Agrupar apenas lançamentos com DESCRIÇÃO específica
+      // MENSALIDADE E PECULIO - IRMAO (descrição específica)
+      if (descricao === 'Mensalidade e Peculio - Irmao') {
         totais['Mensalidade'].valor += parseFloat(lanc.valor);
         totais['Mensalidade'].categoria_id = lanc.categoria_id;
         totais['Mensalidade'].data_pagamento = lanc.data_pagamento;
       }
-      // ÁGAPE
-      else if (categoria === 'Agape' || categoriaLower === 'ágape') {
+      // ÁGAPE (categoria Agape)
+      else if (categoria === 'Agape' || categoria.toLowerCase() === 'ágape') {
         totais['Agape'].valor += parseFloat(lanc.valor);
         totais['Agape'].categoria_id = lanc.categoria_id;
         totais['Agape'].data_pagamento = lanc.data_pagamento;
       }
-      // PECÚLIO IRMAO
-      else if (categoria === 'Peculio Irmao' || categoriaLower === 'pecúlio irmao' || categoriaLower === 'peculio irmao') {
+      // PECÚLIO IRMAO (categoria Peculio Irmao)
+      else if (categoria === 'Peculio Irmao' || categoria.toLowerCase() === 'pecúlio irmao' || categoria.toLowerCase() === 'peculio irmao') {
         totais['Peculio'].valor += parseFloat(lanc.valor);
         totais['Peculio'].categoria_id = lanc.categoria_id;
         totais['Peculio'].data_pagamento = lanc.data_pagamento;
       }
-      // Lançamentos normais (outras categorias)
+      // Lançamentos normais (incluindo Mensalidades individuais)
       else {
-        // Ignorar lançamentos antigos que tinham a descrição "Mensalidade e Peculio - Irmao"
-        if (lanc.descricao !== 'Mensalidade e Peculio - Irmao') {
-          lancamentosAgrupados.push(lanc);
-        }
+        lancamentosAgrupados.push(lanc);
       }
     });
     
@@ -1395,7 +1392,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
         const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-        const descricao = lanc.descricao?.substring(0, 28) || '';  // ← Usar descricao!
+        let descricao = lanc.descricao?.substring(0, 28) || '';
+        // Simplificar nome de Mensalidade
+        if (descricao === 'Mensalidade e Peculio - Irmao') {
+          descricao = 'Mensalidade';
+        }
         const obs = (lanc.observacoes || '').substring(0, 35);
         const valor = parseFloat(lanc.valor);
 
@@ -1418,7 +1419,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
           const dataLanc = formatarDataBR(lanc.data_pagamento);
           const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-          const descricao = lanc.descricao?.substring(0, 28) || '';  // ← Usar descricao!
+          let descricao = lanc.descricao?.substring(0, 28) || '';
+          // Simplificar nome de Mensalidade
+          if (descricao === 'Mensalidade e Peculio - Irmao') {
+            descricao = 'Mensalidade';
+          }
           const obs = (lanc.observacoes || '').substring(0, 35);
           const valor = parseFloat(lanc.valor);
 
