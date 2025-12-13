@@ -997,51 +997,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     // ORGANIZAR POR HIERARQUIA
     // ========================================
-    const organizarHierarquia = (tipo) => {
-      // Pegar categorias principais (nível 1)
-      const catsPrincipais = categorias.filter(c => 
-        c.tipo === tipo && 
-        (c.nivel === 1 || !c.categoria_pai_id)
-      );
-
-      // Para cada principal, buscar subcategorias e lançamentos
-      return catsPrincipais.map(principal => {
-        // Subcategorias desta principal
-        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
-        
-        // Lançamentos diretos na principal - APENAS PAGOS
-        const lancsDiretos = lancamentos.filter(l => 
-          l.categoria_id === principal.id &&
-          l.categorias_financeiras?.tipo === tipo &&
-          l.status === 'pago'  // ← FILTRO: apenas pagos
-        );
-        
-        // Subcategorias com lançamentos
-        const subcatsComLancs = subcats.map(sub => {
-          const lancsSubcat = lancamentos.filter(l => 
-            l.categoria_id === sub.id &&
-            l.categorias_financeiras?.tipo === tipo &&
-            l.status === 'pago'  // ← FILTRO: apenas pagos
-          );
-          return {
-            categoria: sub,
-            lancamentos: lancsSubcat,
-            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
-          };
-        }).filter(sc => sc.lancamentos.length > 0);
-
-        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
-
-        return {
-          principal,
-          lancamentosDiretos: lancsDiretos,
-          subcategorias: subcatsComLancs,
-          subtotalTotal: subtotalDireto + subtotalSubs
-        };
-      }).filter(cp => cp.subtotalTotal > 0); // Só mostrar se tiver valores
-    };
-
     // ========================================
     // DESPESAS HIERÁRQUICAS (excluindo compensações)
     // ========================================
