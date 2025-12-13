@@ -1050,55 +1050,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     // ORGANIZAR POR HIERARQUIA
     // ========================================
-    const organizarHierarquia = (tipo) => {
-      // Pegar categorias principais (nível 1)
-      const catsPrincipais = categorias.filter(c => 
-        c.tipo === tipo && 
-        (c.nivel === 1 || !c.categoria_pai_id)
-      );
-
-      // Para cada principal, buscar subcategorias e lançamentos
-      return catsPrincipais.map(principal => {
-        // Subcategorias desta principal
-        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
-        
-        // Lançamentos diretos na principal - APENAS PAGOS
-        const lancsDiretos = lancamentos.filter(l => 
-          l.categoria_id === principal.id &&
-          l.categorias_financeiras?.tipo === tipo &&
-          l.status === 'pago'  // ← FILTRO: apenas pagos
-        );
-        
-        // Subcategorias com lançamentos
-        const subcatsComLancs = subcats.map(sub => {
-          const lancsSubcat = lancamentos.filter(l => 
-            l.categoria_id === sub.id &&
-            l.categorias_financeiras?.tipo === tipo &&
-            l.status === 'pago'  // ← FILTRO: apenas pagos
-          );
-          return {
-            categoria: sub,
-            lancamentos: lancsSubcat,
-            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
-          };
-        }).filter(sc => sc.lancamentos.length > 0);
-
-        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
-
-        return {
-          principal,
-          lancamentosDiretos: lancsDiretos,
-          subcategorias: subcatsComLancs,
-          subtotalTotal: subtotalDireto + subtotalSubs
-        };
-      }).filter(cp => cp.subtotalTotal > 0); // Só mostrar se tiver valores
-    };
-
     // ========================================
     // DESPESAS HIERÁRQUICAS
     // ========================================
-    const despesasHierarquia = organizarHierarquiaAgrupada('despesa');
+    const receitasHierarquia = organizarHierarquia('receita');
     const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     // Título Despesas
@@ -1219,12 +1174,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         const key = `${l.origem_irmao_id}_${l.data_pagamento}`;
         if (!agrupamentoIrmaos[key]) {
           agrupamentoIrmaos[key] = {
-            ...l,  // Copia todos os campos
+            ...l,
             valor: 0,
             descricao: l.irmaos?.nome || 'Irmão',
             categoria_original: l.categorias_financeiras?.nome
           };
-          // Atualizar categoria para "Mensalidade/Ágape/Pecúlio"
           agrupamentoIrmaos[key].categorias_financeiras = {
             ...l.categorias_financeiras,
             nome: 'Mensalidade/Ágape/Pecúlio'
@@ -1232,21 +1186,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         }
         agrupamentoIrmaos[key].valor += parseFloat(l.valor);
       } else {
-        // Lançamento normal
         lancamentosSemAgrupar.push(l);
       }
     });
     
-    // Adicionar lançamentos agrupados de volta ao array
     const lancamentosParaRelatorio = [
       ...lancamentosSemAgrupar,
       ...Object.values(agrupamentoIrmaos)
     ];
     
     // ========================================
-    // ORGANIZAR POR HIERARQUIA (usando lancamentos agrupados)
+    // ORGANIZAR POR HIERARQUIA
     // ========================================
-    const organizarHierarquiaAgrupada = (tipo) => {
+    const organizarHierarquia = (tipo, lancsArray = lancamentosParaRelatorio) => {
       const catsPrincipais = categorias.filter(c => 
         c.tipo === tipo && 
         (c.nivel === 1 || !c.categoria_pai_id)
@@ -1255,14 +1207,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       return catsPrincipais.map(principal => {
         const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
         
-        const lancsDiretos = lancamentosParaRelatorio.filter(l => 
+        const lancsDiretos = lancsArray.filter(l => 
           l.categoria_id === principal.id &&
           l.categorias_financeiras?.tipo === tipo &&
           l.status === 'pago'
         );
         
         const subcatsComLancs = subcats.map(sub => {
-          const lancsSubcat = lancamentosParaRelatorio.filter(l => 
+          const lancsSubcat = lancsArray.filter(l => 
             l.categoria_id === sub.id &&
             l.categorias_financeiras?.tipo === tipo &&
             l.status === 'pago'
@@ -1287,9 +1239,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     };
     
     // ========================================
-    // RECEITAS HIERÁRQUICAS
+    // DESPESAS HIERÁRQUICAS
     // ========================================
-    const receitasHierarquia = organizarHierarquiaAgrupada('receita');
+    const despesasHierarquia = organizarHierarquia('despesa');
     const totalReceitas = receitasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     if (yPos > 240) {
