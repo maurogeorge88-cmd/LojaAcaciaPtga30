@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Plus, Trash2, Edit2, X, Save } from 'lucide-react';
 
 export default function Eventos() {
   const [eventos, setEventos] = useState([]);
@@ -259,7 +258,7 @@ export default function Eventos() {
           onClick={() => abrirModal()}
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          <Plus size={20} />
+          <span>➕</span>
           Novo Evento
         </button>
       </div>
@@ -300,13 +299,13 @@ export default function Eventos() {
                   onClick={() => abrirModal(evento)}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                 >
-                  <Edit2 size={18} />
+                  ✏️
                 </button>
                 <button
                   onClick={() => excluirEvento(evento.id)}
                   className="p-2 text-red-600 hover:bg-red-50 rounded"
                 >
-                  <Trash2 size={18} />
+                  🗑️
                 </button>
               </div>
             </div>
@@ -323,7 +322,7 @@ export default function Eventos() {
                 {modoEdicao ? 'Editar Evento' : 'Novo Evento'}
               </h2>
               <button onClick={fecharModal} className="text-gray-500 hover:text-gray-700">
-                <X size={24} />
+                ✖️
               </button>
             </div>
 
@@ -455,7 +454,7 @@ export default function Eventos() {
                     onClick={adicionarItem}
                     className="col-span-1 bg-green-600 text-white rounded hover:bg-green-700"
                   >
-                    <Plus size={20} className="mx-auto" />
+                    ➕
                   </button>
                 </div>
 
@@ -473,7 +472,7 @@ export default function Eventos() {
                           onClick={() => removerItem(index, item.id)}
                           className="text-red-600 hover:bg-red-50 p-1 rounded"
                         >
-                          <Trash2 size={16} />
+                          🗑️
                         </button>
                       </div>
                     ))}
@@ -503,7 +502,7 @@ export default function Eventos() {
                     onClick={adicionarParticipante}
                     className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
                   >
-                    <Plus size={20} />
+                    ➕
                   </button>
                 </div>
 
@@ -516,7 +515,7 @@ export default function Eventos() {
                           onClick={() => removerParticipante(index, part.id)}
                           className="text-red-600 hover:bg-red-50 p-1 rounded"
                         >
-                          <Trash2 size={16} />
+                          🗑️
                         </button>
                       </div>
                     ))}
@@ -536,7 +535,7 @@ export default function Eventos() {
                 onClick={salvarEvento}
                 className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
-                <Save size={20} />
+                💾
                 Salvar
               </button>
             </div>
