@@ -1213,7 +1213,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     const lancamentosAgrupados = [];
     const totais = {
-      'Mensalidade': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Mensalidade e Peculio - Irmao' },
+      'Mensalidade': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Mensalidade' },
       'Agape': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Agape' },
       'Peculio': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Peculio Irmao' }
     };
