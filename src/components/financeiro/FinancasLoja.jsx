@@ -1246,7 +1246,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }
       // Lançamentos normais (outras categorias)
       else {
-        lancamentosAgrupados.push(lanc);
+        // Ignorar lançamentos antigos que tinham a descrição "Mensalidade e Peculio - Irmao"
+        if (lanc.descricao !== 'Mensalidade e Peculio - Irmao') {
+          lancamentosAgrupados.push(lanc);
+        }
       }
     });
     
