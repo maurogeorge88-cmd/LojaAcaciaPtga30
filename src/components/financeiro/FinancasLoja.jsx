@@ -3580,7 +3580,16 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
   const [valorPagar, setValorPagar] = useState('');
   const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().split('T')[0]);
 
-  // Calcular totais
+  // ===================================================================
+  // LÓGICA CORRETA DE CÁLCULO
+  // ===================================================================
+  // 1. Buscar o PRIMEIRO valor do lançamento (antes de qualquer alteração)
+  // 2. Calcular quanto foi compensado
+  // 3. Calcular quanto foi pago (pagamentos parciais reais)
+  // 4. Valor Restante = Original - Compensado - Pago
+  // 5. Valor no banco = Valor Restante (sempre atualizado)
+  // ===================================================================
+  
   // Separar pagamentos reais e compensações
   const pagamentosReais = pagamentosExistentes.filter(pag => pag.tipo_pagamento !== 'compensacao');
   const compensacoes = pagamentosExistentes.filter(pag => pag.tipo_pagamento === 'compensacao');
@@ -3588,13 +3597,22 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
   const totalPago = pagamentosReais.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
   const totalCompensado = compensacoes.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
   
-  // USAR o valor_original que já vem calculado da listagem (se existir)
-  // Caso não exista (primeiro pagamento), calcular: valor atual + compensações
-  const valorOriginal = lancamento.valor_original 
-    ? parseFloat(lancamento.valor_original)
-    : parseFloat(lancamento.valor) + totalCompensado;
-    
-  // Valor restante = valor no banco (que já está ajustado)
+  // VALOR ORIGINAL: Tentar pegar das observações primeiro, senão calcular
+  let valorOriginal;
+  
+  // Tentar extrair das observações: "[Valor original: R$ 200,00 |"
+  const matchObservacoes = lancamento.observacoes?.match(/Valor original: R\$ ([\d.,]+)/);
+  if (matchObservacoes) {
+    valorOriginal = parseFloat(matchObservacoes[1].replace('.', '').replace(',', '.'));
+  } else if (totalCompensado > 0 || totalPago > 0) {
+    // Se já tem compensação ou pagamento, calcular valor original
+    valorOriginal = parseFloat(lancamento.valor) + totalPago + totalCompensado;
+  } else {
+    // Primeiro pagamento/compensação - valor do banco É o original
+    valorOriginal = parseFloat(lancamento.valor);
+  }
+  
+  // VALOR RESTANTE = simplesmente o valor no banco (já está correto)
   const valorRestante = parseFloat(lancamento.valor);
 
   const handleSubmit = async (e) => {
@@ -3698,17 +3716,38 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
             </div>
             <div className="flex justify-between border-t pt-2">
               <span className="font-medium">Valor Original:</span>
-              <span className="font-bold">R$ {valorOriginal.toFixed(2)}</span>
+              <span className="font-bold text-lg">R$ {valorOriginal.toFixed(2)}</span>
             </div>
+            {totalCompensado > 0 && (
+              <div className="flex justify-between">
+                <span className="font-medium text-purple-600">🔄 Compensado:</span>
+                <span className="font-bold text-purple-600">R$ {totalCompensado.toFixed(2)}</span>
+              </div>
+            )}
             <div className="flex justify-between">
-              <span className="font-medium text-green-600">Total Pago:</span>
+              <span className="font-medium text-green-600">✅ Pago:</span>
               <span className="font-bold text-green-600">R$ {totalPago.toFixed(2)}</span>
             </div>
             <div className="flex justify-between border-t pt-2">
-              <span className="font-medium text-red-600">Valor Restante:</span>
-              <span className="font-bold text-red-600">R$ {valorRestante.toFixed(2)}</span>
+              <span className="font-medium text-red-600 text-lg">Valor Restante:</span>
+              <span className="font-bold text-red-600 text-lg">R$ {valorRestante.toFixed(2)}</span>
             </div>
           </div>
+
+          {/* Histórico de Compensações */}
+          {compensacoes.length > 0 && (
+            <div className="bg-purple-50 rounded-lg p-4">
+              <h4 className="font-medium mb-2 text-purple-800">🔄 Compensações Realizadas:</h4>
+              <div className="space-y-1 max-h-32 overflow-y-auto">
+                {compensacoes.map((comp, idx) => (
+                  <div key={comp.id} className="flex justify-between text-sm">
+                    <span>#{idx + 1} - {new Date(comp.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                    <span className="font-medium text-purple-700">R$ {parseFloat(comp.valor).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Histórico de Pagamentos */}
           {pagamentosReais.length > 0 && (
@@ -3899,11 +3938,20 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           
           // ATUALIZAR o valor do lançamento original para refletir a compensação
           const novoValor = valorDebito - valorACompensar;
+          
+          // Preparar observações com valor original (se ainda não tiver)
+          let novasObservacoes = debito.observacoes || '';
+          if (!novasObservacoes.includes('Valor original:')) {
+            // Primeira alteração - guardar valor original
+            novasObservacoes = `[Valor original: R$ ${valorDebito.toFixed(2)}]\n${novasObservacoes}`.trim();
+          }
+          novasObservacoes += `\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`;
+          
           const { error: errorUpdate } = await supabase
             .from('lancamentos_loja')
             .update({
               valor: novoValor,
-              observacoes: `${debito.observacoes || ''}\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`.trim()
+              observacoes: novasObservacoes.trim()
             })
             .eq('id', debitoId);
             
@@ -3958,11 +4006,20 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           
           // ATUALIZAR o valor do lançamento original para refletir a compensação
           const novoValor = valorCredito - valorACompensar;
+          
+          // Preparar observações com valor original (se ainda não tiver)
+          let novasObservacoes = credito.observacoes || '';
+          if (!novasObservacoes.includes('Valor original:')) {
+            // Primeira alteração - guardar valor original
+            novasObservacoes = `[Valor original: R$ ${valorCredito.toFixed(2)}]\n${novasObservacoes}`.trim();
+          }
+          novasObservacoes += `\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`;
+          
           const { error: errorUpdate } = await supabase
             .from('lancamentos_loja')
             .update({
               valor: novoValor,
-              observacoes: `${credito.observacoes || ''}\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`.trim()
+              observacoes: novasObservacoes.trim()
             })
             .eq('id', creditoId);
             
