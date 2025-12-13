@@ -3588,9 +3588,14 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
   const totalPago = pagamentosReais.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
   const totalCompensado = compensacoes.reduce((sum, pag) => sum + parseFloat(pag.valor), 0);
   
-  // IMPORTANTE: Valor original = valor atual no banco + tudo que já foi pago/compensado
-  const valorOriginal = parseFloat(lancamento.valor) + totalPago + totalCompensado;
-  const valorRestante = valorOriginal - totalPago - totalCompensado;
+  // USAR o valor_original que já vem calculado da listagem (se existir)
+  // Caso não exista (primeiro pagamento), calcular: valor atual + compensações
+  const valorOriginal = lancamento.valor_original 
+    ? parseFloat(lancamento.valor_original)
+    : parseFloat(lancamento.valor) + totalCompensado;
+    
+  // Valor restante = valor no banco (que já está ajustado)
+  const valorRestante = parseFloat(lancamento.valor);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
