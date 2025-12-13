@@ -1009,17 +1009,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         // Subcategorias desta principal
         const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
         
-        // Lançamentos diretos na principal
+        // Lançamentos diretos na principal - APENAS PAGOS
         const lancsDiretos = lancamentos.filter(l => 
           l.categoria_id === principal.id &&
-          l.categorias_financeiras?.tipo === tipo
+          l.categorias_financeiras?.tipo === tipo &&
+          l.status === 'pago'  // ← FILTRO: apenas pagos
         );
         
         // Subcategorias com lançamentos
         const subcatsComLancs = subcats.map(sub => {
           const lancsSubcat = lancamentos.filter(l => 
             l.categoria_id === sub.id &&
-            l.categorias_financeiras?.tipo === tipo
+            l.categorias_financeiras?.tipo === tipo &&
+            l.status === 'pago'  // ← FILTRO: apenas pagos
           );
           return {
             categoria: sub,
@@ -1075,7 +1077,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       // Cabeçalho da tabela
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('DataLanc', 10, yPos);
+      doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
       doc.text('Descrição', 80, yPos);
       doc.text('Obs', 140, yPos);
@@ -1090,7 +1092,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           yPos = 20;
         }
 
-        const dataLanc = formatarDataBR(lanc.data_lancamento);
+        const dataLanc = formatarDataBR(lanc.data_pagamento);
         const interessado = lanc.origem_tipo === 'Loja' ? 
           (lanc.descricao.substring(0, 22)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
@@ -1115,7 +1117,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             yPos = 20;
           }
 
-          const dataLanc = formatarDataBR(lanc.data_lancamento);
+          const dataLanc = formatarDataBR(lanc.data_pagamento);
           const interessado = lanc.origem_tipo === 'Loja' ? 
             (lanc.descricao.substring(0, 22)) : 
             (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
@@ -1187,7 +1189,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('DataLanc', 10, yPos);
+        doc.text('DataPgto', 10, yPos);
         doc.text('Interessado', 32, yPos);
         doc.text('Descrição', 80, yPos);
         doc.text('Obs', 140, yPos);
@@ -1208,7 +1210,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         // Cabeçalho para outras categorias
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('DataLanc', 10, yPos);
+        doc.text('DataPgto', 10, yPos);
         doc.text('Interessado', 32, yPos);
         doc.text('Descrição', 80, yPos);
         doc.text('Obs', 140, yPos);
@@ -1224,7 +1226,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           yPos = 20;
         }
 
-        const dataLanc = formatarDataBR(lanc.data_lancamento);
+        const dataLanc = formatarDataBR(lanc.data_pagamento);
         const interessado = 'Irmãos - Acacia Paranatinga nº 30';
         const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
         const obs = (lanc.observacoes || '').substring(0, 35);
@@ -1247,7 +1249,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             yPos = 20;
           }
 
-          const dataLanc = formatarDataBR(lanc.data_lancamento);
+          const dataLanc = formatarDataBR(lanc.data_pagamento);
           const interessado = 'Irmãos - Acacia Paranatinga nº 30';
           const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
           const obs = (lanc.observacoes || '').substring(0, 35);
@@ -2758,7 +2760,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                                   {/* Informações detalhadas - DATAS NA MESMA LINHA */}
                                   <div className="text-sm text-gray-600">
                                     <p className="mb-1">
-                                      <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_lancamento)}
+                                      <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_pagamento)}
                                       <span className="mx-2">•</span>
                                       <span className={`font-medium ${ehReceita ? 'text-red-600' : 'text-blue-600'}`}>
                                         ⏰ Vencimento:
@@ -2847,7 +2849,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_lancamento)}
+                      {formatarDataBR(lanc.data_pagamento)}
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
