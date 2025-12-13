@@ -1156,8 +1156,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     
     lancamentos.filter(l => 
       l.status === 'pago' && 
-      !l.eh_pagamento_parcial &&  // ← EXCLUIR pagamentos parciais
-      l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+      l.tipo_pagamento !== 'compensacao'  // ← APENAS EXCLUIR compensações (pagamentos parciais podem entrar!)
     ).forEach(lanc => {
       const categoria = lanc.categorias_financeiras?.nome || '';
       const categoriaLower = categoria.toLowerCase();
