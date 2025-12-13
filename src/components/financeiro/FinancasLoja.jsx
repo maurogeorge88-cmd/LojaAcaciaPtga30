@@ -1156,6 +1156,59 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
 
     // ========================================
+    // CRÉDITO À IRMÃOS (Compensações - NÃO entra no total)
+    // ========================================
+    const compensacoes = lancamentos.filter(l => 
+      l.status === 'pago' && 
+      l.tipo_pagamento === 'compensacao' &&
+      l.categorias_financeiras?.tipo === 'despesa'
+    );
+    
+    if (compensacoes.length > 0) {
+      if (yPos > 240) {
+        doc.addPage();
+        yPos = 20;
+      }
+
+      doc.setFillColor(173, 216, 230);
+      doc.rect(10, yPos, 190, 6, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('Crédito à Irmãos', 12, yPos + 4);
+      yPos += 8;
+
+      doc.setFontSize(8);
+      doc.text('DataPgto', 10, yPos);
+      doc.text('Interessado', 32, yPos);
+      doc.text('Descrição', 80, yPos);
+      doc.text('Obs', 140, yPos);
+      doc.text('Despesa', 200, yPos, { align: 'right' });
+      yPos += 4;
+
+      doc.setFont('helvetica', 'normal');
+      compensacoes.forEach(lanc => {
+        if (yPos > 275) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.text(formatarDataBR(lanc.data_pagamento), 10, yPos);
+        doc.text(lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão', 32, yPos);
+        doc.text(lanc.categorias_financeiras?.nome?.substring(0, 28) || '', 80, yPos);
+        doc.text((lanc.observacoes || '').substring(0, 35), 140, yPos);
+        doc.text(`R$${parseFloat(lanc.valor).toFixed(2)}`, 200, yPos, { align: 'right' });
+        yPos += 4;
+      });
+
+      yPos += 2;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
+      doc.text(`R$ ${totalCompensacoes.toFixed(2)}`, 200, yPos, { align: 'right' });
+      yPos += 8;
+    }
+
+    // ========================================
     // AGRUPAR ÁGAPE E PECÚLIO EM LINHAS ÚNICAS
     // ========================================
     const lancamentosAgrupados = [];
