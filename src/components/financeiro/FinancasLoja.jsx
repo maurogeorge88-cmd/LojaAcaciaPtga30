@@ -1149,9 +1149,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     const lancamentosAgrupados = [];
     const totais = {
-      'Mensalidade e Peculio - Irmao': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' },
-      'Agape': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' },
-      'Peculio Irmao': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' }
+      'Mensalidade': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Mensalidade e Peculio - Irmao' },
+      'Agape': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Agape' },
+      'Peculio': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Peculio Irmao' }
     };
     
     lancamentos.filter(l => 
@@ -1160,44 +1160,46 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
     ).forEach(lanc => {
       const categoria = lanc.categorias_financeiras?.nome || '';
+      const categoriaLower = categoria.toLowerCase();
       
-      // Agrupar MENSALIDADE/PECULIO
-      if (categoria.includes('Mensalidade e Peculio - Irmao')) {
-        totais['Mensalidade e Peculio - Irmao'].valor += parseFloat(lanc.valor);
-        totais['Mensalidade e Peculio - Irmao'].categoria_id = lanc.categoria_id;
-        totais['Mensalidade e Peculio - Irmao'].data_pagamento = lanc.data_pagamento;
+      // Agrupar por CATEGORIA (não por descrição!)
+      // MENSALIDADE (categoria principal)
+      if (categoria === 'Mensalidade' || categoriaLower.includes('mensalidade')) {
+        totais['Mensalidade'].valor += parseFloat(lanc.valor);
+        totais['Mensalidade'].categoria_id = lanc.categoria_id;
+        totais['Mensalidade'].data_pagamento = lanc.data_pagamento;
       }
-      // Agrupar ÁGAPE
-      else if (categoria.toLowerCase().includes('agape') || categoria.toLowerCase().includes('ágape')) {
+      // ÁGAPE
+      else if (categoria === 'Agape' || categoriaLower === 'ágape') {
         totais['Agape'].valor += parseFloat(lanc.valor);
         totais['Agape'].categoria_id = lanc.categoria_id;
         totais['Agape'].data_pagamento = lanc.data_pagamento;
       }
-      // Agrupar PECÚLIO
-      else if (categoria.toLowerCase().includes('peculio') || categoria.toLowerCase().includes('pecúlio')) {
-        totais['Peculio Irmao'].valor += parseFloat(lanc.valor);
-        totais['Peculio Irmao'].categoria_id = lanc.categoria_id;
-        totais['Peculio Irmao'].data_pagamento = lanc.data_pagamento;
+      // PECÚLIO IRMAO
+      else if (categoria === 'Peculio Irmao' || categoriaLower === 'pecúlio irmao' || categoriaLower === 'peculio irmao') {
+        totais['Peculio'].valor += parseFloat(lanc.valor);
+        totais['Peculio'].categoria_id = lanc.categoria_id;
+        totais['Peculio'].data_pagamento = lanc.data_pagamento;
       }
-      // Lançamentos normais
+      // Lançamentos normais (outras categorias)
       else {
         lancamentosAgrupados.push(lanc);
       }
     });
     
     // Adicionar linhas agrupadas
-    Object.keys(totais).forEach(nome => {
-      if (totais[nome].valor > 0) {
+    Object.keys(totais).forEach(chave => {
+      if (totais[chave].valor > 0) {
         lancamentosAgrupados.push({
-          id: `agrupado_${nome}`,
-          categoria_id: totais[nome].categoria_id,
+          id: `agrupado_${chave}`,
+          categoria_id: totais[chave].categoria_id,
           categorias_financeiras: { tipo: 'receita', nome: 'Mensalidade/Agape/Peculio' },
-          descricao: nome,
-          valor: totais[nome].valor,
-          data_pagamento: totais[nome].data_pagamento,
+          descricao: totais[chave].nome_exibir,
+          valor: totais[chave].valor,
+          data_pagamento: totais[chave].data_pagamento,
           status: 'pago',
           origem_tipo: 'Loja',
-          observacoes: `Total agrupado de ${nome}`
+          observacoes: `Total agrupado de ${totais[chave].nome_exibir}`
         });
       }
     });
