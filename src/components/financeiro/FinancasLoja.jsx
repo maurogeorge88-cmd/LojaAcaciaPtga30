@@ -1145,51 +1145,58 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
 
     // ========================================
-    // AGRUPAR ÁGAPE E PECÚLIO POR IRMÃO
+    // AGRUPAR ÁGAPE E PECÚLIO EM LINHAS ÚNICAS
     // ========================================
     const lancamentosAgrupados = [];
-    const agrupamentosAgape = {};
-    const agrupamentosPeculio = {};
+    const totais = {
+      'Mensalidade e Peculio - Irmao': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' },
+      'Agape': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' },
+      'Peculio Irmao': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' }
+    };
     
     lancamentos.filter(l => l.status === 'pago').forEach(lanc => {
-      const categoria = lanc.categorias_financeiras?.nome?.toLowerCase() || '';
+      const categoria = lanc.categorias_financeiras?.nome || '';
       
+      // Agrupar MENSALIDADE/PECULIO
+      if (categoria.includes('Mensalidade e Peculio - Irmao')) {
+        totais['Mensalidade e Peculio - Irmao'].valor += parseFloat(lanc.valor);
+        totais['Mensalidade e Peculio - Irmao'].categoria_id = lanc.categoria_id;
+        totais['Mensalidade e Peculio - Irmao'].data_pagamento = lanc.data_pagamento;
+      }
       // Agrupar ÁGAPE
-      if (categoria.includes('agape') || categoria.includes('ágape')) {
-        const key = `${lanc.origem_irmao_id}_${lanc.data_pagamento}`;
-        if (!agrupamentosAgape[key]) {
-          agrupamentosAgape[key] = {
-            ...lanc,
-            valor: 0,
-            descricao: lanc.irmaos?.nome || 'Irmão'
-          };
-        }
-        agrupamentosAgape[key].valor += parseFloat(lanc.valor);
+      else if (categoria.toLowerCase().includes('agape') || categoria.toLowerCase().includes('ágape')) {
+        totais['Agape'].valor += parseFloat(lanc.valor);
+        totais['Agape'].categoria_id = lanc.categoria_id;
+        totais['Agape'].data_pagamento = lanc.data_pagamento;
       }
       // Agrupar PECÚLIO
-      else if (categoria.includes('peculio') || categoria.includes('pecúlio')) {
-        const key = `${lanc.origem_irmao_id}_${lanc.data_pagamento}`;
-        if (!agrupamentosPeculio[key]) {
-          agrupamentosPeculio[key] = {
-            ...lanc,
-            valor: 0,
-            descricao: lanc.irmaos?.nome || 'Irmão'
-          };
-        }
-        agrupamentosPeculio[key].valor += parseFloat(lanc.valor);
+      else if (categoria.toLowerCase().includes('peculio') || categoria.toLowerCase().includes('pecúlio')) {
+        totais['Peculio Irmao'].valor += parseFloat(lanc.valor);
+        totais['Peculio Irmao'].categoria_id = lanc.categoria_id;
+        totais['Peculio Irmao'].data_pagamento = lanc.data_pagamento;
       }
-      // Lançamentos normais (não Ágape nem Pecúlio)
+      // Lançamentos normais
       else {
         lancamentosAgrupados.push(lanc);
       }
     });
     
-    // Adicionar agrupamentos de volta
-    const todosLancamentos = [
-      ...lancamentosAgrupados,
-      ...Object.values(agrupamentosAgape),
-      ...Object.values(agrupamentosPeculio)
-    ];
+    // Adicionar linhas agrupadas
+    Object.keys(totais).forEach(nome => {
+      if (totais[nome].valor > 0) {
+        lancamentosAgrupados.push({
+          id: `agrupado_${nome}`,
+          categoria_id: totais[nome].categoria_id,
+          categorias_financeiras: { tipo: 'receita', nome: 'Mensalidade/Agape/Peculio' },
+          descricao: nome,
+          valor: totais[nome].valor,
+          data_pagamento: totais[nome].data_pagamento,
+          status: 'pago',
+          origem_tipo: 'Loja',
+          observacoes: `Total agrupado de ${nome}`
+        });
+      }
+    });
     
     // Criar função que usa lançamentos agrupados
     const organizarHierarquiaAgrupada = (tipo) => {
@@ -1201,14 +1208,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       return catsPrincipais.map(principal => {
         const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
         
-        const lancsDiretos = todosLancamentos.filter(l => 
+        const lancsDiretos = lancamentosAgrupados.filter(l => 
           l.categoria_id === principal.id &&
           l.categorias_financeiras?.tipo === tipo &&
           l.status === 'pago'
         );
         
         const subcatsComLancs = subcats.map(sub => {
-          const lancsSubcat = todosLancamentos.filter(l => 
+          const lancsSubcat = lancamentosAgrupados.filter(l => 
             l.categoria_id === sub.id &&
             l.categorias_financeiras?.tipo === tipo &&
             l.status === 'pago'
