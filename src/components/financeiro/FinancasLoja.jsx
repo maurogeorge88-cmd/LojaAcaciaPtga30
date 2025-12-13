@@ -1154,7 +1154,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       'Peculio Irmao': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita' }
     };
     
-    lancamentos.filter(l => l.status === 'pago').forEach(lanc => {
+    lancamentos.filter(l => 
+      l.status === 'pago' && 
+      !l.eh_pagamento_parcial &&  // ← EXCLUIR pagamentos parciais
+      l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+    ).forEach(lanc => {
       const categoria = lanc.categorias_financeiras?.nome || '';
       
       // Agrupar MENSALIDADE/PECULIO
