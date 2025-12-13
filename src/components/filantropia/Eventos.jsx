@@ -5,6 +5,7 @@ export default function Eventos() {
   const [eventos, setEventos] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
+  const [modalVisualizacao, setModalVisualizacao] = useState(false);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
@@ -124,8 +125,16 @@ export default function Eventos() {
     setModalAberto(true);
   };
 
+  const abrirVisualizacao = async (evento) => {
+    setEventoSelecionado(evento);
+    await carregarItensEvento(evento.id);
+    await carregarParticipantes(evento.id);
+    setModalVisualizacao(true);
+  };
+
   const fecharModal = () => {
     setModalAberto(false);
+    setModalVisualizacao(false);
     setEventoSelecionado(null);
     setModoEdicao(false);
   };
@@ -394,7 +403,7 @@ export default function Eventos() {
                 </div>
 
                 {/* Informações adicionais em cards */}
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-3 gap-4 mt-4">
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <div className="text-sm font-semibold text-blue-800 mb-1">💰 Custo Total</div>
                     <div className="text-2xl font-bold text-blue-900">
@@ -406,6 +415,14 @@ export default function Eventos() {
                     <div className="text-2xl font-bold text-green-900">
                       {numParticipantes} irmãos
                     </div>
+                  </div>
+                  <div className="bg-purple-50 p-4 rounded-lg flex items-center justify-center">
+                    <button
+                      onClick={() => abrirVisualizacao(evento)}
+                      className="text-purple-700 hover:text-purple-900 font-semibold text-sm flex items-center gap-2"
+                    >
+                      👁️ Ver Detalhes
+                    </button>
                   </div>
                 </div>
               </div>
@@ -687,6 +704,112 @@ export default function Eventos() {
               >
                 💾
                 Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Visualização */}
+      {modalVisualizacao && eventoSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-4 flex justify-between items-center">
+              <h2 className="text-xl font-bold">{eventoSelecionado.nome_evento}</h2>
+              <button onClick={fecharModal} className="text-gray-500 hover:text-gray-700">
+                ✖️
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Tipo:</span>
+                  <p className="text-lg">{eventoSelecionado.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Status:</span>
+                  <p className="text-lg">
+                    {eventoSelecionado.status === 'planejamento' ? '📋 Planejamento' :
+                     eventoSelecionado.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Idealizador:</span>
+                  <p className="text-lg">{eventoSelecionado.idealizador || 'Não informado'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Local:</span>
+                  <p className="text-lg">{eventoSelecionado.local_evento || 'Não informado'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Data do Aviso:</span>
+                  <p className="text-lg">{eventoSelecionado.data_aviso ? new Date(eventoSelecionado.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                </div>
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Data do Evento:</span>
+                  <p className="text-lg">{new Date(eventoSelecionado.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                </div>
+              </div>
+
+              {eventoSelecionado.descricao && (
+                <div>
+                  <span className="text-sm font-semibold text-gray-600">Descrição:</span>
+                  <p className="text-gray-700 mt-1">{eventoSelecionado.descricao}</p>
+                </div>
+              )}
+
+              {/* Itens */}
+              {itensEvento.length > 0 && (
+                <div className="border-t pt-4">
+                  <h3 className="font-bold mb-3 text-lg">💰 Itens e Custos</h3>
+                  <div className="space-y-2">
+                    {itensEvento.map((item, index) => (
+                      <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded">
+                        <span className="font-medium">{item.descricao}</span>
+                        <div className="flex gap-4 text-sm">
+                          <span>{item.quantidade}x</span>
+                          <span>R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
+                          <span className="font-bold text-blue-600">
+                            R$ {(parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-blue-900">Total</span>
+                        <span className="text-2xl font-bold text-blue-900">
+                          R$ {itensEvento.reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Participantes */}
+              {participantes.length > 0 && (
+                <div className="border-t pt-4">
+                  <h3 className="font-bold mb-3 text-lg">👥 Irmãos Participantes ({participantes.length})</h3>
+                  <div className="grid grid-cols-4 gap-2">
+                    {participantes.map((part, index) => (
+                      <div key={index} className="bg-gray-50 p-2 rounded text-sm text-center border hover:bg-gray-100">
+                        {part.irmaos?.nome || 'Nome não encontrado'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end">
+              <button
+                onClick={fecharModal}
+                className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Fechar
               </button>
             </div>
           </div>
