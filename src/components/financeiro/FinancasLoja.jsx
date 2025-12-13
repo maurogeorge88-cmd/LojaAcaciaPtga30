@@ -1098,7 +1098,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     // DESPESAS HIERÁRQUICAS
     // ========================================
-    const despesasHierarquia = organizarHierarquia('despesa');
+    const despesasHierarquia = organizarHierarquiaAgrupada('despesa');
     const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     // Título Despesas
@@ -1238,19 +1238,58 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
     
     // Adicionar lançamentos agrupados de volta ao array
-    const lancamentosAgrupados = [
+    const lancamentosParaRelatorio = [
       ...lancamentosSemAgrupar,
       ...Object.values(agrupamentoIrmaos)
     ];
     
-    // SUBSTITUIR temporariamente o array de lançamentos
-    const lancamentosOriginais = [...lancamentos];
-    lancamentos = lancamentosAgrupados;
+    // ========================================
+    // ORGANIZAR POR HIERARQUIA (usando lancamentos agrupados)
+    // ========================================
+    const organizarHierarquiaAgrupada = (tipo) => {
+      const catsPrincipais = categorias.filter(c => 
+        c.tipo === tipo && 
+        (c.nivel === 1 || !c.categoria_pai_id)
+      );
+
+      return catsPrincipais.map(principal => {
+        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
+        
+        const lancsDiretos = lancamentosParaRelatorio.filter(l => 
+          l.categoria_id === principal.id &&
+          l.categorias_financeiras?.tipo === tipo &&
+          l.status === 'pago'
+        );
+        
+        const subcatsComLancs = subcats.map(sub => {
+          const lancsSubcat = lancamentosParaRelatorio.filter(l => 
+            l.categoria_id === sub.id &&
+            l.categorias_financeiras?.tipo === tipo &&
+            l.status === 'pago'
+          );
+          return {
+            categoria: sub,
+            lancamentos: lancsSubcat,
+            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
+          };
+        }).filter(sc => sc.lancamentos.length > 0);
+
+        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
+
+        return {
+          principal,
+          lancamentosDiretos: lancsDiretos,
+          subcategorias: subcatsComLancs,
+          subtotalTotal: subtotalDireto + subtotalSubs
+        };
+      }).filter(cp => cp.subtotalTotal > 0);
+    };
     
     // ========================================
     // RECEITAS HIERÁRQUICAS
     // ========================================
-    const receitasHierarquia = organizarHierarquia('receita');
+    const receitasHierarquia = organizarHierarquiaAgrupada('receita');
     const totalReceitas = receitasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     if (yPos > 240) {
