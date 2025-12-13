@@ -1145,9 +1145,97 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
 
     // ========================================
+    // AGRUPAR ÁGAPE E PECÚLIO POR IRMÃO
+    // ========================================
+    const lancamentosAgrupados = [];
+    const agrupamentosAgape = {};
+    const agrupamentosPeculio = {};
+    
+    lancamentos.filter(l => l.status === 'pago').forEach(lanc => {
+      const categoria = lanc.categorias_financeiras?.nome?.toLowerCase() || '';
+      
+      // Agrupar ÁGAPE
+      if (categoria.includes('agape') || categoria.includes('ágape')) {
+        const key = `${lanc.origem_irmao_id}_${lanc.data_pagamento}`;
+        if (!agrupamentosAgape[key]) {
+          agrupamentosAgape[key] = {
+            ...lanc,
+            valor: 0,
+            descricao: lanc.irmaos?.nome || 'Irmão'
+          };
+        }
+        agrupamentosAgape[key].valor += parseFloat(lanc.valor);
+      }
+      // Agrupar PECÚLIO
+      else if (categoria.includes('peculio') || categoria.includes('pecúlio')) {
+        const key = `${lanc.origem_irmao_id}_${lanc.data_pagamento}`;
+        if (!agrupamentosPeculio[key]) {
+          agrupamentosPeculio[key] = {
+            ...lanc,
+            valor: 0,
+            descricao: lanc.irmaos?.nome || 'Irmão'
+          };
+        }
+        agrupamentosPeculio[key].valor += parseFloat(lanc.valor);
+      }
+      // Lançamentos normais (não Ágape nem Pecúlio)
+      else {
+        lancamentosAgrupados.push(lanc);
+      }
+    });
+    
+    // Adicionar agrupamentos de volta
+    const todosLancamentos = [
+      ...lancamentosAgrupados,
+      ...Object.values(agrupamentosAgape),
+      ...Object.values(agrupamentosPeculio)
+    ];
+    
+    // Criar função que usa lançamentos agrupados
+    const organizarHierarquiaAgrupada = (tipo) => {
+      const catsPrincipais = categorias.filter(c => 
+        c.tipo === tipo && 
+        (c.nivel === 1 || !c.categoria_pai_id)
+      );
+
+      return catsPrincipais.map(principal => {
+        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
+        
+        const lancsDiretos = todosLancamentos.filter(l => 
+          l.categoria_id === principal.id &&
+          l.categorias_financeiras?.tipo === tipo &&
+          l.status === 'pago'
+        );
+        
+        const subcatsComLancs = subcats.map(sub => {
+          const lancsSubcat = todosLancamentos.filter(l => 
+            l.categoria_id === sub.id &&
+            l.categorias_financeiras?.tipo === tipo &&
+            l.status === 'pago'
+          );
+          return {
+            categoria: sub,
+            lancamentos: lancsSubcat,
+            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
+          };
+        }).filter(sc => sc.lancamentos.length > 0);
+
+        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
+
+        return {
+          principal,
+          lancamentosDiretos: lancsDiretos,
+          subcategorias: subcatsComLancs,
+          subtotalTotal: subtotalDireto + subtotalSubs
+        };
+      }).filter(cp => cp.subtotalTotal > 0);
+    };
+
+    // ========================================
     // RECEITAS HIERÁRQUICAS
     // ========================================
-    const receitasHierarquia = organizarHierarquia('receita');
+    const receitasHierarquia = organizarHierarquiaAgrupada('receita');
     const totalReceitas = receitasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     if (yPos > 240) {
