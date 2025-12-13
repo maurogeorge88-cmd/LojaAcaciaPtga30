@@ -3600,10 +3600,11 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
   // VALOR ORIGINAL: Tentar pegar das observações primeiro, senão calcular
   let valorOriginal;
   
-  // Tentar extrair das observações: "[Valor original: R$ 200,00 |"
-  const matchObservacoes = lancamento.observacoes?.match(/Valor original: R\$ ([\d.,]+)/);
+  // Tentar extrair das observações: "[Valor original: R$ 200.00 |" (formato com ponto decimal)
+  const matchObservacoes = lancamento.observacoes?.match(/Valor original: R\$ ([\d.]+)/);
   if (matchObservacoes) {
-    valorOriginal = parseFloat(matchObservacoes[1].replace('.', '').replace(',', '.'));
+    // Valor está salvo como "200.00" (formato padrão toFixed)
+    valorOriginal = parseFloat(matchObservacoes[1]);
   } else if (totalCompensado > 0 || totalPago > 0) {
     // Se já tem compensação ou pagamento, calcular valor original
     valorOriginal = parseFloat(lancamento.valor) + totalPago + totalCompensado;
