@@ -1362,7 +1362,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         doc.setFont('helvetica', 'normal');
         doc.text(dataLanc, 10, yPos);
-        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+        doc.text('Irmãos - Acacia', 32, yPos);
         doc.text('Mensalidade', 80, yPos);
         doc.text('', 140, yPos);
         doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
@@ -1391,7 +1391,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         }
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
-        const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+        const interessado = 'Irmãos - Acacia';
         let descricao = lanc.descricao?.substring(0, 28) || '';
         // Simplificar nome de Mensalidade
         if (descricao === 'Mensalidade e Peculio - Irmao') {
@@ -1418,7 +1418,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           }
 
           const dataLanc = formatarDataBR(lanc.data_pagamento);
-          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+          const interessado = 'Irmãos - Acacia';
           let descricao = lanc.descricao?.substring(0, 28) || '';
           // Simplificar nome de Mensalidade
           if (descricao === 'Mensalidade e Peculio - Irmao') {
