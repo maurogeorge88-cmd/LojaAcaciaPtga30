@@ -322,7 +322,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           return lanc;
         }
 
-        // Buscar pagamentos parciais deste lançamento
+        // Buscar pagamentos parciais deste lançamento para mostrar o total pago
         const { data: pagamentosParcias, error: errPag } = await supabase
           .from('lancamentos_loja')
           .select('valor, tipo_pagamento')
@@ -334,13 +334,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           const pagamentosReais = pagamentosParcias.filter(p => p.tipo_pagamento !== 'compensacao');
           const totalPago = pagamentosReais.reduce((sum, p) => sum + parseFloat(p.valor), 0);
           
-          // Retornar lançamento com valor ajustado e informação extra
+          // Calcular compensações para saber o valor original antes de tudo
+          const compensacoes = pagamentosParcias.filter(p => p.tipo_pagamento === 'compensacao');
+          const totalCompensado = compensacoes.reduce((sum, p) => sum + parseFloat(p.valor), 0);
+          
+          // Valor original = valor atual + pagamentos + compensações
+          const valorOriginalCalculado = parseFloat(lanc.valor) + totalPago + totalCompensado;
+          
+          // NÃO SUBTRAIR totalPago do valor, pois o banco já foi atualizado pelos pagamentos
+          // Apenas adicionar informações extras para exibição
           return {
             ...lanc,
-            valor_original: lanc.valor,
-            valor: lanc.valor - totalPago, // Valor restante
+            valor_original: valorOriginalCalculado,
             total_pago_parcial: totalPago,
-            tem_pagamento_parcial: true
+            tem_pagamento_parcial: totalPago > 0 || totalCompensado > 0
           };
         }
 
