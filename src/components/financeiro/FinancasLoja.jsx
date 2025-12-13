@@ -1049,6 +1049,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     const despesasHierarquia = organizarHierarquia('despesa');
     const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
+    
+    // Calcular total de compensações (para exibir separadamente)
+    const totalCompensacoes = lancamentos
+      .filter(l => l.status === 'pago' && l.tipo_pagamento === 'compensacao')
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     // Título Despesas
     doc.setFillColor(154, 205, 50);
@@ -1395,28 +1400,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.text('Total Geral de Receita e Despesa', 105, yPos + 5.5, { align: 'center' });
     
     yPos += 12;
+    doc.setTextColor(0, 0, 0);
 
-    // Total Receita (AZUL)
-    doc.setTextColor(33, 150, 243);
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
     doc.text('Total Receita', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 200, yPos, { align: 'right' });
-    yPos += 6;
+    doc.text(`R$ ${totalReceitas.toFixed(2)}`, 200, yPos, { align: 'right' });
+    yPos += 5;
     
-    // Total Despesa (VERMELHO)
-    doc.setTextColor(244, 67, 54);
     doc.text('Total Despesa', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 200, yPos, { align: 'right' });
-    yPos += 7;
+    doc.text(`R$ ${totalDespesas.toFixed(2)}`, 200, yPos, { align: 'right' });
+    yPos += 5;
+    
+    doc.text('Valores Compensados', 150, yPos, { align: 'right' });
+    doc.text(`R$ ${totalCompensacoes.toFixed(2)}`, 200, yPos, { align: 'right' });
+    yPos += 6;
 
-    // Saldo Total (AZUL se positivo, VERMELHO se negativo)
-    const corSaldo = saldoTotal >= 0 ? [33, 150, 243] : [244, 67, 54];
+    const corSaldo = saldoTotal >= 0 ? [0, 0, 0] : [255, 0, 0];
     doc.setTextColor(corSaldo[0], corSaldo[1], corSaldo[2]);
-    doc.setFontSize(13);
     doc.text('Saldo Total', 150, yPos, { align: 'right' });
-    const saldoFormatado = Math.abs(saldoTotal).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    doc.text(`${saldoTotal < 0 ? '-' : ''}R$ ${saldoFormatado}`, 200, yPos, { align: 'right' });
+    doc.text(`${saldoTotal >= 0 ? '' : '-'}R$ ${Math.abs(saldoTotal).toFixed(2)}`, 200, yPos, { align: 'right' });
 
     // Rodapé
     const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
