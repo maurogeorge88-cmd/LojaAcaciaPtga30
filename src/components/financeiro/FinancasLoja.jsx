@@ -1363,7 +1363,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         doc.setFont('helvetica', 'normal');
         doc.text(dataLanc, 10, yPos);
         doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
-        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
+        doc.text('Mensalidade', 80, yPos);
         doc.text('', 140, yPos);
         doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
         yPos += 4;
