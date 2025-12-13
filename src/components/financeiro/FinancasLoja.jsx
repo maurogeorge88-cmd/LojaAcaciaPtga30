@@ -3858,8 +3858,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           if (error) throw error;
         } else {
           // Compensação parcial do débito
-          // NÃO reduzir valor no banco - apenas criar registro de pagamento parcial
-          // O sistema já recalcula automaticamente ao carregar
           
           // Criar registro de pagamento parcial
           const { error: errorInsert } = await supabase
@@ -3881,6 +3879,18 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
             });
             
           if (errorInsert) throw errorInsert;
+          
+          // ATUALIZAR o valor do lançamento original para refletir a compensação
+          const novoValor = valorDebito - valorACompensar;
+          const { error: errorUpdate } = await supabase
+            .from('lancamentos_loja')
+            .update({
+              valor: novoValor,
+              observacoes: `${debito.observacoes || ''}\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`.trim()
+            })
+            .eq('id', debitoId);
+            
+          if (errorUpdate) throw errorUpdate;
         }
       }
       
@@ -3907,8 +3917,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           if (error) throw error;
         } else {
           // Compensação parcial do crédito
-          // NÃO reduzir valor no banco - apenas criar registro de pagamento parcial
-          // O sistema já recalcula automaticamente ao carregar
           
           // Criar registro de pagamento parcial
           const { error: errorInsert } = await supabase
@@ -3930,6 +3938,18 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
             });
             
           if (errorInsert) throw errorInsert;
+          
+          // ATUALIZAR o valor do lançamento original para refletir a compensação
+          const novoValor = valorCredito - valorACompensar;
+          const { error: errorUpdate } = await supabase
+            .from('lancamentos_loja')
+            .update({
+              valor: novoValor,
+              observacoes: `${credito.observacoes || ''}\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`.trim()
+            })
+            .eq('id', creditoId);
+            
+          if (errorUpdate) throw errorUpdate;
         }
       }
       
