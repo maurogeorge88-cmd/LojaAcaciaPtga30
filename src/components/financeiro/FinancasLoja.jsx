@@ -1227,7 +1227,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       
       // Agrupar apenas lançamentos com DESCRIÇÃO específica
       // MENSALIDADE E PECULIO - IRMAO (descrição específica)
-      if (descricao === 'Mensalidade e Peculio - Irmao') {
+      if (descricao === 'Mensalidade') {
         totais['Mensalidade'].valor += parseFloat(lanc.valor);
         totais['Mensalidade'].categoria_id = lanc.categoria_id;
         totais['Mensalidade'].data_pagamento = lanc.data_pagamento;
