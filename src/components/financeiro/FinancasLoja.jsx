@@ -874,7 +874,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(tipo)')
         .eq('status', 'pago')
-        .lt('data_lancamento', dataLimite)
+        .lt('data_pagamento', dataLimite)  // ← MUDANÇA: data_pagamento
         .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais duplicados
 
       if (error) throw error;
@@ -925,7 +925,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     // Título
     doc.setFontSize(18);
-    doc.text('Relatório Financeiro da Loja', 14, 20);
+    doc.text('Relatório Financeiro da Loja - Fechamento do Mês', 14, 20);
     
     // Período
     doc.setFontSize(12);
@@ -941,28 +941,81 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.text(`Despesas Pagas: R$ ${resumo.despesas.toFixed(2)}`, 14, 60);
     doc.text(`Saldo do Período: R$ ${resumo.saldoPeriodo.toFixed(2)}`, 14, 66);
     doc.text(`Saldo Total: R$ ${resumo.saldoTotal.toFixed(2)}`, 14, 72);
-    doc.text(`Receitas Pendentes: R$ ${resumo.receitasPendentes.toFixed(2)}`, 14, 78);
-    doc.text(`Despesas Pendentes: R$ ${resumo.despesasPendentes.toFixed(2)}`, 14, 84);
 
-    // Tabela de lançamentos
-    const dadosTabela = lancamentos.map(l => [
-      formatarDataBR(l.data_lancamento),
+    // FILTRAR apenas lançamentos PAGOS (não mostrar pendentes)
+    const lancamentosPagos = lancamentos.filter(l => l.status === 'pago' && l.data_pagamento);
+    
+    // AGRUPAR valores de irmãos (mensalidade, ágape, pecúlio, cota chope, etc)
+    const agrupamentoIrmaos = {};
+    const lancamentosAgrupados = [];
+    
+    lancamentosPagos.forEach(l => {
+      const categoria = l.categorias_financeiras?.nome?.toLowerCase() || '';
+      const isValorIrmao = categoria.includes('mensalidade') || 
+                          categoria.includes('ágape') || 
+                          categoria.includes('agape') ||
+                          categoria.includes('pecúlio') || 
+                          categoria.includes('peculio') ||
+                          categoria.includes('cota') ||
+                          categoria.includes('chope') ||
+                          categoria.includes('chop');
+      
+      if (isValorIrmao && l.origem_irmao_id) {
+        // Agrupar por irmão
+        const key = `irmao_${l.origem_irmao_id}_${l.data_pagamento}`;
+        if (!agrupamentoIrmaos[key]) {
+          agrupamentoIrmaos[key] = {
+            data_pagamento: l.data_pagamento,
+            irmao: l.irmaos?.nome || 'Irmão',
+            valor: 0,
+            descricoes: []
+          };
+        }
+        agrupamentoIrmaos[key].valor += parseFloat(l.valor);
+        agrupamentoIrmaos[key].descricoes.push(categoria);
+      } else {
+        // Lançamento normal (não é de irmão)
+        lancamentosAgrupados.push(l);
+      }
+    });
+    
+    // Adicionar lançamentos agrupados de irmãos
+    Object.values(agrupamentoIrmaos).forEach(grupo => {
+      lancamentosAgrupados.push({
+        data_pagamento: grupo.data_pagamento,
+        categorias_financeiras: { tipo: 'receita', nome: 'Valores de Irmãos' },
+        descricao: grupo.irmao,
+        valor: grupo.valor,
+        status: 'pago'
+      });
+    });
+    
+    // ORDENAR por data de pagamento
+    lancamentosAgrupados.sort((a, b) => {
+      const dataA = new Date(a.data_pagamento + 'T00:00:00');
+      const dataB = new Date(b.data_pagamento + 'T00:00:00');
+      return dataA - dataB;
+    });
+
+    // Tabela de lançamentos (usar data_pagamento)
+    const dadosTabela = lancamentosAgrupados.map(l => [
+      formatarDataBR(l.data_pagamento),  // ← MUDANÇA: data_pagamento
       l.categorias_financeiras?.tipo === 'receita' ? 'Receita' : 'Despesa',
       l.categorias_financeiras?.nome,
       l.descricao,
       `R$ ${parseFloat(l.valor).toFixed(2)}`,
-      l.status === 'pago' ? 'Pago' : 'Pendente'
+      'Pago'  // ← Todos são pagos
     ]);
 
     doc.autoTable({
-      head: [['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Status']],
+      head: [['Data Pgto', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Status']],
       body: dadosTabela,
-      startY: 92,
+      startY: 80,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [41, 128, 185] }
     });
 
-    doc.save(`relatorio-financeiro-${filtros.mes}-${filtros.ano}.pdf`);
+    doc.save(`fechamento-mensal-${filtros.mes}-${filtros.ano}.pdf`);
   };
 
   // ========================================
