@@ -73,15 +73,19 @@ export default function Eventos() {
   const carregarIrmaos = async () => {
     const { data, error } = await supabase
       .from('irmaos')
-      .select('id, nome, tipo_membro')
-      .in('tipo_membro', ['regular', 'licenciado'])
+      .select('id, nome, situacao')
       .order('nome');
     
     if (error) {
       console.error('Erro ao carregar irmãos:', error);
     } else {
-      console.log('Irmãos carregados:', data);
-      setIrmaos(data || []);
+      // Filtrar apenas regulares e licenciados
+      const irmaosFiltrados = (data || []).filter(irmao => {
+        const situacao = (irmao.situacao || 'regular').toLowerCase();
+        return situacao === 'regular' || situacao === 'licenciado';
+      });
+      console.log('Irmãos carregados:', irmaosFiltrados);
+      setIrmaos(irmaosFiltrados);
     }
   };
 
