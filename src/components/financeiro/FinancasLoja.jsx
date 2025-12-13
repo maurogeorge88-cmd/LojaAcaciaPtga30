@@ -874,7 +874,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(tipo)')
         .eq('status', 'pago')
-        .lt('data_pagamento', dataLimite)  // ← MUDANÇA: data_pagamento
+        .lt('data_lancamento', dataLimite)
         .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais duplicados
 
       if (error) throw error;
@@ -925,7 +925,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     // Título
     doc.setFontSize(18);
-    doc.text('Relatório Financeiro da Loja - Fechamento do Mês', 14, 20);
+    doc.text('Relatório Financeiro da Loja', 14, 20);
     
     // Período
     doc.setFontSize(12);
@@ -941,81 +941,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.text(`Despesas Pagas: R$ ${resumo.despesas.toFixed(2)}`, 14, 60);
     doc.text(`Saldo do Período: R$ ${resumo.saldoPeriodo.toFixed(2)}`, 14, 66);
     doc.text(`Saldo Total: R$ ${resumo.saldoTotal.toFixed(2)}`, 14, 72);
+    doc.text(`Receitas Pendentes: R$ ${resumo.receitasPendentes.toFixed(2)}`, 14, 78);
+    doc.text(`Despesas Pendentes: R$ ${resumo.despesasPendentes.toFixed(2)}`, 14, 84);
 
-    // FILTRAR apenas lançamentos PAGOS (não mostrar pendentes)
-    const lancamentosPagos = lancamentos.filter(l => l.status === 'pago' && l.data_pagamento);
-    
-    // AGRUPAR valores de irmãos (mensalidade, ágape, pecúlio, cota chope, etc)
-    const agrupamentoIrmaos = {};
-    const lancamentosAgrupados = [];
-    
-    lancamentosPagos.forEach(l => {
-      const categoria = l.categorias_financeiras?.nome?.toLowerCase() || '';
-      const isValorIrmao = categoria.includes('mensalidade') || 
-                          categoria.includes('ágape') || 
-                          categoria.includes('agape') ||
-                          categoria.includes('pecúlio') || 
-                          categoria.includes('peculio') ||
-                          categoria.includes('cota') ||
-                          categoria.includes('chope') ||
-                          categoria.includes('chop');
-      
-      if (isValorIrmao && l.origem_irmao_id) {
-        // Agrupar por irmão
-        const key = `irmao_${l.origem_irmao_id}_${l.data_pagamento}`;
-        if (!agrupamentoIrmaos[key]) {
-          agrupamentoIrmaos[key] = {
-            data_pagamento: l.data_pagamento,
-            irmao: l.irmaos?.nome || 'Irmão',
-            valor: 0,
-            descricoes: []
-          };
-        }
-        agrupamentoIrmaos[key].valor += parseFloat(l.valor);
-        agrupamentoIrmaos[key].descricoes.push(categoria);
-      } else {
-        // Lançamento normal (não é de irmão)
-        lancamentosAgrupados.push(l);
-      }
-    });
-    
-    // Adicionar lançamentos agrupados de irmãos
-    Object.values(agrupamentoIrmaos).forEach(grupo => {
-      lancamentosAgrupados.push({
-        data_pagamento: grupo.data_pagamento,
-        categorias_financeiras: { tipo: 'receita', nome: 'Valores de Irmãos' },
-        descricao: grupo.irmao,
-        valor: grupo.valor,
-        status: 'pago'
-      });
-    });
-    
-    // ORDENAR por data de pagamento
-    lancamentosAgrupados.sort((a, b) => {
-      const dataA = new Date(a.data_pagamento + 'T00:00:00');
-      const dataB = new Date(b.data_pagamento + 'T00:00:00');
-      return dataA - dataB;
-    });
-
-    // Tabela de lançamentos (usar data_pagamento)
-    const dadosTabela = lancamentosAgrupados.map(l => [
-      formatarDataBR(l.data_pagamento),  // ← MUDANÇA: data_pagamento
+    // Tabela de lançamentos
+    const dadosTabela = lancamentos.map(l => [
+      formatarDataBR(l.data_pagamento),
       l.categorias_financeiras?.tipo === 'receita' ? 'Receita' : 'Despesa',
       l.categorias_financeiras?.nome,
       l.descricao,
       `R$ ${parseFloat(l.valor).toFixed(2)}`,
-      'Pago'  // ← Todos são pagos
+      l.status === 'pago' ? 'Pago' : 'Pendente'
     ]);
 
     doc.autoTable({
-      head: [['Data Pgto', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Status']],
+      head: [['Data', 'Tipo', 'Categoria', 'Descrição', 'Valor', 'Status']],
       body: dadosTabela,
-      startY: 80,
+      startY: 92,
       styles: { fontSize: 8 },
       headStyles: { fillColor: [41, 128, 185] }
     });
 
-    doc.save(`fechamento-mensal-${filtros.mes}-${filtros.ano}.pdf`);
+    doc.save(`relatorio-financeiro-${filtros.mes}-${filtros.ano}.pdf`);
   };
 
   // ========================================
@@ -1050,10 +997,53 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     // ========================================
     // ORGANIZAR POR HIERARQUIA
     // ========================================
+    const organizarHierarquia = (tipo) => {
+      // Pegar categorias principais (nível 1)
+      const catsPrincipais = categorias.filter(c => 
+        c.tipo === tipo && 
+        (c.nivel === 1 || !c.categoria_pai_id)
+      );
+
+      // Para cada principal, buscar subcategorias e lançamentos
+      return catsPrincipais.map(principal => {
+        // Subcategorias desta principal
+        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
+        
+        // Lançamentos diretos na principal
+        const lancsDiretos = lancamentos.filter(l => 
+          l.categoria_id === principal.id &&
+          l.categorias_financeiras?.tipo === tipo
+        );
+        
+        // Subcategorias com lançamentos
+        const subcatsComLancs = subcats.map(sub => {
+          const lancsSubcat = lancamentos.filter(l => 
+            l.categoria_id === sub.id &&
+            l.categorias_financeiras?.tipo === tipo
+          );
+          return {
+            categoria: sub,
+            lancamentos: lancsSubcat,
+            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
+          };
+        }).filter(sc => sc.lancamentos.length > 0);
+
+        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
+
+        return {
+          principal,
+          lancamentosDiretos: lancsDiretos,
+          subcategorias: subcatsComLancs,
+          subtotalTotal: subtotalDireto + subtotalSubs
+        };
+      }).filter(cp => cp.subtotalTotal > 0); // Só mostrar se tiver valores
+    };
+
     // ========================================
     // DESPESAS HIERÁRQUICAS
     // ========================================
-    const receitasHierarquia = organizarHierarquia('receita');
+    const despesasHierarquia = organizarHierarquia('despesa');
     const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     // Título Despesas
@@ -1085,7 +1075,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       // Cabeçalho da tabela
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('DataPgto', 10, yPos);
+      doc.text('DataLanc', 10, yPos);
       doc.text('Interessado', 32, yPos);
       doc.text('Descrição', 80, yPos);
       doc.text('Obs', 140, yPos);
@@ -1100,7 +1090,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           yPos = 20;
         }
 
-        const dataLanc = formatarDataBR(lanc.data_pagamento);
+        const dataLanc = formatarDataBR(lanc.data_lancamento);
         const interessado = lanc.origem_tipo === 'Loja' ? 
           (lanc.descricao.substring(0, 22)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
@@ -1125,7 +1115,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             yPos = 20;
           }
 
-          const dataLanc = formatarDataBR(lanc.data_pagamento);
+          const dataLanc = formatarDataBR(lanc.data_lancamento);
           const interessado = lanc.origem_tipo === 'Loja' ? 
             (lanc.descricao.substring(0, 22)) : 
             (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
@@ -1153,95 +1143,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
 
     // ========================================
-    // AGRUPAR VALORES DE IRMÃOS (Mensalidade/Ágape/Pecúlio/Cota)
+    // RECEITAS HIERÁRQUICAS
     // ========================================
-    const agrupamentoIrmaos = {};
-    const lancamentosSemAgrupar = [];
-    
-    lancamentos.filter(l => l.status === 'pago').forEach(l => {
-      const categoria = l.categorias_financeiras?.nome?.toLowerCase() || '';
-      const isValorIrmao = categoria.includes('mensalidade') || 
-                          categoria.includes('ágape') || 
-                          categoria.includes('agape') ||
-                          categoria.includes('pecúlio') || 
-                          categoria.includes('peculio') ||
-                          categoria.includes('cota') ||
-                          categoria.includes('chope') ||
-                          categoria.includes('chop');
-      
-      if (isValorIrmao && l.origem_irmao_id && l.categorias_financeiras?.tipo === 'receita') {
-        // Agrupar por irmão + data
-        const key = `${l.origem_irmao_id}_${l.data_pagamento}`;
-        if (!agrupamentoIrmaos[key]) {
-          agrupamentoIrmaos[key] = {
-            ...l,
-            valor: 0,
-            descricao: l.irmaos?.nome || 'Irmão',
-            categoria_original: l.categorias_financeiras?.nome
-          };
-          agrupamentoIrmaos[key].categorias_financeiras = {
-            ...l.categorias_financeiras,
-            nome: 'Mensalidade/Ágape/Pecúlio'
-          };
-        }
-        agrupamentoIrmaos[key].valor += parseFloat(l.valor);
-      } else {
-        lancamentosSemAgrupar.push(l);
-      }
-    });
-    
-    const lancamentosParaRelatorio = [
-      ...lancamentosSemAgrupar,
-      ...Object.values(agrupamentoIrmaos)
-    ];
-    
-    // ========================================
-    // ORGANIZAR POR HIERARQUIA
-    // ========================================
-    const organizarHierarquia = (tipo, lancsArray = lancamentosParaRelatorio) => {
-      const catsPrincipais = categorias.filter(c => 
-        c.tipo === tipo && 
-        (c.nivel === 1 || !c.categoria_pai_id)
-      );
-
-      return catsPrincipais.map(principal => {
-        const subcats = categorias.filter(c => c.categoria_pai_id === principal.id);
-        
-        const lancsDiretos = lancsArray.filter(l => 
-          l.categoria_id === principal.id &&
-          l.categorias_financeiras?.tipo === tipo &&
-          l.status === 'pago'
-        );
-        
-        const subcatsComLancs = subcats.map(sub => {
-          const lancsSubcat = lancsArray.filter(l => 
-            l.categoria_id === sub.id &&
-            l.categorias_financeiras?.tipo === tipo &&
-            l.status === 'pago'
-          );
-          return {
-            categoria: sub,
-            lancamentos: lancsSubcat,
-            subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
-          };
-        }).filter(sc => sc.lancamentos.length > 0);
-
-        const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-        const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
-
-        return {
-          principal,
-          lancamentosDiretos: lancsDiretos,
-          subcategorias: subcatsComLancs,
-          subtotalTotal: subtotalDireto + subtotalSubs
-        };
-      }).filter(cp => cp.subtotalTotal > 0);
-    };
-    
-    // ========================================
-    // DESPESAS HIERÁRQUICAS
-    // ========================================
-    const despesasHierarquia = organizarHierarquia('despesa');
+    const receitasHierarquia = organizarHierarquia('receita');
     const totalReceitas = receitasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
     if (yPos > 240) {
@@ -1283,7 +1187,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('DataPgto', 10, yPos);
+        doc.text('DataLanc', 10, yPos);
         doc.text('Interessado', 32, yPos);
         doc.text('Descrição', 80, yPos);
         doc.text('Obs', 140, yPos);
@@ -1304,7 +1208,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         // Cabeçalho para outras categorias
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
-        doc.text('DataPgto', 10, yPos);
+        doc.text('DataLanc', 10, yPos);
         doc.text('Interessado', 32, yPos);
         doc.text('Descrição', 80, yPos);
         doc.text('Obs', 140, yPos);
@@ -1320,7 +1224,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           yPos = 20;
         }
 
-        const dataLanc = formatarDataBR(lanc.data_pagamento);
+        const dataLanc = formatarDataBR(lanc.data_lancamento);
         const interessado = 'Irmãos - Acacia Paranatinga nº 30';
         const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
         const obs = (lanc.observacoes || '').substring(0, 35);
@@ -1343,7 +1247,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             yPos = 20;
           }
 
-          const dataLanc = formatarDataBR(lanc.data_pagamento);
+          const dataLanc = formatarDataBR(lanc.data_lancamento);
           const interessado = 'Irmãos - Acacia Paranatinga nº 30';
           const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
           const obs = (lanc.observacoes || '').substring(0, 35);
@@ -2854,7 +2758,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                                   {/* Informações detalhadas - DATAS NA MESMA LINHA */}
                                   <div className="text-sm text-gray-600">
                                     <p className="mb-1">
-                                      <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_pagamento)}
+                                      <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_lancamento)}
                                       <span className="mx-2">•</span>
                                       <span className={`font-medium ${ehReceita ? 'text-red-600' : 'text-blue-600'}`}>
                                         ⏰ Vencimento:
@@ -2943,7 +2847,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_pagamento)}
+                      {formatarDataBR(lanc.data_lancamento)}
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
