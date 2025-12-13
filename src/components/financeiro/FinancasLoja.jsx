@@ -1392,7 +1392,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
         const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+        const descricao = lanc.descricao?.substring(0, 28) || '';  // ← Usar descricao!
         const obs = (lanc.observacoes || '').substring(0, 35);
         const valor = parseFloat(lanc.valor);
 
@@ -1415,7 +1415,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
           const dataLanc = formatarDataBR(lanc.data_pagamento);
           const interessado = 'Irmãos - Acacia Paranatinga nº 30';
-          const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
+          const descricao = lanc.descricao?.substring(0, 28) || '';  // ← Usar descricao!
           const obs = (lanc.observacoes || '').substring(0, 35);
           const valor = parseFloat(lanc.valor);
 
