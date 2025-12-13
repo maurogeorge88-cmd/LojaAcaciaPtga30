@@ -73,13 +73,14 @@ export default function Eventos() {
   const carregarIrmaos = async () => {
     const { data, error } = await supabase
       .from('irmaos')
-      .select('id, nome')
-      .eq('ativo', true)
+      .select('id, nome, tipo_membro')
+      .in('tipo_membro', ['regular', 'licenciado'])
       .order('nome');
     
     if (error) {
       console.error('Erro ao carregar irmãos:', error);
     } else {
+      console.log('Irmãos carregados:', data);
       setIrmaos(data || []);
     }
   };
