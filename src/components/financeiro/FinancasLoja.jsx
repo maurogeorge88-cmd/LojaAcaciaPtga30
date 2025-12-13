@@ -1050,9 +1050,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     const despesasHierarquia = organizarHierarquia('despesa');
     const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
     
-    // Calcular total de compensações (para exibir separadamente)
+    // Calcular total de compensações (APENAS DESPESAS - Crédito à Irmãos)
     const totalCompensacoes = lancamentos
-      .filter(l => l.status === 'pago' && l.tipo_pagamento === 'compensacao')
+      .filter(l => 
+        l.status === 'pago' && 
+        l.tipo_pagamento === 'compensacao' &&
+        l.categorias_financeiras?.tipo === 'despesa'  // ← Só despesas
+      )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     // Título Despesas
