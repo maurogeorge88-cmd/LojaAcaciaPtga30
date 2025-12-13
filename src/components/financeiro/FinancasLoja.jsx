@@ -330,19 +330,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           .eq('eh_pagamento_parcial', true);
 
         if (!errPag && pagamentosParcias && pagamentosParcias.length > 0) {
-          // Calcular total pago (EXCLUINDO compensações, pois elas já ajustaram o valor no banco)
+          // Separar compensações e pagamentos reais
           const pagamentosReais = pagamentosParcias.filter(p => p.tipo_pagamento !== 'compensacao');
-          const totalPago = pagamentosReais.reduce((sum, p) => sum + parseFloat(p.valor), 0);
-          
-          // Calcular compensações para saber o valor original antes de tudo
           const compensacoes = pagamentosParcias.filter(p => p.tipo_pagamento === 'compensacao');
+          
+          const totalPago = pagamentosReais.reduce((sum, p) => sum + parseFloat(p.valor), 0);
           const totalCompensado = compensacoes.reduce((sum, p) => sum + parseFloat(p.valor), 0);
           
-          // Valor original = valor atual + pagamentos + compensações
+          // Valor original = apenas valor atual + compensações (pagamentos JÁ foram descontados do banco!)
           const valorOriginalCalculado = parseFloat(lanc.valor) + totalPago + totalCompensado;
           
-          // NÃO SUBTRAIR totalPago do valor, pois o banco já foi atualizado pelos pagamentos
-          // Apenas adicionar informações extras para exibição
           return {
             ...lanc,
             valor_original: valorOriginalCalculado,
