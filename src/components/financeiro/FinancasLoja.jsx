@@ -3628,11 +3628,12 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
         return;
       }
 
-      // Calcular se vai quitar tudo
+      // Calcular novo valor restante
+      // IMPORTANTE: Descontar do valor ATUAL no banco (que já tem compensações descontadas)
+      const novoRestante = valorRestante - valorAPagar;
       const novoTotalPago = totalPago + valorAPagar;
-      const novoRestante = valorOriginal - novoTotalPago;
 
-      if (novoRestante === 0) {
+      if (novoRestante <= 0.01) {  // <= 0.01 para evitar problemas de arredondamento
         // ÚLTIMO PAGAMENTO: Não criar registro separado, apenas atualizar o original
         const { error: errorUpdate } = await supabase
           .from('lancamentos_loja')
