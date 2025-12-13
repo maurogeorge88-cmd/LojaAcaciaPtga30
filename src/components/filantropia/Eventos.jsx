@@ -21,14 +21,41 @@ export default function Eventos() {
 
   const [itensEvento, setItensEvento] = useState([]);
   const [novoItem, setNovoItem] = useState({ descricao: '', quantidade: '', valor: '' });
+  const [itemEditando, setItemEditando] = useState(null);
   
   const [participantes, setParticipantes] = useState([]);
   const [novoParticipante, setNovoParticipante] = useState('');
+  
+  // Estados para armazenar itens e participantes de TODOS os eventos
+  const [todosItens, setTodosItens] = useState([]);
+  const [todosParticipantes, setTodosParticipantes] = useState([]);
 
   useEffect(() => {
     carregarEventos();
     carregarIrmaos();
+    carregarTodosItens();
+    carregarTodosParticipantes();
   }, []);
+
+  const carregarTodosItens = async () => {
+    const { data, error } = await supabase
+      .from('eventos_itens')
+      .select('*');
+    
+    if (!error) {
+      setTodosItens(data || []);
+    }
+  };
+
+  const carregarTodosParticipantes = async () => {
+    const { data, error } = await supabase
+      .from('eventos_participantes')
+      .select('*');
+    
+    if (!error) {
+      setTodosParticipantes(data || []);
+    }
+  };
 
   const carregarEventos = async () => {
     const { data, error } = await supabase
@@ -144,6 +171,8 @@ export default function Eventos() {
       } else {
         await salvarItens(eventoSelecionado.id);
         carregarEventos();
+        carregarTodosItens();
+        carregarTodosParticipantes();
         fecharModal();
       }
     } else {
@@ -159,6 +188,8 @@ export default function Eventos() {
       } else if (data && data[0]) {
         await salvarItens(data[0].id);
         carregarEventos();
+        carregarTodosItens();
+        carregarTodosParticipantes();
         fecharModal();
       }
     }
@@ -216,8 +247,27 @@ export default function Eventos() {
   const adicionarItem = () => {
     if (!novoItem.descricao) return;
     
-    setItensEvento([...itensEvento, { ...novoItem }]);
+    if (itemEditando !== null) {
+      // Editando item existente
+      const novosItens = [...itensEvento];
+      novosItens[itemEditando] = { ...novoItem };
+      setItensEvento(novosItens);
+      setItemEditando(null);
+    } else {
+      // Novo item
+      setItensEvento([...itensEvento, { ...novoItem }]);
+    }
     setNovoItem({ descricao: '', quantidade: '', valor: '' });
+  };
+
+  const editarItem = (index) => {
+    setNovoItem(itensEvento[index]);
+    setItemEditando(index);
+  };
+
+  const cancelarEdicaoItem = () => {
+    setNovoItem({ descricao: '', quantidade: '', valor: '' });
+    setItemEditando(null);
   };
 
   const removerItem = async (index, itemId) => {
@@ -265,52 +315,98 @@ export default function Eventos() {
 
       {/* Lista de Eventos */}
       <div className="grid gap-4">
-        {eventos.map(evento => (
-          <div key={evento.id} className="bg-white p-4 rounded-lg shadow">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className={`px-3 py-1 rounded text-sm ${
-                    evento.tipo_evento === 'externo' 
-                      ? 'bg-purple-100 text-purple-800' 
-                      : 'bg-green-100 text-green-800'
-                  }`}>
-                    {evento.tipo_evento === 'externo' ? 'Externo' : 'Interno'}
-                  </span>
-                  <span className={`px-3 py-1 rounded text-sm ${
-                    evento.status === 'planejamento' ? 'bg-yellow-100 text-yellow-800' :
-                    evento.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {evento.status === 'planejamento' ? 'Planejamento' :
-                     evento.status === 'em_andamento' ? 'Em Andamento' : 'Concluído'}
-                  </span>
+        {eventos.map(evento => {
+          const custoTotal = todosItens
+            .filter(item => item.evento_id === evento.id)
+            .reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0);
+          
+          const numParticipantes = todosParticipantes.filter(p => p.evento_id === evento.id).length;
+
+          return (
+            <div key={evento.id} className="bg-white rounded-lg shadow-lg overflow-hidden border-l-4" 
+                 style={{borderLeftColor: evento.tipo_evento === 'externo' ? '#9333ea' : '#10b981'}}>
+              <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+                        evento.tipo_evento === 'externo' 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {evento.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}
+                      </span>
+                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
+                        evento.status === 'planejamento' ? 'bg-yellow-100 text-yellow-800' :
+                        evento.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {evento.status === 'planejamento' ? '📋 Planejamento' :
+                         evento.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">{evento.nome_evento}</h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">👤 Idealizador:</span>
+                        <span>{evento.idealizador || 'Não informado'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">📍 Local:</span>
+                        <span>{evento.local_evento || 'Não informado'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">📅 Aviso:</span>
+                        <span>{evento.data_aviso ? new Date(evento.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">🎯 Evento:</span>
+                        <span>{new Date(evento.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                      </div>
+                    </div>
+                    {evento.descricao && (
+                      <p className="mt-3 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                        {evento.descricao}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => abrirModal(evento)}
+                      className="p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                      title="Editar"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => excluirEvento(evento.id)}
+                      className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="Excluir"
+                    >
+                      🗑️
+                    </button>
+                  </div>
                 </div>
-                <h3 className="text-lg font-bold">{evento.nome_evento}</h3>
-                <p className="text-gray-600 text-sm mt-1">Idealizador: {evento.idealizador}</p>
-                <p className="text-gray-600 text-sm">Local: {evento.local_evento}</p>
-                <div className="flex gap-4 mt-2 text-sm">
-                  <span>📅 Aviso: {new Date(evento.data_aviso).toLocaleDateString('pt-BR')}</span>
-                  <span>📍 Evento: {new Date(evento.data_prevista).toLocaleDateString('pt-BR')}</span>
+
+                {/* Informações adicionais em cards */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <div className="text-sm font-semibold text-blue-800 mb-1">💰 Custo Total</div>
+                    <div className="text-2xl font-bold text-blue-900">
+                      R$ {custoTotal.toFixed(2)}
+                    </div>
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg">
+                    <div className="text-sm font-semibold text-green-800 mb-1">👥 Participantes</div>
+                    <div className="text-2xl font-bold text-green-900">
+                      {numParticipantes} irmãos
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => abrirModal(evento)}
-                  className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                >
-                  ✏️
-                </button>
-                <button
-                  onClick={() => excluirEvento(evento.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded"
-                >
-                  🗑️
-                </button>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Modal */}
@@ -425,22 +521,22 @@ export default function Eventos() {
 
               {/* Itens/Custos */}
               <div className="border-t pt-6">
-                <h3 className="font-bold mb-4">Itens e Custos</h3>
+                <h3 className="font-bold mb-4 text-lg">💰 Itens e Custos</h3>
                 
-                <div className="grid grid-cols-12 gap-2 mb-2">
+                <div className="grid grid-cols-12 gap-2 mb-3">
                   <input
                     type="text"
                     placeholder="Descrição do item"
                     value={novoItem.descricao}
                     onChange={(e) => setNovoItem({...novoItem, descricao: e.target.value})}
-                    className="col-span-6 border rounded px-3 py-2"
+                    className="col-span-5 border rounded px-3 py-2 text-sm"
                   />
                   <input
                     type="number"
                     placeholder="Qtd"
                     value={novoItem.quantidade}
                     onChange={(e) => setNovoItem({...novoItem, quantidade: e.target.value})}
-                    className="col-span-2 border rounded px-3 py-2"
+                    className="col-span-2 border rounded px-3 py-2 text-sm"
                   />
                   <input
                     type="number"
@@ -448,36 +544,79 @@ export default function Eventos() {
                     placeholder="Valor R$"
                     value={novoItem.valor}
                     onChange={(e) => setNovoItem({...novoItem, valor: e.target.value})}
-                    className="col-span-3 border rounded px-3 py-2"
+                    className="col-span-3 border rounded px-3 py-2 text-sm"
                   />
-                  <button
-                    onClick={adicionarItem}
-                    className="col-span-1 bg-green-600 text-white rounded hover:bg-green-700"
-                  >
-                    ➕
-                  </button>
+                  {itemEditando !== null ? (
+                    <>
+                      <button
+                        onClick={adicionarItem}
+                        className="col-span-1 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center"
+                        title="Salvar edição"
+                      >
+                        💾
+                      </button>
+                      <button
+                        onClick={cancelarEdicaoItem}
+                        className="col-span-1 bg-gray-500 text-white rounded hover:bg-gray-600 flex items-center justify-center"
+                        title="Cancelar"
+                      >
+                        ✖️
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={adicionarItem}
+                      className="col-span-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center justify-center gap-1"
+                    >
+                      ➕ Adicionar
+                    </button>
+                  )}
                 </div>
 
                 {itensEvento.length > 0 && (
                   <div className="space-y-2">
+                    <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-gray-600 px-2">
+                      <div className="col-span-5">Descrição</div>
+                      <div className="col-span-2 text-center">Qtd</div>
+                      <div className="col-span-2 text-right">Valor Unit.</div>
+                      <div className="col-span-2 text-right">Total</div>
+                      <div className="col-span-1"></div>
+                    </div>
                     {itensEvento.map((item, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-gray-50 p-2 rounded">
-                        <span className="flex-1">{item.descricao}</span>
-                        <span className="w-16 text-center">{item.quantidade}x</span>
-                        <span className="w-24 text-right">R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
-                        <span className="w-24 text-right font-bold">
+                      <div key={index} className="grid grid-cols-12 gap-2 items-center bg-gray-50 p-3 rounded-lg border hover:bg-gray-100 transition">
+                        <span className="col-span-5 font-medium text-sm">{item.descricao}</span>
+                        <span className="col-span-2 text-center text-sm">{item.quantidade}x</span>
+                        <span className="col-span-2 text-right text-sm">R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
+                        <span className="col-span-2 text-right font-bold text-sm text-blue-600">
                           R$ {(parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)).toFixed(2)}
                         </span>
-                        <button
-                          onClick={() => removerItem(index, item.id)}
-                          className="text-red-600 hover:bg-red-50 p-1 rounded"
-                        >
-                          🗑️
-                        </button>
+                        <div className="col-span-1 flex gap-1 justify-end">
+                          <button
+                            onClick={() => editarItem(index)}
+                            className="text-blue-600 hover:bg-blue-50 p-1.5 rounded transition"
+                            title="Editar"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => removerItem(index, item.id)}
+                            className="text-red-600 hover:bg-red-50 p-1.5 rounded transition"
+                            title="Remover"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </div>
                     ))}
-                    <div className="text-right font-bold text-lg mt-4">
-                      Total: R$ {totalCusto.toFixed(2)}
+                    
+                    {/* Total Geral */}
+                    <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200 mt-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-lg font-bold text-blue-900">💰 Custo Total do Evento</span>
+                        <span className="text-2xl font-bold text-blue-900">
+                          R$ {totalCusto.toFixed(2)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -485,9 +624,9 @@ export default function Eventos() {
 
               {/* Participantes */}
               <div className="border-t pt-6">
-                <h3 className="font-bold mb-4">Irmãos Participantes</h3>
+                <h3 className="font-bold mb-4 text-lg">👥 Irmãos Participantes</h3>
                 
-                <div className="flex gap-2 mb-2">
+                <div className="flex gap-2 mb-3">
                   <select
                     value={novoParticipante}
                     onChange={(e) => setNovoParticipante(e.target.value)}
@@ -495,25 +634,31 @@ export default function Eventos() {
                   >
                     <option value="">Selecione um irmão...</option>
                     {irmaos.map(irmao => (
-                      <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                      <option key={irmao.id} value={irmao.id}>
+                        {irmao.nome}
+                      </option>
                     ))}
                   </select>
                   <button
                     onClick={adicionarParticipante}
-                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 flex items-center gap-2"
                   >
-                    ➕
+                    ➕ Adicionar
                   </button>
                 </div>
 
                 {participantes.length > 0 && (
-                  <div className="space-y-1">
+                  <div className="grid gap-2">
                     {participantes.map((part, index) => (
-                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                        <span>{part.irmaos.nome}</span>
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border hover:bg-gray-100 transition">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">👤</span>
+                          <span className="font-medium">{part.irmaos?.nome || 'Nome não encontrado'}</span>
+                        </div>
                         <button
                           onClick={() => removerParticipante(index, part.id)}
-                          className="text-red-600 hover:bg-red-50 p-1 rounded"
+                          className="text-red-600 hover:bg-red-50 p-2 rounded transition"
+                          title="Remover"
                         >
                           🗑️
                         </button>
