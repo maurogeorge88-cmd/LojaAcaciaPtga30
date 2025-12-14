@@ -121,7 +121,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
 
   // Excluir prancha
   const handleExcluir = async (id) => {
-    if (!window.confirm('Tem certeza que deseja excluir esta prancha?')) return;
+    if (!confirm('Tem certeza que deseja excluir esta prancha?')) return;
 
     setLoading(true);
     try {
