@@ -1,3 +1,5 @@
+// NO TOPO DO ARQUIVO, adicione:
+import { safeConfirm } from '../../utils/confirmHelper';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import jsPDF from 'jspdf';
@@ -611,7 +613,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   const excluirLancamento = async (id) => {
     // Verificação segura para SSR
-    if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir este lançamento?')) return;
+   if (!safeConfirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
       const { error } = await supabase
@@ -3299,7 +3301,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
 
   const excluirCategoria = async (id) => {
     // Verificação segura para SSR
-    if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir esta categoria?')) return;
+    if (!safeConfirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
       const { error } = await supabase
