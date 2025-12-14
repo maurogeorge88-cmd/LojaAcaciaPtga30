@@ -6,7 +6,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null);
-
+  
   const [formCategoria, setFormCategoria] = useState({
     nome: '',
     tipo: 'receita',
@@ -134,7 +134,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
       return;
     }
 
-    if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir esta categoria?')) return;
+    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
     
     try {
       const { error } = await supabase
