@@ -91,7 +91,7 @@ export default function ModalLancamento({
                 <select value={formLancamento.categoria_id} onChange={(e) => setFormLancamento({ ...formLancamento, categoria_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                   <option value="">Selecione...</option>
-                  {renderizarOpcoesCategoria(form.tipo)}
+                  {renderizarOpcoesCategoria(formLancamento.tipo)}
                 </select>
               </div>
 
@@ -112,7 +112,7 @@ export default function ModalLancamento({
                 </select>
               </div>
 
-              {form.origem_tipo === 'Irmao' && (
+              {formLancamento.origem_tipo === 'Irmao' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Irmão *</label>
                   <select value={formLancamento.origem_irmao_id} onChange={(e) => setFormLancamento({ ...formLancamento, origem_irmao_id: e.target.value })}
@@ -172,7 +172,7 @@ export default function ModalLancamento({
               </div>
             </div>
 
-            {form.status === 'pago' && (
+            {formLancamento.status === 'pago' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data Pagamento</label>
