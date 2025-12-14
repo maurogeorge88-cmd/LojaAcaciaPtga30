@@ -102,7 +102,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
   // Excluir livro
   const excluirLivro = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir este livro? Esta ação é irreversível!')) return;
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este livro? Esta ação é irreversível!')) return;
 
     setLoading(true);
     try {
@@ -244,7 +244,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
   // Excluir empréstimo
   const excluirEmprestimo = async (emprestimoId, livroId, status) => {
-    if (!confirm('Tem certeza que deseja excluir este registro de empréstimo?')) return;
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este registro de empréstimo?')) return;
 
     setLoading(true);
     try {
