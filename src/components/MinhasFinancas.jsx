@@ -50,7 +50,8 @@ export default function MinhasFinancas({ userEmail }) {
         .eq('origem_irmao_id', irmao.id)
         .eq('origem_tipo', 'Irmao')
         .gte('data_vencimento', `${anoFiltro}-01-01`)
-        .lte('data_vencimento', `${anoFiltro}-12-31`);
+        .lte('data_vencimento', `${anoFiltro}-12-31`)
+        .limit(300); // ⚡ PERFORMANCE: Limita a 300 registros por ano
 
       if (erroTodos) throw erroTodos;
 
