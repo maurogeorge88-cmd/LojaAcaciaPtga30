@@ -1,29 +1,7 @@
-// NO TOPO DO ARQUIVO, adicione:
-import { safeConfirm } from '../../utils/confirmHelper';
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import {
-  corrigirTimezone,
-  formatarDataBR,
-  formatarMoeda,
-  formatarDataHoraBR,
-  dataAtual,
-  estaVencido,
-  obterDiasMes
-} from './utils/formatadores';
-import {
-  calcularTotal,
-  calcularTotalReceitas,
-  calcularTotalDespesas,
-  calcularSaldo,
-  calcularValorRestante
-} from './utils/calculadora';
-import { useFiltros } from './hooks/useFiltros';
-import { useLancamentos } from './hooks/useLancamentos';
-import { useCategorias } from './hooks/useCategorias';
-import { useIrmaos } from './hooks/useIrmaos';
 
 // ========================================
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
@@ -48,16 +26,32 @@ const STATUS_BLOQUEADOS = [
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // ========================================
-  // 🎣 HOOKS CUSTOMIZADOS
+  // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   // ========================================
-  const { filtros, atualizarFiltro, resetarFiltros } = useFiltros();
-  const { categorias, carregarCategorias } = useCategorias();
-  const { lancamentos, loading, carregarLancamentos, salvarLancamento, excluirLancamento, setLancamentos } = useLancamentos(categorias);
-  const { irmaos, carregarIrmaos } = useIrmaos();
-  
-  // ========================================
-  // ESTADOS LOCAIS (específicos do componente)
-  // ========================================
+  const corrigirTimezone = (data) => {
+    if (!data) return '';
+    const d = new Date(data + 'T00:00:00'); // Força horário local
+    return d.toISOString().split('T')[0];
+  };
+
+  const formatarDataBR = (data) => {
+    if (!data) return '';
+    const d = new Date(data + 'T00:00:00');
+    return d.toLocaleDateString('pt-BR');
+  };
+
+  // Função para formatar valores em moeda brasileira
+  const formatarMoeda = (valor) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(valor || 0);
+  };
+
+  const [categorias, setCategorias] = useState([]);
+  const [irmaos, setIrmaos] = useState([]);
+  const [lancamentos, setLancamentos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
@@ -65,6 +59,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
   const [saldoAnterior, setSaldoAnterior] = useState(0);
+  const [totalRegistros, setTotalRegistros] = useState(0);
+  
+  const [filtros, setFiltros] = useState({
+    mes: new Date().getMonth() + 1, // Mês atual (1-12)
+    ano: new Date().getFullYear(), // Ano atual
+    tipo: '', // 'receita' ou 'despesa'
+    categoria: '',
+    status: '', // 'pago', 'pendente', 'vencido', 'cancelado'
+    origem_tipo: '', // 'Loja' ou 'Irmao'
+    origem_irmao_id: '' // ID do irmão
+  });
 
   // Estado para Modal de Parcelamento
   const [modalParcelamentoAberto, setModalParcelamentoAberto] = useState(false);
@@ -612,32 +617,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const excluirLancamento = async (id) => {
-  if (typeof window === 'undefined') return;
+    if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
 
-  if (!id) {
-    showError('ID inválido');
-    return;
-  }
+    try {
+      const { error } = await supabase
+        .from('lancamentos_loja')
+        .delete()
+        .eq('id', id);
 
-  if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
+      if (error) throw error;
 
-  try {
-    const { error } = await supabase
-      .from('lancamentos_loja')
-      .delete()
-      .eq('id', Number(id));
+      showSuccess('Lançamento excluído com sucesso!');
+      await carregarLancamentos();
 
-    if (error) throw error;
+    } catch (error) {
+      console.error('Erro ao excluir lançamento:', error);
+      showError('Erro ao excluir lançamento: ' + error.message);
+    }
+  };
 
-    showSuccess('Lançamento excluído com sucesso!');
-    carregarLancamentos(filtros);
-  } catch (error) {
-    console.error('Erro ao excluir:', error);
-    showError(error.message || 'Erro ao excluir lançamento');
-  }
-};
-  
-  
   const abrirModalPagamentoParcial = async (lancamento) => {
     try {
       // Buscar todos os pagamentos parciais deste lançamento
@@ -1365,7 +1363,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         doc.setFont('helvetica', 'normal');
         doc.text(dataLanc, 10, yPos);
-        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+        doc.text('Irmãos - Acacia', 32, yPos);
         doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
         doc.text('', 140, yPos);
         doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
@@ -1394,7 +1392,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         }
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
-        const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+        const interessado = 'Irmãos - Acacia';
         let descricao = lanc.descricao?.substring(0, 28) || '';
         // Simplificar nome de Mensalidade
         if (descricao === 'Mensalidade e Peculio - Irmao') {
@@ -1421,7 +1419,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           }
 
           const dataLanc = formatarDataBR(lanc.data_pagamento);
-          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
+          const interessado = 'Irmãos - Acacia';
           let descricao = lanc.descricao?.substring(0, 28) || '';
           // Simplificar nome de Mensalidade
           if (descricao === 'Mensalidade e Peculio - Irmao') {
@@ -2021,7 +2019,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
             <select
               value={filtros.mes}
-              onChange={(e) => atualizarFiltro("mes", parseInt(e.target.value))}
+              onChange={(e) => setFiltros({ ...filtros, mes: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
@@ -2036,7 +2034,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
             <select
               value={filtros.ano}
-              onChange={(e) => atualizarFiltro("ano", parseInt(e.target.value))}
+              onChange={(e) => setFiltros({ ...filtros, ano: parseInt(e.target.value) })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
@@ -2051,7 +2049,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
             <select
               value={filtros.tipo}
-              onChange={(e) => atualizarFiltro("tipo", e.target.value)}
+              onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos</option>
@@ -2065,7 +2063,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
             <select
               value={filtros.categoria}
-              onChange={(e) => atualizarFiltro("categoria", e.target.value)}
+              onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todas</option>
@@ -2080,7 +2078,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
             <select
               value={filtros.status}
-              onChange={(e) => atualizarFiltro("status", e.target.value)}
+              onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Todos</option>
@@ -2097,7 +2095,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <select
               value={filtros.origem_tipo}
               onChange={(e) => {
-                atualizarFiltro("origem_tipo: e.target.value, origem_irmao_id", '');
+                setFiltros({ ...filtros, origem_tipo: e.target.value, origem_irmao_id: '' });
               }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
@@ -2113,7 +2111,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <label className="block text-sm font-medium text-gray-700 mb-1">Irmão</label>
               <select
                 value={filtros.origem_irmao_id}
-                onChange={(e) => atualizarFiltro("origem_irmao_id", e.target.value)}
+                onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Todos</option>
@@ -3306,9 +3304,9 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   };
 
   const excluirCategoria = async (id) => {
-    // Verificação segura para SSR
-   if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir este lançamento?')) return;
-   try {
+    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
+
+    try {
       const { error } = await supabase
         .from('categorias_financeiras')
         .delete()
