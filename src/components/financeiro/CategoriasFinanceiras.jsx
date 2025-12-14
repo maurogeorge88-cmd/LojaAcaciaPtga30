@@ -6,7 +6,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null);
-  
+
   const [formCategoria, setFormCategoria] = useState({
     nome: '',
     tipo: 'receita',
