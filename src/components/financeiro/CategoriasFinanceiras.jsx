@@ -134,7 +134,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
       return;
     }
 
-    if (!confirm('Deseja realmente excluir esta categoria?')) return;
+    if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir esta categoria?')) return;
     
     try {
       const { error } = await supabase
