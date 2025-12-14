@@ -384,7 +384,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         const { error } = await supabase
           .from('lancamentos_loja')
           .update(dadosLancamento)
-          .eq('id', editando);
+          .eq('id', editando.id || editando);
 
         if (error) throw error;
         showSuccess('Lançamento atualizado com sucesso!');
@@ -599,7 +599,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   const editarLancamento = (lancamento) => {
     setFormLancamento({
-      tipo: lancamento.tipo,
+      tipo: lancamento.categorias_financeiras?.tipo || lancamento.tipo || 'receita',
       categoria_id: lancamento.categoria_id,
       descricao: lancamento.descricao,
       valor: lancamento.valor,
@@ -610,11 +610,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       status: lancamento.status,
       comprovante_url: lancamento.comprovante_url || '',
       observacoes: lancamento.observacoes || '',
-      origem_tipo: lancamento.origem_tipo || 'Loja', // ← ADICIONAR
-      origem_irmao_id: lancamento.origem_irmao_id || '' // ← ADICIONAR
+      origem_tipo: lancamento.origem_tipo || 'Loja',
+      origem_irmao_id: lancamento.origem_irmao_id || ''
     });
-    setEditando(lancamento.id);
+    setEditando(lancamento);
     setMostrarFormulario(true);
+  };
   };
 
   const excluirLancamento = async (id) => {
