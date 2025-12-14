@@ -2135,9 +2135,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         lancamento={editando}
         categorias={categorias}
         irmaos={irmaos}
+        formLancamento={formLancamento}
+        setFormLancamento={setFormLancamento}
         onSubmit={handleSubmit}
       />
-      )}
 
       {/* MODAL LANÇAMENTO EM LOTE */}
       {mostrarModalIrmaos && (
