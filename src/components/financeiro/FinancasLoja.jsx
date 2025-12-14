@@ -658,6 +658,52 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     }
   };
 
+  // Função wrapper para o modal
+  const handleModalSubmit = async (formData, lancamentoEditando) => {
+    try {
+      const dadosLancamento = {
+        tipo: formData.tipo,
+        categoria_id: parseInt(formData.categoria_id),
+        descricao: formData.descricao,
+        valor: parseFloat(formData.valor),
+        data_lancamento: formData.data_lancamento,
+        data_vencimento: formData.data_vencimento,
+        tipo_pagamento: formData.tipo_pagamento,
+        data_pagamento: formData.data_pagamento || null,
+        status: formData.status,
+        comprovante_url: formData.comprovante_url || null,
+        observacoes: formData.observacoes || null,
+        origem_tipo: formData.origem_tipo || 'Loja',
+        origem_irmao_id: formData.origem_irmao_id ? parseInt(formData.origem_irmao_id) : null
+      };
+
+      if (lancamentoEditando) {
+        const { error } = await supabase
+          .from('lancamentos_loja')
+          .update(dadosLancamento)
+          .eq('id', lancamentoEditando.id);
+
+        if (error) throw error;
+        showSuccess('Lançamento atualizado com sucesso!');
+      } else {
+        const { error } = await supabase
+          .from('lancamentos_loja')
+          .insert(dadosLancamento);
+
+        if (error) throw error;
+        showSuccess('Lançamento criado com sucesso!');
+      }
+
+      setMostrarFormulario(false);
+      setEditando(null);
+      await carregarLancamentos();
+
+    } catch (error) {
+      console.error('Erro ao salvar:', error);
+      showError('Erro ao salvar lançamento: ' + error.message);
+    }
+  };
+
   const limparFormulario = () => {
     setFormLancamento({
       tipo: 'receita',
@@ -2135,7 +2181,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         lancamento={editando}
         categorias={categorias}
         irmaos={irmaos}
-        onSubmit={handleSubmit}
+        onSubmit={handleModalSubmit}
       />
 
       {/* MODAL LANÇAMENTO EM LOTE */}
