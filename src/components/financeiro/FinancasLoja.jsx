@@ -268,7 +268,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           categorias_financeiras(nome, tipo),
           irmaos(nome)
         `)
-        .order('data_lancamento', { ascending: false });
+        .order('data_lancamento', { ascending: false })
+        .limit(500); // ⚡ PERFORMANCE: Limita a 500 registros
 
       // Filtro de MÊS e ANO (0 = Todos)
       if (mes > 0 && ano > 0) {
@@ -1227,7 +1228,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       
       // Agrupar apenas lançamentos com DESCRIÇÃO específica
       // MENSALIDADE E PECULIO - IRMAO (descrição específica)
-      if (descricao === 'Mensalidade') {
+      if (descricao === 'Mensalidade e Peculio - Irmao') {
         totais['Mensalidade'].valor += parseFloat(lanc.valor);
         totais['Mensalidade'].categoria_id = lanc.categoria_id;
         totais['Mensalidade'].data_pagamento = lanc.data_pagamento;
@@ -1362,8 +1363,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         doc.setFont('helvetica', 'normal');
         doc.text(dataLanc, 10, yPos);
-        doc.text('Irmãos - Acacia', 32, yPos);
-        doc.text('Mensalidade', 80, yPos);
+        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
+        doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
         doc.text('', 140, yPos);
         doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
         yPos += 4;
@@ -1391,7 +1392,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         }
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
-        const interessado = 'Irmãos - Acacia';
+        const interessado = 'Irmãos - Acacia Paranatinga nº 30';
         let descricao = lanc.descricao?.substring(0, 28) || '';
         // Simplificar nome de Mensalidade
         if (descricao === 'Mensalidade e Peculio - Irmao') {
@@ -1418,7 +1419,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           }
 
           const dataLanc = formatarDataBR(lanc.data_pagamento);
-          const interessado = 'Irmãos - Acacia';
+          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
           let descricao = lanc.descricao?.substring(0, 28) || '';
           // Simplificar nome de Mensalidade
           if (descricao === 'Mensalidade e Peculio - Irmao') {
