@@ -89,9 +89,9 @@ export default function ModalLancamento({
     return opcoes;
   };
 
-  const handleSubmit = (e) => {
+  const handleLocalSubmit = (e) => {
     e.preventDefault();
-    onSubmit(e, form, lancamento?.id);
+    onSubmit(form, lancamento);
   };
 
   if (!aberto) return null;
@@ -104,7 +104,7 @@ export default function ModalLancamento({
             {lancamento ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
           </h3>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleLocalSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
