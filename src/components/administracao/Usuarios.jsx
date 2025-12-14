@@ -393,7 +393,7 @@ IMPORTANTE: Copie estas informações agora!
   };
 
   const handleExcluirUsuario = async (usuario) => {
-    if (!window.confirm(`❗ Tem certeza que deseja excluir o usuário ${usuario.nome}?`)) return;
+    if (!confirm(`❗ Tem certeza que deseja excluir o usuário ${usuario.nome}?`)) return;
 
     setLoading(true);
     try {
