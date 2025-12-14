@@ -39,8 +39,25 @@ export default function ModalLancamento({
         origem_tipo: lancamento.origem_tipo || 'Loja',
         origem_irmao_id: lancamento.origem_irmao_id || ''
       });
+    } else if (aberto) {
+      // Resetar para novo lançamento
+      setFormLancamento({
+        tipo: 'receita',
+        categoria_id: '',
+        descricao: '',
+        valor: '',
+        data_lancamento: new Date().toISOString().split('T')[0],
+        data_vencimento: new Date().toISOString().split('T')[0],
+        tipo_pagamento: 'dinheiro',
+        data_pagamento: '',
+        status: 'pendente',
+        comprovante_url: '',
+        observacoes: '',
+        origem_tipo: 'Loja',
+        origem_irmao_id: ''
+      });
     }
-  }, [lancamento]);
+  }, [lancamento, aberto]);
 
   const renderizarOpcoesCategoria = (tipo) => {
     const categoriasFiltradas = categorias.filter(c => c.tipo === tipo);
