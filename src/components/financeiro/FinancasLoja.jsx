@@ -598,22 +598,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const editarLancamento = (lancamento) => {
-    setFormLancamento({
-      tipo: lancamento.tipo,
-      categoria_id: lancamento.categoria_id,
-      descricao: lancamento.descricao,
-      valor: lancamento.valor,
-      data_lancamento: lancamento.data_lancamento,
-      data_vencimento: lancamento.data_vencimento,
-      tipo_pagamento: lancamento.tipo_pagamento,
-      data_pagamento: lancamento.data_pagamento || '',
-      status: lancamento.status,
-      comprovante_url: lancamento.comprovante_url || '',
-      observacoes: lancamento.observacoes || '',
-      origem_tipo: lancamento.origem_tipo || 'Loja', // ← ADICIONAR
-      origem_irmao_id: lancamento.origem_irmao_id || '' // ← ADICIONAR
-    });
-    setEditando(lancamento.id);
+    setEditando(lancamento);
+    setMostrarFormulario(true);
+  };
     setMostrarFormulario(true);
   };
 
@@ -2858,7 +2845,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_pagamento)}
+                      {formatarDataBR(lanc.data_lancamento)}
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
