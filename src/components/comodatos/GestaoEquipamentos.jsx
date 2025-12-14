@@ -213,7 +213,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
   // NOVO: Exclusão permanente
   const excluirEquipamento = async (id) => {
-    if (!window.confirm('⚠️ ATENÇÃO! Esta ação NÃO pode ser desfeita.\n\nTem certeza que deseja EXCLUIR permanentemente este equipamento?')) {
+    if (!confirm('⚠️ ATENÇÃO! Esta ação NÃO pode ser desfeita.\n\nTem certeza que deseja EXCLUIR permanentemente este equipamento?')) {
       return;
     }
 
