@@ -2692,8 +2692,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                               </button>
                             )}
                             */}
-                              </button>
-                            )}
                           </div>
                           <div className="text-right">
                             {totalReceitas > 0 && (
