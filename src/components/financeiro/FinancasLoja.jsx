@@ -610,7 +610,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const excluirLancamento = async (id) => {
-    if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
+    if (!confirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
       const { error } = await supabase
@@ -3297,7 +3297,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   };
 
   const excluirCategoria = async (id) => {
-    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
+    if (!confirm('Deseja realmente excluir esta categoria?')) return;
 
     try {
       const { error } = await supabase
