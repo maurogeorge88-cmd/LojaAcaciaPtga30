@@ -163,7 +163,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   };
 
   const excluir = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir este beneficiário?')) {
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este beneficiário?')) {
       return;
     }
 
