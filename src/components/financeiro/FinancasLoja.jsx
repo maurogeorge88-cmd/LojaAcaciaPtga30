@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 
 // ========================================
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
@@ -27,27 +28,6 @@ const STATUS_BLOQUEADOS = [
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // ========================================
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
-  // ========================================
-  const corrigirTimezone = (data) => {
-    if (!data) return '';
-    const d = new Date(data + 'T00:00:00'); // Força horário local
-    return d.toISOString().split('T')[0];
-  };
-
-  const formatarDataBR = (data) => {
-    if (!data) return '';
-    const d = new Date(data + 'T00:00:00');
-    return d.toLocaleDateString('pt-BR');
-  };
-
-  // Função para formatar valores em moeda brasileira
-  const formatarMoeda = (valor) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor || 0);
-  };
-
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [lancamentos, setLancamentos] = useState([]);
@@ -4021,15 +4001,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
   const [debitosSelecionados, setDebitosSelecionados] = useState([]);
   const [creditosSelecionados, setCreditosSelecionados] = useState([]);
 
-  const formatarMoeda = (valor) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor || 0);
-  };
-
-  const formatarDataBR = (data) => {
-    if (!data) return '';
-    const d = new Date(data + 'T00:00:00');
-    return d.toLocaleDateString('pt-BR');
-  };
 
   // Calcular totais
   const totalDebitos = debitosSelecionados.reduce((sum, id) => {
