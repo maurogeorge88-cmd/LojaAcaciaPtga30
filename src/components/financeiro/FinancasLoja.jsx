@@ -612,8 +612,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const excluirLancamento = async (id) => {
-  if (!safeConfirm('Deseja realmente excluir este lançamento?')) return;
-
+  if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir este lançamento?')) return;
   try {
     const { error } = await supabase
       .from('lancamentos_loja')
@@ -3299,9 +3298,8 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
 
   const excluirCategoria = async (id) => {
     // Verificação segura para SSR
-    if (!safeConfirm('Deseja realmente excluir este lançamento?')) return;
-
-    try {
+   if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir este lançamento?')) return;
+   try {
       const { error } = await supabase
         .from('categorias_financeiras')
         .delete()
