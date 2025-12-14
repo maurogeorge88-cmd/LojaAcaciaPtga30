@@ -3558,14 +3558,35 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
         });
       }
 
-      // Se estiver parcelando um lançamento existente, deletar o original
+      // Se estiver parcelando um lançamento existente
       if (lancamentoExistente) {
-        const { error: deleteError } = await supabase
+        // Verificar se tem pagamentos parciais
+        const { data: pagamentosParciais } = await supabase
           .from('lancamentos_loja')
-          .delete()
-          .eq('id', lancamentoExistente.id);
-        
-        if (deleteError) throw deleteError;
+          .select('id')
+          .eq('lancamento_principal_id', lancamentoExistente.id)
+          .eq('eh_pagamento_parcial', true);
+
+        if (pagamentosParciais && pagamentosParciais.length > 0) {
+          // TEM pagamentos parciais - NÃO deletar, apenas marcar
+          const { error: updateError } = await supabase
+            .from('lancamentos_loja')
+            .update({ 
+              status: 'parcialmente_pago',
+              observacoes: (lancamentoExistente.observacoes || '') + ' | Remanescente parcelado'
+            })
+            .eq('id', lancamentoExistente.id);
+          
+          if (updateError) throw updateError;
+        } else {
+          // NÃO tem pagamentos parciais - pode deletar
+          const { error: deleteError } = await supabase
+            .from('lancamentos_loja')
+            .delete()
+            .eq('id', lancamentoExistente.id);
+          
+          if (deleteError) throw deleteError;
+        }
       }
 
       const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
