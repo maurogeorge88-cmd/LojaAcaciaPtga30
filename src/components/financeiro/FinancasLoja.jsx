@@ -2,6 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import {
+  corrigirTimezone,
+  formatarDataBR,
+  formatarMoeda,
+  formatarDataHoraBR,
+  dataAtual,
+  estaVencido,
+  obterDiasMes
+} from './utils/formatadores';
+import {
+  calcularTotal,
+  calcularTotalReceitas,
+  calcularTotalDespesas,
+  calcularSaldo,
+  calcularValorRestante
+} from './utils/calculadora';
 
 // ========================================
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
@@ -26,28 +42,8 @@ const STATUS_BLOQUEADOS = [
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // ========================================
-  // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
+  // ESTADOS DO COMPONENTE
   // ========================================
-  const corrigirTimezone = (data) => {
-    if (!data) return '';
-    const d = new Date(data + 'T00:00:00'); // Força horário local
-    return d.toISOString().split('T')[0];
-  };
-
-  const formatarDataBR = (data) => {
-    if (!data) return '';
-    const d = new Date(data + 'T00:00:00');
-    return d.toLocaleDateString('pt-BR');
-  };
-
-  // Função para formatar valores em moeda brasileira
-  const formatarMoeda = (valor) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor || 0);
-  };
-
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [lancamentos, setLancamentos] = useState([]);
@@ -1363,7 +1359,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         doc.setFont('helvetica', 'normal');
         doc.text(dataLanc, 10, yPos);
-        doc.text('Irmãos - Acacia', 32, yPos);
+        doc.text('Irmãos - Acacia Paranatinga nº 30', 32, yPos);
         doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
         doc.text('', 140, yPos);
         doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
@@ -1392,7 +1388,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         }
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
-        const interessado = 'Irmãos - Acacia';
+        const interessado = 'Irmãos - Acacia Paranatinga nº 30';
         let descricao = lanc.descricao?.substring(0, 28) || '';
         // Simplificar nome de Mensalidade
         if (descricao === 'Mensalidade e Peculio - Irmao') {
@@ -1419,7 +1415,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           }
 
           const dataLanc = formatarDataBR(lanc.data_pagamento);
-          const interessado = 'Irmãos - Acacia';
+          const interessado = 'Irmãos - Acacia Paranatinga nº 30';
           let descricao = lanc.descricao?.substring(0, 28) || '';
           // Simplificar nome de Mensalidade
           if (descricao === 'Mensalidade e Peculio - Irmao') {
