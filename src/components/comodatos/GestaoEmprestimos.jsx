@@ -268,7 +268,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   };
 
   const excluir = async (id) => {
-    if (!window.confirm('⚠️ Tem certeza que deseja excluir este empréstimo?\n\nEsta ação não pode ser desfeita!')) {
+    if (!confirm('⚠️ Tem certeza que deseja excluir este empréstimo?\n\nEsta ação não pode ser desfeita!')) {
       return;
     }
 
