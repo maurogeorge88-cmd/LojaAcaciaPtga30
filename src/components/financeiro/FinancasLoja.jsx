@@ -612,26 +612,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const excluirLancamento = async (id) => {
-    // Verificação segura para SSR
-   if (!safeConfirm('Deseja realmente excluir este lançamento?')) return;
+  if (!safeConfirm('Deseja realmente excluir este lançamento?')) return;
 
-    try {
-      const { error } = await supabase
-        .from('lancamentos_loja')
-        .delete()
-        .eq('id', id);
+  try {
+    const { error } = await supabase
+      .from('lancamentos_loja')
+      .delete()
+      .eq('id', id);
 
-      if (error) throw error;
+    if (error) throw error;
 
-      showSuccess('Lançamento excluído com sucesso!');
-      await carregarLancamentos();
-
-    } catch (error) {
-      console.error('Erro ao excluir lançamento:', error);
-      showError('Erro ao excluir lançamento: ' + error.message);
-    }
-  };
-
+    showSuccess('Lançamento excluído com sucesso!');
+    carregarLancamentos(filtros);
+  } catch (error) {
+    console.error('Erro ao excluir:', error);
+    showError('Erro ao excluir lançamento');
+  }
+};
+  
   const abrirModalPagamentoParcial = async (lancamento) => {
     try {
       // Buscar todos os pagamentos parciais deste lançamento
