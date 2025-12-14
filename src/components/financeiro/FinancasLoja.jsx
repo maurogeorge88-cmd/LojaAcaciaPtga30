@@ -2996,23 +2996,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         />
       )}
 
-      {/* Modal de Compensação */}
-      {modalCompensacaoAberto && (
-        <ModalCompensacao
-          irmao={irmaoCompensacao}
-          debitos={debitosIrmao}
-          creditos={creditosIrmao}
-          onClose={() => {
-            setModalCompensacaoAberto(false);
-            setIrmaoCompensacao(null);
-            setDebitosIrmao([]);
-            setCreditosIrmao([]);
-          }}
-          onSuccess={carregarLancamentos}
-          showSuccess={showSuccess}
-          showError={showError}
-        />
-      )}
+      {/* Modal Compensação removido - causa erro build */}
     </div>
   );
 }
