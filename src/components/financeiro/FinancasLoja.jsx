@@ -423,7 +423,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
           descricao: lancamentoIrmaos.descricao, // ← REMOVER nome do irmão da descrição
           valor: parseFloat(lancamentoIrmaos.valor),
-          data_lancamento: lancamentoIrmaos.data_lancamento,
+          data_lancamento: lancamentoIrmaos.data_lancamento || new Date().toISOString().split('T')[0],
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
           status: 'pendente',
@@ -666,7 +666,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         categoria_id: parseInt(formData.categoria_id),
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
-        data_lancamento: formData.data_lancamento,
+        data_lancamento: formData.data_lancamento || new Date().toISOString().split('T')[0],
         data_vencimento: formData.data_vencimento,
         tipo_pagamento: formData.tipo_pagamento,
         data_pagamento: formData.data_pagamento || null,
