@@ -119,7 +119,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
 
   // Deletar irmão
   const deletarIrmao = async (irmaoId) => {
-    if (!confirm('Tem certeza que deseja excluir este irmão? Esta ação não pode ser desfeita e irá remover também todos os dados de familiares.')) {
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este irmão? Esta ação não pode ser desfeita e irá remover também todos os dados de familiares.')) {
       return;
     }
 
