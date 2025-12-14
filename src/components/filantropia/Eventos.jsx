@@ -62,7 +62,8 @@ export default function Eventos() {
     const { data, error } = await supabase
       .from('eventos_loja')
       .select('*')
-      .order('data_prevista', { ascending: false });
+      .order('data_prevista', { ascending: false })
+      .limit(100); // ⚡ PERFORMANCE: Limita a 100 eventos
     
     if (error) {
       console.error('Erro ao carregar eventos:', error);
