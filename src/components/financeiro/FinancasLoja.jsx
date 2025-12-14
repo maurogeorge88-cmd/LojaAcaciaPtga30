@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import ModalLancamento from './modais/ModalLancamento';
 
 // ========================================
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
@@ -2130,18 +2129,230 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             {editando ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
+          </h3>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Linha 1: Tipo, Categoria e Descrição */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo *
+                </label>
+                <select
+                  value={formLancamento.tipo}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, tipo: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="receita">📈 Receita</option>
+                  <option value="despesa">📉 Despesa</option>
+                </select>
+              </div>
 
-      <ModalLancamento
-        aberto={mostrarFormulario}
-        fechar={() => {
-          setMostrarFormulario(false);
-          setEditando(null);
-        }}
-        lancamento={editando}
-        categorias={categorias}
-        irmaos={irmaos}
-        onSubmit={handleSubmit}
-      />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Categoria *
+                </label>
+                <select
+                  value={formLancamento.categoria_id}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, categoria_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {renderizarOpcoesCategoria(formLancamento.tipo)}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição *
+                </label>
+                <input
+                  type="text"
+                  value={formLancamento.descricao}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Linha 2: Origem e Irmão */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Origem *
+                </label>
+                <select
+                  value={formLancamento.origem_tipo}
+                  onChange={(e) => {
+                    setFormLancamento({ 
+                      ...formLancamento, 
+                      origem_tipo: e.target.value,
+                      origem_irmao_id: '' // Limpar irmão ao mudar tipo
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="Loja">🏛️ Loja</option>
+                  <option value="Irmao">👤 Irmão</option>
+                </select>
+              </div>
+
+              {formLancamento.origem_tipo === 'Irmao' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Irmão *
+                  </label>
+                  <select
+                    value={formLancamento.origem_irmao_id}
+                    onChange={(e) => setFormLancamento({ ...formLancamento, origem_irmao_id: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    {irmaos.map(irmao => (
+                      <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+
+            {/* Linha 3: Valor, Data Lançamento e Data Vencimento */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Valor (R$) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formLancamento.valor}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, valor: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data Lançamento *
+                </label>
+                <input
+                  type="date"
+                  value={formLancamento.data_lancamento}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, data_lancamento: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data Vencimento *
+                </label>
+                <input
+                  type="date"
+                  value={formLancamento.data_vencimento}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, data_vencimento: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Linha 4: Tipo de Pagamento e Status */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Pagamento
+                </label>
+                <select
+                  value={formLancamento.tipo_pagamento}
+                  onChange={(e) => setFormLancamento({ ...formLancamento, tipo_pagamento: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  {tiposPagamento.map(tipo => (
+                    <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={formLancamento.status}
+                  onChange={(e) => {
+                    const novoStatus = e.target.value;
+                    setFormLancamento({ 
+                      ...formLancamento, 
+                      status: novoStatus,
+                      data_pagamento: novoStatus === 'pago' ? new Date().toISOString().split('T')[0] : ''
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="pendente">⏳ Pendente</option>
+                  <option value="pago">✅ Pago</option>
+                  <option value="vencido">⚠️ Vencido</option>
+                  <option value="cancelado">❌ Cancelado</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Data Pagamento (condicional) */}
+            {formLancamento.status === 'pago' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data Pagamento
+                  </label>
+                  <input
+                    type="date"
+                    value={formLancamento.data_pagamento}
+                    onChange={(e) => setFormLancamento({ ...formLancamento, data_pagamento: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Observações - altura reduzida */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observações
+              </label>
+              <textarea
+                value={formLancamento.observacoes}
+                onChange={(e) => setFormLancamento({ ...formLancamento, observacoes: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                rows="2"
+              />
+            </div>
+
+            <div className="flex gap-3 pt-4">
+              <button
+                type="submit"
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+              >
+                {editando ? '💾 Salvar Alterações' : '✅ Criar Lançamento'}
+              </button>
+              <button
+                type="button"
+                onClick={limparFormulario}
+                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {/* MODAL LANÇAMENTO EM LOTE */}
       {mostrarModalIrmaos && (
@@ -2996,7 +3207,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         />
       )}
 
-      {/* Modal Compensação removido - causa erro build */}
+      {/* Modal de Compensação */}
+      {modalCompensacaoAberto && (
+        <ModalCompensacao
+          irmao={irmaoCompensacao}
+          debitos={debitosIrmao}
+          creditos={creditosIrmao}
+          onClose={() => {
+            setModalCompensacaoAberto(false);
+            setIrmaoCompensacao(null);
+            setDebitosIrmao([]);
+            setCreditosIrmao([]);
+          }}
+          onSuccess={carregarLancamentos}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
+      )}
     </div>
   );
 }
