@@ -677,6 +677,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         origem_irmao_id: formData.origem_irmao_id ? parseInt(formData.origem_irmao_id) : null
       };
 
+      console.log('📊 Dados sendo salvos:', dadosLancamento);
+
       if (lancamentoEditando) {
         const { error } = await supabase
           .from('lancamentos_loja')
