@@ -109,7 +109,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
   };
 
   const handleExcluir = async (atividade) => {
-    if (!window.confirm('❗ Tem certeza que deseja excluir esta atividade?')) return;
+    if (!confirm('❗ Tem certeza que deseja excluir esta atividade?')) return;
 
     setLoading(true);
     try {
