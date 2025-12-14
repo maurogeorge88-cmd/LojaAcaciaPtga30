@@ -3571,10 +3571,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
           // TEM pagamentos parciais - NÃO deletar, apenas marcar
           const { error: updateError } = await supabase
             .from('lancamentos_loja')
-            .update({ 
-              status: 'parcialmente_pago',
-              observacoes: (lancamentoExistente.observacoes || '') + ' | Remanescente parcelado'
-            })
+            .update({ status: 'parcialmente_pago' })
             .eq('id', lancamentoExistente.id);
           
           if (updateError) throw updateError;
