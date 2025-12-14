@@ -15,28 +15,16 @@ export default function ModalLancamento({
   fechar, 
   lancamento, 
   categorias = [], 
-  irmaos = [], 
+  irmaos = [],
+  formLancamento,
+  setFormLancamento,
   onSubmit 
 }) {
-  const [form, setForm] = useState({
-    tipo: 'receita',
-    categoria_id: '',
-    descricao: '',
-    valor: '',
-    data_lancamento: new Date().toISOString().split('T')[0],
-    data_vencimento: new Date().toISOString().split('T')[0],
-    tipo_pagamento: 'dinheiro',
-    data_pagamento: '',
-    status: 'pendente',
-    comprovante_url: '',
-    observacoes: '',
-    origem_tipo: 'Loja',
-    origem_irmao_id: ''
-  });
-
+  // Não precisa de estado local, usa formLancamento do pai
+  
   useEffect(() => {
     if (lancamento) {
-      setForm({
+      setFormLancamento({
         tipo: lancamento.categorias_financeiras?.tipo || 'receita',
         categoria_id: lancamento.categoria_id || '',
         descricao: lancamento.descricao || '',
@@ -51,24 +39,8 @@ export default function ModalLancamento({
         origem_tipo: lancamento.origem_tipo || 'Loja',
         origem_irmao_id: lancamento.origem_irmao_id || ''
       });
-    } else {
-      setForm({
-        tipo: 'receita',
-        categoria_id: '',
-        descricao: '',
-        valor: '',
-        data_lancamento: new Date().toISOString().split('T')[0],
-        data_vencimento: new Date().toISOString().split('T')[0],
-        tipo_pagamento: 'dinheiro',
-        data_pagamento: '',
-        status: 'pendente',
-        comprovante_url: '',
-        observacoes: '',
-        origem_tipo: 'Loja',
-        origem_irmao_id: ''
-      });
     }
-  }, [lancamento, aberto]);
+  }, [lancamento]);
 
   const renderizarOpcoesCategoria = (tipo) => {
     const categoriasFiltradas = categorias.filter(c => c.tipo === tipo);
@@ -90,8 +62,7 @@ export default function ModalLancamento({
   };
 
   const handleLocalSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(form, lancamento);
+    onSubmit(e);
   };
 
   if (!aberto) return null;
@@ -108,7 +79,7 @@ export default function ModalLancamento({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-                <select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value, categoria_id: '' })} 
+                <select value={formLancamento.tipo} onChange={(e) => setFormLancamento({ ...formLancamento, tipo: e.target.value, categoria_id: '' })} 
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                   <option value="receita">📈 Receita</option>
                   <option value="despesa">📉 Despesa</option>
@@ -117,7 +88,7 @@ export default function ModalLancamento({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
-                <select value={form.categoria_id} onChange={(e) => setForm({ ...form, categoria_id: e.target.value })}
+                <select value={formLancamento.categoria_id} onChange={(e) => setFormLancamento({ ...formLancamento, categoria_id: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                   <option value="">Selecione...</option>
                   {renderizarOpcoesCategoria(form.tipo)}
@@ -126,7 +97,7 @@ export default function ModalLancamento({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label>
-                <input type="text" value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                <input type="text" value={formLancamento.descricao} onChange={(e) => setFormLancamento({ ...formLancamento, descricao: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required/>
               </div>
             </div>
@@ -134,7 +105,7 @@ export default function ModalLancamento({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Origem *</label>
-                <select value={form.origem_tipo} onChange={(e) => setForm({ ...form, origem_tipo: e.target.value, origem_irmao_id: '' })}
+                <select value={formLancamento.origem_tipo} onChange={(e) => setFormLancamento({ ...formLancamento, origem_tipo: e.target.value, origem_irmao_id: '' })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                   <option value="Loja">🏛️ Loja</option>
                   <option value="Irmao">👤 Irmão</option>
@@ -144,7 +115,7 @@ export default function ModalLancamento({
               {form.origem_tipo === 'Irmao' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Irmão *</label>
-                  <select value={form.origem_irmao_id} onChange={(e) => setForm({ ...form, origem_irmao_id: e.target.value })}
+                  <select value={formLancamento.origem_irmao_id} onChange={(e) => setFormLancamento({ ...formLancamento, origem_irmao_id: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required>
                     <option value="">Selecione...</option>
                     {irmaos.map(irmao => (
@@ -158,19 +129,19 @@ export default function ModalLancamento({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$) *</label>
-                <input type="number" step="0.01" value={form.valor} onChange={(e) => setForm({ ...form, valor: e.target.value })}
+                <input type="number" step="0.01" value={formLancamento.valor} onChange={(e) => setFormLancamento({ ...formLancamento, valor: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required/>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data Lançamento *</label>
-                <input type="date" value={form.data_lancamento} onChange={(e) => setForm({ ...form, data_lancamento: e.target.value })}
+                <input type="date" value={formLancamento.data_lancamento} onChange={(e) => setFormLancamento({ ...formLancamento, data_lancamento: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required/>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Data Vencimento *</label>
-                <input type="date" value={form.data_vencimento} onChange={(e) => setForm({ ...form, data_vencimento: e.target.value })}
+                <input type="date" value={formLancamento.data_vencimento} onChange={(e) => setFormLancamento({ ...formLancamento, data_vencimento: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" required/>
               </div>
             </div>
@@ -178,7 +149,7 @@ export default function ModalLancamento({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Pagamento</label>
-                <select value={form.tipo_pagamento} onChange={(e) => setForm({ ...form, tipo_pagamento: e.target.value })}
+                <select value={formLancamento.tipo_pagamento} onChange={(e) => setFormLancamento({ ...formLancamento, tipo_pagamento: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                   {tiposPagamento.map(tipo => (
                     <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -188,9 +159,9 @@ export default function ModalLancamento({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select value={form.status} onChange={(e) => {
+                <select value={formLancamento.status} onChange={(e) => {
                     const novoStatus = e.target.value;
-                    setForm({ ...form, status: novoStatus, data_pagamento: novoStatus === 'pago' ? new Date().toISOString().split('T')[0] : '' });
+                    setFormLancamento({ ...formLancamento, status: novoStatus, data_pagamento: novoStatus === 'pago' ? new Date().toISOString().split('T')[0] : '' });
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                   <option value="pendente">⏳ Pendente</option>
@@ -205,7 +176,7 @@ export default function ModalLancamento({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data Pagamento</label>
-                  <input type="date" value={form.data_pagamento} onChange={(e) => setForm({ ...form, data_pagamento: e.target.value })}
+                  <input type="date" value={formLancamento.data_pagamento} onChange={(e) => setFormLancamento({ ...formLancamento, data_pagamento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"/>
                 </div>
               </div>
@@ -213,7 +184,7 @@ export default function ModalLancamento({
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-              <textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+              <textarea value={formLancamento.observacoes} onChange={(e) => setFormLancamento({ ...formLancamento, observacoes: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500" rows="2"/>
             </div>
 
