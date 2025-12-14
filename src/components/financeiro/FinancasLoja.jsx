@@ -423,7 +423,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
           descricao: lancamentoIrmaos.descricao, // ← REMOVER nome do irmão da descrição
           valor: parseFloat(lancamentoIrmaos.valor),
-          data_lancamento: lancamentoIrmaos.data_lancamento || new Date().toISOString().split('T')[0],
+          data_lancamento: lancamentoIrmaos.data_lancamento,
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
           status: 'pendente',
@@ -598,14 +598,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const editarLancamento = (lancamento) => {
-    setEditando(lancamento);
-    setMostrarFormulario(true);
-  };
+    setFormLancamento({
+      tipo: lancamento.tipo,
+      categoria_id: lancamento.categoria_id,
+      descricao: lancamento.descricao,
+      valor: lancamento.valor,
+      data_lancamento: lancamento.data_lancamento,
+      data_vencimento: lancamento.data_vencimento,
+      tipo_pagamento: lancamento.tipo_pagamento,
+      data_pagamento: lancamento.data_pagamento || '',
+      status: lancamento.status,
+      comprovante_url: lancamento.comprovante_url || '',
+      observacoes: lancamento.observacoes || '',
+      origem_tipo: lancamento.origem_tipo || 'Loja', // ← ADICIONAR
+      origem_irmao_id: lancamento.origem_irmao_id || '' // ← ADICIONAR
+    });
+    setEditando(lancamento.id);
     setMostrarFormulario(true);
   };
 
   const excluirLancamento = async (id) => {
-    // Excluir sem confirmação para evitar erro SSR
+    if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
       const { error } = await supabase
@@ -642,54 +655,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     } catch (error) {
       console.error('Erro:', error);
       showError('Erro ao carregar pagamentos: ' + error.message);
-    }
-  };
-
-  // Função wrapper para o modal
-  const handleModalSubmit = async (formData, lancamentoEditando) => {
-    try {
-      const dadosLancamento = {
-        tipo: formData.tipo,
-        categoria_id: parseInt(formData.categoria_id),
-        descricao: formData.descricao,
-        valor: parseFloat(formData.valor),
-        data_lancamento: formData.data_lancamento || new Date().toISOString().split('T')[0],
-        data_vencimento: formData.data_vencimento,
-        tipo_pagamento: formData.tipo_pagamento,
-        data_pagamento: formData.data_pagamento || null,
-        status: formData.status,
-        comprovante_url: formData.comprovante_url || null,
-        observacoes: formData.observacoes || null,
-        origem_tipo: formData.origem_tipo || 'Loja',
-        origem_irmao_id: formData.origem_irmao_id ? parseInt(formData.origem_irmao_id) : null
-      };
-
-      console.log('📊 Dados sendo salvos:', dadosLancamento);
-
-      if (lancamentoEditando) {
-        const { error } = await supabase
-          .from('lancamentos_loja')
-          .update(dadosLancamento)
-          .eq('id', lancamentoEditando.id);
-
-        if (error) throw error;
-        showSuccess('Lançamento atualizado com sucesso!');
-      } else {
-        const { error } = await supabase
-          .from('lancamentos_loja')
-          .insert(dadosLancamento);
-
-        if (error) throw error;
-        showSuccess('Lançamento criado com sucesso!');
-      }
-
-      setMostrarFormulario(false);
-      setEditando(null);
-      await carregarLancamentos();
-
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      showError('Erro ao salvar lançamento: ' + error.message);
     }
   };
 
@@ -2160,6 +2125,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         </div>
       </div>
 
+      {/* FORMULÁRIO DE NOVO LANÇAMENTO */}
+      {mostrarFormulario && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+            {editando ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
 
       <ModalLancamento
         aberto={mostrarFormulario}
@@ -2170,7 +2140,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         lancamento={editando}
         categorias={categorias}
         irmaos={irmaos}
-        onSubmit={handleModalSubmit}
+        onSubmit={handleSubmit}
       />
 
       {/* MODAL LANÇAMENTO EM LOTE */}
@@ -2682,7 +2652,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                               {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
                             </p>
                             {/* Botão Compensar - aparece se houver débitos E créditos */}
-                            {/* BOTÃO COMPENSAR - TEMPORARIAMENTE DESABILITADO 
                             {totalReceitas > 0 && totalDespesas > 0 && (
                               <button
                                 onClick={() => abrirModalCompensacao(irmaoData.irmaoId)}
@@ -2691,7 +2660,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                                 🔄 Compensar Valores
                               </button>
                             )}
-                            */}
                           </div>
                           <div className="text-right">
                             {totalReceitas > 0 && (
@@ -2847,7 +2815,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_lancamento)}
+                      {formatarDataBR(lanc.data_pagamento)}
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
@@ -3028,8 +2996,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         />
       )}
 
-      {/* Modal de Compensação - TEMPORARIAMENTE DESABILITADO */}
-      {/* 
+      {/* Modal de Compensação */}
       {modalCompensacaoAberto && (
         <ModalCompensacao
           irmao={irmaoCompensacao}
@@ -3046,7 +3013,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           showError={showError}
         />
       )}
-      */}
     </div>
   );
 }
@@ -3127,7 +3093,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   };
 
   const excluirCategoria = async (id) => {
-    // Excluir sem confirmação
+    if (!window.confirm('Deseja realmente excluir esta categoria?')) return;
 
     try {
       const { error } = await supabase
