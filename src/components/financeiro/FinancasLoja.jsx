@@ -3026,7 +3026,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_pagamento)}
+                      {formatarDataBR(lanc.data_lancamento)}
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
                       {formatarDataBR(lanc.data_vencimento)}
