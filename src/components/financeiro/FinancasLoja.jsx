@@ -612,12 +612,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const excluirLancamento = async (id) => {
-  if (typeof window !== 'undefined' && !window.confirm('Deseja realmente excluir este lançamento?')) return;
+  if (typeof window === 'undefined') return;
+
+  if (!id) {
+    showError('ID inválido');
+    return;
+  }
+
+  if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
+
   try {
     const { error } = await supabase
       .from('lancamentos_loja')
       .delete()
-      .eq('id', id);
+      .eq('id', Number(id));
 
     if (error) throw error;
 
@@ -625,9 +633,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     carregarLancamentos(filtros);
   } catch (error) {
     console.error('Erro ao excluir:', error);
-    showError('Erro ao excluir lançamento');
+    showError(error.message || 'Erro ao excluir lançamento');
   }
 };
+  
   
   const abrirModalPagamentoParcial = async (lancamento) => {
     try {
