@@ -212,7 +212,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
   // Excluir comissão
   const handleExcluir = async (id) => {
-    if (!confirm('Tem certeza que deseja excluir esta comissão?')) return;
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir esta comissão?')) return;
 
     setLoading(true);
     try {
