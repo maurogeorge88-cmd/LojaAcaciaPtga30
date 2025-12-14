@@ -2682,12 +2682,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                               {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
                             </p>
                             {/* Botão Compensar - aparece se houver débitos E créditos */}
+                            {/* BOTÃO COMPENSAR - TEMPORARIAMENTE DESABILITADO 
                             {totalReceitas > 0 && totalDespesas > 0 && (
                               <button
                                 onClick={() => abrirModalCompensacao(irmaoData.irmaoId)}
                                 className="mt-2 px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                               >
                                 🔄 Compensar Valores
+                              </button>
+                            )}
+                            */}
                               </button>
                             )}
                           </div>
@@ -3026,7 +3030,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         />
       )}
 
-      {/* Modal de Compensação */}
+      {/* Modal de Compensação - TEMPORARIAMENTE DESABILITADO */}
+      {/* 
       {modalCompensacaoAberto && (
         <ModalCompensacao
           irmao={irmaoCompensacao}
@@ -3043,6 +3048,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           showError={showError}
         />
       )}
+      */}
     </div>
   );
 }
