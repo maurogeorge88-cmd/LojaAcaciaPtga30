@@ -3453,11 +3453,35 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
 // COMPONENTE: MODAL DE PARCELAMENTO
 // ============================================
 function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, onSuccess, showSuccess, showError }) {
+  const [valorRemanescente, setValorRemanescente] = useState(lancamentoExistente?.valor || 0);
+  
+  // Calcular remanescente se tiver pagamentos parciais
+  useEffect(() => {
+    const calcularRemanescente = async () => {
+      if (!lancamentoExistente) {
+        setValorRemanescente(0);
+        return;
+      }
+
+      const { data: pagamentos } = await supabase
+        .from('lancamentos_loja')
+        .select('valor')
+        .eq('lancamento_principal_id', lancamentoExistente.id)
+        .eq('eh_pagamento_parcial', true);
+
+      const totalPago = pagamentos?.reduce((sum, p) => sum + parseFloat(p.valor), 0) || 0;
+      const remanescente = parseFloat(lancamentoExistente.valor) - totalPago;
+      setValorRemanescente(remanescente);
+    };
+
+    calcularRemanescente();
+  }, [lancamentoExistente]);
+
   const [formParcelamento, setFormParcelamento] = useState({
     tipo: lancamentoExistente?.tipo || 'despesa',
     categoria_id: lancamentoExistente?.categoria_id || '',
     descricao: lancamentoExistente?.descricao || '',
-    valor_total: lancamentoExistente?.valor || '',
+    valor_total: valorRemanescente,
     num_parcelas: 2,
     data_primeira_parcela: new Date().toISOString().split('T')[0],
     tipo_pagamento: lancamentoExistente?.tipo_pagamento || 'dinheiro',
@@ -3465,6 +3489,13 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
     origem_irmao_id: lancamentoExistente?.origem_irmao_id || '',
     observacoes: lancamentoExistente?.observacoes || ''
   });
+
+  // Atualizar valor_total quando valorRemanescente mudar
+  useEffect(() => {
+    if (lancamentoExistente) {
+      setFormParcelamento(prev => ({ ...prev, valor_total: valorRemanescente }));
+    }
+  }, [valorRemanescente, lancamentoExistente]);
 
   const tiposPagamento = [
     { value: 'dinheiro', label: '💵 Dinheiro' },
