@@ -1056,12 +1056,17 @@ export default function Aniversariantes() {
       // Agrupar por nome + data de nascimento para consolidar duplicatas
       const familiaresMap = new Map();
       
+      console.log('🔍 Iniciando consolidação de familiares. Total antes:', aniversariantesFamiliares.length);
+      
       aniversariantesFamiliares.forEach(familiar => {
         // Criar chave única: nome + data de nascimento
         const chave = `${familiar.nome.trim().toLowerCase()}-${familiar.data_nascimento.getTime()}`;
         
+        console.log('🔑 Processando:', familiar.nome, 'Chave:', chave);
+        
         if (familiaresMap.has(chave)) {
           // Familiar já existe - adicionar vínculo
+          console.log('   ⚠️ DUPLICATA ENCONTRADA!');
           const familiarExistente = familiaresMap.get(chave);
           
           // Criar array de vínculos se não existir
@@ -1082,6 +1087,8 @@ export default function Aniversariantes() {
           const tipos = familiarExistente.vinculos.map(v => v.tipo);
           familiarExistente.tipo = tipos.join(' / ');
           
+          console.log('   ✅ Vínculos consolidados:', familiarExistente.vinculos.length);
+          
         } else {
           // Primeiro registro deste familiar
           familiaresMap.set(chave, familiar);
@@ -1090,6 +1097,9 @@ export default function Aniversariantes() {
       
       // Converter Map de volta para array
       const familiaresConsolidados = Array.from(familiaresMap.values());
+      
+      console.log('✅ Total após consolidação:', familiaresConsolidados.length);
+      console.log('📊 Consolidados:', aniversariantesFamiliares.length - familiaresConsolidados.length, 'familiares');
       
       // Reordenar após consolidação
       familiaresConsolidados.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
