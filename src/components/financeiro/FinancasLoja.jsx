@@ -3533,70 +3533,92 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
 
       const valorParcela = valorTotal / numParcelas;
       const grupoParcelamento = gerarUUID();
+      const valorParcela = valorTotal / numParcelas;
       
-      const parcelas = [];
-      for (let i = 0; i < numParcelas; i++) {
-        const dataParcela = new Date(formParcelamento.data_primeira_parcela);
-        dataParcela.setMonth(dataParcela.getMonth() + i);
-        
-        parcelas.push({
-          tipo: formParcelamento.tipo,
-          categoria_id: parseInt(formParcelamento.categoria_id),
-          descricao: `${formParcelamento.descricao} (${i + 1}/${numParcelas})`,
-          valor: valorParcela,
-          data_lancamento: new Date().toISOString().split('T')[0],
-          data_vencimento: dataParcela.toISOString().split('T')[0],
-          tipo_pagamento: formParcelamento.tipo_pagamento,
-          status: 'pendente',
-          origem_tipo: formParcelamento.origem_tipo,
-          origem_irmao_id: formParcelamento.origem_irmao_id || null,
-          observacoes: formParcelamento.observacoes,
-          eh_parcelado: true,
-          parcela_numero: i + 1,
-          parcela_total: numParcelas,
-          grupo_parcelamento: grupoParcelamento
-        });
-      }
-
       // Se estiver parcelando um lançamento existente
       if (lancamentoExistente) {
-        // Verificar se tem pagamentos parciais
-        const { data: pagamentosParciais } = await supabase
+        // Transformar o lançamento existente na PRIMEIRA parcela
+        const dataPrimeiraParcela = new Date(formParcelamento.data_primeira_parcela);
+        
+        const { error: updateError } = await supabase
           .from('lancamentos_loja')
-          .select('id')
-          .eq('lancamento_principal_id', lancamentoExistente.id)
-          .eq('eh_pagamento_parcial', true);
+          .update({
+            descricao: `${formParcelamento.descricao} (1/${numParcelas})`,
+            valor: valorParcela,
+            data_vencimento: dataPrimeiraParcela.toISOString().split('T')[0],
+            status: 'pendente',
+            eh_parcelado: true,
+            parcela_numero: 1,
+            parcela_total: numParcelas,
+            grupo_parcelamento: grupoParcelamento,
+            observacoes: 'Parcelado'
+          })
+          .eq('id', lancamentoExistente.id);
+        
+        if (updateError) throw updateError;
 
-        if (pagamentosParciais && pagamentosParciais.length > 0) {
-          // TEM pagamentos parciais - NÃO deletar, apenas marcar
-          const { error: updateError } = await supabase
-            .from('lancamentos_loja')
-            .update({ 
-              status: 'pendente',
-              observacoes: 'Remanescente parcelado'
-            })
-            .eq('id', lancamentoExistente.id);
+        // Criar as DEMAIS parcelas (2 em diante)
+        const parcelasRestantes = [];
+        for (let i = 1; i < numParcelas; i++) {
+          const dataParcela = new Date(formParcelamento.data_primeira_parcela);
+          dataParcela.setMonth(dataParcela.getMonth() + i);
           
-          if (updateError) throw updateError;
-        } else {
-          // NÃO tem pagamentos parciais - pode deletar
-          const { error: deleteError } = await supabase
-            .from('lancamentos_loja')
-            .delete()
-            .eq('id', lancamentoExistente.id);
-          
-          if (deleteError) throw deleteError;
+          parcelasRestantes.push({
+            tipo: formParcelamento.tipo,
+            categoria_id: parseInt(formParcelamento.categoria_id),
+            descricao: `${formParcelamento.descricao} (${i + 1}/${numParcelas})`,
+            valor: valorParcela,
+            data_lancamento: new Date().toISOString().split('T')[0],
+            data_vencimento: dataParcela.toISOString().split('T')[0],
+            tipo_pagamento: formParcelamento.tipo_pagamento,
+            status: 'pendente',
+            origem_tipo: formParcelamento.origem_tipo,
+            origem_irmao_id: formParcelamento.origem_irmao_id || null,
+            observacoes: formParcelamento.observacoes,
+            eh_parcelado: true,
+            parcela_numero: i + 1,
+            parcela_total: numParcelas,
+            grupo_parcelamento: grupoParcelamento
+          });
         }
-      }
 
-      const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
-      if (error) throw error;
+        if (parcelasRestantes.length > 0) {
+          const { error } = await supabase.from('lancamentos_loja').insert(parcelasRestantes);
+          if (error) throw error;
+        }
 
-      if (lancamentoExistente) {
-        showSuccess(`✅ Lançamento parcelado em ${numParcelas}x e original excluído!`);
+        showSuccess(`✅ Lançamento parcelado em ${numParcelas}x!`);
       } else {
+        // Parcelamento NOVO (sem lançamento existente) - cria todas
+        const parcelas = [];
+        for (let i = 0; i < numParcelas; i++) {
+          const dataParcela = new Date(formParcelamento.data_primeira_parcela);
+          dataParcela.setMonth(dataParcela.getMonth() + i);
+          
+          parcelas.push({
+            tipo: formParcelamento.tipo,
+            categoria_id: parseInt(formParcelamento.categoria_id),
+            descricao: `${formParcelamento.descricao} (${i + 1}/${numParcelas})`,
+            valor: valorParcela,
+            data_lancamento: new Date().toISOString().split('T')[0],
+            data_vencimento: dataParcela.toISOString().split('T')[0],
+            tipo_pagamento: formParcelamento.tipo_pagamento,
+            status: 'pendente',
+            origem_tipo: formParcelamento.origem_tipo,
+            origem_irmao_id: formParcelamento.origem_irmao_id || null,
+            observacoes: formParcelamento.observacoes,
+            eh_parcelado: true,
+            parcela_numero: i + 1,
+            parcela_total: numParcelas,
+            grupo_parcelamento: grupoParcelamento
+          });
+        }
+
+        const { error } = await supabase.from('lancamentos_loja').insert(parcelas);
+        if (error) throw error;
         showSuccess(`✅ ${numParcelas} parcelas criadas com sucesso!`);
       }
+      
       onClose();
       onSuccess();
     } catch (error) {
