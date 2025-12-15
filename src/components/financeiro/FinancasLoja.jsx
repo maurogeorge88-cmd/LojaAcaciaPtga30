@@ -5,6 +5,45 @@ import 'jspdf-autotable';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 
 // ========================================
+// 💰 REGIME DE COMPETÊNCIA FINANCEIRA
+// ========================================
+// REGRAS FUNDAMENTAIS:
+// 
+// ✅ LANÇAMENTOS PAGOS:
+//    - Filtrados por: data_pagamento
+//    - Exibidos por: data_pagamento
+//    - Contam para: Receitas/Despesas pagas do período
+//
+// ✅ LANÇAMENTOS PENDENTES:
+//    - Filtrados por: data_vencimento  
+//    - Exibidos por: data_vencimento
+//    - Contam para: Receitas/Despesas a receber/pagar
+//
+// ❌ DATA DE LANÇAMENTO:
+//    - NÃO é usada para controle
+//    - Serve apenas como referência histórica
+//    - Aparece como coluna secundária na tabela
+//
+// EXEMPLOS:
+// 
+// Exemplo 1 - Mensalidade:
+// • Lançada: 01/11/2025
+// • Vencimento: 30/11/2025
+// • Paga: 05/12/2025
+// → Aparece no relatório de DEZEMBRO/2025 (data do pagamento)
+//
+// Exemplo 2 - Despesa pendente:
+// • Lançada: 15/11/2025
+// • Vencimento: 20/12/2025
+// • Status: Pendente
+// → Aparece no relatório de DEZEMBRO/2025 (data de vencimento)
+//
+// SALDO ANTERIOR:
+// • Calculado com lançamentos PAGOS antes do período
+// • Usa data_pagamento como critério
+// • Reflete o fluxo de caixa real
+
+// ========================================
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
 // ========================================
 // Status dos irmãos da A∴R∴L∴S∴ Acácia de Paranatinga nº 30
@@ -248,18 +287,32 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           categorias_financeiras(nome, tipo),
           irmaos(nome)
         `)
-        .order('data_lancamento', { ascending: false })
         .limit(500); // ⚡ PERFORMANCE: Limita a 500 registros
 
-      // Filtro de MÊS e ANO (0 = Todos)
+      // ⚠️ REGIME DE COMPETÊNCIA - REGRAS:
+      // - PAGOS: Filtrar por data_pagamento (quando foi efetivamente pago)
+      // - PENDENTES: Filtrar por data_vencimento (quando deve ser pago)
+      // - data_lancamento: NÃO É USADA para controle, apenas referência
+      
       if (mes > 0 && ano > 0) {
         const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
         const ultimoDia = new Date(ano, mes, 0).getDate();
         const ultimoDiaFormatado = `${ano}-${mes.toString().padStart(2, '0')}-${ultimoDia}`;
-        query = query.gte('data_lancamento', primeiroDia).lte('data_lancamento', ultimoDiaFormatado);
+        
+        // Buscar lançamentos onde:
+        // 1. Status PAGO e data_pagamento no período, OU
+        // 2. Status PENDENTE e data_vencimento no período
+        query = query.or(
+          `and(status.eq.pago,data_pagamento.gte.${primeiroDia},data_pagamento.lte.${ultimoDiaFormatado}),` +
+          `and(status.eq.pendente,data_vencimento.gte.${primeiroDia},data_vencimento.lte.${ultimoDiaFormatado})`
+        );
+        
       } else if (ano > 0) {
         // Apenas ano selecionado
-        query = query.gte('data_lancamento', `${ano}-01-01`).lte('data_lancamento', `${ano}-12-31`);
+        query = query.or(
+          `and(status.eq.pago,data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),` +
+          `and(status.eq.pendente,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`
+        );
       }
 
       // Filtro de TIPO (receita/despesa)
@@ -331,6 +384,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
         return lanc;
       }));
+
+      // ⚠️ ORDENAÇÃO: Usar data relevante (pagamento para pagos, vencimento para pendentes)
+      lancamentosProcessados.sort((a, b) => {
+        const dataA = a.status === 'pago' ? a.data_pagamento : a.data_vencimento;
+        const dataB = b.status === 'pago' ? b.data_pagamento : b.data_vencimento;
+        return new Date(dataB) - new Date(dataA); // Mais recente primeiro
+      });
 
       setLancamentos(lancamentosProcessados);
     } catch (error) {
@@ -850,12 +910,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         dataLimite = `${ano}-01-01`;
       }
 
-      // Buscar todos os lançamentos pagos ANTES do período selecionado
+      // ⚠️ IMPORTANTE: Buscar lançamentos PAGOS com data_pagamento ANTES do período
+      // Isso garante que o saldo anterior reflita o que foi efetivamente pago
       const { data, error } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(tipo)')
         .eq('status', 'pago')
-        .lt('data_lancamento', dataLimite)
+        .lt('data_pagamento', dataLimite)  // ← MUDADO: usar data_pagamento
         .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais duplicados
 
       if (error) throw error;
@@ -2990,8 +3051,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Data Lanç.</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Vencimento</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Competência</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Lançamento</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
@@ -3005,11 +3066,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               <tbody className="bg-white divide-y divide-gray-200">
                 {lancamentos.map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
-                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_lancamento)}
+                    {/* COMPETÊNCIA: Mostra data relevante (pagamento se pago, vencimento se pendente) */}
+                    <td className="px-2 py-3 whitespace-nowrap text-sm w-24">
+                      <div className={lanc.status === 'pago' ? 'text-green-700 font-medium' : 'text-gray-900'}>
+                        {formatarDataBR(lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento)}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {lanc.status === 'pago' ? '💰 Pgto' : '📅 Venc'}
+                      </div>
                     </td>
-                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 w-24">
-                      {formatarDataBR(lanc.data_vencimento)}
+                    {/* DATA DE LANÇAMENTO: Apenas referência */}
+                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 w-24">
+                      {formatarDataBR(lanc.data_lancamento)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
