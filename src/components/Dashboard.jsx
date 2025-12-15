@@ -126,13 +126,63 @@ export const Dashboard = ({ irmaos, balaustres }) => {
       }
     });
 
+    // ===== CONSOLIDAR DUPLICATAS =====
+    const consolidarDuplicatas = (lista) => {
+      const map = new Map();
+      
+      lista.forEach(pessoa => {
+        // Normalizar nome
+        const nomeNormalizado = pessoa.nome
+          .trim()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/\s+/g, ' ');
+        
+        const timestamp = pessoa.dataNasc.getTime();
+        const chave = `${nomeNormalizado}-${timestamp}`;
+        
+        if (map.has(chave)) {
+          // Duplicata encontrada - adicionar vínculo
+          const pessoaExistente = map.get(chave);
+          
+          if (!pessoaExistente.vinculos) {
+            pessoaExistente.vinculos = [{
+              tipo: pessoaExistente.tipo,
+              irmao: pessoaExistente.irmaoNome
+            }];
+          }
+          
+          pessoaExistente.vinculos.push({
+            tipo: pessoa.tipo,
+            irmao: pessoa.irmaoNome
+          });
+          
+          // Atualizar tipo
+          const tipos = pessoaExistente.vinculos.map(v => v.tipo);
+          pessoaExistente.tipo = tipos.join(' / ');
+          
+        } else {
+          map.set(chave, pessoa);
+        }
+      });
+      
+      return Array.from(map.values());
+    };
+    
+    const aniversariantesHojeConsolidados = consolidarDuplicatas(aniversariantesHoje);
+    const proximos7DiasConsolidados = consolidarDuplicatas(proximos7Dias);
+
     // Ordenar próximos 7 dias por data
-    proximos7Dias.sort((a, b) => a.diasRestantes - b.diasRestantes);
+    proximos7DiasConsolidados.sort((a, b) => a.diasRestantes - b.diasRestantes);
 
-    console.log('📅 Aniversariantes hoje:', aniversariantesHoje.length);
-    console.log('📅 Próximos 7 dias:', proximos7Dias.length);
+    console.log('📅 Aniversariantes hoje:', aniversariantesHojeConsolidados.length);
+    console.log('📅 Próximos 7 dias:', proximos7DiasConsolidados.length);
 
-    return { aniversariantesHoje, proximos7Dias };
+    return { 
+      aniversariantesHoje: aniversariantesHojeConsolidados, 
+      proximos7Dias: proximos7DiasConsolidados 
+    };
   }, [irmaos]);
 
   return (
@@ -240,16 +290,38 @@ export const Dashboard = ({ irmaos, balaustres }) => {
                   className="bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-white/30"
                 >
                   <div className="font-bold text-base">{pessoa.nome}</div>
-                  <div className="flex items-center gap-3 text-sm opacity-90">
-                    <span>
-                      {pessoa.tipo === 'Irmão' ? '👤' : 
-                       pessoa.tipo === 'Esposa' ? '💑' :
-                       pessoa.tipo === 'Pai' ? '👨' :
-                       pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
-                      {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
-                    </span>
-                    <span>•</span>
-                    <span>🎂 {pessoa.idade} anos hoje</span>
+                  <div className="text-sm opacity-90">
+                    {pessoa.vinculos && pessoa.vinculos.length > 1 ? (
+                      // Múltiplos vínculos
+                      <div className="space-y-1">
+                        {pessoa.vinculos.map((vinculo, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <span>
+                              {vinculo.tipo === 'Irmão' ? '👤' : 
+                               vinculo.tipo === 'Esposa' ? '💑' :
+                               vinculo.tipo === 'Pai' ? '👨' :
+                               vinculo.tipo === 'Mãe' ? '👩' : '👶'} {vinculo.tipo} do Irmão {vinculo.irmao}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="mt-1">
+                          <span>🎂 {pessoa.idade} anos hoje</span>
+                        </div>
+                      </div>
+                    ) : (
+                      // Vínculo único
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <span>
+                          {pessoa.tipo === 'Irmão' ? '👤' : 
+                           pessoa.tipo === 'Esposa' ? '💑' :
+                           pessoa.tipo === 'Pai' ? '👨' :
+                           pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                          {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                        </span>
+                        <span>•</span>
+                        <span>🎂 {pessoa.idade} anos hoje</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -282,21 +354,48 @@ export const Dashboard = ({ irmaos, balaustres }) => {
                       {pessoa.diasRestantes} {pessoa.diasRestantes === 1 ? 'dia' : 'dias'}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm opacity-90 flex-wrap">
-                    <span>
-                      {pessoa.tipo === 'Irmão' ? '👤' : 
-                       pessoa.tipo === 'Esposa' ? '💑' :
-                       pessoa.tipo === 'Pai' ? '👨' :
-                       pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
-                      {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
-                    </span>
-                    <span>•</span>
-                    <span>🎂 {pessoa.idade} anos</span>
-                    <span>•</span>
-                    <span>📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
-                      day: '2-digit', 
-                      month: 'long' 
-                    })}</span>
+                  <div className="text-sm opacity-90">
+                    {pessoa.vinculos && pessoa.vinculos.length > 1 ? (
+                      // Múltiplos vínculos
+                      <div className="space-y-1">
+                        {pessoa.vinculos.map((vinculo, idx) => (
+                          <div key={idx}>
+                            <span>
+                              {vinculo.tipo === 'Irmão' ? '👤' : 
+                               vinculo.tipo === 'Esposa' ? '💑' :
+                               vinculo.tipo === 'Pai' ? '👨' :
+                               vinculo.tipo === 'Mãe' ? '👩' : '👶'} {vinculo.tipo} do Irmão {vinculo.irmao}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="flex items-center gap-2 flex-wrap mt-1">
+                          <span>🎂 {pessoa.idade} anos</span>
+                          <span>•</span>
+                          <span>📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: 'long' 
+                          })}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      // Vínculo único
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span>
+                          {pessoa.tipo === 'Irmão' ? '👤' : 
+                           pessoa.tipo === 'Esposa' ? '💑' :
+                           pessoa.tipo === 'Pai' ? '👨' :
+                           pessoa.tipo === 'Mãe' ? '👩' : '👶'} {pessoa.tipo}
+                          {pessoa.irmaoNome && ` de ${pessoa.irmaoNome}`}
+                        </span>
+                        <span>•</span>
+                        <span>🎂 {pessoa.idade} anos</span>
+                        <span>•</span>
+                        <span>📆 {pessoa.dataAniversario.toLocaleDateString('pt-BR', { 
+                          day: '2-digit', 
+                          month: 'long' 
+                        })}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
