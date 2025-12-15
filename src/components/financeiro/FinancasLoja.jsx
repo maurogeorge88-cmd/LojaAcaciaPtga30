@@ -8,7 +8,6 @@ import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formata
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
 // ========================================
 // Status dos irmãos da A∴R∴L∴S∴ Acácia de Paranatinga nº 30
-
 // Status que PODEM receber lançamentos financeiros
 const STATUS_PERMITIDOS = [
   'Regular',      // Irmão em situação regular
