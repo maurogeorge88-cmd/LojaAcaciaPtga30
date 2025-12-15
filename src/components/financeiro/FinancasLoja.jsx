@@ -3536,6 +3536,20 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
       
       // Se estiver parcelando um lançamento existente
       if (lancamentoExistente) {
+        // Verificar se é lançamento principal com pagamentos parciais
+        const { data: pagamentos, error: checkError } = await supabase
+          .from('lancamentos_loja')
+          .select('id')
+          .eq('lancamento_principal_id', lancamentoExistente.id)
+          .eq('eh_pagamento_parcial', true);
+
+        if (checkError) throw checkError;
+
+        if (pagamentos && pagamentos.length > 0) {
+          showError('Este lançamento tem pagamentos parciais. Parcele o remanescente!');
+          return;
+        }
+
         // Transformar o lançamento existente na PRIMEIRA parcela
         const dataPrimeiraParcela = new Date(formParcelamento.data_primeira_parcela);
         
