@@ -352,12 +352,18 @@ export default function Aniversariantes() {
           const ehHoje = aniv.proximo_aniversario.toDateString() === hoje.toDateString();
           const dataNascFormatada = aniv.data_nascimento.toLocaleDateString('pt-BR');
           
+          // Montar texto de vínculos
+          let textoIrmao = aniv.irmao_responsavel || '-';
+          if (aniv.vinculos && aniv.vinculos.length > 1) {
+            textoIrmao = aniv.vinculos.map(v => `${v.tipo} de ${v.irmao}`).join('; ');
+          }
+          
           return [
             aniv.nome,
             aniv.tipo,
             `${aniv.idade} anos`,
             dataNascFormatada,
-            aniv.irmao_responsavel || '-',
+            textoIrmao,
             ehHoje ? '🎉' : ''
           ];
         });
@@ -1046,14 +1052,53 @@ export default function Aniversariantes() {
         console.log('ℹ️ Campo data_casamento não encontrado (adicione na tabela esposas futuramente)');
       }
       
-      // Reordenar familiares após adicionar bodas
-      aniversariantesFamiliares.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
+      // ===== CONSOLIDAR FAMILIARES DUPLICADOS =====
+      // Agrupar por nome + data de nascimento para consolidar duplicatas
+      const familiaresMap = new Map();
+      
+      aniversariantesFamiliares.forEach(familiar => {
+        // Criar chave única: nome + data de nascimento
+        const chave = `${familiar.nome.trim().toLowerCase()}-${familiar.data_nascimento.getTime()}`;
+        
+        if (familiaresMap.has(chave)) {
+          // Familiar já existe - adicionar vínculo
+          const familiarExistente = familiaresMap.get(chave);
+          
+          // Criar array de vínculos se não existir
+          if (!familiarExistente.vinculos) {
+            familiarExistente.vinculos = [{
+              tipo: familiarExistente.tipo,
+              irmao: familiarExistente.irmao_responsavel
+            }];
+          }
+          
+          // Adicionar novo vínculo
+          familiarExistente.vinculos.push({
+            tipo: familiar.tipo,
+            irmao: familiar.irmao_responsavel
+          });
+          
+          // Atualizar tipo para mostrar que tem múltiplos vínculos
+          const tipos = familiarExistente.vinculos.map(v => v.tipo);
+          familiarExistente.tipo = tipos.join(' / ');
+          
+        } else {
+          // Primeiro registro deste familiar
+          familiaresMap.set(chave, familiar);
+        }
+      });
+      
+      // Converter Map de volta para array
+      const familiares consolidados = Array.from(familiaresMap.values());
+      
+      // Reordenar após consolidação
+      familiaresConsolidados.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
       aniversariantesEventos.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
 
       // Combinar todos em uma lista única mantendo os níveis
       const todosAniversariantes = [
         ...aniversariantesIrmaos,
-        ...aniversariantesFamiliares,
+        ...familiaresConsolidados,
         ...aniversariantesEventos,
         ...aniversariantesInMemoriam
       ];
@@ -1254,7 +1299,16 @@ export default function Aniversariantes() {
                               {aniv.tipo === 'Bodas' ? `${aniv.tipo} - ${aniv.idade} anos de união` : `${aniv.tipo} - ${aniv.idade} anos`}
                             </p>
                             
-                            {aniv.irmao_responsavel && (
+                            {/* Exibir vínculos múltiplos se existirem */}
+                            {aniv.vinculos && aniv.vinculos.length > 1 ? (
+                              <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                                {aniv.vinculos.map((vinculo, idx) => (
+                                  <p key={idx}>
+                                    • {vinculo.tipo} de {vinculo.irmao}
+                                  </p>
+                                ))}
+                              </div>
+                            ) : aniv.irmao_responsavel && (
                               <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
                             )}
                             
