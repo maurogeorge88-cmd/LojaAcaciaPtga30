@@ -3093,11 +3093,30 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => {
+                              // Verificar se tem pagamentos parciais
+                              const temFilhos = lancamentos.some(l => 
+                                l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial
+                              );
+                              
+                              if (temFilhos) {
+                                showError('Este lançamento tem pagamentos parciais. Use "💰" para pagamento parcial.');
+                                return;
+                              }
+                              
                               setLancamentoParcelar(lanc);
                               setModalParcelamentoAberto(true);
                             }}
-                            className="text-indigo-600 hover:text-indigo-900 text-lg"
-                            title="Parcelar este lançamento"
+                            disabled={lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)}
+                            className={`text-lg ${
+                              lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)
+                                ? 'text-gray-400 cursor-not-allowed'
+                                : 'text-indigo-600 hover:text-indigo-900'
+                            }`}
+                            title={
+                              lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)
+                                ? 'Lançamento com pagamento parcial - use 💰'
+                                : 'Parcelar este lançamento'
+                            }
                           >
                             🔀
                           </button>
