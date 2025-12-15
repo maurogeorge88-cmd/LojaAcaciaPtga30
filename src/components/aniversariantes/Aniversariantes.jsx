@@ -1089,7 +1089,7 @@ export default function Aniversariantes() {
       });
       
       // Converter Map de volta para array
-      const familiares consolidados = Array.from(familiaresMap.values());
+      const familiaresConsolidados = Array.from(familiaresMap.values());
       
       // Reordenar após consolidação
       familiaresConsolidados.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
