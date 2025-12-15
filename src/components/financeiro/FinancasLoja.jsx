@@ -3531,7 +3531,6 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
         return;
       }
 
-      const valorParcela = valorTotal / numParcelas;
       const grupoParcelamento = gerarUUID();
       const valorParcela = valorTotal / numParcelas;
       
