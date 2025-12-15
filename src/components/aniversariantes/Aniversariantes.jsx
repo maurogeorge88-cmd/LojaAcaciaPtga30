@@ -355,7 +355,7 @@ export default function Aniversariantes() {
           // Montar texto de vínculos
           let textoIrmao = aniv.irmao_responsavel || '-';
           if (aniv.vinculos && aniv.vinculos.length > 1) {
-            textoIrmao = aniv.vinculos.map(v => `${v.tipo} de ${v.irmao}`).join('; ');
+            textoIrmao = aniv.vinculos.map(v => `${v.tipo} do Irmão ${v.irmao}`).join('; ');
           }
           
           return [
@@ -1056,8 +1056,6 @@ export default function Aniversariantes() {
       // Agrupar por nome + data de nascimento para consolidar duplicatas
       const familiaresMap = new Map();
       
-      console.log('🔍 Iniciando consolidação de familiares. Total antes:', aniversariantesFamiliares.length);
-      
       aniversariantesFamiliares.forEach(familiar => {
         // Normalizar nome: remover espaços extras, lowercase, remover acentos
         const nomeNormalizado = familiar.nome
@@ -1071,16 +1069,8 @@ export default function Aniversariantes() {
         const timestamp = familiar.data_nascimento.getTime();
         const chave = `${nomeNormalizado}-${timestamp}`;
         
-        console.log('🔑 Processando:', familiar.nome);
-        console.log('   Nome normalizado:', nomeNormalizado);
-        console.log('   Timestamp:', timestamp);
-        console.log('   Chave final:', chave);
-        console.log('   Tipo:', familiar.tipo);
-        console.log('   Irmão:', familiar.irmao_responsavel);
-        
         if (familiaresMap.has(chave)) {
           // Familiar já existe - adicionar vínculo
-          console.log('   ⚠️ DUPLICATA ENCONTRADA!');
           const familiarExistente = familiaresMap.get(chave);
           
           // Criar array de vínculos se não existir
@@ -1089,7 +1079,6 @@ export default function Aniversariantes() {
               tipo: familiarExistente.tipo,
               irmao: familiarExistente.irmao_responsavel
             }];
-            console.log('   📝 Criando array de vínculos com o primeiro registro');
           }
           
           // Adicionar novo vínculo
@@ -1098,27 +1087,18 @@ export default function Aniversariantes() {
             irmao: familiar.irmao_responsavel
           });
           
-          console.log('   📋 Total de vínculos agora:', familiarExistente.vinculos.length);
-          
           // Atualizar tipo para mostrar que tem múltiplos vínculos
           const tipos = familiarExistente.vinculos.map(v => v.tipo);
           familiarExistente.tipo = tipos.join(' / ');
           
-          console.log('   ✅ Tipo atualizado:', familiarExistente.tipo);
-          
         } else {
           // Primeiro registro deste familiar
-          console.log('   ➕ Primeira vez que vejo este familiar');
           familiaresMap.set(chave, familiar);
         }
-        console.log('---');
       });
       
       // Converter Map de volta para array
       const familiaresConsolidados = Array.from(familiaresMap.values());
-      
-      console.log('✅ Total após consolidação:', familiaresConsolidados.length);
-      console.log('📊 Consolidados:', aniversariantesFamiliares.length - familiaresConsolidados.length, 'familiares');
       
       // Reordenar após consolidação
       familiaresConsolidados.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
@@ -1333,7 +1313,7 @@ export default function Aniversariantes() {
                               <div className="text-xs text-gray-500 mt-1 space-y-0.5">
                                 {aniv.vinculos.map((vinculo, idx) => (
                                   <p key={idx}>
-                                    • {vinculo.tipo} de {vinculo.irmao}
+                                    • {vinculo.tipo} do Irmão {vinculo.irmao}
                                   </p>
                                 ))}
                               </div>
