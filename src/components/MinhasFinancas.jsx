@@ -74,6 +74,97 @@ export default function MinhasFinancas({ userEmail }) {
       const totalReceitasPagas = receitasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       const totalDespesasPagas = despesasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
 
+      /**
+ * MINHAS FINANÇAS - VISUALIZAÇÃO DO IRMÃO
+ * 
+ * Este componente permite que irmãos comuns visualizem APENAS suas próprias finanças.
+ * 
+ * PERMISSÕES:
+ * ✅ Visualizar lançamentos próprios (receitas e despesas)
+ * ✅ Ver saldo devedor/credor
+ * ✅ Filtrar por status e ano
+ * 
+ * RESTRIÇÕES:
+ * ❌ NÃO pode criar lançamentos
+ * ❌ NÃO pode editar lançamentos
+ * ❌ NÃO pode excluir lançamentos
+ * ❌ NÃO pode quitar/pagar lançamentos
+ * ❌ NÃO pode ver finanças de outros irmãos
+ * 
+ * NOTA: Todas as operações financeiras devem ser feitas pelo Tesoureiro
+ * através do módulo "Finanças da Loja".
+ */
+
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+
+export default function MinhasFinancas({ userEmail }) {
+  const [lancamentos, setLancamentos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState('todos'); // todos, pendentes, pagos
+  const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
+
+  // Estatísticas
+  const [totalReceitas, setTotalReceitas] = useState(0); // O que o irmão DEVE
+  const [totalDespesas, setTotalDespesas] = useState(0); // O que a loja DEVE (créditos)
+  const [saldoLiquido, setSaldoLiquido] = useState(0);
+
+  useEffect(() => {
+    carregarMinhasFinancas();
+  }, [userEmail, filtro, anoFiltro]);
+
+  const carregarMinhasFinancas = async () => {
+    try {
+      setLoading(true);
+
+      // Buscar ID do irmão pelo email
+      const { data: irmao, error: irmaoError } = await supabase
+        .from('irmaos')
+        .select('id, nome')
+        .eq('email', userEmail)
+        .single();
+
+      if (irmaoError) throw irmaoError;
+      if (!irmao) {
+        console.log('Irmão não encontrado');
+        setLoading(false);
+        return;
+      }
+
+      // PRIMEIRO: Buscar TODOS os lançamentos do ano para calcular totais corretos
+      const { data: todosLancamentos, error: erroTodos } = await supabase
+        .from('lancamentos_loja')
+        .select(`
+          *,
+          categorias_financeiras (nome, tipo)
+        `)
+        .eq('origem_irmao_id', irmao.id)
+        .eq('origem_tipo', 'Irmao')
+        .gte('data_vencimento', `${anoFiltro}-01-01`)
+        .lte('data_vencimento', `${anoFiltro}-12-31`)
+        .limit(300); // ⚡ PERFORMANCE: Limita a 300 registros por ano
+
+      if (erroTodos) throw erroTodos;
+
+      // Calcular totais GERAIS (independente do filtro)
+      const todasReceitas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente'
+      );
+      const todasDespesas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente'
+      );
+      const receitasPagas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago'
+      );
+      const despesasPagas = (todosLancamentos || []).filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago'
+      );
+
+      const totalReceitasPendentes = todasReceitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesasPendentes = todasDespesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalReceitasPagas = receitasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesasPagas = despesasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
       // SALDO FINAL CORRETO:
       // Você deve (receitas pendentes) - Você já pagou (receitas pagas) + Loja deve (despesas pendentes) - Loja já pagou (despesas pagas)
       const saldoFinal = totalReceitasPendentes - totalDespesasPendentes;
@@ -158,7 +249,9 @@ export default function MinhasFinancas({ userEmail }) {
   const anosDisponiveis = () => {
     const anoAtual = new Date().getFullYear();
     const anos = [];
-    for (let i = anoAtual; i >= anoAtual - 5; i--) {
+    // De 2025 até 3 anos no futuro a partir do ano atual
+    const anoFinal = Math.max(anoAtual + 3, 2028); // Garante pelo menos até 2028
+    for (let i = anoFinal; i >= 2025; i--) {
       anos.push(i);
     }
     return anos;
@@ -174,7 +267,20 @@ export default function MinhasFinancas({ userEmail }) {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">💰 Minhas Finanças</h2>
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">💰 Minhas Finanças</h2>
+        
+        {/* Aviso de Somente Leitura */}
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 text-lg">ℹ️</span>
+            <p className="text-sm text-blue-800">
+              <strong>Visualização:</strong> Esta tela mostra apenas suas finanças. 
+              Para pagamentos ou dúvidas, entre em contato com o Tesoureiro.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Cards de resumo - NOVO LAYOUT */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
