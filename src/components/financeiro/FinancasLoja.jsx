@@ -2044,50 +2044,88 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         </div>
       </div>
 
-      {/* RESUMO FINANCEIRO */}
-      <div className="grid grid-cols-2 md:grid-cols-7 gap-3">
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-          <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
-          <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
-            {formatarMoeda(saldoAnterior)}
-          </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">
-            {filtros.mes > 0 && filtros.ano > 0 
-              ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
-              : filtros.ano > 0 
-              ? `Antes de ${filtros.ano}`
-              : 'Período base'}
-          </p>
+      {/* RESUMO FINANCEIRO - NOVA ESTRUTURA */}
+      <div className="space-y-3">
+        {/* LINHA 1: Resumo Geral */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
+            <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+              {formatarMoeda(saldoAnterior)}
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">
+              {filtros.mes > 0 && filtros.ano > 0 
+                ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
+                : filtros.ano > 0 
+                ? `Antes de ${filtros.ano}`
+                : 'Período base'}
+            </p>
+          </div>
+          
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas</p>
+            <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
+          </div>
+          
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+            <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
+            <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Total pago</p>
+          </div>
+          
+          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
+            <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
+            <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
+              {formatarMoeda(resumo.saldoPeriodo)}
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Receitas - Despesas</p>
+          </div>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-          <p className="text-xs text-green-600 font-medium">Receitas Pagas</p>
-          <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-xs text-red-600 font-medium">Despesas Pagas</p>
-          <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
-        </div>
-        <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
-          <p className="text-xs text-cyan-600 font-medium">Saldo do Período</p>
-          <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
-            {formatarMoeda(resumo.saldoPeriodo)}
-          </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Apenas este período</p>
-        </div>
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
-          <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-            {formatarMoeda(resumo.saldoTotal)}
-          </p>
-          <p className="text-[10px] text-gray-500 mt-0.5">Acumulado total</p>
-        </div>
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <p className="text-xs text-yellow-600 font-medium">Receitas Pendentes</p>
-          <p className="text-lg font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
-        </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-          <p className="text-xs text-orange-600 font-medium">Despesas Pendentes</p>
-          <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
+
+        {/* LINHA 2: Detalhamento (Bancário, Caixa, Total) */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="bg-sky-50 border-2 border-sky-300 rounded-lg p-3">
+            <p className="text-xs text-sky-600 font-medium">🏦 Saldo Bancário</p>
+            <p className={`text-lg font-bold ${resumo.saldoBancario >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
+              {formatarMoeda(resumo.saldoBancario)}
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">
+              PIX, Transf., Cartão
+            </p>
+          </div>
+
+          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3">
+            <p className="text-xs text-emerald-600 font-medium">💵 Caixa Físico</p>
+            <p className="text-lg font-bold text-emerald-700">
+              {formatarMoeda(resumo.caixaFisico)}
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">
+              Dinheiro não depositado
+            </p>
+          </div>
+
+          <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-3 col-span-2 md:col-span-1">
+            <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
+            <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+              {formatarMoeda(resumo.saldoTotal)}
+            </p>
+            <p className="text-[10px] text-gray-500 mt-0.5">
+              Bancário + Caixa
+            </p>
+          </div>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-xs text-yellow-600 font-medium">⏳ A Receber</p>
+            <p className="text-lg font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
+          </div>
+          
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+            <p className="text-xs text-orange-600 font-medium">⏰ A Pagar</p>
+            <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
+          </div>
         </div>
       </div>
 
