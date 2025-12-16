@@ -223,7 +223,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       </div>
 
       {/* LISTA */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {beneficiariosFiltrados.map(beneficiario => (
           <div
             key={beneficiario.id}
