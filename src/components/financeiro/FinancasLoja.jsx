@@ -105,6 +105,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [debitosIrmao, setDebitosIrmao] = useState([]);
   const [creditosIrmao, setCreditosIrmao] = useState([]);
 
+  // Estados para Sangria de Caixa
+  const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
+  const [formSangria, setFormSangria] = useState({
+    valor: '',
+    data: new Date().toISOString().split('T')[0],
+    observacao: ''
+  });
+
   const [formLancamento, setFormLancamento] = useState({
     tipo: 'receita',
     categoria_id: '',
@@ -846,6 +854,116 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     }));
   };
 
+  // ========================================
+  // FUNÇÃO: FAZER SANGRIA DE CAIXA
+  // ========================================
+  const fazerSangria = async () => {
+    try {
+      const { valor, data, observacao } = formSangria;
+
+      // Validações
+      if (!valor || parseFloat(valor) <= 0) {
+        showError('Informe um valor válido para a sangria');
+        return;
+      }
+
+      const valorSangria = parseFloat(valor);
+      const resumoAtual = calcularResumo();
+
+      // Verificar se tem dinheiro suficiente no caixa
+      if (valorSangria > resumoAtual.caixaFisico) {
+        showError(`Valor da sangria (${formatarMoeda(valorSangria)}) é maior que o caixa físico disponível (${formatarMoeda(resumoAtual.caixaFisico)})`);
+        return;
+      }
+
+      setLoading(true);
+
+      // Buscar ou criar categoria "Transferências Internas"
+      let categoriaTransferencia = categorias.find(c => 
+        c.nome.toLowerCase().includes('transferência') && 
+        c.nome.toLowerCase().includes('interna')
+      );
+
+      if (!categoriaTransferencia) {
+        // Criar categoria se não existir
+        const { data: novaCategoria, error: errorCategoria } = await supabase
+          .from('categorias_financeiras')
+          .insert([{
+            nome: 'Transferências Internas',
+            tipo: 'receita',
+            descricao: 'Movimentações entre caixa físico e banco'
+          }])
+          .select()
+          .single();
+
+        if (errorCategoria) throw errorCategoria;
+        categoriaTransferencia = novaCategoria;
+        
+        // Atualizar lista de categorias
+        setCategorias([...categorias, novaCategoria]);
+      }
+
+      // LANÇAMENTO 1: Sangria (saída do caixa físico)
+      const { error: errorSangria } = await supabase
+        .from('lancamentos_loja')
+        .insert([{
+          categoria_id: categoriaTransferencia.id,
+          tipo: 'despesa',
+          descricao: `🔻 Sangria de Caixa${observacao ? ` - ${observacao}` : ''}`,
+          valor: valorSangria,
+          data_lancamento: data,
+          data_vencimento: data,
+          data_pagamento: data,
+          tipo_pagamento: 'dinheiro',
+          status: 'pago',
+          eh_transferencia_interna: true,
+          origem_tipo: 'Loja',
+          observacoes: `Sangria de caixa. ${observacao || ''}`
+        }]);
+
+      if (errorSangria) throw errorSangria;
+
+      // LANÇAMENTO 2: Depósito (entrada no banco)
+      const { error: errorDeposito } = await supabase
+        .from('lancamentos_loja')
+        .insert([{
+          categoria_id: categoriaTransferencia.id,
+          tipo: 'receita',
+          descricao: `🔺 Depósito em Banco${observacao ? ` - ${observacao}` : ''}`,
+          valor: valorSangria,
+          data_lancamento: data,
+          data_vencimento: data,
+          data_pagamento: data,
+          tipo_pagamento: 'transferencia',
+          status: 'pago',
+          eh_transferencia_interna: true,
+          origem_tipo: 'Loja',
+          observacoes: `Depósito de caixa físico. ${observacao || ''}`
+        }]);
+
+      if (errorDeposito) throw errorDeposito;
+
+      showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada com sucesso!`);
+      
+      // Limpar formulário e fechar modal
+      setFormSangria({
+        valor: '',
+        data: new Date().toISOString().split('T')[0],
+        observacao: ''
+      });
+      setModalSangriaAberto(false);
+
+      // Recarregar dados
+      carregarLancamentos();
+
+    } catch (error) {
+      console.error('Erro ao fazer sangria:', error);
+      showError('Erro ao fazer sangria: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calcularResumo = () => {
     // ========================================
     // RECEITAS PAGAS - SEPARADAS POR TIPO
@@ -858,7 +976,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
         l.tipo_pagamento !== 'compensacao' &&  // ← Não movimenta caixa
-        l.tipo_pagamento !== 'dinheiro'        // ← NOVO: Vai para caixa físico
+        l.tipo_pagamento !== 'dinheiro' &&     // ← Vai para caixa físico
+        !l.eh_transferencia_interna            // ← NOVO: Excluir sangrias/depósitos
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -868,60 +987,91 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro'       // ← NOVO: Só dinheiro físico
+        l.tipo_pagamento === 'dinheiro' &&     // ← Só dinheiro físico
+        !l.eh_transferencia_interna            // ← NOVO: Excluir sangrias
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    // 3. TOTAL DE RECEITAS (para compatibilidade)
+    // 3. SANGRIAS DE CAIXA (saídas do caixa físico)
+    const sangrias = lancamentos
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && 
+        l.status === 'pago' &&
+        l.eh_transferencia_interna === true &&
+        l.tipo_pagamento === 'dinheiro'        // ← Sangrias são em dinheiro
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    // 4. DEPÓSITOS (entradas no banco vindas do caixa)
+    const depositos = lancamentos
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && 
+        l.status === 'pago' &&
+        l.eh_transferencia_interna === true &&
+        l.tipo_pagamento !== 'dinheiro'        // ← Depósitos são bancários
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    // 5. TOTAL DE RECEITAS (para compatibilidade - não conta sangrias/depósitos)
     const receitas = receitasBancarias + receitasDinheiro;
 
     // ========================================
-    // DESPESAS PAGAS - TODAS JUNTAS
+    // DESPESAS PAGAS
     // ========================================
-    // Despesas são sempre bancárias (já foram pagas)
     const despesas = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'despesa' && 
         l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+        l.tipo_pagamento !== 'compensacao' &&  // ← EXCLUIR compensações
+        !l.eh_transferencia_interna            // ← NOVO: Excluir sangrias
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     // ========================================
-    // PENDENTES (não mudou)
+    // PENDENTES
     // ========================================
     const receitasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && 
+        l.status === 'pendente' &&
+        !l.eh_transferencia_interna
+      )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const despesasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente')
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'despesa' && 
+        l.status === 'pendente' &&
+        !l.eh_transferencia_interna
+      )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     // ========================================
-    // SALDOS - NOVA LÓGICA
+    // SALDOS - LÓGICA COM SANGRIA
     // ========================================
     
-    // Saldo do período (bancário + caixa)
+    // Saldo do período (bancário + caixa - sem contar transferências internas)
     const saldoPeriodo = receitas - despesas;
     
-    // Saldo Bancário = anterior + entradas bancárias - despesas
-    const saldoBancario = saldoAnterior + receitasBancarias - despesas;
+    // Saldo Bancário = anterior + receitas bancárias + depósitos - despesas
+    const saldoBancario = saldoAnterior + receitasBancarias + depositos - despesas;
     
-    // Caixa Físico = apenas receitas em dinheiro do período
-    const caixaFisico = receitasDinheiro;
+    // Caixa Físico = receitas em dinheiro - sangrias realizadas
+    const caixaFisico = receitasDinheiro - sangrias;
     
     // Saldo Total = bancário + caixa físico
     const saldoTotal = saldoBancario + caixaFisico;
 
     return {
       receitas,              // Total de receitas (compatibilidade)
-      receitasBancarias,     // ← NOVO: Receitas que entraram no banco
-      receitasDinheiro,      // ← NOVO: Receitas em dinheiro (caixa físico)
+      receitasBancarias,     // Receitas que entraram no banco
+      receitasDinheiro,      // Receitas em dinheiro (caixa físico)
+      sangrias,              // ← NOVO: Sangrias realizadas
+      depositos,             // ← NOVO: Depósitos realizados
       despesas,              // Despesas pagas
       saldoPeriodo,          // Saldo apenas do período
-      saldoBancario,         // ← NOVO: Saldo no banco
-      caixaFisico,           // ← NOVO: Dinheiro físico
+      saldoBancario,         // Saldo no banco
+      caixaFisico,           // Dinheiro físico (depois das sangrias)
       saldoTotal,            // Saldo total (bancário + caixa)
       receitasPendentes,     // Receitas a receber
       despesasPendentes      // Despesas a pagar
@@ -2095,14 +2245,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </p>
           </div>
 
-          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3">
+          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3 relative">
             <p className="text-xs text-emerald-600 font-medium">💵 Caixa Físico</p>
             <p className="text-lg font-bold text-emerald-700">
               {formatarMoeda(resumo.caixaFisico)}
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">
+            <p className="text-[10px] text-gray-500 mt-0.5 mb-2">
               Dinheiro não depositado
             </p>
+            {resumo.caixaFisico > 0 && (
+              <button
+                onClick={() => setModalSangriaAberto(true)}
+                className="w-full px-2 py-1 bg-emerald-600 text-white text-[10px] rounded hover:bg-emerald-700 transition-colors font-medium"
+              >
+                💰 Fazer Sangria
+              </button>
+            )}
           </div>
 
           <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-3 col-span-2 md:col-span-1">
@@ -3349,6 +3507,119 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           showSuccess={showSuccess}
           showError={showError}
         />
+      )}
+
+      {/* Modal de Sangria de Caixa */}
+      {modalSangriaAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">💰 Sangria de Caixa</h3>
+              <button
+                onClick={() => {
+                  setModalSangriaAberto(false);
+                  setFormSangria({
+                    valor: '',
+                    data: new Date().toISOString().split('T')[0],
+                    observacao: ''
+                  });
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Informação do Caixa Atual */}
+            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4 mb-6">
+              <p className="text-sm text-emerald-700 font-semibold mb-1">💵 Caixa Físico Disponível</p>
+              <p className="text-3xl font-bold text-emerald-800">
+                {formatarMoeda(resumo.caixaFisico)}
+              </p>
+            </div>
+
+            {/* Formulário */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valor da Sangria *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formSangria.valor}
+                  onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data do Depósito *
+                </label>
+                <input
+                  type="date"
+                  value={formSangria.data}
+                  onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observação (opcional)
+                </label>
+                <textarea
+                  value={formSangria.observacao}
+                  onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  rows="3"
+                  placeholder="Ex: Depósito no Banco do Brasil"
+                />
+              </div>
+            </div>
+
+            {/* Aviso */}
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
+              <p className="text-sm text-blue-800">
+                <strong>ℹ️ Esta operação irá:</strong>
+              </p>
+              <ul className="text-sm text-blue-700 mt-2 ml-4 list-disc space-y-1">
+                <li>Reduzir o Caixa Físico em R$ {formSangria.valor || '0,00'}</li>
+                <li>Aumentar o Saldo Bancário em R$ {formSangria.valor || '0,00'}</li>
+                <li>Criar 2 lançamentos de transferência interna</li>
+                <li>Manter o Saldo Total inalterado</li>
+              </ul>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setModalSangriaAberto(false);
+                  setFormSangria({
+                    valor: '',
+                    data: new Date().toISOString().split('T')[0],
+                    observacao: ''
+                  });
+                }}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={fazerSangria}
+                disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0}
+                className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                💰 Confirmar Sangria
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal de Compensação */}
