@@ -847,16 +847,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const calcularResumo = () => {
-    // Receitas pagas - EXCLUINDO compensações (não movimentam caixa)
-    const receitas = lancamentos
+    // ========================================
+    // RECEITAS PAGAS - SEPARADAS POR TIPO
+    // ========================================
+    
+    // 1. RECEITAS BANCÁRIAS (PIX, Transferência, Débito, Crédito, Cheque)
+    // Essas entram no saldo bancário
+    const receitasBancarias = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+        l.tipo_pagamento !== 'compensacao' &&  // ← Não movimenta caixa
+        l.tipo_pagamento !== 'dinheiro'        // ← NOVO: Vai para caixa físico
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    // Despesas pagas - EXCLUINDO compensações (não movimentam caixa)
+    // 2. RECEITAS EM DINHEIRO (Caixa Físico)
+    // Essas ficam no caixa físico até serem depositadas
+    const receitasDinheiro = lancamentos
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && 
+        l.status === 'pago' &&
+        l.tipo_pagamento === 'dinheiro'       // ← NOVO: Só dinheiro físico
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    // 3. TOTAL DE RECEITAS (para compatibilidade)
+    const receitas = receitasBancarias + receitasDinheiro;
+
+    // ========================================
+    // DESPESAS PAGAS - TODAS JUNTAS
+    // ========================================
+    // Despesas são sempre bancárias (já foram pagas)
     const despesas = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'despesa' && 
@@ -865,6 +887,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
+    // ========================================
+    // PENDENTES (não mudou)
+    // ========================================
     const receitasPendentes = lancamentos
       .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
@@ -873,19 +898,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente')
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    // Saldo do período (sem incluir saldo anterior)
+    // ========================================
+    // SALDOS - NOVA LÓGICA
+    // ========================================
+    
+    // Saldo do período (bancário + caixa)
     const saldoPeriodo = receitas - despesas;
     
-    // Saldo total (incluindo saldo anterior)
-    const saldoTotal = saldoAnterior + receitas - despesas;
+    // Saldo Bancário = anterior + entradas bancárias - despesas
+    const saldoBancario = saldoAnterior + receitasBancarias - despesas;
+    
+    // Caixa Físico = apenas receitas em dinheiro do período
+    const caixaFisico = receitasDinheiro;
+    
+    // Saldo Total = bancário + caixa físico
+    const saldoTotal = saldoBancario + caixaFisico;
 
     return {
-      receitas,
-      despesas,
-      saldoPeriodo,      // Saldo apenas do período
-      saldoTotal,        // Saldo acumulado total
-      receitasPendentes,
-      despesasPendentes
+      receitas,              // Total de receitas (compatibilidade)
+      receitasBancarias,     // ← NOVO: Receitas que entraram no banco
+      receitasDinheiro,      // ← NOVO: Receitas em dinheiro (caixa físico)
+      despesas,              // Despesas pagas
+      saldoPeriodo,          // Saldo apenas do período
+      saldoBancario,         // ← NOVO: Saldo no banco
+      caixaFisico,           // ← NOVO: Dinheiro físico
+      saldoTotal,            // Saldo total (bancário + caixa)
+      receitasPendentes,     // Receitas a receber
+      despesasPendentes      // Despesas a pagar
     };
   };
 
