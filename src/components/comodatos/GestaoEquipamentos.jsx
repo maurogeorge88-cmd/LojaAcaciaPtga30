@@ -403,11 +403,11 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       </div>
 
       {/* LISTA DE EQUIPAMENTOS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {equipamentosFiltrados.map(equipamento => (
           <div
             key={equipamento.id}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow"
+            className="bg-white rounded-lg shadow-md p-4 hover:shadow-xl transition-shadow"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
