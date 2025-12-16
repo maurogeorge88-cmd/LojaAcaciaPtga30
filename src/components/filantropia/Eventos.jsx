@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function Eventos() {
+export default function Eventos({ userPermissions = {} }) {
   const [eventos, setEventos] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
   const [modalVisualizacao, setModalVisualizacao] = useState(false);
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
+
+  // Verificar se tem permissão de edição (tesoureiro ou veneravel)
+  const podeEditar = userPermissions?.pode_editar_financas || userPermissions?.eh_veneravel || false;
 
   const [formData, setFormData] = useState({
     tipo_evento: 'externo', // externo ou interno
@@ -319,14 +322,29 @@ export default function Eventos() {
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Eventos da Loja</h1>
-        <button
-          onClick={() => abrirModal()}
-          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          <span>➕</span>
-          Novo Evento
-        </button>
+        {podeEditar && (
+          <button
+            onClick={() => abrirModal()}
+            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            <span>➕</span>
+            Novo Evento
+          </button>
+        )}
       </div>
+
+      {/* Aviso para irmãos sem permissão */}
+      {!podeEditar && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
+          <div className="flex items-center gap-2">
+            <span className="text-blue-600 text-lg">ℹ️</span>
+            <p className="text-sm text-blue-800">
+              <strong>Visualização:</strong> Você pode visualizar os eventos da loja. 
+              Para criar ou editar eventos, entre em contato com a administração.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Lista de Eventos */}
       <div className="grid gap-4">
@@ -385,22 +403,24 @@ export default function Eventos() {
                       </p>
                     )}
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => abrirModal(evento)}
-                      className="p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                      title="Editar"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={() => excluirEvento(evento.id)}
-                      className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition"
-                      title="Excluir"
-                    >
-                      🗑️
-                    </button>
-                  </div>
+                  {podeEditar && (
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => abrirModal(evento)}
+                        className="p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        title="Editar"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => excluirEvento(evento.id)}
+                        className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Excluir"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Informações adicionais em cards */}
