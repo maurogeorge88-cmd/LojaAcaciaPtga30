@@ -246,13 +246,69 @@ export const CorpoAdmin = ({
                     {corpoAdmin
                       .filter(ca => ca.ano_exercicio === ano)
                       .sort((a, b) => {
-                        // Ordem por hierarquia maçônica
-                        const ordemHierarquica = CARGOS_ADMINISTRATIVOS;
-                        const indexA = ordemHierarquica.indexOf(a.cargo || '');
-                        const indexB = ordemHierarquica.indexOf(b.cargo || '');
-                        if (indexA === -1 && indexB === -1) return (a.cargo || '').localeCompare(b.cargo || '');
+                        // Normalizar e mapear cargos para hierarquia
+                        const normalizarCargo = (cargo) => {
+                          if (!cargo) return '';
+                          const c = cargo.toLowerCase().trim();
+                          
+                          // Mapear variações para padrão
+                          if (c.includes('veneravel') || c.includes('venerável')) return 'veneravel mestre';
+                          if (c.includes('1') && c.includes('vigilante')) return 'primeiro vigilante';
+                          if (c.includes('primeiro') && c.includes('vigilante')) return 'primeiro vigilante';
+                          if (c.includes('2') && c.includes('vigilante')) return 'segundo vigilante';
+                          if (c.includes('segundo') && c.includes('vigilante')) return 'segundo vigilante';
+                          if (c.includes('orador')) return 'orador';
+                          if (c.includes('secretario') || c.includes('secretário')) return 'secretario';
+                          if (c.includes('tesoureiro')) return 'tesoureiro';
+                          if (c.includes('chanceler')) return 'chanceler';
+                          if (c.includes('hospitaleiro')) return 'hospitaleiro';
+                          if (c.includes('mestre') && c.includes('cerimonia')) return 'mestre de cerimonia';
+                          if (c.includes('mestre') && c.includes('harmonia')) return 'mestre de harmonia';
+                          if (c.includes('mestre') && c.includes('banquete')) return 'mestre de banquetes';
+                          if (c.includes('porta') && c.includes('espada')) return 'porta espada';
+                          if (c.includes('porta') && c.includes('estandarte')) return 'porta estandarte';
+                          if (c.includes('diacono') || c.includes('diácono')) return 'diacono';
+                          if (c.includes('cobridor') && c.includes('externo')) return 'cobridor externo';
+                          if (c.includes('cobridor') && c.includes('interno')) return 'cobridor interno';
+                          if (c.includes('bibliotecario') || c.includes('bibliotecário')) return 'bibliotecario';
+                          
+                          return c;
+                        };
+                        
+                        // Ordem hierárquica normalizada
+                        const ordemHierarquica = [
+                          'veneravel mestre',
+                          'primeiro vigilante',
+                          'segundo vigilante',
+                          'orador',
+                          'secretario',
+                          'tesoureiro',
+                          'chanceler',
+                          'hospitaleiro',
+                          'mestre de cerimonia',
+                          'mestre de harmonia',
+                          'mestre de banquetes',
+                          'porta espada',
+                          'porta estandarte',
+                          'diacono',
+                          'cobridor externo',
+                          'cobridor interno',
+                          'bibliotecario'
+                        ];
+                        
+                        const cargoA = normalizarCargo(a.cargo);
+                        const cargoB = normalizarCargo(b.cargo);
+                        
+                        const indexA = ordemHierarquica.indexOf(cargoA);
+                        const indexB = ordemHierarquica.indexOf(cargoB);
+                        
+                        // Se ambos não estão na lista, ordena alfabeticamente
+                        if (indexA === -1 && indexB === -1) return cargoA.localeCompare(cargoB);
+                        // Se só A não está na lista, coloca no final
                         if (indexA === -1) return 1;
+                        // Se só B não está na lista, coloca no final
                         if (indexB === -1) return -1;
+                        // Ambos estão na lista, ordena por índice
                         return indexA - indexB;
                       })
                       .map((item) => (
