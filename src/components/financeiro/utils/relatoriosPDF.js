@@ -86,76 +86,69 @@ export const gerarRelatorioResumido = ({
 
   let yPos = 52;
 
-  // Função para agrupar lançamentos de forma inteligente
-  const agruparLancamentos = (lancs, nomeCategoria) => {
-    // Para Mensalidade/Agape/Peculio, agrupar por tipo
-    if (nomeCategoria && (
-      nomeCategoria.toLowerCase().includes('mensalidade') || 
-      nomeCategoria.toLowerCase().includes('agape') || 
-      nomeCategoria.toLowerCase().includes('peculio')
-    )) {
-      const grupos = {};
-      
-      lancs.forEach(l => {
-        let chaveGrupo = '';
-        const desc = (l.descricao || '').toLowerCase();
-        
-        // Identificar tipo
-        if (desc.includes('mensalidade') && !desc.includes('agape')) {
-          chaveGrupo = 'Mensalidade e Peculio - Irmao';
-        } else if (desc.includes('agape') && !desc.includes('iniciação')) {
-          chaveGrupo = 'Agape';
-        } else if (desc.includes('peculio') && desc.includes('irmao')) {
-          chaveGrupo = 'Peculio Irmao';
-        } else if (desc.includes('iniciação') && desc.includes('agape')) {
-          chaveGrupo = l.descricao; // Manter descrição original para parcelados
-        } else if (desc.includes('processo') && desc.includes('iniciação')) {
-          chaveGrupo = 'Processo de Iniciação';
-        } else {
-          chaveGrupo = l.descricao;
-        }
-        
-        if (!grupos[chaveGrupo]) {
-          grupos[chaveGrupo] = {
-            ...l,
-            descricao: chaveGrupo,
-            observacoes: '',
-            valor: 0,
-            quantidade: 0,
-            data_pagamento: l.data_pagamento
-          };
-        }
-        
-        grupos[chaveGrupo].valor += parseFloat(l.valor);
-        grupos[chaveGrupo].quantidade += 1;
-        
-        // Para agrupados, adicionar info na observação
-        if (grupos[chaveGrupo].quantidade > 1 && 
-            (chaveGrupo === 'Agape' || chaveGrupo === 'Peculio Irmao')) {
-          grupos[chaveGrupo].observacoes = `Total agrupado de ${chaveGrupo}`;
-        }
-      });
-      
-      return Object.values(grupos);
-    }
-    
-    // Para outras categorias, agrupar por descrição exata
-    const grupos = {};
-    lancs.forEach(l => {
-      const chave = `${l.descricao}_${l.observacoes || ''}`;
-      if (!grupos[chave]) {
-        grupos[chave] = {
-          ...l,
-          valor: 0,
-          quantidade: 0
-        };
-      }
-      grupos[chave].valor += parseFloat(l.valor);
-      grupos[chave].quantidade += 1;
-    });
-    
-    return Object.values(grupos);
+  // === PRÉ-PROCESSAMENTO: AGRUPAR MENSALIDADES ===
+  const lancamentosAgrupados = [];
+  const totais = {
+    'Mensalidade': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Mensalidade e Peculio - Irmao' },
+    'Agape': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Agape' },
+    'Peculio': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Peculio Irmao' }
   };
+  
+  lancamentos.filter(l => 
+    l.status === 'pago' && 
+    l.tipo_pagamento !== 'compensacao'
+  ).forEach(lanc => {
+    const descricao = lanc.descricao || '';
+    const categoria = lanc.categorias_financeiras?.nome || '';
+    
+    // Agrupar apenas lançamentos com DESCRIÇÃO específica
+    if (descricao === 'Mensalidade e Peculio - Irmao') {
+      totais['Mensalidade'].valor += parseFloat(lanc.valor);
+      totais['Mensalidade'].categoria_id = lanc.categoria_id;
+      totais['Mensalidade'].data_pagamento = lanc.data_pagamento;
+    }
+    // ÁGAPE (categoria Agape, mas SEM iniciação na descrição)
+    else if ((categoria === 'Agape' || categoria.toLowerCase() === 'ágape') && 
+             !descricao.toLowerCase().includes('iniciação') &&
+             !descricao.toLowerCase().includes('iniciacao')) {
+      totais['Agape'].valor += parseFloat(lanc.valor);
+      totais['Agape'].categoria_id = lanc.categoria_id;
+      totais['Agape'].data_pagamento = lanc.data_pagamento;
+    }
+    // PECÚLIO IRMAO (categoria Peculio Irmao)
+    else if (categoria === 'Peculio Irmao' || 
+             categoria.toLowerCase() === 'pecúlio irmao' || 
+             categoria.toLowerCase() === 'peculio irmao') {
+      totais['Peculio'].valor += parseFloat(lanc.valor);
+      totais['Peculio'].categoria_id = lanc.categoria_id;
+      totais['Peculio'].data_pagamento = lanc.data_pagamento;
+    }
+    // Lançamentos normais (incluindo Mensalidades individuais e Iniciações)
+    else {
+      lancamentosAgrupados.push(lanc);
+    }
+  });
+  
+  // Adicionar linhas agrupadas
+  Object.keys(totais).forEach(chave => {
+    if (totais[chave].valor > 0) {
+      lancamentosAgrupados.push({
+        id: `agrupado_${chave}`,
+        categoria_id: totais[chave].categoria_id,
+        categorias_financeiras: { tipo: 'receita', nome: 'Mensalidade/Agape/Peculio' },
+        descricao: totais[chave].nome_exibir,
+        valor: totais[chave].valor,
+        data_pagamento: totais[chave].data_pagamento,
+        status: 'pago',
+        origem_tipo: 'Loja',
+        irmaos: { nome: 'Irmãos - Acacia' },
+        observacoes: chave === 'Mensalidade' ? '' : `Total agrupado de ${totais[chave].nome_exibir}`
+      });
+    }
+  });
+
+  // Usar lancamentosAgrupados ao invés de lancamentos originais
+
 
   // Função para organizar hierarquia agrupada
   const organizarHierarquiaAgrupada = (tipo) => {
@@ -168,7 +161,7 @@ export const gerarRelatorioResumido = ({
     return catsPrincipais.map(principal => {
       const subcats = categorias.filter(c => c.categoria_pai_id === principal.id && c.ativo === true);
       
-      const lancsDiretos = lancamentos.filter(l => 
+      const lancsDiretos = lancamentosAgrupados.filter(l => 
         l.categoria_id === principal.id &&
         l.categorias_financeiras?.tipo === tipo &&
         l.status === 'pago' &&
@@ -176,29 +169,26 @@ export const gerarRelatorioResumido = ({
       );
       
       const subcatsComLancs = subcats.map(sub => {
-        const lancsSubcat = lancamentos.filter(l => 
+        const lancsSubcat = lancamentosAgrupados.filter(l => 
           l.categoria_id === sub.id &&
           l.categorias_financeiras?.tipo === tipo &&
           l.status === 'pago' &&
           l.tipo_pagamento !== 'compensacao'
         );
         
-        const lancsAgrupados = agruparLancamentos(lancsSubcat, sub.nome);
-        
         return {
           categoria: sub,
-          lancamentos: lancsAgrupados,
-          subtotal: lancsAgrupados.reduce((sum, l) => sum + parseFloat(l.valor), 0)
+          lancamentos: lancsSubcat,
+          subtotal: lancsSubcat.reduce((sum, l) => sum + parseFloat(l.valor), 0)
         };
       }).filter(sc => sc.lancamentos.length > 0);
 
-      const lancsDiretosAgrupados = agruparLancamentos(lancsDiretos, principal.nome);
-      const subtotalDireto = lancsDiretosAgrupados.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const subtotalDireto = lancsDiretos.reduce((sum, l) => sum + parseFloat(l.valor), 0);
       const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
 
       return {
         principal,
-        lancamentosDiretos: lancsDiretosAgrupados,
+        lancamentosDiretos: lancsDiretos,
         subcategorias: subcatsComLancs,
         subtotalTotal: subtotalDireto + subtotalSubs
       };
@@ -279,7 +269,7 @@ export const gerarRelatorioResumido = ({
   });
 
   // === CRÉDITO A IRMÃOS (COMPENSAÇÕES) ===
-  const lancamentosCompensacao = lancamentos.filter(l => 
+  const lancamentosCompensacao = lancamentosAgrupados.filter(l => 
     l.categorias_financeiras?.tipo === 'despesa' && 
     l.tipo_pagamento === 'compensacao' && 
     l.status === 'pago'
@@ -352,6 +342,8 @@ export const gerarRelatorioResumido = ({
 
     // Nome da Categoria Principal
     doc.setFontSize(10);
+    // Nome da Categoria Principal
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(0, 0, 0);
     doc.text(catPrincipal.principal.nome, 14, yPos);
@@ -381,6 +373,23 @@ export const gerarRelatorioResumido = ({
       doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
       yPos += 4;
     });
+
+    // Subcategorias
+    catPrincipal.subcategorias.forEach(subcat => {
+      subcat.lancamentos.forEach(l => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(formatarDataBR(l.data_pagamento || l.data_vencimento), 22, yPos);
+        doc.text(l.irmaos?.nome || 'Irmãos - Acacia', 42, yPos);
+        doc.text(l.descricao || '', 82, yPos);
+        doc.text(l.observacoes || '', 142, yPos);
+        doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+        yPos += 4;
+      });
+    });
+
 
     // Subcategorias
     catPrincipal.subcategorias.forEach(subcat => {
