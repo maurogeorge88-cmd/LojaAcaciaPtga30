@@ -967,10 +967,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
     
     const saldoPeriodo = receitas - despesas;
+    
     const saldoBancario = saldoAnterior + receitasBancarias + depositos - despesas;
+    
     const caixaFisico = receitasDinheiro - sangrias;
     
-    // Saldo Total = bancário + caixa físico
     const saldoTotal = saldoBancario + caixaFisico;
 
     return {
@@ -1006,7 +1007,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         dataLimite = `${ano}-01-01`;
       }
 
-      // Isso garante que o saldo anterior reflita o que foi efetivamente pago
       const { data, error } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(tipo)')
@@ -1015,22 +1015,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       if (error) throw error;
 
-      // Calcular saldo anterior (receitas - despesas) - EXCLUINDO compensações
-      const receitasAnteriores = (data || [])
+      const receitasBancariasAnt = (data || [])
         .filter(l => 
           l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento !== 'compensacao'  
+          l.tipo_pagamento !== 'compensacao' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      const depositosAnt = (data || [])
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.eh_transferencia_interna === true
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       const despesasAnteriores = (data || [])
         .filter(l => 
           l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento !== 'compensacao'  
+          l.tipo_pagamento !== 'compensacao' &&
+          !l.eh_transferencia_interna
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const saldo = receitasAnteriores - despesasAnteriores;
+      const saldo = receitasBancariasAnt + depositosAnt - despesasAnteriores;
       setSaldoAnterior(saldo);
 
     } catch (error) {
