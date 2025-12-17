@@ -86,10 +86,61 @@ export const gerarRelatorioResumido = ({
 
   let yPos = 52;
 
-  // Função para agrupar lançamentos similares
-  const agruparLancamentos = (lancs) => {
-    const grupos = {};
+  // Função para agrupar lançamentos de forma inteligente
+  const agruparLancamentos = (lancs, nomeCategoria) => {
+    // Para Mensalidade/Agape/Peculio, agrupar por tipo
+    if (nomeCategoria && (
+      nomeCategoria.toLowerCase().includes('mensalidade') || 
+      nomeCategoria.toLowerCase().includes('agape') || 
+      nomeCategoria.toLowerCase().includes('peculio')
+    )) {
+      const grupos = {};
+      
+      lancs.forEach(l => {
+        let chaveGrupo = '';
+        const desc = (l.descricao || '').toLowerCase();
+        
+        // Identificar tipo
+        if (desc.includes('mensalidade') && !desc.includes('agape')) {
+          chaveGrupo = 'Mensalidade e Peculio - Irmao';
+        } else if (desc.includes('agape') && !desc.includes('iniciação')) {
+          chaveGrupo = 'Agape';
+        } else if (desc.includes('peculio') && desc.includes('irmao')) {
+          chaveGrupo = 'Peculio Irmao';
+        } else if (desc.includes('iniciação') && desc.includes('agape')) {
+          chaveGrupo = l.descricao; // Manter descrição original para parcelados
+        } else if (desc.includes('processo') && desc.includes('iniciação')) {
+          chaveGrupo = 'Processo de Iniciação';
+        } else {
+          chaveGrupo = l.descricao;
+        }
+        
+        if (!grupos[chaveGrupo]) {
+          grupos[chaveGrupo] = {
+            ...l,
+            descricao: chaveGrupo,
+            observacoes: '',
+            valor: 0,
+            quantidade: 0,
+            data_pagamento: l.data_pagamento
+          };
+        }
+        
+        grupos[chaveGrupo].valor += parseFloat(l.valor);
+        grupos[chaveGrupo].quantidade += 1;
+        
+        // Para agrupados, adicionar info na observação
+        if (grupos[chaveGrupo].quantidade > 1 && 
+            (chaveGrupo === 'Agape' || chaveGrupo === 'Peculio Irmao')) {
+          grupos[chaveGrupo].observacoes = `Total agrupado de ${chaveGrupo}`;
+        }
+      });
+      
+      return Object.values(grupos);
+    }
     
+    // Para outras categorias, agrupar por descrição exata
+    const grupos = {};
     lancs.forEach(l => {
       const chave = `${l.descricao}_${l.observacoes || ''}`;
       if (!grupos[chave]) {
@@ -132,7 +183,7 @@ export const gerarRelatorioResumido = ({
           l.tipo_pagamento !== 'compensacao'
         );
         
-        const lancsAgrupados = agruparLancamentos(lancsSubcat);
+        const lancsAgrupados = agruparLancamentos(lancsSubcat, sub.nome);
         
         return {
           categoria: sub,
@@ -141,7 +192,7 @@ export const gerarRelatorioResumido = ({
         };
       }).filter(sc => sc.lancamentos.length > 0);
 
-      const lancsDiretosAgrupados = agruparLancamentos(lancsDiretos);
+      const lancsDiretosAgrupados = agruparLancamentos(lancsDiretos, principal.nome);
       const subtotalDireto = lancsDiretosAgrupados.reduce((sum, l) => sum + parseFloat(l.valor), 0);
       const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
 
