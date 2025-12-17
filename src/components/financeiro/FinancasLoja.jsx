@@ -166,6 +166,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
+  const formatarPeriodo = () => {
+    const { mes, ano } = filtros;
+    if (mes === 0 && ano === 0) return 'Período Total';
+    if (mes === 0) return `${ano}`;
+    return `${mes.toString().padStart(2, '0')}/${ano}`;
+  };
+
   useEffect(() => {
     carregarDados();
     calcularSaldoAnterior();
@@ -2148,24 +2155,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </p>
           </div>
           
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 relative">
             <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas</p>
             <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
+            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
           
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
             <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
             <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Total pago</p>
+            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
           
-          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3">
+          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative">
             <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
             <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
               {formatarMoeda(resumo.saldoPeriodo)}
             </p>
             <p className="text-[10px] text-gray-500 mt-0.5">Receitas - Despesas</p>
+            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
         </div>
 
@@ -2209,16 +2219,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             </p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 relative">
             <p className="text-xs text-yellow-600 font-medium">⏳ A Receber</p>
             <p className="text-lg font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
+            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
           
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative">
             <p className="text-xs text-orange-600 font-medium">⏰ A Pagar</p>
             <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
+            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
         </div>
       </div>
