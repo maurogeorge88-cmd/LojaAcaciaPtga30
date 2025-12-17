@@ -878,7 +878,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         data_pagamento: data,
         tipo_pagamento: 'dinheiro',
         status: 'pago',
+        eh_transferencia_interna: true,
         origem_tipo: 'Loja',
+        origem_irmao_id: null,
+        comprovante_url: null,
         observacoes: `Sangria. ${observacao || ''}`
       }]);
       if (errorSangria) throw errorSangria;
@@ -891,7 +894,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         data_pagamento: data,
         tipo_pagamento: 'transferencia',
         status: 'pago',
+        eh_transferencia_interna: true,
         origem_tipo: 'Loja',
+        origem_irmao_id: null,
+        comprovante_url: null,
         observacoes: `Depósito. ${observacao || ''}`
       }]);
       if (errorDeposito) throw errorDeposito;
@@ -926,16 +932,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
         l.tipo_pagamento === 'dinheiro' &&
-        !l.descricao?.includes('🔻 Sangria')
+        !l.eh_transferencia_interna
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const sangrias = lancamentos
-      .filter(l => l.descricao?.includes('🔻 Sangria') && l.status === 'pago')
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago' && l.eh_transferencia_interna === true)
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const depositos = lancamentos
-      .filter(l => l.descricao?.includes('🔺 Depósito') && l.status === 'pago')
+      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago' && l.eh_transferencia_interna === true)
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitas = receitasBancarias + receitasDinheiro;
@@ -945,16 +951,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'despesa' && 
         l.status === 'pago' &&
         l.tipo_pagamento !== 'compensacao' &&
-        !l.descricao?.includes('🔻 Sangria')
+        !l.eh_transferencia_interna
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente' && !l.descricao?.includes('🔺 Depósito'))
+      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente' && !l.eh_transferencia_interna)
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const despesasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && !l.descricao?.includes('🔻 Sangria'))
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && !l.eh_transferencia_interna)
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
     
     const saldoPeriodo = receitas - despesas;
