@@ -859,13 +859,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       setLoading(true);
       const categoriaSangria = categorias.find(c => c.nome.toLowerCase().includes('sangria') && c.tipo === 'despesa');
       if (!categoriaSangria) {
-        showError('Categoria Sangria não encontrada');
+        showError('Categoria Sangria não encontrada. Execute o SQL primeiro!');
         setLoading(false);
         return;
       }
       const categoriaDeposito = categorias.find(c => c.nome.toLowerCase().includes('depósito') && c.tipo === 'receita');
       if (!categoriaDeposito) {
-        showError('Categoria Depósito não encontrada');
+        showError('Categoria Depósito não encontrada. Execute o SQL primeiro!');
         setLoading(false);
         return;
       }
@@ -878,7 +878,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         data_pagamento: data,
         tipo_pagamento: 'dinheiro',
         status: 'pago',
-        eh_transferencia_interna: true,
         origem_tipo: 'Loja',
         observacoes: `Sangria. ${observacao || ''}`
       }]);
@@ -892,7 +891,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         data_pagamento: data,
         tipo_pagamento: 'transferencia',
         status: 'pago',
-        eh_transferencia_interna: true,
         origem_tipo: 'Loja',
         observacoes: `Depósito. ${observacao || ''}`
       }]);
@@ -903,7 +901,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       carregarLancamentos();
     } catch (error) {
       console.error('Erro:', error);
-      showError('Erro ao fazer sangria');
+      showError('Erro ao fazer sangria: ' + (error.message || ''));
     } finally {
       setLoading(false);
     }
@@ -928,16 +926,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
         l.tipo_pagamento === 'dinheiro' &&
-        !l.eh_transferencia_interna
+        !l.descricao?.includes('🔻 Sangria')
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const sangrias = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago' && l.eh_transferencia_interna === true && l.tipo_pagamento === 'dinheiro')
+      .filter(l => l.descricao?.includes('🔻 Sangria') && l.status === 'pago')
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const depositos = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago' && l.eh_transferencia_interna === true && l.tipo_pagamento !== 'dinheiro')
+      .filter(l => l.descricao?.includes('🔺 Depósito') && l.status === 'pago')
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitas = receitasBancarias + receitasDinheiro;
@@ -947,16 +945,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'despesa' && 
         l.status === 'pago' &&
         l.tipo_pagamento !== 'compensacao' &&
-        !l.eh_transferencia_interna
+        !l.descricao?.includes('🔻 Sangria')
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente' && !l.eh_transferencia_interna)
+      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente' && !l.descricao?.includes('🔺 Depósito'))
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const despesasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && !l.eh_transferencia_interna)
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && !l.descricao?.includes('🔻 Sangria'))
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
     
     const saldoPeriodo = receitas - despesas;
