@@ -974,8 +974,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro' &&     // ← Só dinheiro físico
-        !l.eh_transferencia_interna            // ← NOVO: Excluir sangrias
+        l.tipo_pagamento === 'dinheiro' &&       // ← Só dinheiro físico
+        !l.eh_transferencia_interna              // ← NOVO: Excluir sangrias/depósitos
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -985,7 +985,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'despesa' && 
         l.status === 'pago' &&
         l.eh_transferencia_interna === true &&
-        l.tipo_pagamento === 'dinheiro'        // ← Sangrias são em dinheiro
+        l.tipo_pagamento === 'dinheiro'          // ← Sangrias são em dinheiro
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -995,7 +995,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
         l.eh_transferencia_interna === true &&
-        l.tipo_pagamento !== 'dinheiro'        // ← Depósitos são bancários
+        l.tipo_pagamento !== 'dinheiro'          // ← Depósitos são bancários
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1003,14 +1003,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     const receitas = receitasBancarias + receitasDinheiro;
 
     // ========================================
+    // ========================================
     // DESPESAS PAGAS
     // ========================================
     const despesas = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'despesa' && 
         l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao' &&  // ← EXCLUIR compensações
-        !l.eh_transferencia_interna            // ← NOVO: Excluir sangrias
+        l.tipo_pagamento !== 'compensacao' &&    // ← EXCLUIR compensações
+        !l.eh_transferencia_interna              // ← NOVO: Excluir sangrias
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1063,7 +1064,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       receitasPendentes,     // Receitas a receber
       despesasPendentes      // Despesas a pagar
     };
-  };
 
   // Calcular saldo anterior (todos os lançamentos pagos antes do período selecionado)
   const calcularSaldoAnterior = async () => {
