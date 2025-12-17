@@ -854,14 +854,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     }));
   };
 
-  // ========================================
+  
+ // ========================================
   // FUNÇÃO: FAZER SANGRIA DE CAIXA
   // ========================================
   const fazerSangria = async () => {
     try {
       const { valor, data, observacao } = formSangria;
 
-      // Validações
       if (!valor || parseFloat(valor) <= 0) {
         showError('Informe um valor válido para a sangria');
         return;
@@ -870,7 +870,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       const valorSangria = parseFloat(valor);
       const resumoAtual = calcularResumo();
 
-      // Verificar se tem dinheiro suficiente no caixa
       if (valorSangria > resumoAtual.caixaFisico) {
         showError(`Valor da sangria (${formatarMoeda(valorSangria)}) é maior que o caixa físico disponível (${formatarMoeda(resumoAtual.caixaFisico)})`);
         return;
@@ -878,57 +877,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       setLoading(true);
 
-      // ========================================
-      // BUSCAR OU CRIAR CATEGORIAS
-      // ========================================
-      
-      // 1. Categoria para SANGRIA (despesa)
-      let categoriaSangria = categorias.find(c => 
-        c.nome.toLowerCase().includes('sangria') &&
-        c.tipo === 'despesa'
+      const categoriaSangria = categorias.find(c => 
+        c.nome.toLowerCase().includes('sangria') && c.tipo === 'despesa'
       );
 
       if (!categoriaSangria) {
-        const { data: novaCat, error: errCat } = await supabase
-          .from('categorias_financeiras')
-          .insert([{
-            nome: 'Sangria de Caixa',
-            tipo: 'despesa',
-            descricao: 'Retirada de dinheiro físico do caixa para depósito'
-          }])
-          .select()
-          .single();
-
-        if (errCat) throw errCat;
-        categoriaSangria = novaCat;
-        setCategorias([...categorias, novaCat]);
+        showError('Categoria "Sangria de Caixa" não encontrada. Execute o SQL primeiro.');
+        setLoading(false);
+        return;
       }
 
-      // 2. Categoria para DEPÓSITO (receita)
-      let categoriaDeposito = categorias.find(c => 
-        c.nome.toLowerCase().includes('depósito') &&
-        c.tipo === 'receita'
+      const categoriaDeposito = categorias.find(c => 
+        c.nome.toLowerCase().includes('depósito') && c.tipo === 'receita'
       );
 
       if (!categoriaDeposito) {
-        const { data: novaCat, error: errCat } = await supabase
-          .from('categorias_financeiras')
-          .insert([{
-            nome: 'Depósito de Caixa',
-            tipo: 'receita',
-            descricao: 'Entrada no banco vinda de sangria do caixa físico'
-          }])
-          .select()
-          .single();
-
-        if (errCat) throw errCat;
-        categoriaDeposito = novaCat;
-        setCategorias([...categorias, novaCat]);
+        showError('Categoria "Depósito de Caixa" não encontrada. Execute o SQL primeiro.');
+        setLoading(false);
+        return;
       }
 
-      // ========================================
-      // LANÇAMENTO 1: Sangria (saída do caixa físico)
-      // ========================================
       const { error: errorSangria } = await supabase
         .from('lancamentos_loja')
         .insert([{
@@ -947,9 +915,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       if (errorSangria) throw errorSangria;
 
-      // ========================================
-      // LANÇAMENTO 2: Depósito (entrada no banco)
-      // ========================================
       const { error: errorDeposito } = await supabase
         .from('lancamentos_loja')
         .insert([{
@@ -970,15 +935,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada com sucesso!`);
       
-      // Limpar formulário e fechar modal
       setFormSangria({
         valor: '',
         data: new Date().toISOString().split('T')[0],
         observacao: ''
       });
       setModalSangriaAberto(false);
-
-      // Recarregar dados
       carregarLancamentos();
 
     } catch (error) {
