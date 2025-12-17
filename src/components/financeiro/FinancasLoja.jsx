@@ -4728,4 +4728,5 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
       </div>
     </div>
   );
-}
+    };
+  };
