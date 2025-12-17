@@ -1623,25 +1623,36 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.text('Total Geral de Receita e Despesa', 105, yPos + 5.5, { align: 'center' });
     
     yPos += 12;
-    doc.setTextColor(0, 0, 0);
-
+    
     doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    
+    // Total Receita - Azul
+    doc.setTextColor(0, 102, 204);
     doc.text('Total Receita', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${totalReceitas.toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(totalReceitas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
     yPos += 5;
     
+    // Total Despesa - Vermelho
+    doc.setTextColor(220, 38, 38);
     doc.text('Total Despesa', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${totalDespesas.toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
     yPos += 5;
     
+    // Valores Compensados - Preto
+    doc.setTextColor(0, 0, 0);
     doc.text('Valores Compensados (Inf)', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${totalCompensacoes.toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(totalCompensacoes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
     yPos += 6;
 
-    const corSaldo = saldoTotal >= 0 ? [0, 0, 0] : [255, 0, 0];
+    // Saldo Total - Azul se positivo, Vermelho se negativo
+    const corSaldo = saldoTotal >= 0 ? [0, 102, 204] : [220, 38, 38];
     doc.setTextColor(corSaldo[0], corSaldo[1], corSaldo[2]);
     doc.text('Saldo Total', 150, yPos, { align: 'right' });
-    doc.text(`${saldoTotal >= 0 ? '' : '-'}R$ ${Math.abs(saldoTotal).toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(saldoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+    
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
 
     // Rodapé
     const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
