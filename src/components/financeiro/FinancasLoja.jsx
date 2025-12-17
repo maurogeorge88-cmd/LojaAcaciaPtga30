@@ -71,8 +71,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
   const [mostrarModalQuitacaoLote, setMostrarModalQuitacaoLote] = useState(false);
   const [editando, setEditando] = useState(null);
-  const [viewMode, setViewMode] = useState('lancamentos'); // 'lancamentos', 'inadimplentes', 'categorias'
+  const [viewMode, setViewMode] = useState('lancamentos');
   const [saldoAnterior, setSaldoAnterior] = useState(0);
+  const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [totalRegistros, setTotalRegistros] = useState(0);
   
   const [filtros, setFiltros] = useState({
@@ -168,6 +169,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   useEffect(() => {
     carregarDados();
     calcularSaldoAnterior();
+    calcularCaixaFisicoTotal();
     buscarTotalRegistros();
   }, [filtros.mes, filtros.ano]);
 
@@ -907,6 +909,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
       setModalSangriaAberto(false);
       carregarLancamentos();
+      calcularCaixaFisicoTotal();
     } catch (error) {
       console.error('Erro:', error);
       showError('Erro ao fazer sangria: ' + (error.message || ''));
@@ -916,9 +919,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   };
 
   const calcularResumo = () => {
-    // RECEITAS PAGAS - SEPARADAS POR TIPO
-    
-    // 1. RECEITAS BANCÁRIAS (PIX, Transferência, Débito, Crédito, Cheque)
     const receitasBancarias = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
@@ -929,7 +929,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    // 2. RECEITAS EM DINHEIRO (Caixa Físico)
     const receitasDinheiro = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
@@ -970,7 +969,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     
     const saldoBancario = saldoAnterior + receitasBancarias + depositos - despesas;
     
-    const caixaFisico = receitasDinheiro - sangrias;
+    const caixaFisico = caixaFisicoTotal;
     
     const saldoTotal = saldoBancario + caixaFisico;
 
@@ -1045,6 +1044,35 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     } catch (error) {
       console.error('Erro ao calcular saldo anterior:', error);
       setSaldoAnterior(0);
+    }
+  };
+
+  const calcularCaixaFisicoTotal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(tipo)')
+        .eq('status', 'pago');
+
+      if (error) throw error;
+
+      const dinheiroRecebido = (data || [])
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      const sangriasFeitas = (data || [])
+        .filter(l => l.eh_transferencia_interna === true && l.categorias_financeiras?.tipo === 'despesa')
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      setCaixaFisicoTotal(dinheiroRecebido - sangriasFeitas);
+
+    } catch (error) {
+      console.error('Erro ao calcular caixa físico:', error);
+      setCaixaFisicoTotal(0);
     }
   };
 
