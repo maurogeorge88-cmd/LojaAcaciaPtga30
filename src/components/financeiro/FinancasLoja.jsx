@@ -923,8 +923,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao' &&  // ← Não movimenta caixa
-        l.tipo_pagamento !== 'dinheiro'        
+        l.tipo_pagamento !== 'compensacao' &&
+        l.tipo_pagamento !== 'dinheiro' &&
+        !l.eh_transferencia_interna
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
