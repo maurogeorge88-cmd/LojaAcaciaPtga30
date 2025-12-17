@@ -92,92 +92,57 @@ export const gerarRelatorioResumido = ({
   let yPos = 52;
 
   // Função auxiliar para organizar hierarquia
-  const organizarHierarquia = (tipo) => {
-    const lancamentosTipo = lancamentos.filter(l => 
-      l.categorias_financeiras?.tipo === tipo && 
-      l.status === 'pago' &&
-      l.tipo_pagamento !== 'compensacao'
-    );
-
-    const catsPrincipais = categorias.filter(c => 
-      c.tipo === tipo && 
-      c.nivel === 1 &&
-      c.ativo === true
-    );
-
-    const estrutura = [];
-
-    catsPrincipais.forEach(catPrinc => {
-      const lancamentosDiretos = lancamentosTipo.filter(l => 
-        l.categoria_id === catPrinc.id
-      );
-
-      const subcategorias = categorias.filter(c => 
-        c.categoria_pai_id === catPrinc.id && 
-        c.ativo === true
-      );
-
-      const totalSubcats = subcategorias.reduce((sum, sub) => {
-        const lancsFilhos = lancamentosTipo.filter(l => l.categoria_id === sub.id);
-        return sum + lancsFilhos.reduce((s, l) => s + parseFloat(l.valor), 0);
-      }, 0);
-
-      const totalCatPrinc = lancamentosDiretos.reduce((sum, l) => 
-        sum + parseFloat(l.valor), 0
-      ) + totalSubcats;
-
-      if (totalCatPrinc > 0) {
-        estrutura.push({
-          categoria: catPrinc,
-          total: totalCatPrinc,
-          subcategorias: subcategorias.map(sub => {
-            const lancsFilhos = lancamentosTipo.filter(l => l.categoria_id === sub.id);
-            const totalSub = lancsFilhos.reduce((s, l) => s + parseFloat(l.valor), 0);
-            return totalSub > 0 ? { categoria: sub, total: totalSub } : null;
-          }).filter(Boolean)
-        });
-      }
-    });
-
-    return estrutura;
-  };
 
   // === DESPESAS ===
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(220, 38, 38);
-  doc.text('DESPESAS', 14, yPos);
   doc.setTextColor(0, 0, 0);
+  doc.text('DESPESAS', 14, yPos);
   yPos += 8;
 
-  const estruturaDespesas = organizarHierarquia('despesa');
-  let totalDespesas = 0;
+  const lancamentosDespesas = lancamentos.filter(l => 
+    l.categorias_financeiras?.tipo === 'despesa' && 
+    l.status === 'pago' &&
+    l.tipo_pagamento !== 'compensacao'
+  );
 
-  estruturaDespesas.forEach(item => {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(item.categoria.nome, 14, yPos);
-    doc.text(item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-    yPos += 5;
+  if (lancamentosDespesas.length > 0) {
+    const dadosDespesas = lancamentosDespesas.map(l => [
+      formatarDataBR(l.data_pagamento || l.data_vencimento),
+      l.irmaos?.nome || 'Loja',
+      l.descricao || '',
+      l.observacoes || '',
+      l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    ]);
 
-    if (item.subcategorias.length > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      item.subcategorias.forEach(sub => {
-        doc.text(`  • ${sub.categoria.nome}`, 20, yPos);
-        doc.text(sub.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-        yPos += 4;
-      });
-    }
+    doc.autoTable({
+      head: [['DataPgto', 'Interessado', 'Descrição', 'Obs', 'Despesa']],
+      body: dadosDespesas,
+      startY: yPos,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2,
+        textColor: [0, 0, 0]
+      },
+      headStyles: { 
+        fillColor: [100, 100, 100],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 60 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 28, halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
 
-    totalDespesas += item.total;
-    yPos += 2;
+    yPos = doc.lastAutoTable.finalY + 5;
+  }
 
-    if (yPos > 270) {
-      doc.addPage();
-      yPos = 20;
-    }
-  });
+  const totalDespesas = lancamentosDespesas.reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
   // SUB TOTAL DESPESAS
   yPos += 3;
@@ -260,39 +225,53 @@ export const gerarRelatorioResumido = ({
   // === RECEITAS ===
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
-  doc.setTextColor(0, 102, 204);
-  doc.text('RECEITAS', 14, yPos);
   doc.setTextColor(0, 0, 0);
+  doc.text('RECEITAS', 14, yPos);
   yPos += 8;
 
-  const estruturaReceitas = organizarHierarquia('receita');
-  let totalReceitas = 0;
+  const lancamentosReceitas = lancamentos.filter(l => 
+    l.categorias_financeiras?.tipo === 'receita' && 
+    l.status === 'pago' &&
+    l.tipo_pagamento !== 'compensacao'
+  );
 
-  estruturaReceitas.forEach(item => {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(item.categoria.nome, 14, yPos);
-    doc.text(item.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-    yPos += 5;
+  if (lancamentosReceitas.length > 0) {
+    const dadosReceitas = lancamentosReceitas.map(l => [
+      formatarDataBR(l.data_pagamento || l.data_vencimento),
+      l.irmaos?.nome || 'Loja',
+      l.descricao || '',
+      l.observacoes || '',
+      l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    ]);
 
-    if (item.subcategorias.length > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      item.subcategorias.forEach(sub => {
-        doc.text(`  • ${sub.categoria.nome}`, 20, yPos);
-        doc.text(sub.total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-        yPos += 4;
-      });
-    }
+    doc.autoTable({
+      head: [['DataPgto', 'Interessado', 'Descrição', 'Obs', 'Receita']],
+      body: dadosReceitas,
+      startY: yPos,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2,
+        textColor: [0, 0, 0]
+      },
+      headStyles: { 
+        fillColor: [100, 100, 100],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 22 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 60 },
+        3: { cellWidth: 40 },
+        4: { cellWidth: 28, halign: 'right' }
+      },
+      margin: { left: 14, right: 14 }
+    });
 
-    totalReceitas += item.total;
-    yPos += 2;
+    yPos = doc.lastAutoTable.finalY + 5;
+  }
 
-    if (yPos > 270) {
-      doc.addPage();
-      yPos = 20;
-    }
-  });
+  const totalReceitas = lancamentosReceitas.reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
   // SUB TOTAL RECEITAS
   yPos += 3;
