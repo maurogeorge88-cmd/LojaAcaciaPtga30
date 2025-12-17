@@ -172,8 +172,8 @@ export const gerarRelatorioResumido = ({
     doc.text('DataPgto', 10, yPos);
     doc.text('Interessado', 32, yPos);
     doc.text('Descrição', 80, yPos);
-    doc.text('Obs', 140, yPos);
-    doc.text('Despesa', 200, yPos, { align: 'right' });
+    doc.text('Obs', 125, yPos);
+    doc.text('Despesa', 190, yPos, { align: 'right' });
     yPos += 4;
 
     doc.setFont('helvetica', 'normal');
@@ -188,14 +188,14 @@ export const gerarRelatorioResumido = ({
         (lanc.descricao.substring(0, 22)) : 
         (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
       const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-      const obs = (lanc.observacoes || '').substring(0, 35);
+      const obs = (lanc.observacoes || '').substring(0, 30);
       const valor = parseFloat(lanc.valor);
 
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 80, yPos);
-      doc.text(obs, 140, yPos);
-      doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text(obs.substring(0, 30), 125, yPos);
+      doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
     });
@@ -212,14 +212,14 @@ export const gerarRelatorioResumido = ({
           (lanc.descricao.substring(0, 22)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
         const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-        const obs = (lanc.observacoes || '').substring(0, 35);
+        const obs = (lanc.observacoes || '').substring(0, 30);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 10, yPos);
         doc.text(interessado.substring(0, 22), 32, yPos);
         doc.text(descricao, 80, yPos);
-        doc.text(obs, 140, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+        doc.text(obs.substring(0, 30), 125, yPos);
+        doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
         
         yPos += 4;
       });
@@ -228,7 +228,7 @@ export const gerarRelatorioResumido = ({
     yPos += 2;
     doc.setFont('helvetica', 'bold');
     doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 190, yPos, { align: 'right' });
     
     yPos += 8;
   });
@@ -258,8 +258,8 @@ export const gerarRelatorioResumido = ({
     doc.text('DataPgto', 10, yPos);
     doc.text('Interessado', 32, yPos);
     doc.text('Descrição', 80, yPos);
-    doc.text('Obs', 140, yPos);
-    doc.text('Despesa', 200, yPos, { align: 'right' });
+    doc.text('Obs', 125, yPos);
+    doc.text('Despesa', 190, yPos, { align: 'right' });
     yPos += 4;
 
     doc.setFont('helvetica', 'normal');
@@ -272,15 +272,15 @@ export const gerarRelatorioResumido = ({
       doc.text(formatarDataBR(lanc.data_pagamento), 10, yPos);
       doc.text(lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão', 32, yPos);
       doc.text(lanc.categorias_financeiras?.nome?.substring(0, 28) || '', 80, yPos);
-      doc.text((lanc.observacoes || '').substring(0, 35), 140, yPos);
-      doc.text(`R$${parseFloat(lanc.valor).toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text((lanc.observacoes || '').substring(0, 30), 140, yPos);
+      doc.text(`R$${parseFloat(lanc.valor).toFixed(2)}`, 190, yPos, { align: 'right' });
       yPos += 4;
     });
 
     yPos += 2;
     doc.setFont('helvetica', 'bold');
     doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${totalCompensacoes.toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(`R$ ${totalCompensacoes.toFixed(2)}`, 190, yPos, { align: 'right' });
     yPos += 8;
   }
 
@@ -417,8 +417,8 @@ export const gerarRelatorioResumido = ({
       doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
       doc.text('Descrição', 80, yPos);
-      doc.text('Obs', 140, yPos);
-      doc.text('Receita', 200, yPos, { align: 'right' });
+      doc.text('Obs', 125, yPos);
+      doc.text('Receita', 190, yPos, { align: 'right' });
       yPos += 4;
 
       doc.setFont('helvetica', 'normal');
@@ -426,7 +426,7 @@ export const gerarRelatorioResumido = ({
       doc.text('Irmãos - Acacia', 32, yPos);
       doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
       doc.text('', 140, yPos);
-      doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
       yPos += 4;
       
       catPrincipal.subcategorias = catPrincipal.subcategorias.filter(s => s.categoria.nome !== 'Mensalidade');
@@ -436,8 +436,8 @@ export const gerarRelatorioResumido = ({
       doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
       doc.text('Descrição', 80, yPos);
-      doc.text('Obs', 140, yPos);
-      doc.text('Receita', 200, yPos, { align: 'right' });
+      doc.text('Obs', 125, yPos);
+      doc.text('Receita', 190, yPos, { align: 'right' });
       yPos += 4;
     }
 
@@ -454,14 +454,14 @@ export const gerarRelatorioResumido = ({
       if (descricao === 'Mensalidade e Peculio - Irmao') {
         descricao = 'Mensalidade';
       }
-      const obs = (lanc.observacoes || '').substring(0, 35);
+      const obs = (lanc.observacoes || '').substring(0, 30);
       const valor = parseFloat(lanc.valor);
 
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 80, yPos);
-      doc.text(obs, 140, yPos);
-      doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+      doc.text(obs.substring(0, 30), 125, yPos);
+      doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
     });
@@ -479,14 +479,14 @@ export const gerarRelatorioResumido = ({
         if (descricao === 'Mensalidade e Peculio - Irmao') {
           descricao = 'Mensalidade';
         }
-        const obs = (lanc.observacoes || '').substring(0, 35);
+        const obs = (lanc.observacoes || '').substring(0, 30);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 10, yPos);
         doc.text(interessado.substring(0, 22), 32, yPos);
         doc.text(descricao, 80, yPos);
-        doc.text(obs, 140, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 200, yPos, { align: 'right' });
+        doc.text(obs.substring(0, 30), 125, yPos);
+        doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
         
         yPos += 4;
       });
@@ -495,7 +495,7 @@ export const gerarRelatorioResumido = ({
     yPos += 2;
     doc.setFont('helvetica', 'bold');
     doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 200, yPos, { align: 'right' });
+    doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 190, yPos, { align: 'right' });
     
     yPos += 8;
   });
@@ -523,23 +523,23 @@ export const gerarRelatorioResumido = ({
   
   doc.setTextColor(0, 102, 204);
   doc.text('Total Receita', 150, yPos, { align: 'right' });
-  doc.text(totalReceitas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+  doc.text(totalReceitas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
   yPos += 5;
   
   doc.setTextColor(220, 38, 38);
   doc.text('Total Despesa', 150, yPos, { align: 'right' });
-  doc.text(totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+  doc.text(totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
   yPos += 5;
   
   doc.setTextColor(0, 0, 0);
   doc.text('Valores Compensados (Inf)', 150, yPos, { align: 'right' });
-  doc.text(totalCompensacoes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+  doc.text(totalCompensacoes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
   yPos += 6;
 
   const corSaldo = saldoTotal >= 0 ? [0, 102, 204] : [220, 38, 38];
   doc.setTextColor(corSaldo[0], corSaldo[1], corSaldo[2]);
   doc.text('Saldo Total', 150, yPos, { align: 'right' });
-  doc.text(saldoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+  doc.text(saldoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
   
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
