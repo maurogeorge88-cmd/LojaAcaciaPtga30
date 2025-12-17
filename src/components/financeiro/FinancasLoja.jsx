@@ -1634,7 +1634,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.text(`R$ ${totalDespesas.toFixed(2)}`, 200, yPos, { align: 'right' });
     yPos += 5;
     
-    doc.text('Valores Compensados', 150, yPos, { align: 'right' });
+    doc.text('Valores Compensados (Inf)', 150, yPos, { align: 'right' });
     doc.text(`R$ ${totalCompensacoes.toFixed(2)}`, 200, yPos, { align: 'right' });
     yPos += 6;
 
