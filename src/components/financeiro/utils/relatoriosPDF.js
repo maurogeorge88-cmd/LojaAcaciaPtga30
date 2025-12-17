@@ -15,16 +15,13 @@ export const gerarRelatorioPDF = ({
 }) => {
   const doc = new jsPDF();
 
-  // Título
   doc.setFontSize(18);
   doc.text('Relatório Financeiro da Loja', 14, 20);
   
-  // Período
   doc.setFontSize(12);
   const mesNome = filtros.mes > 0 ? meses[filtros.mes - 1] : 'Todos os meses';
   doc.text(`Período: ${mesNome}/${filtros.ano}`, 14, 30);
   
-  // Resumo
   doc.setFontSize(14);
   doc.text('Resumo', 14, 40);
   doc.setFontSize(10);
@@ -36,7 +33,6 @@ export const gerarRelatorioPDF = ({
   doc.text(`Receitas Pendentes: R$ ${resumo.receitasPendentes.toFixed(2)}`, 14, 78);
   doc.text(`Despesas Pendentes: R$ ${resumo.despesasPendentes.toFixed(2)}`, 14, 84);
 
-  // Tabela de lançamentos
   const dadosTabela = lancamentos.map(l => [
     formatarDataBR(l.data_pagamento),
     l.categorias_financeiras?.tipo === 'receita' ? 'Receita' : 'Despesa',
@@ -58,7 +54,7 @@ export const gerarRelatorioPDF = ({
 };
 
 /**
- * Gera relatório PDF resumido por categorias hierárquicas
+ * Gera relatório PDF resumido por categorias hierárquicas (FECHAMENTO MENSAL)
  */
 export const gerarRelatorioResumido = ({
   lancamentos,
@@ -78,7 +74,6 @@ export const gerarRelatorioResumido = ({
   doc.text('Avenida Brasil, Paranatinga-MT', 105, 26, { align: 'center' });
   doc.text('Paranatinga-MT', 105, 31, { align: 'center' });
   
-  // TÍTULO DO RELATÓRIO
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
   doc.setDrawColor(0);
@@ -91,73 +86,146 @@ export const gerarRelatorioResumido = ({
 
   let yPos = 52;
 
-  // Função auxiliar para organizar hierarquia
+  // Função para agrupar lançamentos similares
+  const agruparLancamentos = (lancs) => {
+    const grupos = {};
+    
+    lancs.forEach(l => {
+      const chave = `${l.descricao}_${l.observacoes || ''}`;
+      if (!grupos[chave]) {
+        grupos[chave] = {
+          ...l,
+          valor: 0,
+          quantidade: 0
+        };
+      }
+      grupos[chave].valor += parseFloat(l.valor);
+      grupos[chave].quantidade += 1;
+    });
+    
+    return Object.values(grupos);
+  };
+
+  // Função para organizar hierarquia agrupada
+  const organizarHierarquiaAgrupada = (tipo) => {
+    const catsPrincipais = categorias.filter(c => 
+      c.tipo === tipo && 
+      (c.nivel === 1 || !c.categoria_pai_id) &&
+      c.ativo === true
+    );
+
+    return catsPrincipais.map(principal => {
+      const subcats = categorias.filter(c => c.categoria_pai_id === principal.id && c.ativo === true);
+      
+      const lancsDiretos = lancamentos.filter(l => 
+        l.categoria_id === principal.id &&
+        l.categorias_financeiras?.tipo === tipo &&
+        l.status === 'pago' &&
+        l.tipo_pagamento !== 'compensacao'
+      );
+      
+      const subcatsComLancs = subcats.map(sub => {
+        const lancsSubcat = lancamentos.filter(l => 
+          l.categoria_id === sub.id &&
+          l.categorias_financeiras?.tipo === tipo &&
+          l.status === 'pago' &&
+          l.tipo_pagamento !== 'compensacao'
+        );
+        
+        const lancsAgrupados = agruparLancamentos(lancsSubcat);
+        
+        return {
+          categoria: sub,
+          lancamentos: lancsAgrupados,
+          subtotal: lancsAgrupados.reduce((sum, l) => sum + parseFloat(l.valor), 0)
+        };
+      }).filter(sc => sc.lancamentos.length > 0);
+
+      const lancsDiretosAgrupados = agruparLancamentos(lancsDiretos);
+      const subtotalDireto = lancsDiretosAgrupados.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const subtotalSubs = subcatsComLancs.reduce((sum, sc) => sum + sc.subtotal, 0);
+
+      return {
+        principal,
+        lancamentosDiretos: lancsDiretosAgrupados,
+        subcategorias: subcatsComLancs,
+        subtotalTotal: subtotalDireto + subtotalSubs
+      };
+    }).filter(cp => cp.subtotalTotal > 0);
+  };
 
   // === DESPESAS ===
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
-  doc.text('DESPESAS', 14, yPos);
+  doc.text('Despesa', 105, yPos, { align: 'center' });
   yPos += 8;
 
-  const lancamentosDespesas = lancamentos.filter(l => 
-    l.categorias_financeiras?.tipo === 'despesa' && 
-    l.status === 'pago' &&
-    l.tipo_pagamento !== 'compensacao'
-  );
+  const despesasHierarquia = organizarHierarquiaAgrupada('despesa');
+  let totalDespesas = 0;
 
-  if (lancamentosDespesas.length > 0) {
-    const dadosDespesas = lancamentosDespesas.map(l => [
-      formatarDataBR(l.data_pagamento || l.data_vencimento),
-      l.irmaos?.nome || 'Loja',
-      l.descricao || '',
-      l.observacoes || '',
-      l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    ]);
+  despesasHierarquia.forEach(catPrincipal => {
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
 
-    doc.autoTable({
-      head: [['DataPgto', 'Interessado', 'Descrição', 'Obs', 'Despesa']],
-      body: dadosDespesas,
-      startY: yPos,
-      styles: { 
-        fontSize: 8,
-        cellPadding: 2,
-        textColor: [0, 0, 0]
-      },
-      headStyles: { 
-        fillColor: [100, 100, 100],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 60 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 28, halign: 'right' }
-      },
-      margin: { left: 14, right: 14 }
+    // Nome da Categoria Principal
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(catPrincipal.principal.nome, 14, yPos);
+    yPos += 6;
+
+    // Cabeçalho da tabela
+    doc.setFontSize(8);
+    doc.text('DataPgto', 22, yPos);
+    doc.text('Interessado', 42, yPos);
+    doc.text('Descrição', 82, yPos);
+    doc.text('Obs', 142, yPos);
+    doc.text('Despesa', 200, yPos, { align: 'right' });
+    yPos += 4;
+
+    doc.setFont('helvetica', 'normal');
+
+    // Lançamentos diretos
+    catPrincipal.lancamentosDiretos.forEach(l => {
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.text(formatarDataBR(l.data_pagamento || l.data_vencimento), 22, yPos);
+      doc.text(l.irmaos?.nome || 'Loja', 42, yPos);
+      doc.text(l.descricao || '', 82, yPos);
+      doc.text(l.observacoes || '', 142, yPos);
+      doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+      yPos += 4;
     });
 
-    yPos = doc.lastAutoTable.finalY + 5;
-  }
+    // Subcategorias
+    catPrincipal.subcategorias.forEach(subcat => {
+      subcat.lancamentos.forEach(l => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(formatarDataBR(l.data_pagamento || l.data_vencimento), 22, yPos);
+        doc.text(l.irmaos?.nome || 'Loja', 42, yPos);
+        doc.text(l.descricao || '', 82, yPos);
+        doc.text(l.observacoes || '', 142, yPos);
+        doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+        yPos += 4;
+      });
+    });
 
-  const totalDespesas = lancamentosDespesas.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+    // Subtotal da categoria
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
+    doc.text(catPrincipal.subtotalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+    yPos += 8;
 
-  // SUB TOTAL DESPESAS
-  yPos += 3;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(220, 38, 38);
-  doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-  doc.text(totalDespesas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-  doc.setTextColor(0, 0, 0);
-  yPos += 12;
-
-  if (yPos > 250) {
-    doc.addPage();
-    yPos = 20;
-  }
+    totalDespesas += catPrincipal.subtotalTotal;
+  });
 
   // === CRÉDITO A IRMÃOS (COMPENSAÇÕES) ===
   const lancamentosCompensacao = lancamentos.filter(l => 
@@ -167,143 +235,143 @@ export const gerarRelatorioResumido = ({
   );
 
   if (lancamentosCompensacao.length > 0) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0);
-    doc.text('Crédito a Irmãos', 14, yPos);
-    yPos += 8;
-
-    // Criar tabela de compensações
-    const dadosCompensacao = lancamentosCompensacao.map(l => [
-      formatarDataBR(l.data_pagamento || l.data_vencimento),
-      l.irmaos?.nome || 'N/A',
-      l.descricao || '',
-      l.observacoes || '',
-      l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    ]);
-
-    doc.autoTable({
-      head: [['DataPgto', 'Interessado', 'Descrição', 'Obs', 'Despesa']],
-      body: dadosCompensacao,
-      startY: yPos,
-      styles: { 
-        fontSize: 8,
-        cellPadding: 2
-      },
-      headStyles: { 
-        fillColor: [100, 100, 100],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 22 },  // DataPgto
-        1: { cellWidth: 40 },  // Interessado
-        2: { cellWidth: 60 },  // Descrição
-        3: { cellWidth: 40 },  // Obs
-        4: { cellWidth: 28, halign: 'right' }  // Despesa
-      },
-      margin: { left: 14, right: 14 },
-      didDrawPage: (data) => {
-        yPos = data.cursor.y;
-      }
-    });
-
-    // Sub Total das Compensações
-    yPos = doc.lastAutoTable.finalY + 5;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-    doc.text(lancamentosCompensacao.reduce((sum, l) => sum + parseFloat(l.valor), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-    yPos += 12;
-
-    if (yPos > 250) {
+    if (yPos > 240) {
       doc.addPage();
       yPos = 20;
     }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Crédito à Irmãos', 14, yPos);
+    yPos += 6;
+
+    // Cabeçalho
+    doc.setFontSize(8);
+    doc.text('DataPgto', 22, yPos);
+    doc.text('Interessado', 42, yPos);
+    doc.text('Descrição', 82, yPos);
+    doc.text('Obs', 142, yPos);
+    doc.text('Despesa', 200, yPos, { align: 'right' });
+    yPos += 4;
+
+    doc.setFont('helvetica', 'normal');
+
+    lancamentosCompensacao.forEach(l => {
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.text(formatarDataBR(l.data_pagamento || l.data_vencimento), 22, yPos);
+      doc.text(l.irmaos?.nome || 'N/A', 42, yPos);
+      doc.text(l.descricao || '', 82, yPos);
+      doc.text(l.observacoes || '', 142, yPos);
+      doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+      yPos += 4;
+    });
+
+    const totalCompensacoes = lancamentosCompensacao.reduce((sum, l) => sum + parseFloat(l.valor), 0);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
+    doc.text(totalCompensacoes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+    yPos += 12;
   }
 
   // === RECEITAS ===
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text('RECEITAS', 14, yPos);
-  yPos += 8;
-
-  const lancamentosReceitas = lancamentos.filter(l => 
-    l.categorias_financeiras?.tipo === 'receita' && 
-    l.status === 'pago' &&
-    l.tipo_pagamento !== 'compensacao'
-  );
-
-  if (lancamentosReceitas.length > 0) {
-    const dadosReceitas = lancamentosReceitas.map(l => [
-      formatarDataBR(l.data_pagamento || l.data_vencimento),
-      l.irmaos?.nome || 'Loja',
-      l.descricao || '',
-      l.observacoes || '',
-      l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-    ]);
-
-    doc.autoTable({
-      head: [['DataPgto', 'Interessado', 'Descrição', 'Obs', 'Receita']],
-      body: dadosReceitas,
-      startY: yPos,
-      styles: { 
-        fontSize: 8,
-        cellPadding: 2,
-        textColor: [0, 0, 0]
-      },
-      headStyles: { 
-        fillColor: [100, 100, 100],
-        textColor: [255, 255, 255],
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 22 },
-        1: { cellWidth: 40 },
-        2: { cellWidth: 60 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 28, halign: 'right' }
-      },
-      margin: { left: 14, right: 14 }
-    });
-
-    yPos = doc.lastAutoTable.finalY + 5;
-  }
-
-  const totalReceitas = lancamentosReceitas.reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-  // SUB TOTAL RECEITAS
-  yPos += 3;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(10);
-  doc.setTextColor(0, 102, 204);
-  doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
-  doc.text(totalReceitas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
-  doc.setTextColor(0, 0, 0);
-  yPos += 12;
-
-  // === TOTAIS FINAIS ===
-  if (yPos > 240) {
+  if (yPos > 230) {
     doc.addPage();
     yPos = 20;
   }
 
-  // Calcular compensações (despesas pagas por compensação = créditos a irmãos)
-  const totalCompensacoes = lancamentos
-    .filter(l => 
-      l.categorias_financeiras?.tipo === 'despesa' && 
-      l.tipo_pagamento === 'compensacao' && 
-      l.status === 'pago'
-    )
-    .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(0, 0, 0);
+  doc.text('Receita', 105, yPos, { align: 'center' });
+  yPos += 8;
 
+  const receitasHierarquia = organizarHierarquiaAgrupada('receita');
+  let totalReceitas = 0;
+
+  receitasHierarquia.forEach(catPrincipal => {
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+
+    // Nome da Categoria Principal
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 0, 0);
+    doc.text(catPrincipal.principal.nome, 14, yPos);
+    yPos += 6;
+
+    // Cabeçalho da tabela
+    doc.setFontSize(8);
+    doc.text('DataPgto', 22, yPos);
+    doc.text('Interessado', 42, yPos);
+    doc.text('Descrição', 82, yPos);
+    doc.text('Obs', 142, yPos);
+    doc.text('Receita', 200, yPos, { align: 'right' });
+    yPos += 4;
+
+    doc.setFont('helvetica', 'normal');
+
+    // Lançamentos diretos
+    catPrincipal.lancamentosDiretos.forEach(l => {
+      if (yPos > 270) {
+        doc.addPage();
+        yPos = 20;
+      }
+      doc.text(formatarDataBR(l.data_pagamento || l.data_vencimento), 22, yPos);
+      doc.text(l.irmaos?.nome || 'Loja', 42, yPos);
+      doc.text(l.descricao || '', 82, yPos);
+      doc.text(l.observacoes || '', 142, yPos);
+      doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+      yPos += 4;
+    });
+
+    // Subcategorias
+    catPrincipal.subcategorias.forEach(subcat => {
+      subcat.lancamentos.forEach(l => {
+        if (yPos > 270) {
+          doc.addPage();
+          yPos = 20;
+        }
+        doc.text(formatarDataBR(l.data_pagamento || l.data_vencimento), 22, yPos);
+        doc.text(l.irmaos?.nome || 'Irmãos - Acacia', 42, yPos);
+        doc.text(l.descricao || '', 82, yPos);
+        doc.text(l.observacoes || '', 142, yPos);
+        doc.text(l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+        yPos += 4;
+      });
+    });
+
+    // Subtotal da categoria
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
+    doc.text(catPrincipal.subtotalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+    yPos += 8;
+
+    totalReceitas += catPrincipal.subtotalTotal;
+  });
+
+  // === TOTAIS FINAIS ===
+  if (yPos > 220) {
+    doc.addPage();
+    yPos = 20;
+  }
+
+  const totalCompensacoes = lancamentosCompensacao.reduce((sum, l) => sum + parseFloat(l.valor), 0);
   const saldoTotal = totalReceitas - totalDespesas;
 
-  yPos += 12;
-  
-  doc.setFontSize(10);
+  yPos += 6;
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
+  doc.text('Total Geral de Receita e Despesa', 105, yPos, { align: 'center' });
+  yPos += 8;
+
+  doc.setFontSize(10);
   
   // Total Receita - Azul
   doc.setTextColor(0, 102, 204);
@@ -329,21 +397,24 @@ export const gerarRelatorioResumido = ({
   doc.text('Saldo Total', 150, yPos, { align: 'right' });
   doc.text(saldoTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
   
-  doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
 
-  // Rodapé
+  // Rodapé com data e paginação
   const totalPages = doc.internal.getNumberOfPages();
+  const dataAtual = new Date().toLocaleDateString('pt-BR', { 
+    weekday: 'long', 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
+  
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(8);
-    doc.text(
-      `Página ${i} de ${totalPages}`,
-      105,
-      287,
-      { align: 'center' }
-    );
+    doc.setFont('helvetica', 'normal');
+    doc.text(dataAtual, 14, 287);
+    doc.text(`Página ${i} de ${totalPages}`, 200, 287, { align: 'right' });
   }
 
-  doc.save(`fechamento-mensal-${filtros.mes}-${filtros.ano}.pdf`);
+  doc.save(`Rel_Fechamento_-_${filtros.mes}_${filtros.ano}.pdf`);
 };
