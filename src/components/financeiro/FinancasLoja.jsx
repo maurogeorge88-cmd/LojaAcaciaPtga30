@@ -878,37 +878,61 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       setLoading(true);
 
-      // Buscar ou criar categoria "Transferências Internas"
-      let categoriaTransferencia = categorias.find(c => 
-        c.nome.toLowerCase().includes('transferência') && 
-        c.nome.toLowerCase().includes('interna')
+      // ========================================
+      // BUSCAR OU CRIAR CATEGORIAS
+      // ========================================
+      
+      // 1. Categoria para SANGRIA (despesa)
+      let categoriaSangria = categorias.find(c => 
+        c.nome.toLowerCase().includes('sangria') &&
+        c.tipo === 'despesa'
       );
 
-      if (!categoriaTransferencia) {
-        // Criar categoria se não existir
-        const { data: novaCategoria, error: errorCategoria } = await supabase
+      if (!categoriaSangria) {
+        const { data: novaCat, error: errCat } = await supabase
           .from('categorias_financeiras')
           .insert([{
-            nome: 'Transferências Internas',
-            tipo: 'receita',
-            descricao: 'Movimentações entre caixa físico e banco'
+            nome: 'Sangria de Caixa',
+            tipo: 'despesa',
+            descricao: 'Retirada de dinheiro físico do caixa para depósito'
           }])
           .select()
           .single();
 
-        if (errorCategoria) throw errorCategoria;
-        categoriaTransferencia = novaCategoria;
-        
-        // Atualizar lista de categorias
-        setCategorias([...categorias, novaCategoria]);
+        if (errCat) throw errCat;
+        categoriaSangria = novaCat;
+        setCategorias([...categorias, novaCat]);
       }
 
+      // 2. Categoria para DEPÓSITO (receita)
+      let categoriaDeposito = categorias.find(c => 
+        c.nome.toLowerCase().includes('depósito') &&
+        c.tipo === 'receita'
+      );
+
+      if (!categoriaDeposito) {
+        const { data: novaCat, error: errCat } = await supabase
+          .from('categorias_financeiras')
+          .insert([{
+            nome: 'Depósito de Caixa',
+            tipo: 'receita',
+            descricao: 'Entrada no banco vinda de sangria do caixa físico'
+          }])
+          .select()
+          .single();
+
+        if (errCat) throw errCat;
+        categoriaDeposito = novaCat;
+        setCategorias([...categorias, novaCat]);
+      }
+
+      // ========================================
       // LANÇAMENTO 1: Sangria (saída do caixa físico)
+      // ========================================
       const { error: errorSangria } = await supabase
         .from('lancamentos_loja')
         .insert([{
-          categoria_id: categoriaTransferencia.id,
-          tipo: 'despesa',
+          categoria_id: categoriaSangria.id,
           descricao: `🔻 Sangria de Caixa${observacao ? ` - ${observacao}` : ''}`,
           valor: valorSangria,
           data_lancamento: data,
@@ -923,12 +947,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       if (errorSangria) throw errorSangria;
 
+      // ========================================
       // LANÇAMENTO 2: Depósito (entrada no banco)
+      // ========================================
       const { error: errorDeposito } = await supabase
         .from('lancamentos_loja')
         .insert([{
-          categoria_id: categoriaTransferencia.id,
-          tipo: 'receita',
+          categoria_id: categoriaDeposito.id,
           descricao: `🔺 Depósito em Banco${observacao ? ` - ${observacao}` : ''}`,
           valor: valorSangria,
           data_lancamento: data,
