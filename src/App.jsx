@@ -281,21 +281,21 @@ function App() {
       
       // Definir permissões baseadas no nível de acesso
       if (data.nivel_acesso === 'irmao') {
-        // Irmão comum: apenas visualização
+        // Irmão: permissões baseadas no que foi marcado no cadastro
         setPermissoes({
-          canEdit: false,
-          canEditMembers: false,
-          canDelete: false,
-          canManageUsers: false,
-          canViewFinancial: false,
-          canEditFinancial: false,
-          pode_editar_biblioteca: false,
-          pode_editar_comodatos: false,
-          pode_editar_caridade: false,
-          pode_editar_balaustres: false,
-          pode_editar_pranchas: false,
-          pode_editar_comissoes: false,
-          pode_editar_corpo_admin: false
+          canEdit: data.pode_editar_cadastros || false,
+          canEditMembers: data.pode_editar_cadastros || false,
+          canDelete: data.pode_editar_cadastros || false,
+          canManageUsers: data.pode_gerenciar_usuarios || false,
+          canViewFinancial: data.pode_visualizar_financeiro || false,
+          canEditFinancial: data.pode_editar_financeiro || false,
+          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
+          pode_editar_comodatos: data.pode_editar_comodatos || false,
+          pode_editar_caridade: data.pode_editar_caridade || false,
+          pode_editar_balaustres: data.pode_editar_balaustres || false,
+          pode_editar_pranchas: data.pode_editar_pranchas || false,
+          pode_editar_comissoes: data.pode_editar_comissoes || false,
+          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false
         });
       } else if (data.nivel_acesso === 'admin') {
         // Admin: acesso total
