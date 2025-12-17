@@ -870,6 +870,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         return;
       }
       const { error: errorSangria } = await supabase.from('lancamentos_loja').insert([{
+        tipo: 'despesa',
         categoria_id: categoriaSangria.id,
         descricao: `🔻 Sangria${observacao ? ` - ${observacao}` : ''}`,
         valor: valorSangria,
@@ -886,6 +887,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }]);
       if (errorSangria) throw errorSangria;
       const { error: errorDeposito } = await supabase.from('lancamentos_loja').insert([{
+        tipo: 'receita',
         categoria_id: categoriaDeposito.id,
         descricao: `🔺 Depósito${observacao ? ` - ${observacao}` : ''}`,
         valor: valorSangria,
