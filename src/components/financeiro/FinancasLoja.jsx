@@ -3,6 +3,10 @@ import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
+import { useCategorias } from './hooks/useCategorias';
+import { useFiltros } from './hooks/useFiltros';
+import { useIrmaos } from './hooks/useIrmaos';
+import { useLancamentos } from './hooks/useLancamentos';
 
 // 💰 REGIME DE COMPETÊNCIA FINANCEIRA
 // REGRAS FUNDAMENTAIS:
@@ -61,10 +65,13 @@ const STATUS_BLOQUEADOS = [
 ];
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
-  // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
-  const [categorias, setCategorias] = useState([]);
-  const [irmaos, setIrmaos] = useState([]);
-  const [lancamentos, setLancamentos] = useState([]);
+  // 🎣 HOOKS CUSTOMIZADOS
+  const { categorias, carregarCategorias: carregarCategoriasHook, categoriasReceita, categoriasDespesa } = useCategorias();
+  const { filtros, setFiltros, limparFiltros } = useFiltros();
+  const { irmaos, carregarIrmaos: carregarIrmaosHook } = useIrmaos();
+  const { lancamentos, setLancamentos, carregarLancamentos: carregarLancamentosHook } = useLancamentos();
+
+  // 🕐 ESTADOS LOCAIS
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
@@ -75,16 +82,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [saldoAnterior, setSaldoAnterior] = useState(0);
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [totalRegistros, setTotalRegistros] = useState(0);
-  
-  const [filtros, setFiltros] = useState({
-    mes: new Date().getMonth() + 1, // Mês atual (1-12)
-    ano: new Date().getFullYear(), // Ano atual
-    tipo: '', // 'receita' ou 'despesa'
-    categoria: '',
-    status: '', // 'pago', 'pendente', 'vencido', 'cancelado'
-    origem_tipo: '', // 'Loja' ou 'Irmao'
-    origem_irmao_id: '' // ID do irmão
-  });
 
   // Estado para Modal de Parcelamento
   const [modalParcelamentoAberto, setModalParcelamentoAberto] = useState(false);
@@ -183,187 +180,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // Recarregar lançamentos quando mudar filtros
   useEffect(() => {
     if (categorias.length > 0) {
-      carregarLancamentos();
+      carregarLancamentosHook(filtros);
     }
   }, [filtros.tipo, filtros.categoria, filtros.status, filtros.origem_tipo, filtros.origem_irmao_id]); 
 
   const carregarDados = async () => {
     setLoading(true);
     try {
-      console.log('🔄 Iniciando carregamento de dados...');
-      
-      // Carregar categorias (com hierarquia)
-      const { data: catData, error: catError } = await supabase
-        .from('categorias_financeiras')
-        .select('*')
-        .eq('ativo', true)
-        .order('tipo')
-        .order('nivel')
-        .order('ordem')
-        .order('nome');
-
-      if (catError) {
-        console.error('❌ Erro ao carregar categorias:', catError);
-        throw catError;
-      }
-      console.log('✅ Categorias carregadas:', catData?.length || 0);
-      setCategorias(catData || []);
-
-      // Carregar irmãos (com status permitidos)
-      console.log('🔍 Buscando irmãos...');
-      
-      const { data: todosIrmaos, error: irmaoError } = await supabase
-        .from('irmaos')
-        .select('id, nome, situacao, periodicidade_pagamento')
-        .order('nome');
-
-      if (irmaoError) {
-        console.error('❌ Erro ao carregar irmãos:', irmaoError);
-        throw irmaoError;
-      }
-      
-      console.log('📋 Total de irmãos cadastrados:', todosIrmaos?.length || 0);
-      
-      // Verificar quais status existem no banco
-      const statusUnicos = [...new Set(todosIrmaos?.map(i => i.situacao) || [])];
-      console.log('🏷️ Status encontrados no banco:', statusUnicos);
-      
-      // Contagem por status
-      const contagemStatus = {};
-      todosIrmaos?.forEach(i => {
-        const status = i.situacao || 'SEM STATUS';
-        contagemStatus[status] = (contagemStatus[status] || 0) + 1;
-      });
-      console.log('📊 Distribuição por status:', contagemStatus);
-      console.log('⚙️ Status permitidos (configuração):', STATUS_PERMITIDOS);
-      
-      // Filtrar irmãos com status permitidos (case-insensitive)
-      const irmaosDisponiveis = todosIrmaos?.filter(i => {
-        const status = (i.situacao || '').trim();
-        
-        // Verifica se está na lista de permitidos
-        const estaPermitido = STATUS_PERMITIDOS.some(sp => 
-          sp.toLowerCase() === status.toLowerCase()
-        );
-        
-        // Verifica se NÃO está na lista de bloqueados
-        const estaBloqueado = STATUS_BLOQUEADOS.some(sb => 
-          sb.toLowerCase() === status.toLowerCase()
-        );
-        
-        return estaPermitido && !estaBloqueado;
-      }) || [];
-      
-      console.log('✅ Irmãos disponíveis para lançamento:', irmaosDisponiveis.length);
-      
-      if (irmaosDisponiveis.length === 0) {
-        console.warn('⚠️ NENHUM IRMÃO DISPONÍVEL PARA LANÇAMENTO!');
-        console.warn('');
-        console.warn('🔍 DIAGNÓSTICO:');
-        console.warn('  • Status encontrados no banco:', statusUnicos);
-        console.warn('  • Status permitidos no código:', STATUS_PERMITIDOS);
-        console.warn('  • Status bloqueados:', STATUS_BLOQUEADOS);
-        console.warn('');
-        console.warn('💡 SOLUÇÃO:');
-        console.warn('  1. Verifique se os status do banco correspondem aos permitidos');
-        console.warn('  2. Ajuste STATUS_PERMITIDOS no início do arquivo FinancasLoja.jsx');
-        console.warn('  3. Adicione os status do seu banco na configuração');
-        console.warn('');
-        console.warn('📋 Primeiros 5 irmãos:', todosIrmaos?.slice(0, 5));
-      } else {
-        console.log('📝 Exemplo de irmãos carregados:', irmaosDisponiveis.slice(0, 3));
-      }
-      
-      setIrmaos(irmaosDisponiveis);
-
-      // Carregar lançamentos
-      await carregarLancamentos();
-
+      await Promise.all([
+        carregarCategoriasHook(),
+        carregarIrmaosHook(),
+        carregarLancamentosHook(filtros)
+      ]);
     } catch (error) {
-      console.error('❌ Erro ao carregar dados:', error);
+      console.error('Erro ao carregar dados:', error);
       showError('Erro ao carregar dados: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  const carregarLancamentos = async () => {
-    try {
-      const { mes, ano, tipo, categoria, status, origem_tipo, origem_irmao_id } = filtros;
-
-      let query = supabase
-        .from('lancamentos_loja')
-        .select(`
-          *,
-          categorias_financeiras(nome, tipo),
-          irmaos(nome)
-        `)
-        .limit(500); // ⚡ PERFORMANCE: Limita a 500 registros
-
-      // - PAGOS: Filtrar por data_pagamento (quando foi efetivamente pago)
-      // - PENDENTES: Filtrar por data_vencimento (quando deve ser pago)
-      // - data_lancamento: NÃO É USADA para controle, apenas referência
-      
-      if (mes > 0 && ano > 0) {
-        const primeiroDia = `${ano}-${mes.toString().padStart(2, '0')}-01`;
-        const ultimoDia = new Date(ano, mes, 0).getDate();
-        const ultimoDiaFormatado = `${ano}-${mes.toString().padStart(2, '0')}-${ultimoDia}`;
-        
-        // Buscar lançamentos onde:
-        // 1. Status PAGO e data_pagamento no período, OU
-        // 2. Status PENDENTE e data_vencimento no período
-        query = query.or(
-          `and(status.eq.pago,data_pagamento.gte.${primeiroDia},data_pagamento.lte.${ultimoDiaFormatado}),` +
-          `and(status.eq.pendente,data_vencimento.gte.${primeiroDia},data_vencimento.lte.${ultimoDiaFormatado})`
-        );
-        
-      } else if (ano > 0) {
-        query = query.or(
-          `and(status.eq.pago,data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),` +
-          `and(status.eq.pendente,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`
-        );
-      }
-
-      // Filtro de TIPO (receita/despesa)
-      if (tipo) {
-        const categoriasDoTipo = categorias
-          .filter(c => c.tipo === tipo)
-          .map(c => c.id);
-        if (categoriasDoTipo.length > 0) {
-          query = query.in('categoria_id', categoriasDoTipo);
-        }
-      }
-
-      // Filtro de CATEGORIA específica
-      if (categoria) {
-        query = query.eq('categoria_id', parseInt(categoria));
-      }
-
-      // Filtro de STATUS
-      if (status) {
-        query = query.eq('status', status);
-      }
-
-      // Filtro de ORIGEM (Loja ou Irmão)
-      if (origem_tipo) {
-        query = query.eq('origem_tipo', origem_tipo);
-      }
-
-      // Filtro de IRMÃO específico
-      if (origem_irmao_id) {
-        query = query.eq('origem_irmao_id', parseInt(origem_irmao_id));
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      // RECALCULAR valores considerando pagamentos parciais
-      const lancamentosProcessados = await Promise.all((data || []).map(async (lanc) => {
-        // Ignorar os próprios registros de pagamento parcial
-        if (lanc.eh_pagamento_parcial) {
-          return lanc;
-        }
 
         // Buscar pagamentos parciais deste lançamento para mostrar o total pago
         const { data: pagamentosParcias, error: errPag } = await supabase
@@ -446,7 +281,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }
 
       limparFormulario();
-      await carregarLancamentos();
+      await carregarLancamentosHook(filtros);
 
     } catch (error) {
       console.error('Erro ao salvar lançamento:', error);
@@ -488,7 +323,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       showSuccess(`${lancamentosParaInserir.length} lançamentos criados com sucesso!`);
       setMostrarModalIrmaos(false);
       limparLancamentoIrmaos();
-      await carregarLancamentos();
+      await carregarLancamentosHook(filtros);
 
     } catch (error) {
       console.error('Erro ao criar lançamentos:', error);
@@ -550,7 +385,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       showSuccess('Lançamento quitado com sucesso!');
       setMostrarModalQuitacao(false);
-      await carregarLancamentos();
+      await carregarLancamentosHook(filtros);
 
     } catch (error) {
       console.error('Erro ao quitar lançamento:', error);
@@ -612,7 +447,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         data_pagamento: new Date().toISOString().split('T')[0],
         tipo_pagamento: 'dinheiro'
       });
-      await carregarLancamentos();
+      await carregarLancamentosHook(filtros);
 
     } catch (error) {
       console.error('Erro ao quitar lançamentos:', error);
@@ -636,7 +471,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       if (error) throw error;
 
       showSuccess(`Status atualizado para ${novoStatus === 'pago' ? 'PAGO' : 'PENDENTE'}!`);
-      await carregarLancamentos();
+      await carregarLancamentosHook(filtros);
 
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
@@ -676,7 +511,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       if (error) throw error;
 
       showSuccess('Lançamento excluído com sucesso!');
-      await carregarLancamentos();
+      await carregarLancamentosHook(filtros);
 
     } catch (error) {
       console.error('Erro ao excluir lançamento:', error);
@@ -915,7 +750,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada!`);
       setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
       setModalSangriaAberto(false);
-      carregarLancamentos();
+      carregarLancamentosHook(filtros);
       calcularCaixaFisicoTotal();
     } catch (error) {
       console.error('Erro:', error);
