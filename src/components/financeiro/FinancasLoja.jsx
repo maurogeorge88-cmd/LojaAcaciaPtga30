@@ -4,9 +4,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 
-// ========================================
 // 💰 REGIME DE COMPETÊNCIA FINANCEIRA
-// ========================================
 // REGRAS FUNDAMENTAIS:
 // 
 // ✅ LANÇAMENTOS PAGOS:
@@ -43,9 +41,7 @@ import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formata
 // • Usa data_pagamento como critério
 // • Reflete o fluxo de caixa real
 
-// ========================================
 // ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
-// ========================================
 // Status dos irmãos da A∴R∴L∴S∴ Acácia de Paranatinga nº 30
 
 // Status que PODEM receber lançamentos financeiros
@@ -65,7 +61,6 @@ const STATUS_BLOQUEADOS = [
 ];
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
-  // ========================================
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -105,6 +100,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   const [debitosIrmao, setDebitosIrmao] = useState([]);
   const [creditosIrmao, setCreditosIrmao] = useState([]);
 
+  const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
+  const [formSangria, setFormSangria] = useState({
+    valor: '',
+    data: new Date().toISOString().split('T')[0],
+    observacao: ''
+  });
+
   const [formLancamento, setFormLancamento] = useState({
     tipo: 'receita',
     categoria_id: '',
@@ -117,8 +119,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     status: 'pendente', // CORRIGIDO: usar 'pendente' ou 'pago'
     comprovante_url: '',
     observacoes: '',
-    origem_tipo: 'Loja', // ← NOVO: 'Loja' ou 'Irmao'
-    origem_irmao_id: '' // ← NOVO: ID do irmão se origem_tipo = 'Irmao'
+    origem_tipo: 'Loja', 
+    origem_irmao_id: '' 
   });
 
   // Para lançamento em lote de irmãos
@@ -174,7 +176,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     if (categorias.length > 0) {
       carregarLancamentos();
     }
-  }, [filtros.tipo, filtros.categoria, filtros.status, filtros.origem_tipo, filtros.origem_irmao_id]); // ← ADICIONAR origem
+  }, [filtros.tipo, filtros.categoria, filtros.status, filtros.origem_tipo, filtros.origem_irmao_id]); 
 
   const carregarDados = async () => {
     setLoading(true);
@@ -289,7 +291,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         `)
         .limit(500); // ⚡ PERFORMANCE: Limita a 500 registros
 
-      // ⚠️ REGIME DE COMPETÊNCIA - REGRAS:
       // - PAGOS: Filtrar por data_pagamento (quando foi efetivamente pago)
       // - PENDENTES: Filtrar por data_vencimento (quando deve ser pago)
       // - data_lancamento: NÃO É USADA para controle, apenas referência
@@ -308,7 +309,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         );
         
       } else if (ano > 0) {
-        // Apenas ano selecionado
         query = query.or(
           `and(status.eq.pago,data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),` +
           `and(status.eq.pendente,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`
@@ -385,7 +385,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         return lanc;
       }));
 
-      // ⚠️ ORDENAÇÃO: Usar data relevante (pagamento para pagos, vencimento para pendentes)
       lancamentosProcessados.sort((a, b) => {
         const dataA = a.status === 'pago' ? a.data_pagamento : a.data_vencimento;
         const dataB = b.status === 'pago' ? b.data_pagamento : b.data_vencimento;
@@ -414,8 +413,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         status: formLancamento.status, // CORRIGIDO: usar 'pendente' ou 'pago'
         comprovante_url: formLancamento.comprovante_url || null,
         observacoes: formLancamento.observacoes || null,
-        origem_tipo: formLancamento.origem_tipo || 'Loja', // ← NOVO
-        origem_irmao_id: formLancamento.origem_irmao_id ? parseInt(formLancamento.origem_irmao_id) : null // ← NOVO
+        origem_tipo: formLancamento.origem_tipo || 'Loja', 
+        origem_irmao_id: formLancamento.origem_irmao_id ? parseInt(formLancamento.origem_irmao_id) : null 
       };
 
       if (editando) {
@@ -466,8 +465,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
           status: 'pendente',
-          origem_tipo: 'Irmao', // ← NOVO: marcar como origem Irmão
-          origem_irmao_id: irmaoId // ← NOVO: ID do irmão
+          origem_tipo: 'Irmao', 
+          origem_irmao_id: irmaoId 
         };
       });
 
@@ -649,8 +648,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       status: lancamento.status,
       comprovante_url: lancamento.comprovante_url || '',
       observacoes: lancamento.observacoes || '',
-      origem_tipo: lancamento.origem_tipo || 'Loja', // ← ADICIONAR
-      origem_irmao_id: lancamento.origem_irmao_id || '' // ← ADICIONAR
+      origem_tipo: lancamento.origem_tipo || 'Loja', 
+      origem_irmao_id: lancamento.origem_irmao_id || '' 
     });
     setEditando(lancamento.id);
     setMostrarFormulario(true);
@@ -710,8 +709,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       status: 'pendente',
       comprovante_url: '',
       observacoes: '',
-      origem_tipo: 'Loja', // ← ADICIONAR
-      origem_irmao_id: '' // ← ADICIONAR
+      origem_tipo: 'Loja', 
+      origem_irmao_id: '' 
     });
     setEditando(null);
     setMostrarFormulario(false);
@@ -774,9 +773,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     });
   };
 
-  // ========================================
   // 🌳 HELPER: RENDERIZAR CATEGORIAS HIERÁRQUICAS
-  // ========================================
   const renderizarOpcoesCategoria = (tipo) => {
     const categoriasFiltradas = categorias.filter(c => c.tipo === tipo);
     const principais = categoriasFiltradas.filter(c => c.nivel === 1 || !c.categoria_pai_id);
@@ -846,85 +843,142 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     }));
   };
 
+  const fazerSangria = async () => {
+    try {
+      const { valor, data, observacao } = formSangria;
+      if (!valor || parseFloat(valor) <= 0) {
+        showError('Informe um valor válido');
+        return;
+      }
+      const valorSangria = parseFloat(valor);
+      const resumoAtual = calcularResumo();
+      if (valorSangria > resumoAtual.caixaFisico) {
+        showError(`Valor maior que o disponível`);
+        return;
+      }
+      setLoading(true);
+      const categoriaSangria = categorias.find(c => c.nome.toLowerCase().includes('sangria') && c.tipo === 'despesa');
+      if (!categoriaSangria) {
+        showError('Categoria Sangria não encontrada');
+        setLoading(false);
+        return;
+      }
+      const categoriaDeposito = categorias.find(c => c.nome.toLowerCase().includes('depósito') && c.tipo === 'receita');
+      if (!categoriaDeposito) {
+        showError('Categoria Depósito não encontrada');
+        setLoading(false);
+        return;
+      }
+      const { error: errorSangria } = await supabase.from('lancamentos_loja').insert([{
+        categoria_id: categoriaSangria.id,
+        descricao: `🔻 Sangria${observacao ? ` - ${observacao}` : ''}`,
+        valor: valorSangria,
+        data_lancamento: data,
+        data_vencimento: data,
+        data_pagamento: data,
+        tipo_pagamento: 'dinheiro',
+        status: 'pago',
+        eh_transferencia_interna: true,
+        origem_tipo: 'Loja',
+        observacoes: `Sangria. ${observacao || ''}`
+      }]);
+      if (errorSangria) throw errorSangria;
+      const { error: errorDeposito } = await supabase.from('lancamentos_loja').insert([{
+        categoria_id: categoriaDeposito.id,
+        descricao: `🔺 Depósito${observacao ? ` - ${observacao}` : ''}`,
+        valor: valorSangria,
+        data_lancamento: data,
+        data_vencimento: data,
+        data_pagamento: data,
+        tipo_pagamento: 'transferencia',
+        status: 'pago',
+        eh_transferencia_interna: true,
+        origem_tipo: 'Loja',
+        observacoes: `Depósito. ${observacao || ''}`
+      }]);
+      if (errorDeposito) throw errorDeposito;
+      showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada!`);
+      setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
+      setModalSangriaAberto(false);
+      carregarLancamentos();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao fazer sangria');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calcularResumo = () => {
-    // ========================================
     // RECEITAS PAGAS - SEPARADAS POR TIPO
-    // ========================================
     
     // 1. RECEITAS BANCÁRIAS (PIX, Transferência, Débito, Crédito, Cheque)
-    // Essas entram no saldo bancário
     const receitasBancarias = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
         l.tipo_pagamento !== 'compensacao' &&  // ← Não movimenta caixa
-        l.tipo_pagamento !== 'dinheiro'        // ← NOVO: Vai para caixa físico
+        l.tipo_pagamento !== 'dinheiro'        
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     // 2. RECEITAS EM DINHEIRO (Caixa Físico)
-    // Essas ficam no caixa físico até serem depositadas
     const receitasDinheiro = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro'       // ← NOVO: Só dinheiro físico
+        l.tipo_pagamento === 'dinheiro' &&
+        !l.eh_transferencia_interna
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    // 3. TOTAL DE RECEITAS (para compatibilidade)
+    const sangrias = lancamentos
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago' && l.eh_transferencia_interna === true && l.tipo_pagamento === 'dinheiro')
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const depositos = lancamentos
+      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago' && l.eh_transferencia_interna === true && l.tipo_pagamento !== 'dinheiro')
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
     const receitas = receitasBancarias + receitasDinheiro;
 
-    // ========================================
-    // DESPESAS PAGAS - TODAS JUNTAS
-    // ========================================
-    // Despesas são sempre bancárias (já foram pagas)
     const despesas = lancamentos
       .filter(l => 
         l.categorias_financeiras?.tipo === 'despesa' && 
         l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+        l.tipo_pagamento !== 'compensacao' &&
+        !l.eh_transferencia_interna
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    // ========================================
-    // PENDENTES (não mudou)
-    // ========================================
     const receitasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente')
+      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente' && !l.eh_transferencia_interna)
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const despesasPendentes = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente')
+      .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && !l.eh_transferencia_interna)
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-    // ========================================
-    // SALDOS - NOVA LÓGICA
-    // ========================================
     
-    // Saldo do período (bancário + caixa)
     const saldoPeriodo = receitas - despesas;
-    
-    // Saldo Bancário = anterior + entradas bancárias - despesas
-    const saldoBancario = saldoAnterior + receitasBancarias - despesas;
-    
-    // Caixa Físico = apenas receitas em dinheiro do período
-    const caixaFisico = receitasDinheiro;
+    const saldoBancario = saldoAnterior + receitasBancarias + depositos - despesas;
+    const caixaFisico = receitasDinheiro - sangrias;
     
     // Saldo Total = bancário + caixa físico
     const saldoTotal = saldoBancario + caixaFisico;
 
     return {
-      receitas,              // Total de receitas (compatibilidade)
-      receitasBancarias,     // ← NOVO: Receitas que entraram no banco
-      receitasDinheiro,      // ← NOVO: Receitas em dinheiro (caixa físico)
-      despesas,              // Despesas pagas
-      saldoPeriodo,          // Saldo apenas do período
-      saldoBancario,         // ← NOVO: Saldo no banco
-      caixaFisico,           // ← NOVO: Dinheiro físico
-      saldoTotal,            // Saldo total (bancário + caixa)
-      receitasPendentes,     // Receitas a receber
-      despesasPendentes      // Despesas a pagar
+      receitas,            
+      receitasBancarias,     
+      receitasDinheiro,
+      sangrias,
+      depositos,
+      despesas,            
+      saldoPeriodo,
+      saldoBancario,         
+      caixaFisico,           
+      saldoTotal,
+      receitasPendentes,
+      despesasPendentes
     };
   };
 
@@ -933,30 +987,24 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     try {
       const { mes, ano } = filtros;
 
-      // Se não há filtro de período, saldo anterior é zero
       if (mes === 0 && ano === 0) {
         setSaldoAnterior(0);
         return;
       }
 
-      // Definir a data limite (início do período selecionado)
       let dataLimite;
       if (mes > 0 && ano > 0) {
-        // Mês e ano específicos
         dataLimite = `${ano}-${mes.toString().padStart(2, '0')}-01`;
       } else if (ano > 0) {
-        // Apenas ano
         dataLimite = `${ano}-01-01`;
       }
 
-      // ⚠️ IMPORTANTE: Buscar lançamentos PAGOS com data_pagamento ANTES do período
       // Isso garante que o saldo anterior reflita o que foi efetivamente pago
       const { data, error } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(tipo)')
         .eq('status', 'pago')
-        .lt('data_pagamento', dataLimite)  // ← MUDADO: usar data_pagamento
-        .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais duplicados
+        .lt('data_pagamento', dataLimite)  
 
       if (error) throw error;
 
@@ -964,14 +1012,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       const receitasAnteriores = (data || [])
         .filter(l => 
           l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+          l.tipo_pagamento !== 'compensacao'  
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       const despesasAnteriores = (data || [])
         .filter(l => 
           l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+          l.tipo_pagamento !== 'compensacao'  
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -990,7 +1038,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       const { count, error } = await supabase
         .from('lancamentos_loja')
         .select('*', { count: 'exact', head: true })
-        .neq('eh_pagamento_parcial', true); // Não contar pagamentos parciais
 
       if (error) throw error;
       setTotalRegistros(count || 0);
@@ -1046,9 +1093,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.save(`relatorio-financeiro-${filtros.mes}-${filtros.ano}.pdf`);
   };
 
-  // ========================================
   // 📊 RELATÓRIO RESUMIDO POR CATEGORIA
-  // ========================================
   const gerarPDFResumido = () => {
     const doc = new jsPDF();
     
@@ -1075,9 +1120,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
     let yPos = 52;
 
-    // ========================================
     // ORGANIZAR POR HIERARQUIA
-    // ========================================
     const organizarHierarquia = (tipo) => {
       // Pegar categorias principais (nível 1)
       const catsPrincipais = categorias.filter(c => 
@@ -1095,7 +1138,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           l.categoria_id === principal.id &&
           l.categorias_financeiras?.tipo === tipo &&
           l.status === 'pago' &&
-          l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+          l.tipo_pagamento !== 'compensacao'  
         );
         
         // Subcategorias com lançamentos
@@ -1104,7 +1147,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             l.categoria_id === sub.id &&
             l.categorias_financeiras?.tipo === tipo &&
             l.status === 'pago' &&
-            l.tipo_pagamento !== 'compensacao'  // ← EXCLUIR compensações
+            l.tipo_pagamento !== 'compensacao'  
           );
           return {
             categoria: sub,
@@ -1125,9 +1168,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }).filter(cp => cp.subtotalTotal > 0); // Só mostrar se tiver valores
     };
 
-    // ========================================
     // DESPESAS HIERÁRQUICAS
-    // ========================================
     const despesasHierarquia = organizarHierarquia('despesa');
     const totalDespesas = despesasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
     
@@ -1236,9 +1277,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       yPos += 8;
     });
 
-    // ========================================
     // CRÉDITO À IRMÃOS (Compensações - NÃO entra no total)
-    // ========================================
     const compensacoes = lancamentos.filter(l => 
       l.status === 'pago' && 
       l.tipo_pagamento === 'compensacao' &&
@@ -1289,9 +1328,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       yPos += 8;
     }
 
-    // ========================================
     // AGRUPAR ÁGAPE E PECÚLIO EM LINHAS ÚNICAS
-    // ========================================
     const lancamentosAgrupados = [];
     const totais = {
       'Mensalidade': { valor: 0, categoria_id: null, data_pagamento: null, tipo: 'receita', nome_exibir: 'Mensalidade' },
@@ -1389,9 +1426,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }).filter(cp => cp.subtotalTotal > 0);
     };
 
-    // ========================================
     // RECEITAS HIERÁRQUICAS
-    // ========================================
     const receitasHierarquia = organizarHierarquiaAgrupada('receita');
     const totalReceitas = receitasHierarquia.reduce((sum, cp) => sum + cp.subtotalTotal, 0);
 
@@ -1527,9 +1562,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       yPos += 8;
     });
 
-    // ========================================
     // TOTAL GERAL
-    // ========================================
     const saldoTotal = totalReceitas - totalDespesas;
 
     if (yPos > 260) {
@@ -1583,9 +1616,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     doc.save(`Rel_Fechamento_-_${filtros.mes}_${filtros.ano}.pdf`);
   };
 
-  // ========================================
   // 📊 RELATÓRIO INDIVIDUAL DE IRMÃO
-  // ========================================
   const gerarRelatorioIndividual = async (irmaoId) => {
     try {
       showSuccess('Gerando relatório individual...');
@@ -3351,6 +3382,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         />
       )}
 
+      {/* Modal Sangria */}
+      {modalSangriaAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">💰 Sangria</h3>
+              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">×</button>
+            </div>
+            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4 mb-6">
+              <p className="text-sm text-emerald-700 font-semibold mb-1">💵 Disponível</p>
+              <p className="text-3xl font-bold text-emerald-800">{formatarMoeda(resumo.caixaFisico)}</p>
+            </div>
+            <div className="space-y-4">
+              <div><label className="block text-sm font-medium text-gray-700 mb-2">Valor *</label><input type="number" step="0.01" value={formSangria.valor} onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} className="w-full px-4 py-2 border rounded-lg" placeholder="0.00" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-2">Data *</label><input type="date" value={formSangria.data} onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} className="w-full px-4 py-2 border rounded-lg" /></div>
+              <div><label className="block text-sm font-medium text-gray-700 mb-2">Obs</label><textarea value={formSangria.observacao} onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} className="w-full px-4 py-2 border rounded-lg" rows="2" /></div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="flex-1 px-4 py-3 bg-gray-200 rounded-lg font-medium">Cancelar</button>
+              <button onClick={fazerSangria} disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Compensação */}
       {modalCompensacaoAberto && (
         <ModalCompensacao
@@ -3372,9 +3428,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   );
 }
 
-// ============================================
 // COMPONENTE: GERENCIAR CATEGORIAS
-// ============================================
 function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [editando, setEditando] = useState(null);
@@ -3613,9 +3667,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   );
 }
 
-// ============================================
 // COMPONENTE: MODAL DE PARCELAMENTO
-// ============================================
 function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, onSuccess, showSuccess, showError }) {
   const [formParcelamento, setFormParcelamento] = useState({
     tipo: lancamentoExistente?.tipo || 'despesa',
@@ -3949,22 +4001,17 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
   );
 }
 
-// ============================================
 // COMPONENTE: MODAL DE PAGAMENTO PARCIAL
-// ============================================
 function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSuccess, showSuccess, showError }) {
   const [valorPagar, setValorPagar] = useState('');
   const [dataPagamento, setDataPagamento] = useState(new Date().toISOString().split('T')[0]);
 
-  // ===================================================================
   // LÓGICA CORRETA DE CÁLCULO
-  // ===================================================================
   // 1. Buscar o PRIMEIRO valor do lançamento (antes de qualquer alteração)
   // 2. Calcular quanto foi compensado
   // 3. Calcular quanto foi pago (pagamentos parciais reais)
   // 4. Valor Restante = Original - Compensado - Pago
   // 5. Valor no banco = Valor Restante (sempre atualizado)
-  // ===================================================================
   
   // Separar pagamentos reais e compensações
   const pagamentosReais = pagamentosExistentes.filter(pag => pag.tipo_pagamento !== 'compensacao');
@@ -4008,7 +4055,6 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
       }
 
       // Calcular novo valor restante
-      // IMPORTANTE: Descontar do valor ATUAL no banco (que já tem compensações descontadas)
       const novoRestante = valorRestante - valorAPagar;
       const novoTotalPago = totalPago + valorAPagar;
 
@@ -4214,9 +4260,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
   );
 }
 
-// ========================================
 // 🔄 MODAL DE COMPENSAÇÃO
-// ========================================
 function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSuccess, showError }) {
   const [debitosSelecionados, setDebitosSelecionados] = useState([]);
   const [creditosSelecionados, setCreditosSelecionados] = useState([]);
