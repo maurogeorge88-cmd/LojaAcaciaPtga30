@@ -194,6 +194,69 @@ export const gerarRelatorioResumido = ({
     yPos = 20;
   }
 
+  // === CRÉDITO A IRMÃOS (COMPENSAÇÕES) ===
+  const lancamentosCompensacao = lancamentos.filter(l => 
+    l.categorias_financeiras?.tipo === 'despesa' && 
+    l.tipo_pagamento === 'compensacao' && 
+    l.status === 'pago'
+  );
+
+  if (lancamentosCompensacao.length > 0) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Crédito a Irmãos', 14, yPos);
+    yPos += 8;
+
+    // Criar tabela de compensações
+    const dadosCompensacao = lancamentosCompensacao.map(l => [
+      formatarDataBR(l.data_pagamento || l.data_vencimento),
+      l.irmaos?.nome || 'N/A',
+      l.descricao || '',
+      l.observacoes || '',
+      l.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    ]);
+
+    doc.autoTable({
+      head: [['DataPgto', 'Interessado', 'Descrição', 'Obs', 'Despesa']],
+      body: dadosCompensacao,
+      startY: yPos,
+      styles: { 
+        fontSize: 8,
+        cellPadding: 2
+      },
+      headStyles: { 
+        fillColor: [100, 100, 100],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 22 },  // DataPgto
+        1: { cellWidth: 40 },  // Interessado
+        2: { cellWidth: 60 },  // Descrição
+        3: { cellWidth: 40 },  // Obs
+        4: { cellWidth: 28, halign: 'right' }  // Despesa
+      },
+      margin: { left: 14, right: 14 },
+      didDrawPage: (data) => {
+        yPos = data.cursor.y;
+      }
+    });
+
+    // Sub Total das Compensações
+    yPos = doc.lastAutoTable.finalY + 5;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
+    doc.text(lancamentosCompensacao.reduce((sum, l) => sum + parseFloat(l.valor), 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 200, yPos, { align: 'right' });
+    yPos += 12;
+
+    if (yPos > 250) {
+      doc.addPage();
+      yPos = 20;
+    }
+  }
+
   // === RECEITAS ===
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(12);
@@ -247,9 +310,13 @@ export const gerarRelatorioResumido = ({
     yPos = 20;
   }
 
-  // Calcular compensações
+  // Calcular compensações (despesas pagas por compensação = créditos a irmãos)
   const totalCompensacoes = lancamentos
-    .filter(l => l.tipo_pagamento === 'compensacao' && l.status === 'pago')
+    .filter(l => 
+      l.categorias_financeiras?.tipo === 'despesa' && 
+      l.tipo_pagamento === 'compensacao' && 
+      l.status === 'pago'
+    )
     .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
   const saldoTotal = totalReceitas - totalDespesas;
