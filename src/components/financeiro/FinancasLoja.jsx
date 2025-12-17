@@ -2131,9 +2131,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             <p className="text-lg font-bold text-emerald-700">
               {formatarMoeda(resumo.caixaFisico)}
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">
+            <p className="text-[10px] text-gray-500 mt-0.5 mb-2">
               Dinheiro não depositado
             </p>
+            {resumo.caixaFisico > 0 && (
+              <button
+                onClick={() => setModalSangriaAberto(true)}
+                className="w-full px-2 py-1 bg-emerald-600 text-white text-[10px] rounded hover:bg-emerald-700 font-medium"
+              >
+                💰 Fazer Sangria
+              </button>
+            )}
           </div>
 
           <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-3 col-span-2 md:col-span-1">
