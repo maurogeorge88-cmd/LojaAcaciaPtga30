@@ -29,6 +29,7 @@ import Eventos from './components/filantropia/Eventos';
 import Sobre from './components/Sobre';
 import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Comodatos from './components/comodatos/Comodatos';
+import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
