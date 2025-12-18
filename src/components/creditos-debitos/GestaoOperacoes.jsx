@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
+import DetalhesOperacao from './DetalhesOperacao';
 
 export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   const [operacoes, setOperacoes] = useState([]);
@@ -9,6 +10,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   const [modoEdicao, setModoEdicao] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
   const [busca, setBusca] = useState('');
+  const [operacaoDetalhes, setOperacaoDetalhes] = useState(null);
 
   // Formulário
   const [formData, setFormData] = useState({
@@ -521,7 +523,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     {/* Ações */}
                     <div className="flex flex-col gap-2 ml-4">
                       <button
-                        onClick={() => {/* Ver Detalhes */}}
+                        onClick={() => setOperacaoDetalhes(operacao.id)}
                         className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg font-semibold transition-all text-sm whitespace-nowrap"
                       >
                         👁️ Detalhes
@@ -794,6 +796,17 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* MODAL DE DETALHES DA OPERAÇÃO */}
+      {operacaoDetalhes && (
+        <DetalhesOperacao
+          operacaoId={operacaoDetalhes}
+          onClose={() => setOperacaoDetalhes(null)}
+          onUpdate={() => carregarOperacoes()}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
       )}
     </div>
   );
