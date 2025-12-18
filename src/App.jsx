@@ -1704,7 +1704,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                                 : 'hover:bg-blue-800'
                             }`}
                           >
-                            <span>💰</span>
+                            <span>💵</span>
                             <span>Créditos/Débitos</span>
                           </button>
                           <button
