@@ -15,7 +15,9 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
     parcelas_atrasadas: 0,
     parcelas_vencendo_7dias: 0,
     num_creditos_ativos: 0,
-    num_debitos_ativos: 0
+    num_debitos_ativos: 0,
+    total_geral_emprestado: 0,  // NOVO: Total histórico emprestado
+    total_geral_tomado: 0        // NOVO: Total histórico tomado
   });
   
   // Estados das Entidades
@@ -73,14 +75,33 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
       return;
     }
 
-    setStats(data || {
-      total_a_receber: 0,
-      total_a_pagar: 0,
-      posicao_liquida: 0,
-      parcelas_atrasadas: 0,
-      parcelas_vencendo_7dias: 0,
-      num_creditos_ativos: 0,
-      num_debitos_ativos: 0
+    // Calcular totais gerais (todos os créditos e débitos, incluindo quitados)
+    const { data: creditosGeral } = await supabase
+      .from('operacoes_credito_debito')
+      .select('valor_total')
+      .eq('tipo_operacao', 'credito')
+      .neq('status', 'cancelado');
+
+    const { data: debitosGeral } = await supabase
+      .from('operacoes_credito_debito')
+      .select('valor_total')
+      .eq('tipo_operacao', 'debito')
+      .neq('status', 'cancelado');
+
+    const totalGeralEmprestado = creditosGeral?.reduce((sum, op) => sum + op.valor_total, 0) || 0;
+    const totalGeralTomado = debitosGeral?.reduce((sum, op) => sum + op.valor_total, 0) || 0;
+
+    setStats({
+      ...(data || {}),
+      total_a_receber: data?.total_a_receber || 0,
+      total_a_pagar: data?.total_a_pagar || 0,
+      posicao_liquida: data?.posicao_liquida || 0,
+      parcelas_atrasadas: data?.parcelas_atrasadas || 0,
+      parcelas_vencendo_7dias: data?.parcelas_vencendo_7dias || 0,
+      num_creditos_ativos: data?.num_creditos_ativos || 0,
+      num_debitos_ativos: data?.num_debitos_ativos || 0,
+      total_geral_emprestado: totalGeralEmprestado,
+      total_geral_tomado: totalGeralTomado
     });
   };
 
@@ -289,6 +310,50 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
               }`}>
                 {stats.posicao_liquida >= 0 ? 'Credor' : 'Devedor'}
               </p>
+            </div>
+          </div>
+
+          {/* TOTAIS HISTÓRICOS */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Totais Históricos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* TOTAL EMPRESTADO A TERCEIROS */}
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-5 border-2 border-emerald-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-emerald-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl">
+                    📤
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-emerald-800">Emprestado a Terceiros</h4>
+                    <p className="text-xs text-emerald-600">Total histórico de créditos concedidos</p>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-emerald-700 mb-1">
+                  R$ {stats.total_geral_emprestado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-emerald-600">
+                  <span>Inclui ativos e quitados</span>
+                </div>
+              </div>
+
+              {/* TOTAL TOMADO EMPRESTADO */}
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-lg p-5 border-2 border-rose-200">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-rose-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl">
+                    📥
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-semibold text-rose-800">Tomado Emprestado</h4>
+                    <p className="text-xs text-rose-600">Total histórico de débitos assumidos</p>
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-rose-700 mb-1">
+                  R$ {stats.total_geral_tomado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center gap-2 text-xs text-rose-600">
+                  <span>Inclui ativos e quitados</span>
+                </div>
+              </div>
             </div>
           </div>
 
