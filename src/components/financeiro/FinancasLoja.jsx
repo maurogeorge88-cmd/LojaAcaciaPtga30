@@ -363,24 +363,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (dados) => {
+    // Se receber um evento, prevenir default (mantém compatibilidade)
+    if (dados && dados.preventDefault) {
+      dados.preventDefault();
+      // Neste caso, usar formLancamento ao invés de dados
+      dados = formLancamento;
+    }
 
     try {
       const dadosLancamento = {
-        tipo: formLancamento.tipo,
-        categoria_id: parseInt(formLancamento.categoria_id),
-        descricao: formLancamento.descricao,
-        valor: parseFloat(formLancamento.valor),
-        data_lancamento: formLancamento.data_lancamento,
-        data_vencimento: formLancamento.data_vencimento,
-        tipo_pagamento: formLancamento.tipo_pagamento,
-        data_pagamento: formLancamento.data_pagamento || null,
-        status: formLancamento.status, // CORRIGIDO: usar 'pendente' ou 'pago'
-        comprovante_url: formLancamento.comprovante_url || null,
-        observacoes: formLancamento.observacoes || null,
-        origem_tipo: formLancamento.origem_tipo || 'Loja', 
-        origem_irmao_id: formLancamento.origem_irmao_id ? parseInt(formLancamento.origem_irmao_id) : null 
+        tipo: dados.tipo,
+        categoria_id: parseInt(dados.categoria_id),
+        descricao: dados.descricao,
+        valor: parseFloat(dados.valor),
+        data_lancamento: dados.data_lancamento,
+        data_vencimento: dados.data_vencimento,
+        tipo_pagamento: dados.tipo_pagamento,
+        data_pagamento: dados.data_pagamento || null,
+        status: dados.status,
+        comprovante_url: dados.comprovante_url || null,
+        observacoes: dados.observacoes || null,
+        origem_tipo: dados.origem_tipo || 'Loja', 
+        origem_irmao_id: dados.origem_irmao_id ? parseInt(dados.origem_irmao_id) : null 
       };
 
       if (editando) {
@@ -390,14 +395,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           .eq('id', editando);
 
         if (error) throw error;
-        showSuccess('Lançamento atualizado com sucesso!');
+        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
         const { error } = await supabase
           .from('lancamentos_loja')
           .insert(dadosLancamento);
 
         if (error) throw error;
-        showSuccess('Lançamento criado com sucesso!');
+        showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
       }
 
       limparFormulario();
