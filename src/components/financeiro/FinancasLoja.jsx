@@ -10,61 +10,13 @@ import {
   calcularDiasAtraso
 } from './utils/helpers';
 
-// 💰 REGIME DE COMPETÊNCIA FINANCEIRA
-// REGRAS FUNDAMENTAIS:
-// 
-// ✅ LANÇAMENTOS PAGOS:
-//    - Filtrados por: data_pagamento
-//    - Exibidos por: data_pagamento
-//    - Contam para: Receitas/Despesas pagas do período
-//
-// ✅ LANÇAMENTOS PENDENTES:
-//    - Filtrados por: data_vencimento  
-//    - Exibidos por: data_vencimento
-//    - Contam para: Receitas/Despesas a receber/pagar
-//
-// ❌ DATA DE LANÇAMENTO:
-//    - NÃO é usada para controle
-//    - Serve apenas como referência histórica
-//    - Aparece como coluna secundária na tabela
-//
-// EXEMPLOS:
-// 
-// Exemplo 1 - Mensalidade:
-// • Lançada: 01/11/2025
-// • Vencimento: 30/11/2025
-// • Paga: 05/12/2025
-// → Aparece no relatório de DEZEMBRO/2025 (data do pagamento)
-//
-// Exemplo 2 - Despesa pendente:
-// • Lançada: 15/11/2025
-// • Vencimento: 20/12/2025
-// • Status: Pendente
-// → Aparece no relatório de DEZEMBRO/2025 (data de vencimento)
-//
-// SALDO ANTERIOR:
-// • Calculado com lançamentos PAGOS antes do período
-// • Usa data_pagamento como critério
-// • Reflete o fluxo de caixa real
+// 💰 COMPONENTE: Finanças da Loja
+// Gerenciamento financeiro com regime de competência
+// Lançamentos pagos: filtrados por data_pagamento | Pendentes: filtrados por data_vencimento
 
-// ⚙️ CONFIGURAÇÃO DE STATUS - LOJA ACÁCIA
-// Status dos irmãos da A∴R∴L∴S∴ Acácia de Paranatinga nº 30
-
-// Status que PODEM receber lançamentos financeiros
-const STATUS_PERMITIDOS = [
-  'Regular',      // Irmão em situação regular
-  'Irregular',    // Irmão irregular (precisa regularizar)
-  'Licenciado',   // Irmão licenciado (recebe lançamentos)
-];
-
-// Status que NÃO DEVEM receber lançamentos
-const STATUS_BLOQUEADOS = [
-  'Suspenso',     // Irmão suspenso
-  'Desligado',    // Irmão desligado
-  'Excluído',     // Irmão excluído
-  'Falecido',     // Irmão falecido
-  'Ex-Ofício',    // Ex-ofício
-];
+// ⚙️ Configuração de status permitidos
+const STATUS_PERMITIDOS = ['Regular', 'Irregular', 'Licenciado'];
+const STATUS_BLOQUEADOS = ['Suspenso', 'Desligado', 'Excluído', 'Falecido', 'Ex-Ofício'];
 
 export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
@@ -198,7 +150,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     try {
       console.log('🔄 Iniciando carregamento de dados...');
       
-      // Carregar categorias (com hierarquia)
       const { data: catData, error: catError } = await supabase
         .from('categorias_financeiras')
         .select('*')
@@ -215,7 +166,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       console.log('✅ Categorias carregadas:', catData?.length || 0);
       setCategorias(catData || []);
 
-      // Carregar irmãos (com status permitidos)
       console.log('🔍 Buscando irmãos...');
       
       const { data: todosIrmaos, error: irmaoError } = await supabase
@@ -272,7 +222,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       
       setIrmaos(irmaosDisponiveis);
 
-      // Carregar lançamentos
       await carregarLancamentos();
 
     } catch (error) {
@@ -305,7 +254,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         const ultimoDia = new Date(ano, mes, 0).getDate();
         const ultimoDiaFormatado = `${ano}-${mes.toString().padStart(2, '0')}-${ultimoDia}`;
         
-        // Buscar lançamentos onde:
         // 1. Status PAGO e data_pagamento no período, OU
         // 2. Status PENDENTE e data_vencimento no período
         query = query.or(
@@ -340,7 +288,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       // Se filtrar por 'vencido', buscar 'pendente' e filtrar depois
       if (status) {
         if (status === 'vencido') {
-          // Buscar apenas pendentes, vamos filtrar os vencidos depois
           query = query.eq('status', 'pendente');
         } else {
           query = query.eq('status', status);
@@ -368,7 +315,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           return lanc;
         }
 
-        // Buscar pagamentos parciais deste lançamento para mostrar o total pago
         const { data: pagamentosParcias, error: errPag } = await supabase
           .from('lancamentos_loja')
           .select('valor, tipo_pagamento')
@@ -436,7 +382,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       };
 
       if (editando) {
-        // Atualizar
         const { error } = await supabase
           .from('lancamentos_loja')
           .update(dadosLancamento)
@@ -445,7 +390,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         if (error) throw error;
         showSuccess('Lançamento atualizado com sucesso!');
       } else {
-        // Criar
         const { error } = await supabase
           .from('lancamentos_loja')
           .insert(dadosLancamento);
@@ -508,7 +452,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
   // NOVA FUNÇÃO: Quitação individual rápida
   const abrirModalQuitacao = async (lancamento) => {
     try {
-      // Buscar pagamentos parciais deste lançamento
       const { data: pagamentos, error } = await supabase
         .from('lancamentos_loja')
         .select('*')
@@ -695,7 +638,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   const abrirModalPagamentoParcial = async (lancamento) => {
     try {
-      // Buscar todos os pagamentos parciais deste lançamento
       const { data: pagamentos, error } = await supabase
         .from('lancamentos_loja')
         .select('*')
@@ -743,7 +685,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         return;
       }
 
-      // Buscar TODOS os lançamentos pendentes do irmão
       const { data: lancamentosIrmao, error: errorLanc } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(nome, tipo)')
@@ -1092,7 +1033,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     }
   };
 
-  // Buscar total de registros (independente de filtros)
   const buscarTotalRegistros = async () => {
     try {
       const { count, error } = await supabase
@@ -1133,7 +1073,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     try {
       showSuccess('Gerando relatório individual...');
       
-      // Buscar dados do irmão
       const { data: irmaoData, error: irmaoError } = await supabase
         .from('irmaos')
         .select('nome, cpf, cim')
@@ -1142,7 +1081,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
       if (irmaoError) throw irmaoError;
 
-      // Buscar lançamentos PENDENTES
       const { data: lancsData, error: lancsError } = await supabase
         .from('lancamentos_loja')
         .select(`
@@ -1179,7 +1117,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         lancsPorMes[mesAno].lancamentos.push(lanc);
       });
 
-      // Criar PDF
       const doc = new jsPDF();
       let yPos = 15;
 
@@ -1451,7 +1388,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
     try {
       showSuccess('Gerando relatórios de todos os inadimplentes...');
       
-      // Buscar todos os irmãos com pendências
       const lancamentosPendentes = lancamentos.filter(
         l => l.status === 'pendente' && l.origem_tipo === 'Irmao'
       );
@@ -3305,7 +3241,6 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
         
         if (updateError) throw updateError;
 
-        // Criar as DEMAIS parcelas (2 em diante)
         const parcelasRestantes = [];
         for (let i = 1; i < numParcelas; i++) {
           const dataParcela = new Date(formParcelamento.data_primeira_parcela);
@@ -3784,7 +3719,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
   const [debitosSelecionados, setDebitosSelecionados] = useState([]);
   const [creditosSelecionados, setCreditosSelecionados] = useState([]);
 
-
   // Calcular totais
   const totalDebitos = debitosSelecionados.reduce((sum, id) => {
     const debito = debitos.find(d => d.id === id);
@@ -3847,7 +3781,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
         } else {
           // Compensação parcial do débito
           
-          // Criar registro de pagamento parcial
           const { error: errorInsert } = await supabase
             .from('lancamentos_loja')
             .insert({
@@ -3915,7 +3848,6 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
         } else {
           // Compensação parcial do crédito
           
-          // Criar registro de pagamento parcial
           const { error: errorInsert } = await supabase
             .from('lancamentos_loja')
             .insert({
