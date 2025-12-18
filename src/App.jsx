@@ -282,21 +282,21 @@ function App() {
       
       // Definir permissões baseadas no nível de acesso
       if (data.nivel_acesso === 'irmao') {
-        // Irmão: permissões baseadas no que foi marcado no cadastro
+        // Irmão comum: apenas visualização
         setPermissoes({
-          canEdit: data.pode_editar_cadastros || false,
-          canEditMembers: data.pode_editar_cadastros || false,
-          canDelete: data.pode_editar_cadastros || false,
-          canManageUsers: data.pode_gerenciar_usuarios || false,
-          canViewFinancial: data.pode_visualizar_financeiro || false,
-          canEditFinancial: data.pode_editar_financeiro || false,
-          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
-          pode_editar_comodatos: data.pode_editar_comodatos || false,
-          pode_editar_caridade: data.pode_editar_caridade || false,
-          pode_editar_balaustres: data.pode_editar_balaustres || false,
-          pode_editar_pranchas: data.pode_editar_pranchas || false,
-          pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false
+          canEdit: false,
+          canEditMembers: false,
+          canDelete: false,
+          canManageUsers: false,
+          canViewFinancial: false,
+          canEditFinancial: false,
+          pode_editar_biblioteca: false,
+          pode_editar_comodatos: false,
+          pode_editar_caridade: false,
+          pode_editar_balaustres: false,
+          pode_editar_pranchas: false,
+          pode_editar_comissoes: false,
+          pode_editar_corpo_admin: false
         });
       } else if (data.nivel_acesso === 'admin') {
         // Admin: acesso total
@@ -1694,6 +1694,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                             <span>Finanças - Loja</span>
                           </button>
 
+
+                          {/* CRÉDITOS E DÉBITOS */}
+                          <button
+                            onClick={() => setCurrentPage('creditos-debitos')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'creditos-debitos'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>💰</span>
+                            <span>Créditos/Débitos</span>
+                          </button>
                           <button
                             onClick={() => setCurrentPage('lancamentos-lote')}
                             className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
@@ -1879,6 +1892,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
+                  {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
@@ -2095,6 +2109,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* CRÉDITOS E DÉBITOS */}
+        {currentPage === 'creditos-debitos' && (
+          <CreditosDebitos
+            permissoes={permissoes}
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
