@@ -141,8 +141,14 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
       showSuccess('Parcela quitada com sucesso!');
       setModalQuitacao(false);
+      
+      // FORÇAR RECARREGAMENTO IMEDIATO
       await carregarDados();
-      if (onUpdate) onUpdate();
+      
+      // Notificar componente pai para atualizar lista
+      if (onUpdate) {
+        await onUpdate();
+      }
     } catch (error) {
       console.error('Erro ao quitar parcela:', error);
       showError('Erro ao quitar parcela');
@@ -155,6 +161,8 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
     if (!window.confirm(`Deseja estornar o pagamento da parcela ${parcela.numero_parcela}?`)) {
       return;
     }
+
+    setLoading(true);
 
     try {
       // Atualizar parcela
@@ -190,11 +198,19 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
         .eq('id', operacaoId);
 
       showSuccess('Pagamento estornado com sucesso!');
+      
+      // FORÇAR RECARREGAMENTO IMEDIATO
       await carregarDados();
-      if (onUpdate) onUpdate();
+      
+      // Notificar componente pai para atualizar lista
+      if (onUpdate) {
+        await onUpdate();
+      }
     } catch (error) {
       console.error('Erro ao estornar parcela:', error);
       showError('Erro ao estornar parcela');
+    } finally {
+      setLoading(false);
     }
   };
 
