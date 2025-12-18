@@ -802,7 +802,10 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
       {operacaoDetalhes && (
         <DetalhesOperacao
           operacaoId={operacaoDetalhes}
-          onClose={() => setOperacaoDetalhes(null)}
+          onClose={() => {
+            setOperacaoDetalhes(null);
+            carregarOperacoes(); // Recarregar lista ao fechar
+          }}
           onUpdate={() => carregarOperacoes()}
           showSuccess={showSuccess}
           showError={showError}
