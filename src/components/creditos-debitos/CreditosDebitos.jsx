@@ -257,102 +257,105 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
       {/* DASHBOARD */}
       {view === 'dashboard' && (
         <div className="space-y-6">
-          {/* CARDS DE RESUMO */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* A RECEBER */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-green-800">💵 A Receber</h3>
-                <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
-                  {stats.num_creditos_ativos} ativas
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-green-700">
-                R$ {stats.total_a_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-sm text-green-600 mt-2">Créditos concedidos</p>
-            </div>
-
-            {/* A PAGAR */}
-            <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border-2 border-red-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-red-800">💳 A Pagar</h3>
-                <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full">
-                  {stats.num_debitos_ativos} ativas
-                </span>
-              </div>
-              <p className="text-3xl font-bold text-red-700">
-                R$ {stats.total_a_pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <p className="text-sm text-red-600 mt-2">Débitos assumidos</p>
-            </div>
-
-            {/* POSIÇÃO LÍQUIDA */}
-            <div className={`bg-gradient-to-br ${
-              stats.posicao_liquida >= 0 
-                ? 'from-blue-50 to-blue-100 border-blue-200' 
-                : 'from-orange-50 to-orange-100 border-orange-200'
-            } rounded-xl p-6 border-2`}>
-              <div className="flex items-center justify-between mb-4">
-                <h3 className={`text-lg font-bold ${
-                  stats.posicao_liquida >= 0 ? 'text-blue-800' : 'text-orange-800'
-                }`}>
-                  ⚖️ Posição Líquida
-                </h3>
-              </div>
-              <p className={`text-3xl font-bold ${
-                stats.posicao_liquida >= 0 ? 'text-blue-700' : 'text-orange-700'
-              }`}>
-                R$ {Math.abs(stats.posicao_liquida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <p className={`text-sm mt-2 ${
-                stats.posicao_liquida >= 0 ? 'text-blue-600' : 'text-orange-600'
-              }`}>
-                {stats.posicao_liquida >= 0 ? 'Credor' : 'Devedor'}
-              </p>
-            </div>
-          </div>
-
-          {/* TOTAIS HISTÓRICOS */}
+          {/* NEGÓCIOS CONSOLIDADOS (TOTAIS HISTÓRICOS) */}
           <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">📊 Totais Históricos</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Negócios Consolidados</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* TOTAL EMPRESTADO A TERCEIROS */}
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-lg p-5 border-2 border-emerald-200">
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border-2 border-emerald-200">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-emerald-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl">
+                  <div className="bg-emerald-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     📤
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-emerald-800">Emprestado a Terceiros</h4>
-                    <p className="text-xs text-emerald-600">Total histórico de créditos concedidos</p>
+                    <h4 className="text-lg font-bold text-emerald-800">Emprestado a Terceiros</h4>
+                    <p className="text-sm text-emerald-600">Total histórico de créditos concedidos</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-emerald-700 mb-1">
+                <p className="text-4xl font-bold text-emerald-700 mb-2">
                   R$ {stats.total_geral_emprestado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-emerald-600">
-                  <span>Inclui ativos e quitados</span>
+                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                  <span>✓ Inclui operações ativas e quitadas</span>
                 </div>
               </div>
 
               {/* TOTAL TOMADO EMPRESTADO */}
-              <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-lg p-5 border-2 border-rose-200">
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-6 border-2 border-rose-200">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-rose-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl">
+                  <div className="bg-rose-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     📥
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-sm font-semibold text-rose-800">Tomado Emprestado</h4>
-                    <p className="text-xs text-rose-600">Total histórico de débitos assumidos</p>
+                    <h4 className="text-lg font-bold text-rose-800">Tomado Emprestado</h4>
+                    <p className="text-sm text-rose-600">Total histórico de débitos assumidos</p>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-rose-700 mb-1">
+                <p className="text-4xl font-bold text-rose-700 mb-2">
                   R$ {stats.total_geral_tomado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <div className="flex items-center gap-2 text-xs text-rose-600">
-                  <span>Inclui ativos e quitados</span>
+                <div className="flex items-center gap-2 text-sm text-rose-600">
+                  <span>✓ Inclui operações ativas e quitadas</span>
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* CENÁRIO ATUAL (SALDOS PENDENTES) */}
+          <div className="bg-white rounded-xl shadow-md p-6">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">💼 Cenário Atual</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* A RECEBER */}
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-green-800">💵 A Receber</h3>
+                  <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
+                    {stats.num_creditos_ativos} ativas
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-green-700">
+                  R$ {stats.total_a_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-sm text-green-600 mt-2">Saldo pendente de recebimento</p>
+              </div>
+
+              {/* A PAGAR */}
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border-2 border-red-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-red-800">💳 A Pagar</h3>
+                  <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full">
+                    {stats.num_debitos_ativos} ativas
+                  </span>
+                </div>
+                <p className="text-3xl font-bold text-red-700">
+                  R$ {stats.total_a_pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="text-sm text-red-600 mt-2">Saldo pendente de pagamento</p>
+              </div>
+
+              {/* POSIÇÃO LÍQUIDA */}
+              <div className={`bg-gradient-to-br ${
+                stats.posicao_liquida >= 0 
+                  ? 'from-blue-50 to-blue-100 border-blue-200' 
+                  : 'from-orange-50 to-orange-100 border-orange-200'
+              } rounded-xl p-6 border-2`}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className={`text-lg font-bold ${
+                    stats.posicao_liquida >= 0 ? 'text-blue-800' : 'text-orange-800'
+                  }`}>
+                    ⚖️ Posição Líquida
+                  </h3>
+                </div>
+                <p className={`text-3xl font-bold ${
+                  stats.posicao_liquida >= 0 ? 'text-blue-700' : 'text-orange-700'
+                }`}>
+                  R$ {Math.abs(stats.posicao_liquida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className={`text-sm mt-2 ${
+                  stats.posicao_liquida >= 0 ? 'text-blue-600' : 'text-orange-600'
+                }`}>
+                  {stats.posicao_liquida >= 0 ? 'Saldo credor' : 'Saldo devedor'}
+                </p>
               </div>
             </div>
           </div>
