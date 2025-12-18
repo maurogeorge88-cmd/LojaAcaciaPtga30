@@ -272,7 +272,7 @@ export const gerarRelatorioResumido = ({
       doc.text(formatarDataBR(lanc.data_pagamento), 10, yPos);
       doc.text(lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão', 32, yPos);
       doc.text(lanc.categorias_financeiras?.nome?.substring(0, 28) || '', 80, yPos);
-      doc.text((lanc.observacoes || '').substring(0, 30), 115, yPos);
+      doc.text((lanc.observacoes || '').substring(0, 30), 140, yPos);
       doc.text(`R$${parseFloat(lanc.valor).toFixed(2)}`, 190, yPos, { align: 'right' });
       yPos += 4;
     });
