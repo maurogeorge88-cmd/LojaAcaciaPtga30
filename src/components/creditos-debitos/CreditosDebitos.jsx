@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import GestaoEntidades from './GestaoEntidades';
+import GestaoOperacoes from './GestaoOperacoes';
 
 export default function CreditosDebitos({ permissoes, showSuccess, showError }) {
   const [view, setView] = useState('dashboard');
@@ -372,13 +373,13 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
         />
       )}
 
+      {/* CRÉDITOS E DÉBITOS */}
       {(view === 'creditos' || view === 'debitos') && (
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h2 className="text-xl font-bold text-gray-800 mb-4">
-            {view === 'creditos' ? '💵 Créditos' : '💳 Débitos'}
-          </h2>
-          <p className="text-gray-600">Componente de operações será implementado aqui...</p>
-        </div>
+        <GestaoOperacoes
+          tipo={view === 'creditos' ? 'credito' : 'debito'}
+          showSuccess={showSuccess}
+          showError={showError}
+        />
       )}
     </div>
   );
