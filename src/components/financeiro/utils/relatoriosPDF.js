@@ -258,7 +258,7 @@ export const gerarRelatorioResumido = ({
     doc.text('DataPgto', 10, yPos);
     doc.text('Interessado', 32, yPos);
     doc.text('Descrição', 80, yPos);
-    doc.text('Obs', 115, yPos);
+    doc.text('Obs', 125, yPos);
     doc.text('Despesa', 190, yPos, { align: 'right' });
     yPos += 4;
 
