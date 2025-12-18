@@ -336,8 +336,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       }
 
       // Filtro de STATUS
+      // IMPORTANTE: 'vencido' não existe no banco, é calculado dinamicamente!
+      // Se filtrar por 'vencido', buscar 'pendente' e filtrar depois
       if (status) {
-        query = query.eq('status', status);
+        if (status === 'vencido') {
+          // Buscar apenas pendentes, vamos filtrar os vencidos depois
+          query = query.eq('status', 'pendente');
+        } else {
+          query = query.eq('status', status);
+        }
       }
 
       // Filtro de ORIGEM (Loja ou Irmão)
@@ -390,13 +397,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         return lanc;
       }));
 
-      lancamentosProcessados.sort((a, b) => {
+      // Se o filtro é 'vencido', filtrar apenas os que estão realmente vencidos
+      let lancamentosFiltrados = lancamentosProcessados;
+      if (status === 'vencido') {
+        lancamentosFiltrados = lancamentosProcessados.filter(lanc => verificarVencido(lanc));
+      }
+
+      lancamentosFiltrados.sort((a, b) => {
         const dataA = a.status === 'pago' ? a.data_pagamento : a.data_vencimento;
         const dataB = b.status === 'pago' ? b.data_pagamento : b.data_vencimento;
         return new Date(dataB) - new Date(dataA); // Mais recente primeiro
       });
 
-      setLancamentos(lancamentosProcessados);
+      setLancamentos(lancamentosFiltrados);
     } catch (error) {
       console.error('Erro ao carregar lançamentos:', error);
     }
