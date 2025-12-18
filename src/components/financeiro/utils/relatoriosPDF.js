@@ -171,7 +171,7 @@ export const gerarRelatorioResumido = ({
     doc.setFont('helvetica', 'bold');
     doc.text('DataPgto', 10, yPos);
     doc.text('Interessado', 32, yPos);
-    doc.text('Descrição', 80, yPos);
+    doc.text('Descrição', 70, yPos);
     doc.text('Obs', 125, yPos);
     doc.text('Despesa', 190, yPos, { align: 'right' });
     yPos += 4;
@@ -187,14 +187,14 @@ export const gerarRelatorioResumido = ({
       const interessado = lanc.origem_tipo === 'Loja' ? 
         (lanc.descricao.substring(0, 22)) : 
         (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-      const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-      const obs = (lanc.observacoes || '').substring(0, 30);
+      const descricao = lanc.categorias_financeiras?.nome?.substring(0, 20) || '';
+      const obs = (lanc.observacoes || '').substring(0, 45);
       const valor = parseFloat(lanc.valor);
 
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
-      doc.text(descricao, 80, yPos);
-      doc.text(obs.substring(0, 30), 125, yPos);
+      doc.text(descricao, 70, yPos);
+      doc.text(obs.substring(0, 45), 125, yPos);
       doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
@@ -211,14 +211,14 @@ export const gerarRelatorioResumido = ({
         const interessado = lanc.origem_tipo === 'Loja' ? 
           (lanc.descricao.substring(0, 22)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
-        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 28) || '';
-        const obs = (lanc.observacoes || '').substring(0, 30);
+        const descricao = lanc.categorias_financeiras?.nome?.substring(0, 20) || '';
+        const obs = (lanc.observacoes || '').substring(0, 45);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 10, yPos);
         doc.text(interessado.substring(0, 22), 32, yPos);
-        doc.text(descricao, 80, yPos);
-        doc.text(obs.substring(0, 30), 125, yPos);
+        doc.text(descricao, 70, yPos);
+        doc.text(obs.substring(0, 45), 125, yPos);
         doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
         
         yPos += 4;
@@ -257,7 +257,7 @@ export const gerarRelatorioResumido = ({
     doc.setFontSize(8);
     doc.text('DataPgto', 10, yPos);
     doc.text('Interessado', 32, yPos);
-    doc.text('Descrição', 80, yPos);
+    doc.text('Descrição', 70, yPos);
     doc.text('Obs', 125, yPos);
     doc.text('Despesa', 190, yPos, { align: 'right' });
     yPos += 4;
@@ -271,8 +271,8 @@ export const gerarRelatorioResumido = ({
 
       doc.text(formatarDataBR(lanc.data_pagamento), 10, yPos);
       doc.text(lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão', 32, yPos);
-      doc.text(lanc.categorias_financeiras?.nome?.substring(0, 28) || '', 80, yPos);
-      doc.text((lanc.observacoes || '').substring(0, 30), 140, yPos);
+      doc.text(lanc.categorias_financeiras?.nome?.substring(0, 20) || '', 70, yPos);
+      doc.text((lanc.observacoes || '').substring(0, 45), 125, yPos);
       doc.text(`R$${parseFloat(lanc.valor).toFixed(2)}`, 190, yPos, { align: 'right' });
       yPos += 4;
     });
@@ -416,7 +416,7 @@ export const gerarRelatorioResumido = ({
       doc.setFont('helvetica', 'bold');
       doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
-      doc.text('Descrição', 80, yPos);
+      doc.text('Descrição', 70, yPos);
       doc.text('Obs', 125, yPos);
       doc.text('Receita', 190, yPos, { align: 'right' });
       yPos += 4;
@@ -435,7 +435,7 @@ export const gerarRelatorioResumido = ({
       doc.setFont('helvetica', 'bold');
       doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
-      doc.text('Descrição', 80, yPos);
+      doc.text('Descrição', 70, yPos);
       doc.text('Obs', 125, yPos);
       doc.text('Receita', 190, yPos, { align: 'right' });
       yPos += 4;
@@ -450,17 +450,17 @@ export const gerarRelatorioResumido = ({
 
       const dataLanc = formatarDataBR(lanc.data_pagamento);
       const interessado = 'Irmãos - Acacia';
-      let descricao = lanc.descricao?.substring(0, 28) || '';
+      let descricao = lanc.descricao?.substring(0, 20) || '';
       if (descricao === 'Mensalidade e Peculio - Irmao') {
         descricao = 'Mensalidade';
       }
-      const obs = (lanc.observacoes || '').substring(0, 30);
+      const obs = (lanc.observacoes || '').substring(0, 45);
       const valor = parseFloat(lanc.valor);
 
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
-      doc.text(descricao, 80, yPos);
-      doc.text(obs.substring(0, 30), 140, yPos);
+      doc.text(descricao, 70, yPos);
+      doc.text(obs.substring(0, 45), 125, yPos);
       doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
@@ -475,17 +475,17 @@ export const gerarRelatorioResumido = ({
 
         const dataLanc = formatarDataBR(lanc.data_pagamento);
         const interessado = 'Irmãos - Acacia';
-        let descricao = lanc.descricao?.substring(0, 28) || '';
+        let descricao = lanc.descricao?.substring(0, 20) || '';
         if (descricao === 'Mensalidade e Peculio - Irmao') {
           descricao = 'Mensalidade';
         }
-        const obs = (lanc.observacoes || '').substring(0, 30);
+        const obs = (lanc.observacoes || '').substring(0, 45);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 10, yPos);
         doc.text(interessado.substring(0, 22), 32, yPos);
-        doc.text(descricao, 80, yPos);
-        doc.text(obs.substring(0, 30), 125, yPos);
+        doc.text(descricao, 70, yPos);
+        doc.text(obs.substring(0, 45), 125, yPos);
         doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
         
         yPos += 4;
