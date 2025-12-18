@@ -20,13 +20,6 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
     carregarDados();
   }, [operacaoId]);
 
-  useEffect(() => {
-    // Atualizar dias de atraso quando carregar parcelas
-    if (parcelas.length > 0) {
-      atualizarDiasAtraso();
-    }
-  }, [parcelas]);
-
   const carregarDados = async () => {
     setLoading(true);
     try {
@@ -57,26 +50,6 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
     }
   };
 
-  const atualizarDiasAtraso = async () => {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    const parcelasAtualizadas = parcelas.map(parcela => {
-      if (parcela.status === 'pendente') {
-        const vencimento = new Date(parcela.data_vencimento);
-        vencimento.setHours(0, 0, 0, 0);
-        
-        if (vencimento < hoje) {
-          const diasAtraso = Math.floor((hoje - vencimento) / (1000 * 60 * 60 * 24));
-          return { ...parcela, dias_atraso: diasAtraso, status: 'atrasado' };
-        }
-      }
-      return parcela;
-    });
-
-    setParcelas(parcelasAtualizadas);
-  };
-
   const abrirModalQuitacao = (parcela) => {
     setParcelaAtual(parcela);
     setFormQuitacao({
@@ -90,16 +63,16 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
   const quitarParcela = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
     try {
       const valorPago = parseFloat(formQuitacao.valor_pago);
       
       if (!valorPago || valorPago <= 0) {
         showError('Valor pago deve ser maior que zero');
-        setLoading(false);
         return;
       }
+
+      setLoading(true);
 
       // Atualizar parcela
       const { error: errorParcela } = await supabase
@@ -139,10 +112,12 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
       if (errorOp) throw errorOp;
 
-      showSuccess('Parcela quitada com sucesso!');
+      // Fechar modal e mostrar sucesso
       setModalQuitacao(false);
+      showSuccess('Parcela quitada com sucesso!');
       
-      // FORÇAR RECARREGAMENTO IMEDIATO
+      // FORÇAR RECARREGAMENTO COMPLETO
+      setLoading(true);
       await carregarDados();
       
       // Notificar componente pai para atualizar lista
@@ -162,9 +137,9 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
       return;
     }
 
-    setLoading(true);
-
     try {
+      setLoading(true);
+
       // Atualizar parcela
       const { error: errorParcela } = await supabase
         .from('parcelas_operacoes')
@@ -199,7 +174,8 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
       showSuccess('Pagamento estornado com sucesso!');
       
-      // FORÇAR RECARREGAMENTO IMEDIATO
+      // FORÇAR RECARREGAMENTO COMPLETO
+      setLoading(true);
       await carregarDados();
       
       // Notificar componente pai para atualizar lista
