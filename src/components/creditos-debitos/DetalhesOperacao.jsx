@@ -269,186 +269,192 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
           {/* INFORMAÇÕES DA OPERAÇÃO */}
-          <div className="bg-gray-50 rounded-xl p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Informações Gerais</h3>
+          <div className="bg-gray-50 rounded-xl p-4">
+            <h3 className="text-lg font-bold text-gray-800 mb-3">📋 Informações Gerais</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <span className="text-sm text-gray-600 block">Entidade</span>
-                <span className="font-bold text-lg">{operacao.entidade_nome}</span>
+                <span className="text-xs text-gray-600 block">Entidade</span>
+                <span className="font-bold text-sm">{operacao.entidade_nome}</span>
               </div>
               <div>
-                <span className="text-sm text-gray-600 block">Data de Lançamento</span>
-                <span className="font-semibold">{new Date(operacao.data_lancamento).toLocaleDateString('pt-BR')}</span>
+                <span className="text-xs text-gray-600 block">Data de Lançamento</span>
+                <span className="font-semibold text-sm">{new Date(operacao.data_lancamento).toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
 
             {operacao.descricao && (
-              <div className="mb-4">
-                <span className="text-sm text-gray-600 block">Descrição</span>
-                <span className="font-semibold">{operacao.descricao}</span>
+              <div className="mb-3">
+                <span className="text-xs text-gray-600 block">Descrição</span>
+                <span className="font-semibold text-sm">{operacao.descricao}</span>
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-white rounded-lg p-4 border-2 border-gray-200">
-                <span className="text-sm text-gray-600 block">Valor Total</span>
-                <span className={`font-bold text-2xl ${operacao.tipo_operacao === 'credito' ? 'text-green-600' : 'text-red-600'}`}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-white rounded-lg p-3 border-2 border-gray-200">
+                <span className="text-xs text-gray-600 block">Valor Total</span>
+                <span className={`font-bold text-lg ${operacao.tipo_operacao === 'credito' ? 'text-green-600' : 'text-red-600'}`}>
                   R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border-2 border-blue-200">
-                <span className="text-sm text-gray-600 block">Valor Pago</span>
-                <span className="font-bold text-2xl text-blue-600">
+              <div className="bg-white rounded-lg p-3 border-2 border-blue-200">
+                <span className="text-xs text-gray-600 block">Valor Pago</span>
+                <span className="font-bold text-lg text-blue-600">
                   R$ {operacao.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border-2 border-orange-200">
-                <span className="text-sm text-gray-600 block">Saldo Devedor</span>
-                <span className="font-bold text-2xl text-orange-600">
+              <div className="bg-white rounded-lg p-3 border-2 border-orange-200">
+                <span className="text-xs text-gray-600 block">Saldo Devedor</span>
+                <span className="font-bold text-lg text-orange-600">
                   R$ {operacao.saldo_devedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
-              <div className="bg-white rounded-lg p-4 border-2 border-purple-200">
-                <span className="text-sm text-gray-600 block">Progresso</span>
+              <div className="bg-white rounded-lg p-3 border-2 border-purple-200">
+                <span className="text-xs text-gray-600 block">Progresso</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 bg-gray-200 rounded-full h-3">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
                     <div 
-                      className="bg-purple-600 h-3 rounded-full transition-all"
+                      className="bg-purple-600 h-2 rounded-full transition-all"
                       style={{ width: `${percentualPago}%` }}
                     />
                   </div>
-                  <span className="text-lg font-bold text-purple-600">{percentualPago}%</span>
+                  <span className="text-sm font-bold text-purple-600">{percentualPago}%</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* RESUMO DAS PARCELAS */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-200">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-blue-50 rounded-lg p-3 border-2 border-blue-200">
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{parcelas.length}</div>
-                <div className="text-sm text-blue-700 font-semibold">Total de Parcelas</div>
+                <div className="text-2xl font-bold text-blue-600">{parcelas.length}</div>
+                <div className="text-xs text-blue-700 font-semibold">Total</div>
               </div>
             </div>
 
-            <div className="bg-green-50 rounded-lg p-4 border-2 border-green-200">
+            <div className="bg-green-50 rounded-lg p-3 border-2 border-green-200">
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-600">{parcelasPagas}</div>
-                <div className="text-sm text-green-700 font-semibold">✓ Pagas</div>
+                <div className="text-2xl font-bold text-green-600">{parcelasPagas}</div>
+                <div className="text-xs text-green-700 font-semibold">✓ Pagas</div>
               </div>
             </div>
 
-            <div className="bg-yellow-50 rounded-lg p-4 border-2 border-yellow-200">
+            <div className="bg-yellow-50 rounded-lg p-3 border-2 border-yellow-200">
               <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-600">{parcelasPendentes}</div>
-                <div className="text-sm text-yellow-700 font-semibold">⏳ Pendentes</div>
+                <div className="text-2xl font-bold text-yellow-600">{parcelasPendentes}</div>
+                <div className="text-xs text-yellow-700 font-semibold">⏳ Pendentes</div>
               </div>
             </div>
 
-            <div className="bg-red-50 rounded-lg p-4 border-2 border-red-200">
+            <div className="bg-red-50 rounded-lg p-3 border-2 border-red-200">
               <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">{parcelasAtrasadas}</div>
-                <div className="text-sm text-red-700 font-semibold">🚨 Atrasadas</div>
+                <div className="text-2xl font-bold text-red-600">{parcelasAtrasadas}</div>
+                <div className="text-xs text-red-700 font-semibold">🚨 Atrasadas</div>
               </div>
             </div>
           </div>
 
           {/* LISTA DE PARCELAS */}
           <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📅 Parcelas</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-3">📅 Parcelas</h3>
             
             {parcelas.length === 0 ? (
               <div className="bg-gray-50 rounded-lg p-8 text-center">
                 <p className="text-gray-600">Nenhuma parcela cadastrada</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                 {parcelas.map(parcela => {
                   const statusBadge = getStatusBadge(parcela.status, parcela.dias_atraso);
                   
                   return (
                     <div 
                       key={parcela.id} 
-                      className={`bg-white rounded-lg p-4 border-2 ${statusBadge.color.includes('red') ? 'border-red-300' : statusBadge.color.includes('yellow') ? 'border-yellow-300' : statusBadge.color.includes('green') ? 'border-green-300' : 'border-gray-300'} hover:shadow-md transition-all`}
+                      className={`bg-white rounded-lg p-3 border-2 ${
+                        statusBadge.color.includes('red') ? 'border-red-300' : 
+                        statusBadge.color.includes('yellow') ? 'border-yellow-300' : 
+                        statusBadge.color.includes('green') ? 'border-green-300' : 
+                        'border-gray-300'
+                      } hover:shadow-md transition-all`}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-2xl font-bold text-gray-700">
-                              {parcela.numero_parcela}/{parcelas.length}
-                            </span>
-                            <span className={`px-3 py-1 rounded-full text-sm font-semibold border-2 ${statusBadge.color}`}>
-                              {statusBadge.label}
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-600 block">Valor</span>
-                              <span className="font-bold text-lg">
-                                R$ {parcela.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                              </span>
-                            </div>
-
-                            <div>
-                              <span className="text-gray-600 block">Vencimento</span>
-                              <span className="font-semibold">
-                                {new Date(parcela.data_vencimento).toLocaleDateString('pt-BR')}
-                              </span>
-                            </div>
-
-                            {parcela.status === 'pago' && (
-                              <>
-                                <div>
-                                  <span className="text-gray-600 block">Valor Pago</span>
-                                  <span className="font-bold text-green-600">
-                                    R$ {parcela.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  </span>
-                                </div>
-
-                                <div>
-                                  <span className="text-gray-600 block">Data Pagamento</span>
-                                  <span className="font-semibold text-green-600">
-                                    {new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-
-                          {parcela.observacoes && (
-                            <div className="mt-2 text-sm text-gray-600">
-                              <span className="font-semibold">Obs:</span> {parcela.observacoes}
-                            </div>
-                          )}
+                      {/* Número e Status */}
+                      <div className="text-center mb-2">
+                        <div className="text-lg font-bold text-gray-700">
+                          {parcela.numero_parcela}/{parcelas.length}
                         </div>
+                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold border ${statusBadge.color}`}>
+                          {statusBadge.icon}
+                        </span>
+                      </div>
 
-                        {/* Ações */}
-                        <div className="flex gap-2 ml-4">
-                          {parcela.status === 'pago' ? (
-                            <button
-                              onClick={() => estornarParcela(parcela)}
-                              className="bg-orange-100 hover:bg-orange-200 text-orange-700 px-4 py-2 rounded-lg font-semibold transition-all text-sm whitespace-nowrap"
-                            >
-                              ↶ Estornar
-                            </button>
-                          ) : parcela.status !== 'cancelado' && (
-                            <button
-                              onClick={() => abrirModalQuitacao(parcela)}
-                              className="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg font-semibold transition-all text-sm whitespace-nowrap"
-                            >
-                              💰 Quitar
-                            </button>
-                          )}
+                      {/* Valor */}
+                      <div className="text-center mb-2">
+                        <div className="text-xs text-gray-600">Valor</div>
+                        <div className="font-bold text-sm">
+                          R$ {parcela.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                       </div>
+
+                      {/* Vencimento */}
+                      <div className="text-center mb-2">
+                        <div className="text-xs text-gray-600">Vencimento</div>
+                        <div className="font-semibold text-xs">
+                          {new Date(parcela.data_vencimento).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+
+                      {/* Pagamento (se pago) */}
+                      {parcela.status === 'pago' && (
+                        <div className="text-center mb-2 bg-green-50 rounded p-1">
+                          <div className="text-xs text-green-700">Pago em</div>
+                          <div className="font-semibold text-xs text-green-800">
+                            {new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dias de atraso */}
+                      {parcela.status === 'atrasado' && parcela.dias_atraso > 0 && (
+                        <div className="text-center mb-2 bg-red-50 rounded p-1">
+                          <div className="text-xs font-bold text-red-700">
+                            {parcela.dias_atraso} dias
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Botão */}
+                      <div className="text-center mt-2">
+                        {parcela.status === 'pago' ? (
+                          <button
+                            onClick={() => estornarParcela(parcela)}
+                            className="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded font-semibold transition-all text-xs"
+                          >
+                            ↶ Estornar
+                          </button>
+                        ) : parcela.status !== 'cancelado' && (
+                          <button
+                            onClick={() => abrirModalQuitacao(parcela)}
+                            className="w-full bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded font-semibold transition-all text-xs"
+                          >
+                            💰 Quitar
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Observações (se houver) */}
+                      {parcela.observacoes && (
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="text-xs text-gray-600 truncate" title={parcela.observacoes}>
+                            {parcela.observacoes}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
