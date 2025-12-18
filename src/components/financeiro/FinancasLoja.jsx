@@ -2,6 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
+import { 
+  verificarVencido,
+  filtrarIrmaosPorStatus,
+  obterBadgeStatus,
+  validarFormLancamento,
+  calcularDiasAtraso
+} from './utils/helpers';
 
 // 💰 REGIME DE COMPETÊNCIA FINANCEIRA
 // REGRAS FUNDAMENTAIS:
@@ -237,21 +244,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
       console.log('⚙️ Status permitidos (configuração):', STATUS_PERMITIDOS);
       
       // Filtrar irmãos com status permitidos (case-insensitive)
-      const irmaosDisponiveis = todosIrmaos?.filter(i => {
-        const status = (i.situacao || '').trim();
-        
-        // Verifica se está na lista de permitidos
-        const estaPermitido = STATUS_PERMITIDOS.some(sp => 
-          sp.toLowerCase() === status.toLowerCase()
-        );
-        
-        // Verifica se NÃO está na lista de bloqueados
-        const estaBloqueado = STATUS_BLOQUEADOS.some(sb => 
-          sb.toLowerCase() === status.toLowerCase()
-        );
-        
-        return estaPermitido && !estaBloqueado;
-      }) || [];
+      const irmaosDisponiveis = filtrarIrmaosPorStatus(
+        todosIrmaos || [], 
+        STATUS_PERMITIDOS, 
+        STATUS_BLOQUEADOS
+      );
       
       console.log('✅ Irmãos disponíveis para lançamento:', irmaosDisponiveis.length);
       
@@ -2756,20 +2753,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
                       {lanc.tipo_pagamento}
                     </td>
                     <td className="px-2 py-3 whitespace-nowrap w-24">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        lanc.status === 'pago'
-                          ? 'bg-green-100 text-green-800'
-                          : lanc.status === 'vencido'
-                          ? 'bg-red-100 text-red-800'
-                          : lanc.status === 'cancelado'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {lanc.status === 'pago' && '✅ Pago'}
-                        {lanc.status === 'pendente' && '⏳ Pendente'}
-                        {lanc.status === 'vencido' && '⚠️ Vencido'}
-                        {lanc.status === 'cancelado' && '❌ Cancelado'}
-                      </span>
+                      {(() => {
+                        const badge = obterBadgeStatus(lanc);
+                        return (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.cor}`}>
+                            {badge.icone} {badge.texto}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3 text-sm w-44">
                       <div className="flex gap-1 items-center flex-wrap max-w-[176px]">
