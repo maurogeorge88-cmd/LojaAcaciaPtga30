@@ -460,7 +460,7 @@ export const gerarRelatorioResumido = ({
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 80, yPos);
-      doc.text(obs.substring(0, 30), 125, yPos);
+      doc.text(obs.substring(0, 30), 140, yPos);
       doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
