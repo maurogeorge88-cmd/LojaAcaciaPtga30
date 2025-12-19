@@ -49,16 +49,10 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
         setUsuarios(usuariosData);
       }
 
-      // Construir query de logs
+      // Construir query de logs (SEM JOIN para evitar erros)
       let query = supabase
         .from('logs_acesso')
-        .select(`
-          *,
-          usuario:usuario_id (
-            nome,
-            email
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(1000);
 
@@ -83,10 +77,30 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
 
       if (error) throw error;
 
-      setLogs(logsData || []);
+      // Buscar nomes dos usuários separadamente
+      let logsComNomes = logsData || [];
+      
+      if (logsComNomes.length > 0) {
+        const usuarioIds = [...new Set(logsComNomes.map(log => log.usuario_id).filter(Boolean))];
+        
+        if (usuarioIds.length > 0) {
+          const { data: usuariosData } = await supabase
+            .from('usuarios')
+            .select('id, nome, email')
+            .in('id', usuarioIds);
+          
+          // Mapear nomes aos logs
+          logsComNomes = logsComNomes.map(log => ({
+            ...log,
+            usuario: usuariosData?.find(u => u.id === log.usuario_id) || null
+          }));
+        }
+      }
+
+      setLogs(logsComNomes);
 
       // Calcular estatísticas
-      calcularEstatisticas(logsData || []);
+      calcularEstatisticas(logsComNomes);
 
     } catch (error) {
       console.error('Erro ao carregar logs:', error);
