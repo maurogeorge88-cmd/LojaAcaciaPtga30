@@ -19,7 +19,7 @@ import ModalLancamento from './components/ModalLancamento';
 const STATUS_PERMITIDOS = ['Regular', 'Irregular', 'Licenciado'];
 const STATUS_BLOQUEADOS = ['Suspenso', 'Desligado', 'Excluído', 'Falecido', 'Ex-Ofício'];
 
-export default function FinancasLoja({ showSuccess, showError, userEmail }) {
+export default function FinancasLoja({ showSuccess, showError, userEmail, userData }) {
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
@@ -395,6 +395,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           .eq('id', editando);
 
         if (error) throw error;
+        
+        // Registrar log de edição
+        if (userData?.id) {
+          try {
+            await supabase.from('logs_acesso').insert([{
+              usuario_id: userData.id,
+              acao: 'editar',
+              detalhes: `Editou lançamento financeiro: ${dados.descricao} - R$ ${parseFloat(dados.valor).toFixed(2)}`,
+              ip: 'Browser',
+              user_agent: navigator.userAgent
+            }]);
+          } catch (logError) {
+            console.error('Erro ao registrar log:', logError);
+          }
+        }
+        
         showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
         const { error } = await supabase
@@ -634,6 +650,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         .eq('id', id);
 
       if (error) throw error;
+
+      // Registrar log de exclusão
+      if (userData?.id) {
+        try {
+          const lancamento = lancamentos.find(l => l.id === id);
+          const descricao = lancamento?.descricao || 'Lançamento';
+          const valor = lancamento?.valor || 0;
+          
+          await supabase.from('logs_acesso').insert([{
+            usuario_id: userData.id,
+            acao: 'excluir',
+            detalhes: `Excluiu lançamento financeiro: ${descricao} - R$ ${valor.toFixed(2)}`,
+            ip: 'Browser',
+            user_agent: navigator.userAgent
+          }]);
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
+      }
 
       showSuccess('Lançamento excluído com sucesso!');
       await carregarLancamentos();
