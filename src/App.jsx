@@ -2031,6 +2031,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             onCancelarEdicao={() => setIrmaoParaEditar(null)}
+            userData={userData}
           />
         )}
 
@@ -2051,6 +2052,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showError={showError}
             permissoes={permissoes}
             userEmail={userData?.email}
+            userData={userData}
           />
         )}
 
@@ -2192,6 +2194,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             userEmail={userData?.email}
+            userData={userData}
           />
         )}
 
