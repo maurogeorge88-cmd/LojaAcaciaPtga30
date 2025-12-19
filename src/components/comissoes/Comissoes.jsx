@@ -4,15 +4,6 @@ import { formatarData } from '../../utils/formatters';
 import AtividadesComissao from './AtividadesComissao';
 
 const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permissoes }) => {
-  // Verificações de props
-  console.log('Comissoes - Props recebidas:', { 
-    comissoes: comissoes?.length, 
-    irmaos: irmaos?.length,
-    onUpdate: typeof onUpdate,
-    showSuccess: typeof showSuccess,
-    showError: typeof showError
-  });
-
   // Verificar se as props essenciais existem
   if (!comissoes || !irmaos) {
     return (
@@ -424,63 +415,61 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
         </div>
 
         {/* INTEGRANTES */}
-        {!modoEdicao && (
-          <div className="border-t pt-4 mt-4">
-            <h4 className="font-bold text-gray-800 mb-3">👥 Integrantes</h4>
-            
-            <div className="flex gap-2 mb-3">
-              <select
-                id="select-irmao-comissao"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Selecione um irmão</option>
-                {irmaos.map(irmao => (
-                  <option key={irmao.id} value={irmao.id}>
-                    {irmao.nome} - CIM {irmao.cim}
-                  </option>
-                ))}
-              </select>
+        <div className="border-t pt-4 mt-4">
+          <h4 className="font-bold text-gray-800 mb-3">👥 Integrantes</h4>
+          
+          <div className="flex gap-2 mb-3">
+            <select
+              id="select-irmao-comissao"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Selecione um irmão</option>
+              {irmaos.map(irmao => (
+                <option key={irmao.id} value={irmao.id}>
+                  {irmao.nome} - CIM {irmao.cim}
+                </option>
+              ))}
+            </select>
 
-              <select
-                id="select-funcao-comissao"
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Função</option>
-                <option value="Presidente">Presidente</option>
-                <option value="Vice-Presidente">Vice-Presidente</option>
-                <option value="Secretário">Secretário</option>
-                <option value="Membro">Membro</option>
-                <option value="Relator">Relator</option>
-              </select>
+            <select
+              id="select-funcao-comissao"
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Função</option>
+              <option value="Presidente">Presidente</option>
+              <option value="Vice-Presidente">Vice-Presidente</option>
+              <option value="Secretário">Secretário</option>
+              <option value="Membro">Membro</option>
+              <option value="Relator">Relator</option>
+            </select>
 
-              <button
-                type="button"
-                onClick={adicionarIntegrante}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Adicionar
-              </button>
-            </div>
-
-            {integrantesTemp.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-3">
-                {integrantesTemp.map((integrante, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
-                    <span className="font-medium">{integrante.irmao_nome}</span>
-                    <span className="text-sm text-gray-600">{integrante.funcao}</span>
-                    <button
-                      type="button"
-                      onClick={() => removerIntegrante(integrante.irmao_id)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <button
+              type="button"
+              onClick={adicionarIntegrante}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Adicionar
+            </button>
           </div>
-        )}
+
+          {integrantesTemp.length > 0 && (
+            <div className="bg-gray-50 rounded-lg p-3">
+              {integrantesTemp.map((integrante, index) => (
+                <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
+                  <span className="font-medium">{integrante.irmao_nome}</span>
+                  <span className="text-sm text-gray-600">{integrante.funcao}</span>
+                  <button
+                    type="button"
+                    onClick={() => removerIntegrante(integrante.irmao_id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    ❌
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* BOTÕES */}
         <div className="flex gap-3 mt-6">
