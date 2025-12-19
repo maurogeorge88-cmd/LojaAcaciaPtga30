@@ -56,14 +56,14 @@ export default function ModalLancamento({
   const config = {
     receita: {
       titulo: editando ? '✏️ Editar Receita' : '💰 Nova Receita',
-      corTitulo: 'text-blue-600',
+      corHeader: 'bg-blue-600',
       corFoco: 'focus:ring-green-500',
       corBotao: 'bg-green-600 hover:bg-green-700',
       textoBotao: editando ? '💾 Salvar Receita' : '✅ Criar Receita'
     },
     despesa: {
       titulo: editando ? '✏️ Editar Despesa' : '💳 Nova Despesa',
-      corTitulo: 'text-red-400',
+      corHeader: 'bg-red-500',
       corFoco: 'focus:ring-red-500',
       corBotao: 'bg-red-600 hover:bg-red-700',
       textoBotao: editando ? '💾 Salvar Despesa' : '✅ Criar Despesa'
@@ -77,7 +77,7 @@ export default function ModalLancamento({
       aberto={aberto}
       onFechar={onFechar}
       titulo={cfg.titulo}
-      corTitulo={cfg.corTitulo}
+      corHeader={cfg.corHeader}
       tamanho="2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
