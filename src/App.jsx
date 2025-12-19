@@ -1695,19 +1695,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           </button>
 
 
-                          {/* LANÇAMENTOS EM LOTE */}
-                          <button
-                            onClick={() => setCurrentPage('lancamentos-lote')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'lancamentos-lote'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>📦</span>
-                            <span>Lançamentos em Lote</span>
-                          </button>
-
                           {/* CRÉDITOS E DÉBITOS */}
                           <button
                             onClick={() => setCurrentPage('creditos-debitos')}
@@ -1719,6 +1706,17 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           >
                             <span>💵</span>
                             <span>Créditos/Débitos</span>
+                          </button>
+                          <button
+                            onClick={() => setCurrentPage('lancamentos-lote')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'lancamentos-lote'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          >
+                            <span>📦</span>
+                            <span>Lançamentos em Lote</span>
                           </button>
 
                           <button
