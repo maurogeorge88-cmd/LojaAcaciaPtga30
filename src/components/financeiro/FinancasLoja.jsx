@@ -1510,44 +1510,52 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         </div>
 
         <div className="flex gap-2 flex-wrap">
+          {/* Grupo 1: Receita, Despesa e Parcelar - mesmo tamanho */}
           <button
             onClick={() => abrirModalLancamento('receita')}
-            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+            className="w-24 px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight"
           >
-            💰 Nova Receita
+            <span>Nova</span>
+            <span>Receita</span>
           </button>
           <button
             onClick={() => abrirModalLancamento('despesa')}
-            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+            className="w-24 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight"
           >
-            💳 Nova Despesa
-          </button>
-          <button
-            onClick={() => setMostrarModalIrmaos(true)}
-            className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
-          >
-            👥 Lançamento em Lote
+            <span>Nova</span>
+            <span>Despesa</span>
           </button>
           <button
             onClick={() => {
               setLancamentoParcelar(null);
               setModalParcelamentoAberto(true);
             }}
-            className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+            className="w-24 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex items-center justify-center"
           >
             🔀 Parcelar
           </button>
+          
+          {/* Grupo 2: Lote, Relatório Detalhado e Fechamento - mesmo tamanho */}
+          <button
+            onClick={() => setMostrarModalIrmaos(true)}
+            className="w-28 px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex flex-col items-center justify-center leading-tight"
+          >
+            <span>Lançamento</span>
+            <span>em Lote</span>
+          </button>
           <button
             onClick={gerarPDF}
-            className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+            className="w-28 px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium flex flex-col items-center justify-center leading-tight"
           >
-            📄 Relatório Detalhado
+            <span>Relatório</span>
+            <span>Detalhado</span>
           </button>
           <button
             onClick={gerarPDFResumido}
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            className="w-28 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight"
           >
-            📊 Fechamento Mensal
+            <span>Fechamento</span>
+            <span>Mensal</span>
           </button>
           
           {/* Badge de Total de Registros */}
