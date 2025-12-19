@@ -8,7 +8,7 @@ import {
 } from '../../utils/formatters';
 import { STATUS_IRMAOS } from '../../utils/constants';
 
-const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess, showError, permissoes }) => {
+const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess, showError, permissoes, userData }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [situacaoFilter, setSituacaoFilter] = useState('regular,licenciado');
   const [grauFilter, setGrauFilter] = useState('todos');
@@ -137,6 +137,22 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
         .eq('id', irmaoId);
 
       if (error) throw error;
+
+      // Registrar log de exclusão
+      if (userData?.id) {
+        try {
+          const irmaoNome = irmaos.find(i => i.id === irmaoId)?.nome || 'Irmão';
+          await supabase.from('logs_acesso').insert([{
+            usuario_id: userData.id,
+            acao: 'excluir',
+            detalhes: `Excluiu irmão: ${irmaoNome}`,
+            ip: 'Browser',
+            user_agent: navigator.userAgent
+          }]);
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
+      }
 
       showSuccess('Irmão excluído com sucesso!');
       onUpdate();
