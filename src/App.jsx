@@ -125,6 +125,7 @@ function App() {
   const [submenuExpedientes, setSubmenuExpedientes] = useState(false);
   const [submenuFinanceiro, setSubmenuFinanceiro] = useState(false);
   const [submenuFilantropia, setSubmenuFilantropia] = useState(false);
+  const [submenuGestaoSistema, setSubmenuGestaoSistema] = useState(false);
 
   // Estados de login
   const [email, setEmail] = useState('');
@@ -1818,19 +1819,61 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
 
+                {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
-                  <button
-                    onClick={() => setCurrentPage('usuarios')}
-                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                      currentPage === 'usuarios'
-                        ? 'bg-blue-700 border-l-4 border-white'
-                        : 'hover:bg-blue-800'
-                    }`}
-                    title="Gerenciar Usuários"
-                  >
-                    <span className="text-base">👤</span>
-                    {menuAberto && <span className="font-semibold">Gerenciar Usuários</span>}
-                  </button>
+                  <div className="border-t border-blue-700 mt-2 pt-2">
+                    <button
+                      onClick={() => setSubmenuGestaoSistema(!submenuGestaoSistema)}
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                      title="Gestão do Sistema"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">⚙️</span>
+                        {menuAberto && <span className="font-semibold">Gestão do Sistema</span>}
+                      </div>
+                      {menuAberto && (
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${submenuGestaoSistema ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Subitens do submenu */}
+                    {(submenuGestaoSistema && menuAberto) && (
+                      <div className="bg-blue-950 bg-opacity-50">
+                        {/* GERENCIAR USUÁRIOS */}
+                        <button
+                          onClick={() => setCurrentPage('gestao-sistema-usuarios')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'gestao-sistema-usuarios'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>👤</span>
+                          <span>Gerenciar Usuários</span>
+                        </button>
+
+                        {/* CONTROLE DE ACESSO */}
+                        <button
+                          onClick={() => setCurrentPage('gestao-sistema-logs')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'gestao-sistema-logs'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>🔐</span>
+                          <span>Controle de Acesso</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 <button
