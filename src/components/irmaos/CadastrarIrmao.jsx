@@ -19,7 +19,7 @@ import {
   STATUS_IRMAOS
 } from '../../utils/constants';
 
-const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showError, onCancelarEdicao }) => {
+const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showError, onCancelarEdicao, userData }) => {
   // Estado do formulário principal
   const [irmaoForm, setIrmaoForm] = useState({
     cim: '',
@@ -466,6 +466,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         }
 
         showSuccess('Irmão atualizado com sucesso!');
+        
+        // Registrar log de edição
+        if (userData?.id) {
+          try {
+            await supabase.from('logs_acesso').insert([{
+              usuario_id: userData.id,
+              acao: 'editar',
+              detalhes: `Editou irmão: ${irmaoForm.nome} - CIM ${irmaoForm.cim}`,
+              ip: 'Browser',
+              user_agent: navigator.userAgent
+            }]);
+          } catch (logError) {
+            console.error('Erro ao registrar log:', logError);
+          }
+        }
       } else {
         // Inserir novo irmão
         const { data: novoIrmao, error: errorIrmao } = await supabase
@@ -542,6 +557,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         }
 
         showSuccess('Irmão cadastrado com sucesso!');
+        
+        // Registrar log de criação
+        if (userData?.id) {
+          try {
+            await supabase.from('logs_acesso').insert([{
+              usuario_id: userData.id,
+              acao: 'criar',
+              detalhes: `Cadastrou irmão: ${irmaoForm.nome} - CIM ${irmaoForm.cim}`,
+              ip: 'Browser',
+              user_agent: navigator.userAgent
+            }]);
+          } catch (logError) {
+            console.error('Erro ao registrar log:', logError);
+          }
+        }
       }
 
       // Limpar formulário e recarregar dados
