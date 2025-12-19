@@ -1484,12 +1484,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
 
   return (
     <div className="space-y-6">
-      {/* CABEÇALHO COM BOTÕES */}
-      <div className="flex gap-3 items-center flex-wrap">
+      {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
+      <div className="flex gap-3 items-center flex-nowrap">
         {/* Botões de visualização */}
         <button
           onClick={() => setViewMode('lancamentos')}
-          className={`px-4 h-[55px] rounded-lg font-medium ${
+          className={`px-4 h-[55px] rounded-lg font-medium whitespace-nowrap ${
             viewMode === 'lancamentos'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1499,7 +1499,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
         </button>
         <button
           onClick={() => setViewMode('inadimplentes')}
-          className={`px-4 h-[55px] rounded-lg font-medium ${
+          className={`px-4 h-[55px] rounded-lg font-medium whitespace-nowrap ${
             viewMode === 'inadimplentes'
               ? 'bg-red-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -1508,26 +1508,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           ⚠️ Inadimplentes
         </button>
         
-        {/* Badge de Total de Registros - PRIMEIRA LINHA */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px]">
-          <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
-          <p className="text-lg font-bold text-blue-700 leading-tight">{totalRegistros}</p>
-        </div>
-        
-        {/* Espaçador visual */}
-        <div className="w-20"></div>
+        {/* Espaçador menor */}
+        <div className="w-8"></div>
         
         {/* Botões de ação - todos com mesmo tamanho */}
         <button
           onClick={() => abrirModalLancamento('receita')}
-          className="w-32 h-[55px] px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight"
+          className="w-32 h-[55px] px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Nova</span>
           <span>Receita</span>
         </button>
         <button
           onClick={() => abrirModalLancamento('despesa')}
-          className="w-32 h-[55px] px-4 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight"
+          className="w-32 h-[55px] px-4 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Nova</span>
           <span>Despesa</span>
@@ -1537,31 +1531,37 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
             setLancamentoParcelar(null);
             setModalParcelamentoAberto(true);
           }}
-          className="w-32 h-[55px] px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex flex-col items-center justify-center leading-tight"
+          className="w-32 h-[55px] px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>🔀 Parcelar</span>
         </button>
         <button
           onClick={() => setMostrarModalIrmaos(true)}
-          className="w-32 h-[55px] px-4 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex flex-col items-center justify-center leading-tight"
+          className="w-32 h-[55px] px-4 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Lançamento</span>
           <span>em Lote</span>
         </button>
         <button
           onClick={gerarPDF}
-          className="w-32 h-[55px] px-4 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium flex flex-col items-center justify-center leading-tight"
+          className="w-32 h-[55px] px-4 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Relatório</span>
           <span>Detalhado</span>
         </button>
         <button
           onClick={gerarPDFResumido}
-          className="w-32 h-[55px] px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight"
+          className="w-32 h-[55px] px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Fechamento</span>
           <span>Mensal</span>
         </button>
+        
+        {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap">
+          <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
+          <p className="text-lg font-bold text-blue-700 leading-tight">{totalRegistros}</p>
+        </div>
       </div>
 
       {/* RESUMO FINANCEIRO - NOVA ESTRUTURA */}
