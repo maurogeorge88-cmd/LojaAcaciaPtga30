@@ -168,6 +168,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     setLoading(true);
 
     try {
+      // Atualizar dados da comissão
       const { error } = await supabase
         .from('comissoes')
         .update({
@@ -183,6 +184,29 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
       if (error) throw error;
 
+      // DELETAR integrantes antigos
+      const { error: deleteError } = await supabase
+        .from('comissoes_integrantes')
+        .delete()
+        .eq('comissao_id', comissaoEditando.id);
+      
+      if (deleteError) throw deleteError;
+
+      // INSERIR novos integrantes
+      if (integrantesTemp.length > 0) {
+        const integrantesData = integrantesTemp.map(i => ({
+          comissao_id: comissaoEditando.id,
+          irmao_id: i.irmao_id,
+          funcao: i.funcao
+        }));
+
+        const { error: integrantesError } = await supabase
+          .from('comissoes_integrantes')
+          .insert(integrantesData);
+
+        if (integrantesError) throw integrantesError;
+      }
+
       showSuccess('Comissão atualizada com sucesso!');
       limparFormulario();
       onUpdate();
@@ -195,7 +219,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   };
 
   // Editar comissão
-  const handleEditar = (comissao) => {
+  const handleEditar = async (comissao) => {
     setModoEdicao(true);
     setComissaoEditando(comissao);
     setComissaoForm({
@@ -207,6 +231,34 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
       data_fim: comissao.data_fim || '',
       objetivo: comissao.objetivo
     });
+    
+    // BUSCAR INTEGRANTES DA COMISSÃO
+    try {
+      const { data: integrantes, error } = await supabase
+        .from('comissoes_integrantes')
+        .select('*')
+        .eq('comissao_id', comissao.id);
+      
+      if (error) {
+        console.error('Erro ao buscar integrantes:', error);
+        setIntegrantesTemp([]);
+      } else {
+        // Mapear integrantes para o formato do integrantesTemp
+        const integrantesFormatados = integrantes.map(int => {
+          const irmao = irmaos.find(i => i.id === int.irmao_id);
+          return {
+            irmao_id: int.irmao_id,
+            irmao_nome: irmao ? irmao.nome : 'Desconhecido',
+            funcao: int.funcao
+          };
+        });
+        setIntegrantesTemp(integrantesFormatados);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar integrantes:', err);
+      setIntegrantesTemp([]);
+    }
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
