@@ -687,6 +687,30 @@ function App() {
 
       setSession(data.session);
       loadUserData(email);
+      
+      // Registrar log de login
+      try {
+        const { data: user } = await supabase
+          .from('usuarios')
+          .select('id, nome')
+          .eq('email', email)
+          .single();
+        
+        if (user) {
+          await supabase
+            .from('logs_acesso')
+            .insert([{
+              usuario_id: user.id,
+              acao: 'login',
+              detalhes: `${user.nome} fez login no sistema`,
+              ip: 'Browser',
+              user_agent: navigator.userAgent
+            }]);
+        }
+      } catch (logError) {
+        console.error('Erro ao registrar log:', logError);
+      }
+      
       loadIrmaos();
       loadTiposSessao();
       loadCargosLoja();
