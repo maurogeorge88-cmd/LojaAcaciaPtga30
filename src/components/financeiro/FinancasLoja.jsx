@@ -1509,22 +1509,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
           </button>
         </div>
 
-        <div className="flex gap-3">
+        <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => abrirModalLancamento('receita')}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
+            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors"
           >
             💰 Nova Receita
           </button>
           <button
             onClick={() => abrirModalLancamento('despesa')}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
+            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors"
           >
             💳 Nova Despesa
           </button>
           <button
             onClick={() => setMostrarModalIrmaos(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
+            className="px-3 py-1.5 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium"
           >
             👥 Lançamento em Lote
           </button>
@@ -1533,27 +1533,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail }) {
               setLancamentoParcelar(null);
               setModalParcelamentoAberto(true);
             }}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+            className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
           >
             🔀 Parcelar
           </button>
           <button
             onClick={gerarPDF}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+            className="px-3 py-1.5 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
           >
             📄 Relatório Detalhado
           </button>
           <button
             onClick={gerarPDFResumido}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
           >
             📊 Fechamento Mensal
           </button>
           
           {/* Badge de Total de Registros */}
-          <div className="bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 flex flex-col justify-center">
-            <p className="text-[10px] text-gray-600 font-medium leading-tight">Total de Registros</p>
-            <p className="text-lg font-bold text-gray-800 leading-tight">{totalRegistros}</p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 flex flex-col justify-center">
+            <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
+            <p className="text-base font-bold text-blue-700 leading-tight">{totalRegistros}</p>
           </div>
         </div>
       </div>
