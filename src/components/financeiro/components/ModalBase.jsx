@@ -5,6 +5,7 @@ import React from 'react';
  * @param {boolean} aberto - Controla se o modal está visível
  * @param {function} onFechar - Callback para fechar o modal
  * @param {string} titulo - Título do modal
+ * @param {string} corTitulo - Classe CSS para cor do título (opcional)
  * @param {string} tamanho - Tamanho do modal: 'sm', 'md', 'lg', 'xl', '2xl', '4xl'
  * @param {ReactNode} children - Conteúdo do modal
  */
@@ -12,6 +13,7 @@ export default function ModalBase({
   aberto, 
   onFechar, 
   titulo, 
+  corTitulo = 'text-gray-900',
   tamanho = 'lg', 
   children 
 }) {
@@ -32,7 +34,7 @@ export default function ModalBase({
       <div className={`bg-white rounded-lg shadow-xl ${tamanhos[tamanho]} w-full max-h-[90vh] overflow-y-auto`}>
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-gray-900">{titulo}</h3>
+          <h3 className={`text-xl font-bold ${corTitulo}`}>{titulo}</h3>
           <button
             onClick={onFechar}
             className="text-gray-400 hover:text-gray-600 transition-colors"
