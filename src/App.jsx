@@ -1704,7 +1704,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                                 : 'hover:bg-blue-800'
                             }`}
                           >
-
+                          <span>💵</span>
+                            <span>Créditos/Débitos</span>
+                          </button>
+                          <button
+                            onClick={() => setCurrentPage('lancamentos-lote')}
+                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                              currentPage === 'lancamentos-lote'
+                                ? 'bg-blue-700 border-l-4 border-white'
+                                : 'hover:bg-blue-800'
+                            }`}
+                          
+                          >
                             <span>📦</span>
                             <span>Lançamentos em Lote</span>
                           </button>
@@ -1713,17 +1724,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                             onClick={() => setCurrentPage('categorias-financeiras')}
                             className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                               currentPage === 'categorias-financeiras'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>💵</span>
-                            <span>Créditos/Débitos</span>
-                          </button>
-                          <button
-                            onClick={() => setCurrentPage('lancamentos-lote')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'lancamentos-lote'
                                 ? 'bg-blue-700 border-l-4 border-white'
                                 : 'hover:bg-blue-800'
                             }`}
