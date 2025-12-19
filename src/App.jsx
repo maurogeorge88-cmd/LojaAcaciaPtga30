@@ -7,6 +7,8 @@ import { createClient } from '@supabase/supabase-js';
 import { Dashboard } from './components/Dashboard';
 import { CorpoAdmin } from './components/administracao/CorpoAdmin';
 import Usuarios from './components/administracao/Usuarios';
+import GestaoSistema from './components/administracao/GestaoSistema';
+import ControleAcesso from './components/administracao/ControleAcesso';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
@@ -2008,7 +2010,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
 
         {/* GERENCIAMENTO DE USUÁRIOS */}
-        {/* GERENCIAR USUÁRIOS */}
+        {/* GERENCIAR USUÁRIOS - VERSÃO ANTIGA (mantida para compatibilidade) */}
         {currentPage === 'usuarios' && permissoes?.canManageUsers && (
           <Usuarios
             usuarios={usuarios}
@@ -2016,6 +2018,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             onUpdate={loadUsuarios}
             showSuccess={showSuccess}
             showError={showError}
+          />
+        )}
+
+        {/* GESTÃO DO SISTEMA - NOVA VERSÃO UNIFICADA */}
+        {(currentPage === 'gestao-sistema-usuarios' || currentPage === 'gestao-sistema-logs') && permissoes?.canManageUsers && (
+          <GestaoSistema
+            usuarios={usuarios}
+            userData={userData}
+            onUpdate={loadUsuarios}
+            showSuccess={showSuccess}
+            showError={showError}
+            abaInicial={currentPage === 'gestao-sistema-logs' ? 'logs' : 'usuarios'}
           />
         )}
 
