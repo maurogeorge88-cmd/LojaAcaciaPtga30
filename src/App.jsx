@@ -8,6 +8,7 @@ import { Dashboard } from './components/Dashboard';
 import { CorpoAdmin } from './components/administracao/CorpoAdmin';
 import Usuarios from './components/administracao/Usuarios';
 import GestaoSistema from './components/administracao/GestaoSistema';
+import DadosLoja from './components/sistema/DadosLoja';
 import ControleAcesso from './components/administracao/ControleAcesso';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
@@ -1970,6 +1971,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           <span>🔐</span>
                           <span>Controle de Acesso</span>
                         </button>
+
+                        {/* DADOS DA LOJA */}
+                        <button
+                          onClick={() => setCurrentPage('dados-loja')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'dados-loja'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>🏛️</span>
+                          <span>Dados da Loja</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2175,6 +2189,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             abaInicial={currentPage === 'gestao-sistema-logs' ? 'logs' : 'usuarios'}
+          />
+        )}
+
+        {/* DADOS DA LOJA */}
+        {currentPage === 'dados-loja' && userData?.nivel_acesso === 'admin' && (
+          <DadosLoja
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
