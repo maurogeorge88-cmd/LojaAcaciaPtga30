@@ -8,6 +8,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
+  const [editando, setEditando] = useState(null);
   
   // Múltiplos equipamentos
   const [equipamentosSelecionados, setEquipamentosSelecionados] = useState([]);
@@ -96,48 +97,190 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
     }
 
     try {
-      // 1. Criar comodato
-      const { data: comodato, error: comodatoError } = await supabase
-        .from('comodatos')
-        .insert([{
-          beneficiario_id: form.beneficiario_id,
-          data_emprestimo: form.data_emprestimo,
-          data_devolucao_prevista: form.data_devolucao_prevista || null,
-          observacoes_entrega: form.observacoes_entrega || null,
-          status: 'ativo'
-        }])
-        .select()
-        .single();
+      if (editando) {
+        // MODO EDIÇÃO
+        // 1. Atualizar comodato
+        const { error: comodatoError } = await supabase
+          .from('comodatos')
+          .update({
+            beneficiario_id: form.beneficiario_id,
+            data_emprestimo: form.data_emprestimo,
+            data_devolucao_prevista: form.data_devolucao_prevista || null,
+            observacoes_entrega: form.observacoes_entrega || null
+          })
+          .eq('id', editando.id);
 
-      if (comodatoError) throw comodatoError;
+        if (comodatoError) throw comodatoError;
 
-      // 2. Criar itens
-      const itens = equipamentosSelecionados.map(eq_id => ({
-        comodato_id: comodato.id,
-        equipamento_id: eq_id,
-        status: 'emprestado'
-      }));
+        // 2. Buscar itens atuais
+        const { data: itensAtuais } = await supabase
+          .from('comodato_itens')
+          .select('equipamento_id')
+          .eq('comodato_id', editando.id)
+          .eq('status', 'emprestado');
 
-      const { error: itensError } = await supabase
-        .from('comodato_itens')
-        .insert(itens);
+        const idsAtuais = itensAtuais?.map(i => i.equipamento_id) || [];
+        
+        // 3. Equipamentos removidos - liberar
+        const removidos = idsAtuais.filter(id => !equipamentosSelecionados.includes(id));
+        for (const eqId of removidos) {
+          await supabase
+            .from('comodato_itens')
+            .delete()
+            .eq('comodato_id', editando.id)
+            .eq('equipamento_id', eqId);
+          
+          await supabase
+            .from('equipamentos')
+            .update({ status: 'disponivel' })
+            .eq('id', eqId);
+        }
 
-      if (itensError) throw itensError;
+        // 4. Equipamentos novos - adicionar
+        const novos = equipamentosSelecionados.filter(id => !idsAtuais.includes(id));
+        if (novos.length > 0) {
+          const itensNovos = novos.map(eq_id => ({
+            comodato_id: editando.id,
+            equipamento_id: eq_id,
+            status: 'emprestado'
+          }));
 
-      // 3. Atualizar status dos equipamentos
-      for (const eq_id of equipamentosSelecionados) {
-        await supabase
-          .from('equipamentos')
-          .update({ status: 'emprestado' })
-          .eq('id', eq_id);
+          await supabase.from('comodato_itens').insert(itensNovos);
+
+          for (const eq_id of novos) {
+            await supabase
+              .from('equipamentos')
+              .update({ status: 'emprestado' })
+              .eq('id', eq_id);
+          }
+        }
+
+        showSuccess('Empréstimo atualizado!');
+      } else {
+        // MODO CRIAÇÃO
+        // 1. Criar comodato
+        const { data: comodato, error: comodatoError } = await supabase
+          .from('comodatos')
+          .insert([{
+            beneficiario_id: form.beneficiario_id,
+            data_emprestimo: form.data_emprestimo,
+            data_devolucao_prevista: form.data_devolucao_prevista || null,
+            observacoes_entrega: form.observacoes_entrega || null,
+            status: 'ativo'
+          }])
+          .select()
+          .single();
+
+        if (comodatoError) throw comodatoError;
+
+        // 2. Criar itens
+        const itens = equipamentosSelecionados.map(eq_id => ({
+          comodato_id: comodato.id,
+          equipamento_id: eq_id,
+          status: 'emprestado'
+        }));
+
+        const { error: itensError } = await supabase
+          .from('comodato_itens')
+          .insert(itens);
+
+        if (itensError) throw itensError;
+
+        // 3. Atualizar status dos equipamentos
+        for (const eq_id of equipamentosSelecionados) {
+          await supabase
+            .from('equipamentos')
+            .update({ status: 'emprestado' })
+            .eq('id', eq_id);
+        }
+
+        showSuccess(`Empréstimo criado com ${equipamentosSelecionados.length} equipamento(s)!`);
       }
 
-      showSuccess(`Empréstimo criado com ${equipamentosSelecionados.length} equipamento(s)!`);
       fecharModal();
       carregarDados();
     } catch (error) {
       console.error('Erro:', error);
       showError(error.message || 'Erro ao criar empréstimo');
+    }
+  };
+
+  const abrirEdicao = async (emprestimo) => {
+    setEditando(emprestimo);
+    setForm({
+      beneficiario_id: emprestimo.beneficiario_id,
+      data_emprestimo: emprestimo.data_emprestimo,
+      data_devolucao_prevista: emprestimo.data_devolucao_prevista || '',
+      observacoes_entrega: emprestimo.observacoes_entrega || ''
+    });
+
+    // Carregar equipamentos emprestados (não devolvidos)
+    const equipamentosEmprestados = emprestimo.itens
+      ?.filter(item => item.status === 'emprestado')
+      .map(item => item.equipamento_id) || [];
+    
+    setEquipamentosSelecionados(equipamentosEmprestados);
+
+    // Carregar equipamentos disponíveis + os que já estão neste empréstimo
+    const { data: eqDisponiveis } = await supabase
+      .from('equipamentos')
+      .select(`id, numero_patrimonio, status, tipos_equipamentos (nome)`)
+      .eq('status', 'disponivel')
+      .order('numero_patrimonio');
+
+    const { data: eqDoEmprestimo } = await supabase
+      .from('equipamentos')
+      .select(`id, numero_patrimonio, status, tipos_equipamentos (nome)`)
+      .in('id', equipamentosEmprestados)
+      .order('numero_patrimonio');
+
+    // Combinar e remover duplicatas
+    const todosEquipamentos = [...(eqDisponiveis || []), ...(eqDoEmprestimo || [])];
+    const unicos = todosEquipamentos.filter((eq, index, self) => 
+      index === self.findIndex(e => e.id === eq.id)
+    );
+    
+    setEquipamentos(unicos);
+    setModalAberto(true);
+  };
+
+  const excluirEmprestimo = async (emprestimo) => {
+    if (!window.confirm('Excluir este empréstimo? Os equipamentos serão liberados.')) return;
+
+    try {
+      // 1. Buscar todos os itens do empréstimo
+      const { data: itens } = await supabase
+        .from('comodato_itens')
+        .select('equipamento_id')
+        .eq('comodato_id', emprestimo.id);
+
+      // 2. Liberar equipamentos
+      for (const item of itens || []) {
+        await supabase
+          .from('equipamentos')
+          .update({ status: 'disponivel' })
+          .eq('id', item.equipamento_id);
+      }
+
+      // 3. Excluir itens (cascade vai excluir automaticamente, mas por segurança)
+      await supabase
+        .from('comodato_itens')
+        .delete()
+        .eq('comodato_id', emprestimo.id);
+
+      // 4. Excluir empréstimo
+      const { error } = await supabase
+        .from('comodatos')
+        .delete()
+        .eq('id', emprestimo.id);
+
+      if (error) throw error;
+
+      showSuccess('Empréstimo excluído!');
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao excluir empréstimo');
     }
   };
 
@@ -198,6 +341,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
 
   const fecharModal = () => {
     setModalAberto(false);
+    setEditando(null);
     setEquipamentosSelecionados([]);
     setForm({
       beneficiario_id: '',
@@ -251,18 +395,34 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         {emprestimosFiltrados.map(emp => (
           <div key={emp.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500">
             <div className="flex justify-between items-start mb-3">
-              <div>
+              <div className="flex-1">
                 <h3 className="font-bold text-lg">{emp.beneficiarios?.nome}</h3>
                 <p className="text-sm text-gray-600">CPF: {emp.beneficiarios?.cpf}</p>
                 <p className="text-xs text-gray-500">
                   Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
                 </p>
               </div>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                emp.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {emp.status?.toUpperCase()}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                  emp.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {emp.status?.toUpperCase()}
+                </span>
+                <button
+                  onClick={() => abrirEdicao(emp)}
+                  className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                  title="Editar empréstimo"
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  onClick={() => excluirEmprestimo(emp)}
+                  className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                  title="Excluir empréstimo"
+                >
+                  🗑️ Excluir
+                </button>
+              </div>
             </div>
 
             {/* ITENS DO EMPRÉSTIMO */}
@@ -320,7 +480,9 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h3 className="text-xl font-bold mb-4">📦 Novo Empréstimo</h3>
+              <h3 className="text-xl font-bold mb-4">
+                {editando ? '✏️ Editar Empréstimo' : '📦 Novo Empréstimo'}
+              </h3>
               <form onSubmit={salvarEmprestimo} className="space-y-4">
                 {/* Beneficiário */}
                 <div>
