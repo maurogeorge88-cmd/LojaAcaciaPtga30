@@ -419,28 +419,46 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0); // Zera as horas para comparação correta
             
-            console.log('📅 Dashboard - Cronograma recebido:', cronograma);
+            console.log('📅 Dashboard - Eventos recebidos:', cronograma);
             console.log('📅 Data de hoje:', hoje);
             
             const eventosProximos = cronograma
               .filter(evento => {
-                if (!evento.data_evento) return false;
-                const dataEvento = new Date(evento.data_evento + 'T00:00:00');
+                if (!evento.mes || !evento.dia) return false;
+                
+                // Criar data do evento no ano atual
+                const anoAtual = hoje.getFullYear();
+                const dataEvento = new Date(anoAtual, evento.mes - 1, evento.dia);
                 dataEvento.setHours(0, 0, 0, 0);
+                
+                // Se já passou este ano, considerar próximo ano
+                if (dataEvento < hoje) {
+                  dataEvento.setFullYear(anoAtual + 1);
+                }
+                
                 const diffDias = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
-                console.log(`Evento: ${evento.titulo} - Data: ${evento.data_evento} - Diff: ${diffDias} dias`);
-                return diffDias >= 0 && diffDias <= 30; // Inclui hoje (0) até 30 dias
+                console.log(`Evento: ${evento.nome} - ${evento.dia}/${evento.mes} - Diff: ${diffDias} dias`);
+                return diffDias >= 0 && diffDias <= 30;
               })
-              .sort((a, b) => new Date(a.data_evento) - new Date(b.data_evento))
-              .slice(0, 5); // Limita a 5 eventos
+              .sort((a, b) => {
+                const anoAtual = hoje.getFullYear();
+                const dataA = new Date(anoAtual, a.mes - 1, a.dia);
+                const dataB = new Date(anoAtual, b.mes - 1, b.dia);
+                if (dataA < hoje) dataA.setFullYear(anoAtual + 1);
+                if (dataB < hoje) dataB.setFullYear(anoAtual + 1);
+                return dataA - dataB;
+              })
+              .slice(0, 5);
 
             console.log('📅 Eventos filtrados:', eventosProximos);
 
             return eventosProximos.length > 0 ? (
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {eventosProximos.map((evento, idx) => {
-                  const dataEvento = new Date(evento.data_evento + 'T00:00:00');
-                  const hoje = new Date();
+                  const anoAtual = hoje.getFullYear();
+                  const dataEvento = new Date(anoAtual, evento.mes - 1, evento.dia);
+                  if (dataEvento < hoje) dataEvento.setFullYear(anoAtual + 1);
+                  
                   const diffDias = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
                   const ehHoje = diffDias === 0;
 
@@ -456,7 +474,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                       <div className="flex items-start gap-2">
                         <div className="text-2xl">{evento.tipo === 'Maçônico' ? '🔷' : '🎊'}</div>
                         <div className="flex-1">
-                          <div className="font-bold text-base">{evento.titulo}</div>
+                          <div className="font-bold text-base">{evento.nome}</div>
                           <div className="text-sm opacity-90 flex items-center gap-2 flex-wrap mt-1">
                             <span>{evento.tipo}</span>
                             <span>•</span>
