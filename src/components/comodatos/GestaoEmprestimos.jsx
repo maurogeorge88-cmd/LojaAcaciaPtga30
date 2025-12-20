@@ -295,7 +295,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 32;
+          yPos += 37;
         } catch (e) {
           console.log('Logo não disponível');
         }
@@ -403,7 +403,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       // ========================================
       doc.setFont('helvetica', 'normal');
       
-      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do bem descrito a seguir,  o  qual é disponibilizado  pela  Loja  Maçônica  -  ARLS  Acacia  de  Paranatinga  nº  30,  para  que seja utilizado pelo beneficiário acima identificado, sendo vedada a transferência à terceiros sem a autorização do cedente.
+      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do bem descrito a seguir,  o  qual é disponibilizado  pela  Loja  Maçônica  -  ARLS  Acacia  de  Paranatinga  nº  30,  para  que  seja  utilizado  pelo beneficiário acima identificado, sendo vedada a transferência à terceiros sem a autorização do cedente.
 
 O beneficiário deve cuidar do bem disponibilizado e devolvê-lo em boas condições para uso  posterior,  e  será responsabilizado por quaisquer danos ou perda.
 
