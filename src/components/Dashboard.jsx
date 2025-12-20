@@ -221,7 +221,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           <h3 className="text-lg font-semibold mb-3">Balaustres</h3>
           <p className="text-5xl font-bold mb-4">
             {balaustres.filter(b => {
-              const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+              if (!b.data_sessao) return false;
+              const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
               return dataBalaustre.getFullYear() === new Date().getFullYear();
             }).length}
           </p>
@@ -230,7 +231,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               <span>⬜ Grau 1 (Aprendiz):</span>
               <span className="font-bold">
                 {balaustres.filter(b => {
-                  const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+                  if (!b.data_sessao) return false;
+                  const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
                   return b.grau_sessao === 'Aprendiz' && dataBalaustre.getFullYear() === new Date().getFullYear();
                 }).length}
               </span>
@@ -239,7 +241,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               <span>🔷 Grau 2 (Companheiro):</span>
               <span className="font-bold">
                 {balaustres.filter(b => {
-                  const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+                  if (!b.data_sessao) return false;
+                  const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
                   return b.grau_sessao === 'Companheiro' && dataBalaustre.getFullYear() === new Date().getFullYear();
                 }).length}
               </span>
@@ -248,7 +251,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               <span>🔺 Grau 3 (Mestre):</span>
               <span className="font-bold">
                 {balaustres.filter(b => {
-                  const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+                  if (!b.data_sessao) return false;
+                  const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
                   return b.grau_sessao === 'Mestre' && dataBalaustre.getFullYear() === new Date().getFullYear();
                 }).length}
               </span>
