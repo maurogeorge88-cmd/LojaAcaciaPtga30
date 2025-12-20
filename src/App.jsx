@@ -137,6 +137,7 @@ function App() {
   const [balaustres, setBalaustres] = useState([]);
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
+  const [cronograma, setCronograma] = useState([]);
   
   // Estados para Comissões
   const [comissoes, setComissoes] = useState([]);
@@ -218,6 +219,7 @@ function App() {
         loadComissoes();
         loadLivros();
         loadEmprestimos();
+        loadCronograma();
       }
       setLoading(false);
     });
@@ -607,6 +609,25 @@ function App() {
     } catch (err) {
       console.error('❌ Exceção ao carregar livros:', err);
       setLivros([]);
+    }
+  };
+
+  const loadCronograma = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('cronograma')
+        .select('*')
+        .order('data', { ascending: true });
+      
+      if (error) {
+        console.error('Erro ao carregar cronograma:', error);
+        return;
+      }
+      
+      setCronograma(data || []);
+    } catch (err) {
+      console.error('Exceção ao carregar cronograma:', err);
+      setCronograma([]);
     }
   };
 
