@@ -391,33 +391,33 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       </div>
 
       {/* LISTA DE EMPRÉSTIMOS */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {emprestimosFiltrados.map(emp => (
           <div key={emp.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500">
-            <div className="flex justify-between items-start mb-3">
-              <div className="flex-1">
-                <h3 className="font-bold text-lg">{emp.beneficiarios?.nome}</h3>
-                <p className="text-sm text-gray-600">CPF: {emp.beneficiarios?.cpf}</p>
-                <p className="text-xs text-gray-500">
-                  Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+            <div className="flex flex-col gap-2 mb-3">
+              <div className="flex justify-between items-start">
+                <h3 className="font-bold text-base">{emp.beneficiarios?.nome}</h3>
+                <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
                   emp.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
                   {emp.status?.toUpperCase()}
                 </span>
+              </div>
+              <p className="text-xs text-gray-600">CPF: {emp.beneficiarios?.cpf}</p>
+              <p className="text-xs text-gray-500">
+                Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
+              </p>
+              <div className="flex gap-1 mt-2">
                 <button
                   onClick={() => abrirEdicao(emp)}
-                  className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                  className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                   title="Editar empréstimo"
                 >
                   ✏️ Editar
                 </button>
                 <button
                   onClick={() => excluirEmprestimo(emp)}
-                  className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                  className="flex-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                   title="Excluir empréstimo"
                 >
                   🗑️ Excluir
@@ -426,42 +426,40 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
             </div>
 
             {/* ITENS DO EMPRÉSTIMO */}
-            <div className="space-y-2">
-              <p className="font-semibold text-sm text-gray-700">Equipamentos:</p>
+            <div className="space-y-1">
+              <p className="font-semibold text-xs text-gray-700 mb-1">Equipamentos:</p>
               {emp.itens?.map(item => (
                 <div
                   key={item.id}
-                  className={`flex justify-between items-center p-2 rounded ${
+                  className={`p-2 rounded ${
                     item.status === 'devolvido' ? 'bg-gray-100' : 'bg-emerald-50'
                   }`}
                 >
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <p className="text-xs font-medium flex-1">
                       {item.equipamentos?.numero_patrimonio} - {item.equipamentos?.tipos_equipamentos?.nome}
                     </p>
-                    {item.status === 'devolvido' && item.data_devolucao_real && (
-                      <p className="text-xs text-gray-500">
-                        Devolvido em: {new Date(item.data_devolucao_real).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-xs font-bold ${
+                    <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${
                       item.status === 'emprestado'
                         ? 'bg-yellow-100 text-yellow-800'
                         : 'bg-gray-200 text-gray-700'
                     }`}>
-                      {item.status === 'emprestado' ? '🔄 EMPRESTADO' : '✅ DEVOLVIDO'}
+                      {item.status === 'emprestado' ? '🔄' : '✅'}
                     </span>
-                    {item.status === 'emprestado' && (
-                      <button
-                        onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
-                        className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                      >
-                        Devolver
-                      </button>
-                    )}
                   </div>
+                  {item.status === 'devolvido' && item.data_devolucao_real && (
+                    <p className="text-xs text-gray-500">
+                      Devolvido: {new Date(item.data_devolucao_real).toLocaleDateString()}
+                    </p>
+                  )}
+                  {item.status === 'emprestado' && (
+                    <button
+                      onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
+                      className="w-full mt-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    >
+                      Devolver
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
