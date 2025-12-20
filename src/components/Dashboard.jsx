@@ -214,21 +214,44 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           <p className="text-sm opacity-90">Todas as situações</p>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg relative">
+          <div className="absolute top-4 right-4 bg-white/20 px-3 py-1 rounded-full text-sm font-bold">
+            {new Date().getFullYear()}
+          </div>
           <h3 className="text-lg font-semibold mb-3">Balaustres</h3>
-          <p className="text-5xl font-bold mb-4">{balaustres.length}</p>
+          <p className="text-5xl font-bold mb-4">
+            {balaustres.filter(b => {
+              const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+              return dataBalaustre.getFullYear() === new Date().getFullYear();
+            }).length}
+          </p>
           <div className="border-t border-purple-400 pt-3 space-y-1">
             <div className="flex justify-between text-sm">
               <span>⬜ Grau 1 (Aprendiz):</span>
-              <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Aprendiz').length}</span>
+              <span className="font-bold">
+                {balaustres.filter(b => {
+                  const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+                  return b.grau_sessao === 'Aprendiz' && dataBalaustre.getFullYear() === new Date().getFullYear();
+                }).length}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span>🔷 Grau 2 (Companheiro):</span>
-              <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Companheiro').length}</span>
+              <span className="font-bold">
+                {balaustres.filter(b => {
+                  const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+                  return b.grau_sessao === 'Companheiro' && dataBalaustre.getFullYear() === new Date().getFullYear();
+                }).length}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span>🔺 Grau 3 (Mestre):</span>
-              <span className="font-bold">{balaustres.filter(b => b.grau_sessao === 'Mestre').length}</span>
+              <span className="font-bold">
+                {balaustres.filter(b => {
+                  const dataBalaustre = new Date(b.data_balaustre + 'T00:00:00');
+                  return b.grau_sessao === 'Mestre' && dataBalaustre.getFullYear() === new Date().getFullYear();
+                }).length}
+              </span>
             </div>
           </div>
         </div>
