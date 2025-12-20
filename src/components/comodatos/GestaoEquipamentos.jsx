@@ -264,6 +264,18 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     }
 
     try {
+      // Verificar se já existe
+      const { data: tipoExistente } = await supabase
+        .from('tipos_equipamentos')
+        .select('id')
+        .ilike('nome', formTipo.nome)
+        .single();
+
+      if (tipoExistente) {
+        showError('Já existe um tipo com este nome!');
+        return;
+      }
+
       const { error } = await supabase
         .from('tipos_equipamentos')
         .insert([formTipo]);
