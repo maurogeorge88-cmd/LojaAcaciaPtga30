@@ -1111,25 +1111,35 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
-  const gerarPDF = () => {
-    const resumo = calcularResumo();
-    gerarRelatorioPDF({
-      lancamentos,
-      categorias,
-      filtros,
-      resumo,
-      saldoAnterior,
-      meses
-    });
+  const gerarPDF = async () => {
+    try {
+      const resumo = calcularResumo();
+      await gerarRelatorioPDF({
+        lancamentos,
+        categorias,
+        filtros,
+        resumo,
+        saldoAnterior,
+        meses
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      showError('Erro ao gerar relatório: ' + error.message);
+    }
   };
 
-  const gerarPDFResumido = () => {
-    gerarRelatorioResumido({
-      lancamentos,
-      categorias,
-      filtros,
-      meses
-    });
+  const gerarPDFResumido = async () => {
+    try {
+      await gerarRelatorioResumido({
+        lancamentos,
+        categorias,
+        filtros,
+        meses
+      });
+    } catch (error) {
+      console.error('Erro ao gerar PDF resumido:', error);
+      showError('Erro ao gerar relatório: ' + error.message);
+    }
   };
 
   // 📊 RELATÓRIO INDIVIDUAL DE IRMÃO
@@ -1181,6 +1191,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         lancsPorMes[mesAno].lancamentos.push(lanc);
       });
 
+      // Importar jsPDF dinamicamente
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
       const doc = new jsPDF();
       let yPos = 15;
 
