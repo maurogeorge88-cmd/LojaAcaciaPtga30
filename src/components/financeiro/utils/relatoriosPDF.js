@@ -172,7 +172,7 @@ export const gerarRelatorioResumido = ({
     doc.text('DataPgto', 10, yPos);
     doc.text('Interessado', 32, yPos);
     doc.text('Descrição', 70, yPos);
-    doc.text('Obs', 125, yPos);
+    doc.text('Obs', 110, yPos);
     doc.text('Despesa', 190, yPos, { align: 'right' });
     yPos += 4;
 
@@ -188,13 +188,13 @@ export const gerarRelatorioResumido = ({
         (lanc.descricao.substring(0, 22)) : 
         (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
       const descricao = lanc.categorias_financeiras?.nome?.substring(0, 20) || '';
-      const obs = (lanc.observacoes || '').substring(0, 45);
+      const obs = (lanc.observacoes || '').substring(0, 30);
       const valor = parseFloat(lanc.valor);
 
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 70, yPos);
-      doc.text(obs.substring(0, 45), 125, yPos);
+      doc.text(obs, 110, yPos);
       doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
@@ -212,13 +212,13 @@ export const gerarRelatorioResumido = ({
           (lanc.descricao.substring(0, 22)) : 
           (lanc.irmaos?.nome?.split(' ').slice(0, 2).join(' ') || 'Irmão');
         const descricao = lanc.categorias_financeiras?.nome?.substring(0, 20) || '';
-        const obs = (lanc.observacoes || '').substring(0, 45);
+        const obs = (lanc.observacoes || '').substring(0, 30);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 10, yPos);
         doc.text(interessado.substring(0, 22), 32, yPos);
         doc.text(descricao, 70, yPos);
-        doc.text(obs.substring(0, 45), 125, yPos);
+        doc.text(obs, 110, yPos);
         doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
         
         yPos += 4;
@@ -417,7 +417,7 @@ export const gerarRelatorioResumido = ({
       doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
       doc.text('Descrição', 70, yPos);
-      doc.text('Obs', 125, yPos);
+      doc.text('Obs', 110, yPos);
       doc.text('Receita', 190, yPos, { align: 'right' });
       yPos += 4;
 
@@ -425,7 +425,7 @@ export const gerarRelatorioResumido = ({
       doc.text(dataLanc, 10, yPos);
       doc.text('Irmãos - Acacia', 32, yPos);
       doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
-      doc.text('', 140, yPos);
+      doc.text('', 110, yPos);
       doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
       yPos += 4;
       
@@ -436,7 +436,7 @@ export const gerarRelatorioResumido = ({
       doc.text('DataPgto', 10, yPos);
       doc.text('Interessado', 32, yPos);
       doc.text('Descrição', 70, yPos);
-      doc.text('Obs', 125, yPos);
+      doc.text('Obs', 110, yPos);
       doc.text('Receita', 190, yPos, { align: 'right' });
       yPos += 4;
     }
@@ -454,13 +454,13 @@ export const gerarRelatorioResumido = ({
       if (descricao === 'Mensalidade e Peculio - Irmao') {
         descricao = 'Mensalidade';
       }
-      const obs = (lanc.observacoes || '').substring(0, 45);
+      const obs = (lanc.observacoes || '').substring(0, 30);
       const valor = parseFloat(lanc.valor);
 
       doc.text(dataLanc, 10, yPos);
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 70, yPos);
-      doc.text(obs.substring(0, 45), 125, yPos);
+      doc.text(obs, 110, yPos);
       doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
       
       yPos += 4;
@@ -479,13 +479,13 @@ export const gerarRelatorioResumido = ({
         if (descricao === 'Mensalidade e Peculio - Irmao') {
           descricao = 'Mensalidade';
         }
-        const obs = (lanc.observacoes || '').substring(0, 45);
+        const obs = (lanc.observacoes || '').substring(0, 30);
         const valor = parseFloat(lanc.valor);
 
         doc.text(dataLanc, 10, yPos);
         doc.text(interessado.substring(0, 22), 32, yPos);
         doc.text(descricao, 70, yPos);
-        doc.text(obs.substring(0, 45), 125, yPos);
+        doc.text(obs, 110, yPos);
         doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
         
         yPos += 4;
