@@ -621,9 +621,11 @@ function App() {
       
       if (error) {
         console.error('Erro ao carregar cronograma:', error);
+        setCronograma([]); // Define vazio em caso de erro
         return;
       }
       
+      console.log('✅ Cronograma carregado:', data?.length || 0);
       setCronograma(data || []);
     } catch (err) {
       console.error('Exceção ao carregar cronograma:', err);
