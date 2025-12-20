@@ -285,17 +285,17 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
 
       // Gerar PDF
       const doc = new jsPDF();
-      let yPos = 20;
+      let yPos = 10; // Menos espaço do topo
 
       // ========================================
       // CABEÇALHO CENTRALIZADO
       // ========================================
       
-      // Logo (se houver)
+      // Logo (se houver) - mais próximo do topo
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 35;
+          yPos += 32;
         } catch (e) {
           console.log('Logo não disponível');
         }
@@ -313,77 +313,61 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       doc.setFont('helvetica', 'normal');
       if (dadosLoja?.endereco) {
         doc.text(dadosLoja.endereco, 105, yPos, { align: 'center' });
-        yPos += 5;
+        yPos += 4;
       }
       if (dadosLoja?.cidade) {
         doc.text(`${dadosLoja.cidade}/${dadosLoja.estado || ''} - CEP: ${dadosLoja.cep || ''}`, 105, yPos, { align: 'center' });
-        yPos += 5;
+        yPos += 4;
       }
       if (dadosLoja?.telefone) {
         doc.text(`Telefone: ${dadosLoja.telefone}`, 105, yPos, { align: 'center' });
-        yPos += 5;
-      }
-      if (dadosLoja?.email) {
-        doc.text(`E-mail: ${dadosLoja.email}`, 105, yPos, { align: 'center' });
-        yPos += 5;
+        yPos += 4;
       }
 
-      yPos += 5;
+      yPos += 3; // Espaço reduzido
 
       // Linha separadora
       doc.setDrawColor(0);
       doc.setLineWidth(0.5);
       doc.line(15, yPos, 195, yPos);
-      yPos += 10;
+      yPos += 8; // Espaço reduzido
 
       // ========================================
-      // TÍTULO DO DOCUMENTO
+      // TÍTULO
       // ========================================
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('TERMO DE COMODATO', 105, yPos, { align: 'center' });
-      yPos += 7;
-      
-      doc.setFontSize(11);
-      doc.text(`Nº ${String(emprestimo.id).padStart(4, '0')}/${new Date().getFullYear()}`, 105, yPos, { align: 'center' });
-      yPos += 12;
+      yPos += 10; // Espaço reduzido
 
       // ========================================
-      // PREÂMBULO
+      // COMODANTE - APENAS NOME DA LOJA
       // ========================================
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Comodante:', 15, yPos);
+      yPos += 5; // Espaço reduzido
       doc.setFont('helvetica', 'normal');
-      doc.text('Pelo presente instrumento particular, têm entre si:', 15, yPos);
-      yPos += 10;
+      doc.text(nomeLoja, 15, yPos);
+      yPos += 8; // Espaço reduzido entre comodante e comodatário
 
       // ========================================
-      // COMODANTE
+      // COMODATÁRIO - QUALIFICAÇÃO COMPLETA
       // ========================================
       doc.setFont('helvetica', 'bold');
-      doc.text('COMODANTE:', 15, yPos);
-      yPos += 5;
-      doc.setFont('helvetica', 'normal');
-      
-      const textoComodante = `${nomeLoja}, com sede na ${dadosLoja?.endereco || ''}, ${dadosLoja?.cidade || ''}/${dadosLoja?.estado || ''}, ${dadosLoja?.oriente ? `Oriente de ${dadosLoja.oriente}` : ''}, ${dadosLoja?.vale ? `Vale de ${dadosLoja.vale}` : ''}, ${dadosLoja?.grande_loja ? `jurisdicionada à ${dadosLoja.grande_loja}` : ''}, neste ato representada por seu Venerável Mestre, doravante denominada simplesmente COMODANTE;`;
-      
-      const linhasComodante = doc.splitTextToSize(textoComodante, 180);
-      doc.text(linhasComodante, 15, yPos);
-      yPos += linhasComodante.length * 5 + 8;
-
-      // ========================================
-      // COMODATÁRIO
-      // ========================================
-      doc.setFont('helvetica', 'bold');
-      doc.text('COMODATÁRIO:', 15, yPos);
-      yPos += 5;
+      doc.text('Comodatário - Beneficiário:', 15, yPos);
+      yPos += 5; // Espaço reduzido
       doc.setFont('helvetica', 'normal');
       
       const beneficiario = emprestimoCompleto.beneficiarios;
-      const textoComodatario = `${beneficiario?.nome || ''}, brasileiro(a), inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}, doravante denominado(a) simplesmente COMODATÁRIO(A);`;
+      const textoComodatario = `${beneficiario?.nome || ''}, brasileiro(a), inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
       
       const linhasComodatario = doc.splitTextToSize(textoComodatario, 180);
-      doc.text(linhasComodatario, 15, yPos);
-      yPos += linhasComodatario.length * 5 + 8;
+      linhasComodatario.forEach(linha => {
+        doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
+        yPos += 5;
+      });
+      yPos += 3; // Espaço reduzido
 
       // ========================================
       // RESPONSÁVEL (se houver)
@@ -391,294 +375,100 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       if (responsaveis && responsaveis.length > 0) {
         const resp = responsaveis[0];
         doc.setFont('helvetica', 'bold');
-        doc.text('RESPONSÁVEL SOLIDÁRIO:', 15, yPos);
+        doc.text('Comodatário - Responsável:', 15, yPos);
         yPos += 5;
         doc.setFont('helvetica', 'normal');
-        
-        const textoResponsavel = `${resp.nome || ''}, brasileiro(a), inscrito(a) no CPF sob nº ${resp.cpf || ''}, ${resp.parentesco || ''} do(a) COMODATÁRIO(A), residente na ${resp.endereco || ''}, telefone: ${resp.telefone || ''}, doravante denominado(a) simplesmente RESPONSÁVEL;`;
-        
-        const linhasResponsavel = doc.splitTextToSize(textoResponsavel, 180);
-        doc.text(linhasResponsavel, 15, yPos);
-        yPos += linhasResponsavel.length * 5 + 8;
+        doc.text(resp.nome || '', 15, yPos);
+        yPos += 8;
       }
 
       // ========================================
-      // PREÂMBULO DAS CLÁUSULAS
-      // ========================================
-      const preambulo = 'Têm entre si justo e contratado o presente TERMO DE COMODATO, regido pelas disposições dos artigos 579 a 585 do Código Civil Brasileiro e pelas cláusulas e condições seguintes:';
-      const linhasPreambulo = doc.splitTextToSize(preambulo, 180);
-      doc.text(linhasPreambulo, 15, yPos);
-      yPos += linhasPreambulo.length * 5 + 10;
-
-      // Verificar espaço
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-
-      // ========================================
-      // CLÁUSULA PRIMEIRA - OBJETO
+      // EQUIPAMENTOS
       // ========================================
       doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA PRIMEIRA – DO OBJETO', 15, yPos);
-      yPos += 6;
+      doc.text('Equipamento(s):', 15, yPos);
+      yPos += 5;
       doc.setFont('helvetica', 'normal');
       
-      doc.text('1.1. O COMODANTE cede ao COMODATÁRIO, em regime de comodato, sem ônus,', 15, yPos);
-      yPos += 5;
-      doc.text('os seguintes equipamentos de assistência social:', 15, yPos);
-      yPos += 7;
-
-      // Lista de equipamentos
-      emprestimoCompleto.itens?.forEach((item, idx) => {
+      emprestimoCompleto.itens?.forEach((item) => {
         const nomeEquip = item.equipamentos?.tipos_equipamentos?.nome || 'Equipamento';
         const patrimonio = item.equipamentos?.numero_patrimonio || 'S/N';
-        
-        doc.setFont('helvetica', 'bold');
-        doc.text(`${idx + 1}.`, 20, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(`${nomeEquip} - Patrimônio nº ${patrimonio}`, 27, yPos);
+        doc.text(`${nomeEquip} - Patrimônio: ${patrimonio}`, 15, yPos);
         yPos += 5;
       });
-      yPos += 5;
-
-      doc.text('1.2. O equipamento encontra-se em perfeito estado de conservação e funcionamento.', 15, yPos);
-      yPos += 10;
+      yPos += 5; // Espaço reduzido
 
       // ========================================
-      // CLÁUSULA SEGUNDA - PRAZO
+      // TEXTO DO COMODATO (da imagem)
       // ========================================
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA SEGUNDA – DO PRAZO E FINALIDADE', 15, yPos);
-      yPos += 6;
       doc.setFont('helvetica', 'normal');
       
-      const dataEmprestimo = new Date(emprestimoCompleto.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR');
-      let textoPrazo = `2.1. O prazo do presente comodato teve início em ${dataEmprestimo} e `;
-      
-      if (emprestimoCompleto.data_devolucao_prevista) {
-        const dataDevolucao = new Date(emprestimoCompleto.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR');
-        textoPrazo += `terá término previsto em ${dataDevolucao}, podendo ser prorrogado mediante acordo entre as partes.`;
-      } else {
-        textoPrazo += 'é por tempo indeterminado, devendo o equipamento ser devolvido quando não mais necessário ou quando solicitado pelo COMODANTE.';
-      }
-      
-      const linhasPrazo = doc.splitTextToSize(textoPrazo, 180);
-      doc.text(linhasPrazo, 15, yPos);
-      yPos += linhasPrazo.length * 5 + 5;
-      
-      doc.text('2.2. O equipamento destina-se exclusivamente ao uso do COMODATÁRIO para fins de', 15, yPos);
-      yPos += 5;
-      doc.text('assistência médica/locomoção, sendo vedado qualquer uso diverso.', 15, yPos);
-      yPos += 10;
+      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do bem descrito a seguir, o qual é disponibilizado pela Loja Maçônica - A∴R∴L∴S∴, Acácia de Paranatinga nº 30, para que seja utilizado pelo beneficiário acima identificado, sendo vedada a transferência a terceiros sem a autorização do cedente.
 
-      // ========================================
-      // CLÁUSULA TERCEIRA - OBRIGAÇÕES DO COMODATÁRIO
-      // ========================================
-      if (yPos > 230) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA TERCEIRA – DAS OBRIGAÇÕES DO COMODATÁRIO', 15, yPos);
-      yPos += 6;
-      doc.setFont('helvetica', 'normal');
-      
-      const obrigacoes = [
-        '3.1. Conservar o equipamento em perfeito estado, conforme o recebeu;',
-        '3.2. Utilizar o equipamento de acordo com sua finalidade específica;',
-        '3.3. Não ceder, emprestar, alugar ou transferir o equipamento a terceiros, sob qualquer título;',
-        '3.4. Comunicar imediatamente ao COMODANTE qualquer dano, defeito ou necessidade de',
-        'manutenção do equipamento;',
-        '3.5. Devolver o equipamento nas mesmas condições em que recebeu, ressalvado o desgaste',
-        'natural pelo uso adequado;',
-        '3.6. Zelar pela segurança do equipamento, evitando furto, roubo, extravio ou danos;',
-        '3.7. Permitir a vistoria do equipamento pelo COMODANTE, mediante agendamento prévio.'
-      ];
-      
-      obrigacoes.forEach(obr => {
+O beneficiário deve cuidar do bem disponibilizado e devolvê-lo em boas condições para uso posterior, e será responsabilizado por quaisquer danos ou perda.
+
+Se o bem disponibilizado não seja mais necessário ao beneficiário identificado, que seja o mesmo devidamente devolvido.
+
+Caso os dados de endereço ou de contato houver alterações, solicitamos que as novas informações sejam nos enviados de imediato, para que seja possível o acesso e contato quando necessário.`;
+
+      const linhasTexto = doc.splitTextToSize(textoComodato, 180);
+      linhasTexto.forEach(linha => {
         if (yPos > 270) {
           doc.addPage();
           yPos = 20;
         }
-        doc.text(obr, 15, yPos);
+        doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
         yPos += 5;
       });
-      yPos += 5;
-
-      // ========================================
-      // CLÁUSULA QUARTA - OBRIGAÇÕES DO COMODANTE
-      // ========================================
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA QUARTA – DAS OBRIGAÇÕES DO COMODANTE', 15, yPos);
-      yPos += 6;
-      doc.setFont('helvetica', 'normal');
-      
-      doc.text('4.1. Entregar o equipamento em perfeitas condições de uso;', 15, yPos);
-      yPos += 5;
-      doc.text('4.2. Realizar a manutenção preventiva do equipamento quando necessário;', 15, yPos);
-      yPos += 5;
-      doc.text('4.3. Substituir o equipamento em caso de defeito, se disponível em estoque.', 15, yPos);
       yPos += 10;
-
-      // ========================================
-      // CLÁUSULA QUINTA - DEVOLUÇÃO
-      // ========================================
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA QUINTA – DA DEVOLUÇÃO', 15, yPos);
-      yPos += 6;
-      doc.setFont('helvetica', 'normal');
-      
-      const textoDevolucao = '5.1. O COMODATÁRIO obriga-se a devolver o equipamento ao COMODANTE imediatamente quando: (a) não mais necessitar do bem; (b) for solicitado pelo COMODANTE; (c) findar o prazo estabelecido na Cláusula Segunda; ou (d) descumprir qualquer cláusula deste instrumento.';
-      const linhasDevolucao = doc.splitTextToSize(textoDevolucao, 180);
-      doc.text(linhasDevolucao, 15, yPos);
-      yPos += linhasDevolucao.length * 5 + 5;
-      
-      doc.text('5.2. A devolução deverá ser feita na sede do COMODANTE, em dia útil.', 15, yPos);
-      yPos += 10;
-
-      // ========================================
-      // CLÁUSULA SEXTA - PENALIDADES
-      // ========================================
-      if (yPos > 250) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA SEXTA – DAS PENALIDADES', 15, yPos);
-      yPos += 6;
-      doc.setFont('helvetica', 'normal');
-      
-      const textoPenalidades = '6.1. Em caso de dano, perda, furto ou roubo do equipamento por culpa ou dolo do COMODATÁRIO, este se obriga a ressarcir o valor de mercado do bem, apurado mediante três orçamentos, sem prejuízo de outras medidas legais cabíveis.';
-      const linhasPenalidades = doc.splitTextToSize(textoPenalidades, 180);
-      doc.text(linhasPenalidades, 15, yPos);
-      yPos += linhasPenalidades.length * 5 + 5;
-      
-      doc.text('6.2. O RESPONSÁVEL SOLIDÁRIO responde conjuntamente pelas obrigações do', 15, yPos);
-      yPos += 5;
-      doc.text('COMODATÁRIO previstas neste instrumento.', 15, yPos);
-      yPos += 10;
-
-      // ========================================
-      // CLÁUSULA SÉTIMA - DISPOSIÇÕES GERAIS
-      // ========================================
-      if (yPos > 240) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('CLÁUSULA SÉTIMA – DISPOSIÇÕES GERAIS', 15, yPos);
-      yPos += 6;
-      doc.setFont('helvetica', 'normal');
-      
-      doc.text('7.1. Este termo pode ser rescindido a qualquer tempo mediante notificação prévia de', 15, yPos);
-      yPos += 5;
-      doc.text('3 (três) dias por qualquer das partes.', 15, yPos);
-      yPos += 5;
-      doc.text('7.2. O presente comodato é realizado a título gratuito, sem qualquer ônus para o', 15, yPos);
-      yPos += 5;
-      doc.text('COMODATÁRIO.', 15, yPos);
-      yPos += 5;
-      const textoForo = `7.3. As partes elegem o foro da Comarca de ${dadosLoja?.cidade || ''} para dirimir quaisquer dúvidas ou controvérsias oriundas deste instrumento.`;
-      const linhasForo = doc.splitTextToSize(textoForo, 180);
-      doc.text(linhasForo, 15, yPos);
-      yPos += linhasForo.length * 5 + 10;
-
-      // ========================================
-      // ENCERRAMENTO
-      // ========================================
-      if (yPos > 230) {
-        doc.addPage();
-        yPos = 20;
-      }
-      
-      const textoEncerramento = 'E por estarem assim justos e contratados, assinam o presente instrumento em 2 (duas) vias de igual teor e forma.';
-      const linhasEncerramento = doc.splitTextToSize(textoEncerramento, 180);
-      doc.text(linhasEncerramento, 15, yPos);
-      yPos += linhasEncerramento.length * 5 + 15;
 
       // ========================================
       // LOCAL E DATA
       // ========================================
+      if (yPos > 230) {
+        doc.addPage();
+        yPos = 40;
+      }
+
       const hoje = new Date();
       const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-      const dataExtenso = `${dadosLoja?.cidade || ''}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
+      const dataExtenso = `${dadosLoja?.cidade || 'Paranatinga'}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
       
-      doc.setFont('helvetica', 'normal');
       doc.text(dataExtenso, 105, yPos, { align: 'center' });
-      yPos += 20;
+      yPos += 15;
 
       // ========================================
-      // ASSINATURAS
+      // LINHA DE ASSINATURA (conforme imagem)
       // ========================================
-      if (yPos > 200) {
-        doc.addPage();
-        yPos = 60;
-      }
-
-      // COMODANTE
-      doc.text('_'.repeat(65), 105, yPos, { align: 'center' });
+      
+      // Linha única longa
+      doc.line(15, yPos, 195, yPos);
       yPos += 5;
-      doc.setFont('helvetica', 'bold');
-      doc.text('COMODANTE', 105, yPos, { align: 'center' });
-      yPos += 4;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(nomeLoja, 105, yPos, { align: 'center' });
-      yPos += 3;
-      doc.text('Venerável Mestre: _______________________________', 105, yPos, { align: 'center' });
-      yPos += 20;
 
-      // COMODATÁRIO
-      doc.setFontSize(10);
-      doc.text('_'.repeat(65), 105, yPos, { align: 'center' });
+      // Texto centralizado
+      doc.setFontSize(9);
+      doc.text(`${nomeLoja}`, 105, yPos, { align: 'center' });
+      yPos += 4;
+      doc.text('Comodante - Beneficente - Ir∴ Hosp∴ - Elder Barbosa Machado', 105, yPos, { align: 'center' });
+      yPos += 15;
+
+      // ========================================
+      // DUAS LINHAS DE ASSINATURA (conforme imagem)
+      // ========================================
+      
+      // Linha esquerda
+      doc.line(15, yPos, 95, yPos);
+      // Linha direita
+      doc.line(115, yPos, 195, yPos);
       yPos += 5;
-      doc.setFont('helvetica', 'bold');
-      doc.text('COMODATÁRIO(A)', 105, yPos, { align: 'center' });
-      yPos += 4;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text(beneficiario?.nome || '', 105, yPos, { align: 'center' });
-      yPos += 3;
-      doc.text(`CPF: ${beneficiario?.cpf || ''}`, 105, yPos, { align: 'center' });
-      yPos += 20;
 
-      // RESPONSÁVEL (se houver)
-      if (responsaveis && responsaveis.length > 0) {
-        const resp = responsaveis[0];
-        doc.setFontSize(10);
-        doc.text('_'.repeat(65), 105, yPos, { align: 'center' });
-        yPos += 5;
-        doc.setFont('helvetica', 'bold');
-        doc.text('RESPONSÁVEL SOLIDÁRIO', 105, yPos, { align: 'center' });
-        yPos += 4;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.text(resp.nome || '', 105, yPos, { align: 'center' });
-        yPos += 3;
-        doc.text(`CPF: ${resp.cpf || ''}`, 105, yPos, { align: 'center' });
-      }
+      // Textos
+      doc.text('Comodatário - Beneficiário', 55, yPos, { align: 'center' });
+      doc.text('Comodatário - Responsável', 155, yPos, { align: 'center' });
 
       // SALVAR
-      doc.save(`Termo_Comodato_${emprestimo.id}_${beneficiario?.nome?.replace(/\s+/g,'_')}.pdf`);
+      const nomeArquivo = `Termo_Comodato_${String(emprestimo.id).padStart(4, '0')}_${beneficiario?.nome?.replace(/\s+/g,'_') || 'Beneficiario'}.pdf`;
+      doc.save(nomeArquivo);
       
       showSuccess('Termo gerado com sucesso!');
     } catch (error) {
