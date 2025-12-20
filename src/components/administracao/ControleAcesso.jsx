@@ -111,10 +111,14 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
   };
 
   const calcularEstatisticas = (logsData) => {
-    const hoje = new Date().toISOString().split('T')[0];
-    const acoesHoje = logsData.filter(log => 
-      log.created_at.startsWith(hoje)
-    ).length;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    
+    const acoesHoje = logsData.filter(log => {
+      const dataLog = new Date(log.created_at);
+      dataLog.setHours(0, 0, 0, 0);
+      return dataLog.getTime() === hoje.getTime();
+    }).length;
 
     const usuariosUnicos = new Set(logsData.map(log => log.usuario_id)).size;
 
