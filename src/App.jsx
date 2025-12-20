@@ -615,20 +615,20 @@ function App() {
   const loadCronograma = async () => {
     try {
       const { data, error } = await supabase
-        .from('cronograma')
+        .from('eventos_comemorativos')
         .select('*')
-        .order('data_evento', { ascending: true });
+        .order('mes', { ascending: true });
       
       if (error) {
-        console.error('Erro ao carregar cronograma:', error);
-        setCronograma([]); // Define vazio em caso de erro
+        console.error('Erro ao carregar eventos:', error);
+        setCronograma([]);
         return;
       }
       
-      console.log('✅ Cronograma carregado:', data?.length || 0);
+      console.log('✅ Eventos comemorativos carregados:', data?.length || 0);
       setCronograma(data || []);
     } catch (err) {
-      console.error('Exceção ao carregar cronograma:', err);
+      console.error('Exceção ao carregar eventos:', err);
       setCronograma([]);
     }
   };
