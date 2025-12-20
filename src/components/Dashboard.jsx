@@ -424,14 +424,14 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             
             const eventosProximos = cronograma
               .filter(evento => {
-                if (!evento.data) return false;
-                const dataEvento = new Date(evento.data + 'T00:00:00');
+                if (!evento.data_evento) return false;
+                const dataEvento = new Date(evento.data_evento + 'T00:00:00');
                 dataEvento.setHours(0, 0, 0, 0);
                 const diffDias = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
-                console.log(`Evento: ${evento.titulo} - Data: ${evento.data} - Diff: ${diffDias} dias`);
+                console.log(`Evento: ${evento.titulo} - Data: ${evento.data_evento} - Diff: ${diffDias} dias`);
                 return diffDias >= 0 && diffDias <= 30; // Inclui hoje (0) até 30 dias
               })
-              .sort((a, b) => new Date(a.data) - new Date(b.data))
+              .sort((a, b) => new Date(a.data_evento) - new Date(b.data_evento))
               .slice(0, 5); // Limita a 5 eventos
 
             console.log('📅 Eventos filtrados:', eventosProximos);
@@ -439,7 +439,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             return eventosProximos.length > 0 ? (
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {eventosProximos.map((evento, idx) => {
-                  const dataEvento = new Date(evento.data + 'T00:00:00');
+                  const dataEvento = new Date(evento.data_evento + 'T00:00:00');
                   const hoje = new Date();
                   const diffDias = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
                   const ehHoje = diffDias === 0;
