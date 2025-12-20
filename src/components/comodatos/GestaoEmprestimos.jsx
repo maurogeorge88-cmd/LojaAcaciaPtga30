@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
+import { gerarTermoComodato } from './utils/termoComodatoPDF';
 
 export default function GestaoEmprestimos({ showSuccess, showError, permissoes }) {
   const [emprestimos, setEmprestimos] = useState([]);
@@ -244,6 +245,58 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
     setModalAberto(true);
   };
 
+  const gerarTermo = async (emprestimo) => {
+    try {
+      showSuccess('Gerando Termo de Comodato...');
+
+      // Buscar dados da loja
+      const { data: dadosLoja, error: erroLoja } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
+
+      if (erroLoja) {
+        console.log('Dados da loja não encontrados, usando padrão');
+      }
+
+      // Buscar dados completos do empréstimo com responsáveis
+      const { data: emprestimoCompleto, error: erroEmp } = await supabase
+        .from('comodatos')
+        .select(`
+          *,
+          beneficiarios (*),
+          itens:comodato_itens (
+            *,
+            equipamentos (
+              *,
+              tipos_equipamentos (*)
+            )
+          )
+        `)
+        .eq('id', emprestimo.id)
+        .single();
+
+      if (erroEmp) throw erroEmp;
+
+      // Buscar responsáveis do beneficiário
+      const { data: responsaveis } = await supabase
+        .from('responsaveis')
+        .select('*')
+        .eq('beneficiario_id', emprestimoCompleto.beneficiario_id);
+
+      // Adicionar responsáveis ao objeto
+      emprestimoCompleto.beneficiarios.responsaveis = responsaveis || [];
+
+      // Gerar o PDF
+      await gerarTermoComodato(emprestimoCompleto, dadosLoja || {}, supabase);
+      
+      showSuccess('Termo gerado com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar termo:', error);
+      showError('Erro ao gerar termo: ' + error.message);
+    }
+  };
+
   const excluirEmprestimo = async (emprestimo) => {
     if (!window.confirm('Excluir este empréstimo? Os equipamentos serão liberados.')) return;
 
@@ -411,6 +464,13 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
               </p>
               {permissoes?.pode_editar_comodatos && (
                 <div className="flex gap-1 mt-2">
+                  <button
+                    onClick={() => gerarTermo(emp)}
+                    className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                    title="Gerar Termo de Comodato"
+                  >
+                    📄 Termo
+                  </button>
                   <button
                     onClick={() => abrirEdicao(emp)}
                     className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
