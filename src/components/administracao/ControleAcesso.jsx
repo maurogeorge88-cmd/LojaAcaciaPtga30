@@ -495,33 +495,37 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
                         className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                       />
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900">
                       {formatarDataHora(log.created_at)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                    <td className="px-3 py-3 whitespace-nowrap">
+                      <div className="text-xs font-medium text-gray-900">
                         {log.usuario?.nome || 'Usuário Desconhecido'}
                       </div>
                       <div className="text-xs text-gray-500">
                         {log.usuario?.email || '-'}
                       </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getCorAcao(log.acao)}`}>
-                        <span>{getIconeAcao(log.acao)}</span>
-                        <span>{log.acao?.toUpperCase()}</span>
+                    <td className="px-2 py-3 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getCorAcao(log.acao)}`}>
+                        <span className="text-xs">{getIconeAcao(log.acao)}</span>
+                        <span className="text-xs">{log.acao?.toUpperCase()}</span>
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate">
-                      {log.detalhes || '-'}
+                    <td className="px-3 py-3 text-xs text-gray-900 max-w-md">
+                      <div className="break-words line-clamp-2">
+                        {log.detalhes || '-'}
+                      </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500 font-mono">
+                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 font-mono">
                       {log.ip || '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
-                      {log.user_agent || '-'}
+                    <td className="px-2 py-3 text-xs text-gray-500 max-w-xs">
+                      <div className="truncate" title={log.user_agent || '-'}>
+                        {log.user_agent?.substring(0, 30) || '-'}...
+                      </div>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm">
                       <button
                         onClick={() => excluirLog(log.id)}
                         className="text-red-600 hover:text-red-800 font-medium"
