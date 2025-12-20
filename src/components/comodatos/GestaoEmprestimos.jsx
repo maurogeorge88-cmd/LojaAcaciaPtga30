@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
-import { gerarTermoComodato } from './utils/termoComodatoPDF';
+// import { gerarTermoComodato } from './utils/termoComodatoPDF';
 
 export default function GestaoEmprestimos({ showSuccess, showError, permissoes }) {
   const [emprestimos, setEmprestimos] = useState([]);
@@ -249,6 +249,10 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
     try {
       showSuccess('Gerando Termo de Comodato...');
 
+      // Importar jsPDF
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+
       // Buscar dados da loja
       const { data: dadosLoja, error: erroLoja } = await supabase
         .from('dados_loja')
@@ -256,10 +260,10 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         .single();
 
       if (erroLoja) {
-        console.log('Dados da loja não encontrados, usando padrão');
+        console.log('Dados da loja não encontrados');
       }
 
-      // Buscar dados completos do empréstimo com responsáveis
+      // Buscar dados completos
       const { data: emprestimoCompleto, error: erroEmp } = await supabase
         .from('comodatos')
         .select(`
@@ -267,10 +271,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
           beneficiarios (*),
           itens:comodato_itens (
             *,
-            equipamentos (
-              *,
-              tipos_equipamentos (*)
-            )
+            equipamentos (*, tipos_equipamentos (*))
           )
         `)
         .eq('id', emprestimo.id)
@@ -278,21 +279,121 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
 
       if (erroEmp) throw erroEmp;
 
-      // Buscar responsáveis do beneficiário
+      // Buscar responsáveis
       const { data: responsaveis } = await supabase
         .from('responsaveis')
         .select('*')
         .eq('beneficiario_id', emprestimoCompleto.beneficiario_id);
 
-      // Adicionar responsáveis ao objeto
       emprestimoCompleto.beneficiarios.responsaveis = responsaveis || [];
 
-      // Gerar o PDF
-      await gerarTermoComodato(emprestimoCompleto, dadosLoja || {}, supabase);
+      // Gerar PDF
+      const doc = new jsPDF();
+      let yPos = 15;
+
+      // Logo
+      if (dadosLoja?.logo_url) {
+        try {
+          doc.addImage(dadosLoja.logo_url, 'PNG', 15, yPos, 30, 30);
+        } catch (e) {}
+      }
+
+      // Dados loja (topo direito)
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(dadosLoja?.nome_loja || 'Loja Maçônica', 200, yPos, { align: 'right' });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      yPos += 4;
+      if (dadosLoja?.endereco) {
+        doc.text(dadosLoja.endereco, 200, yPos, { align: 'right' });
+        yPos += 3;
+      }
+      if (dadosLoja?.cidade) {
+        doc.text(`${dadosLoja.cidade}/${dadosLoja.estado || ''}`, 200, yPos, { align: 'right' });
+      }
+
+      yPos = 50;
+
+      // Título
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('TERMO DE COMODATO', 105, yPos, { align: 'center' });
+      yPos += 6;
+      doc.setFontSize(10);
+      doc.text(`Nº ${emprestimo.id}/${new Date().getFullYear()}`, 105, yPos, { align: 'center' });
+      yPos += 10;
+
+      // Comodante
+      doc.setFont('helvetica', 'bold');
+      doc.text('COMODANTE:', 15, yPos);
+      doc.setFont('helvetica', 'normal');
+      yPos += 5;
+      const textoComodante = `${dadosLoja?.nome_loja || ''} nº ${dadosLoja?.numero_loja || ''}, ${dadosLoja?.endereco || ''}, ${dadosLoja?.cidade || ''}/${dadosLoja?.estado || ''}.`;
+      const linhasComodante = doc.splitTextToSize(textoComodante, 180);
+      doc.text(linhasComodante, 15, yPos);
+      yPos += linhasComodante.length * 5 + 5;
+
+      // Comodatário
+      doc.setFont('helvetica', 'bold');
+      doc.text('COMODATÁRIO:', 15, yPos);
+      doc.setFont('helvetica', 'normal');
+      yPos += 5;
+      const textoComodatario = `${emprestimoCompleto.beneficiarios?.nome || ''}, CPF ${emprestimoCompleto.beneficiarios?.cpf || ''}, ${emprestimoCompleto.beneficiarios?.endereco || ''}.`;
+      const linhasComodatario = doc.splitTextToSize(textoComodatario, 180);
+      doc.text(linhasComodatario, 15, yPos);
+      yPos += linhasComodatario.length * 5 + 10;
+
+      // Objeto
+      doc.setFont('helvetica', 'bold');
+      doc.text('EQUIPAMENTO(S):', 15, yPos);
+      yPos += 5;
+      doc.setFont('helvetica', 'normal');
+      emprestimoCompleto.itens?.forEach((item, idx) => {
+        doc.text(`${idx + 1}. ${item.equipamentos?.tipos_equipamentos?.nome || ''} - Patrimônio: ${item.equipamentos?.numero_patrimonio || ''}`, 20, yPos);
+        yPos += 5;
+      });
+      yPos += 5;
+
+      // Data
+      const dataEmp = new Date(emprestimoCompleto.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR');
+      doc.text(`Data do Empréstimo: ${dataEmp}`, 15, yPos);
+      yPos += 10;
+
+      // Assinaturas
+      if (yPos > 220) {
+        doc.addPage();
+        yPos = 60;
+      }
+
+      const hoje = new Date();
+      const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+      doc.text(`${dadosLoja?.cidade || ''}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}`, 105, yPos, { align: 'center' });
+      yPos += 20;
+
+      // Comodante
+      doc.text('_'.repeat(50), 105, yPos, { align: 'center' });
+      yPos += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.text('COMODANTE', 105, yPos, { align: 'center' });
+      yPos += 15;
+
+      // Comodatário
+      doc.setFont('helvetica', 'normal');
+      doc.text('_'.repeat(50), 105, yPos, { align: 'center' });
+      yPos += 5;
+      doc.setFont('helvetica', 'bold');
+      doc.text('COMODATÁRIO', 105, yPos, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      yPos += 4;
+      doc.setFontSize(9);
+      doc.text(emprestimoCompleto.beneficiarios?.nome || '', 105, yPos, { align: 'center' });
+
+      doc.save(`Termo_${emprestimo.id}_${emprestimoCompleto.beneficiarios?.nome?.replace(/\s/g,'_')}.pdf`);
       
       showSuccess('Termo gerado com sucesso!');
     } catch (error) {
-      console.error('Erro ao gerar termo:', error);
+      console.error('Erro:', error);
       showError('Erro ao gerar termo: ' + error.message);
     }
   };
