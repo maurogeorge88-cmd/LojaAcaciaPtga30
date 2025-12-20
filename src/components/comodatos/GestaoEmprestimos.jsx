@@ -403,9 +403,11 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       // ========================================
       doc.setFont('helvetica', 'normal');
       
-      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do bem descrito a seguir, o qual é disponibilizado pela Loja Maçônica - A∴R∴L∴S∴, Acácia de Paranatinga nº 30, para que seja utilizado pelo beneficiário acima identificado, sendo vedada a transferência a terceiros sem a autorização do cedente.
+      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do bem descrito a seguir, o qual é
+      disponibilizado pela Loja Maçônica - A∴R∴L∴S∴, Acácia de Paranatinga nº 30, para que seja utilizado pelo beneficiário acima 
+      identificado, sendo vedada a transferência a terceiros sem a autorização do cedente.
 
-O beneficiário deve cuidar do bem disponibilizado e devolvê-lo em boas condições para uso posterior, e será responsabilizado por quaisquer danos ou perda.
+O beneficiário deve cuidar do bem disponibilizado e devolvê-lo em boas condições para uso posterior,  e  será responsabilizado por quaisquer danos ou perda.
 
 Se o bem disponibilizado não seja mais necessário ao beneficiário identificado, que seja o mesmo devidamente devolvido.
 
@@ -449,7 +451,7 @@ Caso os dados de endereço ou de contato houver alterações, solicitamos que as
       doc.setFontSize(9);
       doc.text(`${nomeLoja}`, 105, yPos, { align: 'center' });
       yPos += 4;
-      doc.text('Comodante - Beneficente - Ir∴ Hosp∴ - Elder Barbosa Machado', 105, yPos, { align: 'center' });
+      doc.text('Comodante', 105, yPos, { align: 'center' });
       yPos += 15;
 
       // ========================================
