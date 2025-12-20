@@ -1640,6 +1640,152 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 )}
               </div>
 
+              {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
+                <>
+                  {/* SUBMENU: CONTROLE FINANCEIRO */}
+                  <div className="border-t border-blue-700 mt-2 pt-2">
+                    <button
+                      onClick={() => setSubmenuFinanceiro(!submenuFinanceiro)}
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                      title="Controle Financeiro"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">💰</span>
+                        {menuAberto && <span className="font-semibold">Controle Financeiro</span>}
+                      </div>
+                      {menuAberto && (
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${submenuFinanceiro ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Subitens do submenu */}
+                    {(submenuFinanceiro && menuAberto) && (
+                      <div className="bg-blue-950 bg-opacity-50">
+                        <button
+                          onClick={() => setCurrentPage('financas-loja')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'financas-loja'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>🏦</span>
+                          <span>Finanças - Loja</span>
+                        </button>
+
+                        <button
+                          onClick={() => setCurrentPage('lancamentos-lote')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'lancamentos-lote'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>📦</span>
+                          <span>Lançamentos em Lote</span>
+                        </button>
+
+                        <button
+                          onClick={() => setCurrentPage('creditos-debitos')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'creditos-debitos'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>💵</span>
+                          <span>Créditos/Débitos</span>
+                        </button>
+
+                        <button
+                          onClick={() => setCurrentPage('categorias-financeiras')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'categorias-financeiras'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>🏷️</span>
+                          <span>Categorias</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SUBMENU: FILANTROPIA */}
+                  <div className="border-t border-blue-700 mt-2 pt-2">
+                    <button
+                      onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                      title="Filantropia"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🤝</span>
+                        {menuAberto && <span className="font-semibold">Filantropia</span>}
+                      </div>
+                      {menuAberto && (
+                        <svg 
+                          className={`w-4 h-4 transition-transform ${submenuFilantropia ? 'rotate-180' : ''}`} 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Subitens do submenu */}
+                    {(submenuFilantropia && menuAberto) && (
+                      <div className="bg-blue-950 bg-opacity-50">
+                        <button
+                          onClick={() => setCurrentPage('comodatos')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'comodatos'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>♿</span>
+                          <span>Comodatos</span>
+                        </button>
+
+                        <button
+                          onClick={() => setCurrentPage('caridade')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'caridade'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>❤️</span>
+                          <span>Caridade</span>
+                        </button>
+
+                        <button
+                          onClick={() => setCurrentPage('eventos')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'eventos'
+                              ? 'bg-blue-700 border-l-4 border-white'
+                              : 'hover:bg-blue-800'
+                          }`}
+                        >
+                          <span>🎉</span>
+                          <span>Eventos</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
               {/* ITENS INDIVIDUAIS */}
               <div className="border-t border-blue-700 mt-2 pt-2">
                 <button
@@ -1680,155 +1826,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   <span className="text-base">📅</span>
                   {menuAberto && <span className="font-semibold">Cronograma</span>}
                 </button>
-
-                {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
-                  <>
-                    {/* SUBMENU: CONTROLE FINANCEIRO */}
-                    <div className="border-t border-blue-700 mt-2 pt-2">
-                      <button
-                        onClick={() => setSubmenuFinanceiro(!submenuFinanceiro)}
-                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
-                        title="Controle Financeiro"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">💰</span>
-                          {menuAberto && <span className="font-semibold">Controle Financeiro</span>}
-                        </div>
-                        {menuAberto && (
-                          <svg 
-                            className={`w-4 h-4 transition-transform ${submenuFinanceiro ? 'rotate-180' : ''}`} 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )}
-                      </button>
-
-                      {/* Subitens do submenu */}
-                      {(submenuFinanceiro && menuAberto) && (
-                        <div className="bg-blue-950 bg-opacity-50">
-                          <button
-                            onClick={() => setCurrentPage('financas-loja')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'financas-loja'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>🏦</span>
-                            <span>Finanças - Loja</span>
-                          </button>
-
-
-                          {/* LANÇAMENTOS EM LOTE */}
-                          <button
-                            onClick={() => setCurrentPage('lancamentos-lote')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'lancamentos-lote'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>📦</span>
-                            <span>Lançamentos em Lote</span>
-                          </button>
-
-                          {/* CRÉDITOS E DÉBITOS */}
-                          <button
-                            onClick={() => setCurrentPage('creditos-debitos')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'creditos-debitos'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>💵</span>
-                            <span>Créditos/Débitos</span>
-                          </button>
-
-                          <button
-                            onClick={() => setCurrentPage('categorias-financeiras')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'categorias-financeiras'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>🏷️</span>
-                            <span>Categorias</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* SUBMENU: FILANTROPIA */}
-                    <div className="border-t border-blue-700 mt-2 pt-2">
-                      <button
-                        onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
-                        className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
-                        title="Filantropia"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-base">🤝</span>
-                          {menuAberto && <span className="font-semibold">Filantropia</span>}
-                        </div>
-                        {menuAberto && (
-                          <svg 
-                            className={`w-4 h-4 transition-transform ${submenuFilantropia ? 'rotate-180' : ''}`} 
-                            fill="none" 
-                            stroke="currentColor" 
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        )}
-                      </button>
-
-                      {/* Subitens do submenu */}
-                      {(submenuFilantropia && menuAberto) && (
-                        <div className="bg-blue-950 bg-opacity-50">
-                          <button
-                            onClick={() => setCurrentPage('comodatos')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'comodatos'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>♿</span>
-                            <span>Comodatos</span>
-                          </button>
-
-                          <button
-                            onClick={() => setCurrentPage('caridade')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'caridade'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>❤️</span>
-                            <span>Caridade</span>
-                          </button>
-
-                          <button
-                            onClick={() => setCurrentPage('eventos')}
-                            className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                              currentPage === 'eventos'
-                                ? 'bg-blue-700 border-l-4 border-white'
-                                : 'hover:bg-blue-800'
-                            }`}
-                          >
-                            <span>🎉</span>
-                            <span>Eventos</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
 
                 <button
                   onClick={() => setCurrentPage('aniversariantes')}
