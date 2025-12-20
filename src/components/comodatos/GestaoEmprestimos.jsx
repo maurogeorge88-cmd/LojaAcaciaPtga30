@@ -365,12 +365,14 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">📦 Empréstimos</h2>
-        <button
-          onClick={() => setModalAberto(true)}
-          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-        >
-          ➕ Novo Empréstimo
-        </button>
+        {permissoes?.pode_editar_comodatos && (
+          <button
+            onClick={() => setModalAberto(true)}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
+          >
+            ➕ Novo Empréstimo
+          </button>
+        )}
       </div>
 
       {/* FILTROS */}
@@ -407,22 +409,24 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
               <p className="text-xs text-gray-500">
                 Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
               </p>
-              <div className="flex gap-1 mt-2">
-                <button
-                  onClick={() => abrirEdicao(emp)}
-                  className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                  title="Editar empréstimo"
-                >
-                  ✏️ Editar
-                </button>
-                <button
-                  onClick={() => excluirEmprestimo(emp)}
-                  className="flex-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                  title="Excluir empréstimo"
-                >
-                  🗑️ Excluir
-                </button>
-              </div>
+              {permissoes?.pode_editar_comodatos && (
+                <div className="flex gap-1 mt-2">
+                  <button
+                    onClick={() => abrirEdicao(emp)}
+                    className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    title="Editar empréstimo"
+                  >
+                    ✏️ Editar
+                  </button>
+                  <button
+                    onClick={() => excluirEmprestimo(emp)}
+                    className="flex-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                    title="Excluir empréstimo"
+                  >
+                    🗑️ Excluir
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* ITENS DO EMPRÉSTIMO */}
@@ -452,7 +456,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
                       Devolvido: {new Date(item.data_devolucao_real).toLocaleDateString()}
                     </p>
                   )}
-                  {item.status === 'emprestado' && (
+                  {item.status === 'emprestado' && permissoes?.pode_editar_comodatos && (
                     <button
                       onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
                       className="w-full mt-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
