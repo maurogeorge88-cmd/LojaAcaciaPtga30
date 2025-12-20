@@ -5,7 +5,7 @@
 
 import React, { useMemo } from 'react';
 
-export const Dashboard = ({ irmaos, balaustres }) => {
+export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
@@ -274,7 +274,7 @@ export const Dashboard = ({ irmaos, balaustres }) => {
         </div>
       </div>
       {/* ANIVERSARIANTES - LAYOUT COMPACTO */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* ANIVERSARIANTES DO DIA - COR MAIS CLARA */}
         <div className="bg-gradient-to-br from-pink-300 to-rose-400 text-white rounded-xl shadow-lg p-6">
           <div className="flex items-center justify-between mb-4">
@@ -406,6 +406,76 @@ export const Dashboard = ({ irmaos, balaustres }) => {
               <p className="text-white/80 text-sm">Nenhum aniversário nos próximos 7 dias</p>
             </div>
           )}
+        </div>
+
+        {/* EVENTOS COMEMORATIVOS */}
+        <div className="bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">📅 Datas Comemorativas</h3>
+            <div className="text-4xl">🎊</div>
+          </div>
+          
+          {(() => {
+            const hoje = new Date();
+            const eventosProximos = cronograma
+              .filter(evento => {
+                const dataEvento = new Date(evento.data + 'T00:00:00');
+                const diffDias = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
+                return diffDias >= 0 && diffDias <= 30; // Próximos 30 dias
+              })
+              .sort((a, b) => new Date(a.data) - new Date(b.data))
+              .slice(0, 5); // Limita a 5 eventos
+
+            return eventosProximos.length > 0 ? (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                {eventosProximos.map((evento, idx) => {
+                  const dataEvento = new Date(evento.data + 'T00:00:00');
+                  const hoje = new Date();
+                  const diffDias = Math.ceil((dataEvento - hoje) / (1000 * 60 * 60 * 24));
+                  const ehHoje = diffDias === 0;
+
+                  return (
+                    <div 
+                      key={idx}
+                      className={`backdrop-blur-sm rounded-lg p-3 border ${
+                        ehHoje 
+                          ? 'bg-yellow-300/40 border-yellow-200' 
+                          : 'bg-white/20 border-white/30'
+                      }`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="text-2xl">{evento.tipo === 'Maçônico' ? '🔷' : '🎊'}</div>
+                        <div className="flex-1">
+                          <div className="font-bold text-base">{evento.titulo}</div>
+                          <div className="text-sm opacity-90 flex items-center gap-2 flex-wrap mt-1">
+                            <span>{evento.tipo}</span>
+                            <span>•</span>
+                            <span>📆 {dataEvento.toLocaleDateString('pt-BR', { 
+                              day: '2-digit', 
+                              month: 'long' 
+                            })}</span>
+                            {ehHoje && (
+                              <>
+                                <span>•</span>
+                                <span className="bg-yellow-300 text-yellow-900 px-2 py-0.5 rounded-full text-xs font-bold">
+                                  HOJE
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-6 bg-white/10 rounded-lg">
+                <div className="text-3xl mb-2">📅</div>
+                <p className="text-white/80 text-sm">Nenhum evento nos próximos 30 dias</p>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
