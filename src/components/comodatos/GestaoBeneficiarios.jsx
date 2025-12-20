@@ -53,20 +53,16 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
       if (benError) throw benError;
 
-      // Para cada beneficiário, carregar seus responsáveis
-      const beneficiariosComResponsaveis = await Promise.all(
-        (benData || []).map(async (ben) => {
-          const { data: respData } = await supabase
-            .from('responsaveis')
-            .select('*')
-            .eq('beneficiario_id', ben.id);
-          
-          return {
-            ...ben,
-            responsaveis: respData || []
-          };
-        })
-      );
+      // Carregar todos os responsáveis de uma vez
+      const { data: respData } = await supabase
+        .from('responsaveis')
+        .select('*');
+
+      // Mapear responsáveis para cada beneficiário
+      const beneficiariosComResponsaveis = (benData || []).map(ben => ({
+        ...ben,
+        responsaveis: (respData || []).filter(resp => resp.beneficiario_id === ben.id)
+      }));
 
       setBeneficiarios(beneficiariosComResponsaveis);
       setLoading(false);
@@ -80,7 +76,24 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   const abrirModal = (beneficiario = null) => {
     if (beneficiario) {
       setEditando(beneficiario);
-      setForm(beneficiario);
+      // Extrair apenas os campos válidos da tabela beneficiarios
+      setForm({
+        nome: beneficiario.nome || '',
+        cpf: beneficiario.cpf || '',
+        rg: beneficiario.rg || '',
+        data_nascimento: beneficiario.data_nascimento || '',
+        telefone: beneficiario.telefone || '',
+        celular: beneficiario.celular || '',
+        email: beneficiario.email || '',
+        cep: beneficiario.cep || '',
+        endereco: beneficiario.endereco || '',
+        numero: beneficiario.numero || '',
+        complemento: beneficiario.complemento || '',
+        bairro: beneficiario.bairro || '',
+        cidade: beneficiario.cidade || '',
+        estado: beneficiario.estado || 'MT',
+        observacoes: beneficiario.observacoes || ''
+      });
     } else {
       setEditando(null);
       setForm({
