@@ -44,16 +44,31 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   const carregarBeneficiarios = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Carregar beneficiários
+      const { data: benData, error: benError } = await supabase
         .from('beneficiarios')
-        .select(`
-          *,
-          responsaveis (*)
-        `)
+        .select('*')
         .order('nome');
 
-      if (error) throw error;
-      setBeneficiarios(data || []);
+      if (benError) throw benError;
+
+      // Para cada beneficiário, carregar seus responsáveis
+      const beneficiariosComResponsaveis = await Promise.all(
+        (benData || []).map(async (ben) => {
+          const { data: respData } = await supabase
+            .from('responsaveis')
+            .select('*')
+            .eq('beneficiario_id', ben.id);
+          
+          return {
+            ...ben,
+            responsaveis: respData || []
+          };
+        })
+      );
+
+      setBeneficiarios(beneficiariosComResponsaveis);
       setLoading(false);
     } catch (error) {
       console.error('Erro:', error);
