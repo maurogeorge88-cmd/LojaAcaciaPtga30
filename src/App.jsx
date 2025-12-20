@@ -617,7 +617,7 @@ function App() {
       const { data, error } = await supabase
         .from('cronograma')
         .select('*')
-        .order('data', { ascending: true });
+        .order('data_evento', { ascending: true });
       
       if (error) {
         console.error('Erro ao carregar cronograma:', error);
