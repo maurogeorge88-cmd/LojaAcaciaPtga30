@@ -1296,6 +1296,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           {/* ===== MENU PARA IRMÃO COMUM ===== */}
           {userData?.nivel_acesso === 'irmao' && (
             <>
+              {/* MEU CADASTRO E VISUALIZAR */}
               <button
                 onClick={() => setCurrentPage('meu-cadastro')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -1335,161 +1336,215 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 {menuAberto && <span className="font-semibold">Minhas Finanças</span>}
               </button>
 
-              <button
-                onClick={() => setCurrentPage('balaustres')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'balaustres'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Balaustres"
-              >
-                <span className="text-base">📜</span>
-                {menuAberto && <span className="font-semibold">Balaustres</span>}
-              </button>
+              {/* SUBMENU: EXPEDIENTES */}
+              <div className="border-t border-blue-700 mt-2 pt-2">
+                <button
+                  onClick={() => setSubmenuExpedientes(!submenuExpedientes)}
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  title="Expedientes"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">📑</span>
+                    {menuAberto && <span className="font-semibold">Expedientes</span>}
+                  </div>
+                  {menuAberto && (
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${submenuExpedientes ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </button>
 
-              <button
-                onClick={() => setCurrentPage('pranchas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'pranchas'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Pranchas"
-              >
-                <span className="text-base">📄</span>
-                {menuAberto && <span className="font-semibold">Pranchas</span>}
-              </button>
+                {(submenuExpedientes && menuAberto) && (
+                  <div className="bg-blue-950 bg-opacity-50">
+                    <button
+                      onClick={() => setCurrentPage('balaustres')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'balaustres'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>📜</span>
+                      <span>Balaustres</span>
+                    </button>
 
-              <button
-                onClick={() => setCurrentPage('cronograma')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'cronograma'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Cronograma"
-              >
-                <span className="text-base">📅</span>
-                {menuAberto && <span className="font-semibold">Cronograma</span>}
-              </button>
+                    <button
+                      onClick={() => setCurrentPage('pranchas')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'pranchas'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>📄</span>
+                      <span>Pranchas</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
-              <button
-                onClick={() => setCurrentPage('corpo-admin')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'corpo-admin'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Administração"
-              >
-                <span className="text-base">👔</span>
-                {menuAberto && <span className="font-semibold">Administração</span>}
-              </button>
+              {/* SUBMENU: FILANTROPIA */}
+              <div className="border-t border-blue-700 mt-2 pt-2">
+                <button
+                  onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  title="Filantropia"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🤝</span>
+                    {menuAberto && <span className="font-semibold">Filantropia</span>}
+                  </div>
+                  {menuAberto && (
+                    <svg 
+                      className={`w-4 h-4 transition-transform ${submenuFilantropia ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  )}
+                </button>
 
-              <button
-                onClick={() => setCurrentPage('comissoes')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'comissoes'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Comissões"
-              >
-                <span className="text-base">📋</span>
-                {menuAberto && <span className="font-semibold">Comissões</span>}
-              </button>
+                {(submenuFilantropia && menuAberto) && (
+                  <div className="bg-blue-950 bg-opacity-50">
+                    <button
+                      onClick={() => setCurrentPage('comodatos')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'comodatos'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>♿</span>
+                      <span>Comodatos</span>
+                    </button>
 
-              <button
-                onClick={() => setCurrentPage('altos-graus')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'altos-graus'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Altos Graus"
-              >
-                <span className="text-base">🔺</span>
-                {menuAberto && <span className="font-semibold">Altos Graus</span>}
-              </button>
+                    <button
+                      onClick={() => setCurrentPage('caridade')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'caridade'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>❤️</span>
+                      <span>Caridade</span>
+                    </button>
 
-              <button
-                onClick={() => setCurrentPage('biblioteca')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'biblioteca'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Biblioteca"
-              >
-                <span className="text-base">📚</span>
-                {menuAberto && <span className="font-semibold">Biblioteca</span>}
-              </button>
+                    <button
+                      onClick={() => setCurrentPage('eventos')}
+                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                        currentPage === 'eventos'
+                          ? 'bg-blue-700 border-l-4 border-white'
+                          : 'hover:bg-blue-800'
+                      }`}
+                    >
+                      <span>🎉</span>
+                      <span>Eventos</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
-              <button
-                onClick={() => setCurrentPage('aniversariantes')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'aniversariantes'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Festividades"
-              >
-                <span className="text-base">🎉</span>
-                {menuAberto && <span className="font-semibold">Festividades</span>}
-              </button>
+              {/* ITENS INDIVIDUAIS */}
+              <div className="border-t border-blue-700 mt-2 pt-2">
+                <button
+                  onClick={() => setCurrentPage('comissoes')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'comissoes'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Comissões"
+                >
+                  <span className="text-base">📋</span>
+                  {menuAberto && <span className="font-semibold">Comissões</span>}
+                </button>
 
-              <button
-                onClick={() => setCurrentPage('comodatos')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'comodatos'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Comodatos"
-              >
-                <span className="text-base">♿</span>
-                {menuAberto && <span className="font-semibold">Comodatos</span>}
-              </button>
+                <button
+                  onClick={() => setCurrentPage('biblioteca')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'biblioteca'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Biblioteca"
+                >
+                  <span className="text-base">📚</span>
+                  {menuAberto && <span className="font-semibold">Biblioteca</span>}
+                </button>
 
-              <button
-                onClick={() => setCurrentPage('caridade')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'caridade'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Caridade"
-              >
-                <span className="text-base">❤️</span>
-                {menuAberto && <span className="font-semibold">Caridade</span>}
-              </button>
+                <button
+                  onClick={() => setCurrentPage('cronograma')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'cronograma'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Cronograma"
+                >
+                  <span className="text-base">📅</span>
+                  {menuAberto && <span className="font-semibold">Cronograma</span>}
+                </button>
 
-              <button
-                onClick={() => setCurrentPage('eventos')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'eventos'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Eventos"
-              >
-                <span className="text-base">🎉</span>
-                {menuAberto && <span className="font-semibold">Eventos</span>}
-              </button>
+                <button
+                  onClick={() => setCurrentPage('aniversariantes')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'aniversariantes'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Festividades"
+                >
+                  <span className="text-base">🎉</span>
+                  {menuAberto && <span className="font-semibold">Festividades</span>}
+                </button>
 
-              <button
-                onClick={() => setCurrentPage('sobre')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'sobre'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
-                }`}
-                title="Sobre"
-              >
-                <span className="text-base">ℹ️</span>
-                {menuAberto && <span className="font-semibold">Sobre</span>}
-              </button>
+                <button
+                  onClick={() => setCurrentPage('corpo-admin')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'corpo-admin'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Administração"
+                >
+                  <span className="text-base">📋</span>
+                  {menuAberto && <span className="font-semibold">Administração</span>}
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage('altos-graus')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'altos-graus'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Altos Graus"
+                >
+                  <span className="text-base">🔺</span>
+                  {menuAberto && <span className="font-semibold">Altos Graus</span>}
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage('sobre')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'sobre'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Sobre"
+                >
+                  <span className="text-base">ℹ️</span>
+                  {menuAberto && <span className="font-semibold">Sobre</span>}
+                </button>
+              </div>
             </>
           )}
 
