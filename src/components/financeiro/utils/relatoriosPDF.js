@@ -1,11 +1,27 @@
-import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { formatarDataBR } from './formatadores';
+
+// Função auxiliar para obter jsPDF
+const getJsPDF = async () => {
+  // Tentar primeiro o import global
+  if (window.jspdf && window.jspdf.jsPDF) {
+    return window.jspdf.jsPDF;
+  }
+  
+  // Fallback: importar dinamicamente
+  try {
+    const module = await import('jspdf');
+    return module.default;
+  } catch (error) {
+    console.error('Erro ao carregar jsPDF:', error);
+    throw new Error('jsPDF não pôde ser carregado');
+  }
+};
 
 /**
  * Gera relatório PDF detalhado com todos os lançamentos
  */
-export const gerarRelatorioPDF = ({
+export const gerarRelatorioPDF = async ({
   lancamentos,
   categorias,
   filtros,
@@ -13,6 +29,7 @@ export const gerarRelatorioPDF = ({
   saldoAnterior,
   meses
 }) => {
+  const jsPDF = await getJsPDF();
   const doc = new jsPDF();
 
   doc.setFontSize(18);
@@ -56,12 +73,13 @@ export const gerarRelatorioPDF = ({
 /**
  * Gera relatório PDF resumido por categorias hierárquicas (CÓDIGO ORIGINAL)
  */
-export const gerarRelatorioResumido = ({
+export const gerarRelatorioResumido = async ({
   lancamentos,
   categorias,
   filtros,
   meses
 }) => {
+  const jsPDF = await getJsPDF();
   const doc = new jsPDF();
   
   // Logo/Cabeçalho
