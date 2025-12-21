@@ -102,7 +102,7 @@ export const gerarRelatorioResumido = async ({
   if (dadosLoja?.logo_url) {
     try {
       doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-      yPos += 32;
+      yPos += 37;
     } catch (e) {
       console.log('Logo não disponível');
     }
