@@ -1242,13 +1242,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Relatório de Despesas Pendentes', 105, yPos, { align: 'center' });
-      yPos += 12;
+      yPos += 6;
 
        // Linha separadora
       doc.setDrawColor(0);
       doc.setLineWidth(0.5);
       doc.line(15, yPos, 195, yPos);
-      yPos += 8; // Espaço reduzido
+      yPos += 6; // Espaço reduzido
       
       // Dados do Irmão em um box
       doc.setFillColor(240, 240, 240);
@@ -1373,7 +1373,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         });
 
         // Linha preta separadora ANTES do subtotal
-        yPos += 1;
+        yPos += 3;
         doc.setDrawColor(0, 0, 0); // Preto
         doc.setLineWidth(0.5);
         doc.line(15, yPos, 195, yPos);
