@@ -360,7 +360,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       doc.setFont('helvetica', 'normal');
       
       const beneficiario = emprestimoCompleto.beneficiarios;
-      const textoComodatario = `${beneficiario?.nome || ''}, brasileiro(a), inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
+      const textoComodatario = `${beneficiario?.nome || ''},  brasileiro(a),  inscrito(a)  no  CPF  sob  nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
       
       const linhasComodatario = doc.splitTextToSize(textoComodatario, 180);
       linhasComodatario.forEach(linha => {
@@ -403,13 +403,13 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       // ========================================
       doc.setFont('helvetica', 'normal');
       
-      const textoComodato = `Este  Termo  de  Comodato  estabelece as condições do empréstimo gratuito do(s) bem(s) descrito(s) acima,  o(s)  qual(is) é(são) disponibilizado(s)  pela  Loja  Maçônica  -  ARLS  Acácia  de  Paranatinga  nº  30,  para  que  seja(m)  utilizado(s)  pelo beneficiário acima identificado, sendo vedada a transferência à terceiros sem a autorização do cedente.
+      const textoComodato = `Este  Termo  de  Comodato  estabelece as condições do empréstimo gratuito do(s) bem(s) descrito(s) acima,  o(s)  qual(is)  é(são)   disponibilizado(s)   pela   Loja   Maçônica   -   ARLS  Acácia  de  Paranatinga  nº  30,  para  que  seja(m)   utilizado(s)   pelo  beneficiário  acima  identificado,  sendo  vedada  a  transferência  à terceiros sem a autorização do cedente.
 
 O beneficiário deve cuidar do(s) bem(s) disponibilizado(s) e devolvê-lo(s) em boas condições para uso  posterior,  e  será responsabilizado por quaisquer danos ou perda.
 
-Se  o(s)  bem(s)  disponibilizado(s)  não  seja(m) mais necessário(s) ao beneficiário identificado, que seja(m) o(s) mesmo(s) devidamente devolvido(s).
+Se  o(s)  bem(s)  disponibilizado(s)  não  seja(m)  mais  necessário(s) ao beneficiário identificado, que seja(m) o(s) mesmo(s) devidamente devolvido(s).
 
-Caso  os  dados  de  endereço  ou de contato houver alterações, solicitamos que as novas informações sejam nos enviados de imediato, para que seja possível o acesso e contato quando necessário.`;
+Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos que as novas informações sejam nos enviados de imediato, para que seja possível o acesso e contato quando necessário.`;
 
       const linhasTexto = doc.splitTextToSize(textoComodato, 180);
       linhasTexto.forEach(linha => {
