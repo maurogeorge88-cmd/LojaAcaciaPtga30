@@ -1373,11 +1373,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         });
 
         // Linha preta separadora ANTES do subtotal
-        yPos += 3;
+        yPos += 2;
         doc.setDrawColor(0, 0, 0); // Preto
         doc.setLineWidth(0.5);
         doc.line(15, yPos, 195, yPos);
-        yPos += 4;
+        yPos += 6;
 
         // Subtotal do mês - alinhado com coluna Crédito
         const saldoMes = subtotalDespesa - subtotalCredito;
