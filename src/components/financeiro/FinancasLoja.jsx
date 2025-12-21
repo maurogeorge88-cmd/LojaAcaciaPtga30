@@ -1134,7 +1134,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         lancamentos,
         categorias,
         filtros,
-        meses
+        meses,
+        supabase
       });
     } catch (error) {
       console.error('Erro ao gerar PDF resumido:', error);
@@ -1146,6 +1147,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const gerarRelatorioIndividual = async (irmaoId) => {
     try {
       showSuccess('Gerando relatório individual...');
+      
+      // Buscar dados da loja
+      const { data: dadosLoja } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
       
       const { data: irmaoData, error: irmaoError } = await supabase
         .from('irmaos')
@@ -1195,26 +1202,42 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const jsPDFModule = await import('jspdf');
       const jsPDF = jsPDFModule.default;
       const doc = new jsPDF();
-      let yPos = 15;
+      let yPos = 10;
 
-      // Logo (se disponível - você pode carregar como base64)
-      // Por enquanto, vou deixar espaço para a logo
-      // TODO: Adicionar logo em base64 aqui
+      // ========================================
+      // LOGO
+      // ========================================
+      if (dadosLoja?.logo_url) {
+        try {
+          doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
+          yPos += 32;
+        } catch (e) {
+          console.log('Logo não disponível');
+        }
+      }
       
       // Cabeçalho
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('ARLS ACACIA DE PARANATINGA Nº 30', 105, yPos, { align: 'center' });
+      const nomeLoja = `${dadosLoja?.nome_loja || 'ARLS ACACIA DE PARANATINGA'} Nº ${dadosLoja?.numero_loja || '30'}`;
+      doc.text(nomeLoja, 105, yPos, { align: 'center' });
       yPos += 6;
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text('Jurisdicionada a', 105, yPos, { align: 'center' });
-      yPos += 5;
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('Grande Loja Maçônica do Estado de Mato Grosso', 105, yPos, { align: 'center' });
-      yPos += 10;
+      if (dadosLoja?.grande_loja) {
+        doc.text('Jurisdicionada a', 105, yPos, { align: 'center' });
+        yPos += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.text(dadosLoja.grande_loja, 105, yPos, { align: 'center' });
+        yPos += 10;
+      } else {
+        doc.text('Jurisdicionada a', 105, yPos, { align: 'center' });
+        yPos += 5;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Grande Loja Maçônica do Estado de Mato Grosso', 105, yPos, { align: 'center' });
+        yPos += 10;
+      }
 
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
