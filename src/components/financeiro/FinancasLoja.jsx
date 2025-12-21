@@ -1244,6 +1244,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.text('Relatório de Despesas Pendentes', 105, yPos, { align: 'center' });
       yPos += 12;
 
+       // Linha separadora
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.5);
+      doc.line(15, yPos, 195, yPos);
+      yPos += 8; // Espaço reduzido
+      
       // Dados do Irmão em um box
       doc.setFillColor(240, 240, 240);
       doc.rect(15, yPos, 180, 18, 'F');
