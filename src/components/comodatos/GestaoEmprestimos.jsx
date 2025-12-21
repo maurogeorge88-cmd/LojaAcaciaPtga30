@@ -341,29 +341,31 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       yPos += 10; // Espaço reduzido
 
       // ========================================
-      // COMODANTE - APENAS NOME DA LOJA
+      // COMODANTE - NOME NA MESMA LINHA
       // ========================================
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.text('Comodante:', 15, yPos);
-      yPos += 5; // Espaço reduzido
+      doc.text('Comodante: ', 15, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(nomeLoja, 15, yPos);
+      doc.text(nomeLoja, 42, yPos); // Nome ao lado
       yPos += 8; // Espaço reduzido entre comodante e comodatário
 
       // ========================================
-      // COMODATÁRIO - QUALIFICAÇÃO COMPLETA
+      // COMODATÁRIO - NOME NA MESMA LINHA, QUALIFICAÇÃO ABAIXO
       // ========================================
-      doc.setFont('helvetica', 'bold');
-      doc.text('Comodatário - Beneficiário:', 15, yPos);
-      yPos += 5; // Espaço reduzido
-      doc.setFont('helvetica', 'normal');
-      
       const beneficiario = emprestimoCompleto.beneficiarios;
-      const textoComodatario = `${beneficiario?.nome || ''},  brasileiro(a),  inscrito(a)  no  CPF  sob  nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
       
-      const linhasComodatario = doc.splitTextToSize(textoComodatario, 180);
-      linhasComodatario.forEach(linha => {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Comodatário: ', 15, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(beneficiario?.nome || '', 42, yPos); // Nome ao lado
+      yPos += 5; // Próxima linha para qualificação
+      
+      // Qualificação na linha de baixo
+      const textoQualificacao = `brasileiro(a), inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
+      
+      const linhasQualificacao = doc.splitTextToSize(textoQualificacao, 180);
+      linhasQualificacao.forEach(linha => {
         doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
         yPos += 5;
       });
@@ -396,7 +398,22 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         doc.text(`${nomeEquip} - Patrimônio: ${patrimonio}`, 15, yPos);
         yPos += 5;
       });
-      yPos += 5; // Espaço reduzido
+      yPos += 3; // Espaço reduzido
+
+      // ========================================
+      // PRAZO DE UTILIZAÇÃO
+      // ========================================
+      doc.setFont('helvetica', 'bold');
+      doc.text('Prazo de utilização: ', 15, yPos);
+      doc.setFont('helvetica', 'normal');
+      
+      if (emprestimoCompleto.data_devolucao_prevista) {
+        const dataDevolucao = new Date(emprestimoCompleto.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR');
+        doc.text(`Por tempo determinado até ${dataDevolucao}`, 56, yPos);
+      } else {
+        doc.text('Por prazo indeterminado', 56, yPos);
+      }
+      yPos += 8; // Espaço antes do texto do comodato
 
       // ========================================
       // TEXTO DO COMODATO (da imagem)
