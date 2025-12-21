@@ -1210,7 +1210,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 32;
+          yPos += 37;
         } catch (e) {
           console.log('Logo não disponível');
         }
