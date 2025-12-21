@@ -403,11 +403,11 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       // ========================================
       doc.setFont('helvetica', 'normal');
       
-      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do bem descrito a seguir,  o  qual é disponibilizado  pela  Loja  Maçônica  -  ARLS  Acacia  de  Paranatinga  nº  30,  para  que  seja  utilizado  pelo beneficiário acima identificado, sendo vedada a transferência à terceiros sem a autorização do cedente.
+      const textoComodato = `Este Termo de Comodato estabelece as condições do empréstimo gratuito do(s) bem(s) descrito(s) acima,  o(s)  qual(is) é(são) disponibilizado(s)  pela  Loja  Maçônica  -  A∴R∴L∴S∴  Ácacia  de  Paranatinga  nº  30,  para  que  seja(m)  utilizado(s)  pelo beneficiário acima identificado, sendo vedada a transferência à terceiros sem a autorização do cedente.
 
-O beneficiário deve cuidar do bem disponibilizado e devolvê-lo em boas condições para uso  posterior,  e  será responsabilizado por quaisquer danos ou perda.
+O beneficiário deve cuidar do(s) bem(s) disponibilizado(s) e devolvê-lo(s) em boas condições para uso  posterior,  e  será responsabilizado por quaisquer danos ou perda.
 
-Se o bem disponibilizado não seja mais necessário ao beneficiário identificado, que seja o mesmo devidamente devolvido.
+Se o(s) bem(s) disponibilizado(s) não seja(m) mais necessário(s) ao beneficiário identificado, que seja(m) o(s) mesmo(s) devidamente devolvido(s).
 
 Caso os dados de endereço ou de contato houver alterações, solicitamos que as novas informações sejam nos enviados de imediato, para que seja possível o acesso e contato quando necessário.`;
 
@@ -432,7 +432,7 @@ Caso os dados de endereço ou de contato houver alterações, solicitamos que as
 
       const hoje = new Date();
       const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-      const dataExtenso = `${dadosLoja?.cidade || 'Paranatinga'}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
+      const dataExtenso = `${dadosLoja?.cidade || 'Paranatinga-MT'}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
       
       doc.text(dataExtenso, 105, yPos, { align: 'center' });
       yPos += 15;
@@ -442,7 +442,7 @@ Caso os dados de endereço ou de contato houver alterações, solicitamos que as
       // ========================================
       
       // Linha única longa
-      doc.line(15, yPos, 195, yPos);
+      doc.line(15, yPos, 110, yPos);
       yPos += 5;
 
       // Texto centralizado
