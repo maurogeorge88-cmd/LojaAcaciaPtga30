@@ -341,28 +341,42 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       yPos += 10; // Espaço reduzido
 
       // ========================================
-      // COMODANTE - NOME NA MESMA LINHA
+      // COMODANTE - NOME EM NEGRITO NA MESMA LINHA
       // ========================================
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.text('Comodante: ', 15, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(nomeLoja, 42, yPos); // Nome ao lado
+      doc.text(nomeLoja, 42, yPos); // Nome em negrito
       yPos += 8; // Espaço reduzido entre comodante e comodatário
 
       // ========================================
-      // COMODATÁRIO - NOME NA MESMA LINHA, QUALIFICAÇÃO ABAIXO
+      // COMODATÁRIO - NOME EM NEGRITO NA MESMA LINHA, QUALIFICAÇÃO ABAIXO
       // ========================================
       const beneficiario = emprestimoCompleto.beneficiarios;
       
       doc.setFont('helvetica', 'bold');
       doc.text('Comodatário: ', 15, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(beneficiario?.nome || '', 42, yPos); // Nome ao lado
+      doc.text(beneficiario?.nome || '', 42, yPos); // Nome em negrito
       yPos += 5; // Próxima linha para qualificação
       
-      // Qualificação na linha de baixo
-      const textoQualificacao = `brasileiro(a), inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}, ${beneficiario?.rg ? `portador(a) do RG sob nº ${beneficiario.rg},` : ''} com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
+      // Qualificação na linha de baixo com data de nascimento
+      doc.setFont('helvetica', 'normal');
+      
+      let textoQualificacao = 'brasileiro(a)';
+      
+      // Adicionar data de nascimento se existir
+      if (beneficiario?.data_nascimento) {
+        const dataNasc = new Date(beneficiario.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR');
+        textoQualificacao += `, nascido(a) aos ${dataNasc}`;
+      }
+      
+      textoQualificacao += `, inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}`;
+      
+      if (beneficiario?.rg) {
+        textoQualificacao += `, portador(a) do RG sob nº ${beneficiario.rg}`;
+      }
+      
+      textoQualificacao += `, com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
       
       const linhasQualificacao = doc.splitTextToSize(textoQualificacao, 180);
       linhasQualificacao.forEach(linha => {
