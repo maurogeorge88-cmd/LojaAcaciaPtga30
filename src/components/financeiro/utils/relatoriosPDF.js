@@ -77,33 +77,75 @@ export const gerarRelatorioResumido = async ({
   lancamentos,
   categorias,
   filtros,
-  meses
+  meses,
+  supabase
 }) => {
   const jsPDF = await getJsPDF();
   const doc = new jsPDF();
   
+  // Buscar dados da loja
+  let dadosLoja = null;
+  if (supabase) {
+    try {
+      const { data } = await supabase.from('dados_loja').select('*').single();
+      dadosLoja = data;
+    } catch (e) {
+      console.log('Dados da loja não encontrados');
+    }
+  }
+  
+  let yPos = 10;
+  
+  // ========================================
+  // LOGO
+  // ========================================
+  if (dadosLoja?.logo_url) {
+    try {
+      doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
+      yPos += 32;
+    } catch (e) {
+      console.log('Logo não disponível');
+    }
+  }
+  
   // Logo/Cabeçalho
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text('Acácia de Paranatinga nº 30', 105, 20, { align: 'center' });
+  const nomeLoja = `${dadosLoja?.nome_loja || 'Acácia de Paranatinga'} nº ${dadosLoja?.numero_loja || '30'}`;
+  doc.text(nomeLoja, 105, yPos, { align: 'center' });
+  yPos += 6;
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Avenida Brasil, Paranatinga-MT', 105, 26, { align: 'center' });
-  doc.text('Paranatinga-MT', 105, 31, { align: 'center' });
+  if (dadosLoja?.endereco) {
+    doc.text(dadosLoja.endereco, 105, yPos, { align: 'center' });
+    yPos += 5;
+  } else {
+    doc.text('Avenida Brasil, Paranatinga-MT', 105, yPos, { align: 'center' });
+    yPos += 5;
+  }
+  if (dadosLoja?.cidade) {
+    doc.text(`${dadosLoja.cidade}-${dadosLoja.estado || 'MT'}`, 105, yPos, { align: 'center' });
+    yPos += 5;
+  } else {
+    doc.text('Paranatinga-MT', 105, yPos, { align: 'center' });
+    yPos += 5;
+  }
+  
+  yPos += 2;
   
   // Período
   doc.setFillColor(173, 216, 230);
-  doc.rect(10, 36, 90, 8, 'F');
-  doc.rect(100, 36, 100, 8, 'F');
+  doc.rect(10, yPos, 90, 8, 'F');
+  doc.rect(100, yPos, 100, 8, 'F');
   
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text(filtros.ano.toString(), 59, 41, { align: 'center' });
+  doc.text(filtros.ano.toString(), 59, yPos + 5, { align: 'center' });
   const mesNome = filtros.mes > 0 ? meses[filtros.mes - 1] : 'Todos os meses';
-  doc.text(mesNome, 150, 41, { align: 'center' });
+  doc.text(mesNome, 150, yPos + 5, { align: 'center' });
 
-  let yPos = 52;
+  yPos += 16;
 
   // ORGANIZAR POR HIERARQUIA
   const organizarHierarquia = (tipo) => {
