@@ -442,7 +442,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       // ========================================
       
       // Linha única longa
-      doc.line(15, yPos, 110, yPos, {align: 'center' });
+      doc.line(90, yPos, 110, yPos);
       yPos += 5;
 
       // Texto centralizado
