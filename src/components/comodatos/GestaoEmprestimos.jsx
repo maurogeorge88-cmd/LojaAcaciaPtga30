@@ -386,16 +386,35 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       yPos += 3; // Espaço reduzido
 
       // ========================================
-      // RESPONSÁVEL (se houver)
+      // RESPONSÁVEL (se houver) - MESMO PADRÃO DO BENEFICIÁRIO
       // ========================================
       if (responsaveis && responsaveis.length > 0) {
         const resp = responsaveis[0];
+        
         doc.setFont('helvetica', 'bold');
-        doc.text('Comodatário - Responsável:', 15, yPos);
-        yPos += 5;
+        doc.text('Comodatário - Responsável: ', 15, yPos);
+        doc.text(resp.nome || '', 75, yPos); // Nome em negrito ao lado
+        yPos += 5; // Próxima linha para qualificação
+        
+        // Qualificação na linha de baixo
         doc.setFont('helvetica', 'normal');
-        doc.text(resp.nome || '', 15, yPos);
-        yPos += 8;
+        
+        let textoQualificacaoResp = 'brasileiro(a)';
+        
+        textoQualificacaoResp += `, inscrito(a) no CPF sob nº ${resp.cpf || 'não informado'}`;
+        
+        if (resp.rg) {
+          textoQualificacaoResp += `, portador(a) do RG sob nº ${resp.rg}`;
+        }
+        
+        textoQualificacaoResp += `, com endereço na ${resp.endereco || 'não informado'}, no Município de ${resp.cidade || 'não informado'}/${resp.estado || 'MT'}.`;
+        
+        const linhasQualificacaoResp = doc.splitTextToSize(textoQualificacaoResp, 180);
+        linhasQualificacaoResp.forEach(linha => {
+          doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
+          yPos += 5;
+        });
+        yPos += 3; // Espaço reduzido
       }
 
       // ========================================
