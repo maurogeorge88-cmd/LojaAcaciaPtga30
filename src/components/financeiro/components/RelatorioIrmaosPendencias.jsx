@@ -29,7 +29,7 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
     // CABEÇALHO
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
+    doc.text('ARLS Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
