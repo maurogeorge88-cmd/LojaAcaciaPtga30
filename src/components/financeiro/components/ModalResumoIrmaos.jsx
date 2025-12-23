@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import RelatorioIrmaosPendencias from './RelatorioIrmaosPendencias';
 
 export default function ModalResumoIrmaos({ 
   isOpen, 
@@ -47,7 +48,7 @@ export default function ModalResumoIrmaos({
         <div className="flex-1 overflow-y-auto p-6">
           
           {/* FILTROS */}
-          <div className="flex gap-3 mb-6">
+          <div className="flex gap-3 mb-6 flex-wrap items-center">
             <button
               onClick={() => setFiltroStatus('todos')}
               className={`px-4 py-2 rounded-lg font-semibold transition ${
@@ -78,6 +79,11 @@ export default function ModalResumoIrmaos({
             >
               ✅ Em Dia ({irmaosEmDia.length})
             </button>
+            
+            {/* Botão de Relatório */}
+            <div className="ml-auto">
+              <RelatorioIrmaosPendencias resumoIrmaos={resumoIrmaos} />
+            </div>
           </div>
 
           {/* ESTATÍSTICAS DO FILTRO ATUAL */}
