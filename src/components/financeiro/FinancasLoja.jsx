@@ -1648,14 +1648,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* Botões de ação - todos com mesmo tamanho */}
         <button
           onClick={() => abrirModalLancamento('receita')}
-          className="w-32 h-[55px] px-4 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Nova</span>
           <span>Receita</span>
         </button>
         <button
           onClick={() => abrirModalLancamento('despesa')}
-          className="w-32 h-[55px] px-4 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Nova</span>
           <span>Despesa</span>
@@ -1665,34 +1665,34 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             setLancamentoParcelar(null);
             setModalParcelamentoAberto(true);
           }}
-          className="w-32 h-[55px] px-4 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>🔀 Parcelar</span>
         </button>
         <button
           onClick={() => setMostrarModalIrmaos(true)}
-          className="w-32 h-[55px] px-4 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Lançamento</span>
           <span>em Lote</span>
         </button>
         <button
           onClick={gerarPDF}
-          className="w-32 h-[55px] px-4 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Relatório</span>
           <span>Detalhado</span>
         </button>
         <button
           onClick={gerarPDFResumido}
-          className="w-32 h-[55px] px-4 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Fechamento</span>
           <span>Mensal</span>
         </button>
         <button
           onClick={calcularResumoIrmaos}
-          className="w-32 h-[55px] px-4 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>💰 Resumo</span>
           <span>dos Irmãos</span>
