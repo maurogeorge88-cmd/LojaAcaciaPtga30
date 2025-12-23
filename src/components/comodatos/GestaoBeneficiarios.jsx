@@ -7,6 +7,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   const [modalAberto, setModalAberto] = useState(false);
   const [modalResponsavel, setModalResponsavel] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [editandoResponsavel, setEditandoResponsavel] = useState(null); // NOVO
   const [beneficiarioSelecionado, setBeneficiarioSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
 
@@ -151,16 +152,33 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
     }
   };
 
-  const abrirModalResponsavel = (beneficiario) => {
+  const abrirModalResponsavel = (beneficiario, responsavel = null) => {
     setBeneficiarioSelecionado(beneficiario);
-    setFormResponsavel({
-      nome: '',
-      cpf: '',
-      parentesco: '',
-      telefone: '',
-      celular: '',
-      email: ''
-    });
+    
+    if (responsavel) {
+      // Editando responsável existente
+      setEditandoResponsavel(responsavel);
+      setFormResponsavel({
+        nome: responsavel.nome || '',
+        cpf: responsavel.cpf || '',
+        parentesco: responsavel.parentesco || '',
+        telefone: responsavel.telefone || '',
+        celular: responsavel.celular || '',
+        email: responsavel.email || ''
+      });
+    } else {
+      // Novo responsável
+      setEditandoResponsavel(null);
+      setFormResponsavel({
+        nome: '',
+        cpf: '',
+        parentesco: '',
+        telefone: '',
+        celular: '',
+        email: ''
+      });
+    }
+    
     setModalResponsavel(true);
   };
 
@@ -173,16 +191,30 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
     }
 
     try {
-      const { error } = await supabase
-        .from('responsaveis')
-        .insert([{
-          beneficiario_id: beneficiarioSelecionado.id,
-          ...formResponsavel
-        }]);
+      if (editandoResponsavel) {
+        // ATUALIZAR responsável existente
+        const { error } = await supabase
+          .from('responsaveis')
+          .update(formResponsavel)
+          .eq('id', editandoResponsavel.id);
 
-      if (error) throw error;
-      showSuccess('Responsável cadastrado!');
+        if (error) throw error;
+        showSuccess('Responsável atualizado!');
+      } else {
+        // INSERIR novo responsável
+        const { error } = await supabase
+          .from('responsaveis')
+          .insert([{
+            beneficiario_id: beneficiarioSelecionado.id,
+            ...formResponsavel
+          }]);
+
+        if (error) throw error;
+        showSuccess('Responsável cadastrado!');
+      }
+      
       setModalResponsavel(false);
+      setEditandoResponsavel(null);
       carregarBeneficiarios();
     } catch (error) {
       console.error('Erro:', error);
@@ -295,13 +327,25 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
             {beneficiario.responsaveis && beneficiario.responsaveis.length > 0 && (
               <div className="bg-blue-50 rounded p-3 mb-3">
-                <p className="text-sm font-semibold text-blue-900 mb-1">
+                <p className="text-sm font-semibold text-blue-900 mb-2">
                   👤 Responsáveis:
                 </p>
                 {beneficiario.responsaveis.map((resp, idx) => (
-                  <p key={idx} className="text-sm text-blue-800">
-                    {resp.nome} - {resp.parentesco}
-                  </p>
+                  <div key={idx} className="flex justify-between items-center bg-white rounded p-2 mb-2">
+                    <div>
+                      <p className="text-sm text-blue-800 font-medium">{resp.nome}</p>
+                      <p className="text-xs text-blue-600">{resp.parentesco} • {resp.telefone || resp.celular}</p>
+                    </div>
+                    {permissoes?.pode_editar_comodatos && (
+                      <button
+                        onClick={() => abrirModalResponsavel(beneficiario, resp)}
+                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                        title="Editar responsável"
+                      >
+                        ✏️
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
@@ -559,7 +603,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
             <div className="bg-green-600 text-white p-6 rounded-t-xl">
               <h3 className="text-2xl font-bold">
-                👤 Adicionar Responsável
+                👤 {editandoResponsavel ? 'Editar Responsável' : 'Adicionar Responsável'}
               </h3>
               <p className="text-green-100 text-sm mt-1">
                 Beneficiário: {beneficiarioSelecionado?.nome}
