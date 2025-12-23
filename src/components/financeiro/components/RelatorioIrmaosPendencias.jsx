@@ -1,8 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { supabase } from '../../../supabaseClient';
 
 export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
+  const [dadosLoja, setDadosLoja] = useState(null);
+
+  useEffect(() => {
+    carregarDadosLoja();
+  }, []);
+
+  const carregarDadosLoja = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
+
+      if (data) {
+        setDadosLoja(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados da loja:', error);
+    }
+  };
   
   const gerarRelatorioPDF = () => {
     const doc = new jsPDF();
@@ -16,25 +37,30 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
     const totalReceitas = irmaosComPendencias.reduce((sum, i) => sum + i.totalReceitas, 0);
     const saldoTotal = irmaosComPendencias.reduce((sum, i) => sum + i.saldo, 0);
     
-    // Adicionar logo (se existir)
-    const logoPath = '/icon-192.png';
-    try {
-      const img = new Image();
-      img.src = logoPath;
-      doc.addImage(img, 'PNG', 15, 10, 20, 20);
-    } catch (error) {
-      console.log('Logo não carregado');
+    // Adicionar logo (se existir nos dados da loja)
+    if (dadosLoja?.logo_url) {
+      try {
+        doc.addImage(dadosLoja.logo_url, 'PNG', 15, 10, 20, 20);
+      } catch (error) {
+        console.log('Logo não carregada');
+      }
     }
     
     // CABEÇALHO
+    const nomeLoja = dadosLoja?.nome_loja || 'Acácia de Paranatinga';
+    const numeroLoja = dadosLoja?.numero_loja || '30';
+    const oriente = dadosLoja?.oriente || 'Paranatinga';
+    const estado = dadosLoja?.estado || 'MT';
+    const potencia = dadosLoja?.potencia || 'Grande Oriente do Brasil';
+    
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('ARLS Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
+    doc.text(`ARLS ${nomeLoja} nº ${numeroLoja}`, 105, 15, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('Oriente de Paranatinga - MT', 105, 22, { align: 'center' });
-    doc.text('Grande Oriente do Brasil - GOMT', 105, 27, { align: 'center' });
+    doc.text(`Oriente de ${oriente} - ${estado}`, 105, 22, { align: 'center' });
+    doc.text(potencia, 105, 27, { align: 'center' });
     
     // Linha separadora
     doc.setLineWidth(0.5);
