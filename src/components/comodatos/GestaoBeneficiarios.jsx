@@ -32,10 +32,14 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   const [formResponsavel, setFormResponsavel] = useState({
     nome: '',
     cpf: '',
+    rg: '',
     parentesco: '',
     telefone: '',
     celular: '',
-    email: ''
+    email: '',
+    endereco: '',
+    cidade: '',
+    estado: 'MT'
   });
 
   useEffect(() => {
@@ -161,10 +165,14 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       setFormResponsavel({
         nome: responsavel.nome || '',
         cpf: responsavel.cpf || '',
+        rg: responsavel.rg || '',
         parentesco: responsavel.parentesco || '',
         telefone: responsavel.telefone || '',
         celular: responsavel.celular || '',
-        email: responsavel.email || ''
+        email: responsavel.email || '',
+        endereco: responsavel.endereco || '',
+        cidade: responsavel.cidade || '',
+        estado: responsavel.estado || 'MT'
       });
     } else {
       // Novo responsável
@@ -172,10 +180,14 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       setFormResponsavel({
         nome: '',
         cpf: '',
+        rg: '',
         parentesco: '',
         telefone: '',
         celular: '',
-        email: ''
+        email: '',
+        endereco: '',
+        cidade: '',
+        estado: 'MT'
       });
     }
     
@@ -671,6 +683,56 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     value={formResponsavel.celular}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, celular: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    RG
+                  </label>
+                  <input
+                    type="text"
+                    value={formResponsavel.rg}
+                    onChange={(e) => setFormResponsavel({ ...formResponsavel, rg: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Endereço
+                  </label>
+                  <input
+                    type="text"
+                    value={formResponsavel.endereco}
+                    onChange={(e) => setFormResponsavel({ ...formResponsavel, endereco: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    placeholder="Rua, número, complemento"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Cidade
+                  </label>
+                  <input
+                    type="text"
+                    value={formResponsavel.cidade}
+                    onChange={(e) => setFormResponsavel({ ...formResponsavel, cidade: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Estado
+                  </label>
+                  <input
+                    type="text"
+                    value={formResponsavel.estado}
+                    onChange={(e) => setFormResponsavel({ ...formResponsavel, estado: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    maxLength="2"
                   />
                 </div>
 
