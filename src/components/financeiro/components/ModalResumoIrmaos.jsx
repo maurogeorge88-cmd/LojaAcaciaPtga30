@@ -225,8 +225,8 @@ export default function ModalResumoIrmaos({
           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h3 className="font-semibold text-blue-900 mb-2">ℹ️ Informações:</h3>
             <ul className="text-sm text-blue-800 space-y-1">
-              <li>• <strong>Despesas (Loja → Irmão):</strong> Valores que a Loja cobra do irmão (mensalidades, multas, etc)</li>
-              <li>• <strong>Receitas (Irmão → Loja):</strong> Pagamentos que o irmão realizou para a Loja</li>
+              <li>• <strong>Despesas (Loja → Irmão):</strong> Pagamentos que o irmão realizou para a Loja</li>
+              <li>• <strong>Receitas (Irmão → Loja):</strong> Valores que a Loja cobra do irmão (mensalidades, multas, etc)</li>
               <li>• <strong>Saldo Final:</strong> Receitas - Despesas</li>
               <li>• <strong>Positivo (verde):</strong> Irmão está em dia ou com crédito</li>
               <li>• <strong>Negativo (laranja):</strong> Irmão deve para a Loja</li>
