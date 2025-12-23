@@ -2831,6 +2831,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           showError={showError}
         />
       )}
+
+      {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
+      <ModalResumoIrmaos
+        isOpen={modalResumoAberto}
+        onClose={() => setModalResumoAberto(false)}
+        resumoIrmaos={resumoIrmaos}
+      />
     </div>
   );
 }
@@ -3918,10 +3925,3 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
     </div>
   );
 }
-
-{/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
-<ModalResumoIrmaos
-  isOpen={modalResumoAberto}
-  onClose={() => setModalResumoAberto(false)}
-  resumoIrmaos={resumoIrmaos}
-/>
