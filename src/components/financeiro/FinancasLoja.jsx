@@ -10,6 +10,7 @@ import {
   calcularDiasAtraso
 } from './utils/helpers';
 import ModalLancamento from './components/ModalLancamento';
+import ModalResumoIrmaos from './components/ModalResumoIrmaos';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -30,6 +31,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
   const [mostrarModalQuitacaoLote, setMostrarModalQuitacaoLote] = useState(false);
+  const [modalResumoAberto, setModalResumoAberto] = useState(false);
+  const [resumoIrmaos, setResumoIrmaos] = useState([]);
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos');
   const [saldoAnterior, setSaldoAnterior] = useState(0);
@@ -1143,6 +1146,48 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
+  // 💰 RESUMO FINANCEIRO DOS IRMÃOS
+  const calcularResumoIrmaos = () => {
+    // Agrupar lançamentos por irmão
+    const resumoPorIrmao = {};
+    
+    irmaos.forEach(irmao => {
+      resumoPorIrmao[irmao.id] = {
+        nomeIrmao: irmao.nome,
+        cim: irmao.cim,
+        totalDespesas: 0,
+        totalReceitas: 0,
+        saldo: 0
+      };
+    });
+    
+    // Calcular totais de cada irmão
+    lancamentos.forEach(lanc => {
+      if (lanc.origem_irmao_id && resumoPorIrmao[lanc.origem_irmao_id]) {
+        const valor = parseFloat(lanc.valor) || 0;
+        
+        if (lanc.categorias_financeiras?.tipo === 'despesa') {
+          resumoPorIrmao[lanc.origem_irmao_id].totalDespesas += valor;
+        } else if (lanc.categorias_financeiras?.tipo === 'receita') {
+          resumoPorIrmao[lanc.origem_irmao_id].totalReceitas += valor;
+        }
+      }
+    });
+    
+    // Calcular saldos
+    Object.values(resumoPorIrmao).forEach(irmao => {
+      irmao.saldo = irmao.totalReceitas - irmao.totalDespesas;
+    });
+    
+    // Converter para array e filtrar apenas irmãos com movimentação
+    const resumoArray = Object.values(resumoPorIrmao).filter(
+      irmao => irmao.totalDespesas > 0 || irmao.totalReceitas > 0
+    );
+    
+    setResumoIrmaos(resumoArray);
+    setModalResumoAberto(true);
+  };
+
   // 📊 RELATÓRIO INDIVIDUAL DE IRMÃO
   const gerarRelatorioIndividual = async (irmaoId) => {
     try {
@@ -1210,7 +1255,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 37;
+          yPos += 32;
         } catch (e) {
           console.log('Logo não disponível');
         }
@@ -1242,14 +1287,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Relatório de Despesas Pendentes', 105, yPos, { align: 'center' });
-      yPos += 6;
+      yPos += 12;
 
-       // Linha separadora
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.5);
-      doc.line(15, yPos, 195, yPos);
-      yPos += 6; // Espaço reduzido
-      
       // Dados do Irmão em um box
       doc.setFillColor(240, 240, 240);
       doc.rect(15, yPos, 180, 18, 'F');
@@ -1373,11 +1412,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         });
 
         // Linha preta separadora ANTES do subtotal
-        yPos += 2;
+        yPos += 1;
         doc.setDrawColor(0, 0, 0); // Preto
         doc.setLineWidth(0.5);
         doc.line(15, yPos, 195, yPos);
-        yPos += 6;
+        yPos += 4;
 
         // Subtotal do mês - alinhado com coluna Crédito
         const saldoMes = subtotalDespesa - subtotalCredito;
@@ -1632,6 +1671,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         >
           <span>Fechamento</span>
           <span>Mensal</span>
+        </button>
+        <button
+          onClick={calcularResumoIrmaos}
+          className="w-32 h-[55px] px-4 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+        >
+          <span>💰 Resumo</span>
+          <span>dos Irmãos</span>
         </button>
         
         {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
@@ -3872,3 +3918,10 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
     </div>
   );
 }
+
+{/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
+<ModalResumoIrmaos
+  isOpen={modalResumoAberto}
+  onClose={() => setModalResumoAberto(false)}
+  resumoIrmaos={resumoIrmaos}
+/>
