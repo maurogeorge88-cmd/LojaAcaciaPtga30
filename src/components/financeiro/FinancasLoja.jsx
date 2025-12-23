@@ -1155,8 +1155,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       resumoPorIrmao[irmao.id] = {
         nomeIrmao: irmao.nome,
         cim: irmao.cim,
-        totalDespesas: 0,
-        totalReceitas: 0,
+        totalDespesas: 0, // O que o irmão DEVE
+        totalReceitas: 0, // O que o irmão JÁ PAGOU
         saldo: 0
       };
     });
@@ -1167,16 +1167,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const valor = parseFloat(lanc.valor) || 0;
         
         if (lanc.categorias_financeiras?.tipo === 'despesa') {
+          // Despesa = O que o irmão DEVE para a loja
           resumoPorIrmao[lanc.origem_irmao_id].totalDespesas += valor;
         } else if (lanc.categorias_financeiras?.tipo === 'receita') {
+          // Receita = O que o irmão JÁ PAGOU para a loja
           resumoPorIrmao[lanc.origem_irmao_id].totalReceitas += valor;
         }
       }
     });
     
-    // Calcular saldos
+    // Calcular saldos: DESPESAS - RECEITAS
+    // Positivo = Irmão ainda deve
+    // Negativo = Irmão tem crédito
     Object.values(resumoPorIrmao).forEach(irmao => {
-      irmao.saldo = irmao.totalReceitas - irmao.totalDespesas;
+      irmao.saldo = irmao.totalDespesas - irmao.totalReceitas;
     });
     
     // Converter para array e filtrar apenas irmãos com movimentação
