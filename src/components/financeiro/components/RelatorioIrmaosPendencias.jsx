@@ -29,7 +29,7 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
     // CABEÇALHO
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('ARLS Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
+    doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', 105, 15, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -73,15 +73,13 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
     // TABELA DE IRMÃOS
     const tableData = irmaosComPendencias.map(irmao => [
       irmao.nomeIrmao,
-      `R$ ${irmao.totalDespesas.toFixed(2)}`,
-      `R$ ${irmao.totalReceitas.toFixed(2)}`,
       `R$ ${Math.abs(irmao.saldo).toFixed(2)}`,
       'Devedor'
     ]);
     
     doc.autoTable({
       startY: 88,
-      head: [['Nome', 'Despesas', 'Receitas', 'Saldo', 'Status']],
+      head: [['Nome', 'Saldo', 'Status']],
       body: tableData,
       headStyles: {
         fillColor: [33, 150, 243], // Azul
@@ -93,11 +91,9 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
         textColor: 50
       },
       columnStyles: {
-        0: { cellWidth: 70 }, // Nome
-        1: { halign: 'right', cellWidth: 30 }, // Despesas
-        2: { halign: 'right', cellWidth: 30 }, // Receitas
-        3: { halign: 'right', cellWidth: 30, textColor: [255, 87, 34] }, // Saldo (laranja)
-        4: { halign: 'center', cellWidth: 28, fillColor: [255, 243, 224], textColor: [230, 81, 0] } // Status
+        0: { cellWidth: 100 }, // Nome
+        1: { halign: 'right', cellWidth: 45, textColor: [255, 87, 34] }, // Saldo (laranja)
+        2: { halign: 'center', cellWidth: 43, fillColor: [255, 243, 224], textColor: [230, 81, 0] } // Status
       },
       alternateRowStyles: {
         fillColor: [245, 245, 245]
@@ -134,10 +130,9 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
     doc.text('OBSERVAÇÕES:', 15, finalY + 10);
     
     doc.setFont('helvetica', 'normal');
-    doc.text('• Despesas: Pagamentos realizados pelo irmão à Loja', 15, finalY + 16);
-    doc.text('• Receitas: Valores cobrados da Loja ao irmão (mensalidades, taxas, etc)', 15, finalY + 22);
-    doc.text('• Saldo: Valor em aberto (negativo = devendo à Loja)', 15, finalY + 28);
-    doc.text('• Este relatório lista apenas irmãos com pendências financeiras', 15, finalY + 34);
+    doc.text('• Saldo: Valor em aberto que o irmão deve à Loja', 15, finalY + 16);
+    doc.text('• Status: Situação financeira do irmão perante a Loja', 15, finalY + 22);
+    doc.text('• Este relatório lista apenas irmãos com pendências financeiras', 15, finalY + 28);
     
     // Salvar PDF
     const nomeArquivo = `relatorio_irmaos_pendencias_${new Date().toISOString().split('T')[0]}.pdf`;
