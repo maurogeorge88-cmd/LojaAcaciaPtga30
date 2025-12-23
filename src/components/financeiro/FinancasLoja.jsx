@@ -1155,32 +1155,37 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       resumoPorIrmao[irmao.id] = {
         nomeIrmao: irmao.nome,
         cim: irmao.cim,
-        totalDespesas: 0, // O que o irmão DEVE
-        totalReceitas: 0, // O que o irmão JÁ PAGOU
+        totalDespesas: 0,    // Total de despesas (independente do status)
+        totalReceitas: 0,    // Total de receitas/pagamentos
+        totalPendente: 0,    // Apenas despesas PENDENTES
         saldo: 0
       };
     });
     
-    // Calcular totais de cada irmão
+    // Calcular totais de cada irmão (SEM FILTRO DE MÊS/ANO - TODOS OS PERÍODOS)
     lancamentos.forEach(lanc => {
       if (lanc.origem_irmao_id && resumoPorIrmao[lanc.origem_irmao_id]) {
         const valor = parseFloat(lanc.valor) || 0;
         
         if (lanc.categorias_financeiras?.tipo === 'despesa') {
-          // Despesa = O que o irmão DEVE para a loja
+          // Todas as despesas
           resumoPorIrmao[lanc.origem_irmao_id].totalDespesas += valor;
+          
+          // Apenas despesas PENDENTES
+          if (lanc.status === 'pendente') {
+            resumoPorIrmao[lanc.origem_irmao_id].totalPendente += valor;
+          }
         } else if (lanc.categorias_financeiras?.tipo === 'receita') {
-          // Receita = O que o irmão JÁ PAGOU para a loja
+          // Todas as receitas (pagamentos)
           resumoPorIrmao[lanc.origem_irmao_id].totalReceitas += valor;
         }
       }
     });
     
-    // Calcular saldos: DESPESAS - RECEITAS
-    // Positivo = Irmão ainda deve
-    // Negativo = Irmão tem crédito
+    // Calcular saldos: APENAS O QUE ESTÁ PENDENTE
+    // Se tudo estiver quitado (pago), totalPendente = 0, então saldo = 0
     Object.values(resumoPorIrmao).forEach(irmao => {
-      irmao.saldo = irmao.totalDespesas - irmao.totalReceitas;
+      irmao.saldo = irmao.totalPendente;
     });
     
     // Converter para array e filtrar apenas irmãos com movimentação
