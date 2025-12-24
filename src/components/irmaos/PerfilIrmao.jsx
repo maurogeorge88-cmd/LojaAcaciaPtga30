@@ -104,34 +104,57 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
       if (erroIrmao) throw erroIrmao;
 
-      // Salvar cônjuge se existir
+      // Salvar cônjuge
       if (familiares.conjuge?.nome) {
-        // Verificar se já existe
-        const { data: conjExiste } = await supabase
-          .from('esposas')
-          .select('id')
-          .eq('irmao_id', irmaoId)
-          .single();
-
+        const { data: conjExiste } = await supabase.from('esposas').select('id').eq('irmao_id', irmaoId).single();
         if (conjExiste) {
-          // Atualizar
-          await supabase
-            .from('esposas')
-            .update({
-              nome: familiares.conjuge.nome,
-              data_nascimento: familiares.conjuge.data_nascimento,
-              data_casamento: familiares.conjuge.data_casamento,
-              profissao: familiares.conjuge.profissao
-            })
-            .eq('irmao_id', irmaoId);
-        } else {
-          // Inserir novo
-          await supabase.from('esposas').insert({
-            irmao_id: irmaoId,
+          await supabase.from('esposas').update({
             nome: familiares.conjuge.nome,
             data_nascimento: familiares.conjuge.data_nascimento,
             data_casamento: familiares.conjuge.data_casamento,
             profissao: familiares.conjuge.profissao
+          }).eq('irmao_id', irmaoId);
+        } else {
+          await supabase.from('esposas').insert({
+            irmao_id: irmaoId, nome: familiares.conjuge.nome,
+            data_nascimento: familiares.conjuge.data_nascimento,
+            data_casamento: familiares.conjuge.data_casamento,
+            profissao: familiares.conjuge.profissao
+          });
+        }
+      }
+
+      // Salvar pais (um registro por pai/mãe)
+      if (familiares.pais.pai?.nome) {
+        const { data: paiExiste } = await supabase.from('pais').select('id').eq('irmao_id', irmaoId).eq('tipo', 'pai').single();
+        if (paiExiste) {
+          await supabase.from('pais').update({
+            nome: familiares.pais.pai.nome,
+            data_nascimento: familiares.pais.pai.data_nascimento
+          }).eq('id', paiExiste.id);
+        } else {
+          await supabase.from('pais').insert({
+            irmao_id: irmaoId,
+            tipo: 'pai',
+            nome: familiares.pais.pai.nome,
+            data_nascimento: familiares.pais.pai.data_nascimento
+          });
+        }
+      }
+      
+      if (familiares.pais.mae?.nome) {
+        const { data: maeExiste } = await supabase.from('pais').select('id').eq('irmao_id', irmaoId).eq('tipo', 'mae').single();
+        if (maeExiste) {
+          await supabase.from('pais').update({
+            nome: familiares.pais.mae.nome,
+            data_nascimento: familiares.pais.mae.data_nascimento
+          }).eq('id', maeExiste.id);
+        } else {
+          await supabase.from('pais').insert({
+            irmao_id: irmaoId,
+            tipo: 'mae',
+            nome: familiares.pais.mae.nome,
+            data_nascimento: familiares.pais.mae.data_nascimento
           });
         }
       }
@@ -947,26 +970,108 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               </div>
 
               {/* Pais */}
-              {(familiares.pais.pai || familiares.pais.mae) && (
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
-                  <h4 className="text-lg font-bold text-blue-900 mb-4 flex items-center gap-2">
-                    👨‍👩‍👦 Pais
-                  </h4>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+                <h4 className="text-lg font-bold text-blue-900 mb-4">👨‍👩‍👦 Pais</h4>
+                {modoEdicao ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Pai */}
-                    <div className="space-y-2">
-                      <h5 className="font-semibold text-gray-700 border-b pb-1">Pai</h5>
-                      {familiares.pais.pai ? (
-                        <>
-                          <div className="text-sm">
-                            <span className="font-medium">Nome:</span>
-                            <span className="ml-2">{familiares.pais.pai.nome}</span>
-                          </div>
-                          {familiares.pais.pai.data_nascimento && (
+                    <div className="space-y-3">
+                      <h5 className="font-semibold border-b pb-1">Pai</h5>
+                      <input
+                        type="text"
+                        placeholder="Nome do Pai"
+                        value={familiares.pais.pai?.nome || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          pais: { ...familiares.pais, pai: { ...familiares.pais.pai, nome: e.target.value }}
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                      <input
+                        type="date"
+                        placeholder="Data Nascimento"
+                        value={familiares.pais.pai?.data_nascimento || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          pais: { ...familiares.pais, pai: { ...familiares.pais.pai, data_nascimento: e.target.value }}
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <h5 className="font-semibold border-b pb-1">Mãe</h5>
+                      <input
+                        type="text"
+                        placeholder="Nome da Mãe"
+                        value={familiares.pais.mae?.nome || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          pais: { ...familiares.pais, mae: { ...familiares.pais.mae, nome: e.target.value }}
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                      <input
+                        type="date"
+                        placeholder="Data Nascimento"
+                        value={familiares.pais.mae?.data_nascimento || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          pais: { ...familiares.pais, mae: { ...familiares.pais.mae, data_nascimento: e.target.value }}
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  (familiares.pais.pai || familiares.pais.mae) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Visualização Pai */}
+                      <div className="space-y-2">
+                        <h5 className="font-semibold text-gray-700 border-b pb-1">Pai</h5>
+                        {familiares.pais.pai ? (
+                          <>
                             <div className="text-sm">
-                              <span className="font-medium">Nascimento:</span>
-                              <span className="ml-2">
-                                {familiares.pais.pai.data_nascimento.split('-').reverse().join('/')}
+                              <span className="font-medium">Nome:</span>
+                              <span className="ml-2">{familiares.pais.pai.nome}</span>
+                            </div>
+                            {familiares.pais.pai.data_nascimento && (
+                              <div className="text-sm">
+                                <span className="font-medium">Nascimento:</span>
+                                <span className="ml-2">
+                                  {familiares.pais.pai.data_nascimento.split('-').reverse().join('/')}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-500">Não informado</p>
+                        )}
+                      </div>
+                      {/* Visualização Mãe */}
+                      <div className="space-y-2">
+                        <h5 className="font-semibold text-gray-700 border-b pb-1">Mãe</h5>
+                        {familiares.pais.mae ? (
+                          <>
+                            <div className="text-sm">
+                              <span className="font-medium">Nome:</span>
+                              <span className="ml-2">{familiares.pais.mae.nome}</span>
+                            </div>
+                            {familiares.pais.mae.data_nascimento && (
+                              <div className="text-sm">
+                                <span className="font-medium">Nascimento:</span>
+                                <span className="ml-2">
+                                  {familiares.pais.mae.data_nascimento.split('-').reverse().join('/')}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-sm text-gray-500">Não informado</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
                               </span>
                             </div>
                           )}
