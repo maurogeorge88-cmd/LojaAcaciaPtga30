@@ -94,6 +94,42 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     }
   };
 
+  const handleSalvarEdicao = async () => {
+    try {
+      // Salvar dados do irmão
+      const { error: erroIrmao } = await supabase
+        .from('irmaos')
+        .update(irmaoForm)
+        .eq('id', irmaoId);
+
+      if (erroIrmao) throw erroIrmao;
+
+      // Deletar cargos antigos e inserir novos
+      await supabase.from('historico_cargos').delete().eq('irmao_id', irmaoId);
+      
+      if (historicoCargos.length > 0) {
+        const cargosParaSalvar = historicoCargos.map(c => ({
+          irmao_id: irmaoId,
+          ano: c.ano,
+          cargo: c.cargo
+        }));
+        
+        const { error: erroCargos } = await supabase
+          .from('historico_cargos')
+          .insert(cargosParaSalvar);
+          
+        if (erroCargos) throw erroCargos;
+      }
+
+      showSuccess('✅ Perfil atualizado com sucesso!');
+      setModoEdicao(false);
+      carregarIrmao();
+      carregarHistoricoCargos();
+    } catch (error) {
+      showError('❌ Erro ao salvar: ' + error.message);
+    }
+  };
+
   const handleSalvar = async () => {
     const { error } = await supabase
       .from('irmaos')
@@ -192,12 +228,45 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               </div>
             </div>
 
-            <button
-              onClick={onVoltar}
-              className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
-            >
-              ← Voltar
-            </button>
+            <div className="flex gap-2">
+              {/* Botão Editar - apenas se for o próprio irmão */}
+              {userEmail === irmao.email && !modoEdicao && (
+                <button
+                  onClick={() => setModoEdicao(true)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  ✏️ Editar Meu Perfil
+                </button>
+              )}
+              
+              {/* Botões de salvar/cancelar quando em edição */}
+              {modoEdicao && (
+                <>
+                  <button
+                    onClick={handleSalvarEdicao}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  >
+                    ✓ Salvar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModoEdicao(false);
+                      carregarIrmao(); // Recarrega dados originais
+                    }}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                  >
+                    ✕ Cancelar
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={onVoltar}
+                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+              >
+                ← Voltar
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -672,6 +741,53 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <span>Histórico de Cargos na Loja</span>
                   </h4>
                 </div>
+
+                {/* Formulário para adicionar cargo - apenas em modo edição */}
+                {modoEdicao && (
+                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                      <div className="md:col-span-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                        <input
+                          type="number"
+                          id="cargo-ano"
+                          min="1900"
+                          max="2100"
+                          className="w-full px-3 py-2 border rounded"
+                          placeholder="Ex: 2024"
+                        />
+                      </div>
+                      <div className="md:col-span-7">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+                        <input
+                          type="text"
+                          id="cargo-nome"
+                          className="w-full px-3 py-2 border rounded"
+                          placeholder="Ex: Tesoureiro"
+                        />
+                      </div>
+                      <div className="md:col-span-2 flex items-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const ano = document.getElementById('cargo-ano').value;
+                            const cargo = document.getElementById('cargo-nome').value;
+                            if (!ano || !cargo) {
+                              alert('Preencha ano e cargo!');
+                              return;
+                            }
+                            setHistoricoCargos([...historicoCargos, { ano, cargo }]);
+                            document.getElementById('cargo-ano').value = new Date().getFullYear();
+                            document.getElementById('cargo-nome').value = '';
+                          }}
+                          className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          ➕ Adicionar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {historicoCargos.length > 0 ? (
                   <div className="border rounded-lg overflow-hidden">
