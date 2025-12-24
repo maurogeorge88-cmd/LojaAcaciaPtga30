@@ -274,7 +274,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
               📋 {filas.length} na fila
             </p>
           </div>
-          {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+          {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_biblioteca) && (
             <button
               onClick={() => setModalAdicionar(true)}
               className="px-6 py-3 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
@@ -412,7 +412,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                         )}
                       </div>
 
-                      {(permissoes?.canEdit || permissoes?.canEditMembers) && (
+                      {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_biblioteca) && (
                         <div className="flex gap-2 ml-4">
                           {fila.status === 'aguardando' && (
                             <>
