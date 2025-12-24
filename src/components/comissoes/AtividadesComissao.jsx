@@ -18,6 +18,14 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                      comissao?.permissoesExpandidas?.eh_membro || 
                      false;
 
+  // Log para debug
+  useEffect(() => {
+    console.log('🔍 AtividadesComissao - Permissões:', permissoes);
+    console.log('🔍 AtividadesComissao - Comissão:', comissao);
+    console.log('🔍 AtividadesComissao - É Membro?', comissao?.permissoesExpandidas?.eh_membro);
+    console.log('✏️ AtividadesComissao - Pode Editar?', podeEditar);
+  }, [permissoes, comissao, podeEditar]);
+
   const [atividadeForm, setAtividadeForm] = useState({
     tipo: 'reuniao',
     titulo: '',
