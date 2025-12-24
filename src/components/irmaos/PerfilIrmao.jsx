@@ -176,7 +176,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             irmao_id: irmaoId,
             nome: f.nome,
             data_nascimento: f.data_nascimento,
-            sexo: f.sexo
+            sexo: f.sexo,
+            tipo_vinculo: f.tipo_vinculo || 'filho'
           }))
         );
       }
@@ -1107,30 +1108,42 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           <option value="M">Masculino</option>
                           <option value="F">Feminino</option>
                         </select>
+                        <select id="filho-tipo" className="px-3 py-2 border rounded">
+                          <option value="filho">Filho</option>
+                          <option value="filha">Filha</option>
+                          <option value="enteado">Enteado</option>
+                          <option value="enteada">Enteada</option>
+                          <option value="neto">Neto</option>
+                          <option value="neta">Neta</option>
+                          <option value="bisneto">Bisneto</option>
+                          <option value="bisneta">Bisneta</option>
+                        </select>
                         <button
                           type="button"
                           onClick={() => {
                             const nome = document.getElementById('filho-nome').value;
                             const data = document.getElementById('filho-data').value;
                             const sexo = document.getElementById('filho-sexo').value;
+                            const tipo = document.getElementById('filho-tipo').value;
                             if (!nome) { alert('Digite o nome!'); return; }
                             
                             if (filhoEditandoIndex !== null) {
                               // Editar
                               const novosFilhos = [...familiares.filhos];
-                              novosFilhos[filhoEditandoIndex] = { nome, data_nascimento: data, sexo };
+                              novosFilhos[filhoEditandoIndex] = { nome, data_nascimento: data, sexo, tipo_vinculo: tipo };
                               setFamiliares({ ...familiares, filhos: novosFilhos });
                               setFilhoEditandoIndex(null);
                             } else {
                               // Adicionar
                               setFamiliares({
                                 ...familiares,
-                                filhos: [...familiares.filhos, { nome, data_nascimento: data, sexo }]
+                                filhos: [...familiares.filhos, { nome, data_nascimento: data, sexo, tipo_vinculo: tipo }]
                               });
                             }
                             document.getElementById('filho-nome').value = '';
                             document.getElementById('filho-data').value = '';
                             document.getElementById('filho-sexo').value = 'M';
+                            document.getElementById('filho-tipo').value = 'filho';
                           }}
                           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
@@ -1144,6 +1157,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               document.getElementById('filho-nome').value = '';
                               document.getElementById('filho-data').value = '';
                               document.getElementById('filho-sexo').value = 'M';
+                              document.getElementById('filho-tipo').value = 'filho';
                             }}
                             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                           >
@@ -1164,7 +1178,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               <span className="text-3xl">{sexo === 'M' ? '👦' : '👧'}</span>
                               <div>
                                 <h5 className="font-semibold text-gray-900">{filho.nome}</h5>
-                                <p className="text-xs text-gray-600">{sexo === 'M' ? 'Masculino' : 'Feminino'}</p>
+                                <p className="text-xs text-gray-600">
+                                  {sexo === 'M' ? 'Masculino' : 'Feminino'}
+                                  {filho.tipo_vinculo && (
+                                    <span className="ml-1 capitalize">({filho.tipo_vinculo})</span>
+                                  )}
+                                </p>
                               </div>
                             </div>
                             {modoEdicao && (
@@ -1174,6 +1193,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                     document.getElementById('filho-nome').value = filho.nome;
                                     document.getElementById('filho-data').value = filho.data_nascimento || '';
                                     document.getElementById('filho-sexo').value = filho.sexo;
+                                    document.getElementById('filho-tipo').value = filho.tipo_vinculo || 'filho';
                                     setFilhoEditandoIndex(index);
                                   }}
                                   className="text-blue-600 hover:text-blue-800 text-sm"
