@@ -71,7 +71,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
     setFamiliares({
       conjuge: conjugeData || null,
-      pais: { pai, mae },
+      pais: { pai: pai || null, mae: mae || null },
       filhos: filhosData || []
     });
   };
@@ -196,19 +196,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   };
 
   const handleSalvar = async () => {
-    const { error } = await supabase
-      .from('irmaos')
-      .update(irmaoForm)
-      .eq('id', irmaoId);
-
-    if (error) {
-      showError('Erro ao salvar alterações');
-    } else {
-      showSuccess('Alterações salvas com sucesso!');
-      setIrmao(irmaoForm);
-      setModoEdicao(false);
-      carregarIrmao();
-    }
+    // Usar mesma função do botão de cima
+    await handleSalvarEdicao();
   };
 
   const calcularIdade = (dataNascimento) => {
