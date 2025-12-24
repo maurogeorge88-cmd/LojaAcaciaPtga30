@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function Eventos({ userPermissions = {}, userData = {} }) {
+export default function Eventos({ userPermissions, userData }) {
   const [eventos, setEventos] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [modalAberto, setModalAberto] = useState(false);
@@ -10,10 +10,18 @@ export default function Eventos({ userPermissions = {}, userData = {} }) {
   const [modoEdicao, setModoEdicao] = useState(false);
 
   // Verificar se tem permissão de edição (administrador, tesoureiro ou veneravel)
-  const podeEditar = userPermissions?.eh_administrador || 
-                     userPermissions?.pode_editar_financas || 
-                     userPermissions?.eh_veneravel || 
-                     false;
+  // Usar optional chaining para evitar erro quando userPermissions não está definido
+  const podeEditar = Boolean(
+    userPermissions?.eh_administrador || 
+    userPermissions?.pode_editar_financas || 
+    userPermissions?.eh_veneravel
+  );
+
+  // Log para debug
+  useEffect(() => {
+    console.log('📋 Eventos - Permissões:', userPermissions);
+    console.log('✏️ Eventos - Pode Editar:', podeEditar);
+  }, [userPermissions]);
 
   const [formData, setFormData] = useState({
     tipo_evento: 'externo', // externo ou interno
