@@ -302,7 +302,8 @@ function App() {
           pode_editar_balaustres: data.pode_editar_balaustres || false,
           pode_editar_pranchas: data.pode_editar_pranchas || false,
           pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: false
+          pode_editar_corpo_admin: false,
+          pode_gerenciar_usuarios: false
         });
       } else if (data.nivel_acesso === 'admin') {
         // Admin: acesso total
@@ -319,7 +320,8 @@ function App() {
           pode_editar_balaustres: true,
           pode_editar_pranchas: true,
           pode_editar_comissoes: true,
-          pode_editar_corpo_admin: true
+          pode_editar_corpo_admin: true,
+          pode_gerenciar_usuarios: true
         });
       } else if (data.nivel_acesso === 'cargo') {
         // Cargo: baseado nas permissões específicas
@@ -336,24 +338,26 @@ function App() {
           pode_editar_balaustres: data.pode_editar_balaustres || false,
           pode_editar_pranchas: data.pode_editar_pranchas || false,
           pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false
+          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
+          pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       } else {
-        // Padrão: sem permissões
+        // NULL ou não reconhecido: trata como irmão com permissões do banco
         setPermissoes({
-          canEdit: false,
-          canEditMembers: false,
+          canEdit: data.pode_editar_cadastros || false,
+          canEditMembers: data.pode_editar_cadastros || false,
           canDelete: false,
-          canManageUsers: false,
-          canViewFinancial: false,
-          canEditFinancial: false,
-          pode_editar_biblioteca: false,
-          pode_editar_comodatos: false,
-          pode_editar_caridade: false,
-          pode_editar_balaustres: false,
-          pode_editar_pranchas: false,
-          pode_editar_comissoes: false,
-          pode_editar_corpo_admin: false
+          canManageUsers: data.pode_gerenciar_usuarios || false,
+          canViewFinancial: data.pode_visualizar_financeiro || false,
+          canEditFinancial: data.pode_editar_financeiro || false,
+          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
+          pode_editar_comodatos: data.pode_editar_comodatos || false,
+          pode_editar_caridade: data.pode_editar_caridade || false,
+          pode_editar_balaustres: data.pode_editar_balaustres || false,
+          pode_editar_pranchas: data.pode_editar_pranchas || false,
+          pode_editar_comissoes: data.pode_editar_comissoes || false,
+          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
+          pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       }
     }
