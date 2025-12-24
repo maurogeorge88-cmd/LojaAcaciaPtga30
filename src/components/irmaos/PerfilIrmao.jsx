@@ -107,7 +107,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
       // Salvar cônjuge
       if (familiares.conjuge?.nome) {
-        const { data: conjExiste } = await supabase.from('esposas').select('id').eq('irmao_id', irmaoId).single();
+        const { data: conjExiste } = await supabase.from('esposas').select('id').eq('irmao_id', irmaoId).maybeSingle();
         if (conjExiste) {
           await supabase.from('esposas').update({
             nome: familiares.conjuge.nome,
@@ -127,7 +127,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
       // Salvar pais (um registro por pai/mãe)
       if (familiares.pais.pai?.nome) {
-        const { data: paiExiste } = await supabase.from('pais').select('id').eq('irmao_id', irmaoId).eq('tipo', 'pai').single();
+        const { data: paiExiste } = await supabase.from('pais').select('id').eq('irmao_id', irmaoId).eq('tipo', 'pai').maybeSingle();
         if (paiExiste) {
           await supabase.from('pais').update({
             nome: familiares.pais.pai.nome,
@@ -135,8 +135,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           }).eq('id', paiExiste.id);
         } else {
           await supabase.from('pais').insert({
-            irmao_id: irmaoId,
-            tipo: 'pai',
+            irmao_id: irmaoId, tipo: 'pai',
             nome: familiares.pais.pai.nome,
             data_nascimento: familiares.pais.pai.data_nascimento
           });
@@ -144,7 +143,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
       }
       
       if (familiares.pais.mae?.nome) {
-        const { data: maeExiste } = await supabase.from('pais').select('id').eq('irmao_id', irmaoId).eq('tipo', 'mae').single();
+        const { data: maeExiste } = await supabase.from('pais').select('id').eq('irmao_id', irmaoId).eq('tipo', 'mae').maybeSingle();
         if (maeExiste) {
           await supabase.from('pais').update({
             nome: familiares.pais.mae.nome,
@@ -152,8 +151,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           }).eq('id', maeExiste.id);
         } else {
           await supabase.from('pais').insert({
-            irmao_id: irmaoId,
-            tipo: 'mae',
+            irmao_id: irmaoId, tipo: 'mae',
             nome: familiares.pais.mae.nome,
             data_nascimento: familiares.pais.mae.data_nascimento
           });
