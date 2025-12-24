@@ -161,15 +161,23 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
       // Salvar cargos
       await supabase.from('historico_cargos').delete().eq('irmao_id', irmaoId);
-      
       if (historicoCargos.length > 0) {
-        const cargosParaSalvar = historicoCargos.map(c => ({
-          irmao_id: irmaoId,
-          ano: c.ano,
-          cargo: c.cargo
-        }));
-        
-        await supabase.from('historico_cargos').insert(cargosParaSalvar);
+        await supabase.from('historico_cargos').insert(
+          historicoCargos.map(c => ({ irmao_id: irmaoId, ano: c.ano, cargo: c.cargo }))
+        );
+      }
+
+      // Salvar filhos
+      await supabase.from('filhos').delete().eq('irmao_id', irmaoId);
+      if (familiares.filhos.length > 0) {
+        await supabase.from('filhos').insert(
+          familiares.filhos.map(f => ({
+            irmao_id: irmaoId,
+            nome: f.nome,
+            data_nascimento: f.data_nascimento,
+            sexo: f.sexo
+          }))
+        );
       }
 
       showSuccess('✅ Perfil atualizado!');
@@ -1072,33 +1080,81 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )
                 )}
               </div>
+
+              {/* Filhos */}
+              {(familiares.filhos.length > 0 || modoEdicao) && (
                 <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-200">
-                  <h4 className="text-lg font-bold text-green-900 mb-4 flex items-center gap-2">
-                    👶 Filhos ({familiares.filhos.length})
-                  </h4>
+                  <h4 className="text-lg font-bold text-green-900 mb-4">👶 Filhos ({familiares.filhos.length})</h4>
+                  
+                  {modoEdicao && (
+                    <div className="bg-green-100 p-4 rounded mb-4">
+                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+                        <div className="md:col-span-5">
+                          <input type="text" id="filho-nome" placeholder="Nome" className="w-full px-3 py-2 border rounded" />
+                        </div>
+                        <div className="md:col-span-3">
+                          <input type="date" id="filho-data" className="w-full px-3 py-2 border rounded" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <select id="filho-sexo" className="w-full px-3 py-2 border rounded">
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                          </select>
+                        </div>
+                        <div className="md:col-span-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const nome = document.getElementById('filho-nome').value;
+                              const data = document.getElementById('filho-data').value;
+                              const sexo = document.getElementById('filho-sexo').value;
+                              if (!nome) { alert('Digite o nome!'); return; }
+                              setFamiliares({
+                                ...familiares,
+                                filhos: [...familiares.filhos, { nome, data_nascimento: data, sexo }]
+                              });
+                              document.getElementById('filho-nome').value = '';
+                              document.getElementById('filho-data').value = '';
+                            }}
+                            className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            ➕
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {familiares.filhos.map((filho, index) => {
                       const sexo = filho.sexo || (filho.tipo === 'Filho' ? 'M' : 'F');
                       return (
                         <div key={index} className="bg-white rounded-lg p-4 border border-green-200">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className="text-3xl">{sexo === 'M' ? '👦' : '👧'}</span>
-                            <div>
-                              <h5 className="font-semibold text-gray-900">{filho.nome}</h5>
-                              <p className="text-xs text-gray-600">
-                                {sexo === 'M' ? 'Masculino' : 'Feminino'}
-                              </p>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-3">
+                              <span className="text-3xl">{sexo === 'M' ? '👦' : '👧'}</span>
+                              <div>
+                                <h5 className="font-semibold text-gray-900">{filho.nome}</h5>
+                                <p className="text-xs text-gray-600">{sexo === 'M' ? 'Masculino' : 'Feminino'}</p>
+                              </div>
                             </div>
+                            {modoEdicao && (
+                              <button
+                                onClick={() => {
+                                  const novosFilhos = familiares.filhos.filter((_, i) => i !== index);
+                                  setFamiliares({ ...familiares, filhos: novosFilhos });
+                                }}
+                                className="text-red-600 hover:text-red-800 font-bold"
+                              >
+                                ✕
+                              </button>
+                            )}
                           </div>
                           {filho.data_nascimento && (
                             <div className="text-sm text-gray-700">
                               <span className="font-medium">Nascimento:</span>
-                              <span className="ml-2">
-                                {filho.data_nascimento.split('-').reverse().join('/')}
-                              </span>
-                              <span className="ml-2 text-gray-500">
-                                ({calcularIdade(filho.data_nascimento)})
-                              </span>
+                              <span className="ml-2">{filho.data_nascimento.split('-').reverse().join('/')}</span>
+                              <span className="ml-2 text-gray-500">({calcularIdade(filho.data_nascimento)})</span>
                             </div>
                           )}
                         </div>
