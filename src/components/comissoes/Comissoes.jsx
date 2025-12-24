@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { formatarData } from '../../utils/formatters';
 import AtividadesComissao from './AtividadesComissao';
 
-const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permissoes }) => {
+const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permissoes, userData }) => {
   // Verificar se as props essenciais existem
   if (!comissoes || !irmaos) {
     return (
@@ -15,6 +15,12 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
       </div>
     );
   }
+
+  // Função para verificar se usuário é membro de uma comissão
+  const ehMembroComissao = (comissao, integrantesComissao) => {
+    if (!userData?.irmao_id) return false;
+    return integrantesComissao.some(integrante => integrante.irmao_id === userData.irmao_id);
+  };
 
   // Estados do formulário
   const [comissaoForm, setComissaoForm] = useState({
@@ -322,7 +328,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   return (
     <div>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
-      {permissoes?.pode_editar_comissoes && (
+      {(permissoes?.eh_administrador || permissoes?.pode_editar_comissoes) && (
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
           <h3 className="text-xl font-bold text-blue-900 mb-4">
             {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
@@ -540,8 +546,29 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                       👁️ Ver
                     </button>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setComissaoAtividades(comissao);
+                        
+                        // Buscar integrantes para verificar se usuário é membro
+                        try {
+                          const { data: integrantesData } = await supabase
+                            .from('comissoes_integrantes')
+                            .select('*')
+                            .eq('comissao_id', comissao.id);
+                          
+                          // Criar permissões expandidas
+                          const permissoesExpandidas = {
+                            ...permissoes,
+                            eh_membro: ehMembroComissao(comissao, integrantesData || []),
+                            integrantesComissao: integrantesData || []
+                          };
+                          
+                          setComissaoAtividades({ ...comissao, permissoesExpandidas });
+                        } catch (error) {
+                          console.error('Erro ao buscar integrantes:', error);
+                          setComissaoAtividades(comissao);
+                        }
+                        
                         setModalAtividades(true);
                       }}
                       className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
@@ -549,7 +576,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     >
                       📋 Atividades
                     </button>
-                    {permissoes?.pode_editar_comissoes && (
+                    {(permissoes?.eh_administrador || permissoes?.pode_editar_comissoes) && (
                       <>
                         <button
                           onClick={() => handleEditar(comissao)}
