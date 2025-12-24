@@ -9,19 +9,27 @@ export default function Eventos({ userPermissions, userData }) {
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  // Verificar se tem permissão de edição (administrador, tesoureiro ou veneravel)
-  // Usar optional chaining para evitar erro quando userPermissions não está definido
+  // Verificar se tem permissão de edição
+  // Campos corretos da tabela usuarios: pode_editar_financeiro, pode_editar_caridade
+  // nivel_acesso pode ser: 'administrador', 'usuario', etc.
   const podeEditar = Boolean(
-    userPermissions?.eh_administrador || 
-    userPermissions?.pode_editar_financas || 
-    userPermissions?.eh_veneravel
+    userPermissions?.nivel_acesso === 'administrador' ||
+    userPermissions?.pode_editar_financeiro === true ||
+    userPermissions?.pode_editar_caridade === true ||
+    userPermissions?.cargo === 'Veneravel Mestre' ||
+    userPermissions?.cargo === 'Tesoureiro'
   );
 
   // Log para debug
   useEffect(() => {
-    console.log('📋 Eventos - Permissões:', userPermissions);
+    console.log('📋 Eventos - Permissões recebidas:', userPermissions);
     console.log('✏️ Eventos - Pode Editar:', podeEditar);
-  }, [userPermissions]);
+    console.log('🔑 Eventos - Nivel Acesso:', userPermissions?.nivel_acesso);
+    console.log('💰 Eventos - Pode Editar Financeiro:', userPermissions?.pode_editar_financeiro);
+    console.log('❤️ Eventos - Pode Editar Caridade:', userPermissions?.pode_editar_caridade);
+    console.log('👤 Eventos - Cargo:', userPermissions?.cargo);
+    console.log('👤 Eventos - UserData:', userData);
+  }, [userPermissions, podeEditar, userData]);
 
   const [formData, setFormData] = useState({
     tipo_evento: 'externo', // externo ou interno
@@ -342,6 +350,21 @@ export default function Eventos({ userPermissions, userData }) {
             Novo Evento
           </button>
         )}
+      </div>
+
+      {/* DEBUG - Remover depois */}
+      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mb-4">
+        <p className="font-bold">🔍 DEBUG - Permissões:</p>
+        <pre className="text-xs mt-2 bg-white p-2 rounded overflow-auto">
+          {JSON.stringify({
+            userPermissions,
+            podeEditar,
+            nivel_acesso: userPermissions?.nivel_acesso,
+            cargo: userPermissions?.cargo,
+            pode_editar_financeiro: userPermissions?.pode_editar_financeiro,
+            pode_editar_caridade: userPermissions?.pode_editar_caridade
+          }, null, 2)}
+        </pre>
       </div>
 
       {/* Aviso para irmãos sem permissão */}
