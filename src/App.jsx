@@ -2334,7 +2334,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* EVENTOS */}
         {currentPage === 'eventos' && (
           <Eventos 
-            userPermissions={userPermissions}
+            userPermissions={permissoes}
             userData={userData}
           />
         )}
