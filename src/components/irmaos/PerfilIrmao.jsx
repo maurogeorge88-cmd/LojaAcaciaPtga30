@@ -96,7 +96,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
   const handleSalvarEdicao = async () => {
     try {
-      // Salvar dados do irmão
+      // Salvar apenas dados básicos do irmão (sem familiares por enquanto)
       const { error: erroIrmao } = await supabase
         .from('irmaos')
         .update(irmaoForm)
@@ -121,12 +121,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
         if (erroCargos) throw erroCargos;
       }
 
-      showSuccess('✅ Perfil atualizado com sucesso!');
+      showSuccess('✅ Perfil atualizado!');
       setModoEdicao(false);
       carregarIrmao();
       carregarHistoricoCargos();
     } catch (error) {
-      showError('❌ Erro ao salvar: ' + error.message);
+      console.error('Erro completo:', error);
+      showError('❌ Erro: ' + error.message);
     }
   };
 
