@@ -169,17 +169,22 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
       }
 
       // Salvar filhos
+      console.log('🔍 Salvando filhos:', familiares.filhos);
       await supabase.from('filhos').delete().eq('irmao_id', irmaoId);
       if (familiares.filhos.length > 0) {
-        await supabase.from('filhos').insert(
-          familiares.filhos.map(f => ({
-            irmao_id: irmaoId,
-            nome: f.nome,
-            data_nascimento: f.data_nascimento,
-            sexo: f.sexo,
-            tipo_vinculo: f.tipo_vinculo || 'filho'
-          }))
-        );
+        const filhosParaSalvar = familiares.filhos.map(f => ({
+          irmao_id: irmaoId,
+          nome: f.nome,
+          data_nascimento: f.data_nascimento,
+          sexo: f.sexo || 'M',
+          tipo_vinculo: f.tipo_vinculo || 'filho'
+        }));
+        console.log('💾 Dados dos filhos:', filhosParaSalvar);
+        const { error: erroFilhos } = await supabase.from('filhos').insert(filhosParaSalvar);
+        if (erroFilhos) {
+          console.error('❌ Erro ao salvar filhos:', erroFilhos);
+          throw erroFilhos;
+        }
       }
 
       showSuccess('✅ Perfil atualizado!');
@@ -1125,19 +1130,30 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             const data = document.getElementById('filho-data').value;
                             const sexo = document.getElementById('filho-sexo').value;
                             const tipo = document.getElementById('filho-tipo').value;
+                            
+                            console.log('📝 Valores capturados:', { nome, data, sexo, tipo });
+                            
                             if (!nome) { alert('Digite o nome!'); return; }
                             
                             if (filhoEditandoIndex !== null) {
                               // Editar
                               const novosFilhos = [...familiares.filhos];
-                              novosFilhos[filhoEditandoIndex] = { nome, data_nascimento: data, sexo, tipo_vinculo: tipo };
+                              novosFilhos[filhoEditandoIndex] = { 
+                                nome, 
+                                data_nascimento: data, 
+                                sexo, 
+                                tipo_vinculo: tipo 
+                              };
+                              console.log('✏️ Editando filho index:', filhoEditandoIndex, novosFilhos[filhoEditandoIndex]);
                               setFamiliares({ ...familiares, filhos: novosFilhos });
                               setFilhoEditandoIndex(null);
                             } else {
                               // Adicionar
+                              const novoFilho = { nome, data_nascimento: data, sexo, tipo_vinculo: tipo };
+                              console.log('➕ Adicionando filho:', novoFilho);
                               setFamiliares({
                                 ...familiares,
-                                filhos: [...familiares.filhos, { nome, data_nascimento: data, sexo, tipo_vinculo: tipo }]
+                                filhos: [...familiares.filhos, novoFilho]
                               });
                             }
                             document.getElementById('filho-nome').value = '';
