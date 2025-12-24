@@ -18,8 +18,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   const [filhoForm, setFilhoForm] = useState({
     nome: '',
     data_nascimento: '',
-    sexo: 'M',
-    tipo_vinculo: 'filho'
+    sexo: '',
+    tipo_vinculo: ''
   });
 
   useEffect(() => {
@@ -1117,6 +1117,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           onChange={(e) => setFilhoForm({...filhoForm, sexo: e.target.value})}
                           className="px-3 py-2 border rounded"
                         >
+                          <option value="">Sexo...</option>
                           <option value="M">Masculino</option>
                           <option value="F">Feminino</option>
                         </select>
@@ -1125,6 +1126,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           onChange={(e) => setFilhoForm({...filhoForm, tipo_vinculo: e.target.value})}
                           className="px-3 py-2 border rounded"
                         >
+                          <option value="">Vínculo...</option>
                           <option value="filho">Filho</option>
                           <option value="filha">Filha</option>
                           <option value="enteado">Enteado</option>
@@ -1139,18 +1141,25 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           onClick={() => {
                             if (!filhoForm.nome) { alert('Digite o nome!'); return; }
                             
+                            const filhoData = {
+                              nome: filhoForm.nome,
+                              data_nascimento: filhoForm.data_nascimento || null,
+                              sexo: filhoForm.sexo || 'M',
+                              tipo_vinculo: filhoForm.tipo_vinculo || 'filho'
+                            };
+                            
                             if (filhoEditandoIndex !== null) {
                               const novosFilhos = [...familiares.filhos];
-                              novosFilhos[filhoEditandoIndex] = {...filhoForm};
+                              novosFilhos[filhoEditandoIndex] = filhoData;
                               setFamiliares({ ...familiares, filhos: novosFilhos });
                               setFilhoEditandoIndex(null);
                             } else {
                               setFamiliares({
                                 ...familiares,
-                                filhos: [...familiares.filhos, {...filhoForm}]
+                                filhos: [...familiares.filhos, filhoData]
                               });
                             }
-                            setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
+                            setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '' });
                           }}
                           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
@@ -1161,7 +1170,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             type="button"
                             onClick={() => {
                               setFilhoEditandoIndex(null);
-                              setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
+                              setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '' });
                             }}
                             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                           >
