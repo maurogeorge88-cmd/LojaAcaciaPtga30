@@ -14,6 +14,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     filhos: []
   });
   const [historicoCargos, setHistoricoCargos] = useState([]);
+  const [filhoEditandoIndex, setFilhoEditandoIndex] = useState(null);
 
   useEffect(() => {
     if (irmaoId) {
@@ -1088,39 +1089,67 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   
                   {modoEdicao && (
                     <div className="bg-green-100 p-4 rounded mb-4">
-                      <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                        <div className="md:col-span-5">
-                          <input type="text" id="filho-nome" placeholder="Nome" className="w-full px-3 py-2 border rounded" />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                        <div className="md:col-span-2">
+                          <input 
+                            type="text" 
+                            id="filho-nome" 
+                            placeholder="Nome" 
+                            className="w-full px-3 py-2 border rounded" 
+                          />
                         </div>
-                        <div className="md:col-span-3">
+                        <div>
                           <input type="date" id="filho-data" className="w-full px-3 py-2 border rounded" />
                         </div>
-                        <div className="md:col-span-2">
-                          <select id="filho-sexo" className="w-full px-3 py-2 border rounded">
-                            <option value="M">Masculino</option>
-                            <option value="F">Feminino</option>
-                          </select>
-                        </div>
-                        <div className="md:col-span-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nome = document.getElementById('filho-nome').value;
-                              const data = document.getElementById('filho-data').value;
-                              const sexo = document.getElementById('filho-sexo').value;
-                              if (!nome) { alert('Digite o nome!'); return; }
+                      </div>
+                      <div className="flex gap-3">
+                        <select id="filho-sexo" className="px-3 py-2 border rounded">
+                          <option value="M">Masculino</option>
+                          <option value="F">Feminino</option>
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nome = document.getElementById('filho-nome').value;
+                            const data = document.getElementById('filho-data').value;
+                            const sexo = document.getElementById('filho-sexo').value;
+                            if (!nome) { alert('Digite o nome!'); return; }
+                            
+                            if (filhoEditandoIndex !== null) {
+                              // Editar
+                              const novosFilhos = [...familiares.filhos];
+                              novosFilhos[filhoEditandoIndex] = { nome, data_nascimento: data, sexo };
+                              setFamiliares({ ...familiares, filhos: novosFilhos });
+                              setFilhoEditandoIndex(null);
+                            } else {
+                              // Adicionar
                               setFamiliares({
                                 ...familiares,
                                 filhos: [...familiares.filhos, { nome, data_nascimento: data, sexo }]
                               });
+                            }
+                            document.getElementById('filho-nome').value = '';
+                            document.getElementById('filho-data').value = '';
+                            document.getElementById('filho-sexo').value = 'M';
+                          }}
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          {filhoEditandoIndex !== null ? '💾 Salvar' : '➕ Adicionar'}
+                        </button>
+                        {filhoEditandoIndex !== null && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilhoEditandoIndex(null);
                               document.getElementById('filho-nome').value = '';
                               document.getElementById('filho-data').value = '';
+                              document.getElementById('filho-sexo').value = 'M';
                             }}
-                            className="w-full px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                           >
-                            ➕
+                            ✕ Cancelar
                           </button>
-                        </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1139,15 +1168,29 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               </div>
                             </div>
                             {modoEdicao && (
-                              <button
-                                onClick={() => {
-                                  const novosFilhos = familiares.filhos.filter((_, i) => i !== index);
-                                  setFamiliares({ ...familiares, filhos: novosFilhos });
-                                }}
-                                className="text-red-600 hover:text-red-800 font-bold"
-                              >
-                                ✕
-                              </button>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => {
+                                    document.getElementById('filho-nome').value = filho.nome;
+                                    document.getElementById('filho-data').value = filho.data_nascimento || '';
+                                    document.getElementById('filho-sexo').value = filho.sexo;
+                                    setFilhoEditandoIndex(index);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-800 text-sm"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const novosFilhos = familiares.filhos.filter((_, i) => i !== index);
+                                    setFamiliares({ ...familiares, filhos: novosFilhos });
+                                    if (filhoEditandoIndex === index) setFilhoEditandoIndex(null);
+                                  }}
+                                  className="text-red-600 hover:text-red-800 text-sm"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
                             )}
                           </div>
                           {filho.data_nascimento && (
