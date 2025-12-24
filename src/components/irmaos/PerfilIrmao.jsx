@@ -96,7 +96,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
   const handleSalvarEdicao = async () => {
     try {
-      // Salvar apenas dados básicos do irmão (sem familiares por enquanto)
+      // Salvar dados básicos do irmão
       const { error: erroIrmao } = await supabase
         .from('irmaos')
         .update(irmaoForm)
@@ -104,7 +104,39 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
       if (erroIrmao) throw erroIrmao;
 
-      // Deletar cargos antigos e inserir novos
+      // Salvar cônjuge se existir
+      if (familiares.conjuge?.nome) {
+        // Verificar se já existe
+        const { data: conjExiste } = await supabase
+          .from('esposas')
+          .select('id')
+          .eq('irmao_id', irmaoId)
+          .single();
+
+        if (conjExiste) {
+          // Atualizar
+          await supabase
+            .from('esposas')
+            .update({
+              nome: familiares.conjuge.nome,
+              data_nascimento: familiares.conjuge.data_nascimento,
+              data_casamento: familiares.conjuge.data_casamento,
+              profissao: familiares.conjuge.profissao
+            })
+            .eq('irmao_id', irmaoId);
+        } else {
+          // Inserir novo
+          await supabase.from('esposas').insert({
+            irmao_id: irmaoId,
+            nome: familiares.conjuge.nome,
+            data_nascimento: familiares.conjuge.data_nascimento,
+            data_casamento: familiares.conjuge.data_casamento,
+            profissao: familiares.conjuge.profissao
+          });
+        }
+      }
+
+      // Salvar cargos
       await supabase.from('historico_cargos').delete().eq('irmao_id', irmaoId);
       
       if (historicoCargos.length > 0) {
@@ -114,19 +146,16 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           cargo: c.cargo
         }));
         
-        const { error: erroCargos } = await supabase
-          .from('historico_cargos')
-          .insert(cargosParaSalvar);
-          
-        if (erroCargos) throw erroCargos;
+        await supabase.from('historico_cargos').insert(cargosParaSalvar);
       }
 
       showSuccess('✅ Perfil atualizado!');
       setModoEdicao(false);
       carregarIrmao();
+      carregarFamiliares();
       carregarHistoricoCargos();
     } catch (error) {
-      console.error('Erro completo:', error);
+      console.error('Erro:', error);
       showError('❌ Erro: ' + error.message);
     }
   };
@@ -828,47 +857,94 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {abaSelecionada === 'familiar' && (
             <div className="space-y-6">
               {/* Cônjuge */}
-              {familiares.conjuge && (
-                <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200">
-                  <h4 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
-                    💑 Cônjuge
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200">
+                <h4 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+                  💑 Cônjuge
+                </h4>
+                {modoEdicao ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <span className="font-semibold text-gray-700">Nome:</span>
-                      <span className="ml-2 text-gray-900">{familiares.conjuge.nome}</span>
+                      <label className="block text-sm font-medium mb-1">Nome</label>
+                      <input
+                        type="text"
+                        value={familiares.conjuge?.nome || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          conjuge: { ...familiares.conjuge, nome: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
                     </div>
-                    {familiares.conjuge.data_nascimento && (
-                      <div>
-                        <span className="font-semibold text-gray-700">Data de Nascimento:</span>
-                        <span className="ml-2 text-gray-900">
-                          {familiares.conjuge.data_nascimento.split('-').reverse().join('/')}
-                        </span>
-                      </div>
-                    )}
-                    {familiares.conjuge.data_casamento && (
-                      <div>
-                        <span className="font-semibold text-gray-700">💑 Data de Casamento:</span>
-                        <span className="ml-2 text-gray-900">
-                          {familiares.conjuge.data_casamento.split('-').reverse().join('/')}
-                        </span>
-                      </div>
-                    )}
-                    {familiares.conjuge.cpf && (
-                      <div>
-                        <span className="font-semibold text-gray-700">CPF:</span>
-                        <span className="ml-2 text-gray-900">{familiares.conjuge.cpf}</span>
-                      </div>
-                    )}
-                    {familiares.conjuge.profissao && (
-                      <div>
-                        <span className="font-semibold text-gray-700">Profissão:</span>
-                        <span className="ml-2 text-gray-900">{familiares.conjuge.profissao}</span>
-                      </div>
-                    )}
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Data Nascimento</label>
+                      <input
+                        type="date"
+                        value={familiares.conjuge?.data_nascimento || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          conjuge: { ...familiares.conjuge, data_nascimento: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Data Casamento</label>
+                      <input
+                        type="date"
+                        value={familiares.conjuge?.data_casamento || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          conjuge: { ...familiares.conjuge, data_casamento: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1">Profissão</label>
+                      <input
+                        type="text"
+                        value={familiares.conjuge?.profissao || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          conjuge: { ...familiares.conjuge, profissao: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 border rounded"
+                      />
+                    </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  familiares.conjuge && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="font-semibold text-gray-700">Nome:</span>
+                        <span className="ml-2 text-gray-900">{familiares.conjuge.nome}</span>
+                      </div>
+                      {familiares.conjuge.data_nascimento && (
+                        <div>
+                          <span className="font-semibold text-gray-700">Data de Nascimento:</span>
+                          <span className="ml-2 text-gray-900">
+                            {familiares.conjuge.data_nascimento.split('-').reverse().join('/')}
+                          </span>
+                        </div>
+                      )}
+                      {familiares.conjuge.data_casamento && (
+                        <div>
+                          <span className="font-semibold text-gray-700">💑 Data de Casamento:</span>
+                          <span className="ml-2 text-gray-900">
+                            {familiares.conjuge.data_casamento.split('-').reverse().join('/')}
+                          </span>
+                        </div>
+                      )}
+                      {familiares.conjuge.profissao && (
+                        <div>
+                          <span className="font-semibold text-gray-700">Profissão:</span>
+                          <span className="ml-2 text-gray-900">{familiares.conjuge.profissao}</span>
+                        </div>
+                      )}
+                    </div>
+                  )
+                )}
+              </div>
 
               {/* Pais */}
               {(familiares.pais.pai || familiares.pais.mae) && (
