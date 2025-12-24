@@ -247,7 +247,7 @@ export default function Aniversariantes() {
           .from('filhos')
           .select('irmao_id, nome')
           .in('irmao_id', irmaosIds)
-          .eq('falecido', true);
+          .eq('vivo', false);
         
         if (filhosFalecidos) {
           filhosFalecidos.forEach(filho => {
@@ -739,14 +739,14 @@ export default function Aniversariantes() {
         });
       }
 
-      // FILHOS VIVOS de irmãos vivos (considera null como vivo)
+      // FILHOS VIVOS de irmãos vivos (vivo = true ou null)
       let { data: filhosVivos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, irmao_id, falecido, irmaos(nome, status)')
+        .select('nome, data_nascimento, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, status)')
         .in('irmao_id', irmaoVivosIds);
       
-      // Filtrar apenas os vivos (falecido = false ou null)
-      filhosVivos = filhosVivos?.filter(f => !f.falecido) || [];
+      // Filtrar apenas os vivos (vivo = true ou null)
+      filhosVivos = filhosVivos?.filter(f => f.vivo !== false) || [];
 
       console.log('✅ Filhos vivos:', filhosVivos?.length);
 
@@ -774,8 +774,18 @@ export default function Aniversariantes() {
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            
+            // Usar tipo_vinculo do banco, com fallback para lógica antiga
+            let tipoExibicao = 'Filho(a)';
+            if (filho.tipo_vinculo) {
+              // Capitalizar primeira letra
+              tipoExibicao = filho.tipo_vinculo.charAt(0).toUpperCase() + filho.tipo_vinculo.slice(1);
+            } else if (filho.sexo) {
+              tipoExibicao = filho.sexo === 'M' ? 'Filho' : 'Filha';
+            }
+            
             aniversariantesFamiliares.push({
-              tipo: 'Filho(a)',
+              tipo: tipoExibicao,
               nome: filho.nome,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
@@ -901,7 +911,7 @@ export default function Aniversariantes() {
       // FILHOS FALECIDOS de irmãos VIVOS
       let { data: filhosFalecidos, error: errorFilhosFalecidos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, irmao_id, falecido, irmaos(nome, status)')
+        .select('nome, data_nascimento, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, status)')
         .in('irmao_id', irmaoVivosIds);
 
       if (errorFilhosFalecidos) {
@@ -909,8 +919,8 @@ export default function Aniversariantes() {
         filhosFalecidos = [];
       }
       
-      // Filtrar apenas os falecidos (falecido = true)
-      filhosFalecidos = filhosFalecidos?.filter(f => f.falecido === true) || [];
+      // Filtrar apenas os falecidos (vivo = false)
+      filhosFalecidos = filhosFalecidos?.filter(f => f.vivo === false) || [];
       
       console.log('✅ Filhos falecidos:', filhosFalecidos?.length);
 
@@ -938,8 +948,18 @@ export default function Aniversariantes() {
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            
+            // Usar tipo_vinculo do banco, com fallback para lógica antiga
+            let tipoExibicao = 'Filho(a)';
+            if (filho.tipo_vinculo) {
+              // Capitalizar primeira letra
+              tipoExibicao = filho.tipo_vinculo.charAt(0).toUpperCase() + filho.tipo_vinculo.slice(1);
+            } else if (filho.sexo) {
+              tipoExibicao = filho.sexo === 'M' ? 'Filho' : 'Filha';
+            }
+            
             aniversariantesInMemoriam.push({
-              tipo: 'Filho(a)',
+              tipo: tipoExibicao,
               nome: filho.nome,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
