@@ -10,20 +10,8 @@ export default function Eventos({ userPermissions, userData }) {
   const [modoEdicao, setModoEdicao] = useState(false);
 
   // Verificar se tem permissão de edição
-  // APENAS ADMINISTRADORES podem editar eventos
-  // Administradores = nivel_acesso === 'administrador' OU cargo === 'Veneravel Mestre'
-  const podeEditar = Boolean(
-    userPermissions?.nivel_acesso === 'administrador' ||
-    userPermissions?.cargo === 'Veneravel Mestre'
-  );
-
-  // Log para debug
-  useEffect(() => {
-    console.log('📋 Eventos - Permissões recebidas:', userPermissions);
-    console.log('✏️ Eventos - Pode Editar:', podeEditar);
-    console.log('🔑 Eventos - Nivel Acesso:', userPermissions?.nivel_acesso);
-    console.log('👤 Eventos - Cargo:', userPermissions?.cargo);
-  }, [userPermissions, podeEditar]);
+  // Versão simples: usa pode_gerenciar_usuarios que existe e funciona
+  const podeEditar = Boolean(userPermissions?.pode_gerenciar_usuarios);
 
   const [formData, setFormData] = useState({
     tipo_evento: 'externo', // externo ou interno
