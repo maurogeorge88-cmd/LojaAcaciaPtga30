@@ -15,6 +15,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   });
   const [historicoCargos, setHistoricoCargos] = useState([]);
   const [filhoEditandoIndex, setFilhoEditandoIndex] = useState(null);
+  const [filhoForm, setFilhoForm] = useState({
+    nome: '',
+    data_nascimento: '',
+    sexo: 'M',
+    tipo_vinculo: 'filho'
+  });
 
   useEffect(() => {
     if (irmaoId) {
@@ -1103,21 +1109,35 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         <div className="md:col-span-2">
                           <input 
                             type="text" 
-                            id="filho-nome" 
+                            value={filhoForm.nome}
+                            onChange={(e) => setFilhoForm({...filhoForm, nome: e.target.value})}
                             placeholder="Nome" 
                             className="w-full px-3 py-2 border rounded" 
                           />
                         </div>
                         <div>
-                          <input type="date" id="filho-data" className="w-full px-3 py-2 border rounded" />
+                          <input 
+                            type="date" 
+                            value={filhoForm.data_nascimento}
+                            onChange={(e) => setFilhoForm({...filhoForm, data_nascimento: e.target.value})}
+                            className="w-full px-3 py-2 border rounded" 
+                          />
                         </div>
                       </div>
                       <div className="flex gap-3">
-                        <select id="filho-sexo" className="px-3 py-2 border rounded">
+                        <select 
+                          value={filhoForm.sexo}
+                          onChange={(e) => setFilhoForm({...filhoForm, sexo: e.target.value})}
+                          className="px-3 py-2 border rounded"
+                        >
                           <option value="M">Masculino</option>
                           <option value="F">Feminino</option>
                         </select>
-                        <select id="filho-tipo" className="px-3 py-2 border rounded">
+                        <select 
+                          value={filhoForm.tipo_vinculo}
+                          onChange={(e) => setFilhoForm({...filhoForm, tipo_vinculo: e.target.value})}
+                          className="px-3 py-2 border rounded"
+                        >
                           <option value="filho">Filho</option>
                           <option value="filha">Filha</option>
                           <option value="enteado">Enteado</option>
@@ -1130,43 +1150,20 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         <button
                           type="button"
                           onClick={() => {
-                            const nome = document.getElementById('filho-nome').value;
-                            const data = document.getElementById('filho-data').value;
-                            const sexo = document.getElementById('filho-sexo').value;
-                            const tipo = document.getElementById('filho-tipo').value;
-                            
-                            console.log('📝 Valores capturados:', { nome, data, sexo, tipo });
-                            
-                            if (!nome) { alert('Digite o nome!'); return; }
+                            if (!filhoForm.nome) { alert('Digite o nome!'); return; }
                             
                             if (filhoEditandoIndex !== null) {
-                              // Editar - criar objeto limpo
-                              const novoFilho = { 
-                                nome, 
-                                sexo, 
-                                tipo_vinculo: tipo 
-                              };
-                              if (data) novoFilho.data_nascimento = data;
-                              
                               const novosFilhos = [...familiares.filhos];
-                              novosFilhos[filhoEditandoIndex] = novoFilho;
-                              console.log('✏️ Editando filho index:', filhoEditandoIndex, novoFilho);
+                              novosFilhos[filhoEditandoIndex] = {...filhoForm};
                               setFamiliares({ ...familiares, filhos: novosFilhos });
                               setFilhoEditandoIndex(null);
                             } else {
-                              // Adicionar - objeto limpo
-                              const novoFilho = { nome, sexo, tipo_vinculo: tipo };
-                              if (data) novoFilho.data_nascimento = data;
-                              console.log('➕ Adicionando filho:', novoFilho);
                               setFamiliares({
                                 ...familiares,
-                                filhos: [...familiares.filhos, novoFilho]
+                                filhos: [...familiares.filhos, {...filhoForm}]
                               });
                             }
-                            document.getElementById('filho-nome').value = '';
-                            document.getElementById('filho-data').value = '';
-                            document.getElementById('filho-sexo').value = 'M';
-                            document.getElementById('filho-tipo').value = 'filho';
+                            setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
                           }}
                           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
@@ -1177,10 +1174,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             type="button"
                             onClick={() => {
                               setFilhoEditandoIndex(null);
-                              document.getElementById('filho-nome').value = '';
-                              document.getElementById('filho-data').value = '';
-                              document.getElementById('filho-sexo').value = 'M';
-                              document.getElementById('filho-tipo').value = 'filho';
+                              setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
                             }}
                             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                           >
@@ -1213,10 +1207,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => {
-                                    document.getElementById('filho-nome').value = filho.nome;
-                                    document.getElementById('filho-data').value = filho.data_nascimento || '';
-                                    document.getElementById('filho-sexo').value = filho.sexo;
-                                    document.getElementById('filho-tipo').value = filho.tipo_vinculo || 'filho';
+                                    setFilhoForm({...filho});
                                     setFilhoEditandoIndex(index);
                                   }}
                                   className="text-blue-600 hover:text-blue-800 text-sm"
