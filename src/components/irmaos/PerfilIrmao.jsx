@@ -172,14 +172,20 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
       console.log('🔍 Salvando filhos:', familiares.filhos);
       await supabase.from('filhos').delete().eq('irmao_id', irmaoId);
       if (familiares.filhos.length > 0) {
-        const filhosParaSalvar = familiares.filhos.map(f => ({
-          irmao_id: irmaoId,
-          nome: f.nome,
-          data_nascimento: f.data_nascimento,
-          sexo: f.sexo || 'M',
-          tipo_vinculo: f.tipo_vinculo || 'filho'
-        }));
-        console.log('💾 Dados dos filhos:', filhosParaSalvar);
+        const filhosParaSalvar = familiares.filhos.map(f => {
+          const filho = {
+            irmao_id: irmaoId,
+            nome: f.nome,
+            sexo: f.sexo || 'M',
+            tipo_vinculo: f.tipo_vinculo || 'filho'
+          };
+          // Só adiciona data se existir
+          if (f.data_nascimento) {
+            filho.data_nascimento = f.data_nascimento;
+          }
+          return filho;
+        });
+        console.log('💾 Dados dos filhos para salvar:', filhosParaSalvar);
         const { error: erroFilhos } = await supabase.from('filhos').insert(filhosParaSalvar);
         if (erroFilhos) {
           console.error('❌ Erro ao salvar filhos:', erroFilhos);
@@ -1136,20 +1142,23 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             if (!nome) { alert('Digite o nome!'); return; }
                             
                             if (filhoEditandoIndex !== null) {
-                              // Editar
-                              const novosFilhos = [...familiares.filhos];
-                              novosFilhos[filhoEditandoIndex] = { 
+                              // Editar - criar objeto limpo
+                              const novoFilho = { 
                                 nome, 
-                                data_nascimento: data, 
                                 sexo, 
                                 tipo_vinculo: tipo 
                               };
-                              console.log('✏️ Editando filho index:', filhoEditandoIndex, novosFilhos[filhoEditandoIndex]);
+                              if (data) novoFilho.data_nascimento = data;
+                              
+                              const novosFilhos = [...familiares.filhos];
+                              novosFilhos[filhoEditandoIndex] = novoFilho;
+                              console.log('✏️ Editando filho index:', filhoEditandoIndex, novoFilho);
                               setFamiliares({ ...familiares, filhos: novosFilhos });
                               setFilhoEditandoIndex(null);
                             } else {
-                              // Adicionar
-                              const novoFilho = { nome, data_nascimento: data, sexo, tipo_vinculo: tipo };
+                              // Adicionar - objeto limpo
+                              const novoFilho = { nome, sexo, tipo_vinculo: tipo };
+                              if (data) novoFilho.data_nascimento = data;
                               console.log('➕ Adicionando filho:', novoFilho);
                               setFamiliares({
                                 ...familiares,
