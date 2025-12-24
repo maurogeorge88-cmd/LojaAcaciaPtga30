@@ -62,12 +62,6 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     const pai = paisData?.find(p => p.tipo === 'pai');
     const mae = paisData?.find(p => p.tipo === 'mae');
 
-    console.log('📊 DEBUG PAIS:', {
-      paisData,
-      pai,
-      mae
-    });
-
     // Carregar filhos
     const { data: filhosData } = await supabase
       .from('filhos')
@@ -172,29 +166,22 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
         );
       }
 
-      // Salvar filhos
-      console.log('🔍 Salvando filhos:', familiares.filhos);
-      await supabase.from('filhos').delete().eq('irmao_id', irmaoId);
+      // Salvar filhos - deletar todos e inserir novos
+      const { error: deleteError } = await supabase.from('filhos').delete().eq('irmao_id', irmaoId);
+      if (deleteError) console.error('Erro ao deletar filhos:', deleteError);
+      
       if (familiares.filhos.length > 0) {
-        const filhosParaSalvar = familiares.filhos.map(f => {
-          const filho = {
+        const { error: insertError } = await supabase.from('filhos').insert(
+          familiares.filhos.map(f => ({
             irmao_id: irmaoId,
             nome: f.nome,
+            data_nascimento: f.data_nascimento || null,
             sexo: f.sexo || 'M',
-            tipo_vinculo: f.tipo_vinculo || 'filho'
-          };
-          // Só adiciona data se existir
-          if (f.data_nascimento) {
-            filho.data_nascimento = f.data_nascimento;
-          }
-          return filho;
-        });
-        console.log('💾 Dados dos filhos para salvar:', filhosParaSalvar);
-        const { error: erroFilhos } = await supabase.from('filhos').insert(filhosParaSalvar);
-        if (erroFilhos) {
-          console.error('❌ Erro ao salvar filhos:', erroFilhos);
-          throw erroFilhos;
-        }
+            tipo_vinculo: f.tipo_vinculo || 'filho',
+            vivo: f.vivo !== false
+          }))
+        );
+        if (insertError) throw insertError;
       }
 
       showSuccess('✅ Perfil atualizado!');
