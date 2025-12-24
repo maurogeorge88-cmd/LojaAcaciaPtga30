@@ -77,7 +77,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const [filhoForm, setFilhoForm] = useState({
     nome: '',
     data_nascimento: '',
-    sexo: 'M'
+    sexo: 'M',
+    tipo_vinculo: 'filho'
   });
 
   // Estados de controle
@@ -207,7 +208,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         setFilhos(filhosData.map(f => ({
           nome: f.nome,
           data_nascimento: f.data_nascimento,
-          sexo: f.sexo || (f.tipo === 'Filho' ? 'M' : 'F')
+          sexo: f.sexo || (f.tipo === 'Filho' ? 'M' : 'F'),
+          tipo_vinculo: f.tipo_vinculo || (f.sexo === 'M' ? 'filho' : 'filha')
         })));
       } else {
         setFilhos([]);
@@ -277,7 +279,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       showSuccess('Filho adicionado à lista');
     }
     
-    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
+    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
   };
 
   const editarFilho = (index) => {
@@ -286,7 +288,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   };
 
   const cancelarEdicaoFilho = () => {
-    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
+    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
     setFilhoEditandoIndex(null);
   };
 
@@ -294,7 +296,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   const removerFilho = (index) => {
     setFilhos(filhos.filter((_, i) => i !== index));
     setFilhoEditandoIndex(null);
-    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
+    setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M', tipo_vinculo: 'filho' });
     showSuccess('Filho removido da lista');
   };
 
@@ -439,7 +441,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            sexo: filho.sexo
+            sexo: filho.sexo,
+            tipo_vinculo: filho.tipo_vinculo || (filho.sexo === 'M' ? 'filho' : 'filha')
           }));
 
           await supabase
@@ -535,7 +538,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             irmao_id: irmaoId,
             nome: filho.nome.trim(),
             data_nascimento: filho.data_nascimento || null,
-            sexo: filho.sexo
+            sexo: filho.sexo,
+            tipo_vinculo: filho.tipo_vinculo || (filho.sexo === 'M' ? 'filho' : 'filha')
           }));
 
           await supabase
@@ -1444,7 +1448,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
               {/* Formulário para adicionar filho */}
               <div className="bg-gray-50 p-4 rounded space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Nome do Filho
@@ -1480,6 +1484,28 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     >
                       <option value="M">Masculino</option>
                       <option value="F">Feminino</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tipo de Vínculo
+                    </label>
+                    <select
+                      value={filhoForm.tipo_vinculo}
+                      onChange={(e) => setFilhoForm({ ...filhoForm, tipo_vinculo: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="filho">Filho</option>
+                      <option value="filha">Filha</option>
+                      <option value="enteado">Enteado</option>
+                      <option value="enteada">Enteada</option>
+                      <option value="neto">Neto</option>
+                      <option value="neta">Neta</option>
+                      <option value="bisneto">Bisneto</option>
+                      <option value="bisneta">Bisneta</option>
+                      <option value="adotivo">Filho Adotivo</option>
+                      <option value="adotiva">Filha Adotiva</option>
                     </select>
                   </div>
                 </div>
@@ -1518,7 +1544,11 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       <div className="flex-1">
                         <p className="font-medium text-gray-800">{filho.nome}</p>
                         <p className="text-sm text-gray-600">
-                          {filho.sexo === 'M' ? '👦' : '👧'} Nascimento:{' '}
+                          {filho.sexo === 'M' ? '👦' : '👧'} 
+                          <span className="font-semibold capitalize ml-1">
+                            ({filho.tipo_vinculo || (filho.sexo === 'M' ? 'filho' : 'filha')})
+                          </span>
+                          {' • '}Nascimento:{' '}
                           {filho.data_nascimento ? new Date(filho.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR') : 'Não informado'} 
                           {filho.data_nascimento && ` - ${calcularIdade(filho.data_nascimento)} anos`}
                         </p>
