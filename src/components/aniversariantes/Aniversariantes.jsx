@@ -601,6 +601,7 @@ export default function Aniversariantes() {
         .neq('status', 'Falecido');
 
       console.log('✅ Irmãos vivos:', irmaos?.length);
+      console.log('📋 IDs dos irmãos vivos:', irmaos?.map(i => `${i.nome} (${i.status})`).join(', '));
 
       if (irmaos) {
         irmaos.forEach(irmao => {
@@ -659,7 +660,11 @@ export default function Aniversariantes() {
 
       if (paisVivos) {
         paisVivos.forEach(pai => {
-          if (pai.irmaos?.status === 'Falecido') return;
+          // Garantir que o irmão não está falecido
+          if (!pai.irmaos || pai.irmaos.status === 'Falecido') {
+            console.log('⚠️ Pai/Mãe de irmão falecido ignorado:', pai.nome, 'do irmão', pai.irmaos?.nome);
+            return;
+          }
           if (!pai.data_nascimento) return;
 
           const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
@@ -704,7 +709,11 @@ export default function Aniversariantes() {
 
       if (esposas) {
         esposas.forEach(esposa => {
-          if (esposa.irmaos?.status === 'Falecido') return;
+          // Garantir que o irmão não está falecido (redundante, mas mantém segurança)
+          if (!esposa.irmaos || esposa.irmaos.status === 'Falecido') {
+            console.log('⚠️ Esposa de irmão falecido ignorada:', esposa.nome, 'do irmão', esposa.irmaos?.nome);
+            return;
+          }
           if (!esposa.data_nascimento) return;
 
           const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
@@ -752,7 +761,11 @@ export default function Aniversariantes() {
 
       if (filhosVivos) {
         filhosVivos.forEach(filho => {
-          if (filho.irmaos?.status === 'Falecido') return;
+          // Garantir que o irmão não está falecido
+          if (!filho.irmaos || filho.irmaos.status === 'Falecido') {
+            console.log('⚠️ Filho de irmão falecido ignorado:', filho.nome, 'do irmão', filho.irmaos?.nome);
+            return;
+          }
           if (!filho.data_nascimento) return;
 
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
