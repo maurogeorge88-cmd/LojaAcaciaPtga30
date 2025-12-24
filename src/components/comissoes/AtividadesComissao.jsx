@@ -12,6 +12,12 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
   const [modoEdicao, setModoEdicao] = useState(false);
   const [atividadeEditando, setAtividadeEditando] = useState(null);
 
+  // Verificar permissões: admin, pode_editar_comissoes OU é membro da comissão
+  const podeEditar = permissoes?.eh_administrador || 
+                     permissoes?.pode_editar_comissoes || 
+                     comissao?.permissoesExpandidas?.eh_membro || 
+                     false;
+
   const [atividadeForm, setAtividadeForm] = useState({
     tipo: 'reuniao',
     titulo: '',
@@ -178,7 +184,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
         <div className="p-6 space-y-6">
           {/* FORMULÁRIO */}
-          {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_comissoes) && (
+          {podeEditar && (
             <div className="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
               <h3 className="text-lg font-bold text-gray-800 mb-4">
                 {modoEdicao ? '✏️ Editar Atividade' : '➕ Nova Atividade'}
@@ -331,7 +337,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                           </div>
                         </div>
 
-                        {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_comissoes) && (
+                        {podeEditar && (
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleEditar(atividade)}
