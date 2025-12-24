@@ -13,7 +13,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
   const [atividadeEditando, setAtividadeEditando] = useState(null);
 
   // Verificar permissões: admin, pode_editar_comissoes OU é membro da comissão
-  const podeEditar = permissoes?.eh_administrador || 
+  const podeEditar = permissoes?.nivel_acesso === 'administrador' || 
                      permissoes?.pode_editar_comissoes || 
                      comissao?.permissoesExpandidas?.eh_membro || 
                      false;
