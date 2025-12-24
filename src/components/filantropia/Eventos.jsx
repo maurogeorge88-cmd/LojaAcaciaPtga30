@@ -11,8 +11,10 @@ export default function Eventos({ userPermissions, userData }) {
 
   // Verificar se tem permissão de edição
   // APENAS ADMINISTRADORES podem editar eventos
+  // Administradores = nivel_acesso === 'administrador' OU cargo === 'Veneravel Mestre'
   const podeEditar = Boolean(
-    userPermissions?.nivel_acesso === 'administrador'
+    userPermissions?.nivel_acesso === 'administrador' ||
+    userPermissions?.cargo === 'Veneravel Mestre'
   );
 
   // Log para debug
