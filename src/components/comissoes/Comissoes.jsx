@@ -359,7 +359,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   return (
     <div>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
-      {(permissoes?.nivel_acesso === 'administrador' || permissoes?.pode_editar_comissoes) && (
+      {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
         <div className="bg-white rounded-xl shadow-md p-6 mb-6">
           <h3 className="text-xl font-bold text-blue-900 mb-4">
             {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
@@ -607,7 +607,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     >
                       📋 Atividades
                     </button>
-                    {(permissoes?.nivel_acesso === 'administrador' || permissoes?.pode_editar_comissoes) && (
+                    {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
                       <>
                         <button
                           onClick={() => handleEditar(comissao)}
