@@ -2256,6 +2256,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
+            userData={userData}
           />
         )}
 
@@ -2331,7 +2332,12 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {/* EVENTOS */}
-        {currentPage === 'eventos' && <Eventos />}
+        {currentPage === 'eventos' && (
+          <Eventos 
+            userPermissions={userPermissions}
+            userData={userData}
+          />
+        )}
 
         {/* ALTOS GRAUS */}
         {currentPage === 'altos-graus' && (
