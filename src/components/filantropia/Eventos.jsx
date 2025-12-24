@@ -10,14 +10,9 @@ export default function Eventos({ userPermissions, userData }) {
   const [modoEdicao, setModoEdicao] = useState(false);
 
   // Verificar se tem permissão de edição
-  // Campos corretos da tabela usuarios: pode_editar_financeiro, pode_editar_caridade
-  // nivel_acesso pode ser: 'administrador', 'usuario', etc.
+  // APENAS ADMINISTRADORES podem editar eventos
   const podeEditar = Boolean(
-    userPermissions?.nivel_acesso === 'administrador' ||
-    userPermissions?.pode_editar_financeiro === true ||
-    userPermissions?.pode_editar_caridade === true ||
-    userPermissions?.cargo === 'Veneravel Mestre' ||
-    userPermissions?.cargo === 'Tesoureiro'
+    userPermissions?.nivel_acesso === 'administrador'
   );
 
   // Log para debug
@@ -25,11 +20,8 @@ export default function Eventos({ userPermissions, userData }) {
     console.log('📋 Eventos - Permissões recebidas:', userPermissions);
     console.log('✏️ Eventos - Pode Editar:', podeEditar);
     console.log('🔑 Eventos - Nivel Acesso:', userPermissions?.nivel_acesso);
-    console.log('💰 Eventos - Pode Editar Financeiro:', userPermissions?.pode_editar_financeiro);
-    console.log('❤️ Eventos - Pode Editar Caridade:', userPermissions?.pode_editar_caridade);
     console.log('👤 Eventos - Cargo:', userPermissions?.cargo);
-    console.log('👤 Eventos - UserData:', userData);
-  }, [userPermissions, podeEditar, userData]);
+  }, [userPermissions, podeEditar]);
 
   const [formData, setFormData] = useState({
     tipo_evento: 'externo', // externo ou interno
