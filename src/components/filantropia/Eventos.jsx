@@ -10,8 +10,11 @@ export default function Eventos({ userPermissions, userData }) {
   const [modoEdicao, setModoEdicao] = useState(false);
 
   // Verificar se tem permissão de edição
-  // Versão simples: usa pode_gerenciar_usuarios que existe e funciona
-  const podeEditar = Boolean(userPermissions?.pode_gerenciar_usuarios);
+  // Admin pode editar eventos
+  const podeEditar = Boolean(
+    userPermissions?.pode_gerenciar_usuarios || 
+    userPermissions?.canManageUsers
+  );
 
   const [formData, setFormData] = useState({
     tipo_evento: 'externo', // externo ou interno
