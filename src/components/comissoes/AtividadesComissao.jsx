@@ -13,18 +13,10 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
   const [atividadeEditando, setAtividadeEditando] = useState(null);
 
   // Verificar permissões: admin, pode_editar_comissoes OU é membro da comissão
-  const podeEditar = permissoes?.nivel_acesso === 'administrador' || 
+  const podeEditar = permissoes?.pode_gerenciar_usuarios || 
                      permissoes?.pode_editar_comissoes || 
                      comissao?.permissoesExpandidas?.eh_membro || 
                      false;
-
-  // Log para debug
-  useEffect(() => {
-    console.log('🔍 AtividadesComissao - Permissões:', permissoes);
-    console.log('🔍 AtividadesComissao - Comissão:', comissao);
-    console.log('🔍 AtividadesComissao - É Membro?', comissao?.permissoesExpandidas?.eh_membro);
-    console.log('✏️ AtividadesComissao - Pode Editar?', podeEditar);
-  }, [permissoes, comissao, podeEditar]);
 
   const [atividadeForm, setAtividadeForm] = useState({
     tipo: 'reuniao',
