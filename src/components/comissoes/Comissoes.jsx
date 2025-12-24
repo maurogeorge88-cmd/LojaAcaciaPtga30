@@ -18,8 +18,39 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
   // Função para verificar se usuário é membro de uma comissão
   const ehMembroComissao = (comissao, integrantesComissao) => {
-    if (!userData?.irmao_id) return false;
-    return integrantesComissao.some(integrante => integrante.irmao_id === userData.irmao_id);
+    // Primeiro, precisamos encontrar qual irmão está vinculado a este usuário
+    // userData deve ter ou o id do usuário ou já vir com o irmao vinculado
+    
+    if (!userData) {
+      console.log('⚠️ userData não existe');
+      return false;
+    }
+    
+    // Buscar o irmão deste usuário
+    const irmaoDoUsuario = irmaos.find(irmao => {
+      // Pode ser que o usuário tenha email igual ao do irmão
+      return irmao.email === userData.email;
+    });
+    
+    if (!irmaoDoUsuario) {
+      console.log('⚠️ Irmão do usuário não encontrado. Email:', userData.email);
+      return false;
+    }
+    
+    // Verificar se este irmão está nos integrantes
+    const ehMembro = integrantesComissao.some(integrante => {
+      return integrante.irmao_id === irmaoDoUsuario.id;
+    });
+    
+    console.log('🔍 Verificando membro:', {
+      usuario_email: userData.email,
+      irmao_id: irmaoDoUsuario.id,
+      irmao_nome: irmaoDoUsuario.nome,
+      integrantesComissao,
+      ehMembro
+    });
+    
+    return ehMembro;
   };
 
   // Estados do formulário
