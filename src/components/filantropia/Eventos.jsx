@@ -352,21 +352,6 @@ export default function Eventos({ userPermissions, userData }) {
         )}
       </div>
 
-      {/* DEBUG - Remover depois */}
-      <div className="bg-yellow-50 border border-yellow-200 p-4 rounded mb-4">
-        <p className="font-bold">🔍 DEBUG - Permissões:</p>
-        <pre className="text-xs mt-2 bg-white p-2 rounded overflow-auto">
-          {JSON.stringify({
-            userPermissions,
-            podeEditar,
-            nivel_acesso: userPermissions?.nivel_acesso,
-            cargo: userPermissions?.cargo,
-            pode_editar_financeiro: userPermissions?.pode_editar_financeiro,
-            pode_editar_caridade: userPermissions?.pode_editar_caridade
-          }, null, 2)}
-        </pre>
-      </div>
-
       {/* Aviso para irmãos sem permissão */}
       {!podeEditar && (
         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6">
