@@ -48,7 +48,14 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           p_data_sessao: sessaoData.data_sessao
         });
 
-      if (irmaosError) throw irmaosError;
+      console.log('DEBUG - Sessão:', sessaoData);
+      console.log('DEBUG - Irmãos retornados:', irmaos);
+      console.log('DEBUG - Erro ao buscar irmãos:', irmaosError);
+
+      if (irmaosError) {
+        console.error('Erro na função RPC:', irmaosError);
+        throw irmaosError;
+      }
       setIrmaosElegiveis(irmaos || []);
 
       // Buscar presenças já registradas (se houver)
