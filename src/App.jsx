@@ -34,6 +34,7 @@ import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Comodatos from './components/comodatos/Comodatos';
 import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 import CadastroSessao from './components/CadastroSessao';
+import RegistroPresenca from './components/RegistroPresenca';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -118,6 +119,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
   const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
+  const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -2404,7 +2406,23 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* CADASTRO DE SESSÃO */}
         {currentPage === 'cadastro-sessao' && (
-          <CadastroSessao />
+          <CadastroSessao 
+            onSessaoCriada={(sessaoId) => {
+              setSessaoIdAtual(sessaoId);
+              setCurrentPage('registro-presenca');
+            }}
+          />
+        )}
+
+        {/* REGISTRO DE PRESENÇA */}
+        {currentPage === 'registro-presenca' && (
+          <RegistroPresenca 
+            sessaoId={sessaoIdAtual}
+            onVoltar={() => {
+              setCurrentPage('cadastro-sessao');
+              setSessaoIdAtual(null);
+            }}
+          />
         )}
 
         {/* SOBRE O SISTEMA */}
