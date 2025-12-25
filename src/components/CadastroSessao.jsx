@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function CadastroSessao() {
+export default function CadastroSessao({ onSessaoCriada }) {
   const [loading, setLoading] = useState(false);
   const [grausSessao, setGrausSessao] = useState([]);
   const [classificacoes, setClassificacoes] = useState([]);
@@ -110,7 +110,7 @@ export default function CadastroSessao() {
 
       setMensagem({ 
         tipo: 'sucesso', 
-        texto: 'Sessão cadastrada com sucesso!' 
+        texto: 'Sessão cadastrada com sucesso! Redirecionando...' 
       });
 
       // Limpar formulário
@@ -121,10 +121,12 @@ export default function CadastroSessao() {
         observacoes: ''
       });
 
-      // Redirecionar para registro de presença após 2 segundos
+      // Redirecionar para registro de presença após 1.5 segundos
       setTimeout(() => {
-        window.location.href = `/registro-presenca/${sessao.id}`;
-      }, 2000);
+        if (onSessaoCriada) {
+          onSessaoCriada(sessao.id);
+        }
+      }, 1500);
 
     } catch (error) {
       console.error('Erro ao cadastrar sessão:', error);
