@@ -35,6 +35,7 @@ import Comodatos from './components/comodatos/Comodatos';
 import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 import CadastroSessao from './components/CadastroSessao';
 import RegistroPresenca from './components/RegistroPresenca';
+import ListaSessoes from './components/ListaSessoes';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1940,6 +1941,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Cadastro de Sessão</span>}
                 </button>
 
+                {/* LISTA DE SESSÕES */}
+                <button
+                  onClick={() => setCurrentPage('lista-sessoes')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'lista-sessoes'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Sessões Realizadas"
+                >
+                  <span className="text-base">📊</span>
+                  {menuAberto && <span className="font-semibold">Sessões Realizadas</span>}
+                </button>
+
                 {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
                   <div className="border-t border-blue-700 mt-2 pt-2">
@@ -2080,6 +2095,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
                   {currentPage === 'cadastro-sessao' && '📋 Cadastro de Sessão'}
+                  {currentPage === 'lista-sessoes' && '📊 Sessões Realizadas'}
+                  {currentPage === 'registro-presenca' && '✅ Registro de Presença'}
                   {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
@@ -2411,6 +2428,17 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               setSessaoIdAtual(sessaoId);
               setCurrentPage('registro-presenca');
             }}
+          />
+        )}
+
+        {/* LISTA DE SESSÕES */}
+        {currentPage === 'lista-sessoes' && (
+          <ListaSessoes 
+            onEditarPresenca={(sessaoId) => {
+              setSessaoIdAtual(sessaoId);
+              setCurrentPage('registro-presenca');
+            }}
+            onNovaSessao={() => setCurrentPage('cadastro-sessao')}
           />
         )}
 
