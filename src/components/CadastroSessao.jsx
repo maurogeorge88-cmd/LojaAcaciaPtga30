@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 export default function CadastroSessao() {
   const [loading, setLoading] = useState(false);
