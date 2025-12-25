@@ -33,6 +33,7 @@ import Sobre from './components/Sobre';
 import Aniversariantes from './components/aniversariantes/Aniversariantes';
 import Comodatos from './components/comodatos/Comodatos';
 import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
+import CadastroSessao from './components/CadastroSessao';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1923,6 +1924,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
 
+                {/* CADASTRO DE SESSÃO */}
+                <button
+                  onClick={() => setCurrentPage('cadastro-sessao')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'cadastro-sessao'
+                      ? 'bg-blue-700 border-l-4 border-white'
+                      : 'hover:bg-blue-800'
+                  }`}
+                  title="Cadastro de Sessão"
+                >
+                  <span className="text-base">📋</span>
+                  {menuAberto && <span className="font-semibold">Cadastro de Sessão</span>}
+                </button>
+
                 {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
                   <div className="border-t border-blue-700 mt-2 pt-2">
@@ -2062,6 +2077,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
+                  {currentPage === 'cadastro-sessao' && '📋 Cadastro de Sessão'}
                   {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
                   {currentPage === 'altos-graus' && '🔺 Altos Graus'}
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
@@ -2384,6 +2400,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
           />
+        )}
+
+        {/* CADASTRO DE SESSÃO */}
+        {currentPage === 'cadastro-sessao' && (
+          <CadastroSessao />
         )}
 
         {/* SOBRE O SISTEMA */}
