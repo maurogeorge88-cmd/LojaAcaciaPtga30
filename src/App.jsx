@@ -2479,7 +2479,12 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* DASHBOARD DE PRESENÇA */}
         {currentPage === 'dashboard-presenca' && (
-          <DashboardPresenca />
+          <DashboardPresenca 
+            onEditarPresenca={(sessaoId) => {
+              setSessaoIdAtual(sessaoId);
+              setCurrentPage('registro-presenca');
+            }}
+          />
         )}
 
         {/* LISTA DE SESSÕES */}
