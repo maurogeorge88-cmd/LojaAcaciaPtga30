@@ -1566,27 +1566,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.text(`${irmaoData.nome} - CIM: ${irmaoData.cim || 'N/A'}`, 15, yPos);
         yPos += 8;
 
-        // Preparar dados em formato MATRIZ
+        // Preparar cabeçalho (tipos de sessão)
         const headers = ['Data'];
-        const tiposSessao = [];
-        
-        // Coletar tipos únicos de sessão
         ultimasSessoes.forEach(sessao => {
-          const tipo = sessao.graus_sessao?.nome || 'Não informado';
-          tiposSessao.push(tipo);
+          const tipo = sessao.graus_sessao?.nome || 'Sessão';
           headers.push(tipo);
         });
 
-        // Criar linha de dados com símbolos
-        const row = [];
+        // Criar UMA ÚNICA LINHA com todos os símbolos
+        const primeiraLinha = [];
+        
+        // Primeira célula: data da primeira sessão
+        const primeiraData = new Date(ultimasSessoes[0].data_sessao).toLocaleDateString('pt-BR', { 
+          day: '2-digit', 
+          month: '2-digit' 
+        });
+        primeiraLinha.push(primeiraData);
+        
+        // Demais células: símbolos de presença
         ultimasSessoes.forEach(sessao => {
           const registro = presencas?.find(p => p.sessao_id === sessao.id);
-          const data = new Date(sessao.data_sessao).toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit' 
-          });
           
-          let simbolo = '';
+          let simbolo = '-';
           if (registro) {
             if (registro.presente) {
               simbolo = '✓';
@@ -1595,55 +1596,77 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             } else {
               simbolo = '✗';
             }
-          } else {
-            simbolo = '-';
           }
           
-          row.push({ data, simbolo });
+          primeiraLinha.push(simbolo);
+        });
+
+        // Criar linhas restantes (uma para cada sessão)
+        const tableBody = [];
+        
+        ultimasSessoes.forEach((sessao, idx) => {
+          const data = new Date(sessao.data_sessao).toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit' 
+          });
+          
+          const linha = [data];
+          
+          // Preencher com símbolos
+          ultimasSessoes.forEach((s, colIdx) => {
+            if (idx === colIdx) {
+              // Mesma sessão - pegar o símbolo
+              const registro = presencas?.find(p => p.sessao_id === s.id);
+              let simbolo = '-';
+              if (registro) {
+                if (registro.presente) {
+                  simbolo = '✓';
+                } else if (registro.justificativa) {
+                  simbolo = 'J';
+                } else {
+                  simbolo = '✗';
+                }
+              }
+              linha.push(simbolo);
+            } else {
+              // Sessão diferente - vazio
+              linha.push('');
+            }
+          });
+          
+          tableBody.push(linha);
         });
 
         await import('jspdf-autotable');
         
-        // Tabela em formato matriz (datas nas linhas, tipos nas colunas)
-        const tableBody = row.map(item => {
-          const linha = [item.data];
-          // Adicionar símbolo para cada tipo de sessão
-          ultimasSessoes.forEach((_, idx) => {
-            linha.push(row[idx]?.simbolo || '-');
-          });
-          return [item.data, item.simbolo];
-        });
-
-        // Criar corpo da tabela corretamente
-        const matrixBody = [];
-        row.forEach((item, idx) => {
-          matrixBody.push([item.data, item.simbolo]);
-        });
-
         doc.autoTable({
           startY: yPos,
           head: [headers],
-          body: matrixBody,
+          body: tableBody,
           headStyles: { 
             fillColor: [33, 150, 243],
             textColor: [255, 255, 255],
-            fontSize: 10,
+            fontSize: 9,
             fontStyle: 'bold',
             halign: 'center',
+            valign: 'middle',
             lineWidth: 0.5,
             lineColor: [200, 200, 200]
           },
           bodyStyles: { 
-            fontSize: 11,
+            fontSize: 14,
             halign: 'center',
+            valign: 'middle',
             lineWidth: 0.5,
-            lineColor: [200, 200, 200]
+            lineColor: [200, 200, 200],
+            minCellHeight: 8
           },
           columnStyles: {
             0: { 
-              cellWidth: 25,
+              cellWidth: 20,
               halign: 'center',
-              fontStyle: 'bold'
+              fontStyle: 'bold',
+              fontSize: 9
             }
           },
           alternateRowStyles: {
