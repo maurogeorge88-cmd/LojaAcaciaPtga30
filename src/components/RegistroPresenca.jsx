@@ -327,7 +327,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.eh_licenciado && (
+                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
                           </span>
