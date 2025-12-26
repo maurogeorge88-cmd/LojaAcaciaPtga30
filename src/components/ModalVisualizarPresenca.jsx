@@ -243,7 +243,10 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           <div className="flex gap-3">
             <button
               onClick={() => {
-                if (onEditar) onEditar(sessaoId);
+                onFechar();
+                if (onEditar) {
+                  onEditar(sessaoId);
+                }
               }}
               className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
             >
