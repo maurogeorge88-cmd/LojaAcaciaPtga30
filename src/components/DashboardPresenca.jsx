@@ -31,24 +31,38 @@ export default function DashboardPresenca() {
   const calcularDatas = () => {
     const hoje = new Date();
     let inicio = new Date();
+    let fim = new Date();
 
     switch (periodo) {
       case 'mes':
         inicio.setMonth(hoje.getMonth() - 1);
+        inicio.setHours(0, 0, 0, 0);
+        // Incluir até 7 dias no futuro
+        fim.setDate(hoje.getDate() + 7);
+        fim.setHours(23, 59, 59, 999);
         break;
       case 'trimestre':
         inicio.setMonth(hoje.getMonth() - 3);
+        inicio.setHours(0, 0, 0, 0);
+        fim.setDate(hoje.getDate() + 7);
+        fim.setHours(23, 59, 59, 999);
         break;
       case 'semestre':
         inicio.setMonth(hoje.getMonth() - 6);
+        inicio.setHours(0, 0, 0, 0);
+        fim.setDate(hoje.getDate() + 7);
+        fim.setHours(23, 59, 59, 999);
         break;
       case 'ano':
         inicio.setFullYear(hoje.getFullYear() - 1);
+        inicio.setHours(0, 0, 0, 0);
+        fim.setDate(hoje.getDate() + 7);
+        fim.setHours(23, 59, 59, 999);
         break;
     }
 
     setDataInicio(inicio.toISOString().split('T')[0]);
-    setDataFim(hoje.toISOString().split('T')[0]);
+    setDataFim(fim.toISOString().split('T')[0]);
   };
 
   const carregarDados = async () => {
