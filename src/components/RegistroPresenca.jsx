@@ -131,36 +131,18 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       setSalvando(true);
       setMensagem({ tipo: '', texto: '' });
 
-      // Buscar ID do usuário logado
+      // Buscar ID do usuário logado (só para verificar permissão)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      // Buscar ID do irmão através do email
-      const { data: usuario, error: erroUsuario } = await supabase
-        .from('usuarios')
-        .select('email')
-        .eq('auth_user_id', user.id)
-        .single();
-
-      if (erroUsuario) throw erroUsuario;
-
-      const { data: irmao, error: erroIrmao } = await supabase
-        .from('irmaos')
-        .select('id')
-        .eq('email', usuario.email)
-        .single();
-
-      if (erroIrmao) throw erroIrmao;
-
-      // Preparar registros de presença
+      // Preparar registros de presença (SEM registrado_por)
       const registros = irmaosElegiveis.map(irmaoElegivel => ({
         sessao_id: sessaoId,
         membro_id: irmaoElegivel.membro_id,
         presente: presencas[irmaoElegivel.membro_id] || false,
         justificativa: (!presencas[irmaoElegivel.membro_id] && justificativas[irmaoElegivel.membro_id]) 
           ? justificativas[irmaoElegivel.membro_id] 
-          : null,
-        registrado_por: irmao.id
+          : null
       }));
 
       // Usar UPSERT (inserir ou atualizar) para evitar duplicação
