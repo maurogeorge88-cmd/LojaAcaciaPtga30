@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import ModalVisualizarPresenca from './ModalVisualizarPresenca';
 import ModalEditarSessao from './ModalEditarSessao';
+import ModalGradePresenca from './ModalGradePresenca';
 
 export default function DashboardPresenca() {
   const [loading, setLoading] = useState(true);
@@ -10,6 +11,7 @@ export default function DashboardPresenca() {
   const [dataFim, setDataFim] = useState('');
   const [sessaoIdModal, setSessaoIdModal] = useState(null);
   const [sessaoIdEditar, setSessaoIdEditar] = useState(null);
+  const [mostrarGrade, setMostrarGrade] = useState(false);
   const [anoRanking, setAnoRanking] = useState(new Date().getFullYear());
   const [anoProblemas, setAnoProblemas] = useState(new Date().getFullYear());
   const [periodoProblemas, setPeriodoProblemas] = useState('anual'); // mensal, trimestral, semestral, anual
@@ -304,8 +306,17 @@ export default function DashboardPresenca() {
             </p>
           </div>
 
-          {/* Filtro de Período */}
-          <div className="flex gap-2">
+          <div className="flex gap-3">
+            {/* Botão Ver Grade */}
+            <button
+              onClick={() => setMostrarGrade(true)}
+              className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition font-medium"
+            >
+              📊 Ver Grade Completa
+            </button>
+
+            {/* Filtro de Período */}
+            <div className="flex gap-2">
             <button
               onClick={() => setPeriodo('mes')}
               className={`px-4 py-2 rounded-md transition ${
@@ -628,6 +639,11 @@ export default function DashboardPresenca() {
         <ModalVisualizarPresenca 
           sessaoId={sessaoIdModal}
           onFechar={() => setSessaoIdModal(null)}
+          onEditar={(sessaoId) => {
+            setSessaoIdModal(null);
+            // Redirecionar para tela de registro de presença
+            window.location.href = `#registro-presenca-${sessaoId}`;
+          }}
         />
       )}
 
@@ -640,6 +656,15 @@ export default function DashboardPresenca() {
             carregarDados(); // Recarregar dados após salvar
             setSessaoIdEditar(null);
           }}
+        />
+      )}
+
+      {/* Modal de Grade de Presença */}
+      {mostrarGrade && (
+        <ModalGradePresenca 
+          onFechar={() => setMostrarGrade(false)}
+          periodoInicio={dataInicio}
+          periodoFim={dataFim}
         />
       )}
     </div>
