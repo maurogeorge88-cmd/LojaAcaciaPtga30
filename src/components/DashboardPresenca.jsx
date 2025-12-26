@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import ModalVisualizarPresenca from './ModalVisualizarPresenca';
+import ModalEditarSessao from './ModalEditarSessao';
 
 export default function DashboardPresenca() {
   const [loading, setLoading] = useState(true);
@@ -8,6 +9,8 @@ export default function DashboardPresenca() {
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [sessaoIdModal, setSessaoIdModal] = useState(null);
+  const [sessaoIdEditar, setSessaoIdEditar] = useState(null);
+  const [anoRanking, setAnoRanking] = useState(new Date().getFullYear());
   const [estatisticas, setEstatisticas] = useState({
     totalSessoes: 0,
     totalIrmaos: 0,
@@ -26,7 +29,7 @@ export default function DashboardPresenca() {
     if (dataInicio && dataFim) {
       carregarDados();
     }
-  }, [dataInicio, dataFim]);
+  }, [dataInicio, dataFim, anoRanking]);
 
   const calcularDatas = () => {
     const hoje = new Date();
@@ -92,34 +95,75 @@ export default function DashboardPresenca() {
       const totalRegistros = sessoes?.reduce((acc, s) => acc + (s.total_registros || 0), 0) || 0;
       const mediaPresenca = totalRegistros > 0 ? Math.round((totalPresencas / totalRegistros) * 100) : 0;
 
-      // 3. Buscar resumo de cada irmão
+      // 3. Buscar resumo de cada irmão (filtrado por ano do ranking)
+      const inicioAno = `${anoRanking}-01-01`;
+      const fimAno = `${anoRanking}-12-31`;
+
       const { data: resumoIrmaos, error: erroResumo } = await supabase
-        .from('vw_resumo_presencas_membros')
-        .select('*')
-        .order('taxa_presenca', { ascending: true });
+        .rpc('obter_estatisticas_presenca_membro', {
+          p_membro_id: null, // null = todos
+          p_data_inicio: inicioAno,
+          p_data_fim: fimAno
+        });
 
-      if (erroResumo) throw erroResumo;
+      // Como a função RPC não aceita null, vamos buscar todos os irmãos e calcular manualmente
+      const { data: todosIrmaos, error: erroTodos } = await supabase
+        .from('irmaos')
+        .select('id, nome')
+        .eq('situacao', 'regular');
 
-      const totalIrmaos = resumoIrmaos?.length || 0;
+      if (erroTodos) throw erroTodos;
+
+      // Calcular estatísticas para cada irmão
+      const resumoCompleto = [];
+      for (const irmao of (todosIrmaos || [])) {
+        const { data: stats } = await supabase
+          .rpc('obter_estatisticas_presenca_membro', {
+            p_membro_id: irmao.id,
+            p_data_inicio: inicioAno,
+            p_data_fim: fimAno
+          });
+
+        if (stats && stats.length > 0) {
+          const totalSessoes = stats.reduce((acc, s) => acc + (s.total_sessoes || 0), 0);
+          const totalPresencas = stats.reduce((acc, s) => acc + (s.presencas || 0), 0);
+          const totalAusenciasJust = stats.reduce((acc, s) => acc + (s.ausencias_justificadas || 0), 0);
+          const totalAusenciasInjust = stats.reduce((acc, s) => acc + (s.ausencias_injustificadas || 0), 0);
+          
+          const taxa = totalSessoes > 0 ? (totalPresencas / totalSessoes) * 100 : 0;
+
+          resumoCompleto.push({
+            membro_id: irmao.id,
+            nome: irmao.nome,
+            total_sessoes_obrigatorias: totalSessoes,
+            presencas_obrigatorias: totalPresencas,
+            ausencias_justificadas: totalAusenciasJust,
+            ausencias_injustificadas: totalAusenciasInjust,
+            taxa_presenca: taxa
+          });
+        }
+      }
+
+      const totalIrmaos = resumoCompleto.length;
 
       // 4. Identificar irmãos com problemas (taxa < 70%)
-      const problemas = resumoIrmaos?.filter(i => 
+      const problemas = resumoCompleto.filter(i => 
         i.total_sessoes_obrigatorias > 0 && i.taxa_presenca < 70
-      ) || [];
+      ).sort((a, b) => a.taxa_presenca - b.taxa_presenca);
 
       setIrmaosComProblemas(problemas.slice(0, 10)); // Top 10 com mais problemas
 
-      // 5. Criar ranking (top 10 melhores presenças)
-      const ranking = resumoIrmaos?.filter(i => 
-        i.total_sessoes_obrigatorias > 0
-      ).slice(0, 10) || [];
+      // 5. Criar ranking (TODOS com 100% de presença)
+      const ranking = resumoCompleto.filter(i => 
+        i.total_sessoes_obrigatorias > 0 && i.taxa_presenca === 100
+      ).sort((a, b) => b.presencas_obrigatorias - a.presencas_obrigatorias);
 
-      setRankingPresenca(ranking.reverse()); // Inverter para mostrar melhores primeiro
+      setRankingPresenca(ranking); // Todos com 100%
 
       // 6. Contar alertas (5+ ausências injustificadas)
-      const comAlerta = resumoIrmaos?.filter(i => 
+      const comAlerta = resumoCompleto.filter(i => 
         i.ausencias_injustificadas >= 5
-      ).length || 0;
+      ).length;
 
       setEstatisticas({
         totalSessoes,
@@ -313,7 +357,7 @@ export default function DashboardPresenca() {
                           </span>
                         )}
                       </div>
-                      <div className="text-right flex items-center gap-3">
+                      <div className="text-right flex items-center gap-2">
                         <div>
                           <div className={`text-2xl font-bold px-3 py-1 rounded ${obterCorTaxa(percentual)}`}>
                             {percentual}%
@@ -322,13 +366,22 @@ export default function DashboardPresenca() {
                             {sessao.total_presentes}/{sessao.total_registros}
                           </p>
                         </div>
-                        <button
-                          onClick={() => setSessaoIdModal(sessao.id)}
-                          className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-                          title="Ver detalhes"
-                        >
-                          👁️ Ver
-                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => setSessaoIdModal(sessao.id)}
+                            className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
+                            title="Ver detalhes"
+                          >
+                            👁️ Ver
+                          </button>
+                          <button
+                            onClick={() => setSessaoIdEditar(sessao.id)}
+                            className="px-3 py-1.5 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition"
+                            title="Editar sessão"
+                          >
+                            ✏️ Editar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -340,11 +393,27 @@ export default function DashboardPresenca() {
 
         {/* Ranking de Presença */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">
-            🏆 Top 10 - Melhor Presença
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-800">
+              🏆 100% de Presença
+            </h3>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Ano:</label>
+              <select
+                value={anoRanking}
+                onChange={(e) => setAnoRanking(parseInt(e.target.value))}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           {rankingPresenca.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Sem dados suficientes</p>
+            <p className="text-gray-500 text-center py-8">
+              Nenhum irmão com 100% de presença em {anoRanking}
+            </p>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {rankingPresenca.map((irmao, index) => (
@@ -363,8 +432,8 @@ export default function DashboardPresenca() {
                       {irmao.presencas_obrigatorias}/{irmao.total_sessoes_obrigatorias} sessões
                     </p>
                   </div>
-                  <div className={`text-xl font-bold px-3 py-1 rounded ${obterCorTaxa(irmao.taxa_presenca)}`}>
-                    {Math.round(irmao.taxa_presenca)}%
+                  <div className="text-xl font-bold px-3 py-1 rounded bg-green-100 text-green-800">
+                    100%
                   </div>
                 </div>
               ))}
@@ -441,6 +510,18 @@ export default function DashboardPresenca() {
         <ModalVisualizarPresenca 
           sessaoId={sessaoIdModal}
           onFechar={() => setSessaoIdModal(null)}
+        />
+      )}
+
+      {/* Modal de Edição */}
+      {sessaoIdEditar && (
+        <ModalEditarSessao 
+          sessaoId={sessaoIdEditar}
+          onFechar={() => setSessaoIdEditar(null)}
+          onSalvo={() => {
+            carregarDados(); // Recarregar dados após salvar
+            setSessaoIdEditar(null);
+          }}
         />
       )}
     </div>
