@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function ModalVisualizarPresenca({ sessaoId, onFechar }) {
+export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }) {
   const [loading, setLoading] = useState(true);
   const [sessao, setSessao] = useState(null);
   const [presencas, setPresencas] = useState([]);
@@ -240,12 +240,22 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar }) {
           <div className="text-sm text-gray-600">
             Taxa de Presença: <span className="font-bold text-lg">{percentualPresenca}%</span>
           </div>
-          <button
-            onClick={onFechar}
-            className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
-          >
-            Fechar
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => {
+                if (onEditar) onEditar(sessaoId);
+              }}
+              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            >
+              ✏️ Editar Presenças
+            </button>
+            <button
+              onClick={onFechar}
+              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+            >
+              Fechar
+            </button>
+          </div>
         </div>
       </div>
     </div>
