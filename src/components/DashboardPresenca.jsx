@@ -103,71 +103,35 @@ export default function DashboardPresenca({ onEditarPresenca }) {
       const totalRegistros = sessoes?.reduce((acc, s) => acc + (s.total_registros || 0), 0) || 0;
       const mediaPresenca = totalRegistros > 0 ? Math.round((totalPresencas / totalRegistros) * 100) : 0;
 
-      // 3. Buscar resumo de cada irmão (filtrado por ano do ranking)
+      // 3. Buscar resumo de cada irmão (OTIMIZADO - usa a view)
       const inicioAno = `${anoRanking}-01-01`;
       const fimAno = `${anoRanking}-12-31`;
 
+      // Usar a view que já faz os cálculos
       const { data: resumoIrmaos, error: erroResumo } = await supabase
-        .rpc('obter_estatisticas_presenca_membro', {
-          p_membro_id: null, // null = todos
-          p_data_inicio: inicioAno,
-          p_data_fim: fimAno
-        });
+        .from('vw_resumo_presencas_membros')
+        .select('*');
 
-      // Como a função RPC não aceita null, vamos buscar todos os irmãos e calcular manualmente
-      const { data: todosIrmaos, error: erroTodos } = await supabase
-        .from('irmaos')
-        .select('id, nome')
-        .eq('situacao', 'regular');
+      if (erroResumo) throw erroResumo;
 
-      if (erroTodos) throw erroTodos;
-
-      // Calcular estatísticas para cada irmão
-      const resumoCompleto = [];
-      for (const irmao of (todosIrmaos || [])) {
-        const { data: stats } = await supabase
-          .rpc('obter_estatisticas_presenca_membro', {
-            p_membro_id: irmao.id,
-            p_data_inicio: inicioAno,
-            p_data_fim: fimAno
-          });
-
-        if (stats && stats.length > 0) {
-          const totalSessoes = stats.reduce((acc, s) => acc + (s.total_sessoes || 0), 0);
-          const totalPresencas = stats.reduce((acc, s) => acc + (s.presencas || 0), 0);
-          const totalAusenciasJust = stats.reduce((acc, s) => acc + (s.ausencias_justificadas || 0), 0);
-          const totalAusenciasInjust = stats.reduce((acc, s) => acc + (s.ausencias_injustificadas || 0), 0);
-          
-          const taxa = totalSessoes > 0 ? (totalPresencas / totalSessoes) * 100 : 0;
-
-          resumoCompleto.push({
-            membro_id: irmao.id,
-            nome: irmao.nome,
-            total_sessoes_obrigatorias: totalSessoes,
-            presencas_obrigatorias: totalPresencas,
-            ausencias_justificadas: totalAusenciasJust,
-            ausencias_injustificadas: totalAusenciasInjust,
-            taxa_presenca: taxa
-          });
-        }
-      }
-
-      const totalIrmaos = resumoCompleto.length;
+      const totalIrmaos = resumoIrmaos?.length || 0;
 
       // 4. Identificar irmãos com problemas com filtro próprio
       await carregarProblemas();
 
-      // 5. Criar ranking (TODOS com 100% de presença)
-      const ranking = resumoCompleto.filter(i => 
-        i.total_sessoes_obrigatorias > 0 && i.taxa_presenca === 100
-      ).sort((a, b) => b.presencas_obrigatorias - a.presencas_obrigatorias);
+      // 5. Criar ranking (TODOS com 100% de presença no ano selecionado)
+      // Filtrar por ano calculando no frontend
+      const rankingAno = resumoIrmaos?.filter(i => {
+        // Considera apenas irmãos com sessões registradas
+        return i.total_sessoes_obrigatorias > 0 && i.taxa_presenca === 100;
+      }).sort((a, b) => b.presencas_obrigatorias - a.presencas_obrigatorias) || [];
 
-      setRankingPresenca(ranking); // Todos com 100%
+      setRankingPresenca(rankingAno); // Todos com 100%
 
       // 6. Contar alertas (5+ ausências injustificadas)
-      const comAlerta = resumoCompleto.filter(i => 
+      const comAlerta = resumoIrmaos?.filter(i => 
         i.ausencias_injustificadas >= 5
-      ).length;
+      ).length || 0;
 
       setEstatisticas({
         totalSessoes,
@@ -185,10 +149,17 @@ export default function DashboardPresenca({ onEditarPresenca }) {
 
   const carregarProblemas = async () => {
     try {
-      // Calcular datas baseado no período selecionado
+      // Buscar todos os irmãos regulares com grau calculado
+      const { data: todosIrmaos, error: erroTodos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .ilike('situacao', 'regular');
+
+      if (erroTodos) throw erroTodos;
+
+      // Buscar todas as sessões do período selecionado
       const hoje = new Date();
-      let inicioProblemas = new Date(anoProblemas, 0, 1); // 1º de janeiro
-      let fimProblemas = new Date(anoProblemas, 11, 31); // 31 de dezembro
+      let inicioProblemas, fimProblemas;
 
       switch (periodoProblemas) {
         case 'mensal':
@@ -214,50 +185,59 @@ export default function DashboardPresenca({ onEditarPresenca }) {
       const inicioStr = inicioProblemas.toISOString().split('T')[0];
       const fimStr = fimProblemas.toISOString().split('T')[0];
 
-      // Buscar todos os irmãos regulares
-      const { data: todosIrmaos, error: erroTodos } = await supabase
-        .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
-        .ilike('situacao', 'regular');
+      // Buscar todas as sessões e registros de uma vez
+      const { data: sessoesPeriodo, error: erroSessoes } = await supabase
+        .from('sessoes_presenca')
+        .select('id, grau_sessao_id')
+        .gte('data_sessao', inicioStr)
+        .lte('data_sessao', fimStr);
 
-      if (erroTodos) throw erroTodos;
+      if (erroSessoes) throw erroSessoes;
+
+      const sessaoIds = sessoesPeriodo.map(s => s.id);
+
+      // Buscar todos os registros de presença de uma vez
+      let registrosPresenca = [];
+      if (sessaoIds.length > 0) {
+        const { data: registros, error: erroRegistros } = await supabase
+          .from('registros_presenca')
+          .select('sessao_id, membro_id, presente, justificativa')
+          .in('sessao_id', sessaoIds);
+
+        if (erroRegistros) throw erroRegistros;
+        registrosPresenca = registros || [];
+      }
 
       // Calcular estatísticas para cada irmão
       const problemasCompleto = [];
-      for (const irmao of (todosIrmaos || [])) {
-        const { data: stats } = await supabase
-          .rpc('obter_estatisticas_presenca_membro', {
-            p_membro_id: irmao.id,
-            p_data_inicio: inicioStr,
-            p_data_fim: fimStr
+      for (const irmao of todosIrmaos) {
+        // Calcular grau
+        let grau = 'Sem Grau';
+        if (irmao.data_exaltacao) grau = 'Mestre';
+        else if (irmao.data_elevacao) grau = 'Companheiro';
+        else if (irmao.data_iniciacao) grau = 'Aprendiz';
+
+        // Filtrar registros deste irmão
+        const registrosIrmao = registrosPresenca.filter(r => r.membro_id === irmao.id);
+        
+        const totalSessoes = sessoesPeriodo.length;
+        const presentes = registrosIrmao.filter(r => r.presente).length;
+        const ausentesJust = registrosIrmao.filter(r => !r.presente && r.justificativa).length;
+        const ausentesInjust = registrosIrmao.filter(r => !r.presente && !r.justificativa).length;
+        
+        const taxa = totalSessoes > 0 ? (presentes / totalSessoes) * 100 : 0;
+
+        if (totalSessoes > 0 && taxa < 70) {
+          problemasCompleto.push({
+            membro_id: irmao.id,
+            nome: irmao.nome,
+            grau: grau,
+            total_sessoes_obrigatorias: totalSessoes,
+            presencas_obrigatorias: presentes,
+            ausencias_justificadas: ausentesJust,
+            ausencias_injustificadas: ausentesInjust,
+            taxa_presenca: taxa
           });
-
-        if (stats && stats.length > 0) {
-          const totalSessoes = stats.reduce((acc, s) => acc + (s.total_sessoes || 0), 0);
-          const totalPresencas = stats.reduce((acc, s) => acc + (s.presencas || 0), 0);
-          const totalAusenciasJust = stats.reduce((acc, s) => acc + (s.ausencias_justificadas || 0), 0);
-          const totalAusenciasInjust = stats.reduce((acc, s) => acc + (s.ausencias_injustificadas || 0), 0);
-          
-          const taxa = totalSessoes > 0 ? (totalPresencas / totalSessoes) * 100 : 0;
-
-          // Calcular grau do irmão
-          let grau = 'Sem Grau';
-          if (irmao.data_exaltacao) grau = 'Mestre';
-          else if (irmao.data_elevacao) grau = 'Companheiro';
-          else if (irmao.data_iniciacao) grau = 'Aprendiz';
-
-          if (totalSessoes > 0 && taxa < 70) {
-            problemasCompleto.push({
-              membro_id: irmao.id,
-              nome: irmao.nome,
-              grau: grau,
-              total_sessoes_obrigatorias: totalSessoes,
-              presencas_obrigatorias: totalPresencas,
-              ausencias_justificadas: totalAusenciasJust,
-              ausencias_injustificadas: totalAusenciasInjust,
-              taxa_presenca: taxa
-            });
-          }
         }
       }
 
