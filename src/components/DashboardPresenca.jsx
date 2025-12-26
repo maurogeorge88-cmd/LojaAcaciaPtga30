@@ -358,6 +358,8 @@ export default function DashboardPresenca() {
               Ano
             </button>
           </div>
+          </div>
+        </div>
         </div>
 
         {/* Período Selecionado */}
