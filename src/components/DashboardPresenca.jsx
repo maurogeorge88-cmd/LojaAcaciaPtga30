@@ -185,10 +185,14 @@ export default function DashboardPresenca({ onEditarPresenca }) {
       const inicioStr = inicioProblemas.toISOString().split('T')[0];
       const fimStr = fimProblemas.toISOString().split('T')[0];
 
-      // Buscar todas as sessões e registros de uma vez
+      // Buscar todas as sessões com informação do grau
       const { data: sessoesPeriodo, error: erroSessoes } = await supabase
         .from('sessoes_presenca')
-        .select('id, grau_sessao_id')
+        .select(`
+          id, 
+          grau_sessao_id,
+          graus_sessao:grau_sessao_id (nome)
+        `)
         .gte('data_sessao', inicioStr)
         .lte('data_sessao', fimStr);
 
@@ -217,16 +221,38 @@ export default function DashboardPresenca({ onEditarPresenca }) {
         else if (irmao.data_elevacao) grau = 'Companheiro';
         else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
-        // Filtrar registros deste irmão
-        const registrosIrmao = registrosPresenca.filter(r => r.membro_id === irmao.id);
+        // Filtrar sessões que o irmão PODE participar baseado no grau
+        const sessoesElegiveis = sessoesPeriodo.filter(sessao => {
+          const tipoSessao = sessao.graus_sessao?.nome;
+          
+          if (grau === 'Aprendiz') {
+            return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+          }
+          if (grau === 'Companheiro') {
+            return tipoSessao === 'Sessão de Aprendiz' || 
+                   tipoSessao === 'Sessão de Companheiro' || 
+                   tipoSessao === 'Sessão Administrativa';
+          }
+          if (grau === 'Mestre') {
+            return true; // Mestre pode participar de todas
+          }
+          return tipoSessao === 'Sessão Administrativa'; // Sem grau só administrativa
+        });
+
+        // Filtrar registros deste irmão apenas nas sessões elegíveis
+        const idsElegiveis = sessoesElegiveis.map(s => s.id);
+        const registrosIrmao = registrosPresenca.filter(r => 
+          r.membro_id === irmao.id && idsElegiveis.includes(r.sessao_id)
+        );
         
-        const totalSessoes = sessoesPeriodo.length;
+        const totalSessoes = sessoesElegiveis.length;
         const presentes = registrosIrmao.filter(r => r.presente).length;
         const ausentesJust = registrosIrmao.filter(r => !r.presente && r.justificativa).length;
         const ausentesInjust = registrosIrmao.filter(r => !r.presente && !r.justificativa).length;
         
         const taxa = totalSessoes > 0 ? (presentes / totalSessoes) * 100 : 0;
 
+        // Só adicionar se tem sessões elegíveis E taxa < 70%
         if (totalSessoes > 0 && taxa < 70) {
           problemasCompleto.push({
             membro_id: irmao.id,
