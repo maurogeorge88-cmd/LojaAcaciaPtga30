@@ -1286,7 +1286,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 32;
+          yPos += 35; // Aumentado de 32 para 35
         } catch (e) {
           console.log('Logo não disponível');
         }
@@ -1612,22 +1612,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           
           const linha = [data];
           
-          // Preencher com símbolos
+          // Preencher com letras
           ultimasSessoes.forEach((s, colIdx) => {
             if (idx === colIdx) {
-              // Mesma sessão - pegar o símbolo
+              // Mesma sessão - pegar a letra
               const registro = presencas?.find(p => p.sessao_id === s.id);
-              let simbolo = '-';
+              let letra = 'SR';
               if (registro) {
                 if (registro.presente) {
-                  simbolo = '✓';
+                  letra = 'P';
                 } else if (registro.justificativa) {
-                  simbolo = 'J';
+                  letra = 'J';
                 } else {
-                  simbolo = '✗';
+                  letra = 'A';
                 }
               }
-              linha.push(simbolo);
+              linha.push(letra);
             } else {
               // Sessão diferente - vazio
               linha.push('');
@@ -1679,7 +1679,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
-        doc.text('✓ = Presente  |  ✗ = Ausente  |  J = Justificado  |  - = Sem registro', 15, yPos);
+        doc.text('P = Presente  |  A = Ausente  |  J = Justificado  |  SR = Sem registro', 15, yPos);
       }
 
       // Salvar com novo padrão de nome
