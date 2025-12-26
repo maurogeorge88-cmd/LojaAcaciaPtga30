@@ -11,6 +11,8 @@ export default function DashboardPresenca() {
   const [sessaoIdModal, setSessaoIdModal] = useState(null);
   const [sessaoIdEditar, setSessaoIdEditar] = useState(null);
   const [anoRanking, setAnoRanking] = useState(new Date().getFullYear());
+  const [anoProblemas, setAnoProblemas] = useState(new Date().getFullYear());
+  const [periodoProblemas, setPeriodoProblemas] = useState('anual'); // mensal, trimestral, semestral, anual
   const [estatisticas, setEstatisticas] = useState({
     totalSessoes: 0,
     totalIrmaos: 0,
@@ -30,6 +32,10 @@ export default function DashboardPresenca() {
       carregarDados();
     }
   }, [dataInicio, dataFim, anoRanking]);
+
+  useEffect(() => {
+    carregarProblemas();
+  }, [anoProblemas, periodoProblemas]);
 
   const calcularDatas = () => {
     const hoje = new Date();
@@ -146,12 +152,8 @@ export default function DashboardPresenca() {
 
       const totalIrmaos = resumoCompleto.length;
 
-      // 4. Identificar irmãos com problemas (taxa < 70%)
-      const problemas = resumoCompleto.filter(i => 
-        i.total_sessoes_obrigatorias > 0 && i.taxa_presenca < 70
-      ).sort((a, b) => a.taxa_presenca - b.taxa_presenca);
-
-      setIrmaosComProblemas(problemas.slice(0, 10)); // Top 10 com mais problemas
+      // 4. Identificar irmãos com problemas com filtro próprio
+      await carregarProblemas();
 
       // 5. Criar ranking (TODOS com 100% de presença)
       const ranking = resumoCompleto.filter(i => 
@@ -176,6 +178,93 @@ export default function DashboardPresenca() {
       console.error('Erro ao carregar dados:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const carregarProblemas = async () => {
+    try {
+      // Calcular datas baseado no período selecionado
+      const hoje = new Date();
+      let inicioProblemas = new Date(anoProblemas, 0, 1); // 1º de janeiro
+      let fimProblemas = new Date(anoProblemas, 11, 31); // 31 de dezembro
+
+      switch (periodoProblemas) {
+        case 'mensal':
+          inicioProblemas = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+          fimProblemas = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+          break;
+        case 'trimestral':
+          const trimestreAtual = Math.floor(hoje.getMonth() / 3);
+          inicioProblemas = new Date(hoje.getFullYear(), trimestreAtual * 3, 1);
+          fimProblemas = new Date(hoje.getFullYear(), (trimestreAtual + 1) * 3, 0);
+          break;
+        case 'semestral':
+          const semestreAtual = Math.floor(hoje.getMonth() / 6);
+          inicioProblemas = new Date(hoje.getFullYear(), semestreAtual * 6, 1);
+          fimProblemas = new Date(hoje.getFullYear(), (semestreAtual + 1) * 6, 0);
+          break;
+        case 'anual':
+          inicioProblemas = new Date(anoProblemas, 0, 1);
+          fimProblemas = new Date(anoProblemas, 11, 31);
+          break;
+      }
+
+      const inicioStr = inicioProblemas.toISOString().split('T')[0];
+      const fimStr = fimProblemas.toISOString().split('T')[0];
+
+      // Buscar todos os irmãos regulares
+      const { data: todosIrmaos, error: erroTodos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .ilike('situacao', 'regular');
+
+      if (erroTodos) throw erroTodos;
+
+      // Calcular estatísticas para cada irmão
+      const problemasCompleto = [];
+      for (const irmao of (todosIrmaos || [])) {
+        const { data: stats } = await supabase
+          .rpc('obter_estatisticas_presenca_membro', {
+            p_membro_id: irmao.id,
+            p_data_inicio: inicioStr,
+            p_data_fim: fimStr
+          });
+
+        if (stats && stats.length > 0) {
+          const totalSessoes = stats.reduce((acc, s) => acc + (s.total_sessoes || 0), 0);
+          const totalPresencas = stats.reduce((acc, s) => acc + (s.presencas || 0), 0);
+          const totalAusenciasJust = stats.reduce((acc, s) => acc + (s.ausencias_justificadas || 0), 0);
+          const totalAusenciasInjust = stats.reduce((acc, s) => acc + (s.ausencias_injustificadas || 0), 0);
+          
+          const taxa = totalSessoes > 0 ? (totalPresencas / totalSessoes) * 100 : 0;
+
+          // Calcular grau do irmão
+          let grau = 'Sem Grau';
+          if (irmao.data_exaltacao) grau = 'Mestre';
+          else if (irmao.data_elevacao) grau = 'Companheiro';
+          else if (irmao.data_iniciacao) grau = 'Aprendiz';
+
+          if (totalSessoes > 0 && taxa < 70) {
+            problemasCompleto.push({
+              membro_id: irmao.id,
+              nome: irmao.nome,
+              grau: grau,
+              total_sessoes_obrigatorias: totalSessoes,
+              presencas_obrigatorias: totalPresencas,
+              ausencias_justificadas: totalAusenciasJust,
+              ausencias_injustificadas: totalAusenciasInjust,
+              taxa_presenca: taxa
+            });
+          }
+        }
+      }
+
+      // Ordenar por taxa (menor primeiro)
+      problemasCompleto.sort((a, b) => a.taxa_presenca - b.taxa_presenca);
+      setIrmaosComProblemas(problemasCompleto);
+
+    } catch (error) {
+      console.error('Erro ao carregar problemas:', error);
     }
   };
 
@@ -404,7 +493,7 @@ export default function DashboardPresenca() {
                 onChange={(e) => setAnoRanking(parseInt(e.target.value))}
                 className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(ano => (
+                {Array.from({ length: 6 }, (_, i) => 2025 + i).map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
               </select>
@@ -445,9 +534,38 @@ export default function DashboardPresenca() {
       {/* Irmãos com Problemas de Frequência */}
       {irmaosComProblemas.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold text-red-600 mb-4">
-            ⚠️ Atenção: Irmãos com Baixa Frequência ({"<"}70%)
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-red-600">
+              ⚠️ Atenção: Irmãos com Baixa Frequência ({"<"}70%)
+            </h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Período:</label>
+                <select
+                  value={periodoProblemas}
+                  onChange={(e) => setPeriodoProblemas(e.target.value)}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="mensal">Mensal</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="semestral">Semestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Ano:</label>
+                <select
+                  value={anoProblemas}
+                  onChange={(e) => setAnoProblemas(parseInt(e.target.value))}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 6 }, (_, i) => 2025 + i).map(ano => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
