@@ -55,6 +55,8 @@ export default function DashboardPresenca() {
     try {
       setLoading(true);
 
+      console.log('DEBUG - Carregando sessões com período:', dataInicio, 'até', dataFim);
+
       // 1. Carregar sessões do período
       const { data: sessoes, error: erroSessoes } = await supabase
         .from('vw_sessoes_completas')
@@ -62,6 +64,9 @@ export default function DashboardPresenca() {
         .gte('data_sessao', dataInicio)
         .lte('data_sessao', dataFim)
         .order('data_sessao', { ascending: false });
+
+      console.log('DEBUG - Sessões retornadas:', sessoes);
+      console.log('DEBUG - Erro:', erroSessoes);
 
       if (erroSessoes) throw erroSessoes;
 
