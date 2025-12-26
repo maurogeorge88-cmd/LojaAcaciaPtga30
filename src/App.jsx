@@ -36,6 +36,7 @@ import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 import CadastroSessao from './components/CadastroSessao';
 import RegistroPresenca from './components/RegistroPresenca';
 import ListaSessoes from './components/ListaSessoes';
+import DashboardPresenca from './components/DashboardPresenca';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -131,6 +132,7 @@ function App() {
   const [submenuFinanceiro, setSubmenuFinanceiro] = useState(false);
   const [submenuFilantropia, setSubmenuFilantropia] = useState(false);
   const [submenuGestaoSistema, setSubmenuGestaoSistema] = useState(false);
+  const [submenuPresenca, setSubmenuPresenca] = useState(false);
 
   // Estados de login
   const [email, setEmail] = useState('');
@@ -1927,33 +1929,76 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
 
-                {/* CADASTRO DE SESSÃO */}
-                <button
-                  onClick={() => setCurrentPage('cadastro-sessao')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'cadastro-sessao'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
-                  }`}
-                  title="Cadastro de Sessão"
-                >
-                  <span className="text-base">📋</span>
-                  {menuAberto && <span className="font-semibold">Cadastro de Sessão</span>}
-                </button>
+                {/* SUBMENU: PRESENÇA IRMÃOS */}
+                <div className="border-t border-blue-700 mt-2 pt-2">
+                  <button
+                    onClick={() => setSubmenuPresenca(!submenuPresenca)}
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                    title="Presença Irmãos"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✅</span>
+                      {menuAberto && <span className="font-semibold">Presença Irmãos</span>}
+                    </div>
+                    {menuAberto && (
+                      <svg 
+                        className={`w-4 h-4 transition-transform ${submenuPresenca ? 'rotate-180' : ''}`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </button>
 
-                {/* LISTA DE SESSÕES */}
-                <button
-                  onClick={() => setCurrentPage('lista-sessoes')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'lista-sessoes'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
-                  }`}
-                  title="Sessões Realizadas"
-                >
-                  <span className="text-base">📊</span>
-                  {menuAberto && <span className="font-semibold">Sessões Realizadas</span>}
-                </button>
+                  {/* Subitens do submenu Presença */}
+                  {(submenuPresenca && menuAberto) && (
+                    <div className="bg-blue-950 bg-opacity-50">
+                      {/* DASHBOARD DE PRESENÇA */}
+                      <button
+                        onClick={() => setCurrentPage('dashboard-presenca')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'dashboard-presenca'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                        title="Dashboard de Presença"
+                      >
+                        <span>📊</span>
+                        <span>Dashboard</span>
+                      </button>
+
+                      {/* CADASTRO DE SESSÃO */}
+                      <button
+                        onClick={() => setCurrentPage('cadastro-sessao')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'cadastro-sessao'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                        title="Cadastro de Sessão"
+                      >
+                        <span>📋</span>
+                        <span>Cadastrar Sessão</span>
+                      </button>
+
+                      {/* LISTA DE SESSÕES */}
+                      <button
+                        onClick={() => setCurrentPage('lista-sessoes')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'lista-sessoes'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                        title="Sessões Realizadas"
+                      >
+                        <span>📑</span>
+                        <span>Sessões Realizadas</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
 
                 {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
@@ -2094,6 +2139,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
+                  {currentPage === 'dashboard-presenca' && '📊 Dashboard de Presença'}
                   {currentPage === 'cadastro-sessao' && '📋 Cadastro de Sessão'}
                   {currentPage === 'lista-sessoes' && '📊 Sessões Realizadas'}
                   {currentPage === 'registro-presenca' && '✅ Registro de Presença'}
@@ -2429,6 +2475,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               setCurrentPage('registro-presenca');
             }}
           />
+        )}
+
+        {/* DASHBOARD DE PRESENÇA */}
+        {currentPage === 'dashboard-presenca' && (
+          <DashboardPresenca />
         )}
 
         {/* LISTA DE SESSÕES */}
