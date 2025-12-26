@@ -1,0 +1,253 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+
+export default function ModalVisualizarPresenca({ sessaoId, onFechar }) {
+  const [loading, setLoading] = useState(true);
+  const [sessao, setSessao] = useState(null);
+  const [presencas, setPresencas] = useState([]);
+
+  useEffect(() => {
+    if (sessaoId) {
+      carregarDados();
+    }
+  }, [sessaoId]);
+
+  const carregarDados = async () => {
+    try {
+      setLoading(true);
+
+      // Buscar dados da sessão
+      const { data: sessaoData, error: sessaoError } = await supabase
+        .from('sessoes_presenca')
+        .select(`
+          *,
+          graus_sessao:grau_sessao_id (
+            nome,
+            grau_minimo_requerido
+          ),
+          classificacoes_sessao:classificacao_id (
+            nome
+          )
+        `)
+        .eq('id', sessaoId)
+        .single();
+
+      if (sessaoError) throw sessaoError;
+      setSessao(sessaoData);
+
+      // Buscar registros de presença com dados dos irmãos
+      const { data: registros, error: registrosError } = await supabase
+        .from('registros_presenca')
+        .select(`
+          *,
+          irmaos:membro_id (
+            id,
+            nome,
+            foto_url,
+            data_iniciacao,
+            data_elevacao,
+            data_exaltacao
+          )
+        `)
+        .eq('sessao_id', sessaoId)
+        .order('irmaos(nome)');
+
+      if (registrosError) throw registrosError;
+
+      // Adicionar grau calculado
+      const presencasComGrau = registros.map(reg => {
+        const irmao = reg.irmaos;
+        let grau = 'Sem Grau';
+        
+        if (irmao.data_exaltacao) grau = 'Mestre';
+        else if (irmao.data_elevacao) grau = 'Companheiro';
+        else if (irmao.data_iniciacao) grau = 'Aprendiz';
+
+        return {
+          ...reg,
+          grau
+        };
+      });
+
+      setPresencas(presencasComGrau);
+
+    } catch (error) {
+      console.error('Erro ao carregar presença:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatarData = (data) => {
+    if (!data) return '-';
+    return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
+  };
+
+  const estatisticas = {
+    total: presencas.length,
+    presentes: presencas.filter(p => p.presente).length,
+    ausentesJustificados: presencas.filter(p => !p.presente && p.justificativa).length,
+    ausentesInjustificados: presencas.filter(p => !p.presente && !p.justificativa).length
+  };
+
+  const percentualPresenca = estatisticas.total > 0 
+    ? Math.round((estatisticas.presentes / estatisticas.total) * 100) 
+    : 0;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        {/* Cabeçalho */}
+        <div className="bg-blue-600 text-white p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-bold">Visualizar Presença</h2>
+              {sessao && (
+                <div className="mt-2 space-y-1">
+                  <p className="text-blue-100">
+                    {sessao.graus_sessao?.nome}
+                    {sessao.classificacoes_sessao && ` - ${sessao.classificacoes_sessao.nome}`}
+                  </p>
+                  <p className="text-sm text-blue-200">
+                    Data: {formatarData(sessao.data_sessao)}
+                  </p>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={onFechar}
+              className="text-white hover:bg-blue-700 rounded-full p-2 transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Estatísticas */}
+        {!loading && (
+          <div className="grid grid-cols-4 gap-4 p-6 bg-gray-50 border-b">
+            <div className="text-center">
+              <p className="text-sm text-gray-600">Total</p>
+              <p className="text-2xl font-bold text-gray-800">{estatisticas.total}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-green-600">Presentes</p>
+              <p className="text-2xl font-bold text-green-700">{estatisticas.presentes}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-yellow-600">Justificados</p>
+              <p className="text-2xl font-bold text-yellow-700">{estatisticas.ausentesJustificados}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-red-600">Injustificados</p>
+              <p className="text-2xl font-bold text-red-700">{estatisticas.ausentesInjustificados}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Conteúdo */}
+        <div className="flex-1 overflow-y-auto p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Carregando presenças...</p>
+              </div>
+            </div>
+          ) : presencas.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              Nenhuma presença registrada nesta sessão.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Irmão
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Grau
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Presença
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Justificativa
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {presencas.map((registro) => (
+                    <tr key={registro.id} className={
+                      registro.presente 
+                        ? 'bg-green-50 hover:bg-green-100' 
+                        : registro.justificativa 
+                          ? 'bg-yellow-50 hover:bg-yellow-100'
+                          : 'bg-red-50 hover:bg-red-100'
+                    }>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          {registro.irmaos.foto_url && (
+                            <img
+                              src={registro.irmaos.foto_url}
+                              alt={registro.irmaos.nome}
+                              className="h-10 w-10 rounded-full mr-3 object-cover"
+                            />
+                          )}
+                          <div className="text-sm font-medium text-gray-900">
+                            {registro.irmaos.nome}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {registro.grau}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        {registro.presente ? (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            ✓ Presente
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            ✗ Ausente
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {registro.justificativa ? (
+                          <div className="text-sm text-gray-700 bg-yellow-100 px-3 py-2 rounded">
+                            {registro.justificativa}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Rodapé */}
+        <div className="bg-gray-50 px-6 py-4 border-t flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            Taxa de Presença: <span className="font-bold text-lg">{percentualPresenca}%</span>
+          </div>
+          <button
+            onClick={onFechar}
+            className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+          >
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
