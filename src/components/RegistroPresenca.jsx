@@ -152,12 +152,6 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
       if (erroIrmao) throw erroIrmao;
 
-      // Deletar registros antigos desta sessão
-      await supabase
-        .from('registros_presenca')
-        .delete()
-        .eq('sessao_id', sessaoId);
-
       // Preparar registros de presença
       const registros = irmaosElegiveis.map(irmaoElegivel => ({
         sessao_id: sessaoId,
@@ -169,16 +163,19 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         registrado_por: irmao.id
       }));
 
-      // Inserir todos os registros
-      const { error: insertError } = await supabase
+      // Usar UPSERT (inserir ou atualizar) para evitar duplicação
+      const { error: upsertError } = await supabase
         .from('registros_presenca')
-        .insert(registros);
+        .upsert(registros, {
+          onConflict: 'sessao_id,membro_id',
+          ignoreDuplicates: false
+        });
 
-      if (insertError) throw insertError;
+      if (upsertError) throw upsertError;
 
       setMensagem({
         tipo: 'sucesso',
-        texto: 'Presenças registradas com sucesso!'
+        texto: 'Presenças salvas com sucesso!'
       });
 
       // Recarregar dados
