@@ -1242,6 +1242,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         return;
       }
 
+      // BUSCAR ÚLTIMAS 5 SESSÕES COM PRESENÇA DO IRMÃO
+      const { data: ultimasSessoes } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, graus_sessao:grau_sessao_id(nome)')
+        .order('data_sessao', { ascending: false })
+        .limit(5);
+
+      const { data: presencas } = await supabase
+        .from('registros_presenca')
+        .select('*')
+        .eq('membro_id', irmaoId)
+        .in('sessao_id', ultimasSessoes?.map(s => s.id) || []);
+
       // Organizar por mês/ano
       const lancsPorMes = {};
       lancsData.forEach(lanc => {
@@ -1531,6 +1544,69 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.text(mensagem, 105, yPos, { align: 'center', maxWidth: 170 });
       yPos += 5;
       doc.text(mensagem2, 105, yPos, { align: 'center', maxWidth: 170 });
+      yPos += 15;
+
+      // ========================================
+      // PRESENÇA (ÚLTIMAS 5 SESSÕES) - NO FINAL
+      // ========================================
+      if (ultimasSessoes && ultimasSessoes.length > 0) {
+        if (yPos > 200) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Presença nas Últimas 5 Sessões:', 15, yPos);
+        yPos += 7;
+
+        const tableData = [];
+        ultimasSessoes.forEach(sessao => {
+          const registro = presencas?.find(p => p.sessao_id === sessao.id);
+          const data = new Date(sessao.data_sessao).toLocaleDateString('pt-BR');
+          const tipo = sessao.graus_sessao?.nome || 'Não informado';
+          
+          let status = '';
+          let obs = '-';
+          if (registro) {
+            if (registro.presente) {
+              status = '✓ Presente';
+            } else if (registro.justificativa) {
+              status = 'J Justificado';
+              obs = registro.justificativa.substring(0, 40);
+            } else {
+              status = '✗ Ausente';
+            }
+          } else {
+            status = '- Sem registro';
+          }
+          
+          tableData.push([data, tipo, status, obs]);
+        });
+
+        await import('jspdf-autotable');
+        doc.autoTable({
+          startY: yPos,
+          head: [['Data', 'Tipo Sessão', 'Status', 'Observação']],
+          body: tableData,
+          headStyles: { fillColor: [76, 175, 80], fontSize: 9 },
+          bodyStyles: { fontSize: 8 },
+          columnStyles: {
+            0: { cellWidth: 25 },
+            1: { cellWidth: 50 },
+            2: { cellWidth: 35, halign: 'center' },
+            3: { cellWidth: 70, fontSize: 7 }
+          },
+          margin: { left: 15, right: 15 }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 3;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Legenda: ✓ = Presente | ✗ = Ausente | J = Justificado', 15, yPos);
+      }
 
       // Salvar com novo padrão de nome
       const mesAtual = new Date().getMonth() + 1;
