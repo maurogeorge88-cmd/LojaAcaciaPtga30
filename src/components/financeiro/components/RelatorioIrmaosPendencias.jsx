@@ -25,13 +25,27 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
     }
   };
   
-  const gerarRelatorioPDF = () => {
+  const gerarRelatorioPDF = async () => {
     const doc = new jsPDF();
     
     // Filtrar apenas irmãos com pendências (saldo negativo)
     const irmaosComPendencias = resumoIrmaos
       .filter(irmao => irmao.saldo < 0)
       .sort((a, b) => a.nomeIrmao.localeCompare(b.nomeIrmao));
+    
+    // BUSCAR PRESENÇAS DAS ÚLTIMAS 5 SESSÕES PARA CADA IRMÃO
+    const { data: ultimasSessoes } = await supabase
+      .from('sessoes_presenca')
+      .select('id, data_sessao, graus_sessao:grau_sessao_id(nome)')
+      .order('data_sessao', { ascending: false })
+      .limit(5);
+
+    const idsIrmaos = irmaosComPendencias.map(i => i.irmaoId);
+    const { data: presencas } = await supabase
+      .from('registros_presenca')
+      .select('*')
+      .in('membro_id', idsIrmaos)
+      .in('sessao_id', ultimasSessoes?.map(s => s.id) || []);
     
     const totalDespesas = irmaosComPendencias.reduce((sum, i) => sum + i.totalDespesas, 0);
     const totalReceitas = irmaosComPendencias.reduce((sum, i) => sum + i.totalReceitas, 0);
@@ -148,17 +162,81 @@ export default function RelatorioIrmaosPendencias({ resumoIrmaos }) {
       }
     });
     
-    // OBSERVAÇÕES
+    // TABELA DE PRESENÇAS (ÚLTIMAS 5 SESSÕES)
     const finalY = doc.lastAutoTable.finalY || 150;
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('PRESENÇA NAS ÚLTIMAS 5 SESSÕES:', 15, finalY + 10);
+    
+    if (ultimasSessoes && ultimasSessoes.length > 0) {
+      const presencaData = irmaosComPendencias.map(irmao => {
+        const row = [irmao.nomeIrmao];
+        
+        ultimasSessoes.forEach(sessao => {
+          const registro = presencas?.find(p => 
+            p.membro_id === irmao.irmaoId && p.sessao_id === sessao.id
+          );
+          
+          if (registro) {
+            if (registro.presente) {
+              row.push('✓');
+            } else if (registro.justificativa) {
+              row.push('J');
+            } else {
+              row.push('✗');
+            }
+          } else {
+            row.push('-');
+          }
+        });
+        
+        return row;
+      });
+      
+      const headers = ['Irmão'];
+      ultimasSessoes.forEach(s => {
+        const data = new Date(s.data_sessao).toLocaleDateString('pt-BR');
+        headers.push(data);
+      });
+      
+      doc.autoTable({
+        startY: finalY + 15,
+        head: [headers],
+        body: presencaData,
+        headStyles: {
+          fillColor: [76, 175, 80],
+          textColor: 255,
+          fontStyle: 'bold',
+          halign: 'center',
+          fontSize: 8
+        },
+        bodyStyles: {
+          halign: 'center',
+          fontSize: 9
+        },
+        columnStyles: {
+          0: { halign: 'left', cellWidth: 80 }
+        }
+      });
+      
+      const presencaFinalY = doc.lastAutoTable.finalY || finalY + 50;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.text('Legenda: ✓ = Presente | ✗ = Ausente | J = Justificado | - = Sem registro', 15, presencaFinalY + 5);
+    }
+    
+    // OBSERVAÇÕES
+    const observacoesY = doc.lastAutoTable.finalY || 150;
     
     doc.setFontSize(9);
     doc.setFont('helvetica', 'bold');
-    doc.text('OBSERVAÇÕES:', 15, finalY + 10);
+    doc.text('OBSERVAÇÕES:', 15, observacoesY + 10);
     
     doc.setFont('helvetica', 'normal');
-    doc.text('• Saldo: Valor em aberto que o irmão deve à Loja', 15, finalY + 16);
-    doc.text('• Status: Situação financeira do irmão perante a Loja', 15, finalY + 22);
-    doc.text('• Este relatório lista apenas irmãos com pendências financeiras', 15, finalY + 28);
+    doc.text('• Saldo: Valor em aberto que o irmão deve à Loja', 15, observacoesY + 16);
+    doc.text('• Status: Situação financeira do irmão perante a Loja', 15, observacoesY + 22);
+    doc.text('• Este relatório lista apenas irmãos com pendências financeiras', 15, observacoesY + 28);
     
     // Salvar PDF
     const nomeArquivo = `relatorio_irmaos_pendencias_${new Date().toISOString().split('T')[0]}.pdf`;
