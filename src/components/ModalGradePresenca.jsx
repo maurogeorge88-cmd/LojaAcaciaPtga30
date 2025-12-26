@@ -5,11 +5,62 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
+  const [irmaosExibidos, setIrmaosExibidos] = useState([]);
   const [gradePresenca, setGradePresenca] = useState({});
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtro100, setFiltro100] = useState(false);
 
   useEffect(() => {
     carregarDados();
   }, [periodoInicio, periodoFim]);
+
+  useEffect(() => {
+    aplicarFiltros();
+  }, [irmaos, filtroNome, filtro100, sessoes, gradePresenca]);
+
+  const aplicarFiltros = () => {
+    let filtrados = [...irmaos];
+
+    // Filtro por nome
+    if (filtroNome.trim()) {
+      filtrados = filtrados.filter(irmao =>
+        irmao.nome.toLowerCase().includes(filtroNome.toLowerCase())
+      );
+    }
+
+    // Filtro 100%
+    if (filtro100) {
+      filtrados = filtrados.filter(irmao => {
+        // Filtrar sessões relevantes para o grau do irmão
+        const sessoesRelevantes = sessoes.filter(sessao => {
+          const tipoSessao = sessao.graus_sessao?.nome;
+          
+          if (irmao.grau === 'Aprendiz') {
+            return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+          }
+          if (irmao.grau === 'Companheiro') {
+            return tipoSessao === 'Sessão de Aprendiz' || 
+                   tipoSessao === 'Sessão de Companheiro' || 
+                   tipoSessao === 'Sessão Administrativa';
+          }
+          if (irmao.grau === 'Mestre') {
+            return true;
+          }
+          return tipoSessao === 'Sessão Administrativa';
+        });
+
+        const presencasIrmao = gradePresenca[irmao.id] || {};
+        const totalRelevantes = sessoesRelevantes.length;
+        const presentesRelevantes = sessoesRelevantes.filter(s => 
+          presencasIrmao[s.id]?.presente
+        ).length;
+
+        return totalRelevantes > 0 && presentesRelevantes === totalRelevantes;
+      });
+    }
+
+    setIrmaosExibidos(filtrados);
+  };
 
   const carregarDados = async () => {
     try {
@@ -123,6 +174,28 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
               </svg>
             </button>
           </div>
+
+          {/* Filtros */}
+          <div className="flex gap-4 mt-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                value={filtroNome}
+                onChange={(e) => setFiltroNome(e.target.value)}
+                placeholder="🔍 Pesquisar irmão..."
+                className="w-full px-4 py-2 rounded-md text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white"
+              />
+            </div>
+            <label className="flex items-center gap-2 bg-white bg-opacity-20 px-4 py-2 rounded-md cursor-pointer hover:bg-opacity-30 transition">
+              <input
+                type="checkbox"
+                checked={filtro100}
+                onChange={(e) => setFiltro100(e.target.checked)}
+                className="w-5 h-5 cursor-pointer"
+              />
+              <span className="font-medium whitespace-nowrap">Apenas 100%</span>
+            </label>
+          </div>
         </div>
 
         {/* Conteúdo */}
@@ -161,7 +234,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                   </tr>
                 </thead>
                 <tbody>
-                  {irmaos.map((irmao) => {
+                  {irmaosExibidos.map((irmao) => {
                     // Filtrar sessões relevantes para o grau do irmão
                     const sessoesRelevantes = sessoes.filter(sessao => {
                       const tipoSessao = sessao.graus_sessao?.nome;
@@ -281,7 +354,12 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
           {/* Legenda */}
           {!loading && sessoes.length > 0 && (
             <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h4 className="font-semibold text-sm text-gray-700 mb-3">Legenda:</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-sm text-gray-700">Legenda:</h4>
+                <p className="text-sm text-gray-600">
+                  Exibindo <strong>{irmaosExibidos.length}</strong> de <strong>{irmaos.length}</strong> irmão(s)
+                </p>
+              </div>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-green-600 text-2xl font-bold">✓</span>
