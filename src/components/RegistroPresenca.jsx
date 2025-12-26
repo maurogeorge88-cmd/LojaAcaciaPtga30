@@ -57,55 +57,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         throw irmaosError;
       }
 
-      // Buscar também irmãos LICENCIADOS elegíveis (aparecem mas ausências não contam)
-      const { data: licenciados, error: licenciadosError } = await supabase
-        .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, situacao')
-        .eq('situacao', 'licenciado');  // Usando eq em vez de ilike
-
-      if (licenciadosError) {
-        console.error('Erro ao buscar licenciados:', licenciadosError);
-        // Não throw - continua sem licenciados se der erro
-      }
-
-      console.log('DEBUG - Licenciados encontrados:', licenciados);
-
-      // Filtrar licenciados pelo grau da sessão
-      const licenciadosElegiveis = (licenciados || []).filter(irmao => {
-        const grauSessao = sessaoData.graus_sessao?.nome;
-        
-        // Determinar grau do irmão
-        let grauIrmao = 'Aprendiz';
-        if (irmao.data_exaltacao) grauIrmao = 'Mestre';
-        else if (irmao.data_elevacao) grauIrmao = 'Companheiro';
-
-        // Sessão Administrativa: todos podem
-        if (grauSessao === 'Sessão Administrativa') return true;
-
-        // Outras sessões: verificar grau
-        if (grauSessao === 'Sessão de Aprendiz') return true; // Todos podem
-        if (grauSessao === 'Sessão de Companheiro') return grauIrmao !== 'Aprendiz';
-        if (grauSessao === 'Sessão de Mestre') return grauIrmao === 'Mestre';
-
-        return false;
-      });
-
-      // Combinar regulares + licenciados (marcar licenciados e adicionar campos)
-      const todosMembros = [
-        ...(irmaos || []),
-        ...licenciadosElegiveis.map(l => ({
-          membro_id: l.id,
-          nome_completo: l.nome,
-          grau_atual: l.data_exaltacao ? 'Mestre' : 
-                     l.data_elevacao ? 'Companheiro' : 
-                     l.data_iniciacao ? 'Aprendiz' : 'Sem Grau',
-          foto_url: null,
-          eh_licenciado: true
-        }))
-      ];
-      
-      console.log('DEBUG - Total membros (regulares + licenciados):', todosMembros.length);
-      setIrmaosElegiveis(todosMembros);
+      // TODO: Adicionar licenciados depois
+      setIrmaosElegiveis(irmaos || []);
 
       // Buscar presenças já registradas (se houver)
       const { data: presencasExistentes, error: presencasError } = await supabase
