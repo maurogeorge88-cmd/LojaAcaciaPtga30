@@ -162,8 +162,34 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                 </thead>
                 <tbody>
                   {irmaos.map((irmao) => {
-                    const taxa = calcularTaxaIrmao(irmao.id);
+                    // Filtrar sessões relevantes para o grau do irmão
+                    const sessoesRelevantes = sessoes.filter(sessao => {
+                      const tipoSessao = sessao.graus_sessao?.nome;
+                      
+                      if (irmao.grau === 'Aprendiz') {
+                        return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+                      }
+                      if (irmao.grau === 'Companheiro') {
+                        return tipoSessao === 'Sessão de Aprendiz' || 
+                               tipoSessao === 'Sessão de Companheiro' || 
+                               tipoSessao === 'Sessão Administrativa';
+                      }
+                      if (irmao.grau === 'Mestre') {
+                        return true; // Mestre pode participar de todas
+                      }
+                      return tipoSessao === 'Sessão Administrativa'; // Sem grau só administrativa
+                    });
+
                     const presencasIrmao = gradePresenca[irmao.id] || {};
+                    
+                    // Calcular taxa baseada apenas nas sessões relevantes
+                    const totalRelevantes = sessoesRelevantes.length;
+                    const presentesRelevantes = sessoesRelevantes.filter(s => 
+                      presencasIrmao[s.id]?.presente
+                    ).length;
+                    const taxa = totalRelevantes > 0 
+                      ? Math.round((presentesRelevantes / totalRelevantes) * 100) 
+                      : 0;
 
                     return (
                       <tr key={irmao.id} className="hover:bg-gray-50">
@@ -176,6 +202,31 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           </span>
                         </td>
                         {sessoes.map((sessao) => {
+                          const tipoSessao = sessao.graus_sessao?.nome;
+                          
+                          // Verificar se o irmão pode participar desta sessão
+                          let podeParticipar = false;
+                          if (irmao.grau === 'Aprendiz') {
+                            podeParticipar = tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+                          } else if (irmao.grau === 'Companheiro') {
+                            podeParticipar = tipoSessao === 'Sessão de Aprendiz' || 
+                                           tipoSessao === 'Sessão de Companheiro' || 
+                                           tipoSessao === 'Sessão Administrativa';
+                          } else if (irmao.grau === 'Mestre') {
+                            podeParticipar = true;
+                          } else {
+                            podeParticipar = tipoSessao === 'Sessão Administrativa';
+                          }
+
+                          // Se não pode participar, mostrar N/A
+                          if (!podeParticipar) {
+                            return (
+                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-gray-200">
+                                <span className="text-gray-500 text-xs font-semibold">N/A</span>
+                              </td>
+                            );
+                          }
+
                           const reg = presencasIrmao[sessao.id];
                           
                           if (!reg) {
@@ -231,7 +282,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
           {!loading && sessoes.length > 0 && (
             <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
               <h4 className="font-semibold text-sm text-gray-700 mb-3">Legenda:</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <span className="text-green-600 text-2xl font-bold">✓</span>
                   <span className="text-gray-700">Presente</span>
@@ -247,6 +298,10 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400 text-xs">-</span>
                   <span className="text-gray-700">Sem registro</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-xs font-semibold">N/A</span>
+                  <span className="text-gray-700">Grau não permitido</span>
                 </div>
               </div>
             </div>
