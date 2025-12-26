@@ -1547,7 +1547,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       yPos += 15;
 
       // ========================================
-      // PRESENÇA (ÚLTIMAS 5 SESSÕES) - NO FINAL
+      // PRESENÇA (ÚLTIMAS 5 SESSÕES) - FORMATO MATRIZ
       // ========================================
       if (ultimasSessoes && ultimasSessoes.length > 0) {
         if (yPos > 200) {
@@ -1555,57 +1555,108 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           yPos = 20;
         }
 
-        doc.setFontSize(11);
+        doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
         doc.text('Presença nas Últimas 5 Sessões:', 15, yPos);
-        yPos += 7;
+        yPos += 6;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${irmaoData.nome} - CIM: ${irmaoData.cim || 'N/A'}`, 15, yPos);
+        yPos += 8;
 
-        const tableData = [];
+        // Preparar dados em formato MATRIZ
+        const headers = ['Data'];
+        const tiposSessao = [];
+        
+        // Coletar tipos únicos de sessão
+        ultimasSessoes.forEach(sessao => {
+          const tipo = sessao.graus_sessao?.nome || 'Não informado';
+          tiposSessao.push(tipo);
+          headers.push(tipo);
+        });
+
+        // Criar linha de dados com símbolos
+        const row = [];
         ultimasSessoes.forEach(sessao => {
           const registro = presencas?.find(p => p.sessao_id === sessao.id);
-          const data = new Date(sessao.data_sessao).toLocaleDateString('pt-BR');
-          const tipo = sessao.graus_sessao?.nome || 'Não informado';
+          const data = new Date(sessao.data_sessao).toLocaleDateString('pt-BR', { 
+            day: '2-digit', 
+            month: '2-digit' 
+          });
           
-          let status = '';
-          let obs = '-';
+          let simbolo = '';
           if (registro) {
             if (registro.presente) {
-              status = '✓ Presente';
+              simbolo = '✓';
             } else if (registro.justificativa) {
-              status = 'J Justificado';
-              obs = registro.justificativa.substring(0, 40);
+              simbolo = 'J';
             } else {
-              status = '✗ Ausente';
+              simbolo = '✗';
             }
           } else {
-            status = '- Sem registro';
+            simbolo = '-';
           }
           
-          tableData.push([data, tipo, status, obs]);
+          row.push({ data, simbolo });
         });
 
         await import('jspdf-autotable');
+        
+        // Tabela em formato matriz (datas nas linhas, tipos nas colunas)
+        const tableBody = row.map(item => {
+          const linha = [item.data];
+          // Adicionar símbolo para cada tipo de sessão
+          ultimasSessoes.forEach((_, idx) => {
+            linha.push(row[idx]?.simbolo || '-');
+          });
+          return [item.data, item.simbolo];
+        });
+
+        // Criar corpo da tabela corretamente
+        const matrixBody = [];
+        row.forEach((item, idx) => {
+          matrixBody.push([item.data, item.simbolo]);
+        });
+
         doc.autoTable({
           startY: yPos,
-          head: [['Data', 'Tipo Sessão', 'Status', 'Observação']],
-          body: tableData,
-          headStyles: { fillColor: [76, 175, 80], fontSize: 9 },
-          bodyStyles: { fontSize: 8 },
+          head: [headers],
+          body: matrixBody,
+          headStyles: { 
+            fillColor: [33, 150, 243],
+            textColor: [255, 255, 255],
+            fontSize: 10,
+            fontStyle: 'bold',
+            halign: 'center',
+            lineWidth: 0.5,
+            lineColor: [200, 200, 200]
+          },
+          bodyStyles: { 
+            fontSize: 11,
+            halign: 'center',
+            lineWidth: 0.5,
+            lineColor: [200, 200, 200]
+          },
           columnStyles: {
-            0: { cellWidth: 25 },
-            1: { cellWidth: 50 },
-            2: { cellWidth: 35, halign: 'center' },
-            3: { cellWidth: 70, fontSize: 7 }
+            0: { 
+              cellWidth: 25,
+              halign: 'center',
+              fontStyle: 'bold'
+            }
+          },
+          alternateRowStyles: {
+            fillColor: [245, 245, 245]
           },
           margin: { left: 15, right: 15 }
         });
 
-        yPos = doc.lastAutoTable.finalY + 3;
-        doc.setFontSize(8);
+        yPos = doc.lastAutoTable.finalY + 4;
+        doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
-        doc.setTextColor(100, 100, 100);
-        doc.text('Legenda: ✓ = Presente | ✗ = Ausente | J = Justificado', 15, yPos);
+        doc.setTextColor(80, 80, 80);
+        doc.text('✓ = Presente  |  ✗ = Ausente  |  J = Justificado  |  - = Sem registro', 15, yPos);
       }
 
       // Salvar com novo padrão de nome
