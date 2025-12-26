@@ -4,7 +4,7 @@ import ModalVisualizarPresenca from './ModalVisualizarPresenca';
 import ModalEditarSessao from './ModalEditarSessao';
 import ModalGradePresenca from './ModalGradePresenca';
 
-export default function DashboardPresenca() {
+export default function DashboardPresenca({ onEditarPresenca }) {
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState('mes'); // mes, trimestre, semestre, ano
   const [dataInicio, setDataInicio] = useState('');
@@ -642,8 +642,9 @@ export default function DashboardPresenca() {
           onFechar={() => setSessaoIdModal(null)}
           onEditar={(sessaoId) => {
             setSessaoIdModal(null);
-            // Redirecionar para tela de registro de presença
-            window.location.href = `#registro-presenca-${sessaoId}`;
+            if (onEditarPresenca) {
+              onEditarPresenca(sessaoId);
+            }
           }}
         />
       )}
