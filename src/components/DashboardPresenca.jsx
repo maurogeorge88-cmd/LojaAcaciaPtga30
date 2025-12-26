@@ -15,6 +15,9 @@ export default function DashboardPresenca({ onEditarPresenca }) {
   const [anoRanking, setAnoRanking] = useState(new Date().getFullYear());
   const [anoProblemas, setAnoProblemas] = useState(new Date().getFullYear());
   const [periodoProblemas, setPeriodoProblemas] = useState('anual'); // mensal, trimestral, semestral, anual
+  const [irmaosAlerta25, setIrmaosAlerta25] = useState([]);
+  const [anoAlerta25, setAnoAlerta25] = useState(new Date().getFullYear());
+  const [percentualAlerta, setPercentualAlerta] = useState(25); // Configurável
   const [estatisticas, setEstatisticas] = useState({
     totalSessoes: 0,
     totalIrmaos: 0,
@@ -38,6 +41,10 @@ export default function DashboardPresenca({ onEditarPresenca }) {
   useEffect(() => {
     carregarProblemas();
   }, [anoProblemas, periodoProblemas]);
+
+  useEffect(() => {
+    carregarAlerta25();
+  }, [anoAlerta25, percentualAlerta]);
 
   const calcularDatas = () => {
     const hoje = new Date();
@@ -255,10 +262,10 @@ export default function DashboardPresenca({ onEditarPresenca }) {
         // Critérios para aparecer no quadro de problemas:
         // 1. Tem sessões elegíveis no período
         // 2. Taxa de presença < 70%
-        // 3. Tem pelo menos 2 ausências injustificadas (senão é caso pontual)
+        // 3. Tem 3 ou mais ausências injustificadas (não consecutivas, só quantidade)
         const deveAparecerNoQuadro = totalSessoes > 0 && 
                                      taxa < 70 && 
-                                     ausentesInjust >= 2;
+                                     ausentesInjust >= 3;
 
         if (deveAparecerNoQuadro) {
           problemasCompleto.push({
@@ -280,6 +287,113 @@ export default function DashboardPresenca({ onEditarPresenca }) {
 
     } catch (error) {
       console.error('Erro ao carregar problemas:', error);
+    }
+  };
+
+  const carregarAlerta25 = async () => {
+    try {
+      // Buscar todos os irmãos regulares
+      const { data: todosIrmaos, error: erroTodos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .ilike('situacao', 'regular');
+
+      if (erroTodos) throw erroTodos;
+
+      // Período: ano inteiro selecionado
+      const inicioAno = `${anoAlerta25}-01-01`;
+      const fimAno = `${anoAlerta25}-12-31`;
+
+      // Buscar todas as sessões do ano com grau
+      const { data: sessoesAno, error: erroSessoes } = await supabase
+        .from('sessoes_presenca')
+        .select(`
+          id,
+          grau_sessao_id,
+          graus_sessao:grau_sessao_id (nome)
+        `)
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      if (erroSessoes) throw erroSessoes;
+
+      const sessaoIds = sessoesAno.map(s => s.id);
+
+      // Buscar registros de presença
+      let registrosPresenca = [];
+      if (sessaoIds.length > 0) {
+        const { data: registros, error: erroRegistros } = await supabase
+          .from('registros_presenca')
+          .select('sessao_id, membro_id, presente, justificativa')
+          .in('sessao_id', sessaoIds);
+
+        if (erroRegistros) throw erroRegistros;
+        registrosPresenca = registros || [];
+      }
+
+      // Calcular para cada irmão
+      const alertas = [];
+      for (const irmao of todosIrmaos) {
+        // Calcular grau
+        let grau = 'Sem Grau';
+        if (irmao.data_exaltacao) grau = 'Mestre';
+        else if (irmao.data_elevacao) grau = 'Companheiro';
+        else if (irmao.data_iniciacao) grau = 'Aprendiz';
+
+        // Filtrar sessões elegíveis
+        const sessoesElegiveis = sessoesAno.filter(sessao => {
+          const tipoSessao = sessao.graus_sessao?.nome;
+          
+          if (grau === 'Aprendiz') {
+            return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+          }
+          if (grau === 'Companheiro') {
+            return tipoSessao === 'Sessão de Aprendiz' || 
+                   tipoSessao === 'Sessão de Companheiro' || 
+                   tipoSessao === 'Sessão Administrativa';
+          }
+          if (grau === 'Mestre') {
+            return true;
+          }
+          return tipoSessao === 'Sessão Administrativa';
+        });
+
+        const idsElegiveis = sessoesElegiveis.map(s => s.id);
+        const registrosIrmao = registrosPresenca.filter(r => 
+          r.membro_id === irmao.id && idsElegiveis.includes(r.sessao_id)
+        );
+
+        const totalSessoes = sessoesElegiveis.length;
+        const presentes = registrosIrmao.filter(r => r.presente).length;
+        const ausentesJust = registrosIrmao.filter(r => !r.presente && r.justificativa).length;
+        const ausentesInjust = registrosIrmao.filter(r => !r.presente && !r.justificativa).length;
+
+        // Percentual de ausências INJUSTIFICADAS (não conta justificadas)
+        const percentualAusenciasInjust = totalSessoes > 0 ? (ausentesInjust / totalSessoes) * 100 : 0;
+        const taxaPresenca = totalSessoes > 0 ? (presentes / totalSessoes) * 100 : 0;
+
+        // Alerta se tem o percentual configurado ou mais de ausências INJUSTIFICADAS
+        if (totalSessoes > 0 && percentualAusenciasInjust >= percentualAlerta) {
+          alertas.push({
+            membro_id: irmao.id,
+            nome: irmao.nome,
+            grau: grau,
+            total_sessoes: totalSessoes,
+            presencas: presentes,
+            ausencias_justificadas: ausentesJust,
+            ausencias_injustificadas: ausentesInjust,
+            percentual_ausencias_injust: percentualAusenciasInjust,
+            taxa_presenca: taxaPresenca
+          });
+        }
+      }
+
+      // Ordenar por percentual de ausências injustificadas (maior primeiro)
+      alertas.sort((a, b) => b.percentual_ausencias_injust - a.percentual_ausencias_injust);
+      setIrmaosAlerta25(alertas);
+
+    } catch (error) {
+      console.error('Erro ao carregar alerta 25%:', error);
     }
   };
 
@@ -591,6 +705,9 @@ export default function DashboardPresenca({ onEditarPresenca }) {
               </div>
             </div>
           </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Irmãos com 3+ ausências injustificadas no período selecionado
+          </p>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
@@ -627,12 +744,130 @@ export default function DashboardPresenca({ onEditarPresenca }) {
                       {irmao.presencas_obrigatorias}/{irmao.total_sessoes_obrigatorias}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`px-2 py-1 text-sm font-semibold rounded ${
-                        irmao.ausencias_injustificadas >= 5 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className="px-2 py-1 text-sm font-semibold rounded bg-red-100 text-red-800">
                         {irmao.ausencias_injustificadas}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className={`px-3 py-1 text-sm font-bold rounded ${obterCorTaxa(irmao.taxa_presenca)}`}>
+                        {Math.round(irmao.taxa_presenca)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Quadro de Alerta de Ausências Injustificadas */}
+      {irmaosAlerta25.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-orange-600">
+              🔔 Alerta: Irmãos com {percentualAlerta}%+ de Ausências Injustificadas
+            </h3>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Percentual:</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={percentualAlerta}
+                  onChange={(e) => {
+                    const valor = parseInt(e.target.value);
+                    if (valor >= 1 && valor <= 100) {
+                      setPercentualAlerta(valor);
+                    }
+                  }}
+                  className="w-20 px-3 py-1 border border-gray-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-orange-500"
+                />
+                <span className="text-sm text-gray-600">%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Ano:</label>
+                <select
+                  value={anoAlerta25}
+                  onChange={(e) => setAnoAlerta25(parseInt(e.target.value))}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 6 }, (_, i) => 2025 + i).map(ano => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Irmãos que atingiram {percentualAlerta}% ou mais de ausências INJUSTIFICADAS no ano (ausências justificadas não são contabilizadas)
+          </p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Irmão
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Grau
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Total Sessões
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Presenças
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Aus. Injustificadas
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Aus. Justificadas
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    % Aus. Injust.
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Taxa Presença
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {irmaosAlerta25.map((irmao) => (
+                  <tr key={irmao.membro_id} className="hover:bg-orange-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">{irmao.nome}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+                        {irmao.grau}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+                      {irmao.total_sessoes}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-green-700 font-semibold">
+                      {irmao.presencas}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 text-sm font-semibold rounded bg-red-100 text-red-800">
+                        {irmao.ausencias_injustificadas}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 text-sm font-semibold rounded bg-yellow-100 text-yellow-800">
+                        {irmao.ausencias_justificadas}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className={`px-3 py-1 text-sm font-bold rounded ${
+                        irmao.percentual_ausencias_injust >= 50 ? 'bg-red-500 text-white' :
+                        irmao.percentual_ausencias_injust >= 40 ? 'bg-red-400 text-white' :
+                        irmao.percentual_ausencias_injust >= 30 ? 'bg-orange-400 text-white' :
+                        'bg-yellow-400 text-gray-900'
+                      }`}>
+                        {Math.round(irmao.percentual_ausencias_injust)}%
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
