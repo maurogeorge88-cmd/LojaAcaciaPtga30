@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import ModalVisualizarPresenca from './ModalVisualizarPresenca';
 
 export default function DashboardPresenca() {
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState('mes'); // mes, trimestre, semestre, ano
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
+  const [sessaoIdModal, setSessaoIdModal] = useState(null);
   const [estatisticas, setEstatisticas] = useState({
     totalSessoes: 0,
     totalIrmaos: 0,
@@ -292,13 +294,22 @@ export default function DashboardPresenca() {
                           </span>
                         )}
                       </div>
-                      <div className="text-right">
-                        <div className={`text-2xl font-bold px-3 py-1 rounded ${obterCorTaxa(percentual)}`}>
-                          {percentual}%
+                      <div className="text-right flex items-center gap-3">
+                        <div>
+                          <div className={`text-2xl font-bold px-3 py-1 rounded ${obterCorTaxa(percentual)}`}>
+                            {percentual}%
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {sessao.total_presentes}/{sessao.total_registros}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {sessao.total_presentes}/{sessao.total_registros}
-                        </p>
+                        <button
+                          onClick={() => setSessaoIdModal(sessao.id)}
+                          className="px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+                          title="Ver detalhes"
+                        >
+                          👁️ Ver
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -404,6 +415,14 @@ export default function DashboardPresenca() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Modal de Visualização */}
+      {sessaoIdModal && (
+        <ModalVisualizarPresenca 
+          sessaoId={sessaoIdModal}
+          onFechar={() => setSessaoIdModal(null)}
+        />
       )}
     </div>
   );
