@@ -20,6 +20,8 @@ export default function DashboardPresenca({ onEditarPresenca }) {
   const [percentualAlerta, setPercentualAlerta] = useState(25); // Configurável
   const [irmaosPrerroga70, setIrmaosPrerroga70] = useState([]);
   const [anoPrerroga70, setAnoPrerroga70] = useState(new Date().getFullYear());
+  const [irmaosLicenciados, setIrmaosLicenciados] = useState([]);
+  const [anoLicenciados, setAnoLicenciados] = useState(new Date().getFullYear());
   const [estatisticas, setEstatisticas] = useState({
     totalSessoes: 0,
     totalIrmaos: 0,
@@ -51,6 +53,10 @@ export default function DashboardPresenca({ onEditarPresenca }) {
   useEffect(() => {
     carregarPrerroga70();
   }, [anoPrerroga70]);
+
+  useEffect(() => {
+    carregarLicenciados();
+  }, [anoLicenciados]);
 
   const calcularDatas = () => {
     const hoje = new Date();
@@ -240,6 +246,12 @@ export default function DashboardPresenca({ onEditarPresenca }) {
       // Calcular estatísticas para cada irmão
       const problemasCompleto = [];
       for (const irmao of todosIrmaos) {
+        // Verificar situação - pular se licenciado ou 70+
+        const situacao = (irmao.situacao || '').toLowerCase();
+        if (situacao === 'licenciado') {
+          continue; // Licenciados não são cobrados
+        }
+
         // Verificar idade - se tem 70+ anos, pular (tem prerrogativa)
         const idade = calcularIdade(irmao.data_nascimento);
         if (idade !== null && idade >= 70) {
@@ -358,6 +370,12 @@ export default function DashboardPresenca({ onEditarPresenca }) {
       // Calcular para cada irmão
       const alertas = [];
       for (const irmao of todosIrmaos) {
+        // Verificar situação - pular se licenciado
+        const situacao = (irmao.situacao || '').toLowerCase();
+        if (situacao === 'licenciado') {
+          continue; // Licenciados não são cobrados
+        }
+
         // Verificar idade - se tem 70+ anos, pular (tem prerrogativa)
         const idade = calcularIdade(irmao.data_nascimento);
         if (idade !== null && idade >= 70) {
@@ -539,6 +557,112 @@ export default function DashboardPresenca({ onEditarPresenca }) {
 
     } catch (error) {
       console.error('Erro ao carregar prerrogativa 70:', error);
+    }
+  };
+
+  const carregarLicenciados = async () => {
+    try {
+      // Buscar todos os irmãos licenciados
+      const { data: todosIrmaos, error: erroTodos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, situacao')
+        .ilike('situacao', 'licenciado');
+
+      if (erroTodos) throw erroTodos;
+
+      if (todosIrmaos.length === 0) {
+        setIrmaosLicenciados([]);
+        return;
+      }
+
+      // Período: ano inteiro selecionado
+      const inicioAno = `${anoLicenciados}-01-01`;
+      const fimAno = `${anoLicenciados}-12-31`;
+
+      // Buscar todas as sessões do ano
+      const { data: sessoesAno, error: erroSessoes } = await supabase
+        .from('sessoes_presenca')
+        .select(`
+          id,
+          grau_sessao_id,
+          graus_sessao:grau_sessao_id (nome)
+        `)
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      if (erroSessoes) throw erroSessoes;
+
+      const sessaoIds = sessoesAno.map(s => s.id);
+
+      // Buscar registros de presença
+      let registrosPresenca = [];
+      if (sessaoIds.length > 0) {
+        const { data: registros, error: erroRegistros } = await supabase
+          .from('registros_presenca')
+          .select('sessao_id, membro_id, presente, justificativa')
+          .in('sessao_id', sessaoIds);
+
+        if (erroRegistros) throw erroRegistros;
+        registrosPresenca = registros || [];
+      }
+
+      // Calcular para cada licenciado
+      const licenciadosStats = [];
+      for (const irmao of todosIrmaos) {
+        // Calcular grau
+        let grau = 'Sem Grau';
+        if (irmao.data_exaltacao) grau = 'Mestre';
+        else if (irmao.data_elevacao) grau = 'Companheiro';
+        else if (irmao.data_iniciacao) grau = 'Aprendiz';
+
+        // Filtrar sessões elegíveis
+        const sessoesElegiveis = sessoesAno.filter(sessao => {
+          const tipoSessao = sessao.graus_sessao?.nome;
+          
+          if (grau === 'Aprendiz') {
+            return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+          }
+          if (grau === 'Companheiro') {
+            return tipoSessao === 'Sessão de Aprendiz' || 
+                   tipoSessao === 'Sessão de Companheiro' || 
+                   tipoSessao === 'Sessão Administrativa';
+          }
+          if (grau === 'Mestre') {
+            return true;
+          }
+          return tipoSessao === 'Sessão Administrativa';
+        });
+
+        const idsElegiveis = sessoesElegiveis.map(s => s.id);
+        const registrosIrmao = registrosPresenca.filter(r => 
+          r.membro_id === irmao.id && idsElegiveis.includes(r.sessao_id)
+        );
+
+        const totalSessoes = sessoesElegiveis.length;
+        const presentes = registrosIrmao.filter(r => r.presente).length;
+        const ausentesJust = registrosIrmao.filter(r => !r.presente && r.justificativa).length;
+        const ausentesInjust = registrosIrmao.filter(r => !r.presente && !r.justificativa).length;
+
+        const taxaPresenca = totalSessoes > 0 ? (presentes / totalSessoes) * 100 : 0;
+
+        licenciadosStats.push({
+          membro_id: irmao.id,
+          nome: irmao.nome,
+          grau: grau,
+          total_sessoes: totalSessoes,
+          presencas: presentes,
+          ausencias_justificadas: ausentesJust,
+          ausencias_injustificadas: ausentesInjust,
+          taxa_presenca: taxaPresenca
+        });
+      }
+
+      // Ordenar por presenças (maior primeiro - mostrar os mais assíduos)
+      licenciadosStats.sort((a, b) => b.presencas - a.presencas);
+      setIrmaosLicenciados(licenciadosStats);
+
+    } catch (error) {
+      console.error('Erro ao carregar licenciados:', error);
     }
   };
 
@@ -1139,6 +1263,107 @@ export default function DashboardPresenca({ onEditarPresenca }) {
             <p className="text-sm text-blue-800">
               ℹ️ <strong>Nota:</strong> Estes irmãos não são computados nos quadros de alerta, pois têm prerrogativa de idade.
               A presença é voluntária e não afeta estatísticas de frequência obrigatória.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Quadro de Irmãos Licenciados */}
+      {irmaosLicenciados.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-orange-600">
+              📋 Irmãos Licenciados
+            </h3>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Ano:</label>
+              <select
+                value={anoLicenciados}
+                onChange={(e) => setAnoLicenciados(parseInt(e.target.value))}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {Array.from({ length: 6 }, (_, i) => 2025 + i).map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-sm text-gray-600 mb-4">
+            Irmãos licenciados não têm obrigatoriedade de presença. Apenas presenças são contabilizadas (ausências não afetam estatísticas).
+          </p>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Irmão
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Grau
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Total Sessões
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Presenças
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Ausências (info)
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Taxa Presença
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {irmaosLicenciados.map((irmao) => (
+                  <tr key={irmao.membro_id} className="hover:bg-orange-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="font-medium text-gray-900">{irmao.nome}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="px-2 py-1 text-xs font-semibold bg-blue-100 text-blue-800 rounded">
+                        {irmao.grau}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+                      {irmao.total_sessoes}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <span className="text-sm font-semibold text-green-700">
+                        {irmao.presencas}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="text-xs text-gray-500">
+                        {irmao.ausencias_injustificadas + irmao.ausencias_justificadas} total
+                        <div className="mt-0.5">
+                          ({irmao.ausencias_injustificadas}i / {irmao.ausencias_justificadas}j)
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className={`px-3 py-1 text-sm font-bold rounded ${
+                          irmao.presencas >= irmao.total_sessoes * 0.5 ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {Math.round(irmao.taxa_presenca)}%
+                        </span>
+                        <span className="text-xs text-gray-500 italic">
+                          (não obrigatório)
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded">
+            <p className="text-sm text-orange-800">
+              ℹ️ <strong>Nota:</strong> Irmãos licenciados não são computados nos quadros de alerta.
+              Ausências não afetam estatísticas - apenas presenças são contabilizadas quando comparecem.
             </p>
           </div>
         </div>
