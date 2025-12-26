@@ -56,7 +56,42 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         console.error('Erro na função RPC:', irmaosError);
         throw irmaosError;
       }
-      setIrmaosElegiveis(irmaos || []);
+
+      // Buscar também irmãos LICENCIADOS elegíveis (aparecem mas ausências não contam)
+      const { data: licenciados, error: licenciadosError } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, situacao')
+        .ilike('situacao', 'licenciado');
+
+      if (licenciadosError) console.error('Erro ao buscar licenciados:', licenciadosError);
+
+      // Filtrar licenciados pelo grau da sessão
+      const licenciadosElegiveis = (licenciados || []).filter(irmao => {
+        const grauSessao = sessaoData.graus_sessao?.nome;
+        
+        // Determinar grau do irmão
+        let grauIrmao = 'Aprendiz';
+        if (irmao.data_exaltacao) grauIrmao = 'Mestre';
+        else if (irmao.data_elevacao) grauIrmao = 'Companheiro';
+
+        // Sessão Administrativa: todos podem
+        if (grauSessao === 'Sessão Administrativa') return true;
+
+        // Outras sessões: verificar grau
+        if (grauSessao === 'Sessão de Aprendiz') return true; // Todos podem
+        if (grauSessao === 'Sessão de Companheiro') return grauIrmao !== 'Aprendiz';
+        if (grauSessao === 'Sessão de Mestre') return grauIrmao === 'Mestre';
+
+        return false;
+      });
+
+      // Combinar regulares + licenciados (marcar licenciados)
+      const todosMembros = [
+        ...(irmaos || []),
+        ...licenciadosElegiveis.map(l => ({ ...l, eh_licenciado: true }))
+      ];
+      
+      setIrmaosElegiveis(todosMembros);
 
       // Buscar presenças já registradas (se houver)
       const { data: presencasExistentes, error: presencasError } = await supabase
@@ -313,16 +348,23 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
               {irmaosFiltrados.map((irmao) => (
                 <tr key={irmao.membro_id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       {irmao.foto_url && (
                         <img
                           src={irmao.foto_url}
                           alt={irmao.nome_completo}
-                          className="h-10 w-10 rounded-full mr-3 object-cover"
+                          className="h-10 w-10 rounded-full object-cover"
                         />
                       )}
-                      <div className="text-sm font-medium text-gray-900">
-                        {irmao.nome_completo}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {irmao.nome_completo}
+                        </div>
+                        {irmao.eh_licenciado && (
+                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                            Licenciado
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
