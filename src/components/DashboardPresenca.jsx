@@ -252,8 +252,15 @@ export default function DashboardPresenca({ onEditarPresenca }) {
         
         const taxa = totalSessoes > 0 ? (presentes / totalSessoes) * 100 : 0;
 
-        // Só adicionar se tem sessões elegíveis E taxa < 70%
-        if (totalSessoes > 0 && taxa < 70) {
+        // Critérios para aparecer no quadro de problemas:
+        // 1. Tem sessões elegíveis no período
+        // 2. Taxa de presença < 70%
+        // 3. Tem pelo menos 2 ausências injustificadas (senão é caso pontual)
+        const deveAparecerNoQuadro = totalSessoes > 0 && 
+                                     taxa < 70 && 
+                                     ausentesInjust >= 2;
+
+        if (deveAparecerNoQuadro) {
           problemasCompleto.push({
             membro_id: irmao.id,
             nome: irmao.nome,
