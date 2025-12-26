@@ -360,7 +360,6 @@ export default function DashboardPresenca() {
           </div>
           </div>
         </div>
-        </div>
 
         {/* Período Selecionado */}
         <div className="mt-4 text-sm text-gray-600">
