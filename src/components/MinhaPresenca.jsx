@@ -78,16 +78,19 @@ export default function MinhaPresenca({ userData }) {
       const periodo = calcularPeriodo();
       if (!periodo) return;
 
-      // Buscar dados do irmão logado
+      // Buscar dados do irmão logado usando email
       const { data: irmao, error: irmaoError } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, situacao')
-        .eq('user_id', userData.id)
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, situacao, email')
+        .eq('email', userData.email)
         .single();
 
-      if (irmaoError) throw irmaoError;
+      if (irmaoError) {
+        console.error('Erro ao buscar irmão:', irmaoError);
+        throw irmaoError;
+      }
       if (!irmao) {
-        throw new Error('Irmão não encontrado');
+        throw new Error('Irmão não encontrado. Verifique se seu email está cadastrado.');
       }
 
       setIrmaoData(irmao);
