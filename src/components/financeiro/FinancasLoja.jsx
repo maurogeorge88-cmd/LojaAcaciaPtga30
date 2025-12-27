@@ -1717,20 +1717,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           .gte('data_sessao', `${anoAtual}-01-01`)
           .lte('data_sessao', `${anoAtual}-12-31`);
 
-        const { data: presencasAno } = await supabase
+        const { data: registrosAno } = await supabase
           .from('registros_presenca')
           .select('*')
           .eq('membro_id', irmaoId)
           .in('sessao_id', sessoesAno?.map(s => s.id) || []);
 
         let totalSessoesAno = sessoesAno?.length || 0;
-        let presencasAno = 0;
+        let presencasContadasAno = 0;
         let ausenciasAno = 0;
         let justificadasAno = 0;
 
-        presencasAno?.forEach(reg => {
+        registrosAno?.forEach(reg => {
           if (reg.presente) {
-            presencasAno++;
+            presencasContadasAno++;
           } else if (reg.justificativa) {
             justificadasAno++;
           } else {
@@ -1738,7 +1738,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           }
         });
 
-        const taxaAno = totalSessoesAno > 0 ? ((presencasAno / totalSessoesAno) * 100).toFixed(1) : '0.0';
+        const taxaAno = totalSessoesAno > 0 ? ((presencasContadasAno / totalSessoesAno) * 100).toFixed(1) : '0.0';
 
         // Desenhar quadro de estatísticas
         if (yPos > 230) {
@@ -1766,7 +1766,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           [
             `Ano ${anoAtual}`,
             totalSessoesAno.toString(),
-            presencasAno.toString(),
+            presencasContadasAno.toString(),
             ausenciasAno.toString(),
             justificadasAno.toString(),
             taxaAno + '%'
