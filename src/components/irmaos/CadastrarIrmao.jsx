@@ -50,6 +50,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     grande_oriente: '',
     situacao: 'regular',
     periodicidade_pagamento: 'Mensal',  // ← NOVO CAMPO ADICIONADO
+    data_licenca: '',                    // Data início da licença
+    data_desligamento: '',               // Data do desligamento (usado para Desligado e Ex-Ofício)
+    data_falecimento: '',                // Data do falecimento
     observacoes: '',
     status: 'ativo'
   });
@@ -131,11 +134,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       data_iniciacao: irmao.data_iniciacao || '',
       data_elevacao: irmao.data_elevacao || '',
       data_exaltacao: irmao.data_exaltacao || '',
+      data_ingresso_loja: irmao.data_ingresso_loja || '',
+      data_transferencia_saida: irmao.data_transferencia_saida || '',
       loja_origem: irmao.loja_origem || '',
       oriente: irmao.oriente || '',
       grande_oriente: irmao.grande_oriente || '',
       situacao: irmao.situacao || 'regular',
-      periodicidade_pagamento: irmao.periodicidade_pagamento || 'Mensal',  // ← CARREGAR CAMPO
+      periodicidade_pagamento: irmao.periodicidade_pagamento || 'Mensal',
+      data_licenca: irmao.data_licenca || '',
+      data_desligamento: irmao.data_desligamento || '',
+      data_falecimento: irmao.data_falecimento || '',
       observacoes: irmao.observacoes || '',
       status: irmao.status || 'ativo'
     });
@@ -345,13 +353,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         data_iniciacao: irmaoForm.data_iniciacao || null,
         data_elevacao: irmaoForm.data_elevacao || null,
         data_exaltacao: irmaoForm.data_exaltacao || null,
-        data_ingresso_loja: irmaoForm.data_ingresso_loja || null,           // NOVO
-        data_transferencia_saida: irmaoForm.data_transferencia_saida || null, // NOVO
+        data_ingresso_loja: irmaoForm.data_ingresso_loja || null,
+        data_transferencia_saida: irmaoForm.data_transferencia_saida || null,
         loja_origem: irmaoForm.loja_origem || null,
         oriente: irmaoForm.oriente || null,
         grande_oriente: irmaoForm.grande_oriente || null,
         situacao: irmaoForm.situacao || 'regular',
-        periodicidade_pagamento: irmaoForm.periodicidade_pagamento || 'Mensal',  // ← ENVIAR AO BANCO
+        periodicidade_pagamento: irmaoForm.periodicidade_pagamento || 'Mensal',
+        data_licenca: irmaoForm.data_licenca || null,
+        data_desligamento: irmaoForm.data_desligamento || null,
+        data_falecimento: irmaoForm.data_falecimento || null,
         observacoes: irmaoForm.observacoes || null,
         status: irmaoForm.status || 'ativo'
       };
@@ -982,6 +993,95 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   ))}
                 </select>
               </div>
+            </div>
+
+            {/* CAMPOS DE DATAS CONDICIONAIS - Aparecem conforme a situação */}
+            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+              <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                <span>📅</span> Datas Específicas da Situação
+              </h4>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Data de Licença - aparece se situação for "licenciado" */}
+                {irmaoForm.situacao === 'licenciado' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data de Início da Licença *
+                      <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                        A partir desta data, será considerado licenciado
+                      </span>
+                    </label>
+                    <input
+                      type="date"
+                      value={irmaoForm.data_licenca}
+                      onChange={(e) => setIrmaoForm({ ...irmaoForm, data_licenca: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                {/* Data de Desligamento - aparece se situação for "desligado" ou "ex_oficio" */}
+                {(irmaoForm.situacao === 'desligado' || irmaoForm.situacao === 'ex_oficio') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data do Desligamento *
+                      <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                        {irmaoForm.situacao === 'ex_oficio' 
+                          ? 'Data do desligamento forçado (Ex-Ofício)'
+                          : 'A partir desta data, será considerado desligado'}
+                      </span>
+                    </label>
+                    <input
+                      type="date"
+                      value={irmaoForm.data_desligamento}
+                      onChange={(e) => setIrmaoForm({ ...irmaoForm, data_desligamento: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+
+                {/* Data de Falecimento - aparece se situação for "falecido" */}
+                {irmaoForm.situacao === 'falecido' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data do Falecimento *
+                      <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                        Após esta data, não aparecerá nas listas de presença
+                      </span>
+                    </label>
+                    <input
+                      type="date"
+                      value={irmaoForm.data_falecimento}
+                      onChange={(e) => setIrmaoForm({ ...irmaoForm, data_falecimento: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {!['licenciado', 'desligado', 'falecido', 'ex_oficio'].includes(irmaoForm.situacao) && (
+                <p className="text-sm text-gray-600 italic">
+                  ℹ️ Campos de data específicos aparecerão quando selecionar: Licenciado, Desligado, Falecido ou Ex-Ofício
+                </p>
+              )}
+              
+              {/* Informação sobre prerrogativa por idade */}
+              {irmaoForm.data_nascimento && (
+                <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Prerrogativa por Idade:</strong> Calculada automaticamente aos 70 anos.
+                    {(() => {
+                      const idade = calcularIdade(irmaoForm.data_nascimento);
+                      if (idade >= 70) {
+                        return ` Este irmão tem ${idade} anos e possui prerrogativa.`;
+                      } else {
+                        const anosPrerrogativa = 70 - idade;
+                        return ` Este irmão tem ${idade} anos. Terá prerrogativa em ${anosPrerrogativa} ano${anosPrerrogativa > 1 ? 's' : ''}.`;
+                      }
+                    })()}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
