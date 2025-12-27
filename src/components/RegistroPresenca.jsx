@@ -70,25 +70,37 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         throw irmaosError;
       }
 
-      // Buscar data_nascimento dos irmãos para calcular idade
+      // Buscar data_nascimento e datas de situação dos irmãos
       const idsIrmaos = irmaos?.map(i => i.membro_id) || [];
-      const { data: datasNascimento } = await supabase
+      const { data: dadosIrmaos } = await supabase
         .from('irmaos')
-        .select('id, data_nascimento')
+        .select('id, data_nascimento, data_licenca, data_desligamento, data_falecimento')
         .in('id', idsIrmaos);
 
-      // Adicionar idade aos irmãos
+      // Adicionar idade e verificar status em relação à data da sessão
+      const dataSessao = new Date(sessaoData.data_sessao);
       const irmaosComIdade = irmaos?.map(irmao => {
-        const dadosNasc = datasNascimento?.find(d => d.id === irmao.membro_id);
-        const idade = dadosNasc?.data_nascimento ? calcularIdade(dadosNasc.data_nascimento) : null;
+        const dados = dadosIrmaos?.find(d => d.id === irmao.membro_id);
+        const idade = dados?.data_nascimento ? calcularIdade(dados.data_nascimento) : null;
+        
+        // Verificar se o irmão está "efetivamente licenciado" na data da sessão
+        let estaNaSituacaoEspecial = false;
+        if (irmao.situacao === 'licenciado' && dados?.data_licenca) {
+          const dataLicenca = new Date(dados.data_licenca);
+          estaNaSituacaoEspecial = dataSessao >= dataLicenca;
+        }
+        
         return {
           ...irmao,
           idade,
-          tem_prerrogativa: idade >= 70
+          tem_prerrogativa: idade >= 70,
+          esta_licenciado_efetivo: estaNaSituacaoEspecial, // Após a data da licença
+          data_licenca: dados?.data_licenca,
+          data_desligamento: dados?.data_desligamento,
+          data_falecimento: dados?.data_falecimento
         };
       }) || [];
 
-      // TODO: Adicionar licenciados depois
       setIrmaosElegiveis(irmaosComIdade);
 
       // Buscar presenças já registradas (se houver)
@@ -358,7 +370,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
+                        {irmao.esta_licenciado_efetivo && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
                           </span>
