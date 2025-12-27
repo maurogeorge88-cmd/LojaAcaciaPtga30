@@ -1286,7 +1286,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 35; // Aumentado de 32 para 35
+          yPos += 38; // Aumentado para 38
         } catch (e) {
           console.log('Logo não disponível');
         }
@@ -1605,29 +1605,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const tableBody = [];
         
         ultimasSessoes.forEach((sessao, idx) => {
-          const data = new Date(sessao.data_sessao).toLocaleDateString('pt-BR', { 
-            day: '2-digit', 
-            month: '2-digit' 
-          });
+          // Corrigir data - usar string diretamente sem criar Date
+          const dataPartes = sessao.data_sessao.split('-');
+          const data = `${dataPartes[2]}/${dataPartes[1]}`;
           
           const linha = [data];
           
-          // Preencher com letras
+          // Preencher com abreviações
           ultimasSessoes.forEach((s, colIdx) => {
             if (idx === colIdx) {
-              // Mesma sessão - pegar a letra
+              // Mesma sessão - pegar a abreviação
               const registro = presencas?.find(p => p.sessao_id === s.id);
-              let letra = 'SR';
+              let status = 'N/A';
               if (registro) {
                 if (registro.presente) {
-                  letra = 'P';
+                  status = 'Pres.';
                 } else if (registro.justificativa) {
-                  letra = 'J';
+                  status = 'Just.';
                 } else {
-                  letra = 'A';
+                  status = 'Aus.';
                 }
               }
-              linha.push(letra);
+              linha.push(status);
             } else {
               // Sessão diferente - vazio
               linha.push('');
@@ -1654,7 +1653,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             lineColor: [200, 200, 200]
           },
           bodyStyles: { 
-            fontSize: 14,
+            fontSize: 12,
             halign: 'center',
             valign: 'middle',
             lineWidth: 0.5,
@@ -1679,7 +1678,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
-        doc.text('P = Presente  |  A = Ausente  |  J = Justificado  |  SR = Sem registro', 15, yPos);
+        doc.text('Pres. = Presente  |  Aus. = Ausente  |  Just. = Justificado  |  N/A = Sem obrigatoriedade', 15, yPos);
       }
 
       // Salvar com novo padrão de nome
