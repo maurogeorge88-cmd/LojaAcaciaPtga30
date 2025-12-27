@@ -995,7 +995,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </div>
             </div>
 
-            {/* CAMPOS DE DATAS CONDICIONAIS - Aparecem conforme a situação */}
+            {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO */}
             <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
               <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
                 <span>📅</span> Datas Específicas da Situação
@@ -1081,46 +1081,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               })()}
             </div>
 
-            {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data de Iniciação
-                </label>
-                <input
-                  type="date"
-                  value={irmaoForm.data_iniciacao}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data de Elevação
-                </label>
-                <input
-                  type="date"
-                  value={irmaoForm.data_elevacao}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_elevacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data de Exaltação
-                </label>
-                <input
-                  type="date"
-                  value={irmaoForm.data_exaltacao}
-                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_exaltacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            {/* NOVOS CAMPOS: Transferências */}
+            {/* LINHA 3: TRANSFERÊNCIAS ENTRE LOJAS */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
               <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
                 <span>🔄</span> Transferências entre Lojas
@@ -1165,7 +1126,46 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </div>
             </div>
 
-            {/* LINHA 3: Loja Origem, Oriente e Potência */}
+            {/* LINHA 4: Datas de Iniciação, Elevação e Exaltação */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Iniciação
+                </label>
+                <input
+                  type="date"
+                  value={irmaoForm.data_iniciacao}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Elevação
+                </label>
+                <input
+                  type="date"
+                  value={irmaoForm.data_elevacao}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_elevacao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Exaltação
+                </label>
+                <input
+                  type="date"
+                  value={irmaoForm.data_exaltacao}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_exaltacao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            {/* LINHA 5: Loja Origem, Oriente e Potência */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
