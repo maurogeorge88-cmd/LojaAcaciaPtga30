@@ -1066,22 +1066,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               )}
               
               {/* Informação sobre prerrogativa por idade */}
-              {irmaoForm.data_nascimento && (
-                <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
-                  <p className="text-sm text-blue-800">
-                    💡 <strong>Prerrogativa por Idade:</strong> Calculada automaticamente aos 70 anos.
-                    {(() => {
-                      const idade = calcularIdade(irmaoForm.data_nascimento);
-                      if (idade >= 70) {
-                        return ` Este irmão tem ${idade} anos e possui prerrogativa.`;
-                      } else {
-                        const anosPrerrogativa = 70 - idade;
-                        return ` Este irmão tem ${idade} anos. Terá prerrogativa em ${anosPrerrogativa} ano${anosPrerrogativa > 1 ? 's' : ''}.`;
-                      }
-                    })()}
-                  </p>
-                </div>
-              )}
+              {irmaoForm.data_nascimento && (() => {
+                const idade = calcularIdade(irmaoForm.data_nascimento);
+                if (idade >= 70) {
+                  return (
+                    <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Com Prerrogativa por Idade</strong> - Este irmão tem {idade} anos.
+                      </p>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
 
             {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
