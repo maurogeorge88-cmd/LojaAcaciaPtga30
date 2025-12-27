@@ -54,39 +54,52 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar irmãos elegíveis usando a função SQL
-      const { data: irmaos, error: irmaosError } = await supabase
-        .rpc('obter_membros_elegiveis_sessao', {
-          p_grau_sessao_id: sessaoData.grau_sessao_id,
-          p_data_sessao: sessaoData.data_sessao
-        });
+      // Buscar irmãos elegíveis DIRETO da tabela (sem usar função RPC)
+      const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
+      
+      let query = supabase
+        .from('irmaos')
+        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao')
+        .eq('status', 'ativo');
+
+      // Filtrar por grau
+      if (grauMinimo === 2) {
+        query = query.not('data_elevacao', 'is', null);
+      } else if (grauMinimo === 3) {
+        query = query.not('data_exaltacao', 'is', null);
+      }
+
+      const { data: irmaosData, error: irmaosError } = await query.order('nome');
 
       console.log('DEBUG - Sessão:', sessaoData);
-      console.log('DEBUG - Irmãos retornados:', irmaos);
+      console.log('DEBUG - Irmãos retornados:', irmaosData);
       console.log('DEBUG - Erro ao buscar irmãos:', irmaosError);
 
       if (irmaosError) {
-        console.error('Erro na função RPC:', irmaosError);
+        console.error('Erro ao buscar irmãos:', irmaosError);
         throw irmaosError;
       }
 
-      // Buscar data_nascimento dos irmãos para calcular idade
-      const idsIrmaos = irmaos?.map(i => i.membro_id) || [];
-      const { data: datasNascimento } = await supabase
-        .from('irmaos')
-        .select('id, data_nascimento')
-        .in('id', idsIrmaos);
+      // Mapear para formato esperado
+      const irmaos = irmaosData?.map(i => ({
+        membro_id: i.id,
+        nome_completo: i.nome,
+        cim: i.cim,
+        grau_atual: i.data_exaltacao ? 'Mestre' : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
+        foto_url: i.foto_url,
+        situacao: i.situacao,
+        data_nascimento: i.data_nascimento
+      })) || [];
 
       // Adicionar idade aos irmãos
-      const irmaosComIdade = irmaos?.map(irmao => {
-        const dadosNasc = datasNascimento?.find(d => d.id === irmao.membro_id);
-        const idade = dadosNasc?.data_nascimento ? calcularIdade(dadosNasc.data_nascimento) : null;
+      const irmaosComIdade = irmaos.map(irmao => {
+        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
         return {
           ...irmao,
           idade,
           tem_prerrogativa: idade >= 70
         };
-      }) || [];
+      });
 
       setIrmaosElegiveis(irmaosComIdade);
 
