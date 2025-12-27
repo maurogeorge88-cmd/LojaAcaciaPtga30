@@ -240,12 +240,20 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                     <th className="border border-gray-300 px-2 py-3 text-center font-semibold text-sm bg-gray-100 sticky left-[200px] z-20">
                       Grau
                     </th>
-                    {sessoes.map((sessao) => (
-                      <th key={sessao.id} className="border border-gray-300 px-3 py-3 text-center text-xs whitespace-nowrap">
-                        <div className="font-semibold">{formatarData(sessao.data_sessao)}</div>
-                        <div className="text-gray-600 font-normal">{sessao.graus_sessao?.nome}</div>
-                      </th>
-                    ))}
+                    {sessoes.map((sessao) => {
+                      // Simplificar nome da sessão
+                      let nomeSessao = sessao.graus_sessao?.nome || 'Sessão';
+                      nomeSessao = nomeSessao
+                        .replace('Sessão de ', '')
+                        .replace('Sessão ', '');
+                      
+                      return (
+                        <th key={sessao.id} className="border border-gray-300 px-2 py-2 text-center text-xs whitespace-nowrap">
+                          <div className="font-semibold text-xs">{formatarData(sessao.data_sessao)}</div>
+                          <div className="text-gray-600 font-normal text-xs">{nomeSessao}</div>
+                        </th>
+                      );
+                    })}
                     <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-sm bg-gray-100 sticky right-0 z-20">
                       Taxa
                     </th>
@@ -286,7 +294,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                       <tr key={irmao.id} className="hover:bg-gray-50">
                         <td className="border border-gray-300 px-4 py-3 font-medium text-sm whitespace-nowrap bg-white sticky left-0 z-10">
                           <div>
-                            <div>{irmao.nome}</div>
+                            <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
                             <div className="flex gap-1 mt-1">
                               {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
                                 <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
@@ -326,7 +334,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           // Se não pode participar, mostrar N/A
                           if (!podeParticipar) {
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-gray-200">
+                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-200">
                                 <span className="text-gray-500 text-xs font-semibold">N/A</span>
                               </td>
                             );
@@ -337,8 +345,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           if (!reg) {
                             // Sem registro
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-gray-100">
-                                <span className="text-gray-400 text-xs">-</span>
+                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+                                <span className="text-gray-400 text-sm">-</span>
                               </td>
                             );
                           }
@@ -346,8 +354,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           if (reg.presente) {
                             // Presente
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-green-50">
-                                <span className="text-green-600 text-2xl font-bold">✓</span>
+                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+                                <span className="text-green-600 text-lg font-bold">✓</span>
                               </td>
                             );
                           }
@@ -357,18 +365,18 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                             return (
                               <td 
                                 key={sessao.id} 
-                                className="border border-gray-300 px-3 py-3 text-center bg-yellow-50"
+                                className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
                                 title={reg.justificativa}
                               >
-                                <span className="text-yellow-600 text-2xl font-bold">J</span>
+                                <span className="text-yellow-600 text-lg font-bold">J</span>
                               </td>
                             );
                           }
 
                           // Ausente injustificado
                           return (
-                            <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-red-50">
-                              <span className="text-red-600 text-2xl font-bold">✗</span>
+                            <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+                              <span className="text-red-600 text-lg font-bold">✗</span>
                             </td>
                           );
                         })}
