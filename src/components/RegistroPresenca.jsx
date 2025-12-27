@@ -70,34 +70,21 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         throw irmaosError;
       }
 
-      // Buscar data_nascimento e datas de situação dos irmãos
+      // Buscar data_nascimento dos irmãos para calcular idade
       const idsIrmaos = irmaos?.map(i => i.membro_id) || [];
-      const { data: dadosIrmaos } = await supabase
+      const { data: datasNascimento } = await supabase
         .from('irmaos')
-        .select('id, data_nascimento, data_licenca, data_desligamento, data_falecimento')
+        .select('id, data_nascimento')
         .in('id', idsIrmaos);
 
-      // Adicionar idade e verificar status em relação à data da sessão
-      const dataSessao = new Date(sessaoData.data_sessao);
+      // Adicionar idade aos irmãos
       const irmaosComIdade = irmaos?.map(irmao => {
-        const dados = dadosIrmaos?.find(d => d.id === irmao.membro_id);
-        const idade = dados?.data_nascimento ? calcularIdade(dados.data_nascimento) : null;
-        
-        // Verificar se o irmão está "efetivamente licenciado" na data da sessão
-        let estaNaSituacaoEspecial = false;
-        if (irmao.situacao === 'licenciado' && dados?.data_licenca) {
-          const dataLicenca = new Date(dados.data_licenca);
-          estaNaSituacaoEspecial = dataSessao >= dataLicenca;
-        }
-        
+        const dadosNasc = datasNascimento?.find(d => d.id === irmao.membro_id);
+        const idade = dadosNasc?.data_nascimento ? calcularIdade(dadosNasc.data_nascimento) : null;
         return {
           ...irmao,
           idade,
-          tem_prerrogativa: idade >= 70,
-          esta_licenciado_efetivo: estaNaSituacaoEspecial, // Após a data da licença
-          data_licenca: dados?.data_licenca,
-          data_desligamento: dados?.data_desligamento,
-          data_falecimento: dados?.data_falecimento
+          tem_prerrogativa: idade >= 70
         };
       }) || [];
 
@@ -370,7 +357,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.esta_licenciado_efetivo && (
+                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
                           </span>
