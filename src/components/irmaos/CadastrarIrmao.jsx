@@ -345,6 +345,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         data_iniciacao: irmaoForm.data_iniciacao || null,
         data_elevacao: irmaoForm.data_elevacao || null,
         data_exaltacao: irmaoForm.data_exaltacao || null,
+        data_ingresso_loja: irmaoForm.data_ingresso_loja || null,           // NOVO
+        data_transferencia_saida: irmaoForm.data_transferencia_saida || null, // NOVO
         loja_origem: irmaoForm.loja_origem || null,
         oriente: irmaoForm.oriente || null,
         grande_oriente: irmaoForm.grande_oriente || null,
