@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
+// Função auxiliar para calcular idade
+const calcularIdade = (dataNascimento) => {
+  if (!dataNascimento) return null;
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mes = hoje.getMonth() - nascimento.getMonth();
+  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+    idade--;
+  }
+  return idade;
+};
+
 export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }) {
   const [loading, setLoading] = useState(true);
   const [sessao, setSessao] = useState(null);
@@ -44,6 +57,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             id,
             nome,
             foto_url,
+            data_nascimento,
             data_iniciacao,
             data_elevacao,
             data_exaltacao
@@ -54,7 +68,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
 
       if (registrosError) throw registrosError;
 
-      // Adicionar grau calculado
+      // Adicionar grau calculado e prerrogativa
       const presencasComGrau = registros.map(reg => {
         const irmao = reg.irmaos;
         let grau = 'Sem Grau';
@@ -63,9 +77,13 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
         else if (irmao.data_elevacao) grau = 'Companheiro';
         else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
+        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
+        const tem_prerrogativa = idade >= 70;
+
         return {
           ...reg,
-          grau
+          grau,
+          tem_prerrogativa
         };
       });
 
@@ -197,8 +215,15 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
                               className="h-10 w-10 rounded-full mr-3 object-cover"
                             />
                           )}
-                          <div className="text-sm font-medium text-gray-900">
-                            {registro.irmaos.nome}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {registro.irmaos.nome}
+                            </div>
+                            {registro.tem_prerrogativa && (
+                              <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                                Com Prerrogativa
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
