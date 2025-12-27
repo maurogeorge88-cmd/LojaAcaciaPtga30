@@ -59,7 +59,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       
       let query = supabase
         .from('irmaos')
-        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao')
+        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_licenca, data_desligamento, data_falecimento')
         .eq('status', 'ativo');
 
       // Filtrar por grau
@@ -80,24 +80,64 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         throw irmaosError;
       }
 
+      // Aplicar lógica de filtro por datas de situação
+      const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
+      const irmaosFiltrados = irmaosData?.filter(i => {
+        // FALECIDO: só aparece se sessão for ANTES da data de falecimento
+        if (i.situacao === 'falecido' && i.data_falecimento) {
+          const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
+          return dataSessao < dataFalecimento;
+        }
+        
+        // LICENCIADO: sempre aparece (antes e depois da data)
+        if (i.situacao === 'licenciado') {
+          return true;
+        }
+        
+        // DESLIGADO: só aparece se sessão for ANTES da data de desligamento
+        if (i.situacao === 'desligado' && i.data_desligamento) {
+          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
+          return dataSessao < dataDesligamento;
+        }
+        
+        // EX-OFÍCIO: só aparece se sessão for ANTES da data de desligamento
+        if (i.situacao === 'ex_oficio' && i.data_desligamento) {
+          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
+          return dataSessao < dataDesligamento;
+        }
+        
+        // Outras situações: sempre aparecem
+        return true;
+      }) || [];
+
       // Mapear para formato esperado
-      const irmaos = irmaosData?.map(i => ({
+      const irmaos = irmaosFiltrados.map(i => ({
         membro_id: i.id,
         nome_completo: i.nome,
         cim: i.cim,
         grau_atual: i.data_exaltacao ? 'Mestre' : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
         foto_url: i.foto_url,
         situacao: i.situacao,
-        data_nascimento: i.data_nascimento
-      })) || [];
+        data_nascimento: i.data_nascimento,
+        data_licenca: i.data_licenca
+      }));
 
-      // Adicionar idade aos irmãos
+      // Adicionar idade e verificar se está licenciado efetivo
       const irmaosComIdade = irmaos.map(irmao => {
         const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
+        
+        // Verificar se está licenciado APÓS a data da licença
+        let estaLicenciadoEfetivo = false;
+        if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
+          const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
+          estaLicenciadoEfetivo = dataSessao >= dataLicenca;
+        }
+        
         return {
           ...irmao,
           idade,
-          tem_prerrogativa: idade >= 70
+          tem_prerrogativa: idade >= 70,
+          esta_licenciado_efetivo: estaLicenciadoEfetivo
         };
       });
 
@@ -370,7 +410,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
+                        {irmao.esta_licenciado_efetivo && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
                           </span>
