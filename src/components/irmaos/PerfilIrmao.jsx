@@ -662,14 +662,121 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     >
                       <option value="regular">Regular</option>
                       <option value="irregular">Irregular</option>
-                      <option value="remido">Remido</option>
+                      <option value="licenciado">Licenciado</option>
+                      <option value="suspenso">Suspenso</option>
+                      <option value="desligado">Desligado</option>
+                      <option value="excluido">Excluído</option>
                       <option value="falecido">Falecido</option>
+                      <option value="ex_oficio">Ex-Ofício</option>
                     </select>
                   ) : (
                     <p className="text-gray-900 capitalize text-lg">{irmao.situacao || 'Regular'}</p>
                   )}
                 </div>
               </div>
+
+              {/* CAMPOS DE DATAS CONDICIONAIS - Aparecem conforme a situação */}
+              {modoEdicao && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                    <span>📅</span> Datas Específicas da Situação
+                  </h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Data de Licença */}
+                    {irmaoForm.situacao === 'licenciado' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Data de Início da Licença
+                          <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                            A partir desta data, será considerado licenciado
+                          </span>
+                        </label>
+                        <input
+                          type="date"
+                          value={irmaoForm.data_licenca || ''}
+                          onChange={(e) => setIrmaoForm({ ...irmaoForm, data_licenca: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Data de Desligamento - para Desligado e Ex-Ofício */}
+                    {(irmaoForm.situacao === 'desligado' || irmaoForm.situacao === 'ex_oficio') && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Data do Desligamento
+                          <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                            {irmaoForm.situacao === 'ex_oficio' 
+                              ? 'Data do desligamento forçado (Ex-Ofício)'
+                              : 'A partir desta data, será considerado desligado'}
+                          </span>
+                        </label>
+                        <input
+                          type="date"
+                          value={irmaoForm.data_desligamento || ''}
+                          onChange={(e) => setIrmaoForm({ ...irmaoForm, data_desligamento: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Data de Falecimento */}
+                    {irmaoForm.situacao === 'falecido' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Data do Falecimento
+                          <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                            Após esta data, não aparecerá nas listas de presença
+                          </span>
+                        </label>
+                        <input
+                          type="date"
+                          value={irmaoForm.data_falecimento || ''}
+                          onChange={(e) => setIrmaoForm({ ...irmaoForm, data_falecimento: e.target.value })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {!['licenciado', 'desligado', 'falecido', 'ex_oficio'].includes(irmaoForm.situacao) && (
+                    <p className="text-sm text-gray-600 italic mt-2">
+                      ℹ️ Campos de data específicos aparecerão quando selecionar: Licenciado, Desligado, Falecido ou Ex-Ofício
+                    </p>
+                  )}
+                  
+                  {/* Informação sobre prerrogativa por idade */}
+                  {irmaoForm.data_nascimento && (
+                    <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                      <p className="text-sm text-blue-800">
+                        💡 <strong>Prerrogativa por Idade:</strong> Calculada automaticamente aos 70 anos.
+                        {(() => {
+                          const calcularIdade = (dataNasc) => {
+                            if (!dataNasc) return 0;
+                            const hoje = new Date();
+                            const nascimento = new Date(dataNasc);
+                            let idade = hoje.getFullYear() - nascimento.getFullYear();
+                            const m = hoje.getMonth() - nascimento.getMonth();
+                            if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
+                              idade--;
+                            }
+                            return idade;
+                          };
+                          
+                          const idade = calcularIdade(irmaoForm.data_nascimento);
+                          if (idade >= 70) {
+                            return ` Este irmão tem ${idade} anos e possui prerrogativa.`;
+                          } else {
+                            const anosPrerrogativa = 70 - idade;
+                            return ` Este irmão tem ${idade} anos. Terá prerrogativa em ${anosPrerrogativa} ano${anosPrerrogativa > 1 ? 's' : ''}.`;
+                          }
+                        })()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
