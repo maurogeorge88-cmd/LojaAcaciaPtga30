@@ -58,6 +58,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             nome,
             foto_url,
             data_nascimento,
+            situacao,
             data_iniciacao,
             data_elevacao,
             data_exaltacao
@@ -219,11 +220,18 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
                             <div className="text-sm font-medium text-gray-900">
                               {registro.irmaos.nome}
                             </div>
-                            {registro.tem_prerrogativa && (
-                              <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
-                                Com Prerrogativa
-                              </span>
-                            )}
+                            <div className="flex gap-2 mt-1">
+                              {registro.irmaos.situacao && registro.irmaos.situacao.toLowerCase() === 'licenciado' && (
+                                <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                                  Licenciado
+                                </span>
+                              )}
+                              {registro.tem_prerrogativa && (
+                                <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                                  Com Prerrogativa
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </td>
