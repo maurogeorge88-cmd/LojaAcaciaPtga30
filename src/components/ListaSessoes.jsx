@@ -222,30 +222,59 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo de Sessão
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Classificação
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Presença
-                  </th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sessoes.map((sessao) => {
+        <div className="space-y-6">
+          {(() => {
+            // Agrupar sessões por mês/ano
+            const sessoesPorMes = {};
+            
+            sessoes.forEach(sessao => {
+              const data = new Date(sessao.data_sessao + 'T00:00:00');
+              const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
+              const mesNome = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+              
+              if (!sessoesPorMes[mesAno]) {
+                sessoesPorMes[mesAno] = {
+                  mesNome: mesNome.charAt(0).toUpperCase() + mesNome.slice(1),
+                  sessoes: []
+                };
+              }
+              
+              sessoesPorMes[mesAno].sessoes.push(sessao);
+            });
+
+            return Object.entries(sessoesPorMes).map(([mesAno, grupo]) => (
+              <div key={mesAno} className="bg-white rounded-lg shadow-md overflow-hidden">
+                {/* Faixa do Mês/Ano */}
+                <div className="bg-gradient-to-r from-blue-600 to-blue-400 px-6 py-3">
+                  <h3 className="text-lg font-bold text-white">
+                    📅 {grupo.mesNome}
+                  </h3>
+                </div>
+
+                {/* Tabela do Mês */}
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Data
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Tipo de Sessão
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Classificação
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Presença
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ações
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {grupo.sessoes.map((sessao) => {
                   const totalRegistros = sessao.total_registros || 0;
                   const presentes = sessao.total_presentes || 0;
                   const ausentes = sessao.total_ausentes || 0;
@@ -307,6 +336,9 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
             </table>
           </div>
         </div>
+      ));
+    })()}
+  </div>
       )}
 
       {/* Resumo */}
