@@ -1679,6 +1679,121 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
         doc.text('Pres. = Presente  |  Aus. = Ausente  |  Just. = Justificado  |  N/A = Sem obrigatoriedade', 15, yPos);
+        yPos += 10;
+
+        // ========================================
+        // ESTATÍSTICAS DE PRESENÇA
+        // ========================================
+        
+        // Calcular estatísticas das últimas 5 sessões
+        let totalSessoes5 = ultimasSessoes.length;
+        let presencas5 = 0;
+        let ausencias5 = 0;
+        let justificadas5 = 0;
+        let semRegistro5 = 0;
+
+        ultimasSessoes.forEach(sessao => {
+          const registro = presencas?.find(p => p.sessao_id === sessao.id);
+          if (registro) {
+            if (registro.presente) {
+              presencas5++;
+            } else if (registro.justificativa) {
+              justificadas5++;
+            } else {
+              ausencias5++;
+            }
+          } else {
+            semRegistro5++;
+          }
+        });
+
+        const taxa5 = totalSessoes5 > 0 ? ((presencas5 / totalSessoes5) * 100).toFixed(1) : '0.0';
+
+        // Buscar estatísticas anuais
+        const anoAtual = new Date().getFullYear();
+        const { data: sessoesAno } = await supabase
+          .from('sessoes_presenca')
+          .select('id')
+          .gte('data_sessao', `${anoAtual}-01-01`)
+          .lte('data_sessao', `${anoAtual}-12-31`);
+
+        const { data: presencasAno } = await supabase
+          .from('registros_presenca')
+          .select('*')
+          .eq('membro_id', irmaoId)
+          .in('sessao_id', sessoesAno?.map(s => s.id) || []);
+
+        let totalSessoesAno = sessoesAno?.length || 0;
+        let presencasAno = 0;
+        let ausenciasAno = 0;
+        let justificadasAno = 0;
+
+        presencasAno?.forEach(reg => {
+          if (reg.presente) {
+            presencasAno++;
+          } else if (reg.justificativa) {
+            justificadasAno++;
+          } else {
+            ausenciasAno++;
+          }
+        });
+
+        const taxaAno = totalSessoesAno > 0 ? ((presencasAno / totalSessoesAno) * 100).toFixed(1) : '0.0';
+
+        // Desenhar quadro de estatísticas
+        if (yPos > 230) {
+          doc.addPage();
+          yPos = 20;
+        }
+
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Estatísticas de Presença:', 15, yPos);
+        yPos += 7;
+
+        // Tabela de estatísticas
+        const estatisticas = [
+          ['Período', 'Total Sessões', 'Presenças', 'Ausências', 'Justificadas', 'Taxa %'],
+          [
+            'Últimas 5 Sessões',
+            totalSessoes5.toString(),
+            presencas5.toString(),
+            ausencias5.toString(),
+            justificadas5.toString(),
+            taxa5 + '%'
+          ],
+          [
+            `Ano ${anoAtual}`,
+            totalSessoesAno.toString(),
+            presencasAno.toString(),
+            ausenciasAno.toString(),
+            justificadasAno.toString(),
+            taxaAno + '%'
+          ]
+        ];
+
+        doc.autoTable({
+          startY: yPos,
+          head: [estatisticas[0]],
+          body: [estatisticas[1], estatisticas[2]],
+          headStyles: {
+            fillColor: [33, 150, 243],
+            textColor: [255, 255, 255],
+            fontSize: 9,
+            fontStyle: 'bold',
+            halign: 'center'
+          },
+          bodyStyles: {
+            fontSize: 10,
+            halign: 'center'
+          },
+          columnStyles: {
+            0: { halign: 'left', fontStyle: 'bold', cellWidth: 45 },
+            5: { fontStyle: 'bold', textColor: [0, 100, 0] }
+          },
+          margin: { left: 15, right: 15 }
+        });
       }
 
       // Salvar com novo padrão de nome
