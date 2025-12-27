@@ -800,7 +800,56 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 })()}
               </div>
 
-              {/* LINHA 2: Datas de Iniciação, Elevação e Exaltação */}
+              {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO - Já está no lugar correto */}
+
+              {/* LINHA 3: TRANSFERÊNCIAS ENTRE LOJAS */}
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+                <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
+                  <span>🔄</span> Transferências entre Lojas
+                </h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ➡️ Data de Ingresso na Loja
+                      <span className="block text-xs text-gray-500 font-normal">Quando veio transferido</span>
+                    </label>
+                    {modoEdicao ? (
+                      <input
+                        type="date"
+                        value={irmaoForm.data_ingresso_loja || ''}
+                        onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <p className="text-gray-900">
+                        {irmao.data_ingresso_loja ? irmao.data_ingresso_loja.split('-').reverse().join('/') : 'Iniciado nesta loja'}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ⬅️ Data de Transferência (Saída)
+                      <span className="block text-xs text-gray-500 font-normal">Quando se transferiu</span>
+                    </label>
+                    {modoEdicao ? (
+                      <input
+                        type="date"
+                        value={irmaoForm.data_transferencia_saida || ''}
+                        onChange={(e) => setIrmaoForm({ ...irmaoForm, data_transferencia_saida: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <p className="text-gray-900">
+                        {irmao.data_transferencia_saida ? irmao.data_transferencia_saida.split('-').reverse().join('/') : 'Ativo na loja'}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* LINHA 4: Datas de Iniciação, Elevação e Exaltação */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">🔨 Data de Iniciação</label>
@@ -853,53 +902,6 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {irmao.data_exaltacao ? irmao.data_exaltacao.split('-').reverse().join('/') : 'Não informado'}
                     </p>
                   )}
-                </div>
-              </div>
-
-              {/* NOVOS: Transferências entre Lojas */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
-                <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                  <span>🔄</span> Transferências entre Lojas
-                </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ➡️ Data de Ingresso na Loja
-                      <span className="block text-xs text-gray-500 font-normal">Quando veio transferido</span>
-                    </label>
-                    {modoEdicao ? (
-                      <input
-                        type="date"
-                        value={irmaoForm.data_ingresso_loja || ''}
-                        onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">
-                        {irmao.data_ingresso_loja ? irmao.data_ingresso_loja.split('-').reverse().join('/') : 'Iniciado nesta loja'}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ⬅️ Data de Transferência (Saída)
-                      <span className="block text-xs text-gray-500 font-normal">Quando se transferiu</span>
-                    </label>
-                    {modoEdicao ? (
-                      <input
-                        type="date"
-                        value={irmaoForm.data_transferencia_saida || ''}
-                        onChange={(e) => setIrmaoForm({ ...irmaoForm, data_transferencia_saida: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                      />
-                    ) : (
-                      <p className="text-gray-900">
-                        {irmao.data_transferencia_saida ? irmao.data_transferencia_saida.split('-').reverse().join('/') : 'Ativo na loja'}
-                      </p>
-                    )}
-                  </div>
                 </div>
               </div>
 
