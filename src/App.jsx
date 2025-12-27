@@ -37,6 +37,7 @@ import CadastroSessao from './components/CadastroSessao';
 import RegistroPresenca from './components/RegistroPresenca';
 import ListaSessoes from './components/ListaSessoes';
 import DashboardPresenca from './components/DashboardPresenca';
+import MinhaPresenca from './components/MinhaPresenca';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1370,6 +1371,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 {menuAberto && <span className="font-semibold">Minhas Finanças</span>}
               </button>
 
+              <button
+                onClick={() => setCurrentPage('minhas-presencas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'minhas-presencas'
+                    ? 'bg-blue-700 border-l-4 border-white'
+                    : 'hover:bg-blue-800'
+                }`}
+                title="Minhas Presenças"
+              >
+                <span className="text-base">📊</span>
+                {menuAberto && <span className="font-semibold">Minhas Presenças</span>}
+              </button>
+
               {/* SUBMENU: EXPEDIENTES */}
               <div className="border-t border-blue-700 mt-2 pt-2">
                 <button
@@ -2123,6 +2137,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'dashboard' && '📊 Dashboard'}
                   {currentPage === 'meu-cadastro' && '👤 Meu Cadastro'}
                   {currentPage === 'minhas-financas' && '💰 Minhas Finanças'}
+                  {currentPage === 'minhas-presencas' && '📊 Minhas Presenças'}
                   {currentPage === 'cadastro' && '➕ Cadastro de Irmãos'}
                   {currentPage === 'visualizar' && '👥 Visualizar Irmãos'}
                   {currentPage === 'quadro' && '📋 Quadro de Irmãos'}
@@ -2300,6 +2315,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'minhas-financas' && (
           <MinhasFinancas
             userEmail={userData?.email}
+          />
+        )}
+
+        {/* MINHAS PRESENÇAS - Irmão */}
+        {currentPage === 'minhas-presencas' && (
+          <MinhaPresenca
+            userData={userData}
           />
         )}
 
