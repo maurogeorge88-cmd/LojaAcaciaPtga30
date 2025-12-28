@@ -44,7 +44,27 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
   };
 
   const getReg = (irmaoId, sessaoId) => {
-    return dados.registros.find(r => r.membro_id === irmaoId && r.sessao_id === sessaoId);
+    const reg = dados.registros.find(r => r.membro_id === irmaoId && r.sessao_id === sessaoId);
+    
+    // Debug apenas primeira linha, primeira coluna
+    if (irmaoId === dados.irmaos[0]?.id && sessaoId === dados.sessoes[0]?.id) {
+      console.log('🔍 DEBUG PRIMEIRA CÉLULA:', {
+        irmaoId,
+        sessaoId,
+        tipoIrmaoId: typeof irmaoId,
+        tipoSessaoId: typeof sessaoId,
+        encontrou: !!reg,
+        registro: reg,
+        amostraRegistros: dados.registros.slice(0, 3).map(r => ({
+          membro_id: r.membro_id,
+          sessao_id: r.sessao_id,
+          tipoMembro: typeof r.membro_id,
+          tipoSessao: typeof r.sessao_id
+        }))
+      });
+    }
+    
+    return reg;
   };
 
   if (loading) {
