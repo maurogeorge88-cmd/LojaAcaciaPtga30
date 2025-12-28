@@ -304,20 +304,6 @@ export default function DashboardPresenca({ onEditarPresenca }) {
           }
           return tipoSessao === 'Sessão Administrativa'; // Sem grau só administrativa
         });
-          
-          if (grau === 'Aprendiz') {
-            return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
-          }
-          if (grau === 'Companheiro') {
-            return tipoSessao === 'Sessão de Aprendiz' || 
-                   tipoSessao === 'Sessão de Companheiro' || 
-                   tipoSessao === 'Sessão Administrativa';
-          }
-          if (grau === 'Mestre') {
-            return true; // Mestre pode participar de todas
-          }
-          return tipoSessao === 'Sessão Administrativa'; // Sem grau só administrativa
-        });
 
         // Filtrar registros deste irmão apenas nas sessões elegíveis
         const idsElegiveis = sessoesElegiveis.map(s => s.id);
