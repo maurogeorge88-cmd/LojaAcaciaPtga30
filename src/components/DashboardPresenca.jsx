@@ -99,7 +99,10 @@ export default function DashboardPresenca({ onEditarPresenca }) {
     try {
       setLoading(true);
 
-      console.log('DEBUG - Carregando sessões com período:', dataInicio, 'até', dataFim);
+      console.log('DEBUG - Período selecionado:', periodo);
+      console.log('DEBUG - Data início:', dataInicio);
+      console.log('DEBUG - Data fim:', dataFim);
+      console.log('DEBUG - Carregando sessões...');
 
       // 1. Carregar sessões do período
       const { data: sessoes, error: erroSessoes } = await supabase
@@ -109,7 +112,8 @@ export default function DashboardPresenca({ onEditarPresenca }) {
         .lte('data_sessao', dataFim)
         .order('data_sessao', { ascending: false });
 
-      console.log('DEBUG - Sessões retornadas:', sessoes);
+      console.log('DEBUG - Sessões encontradas:', sessoes?.length || 0);
+      console.log('DEBUG - Sessões:', sessoes);
       console.log('DEBUG - Erro:', erroSessoes);
 
       if (erroSessoes) throw erroSessoes;
