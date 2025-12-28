@@ -41,8 +41,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
             <thead>
               <tr className="bg-gray-100">
                 <th className="border p-2">Irmão</th>
-                {dados.sessoes.slice(0, 20).map(s => (
-                  <th key={s.id} className="border p-1">
+                {dados.sessoes.map(s => (
+                  <th key={s.id} className="border p-1 text-xs">
                     {new Date(s.data_sessao).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}
                   </th>
                 ))}
@@ -52,7 +52,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
               {dados.irmaos.slice(0, 10).map(i => (
                 <tr key={i.id}>
                   <td className="border p-2">{i.nome.split(' ')[0]}</td>
-                  {dados.sessoes.slice(0, 20).map(s => {
+                  {dados.sessoes.map(s => {
                     const reg = obterReg(i.id, s.id);
                     return (
                       <td key={s.id} className="border p-1 text-center">
