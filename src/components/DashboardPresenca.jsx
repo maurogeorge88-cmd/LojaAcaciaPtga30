@@ -99,10 +99,7 @@ export default function DashboardPresenca({ onEditarPresenca }) {
     try {
       setLoading(true);
 
-      console.log('DEBUG - Período selecionado:', periodo);
-      console.log('DEBUG - Data início:', dataInicio);
-      console.log('DEBUG - Data fim:', dataFim);
-      console.log('DEBUG - Carregando sessões...');
+      console.log('DEBUG - Carregando sessões com período:', dataInicio, 'até', dataFim);
 
       // 1. Carregar sessões do período
       const { data: sessoes, error: erroSessoes } = await supabase
@@ -112,8 +109,7 @@ export default function DashboardPresenca({ onEditarPresenca }) {
         .lte('data_sessao', dataFim)
         .order('data_sessao', { ascending: false });
 
-      console.log('DEBUG - Sessões encontradas:', sessoes?.length || 0);
-      console.log('DEBUG - Sessões:', sessoes);
+      console.log('DEBUG - Sessões retornadas:', sessoes);
       console.log('DEBUG - Erro:', erroSessoes);
 
       if (erroSessoes) throw erroSessoes;
@@ -1214,7 +1210,6 @@ export default function DashboardPresenca({ onEditarPresenca }) {
                   <tr key={irmao.membro_id} className="hover:bg-blue-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">{irmao.nome}</div>
-                      <div className="text-xs text-purple-600 font-semibold mt-1">Com Prerrogativa</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
                       <span className="px-2 py-1 text-xs font-semibold bg-purple-100 text-purple-800 rounded">
