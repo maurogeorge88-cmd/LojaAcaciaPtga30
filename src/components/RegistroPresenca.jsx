@@ -54,93 +54,41 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar irmãos elegíveis DIRETO da tabela (sem usar função RPC)
-      const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
-      
-      let query = supabase
-        .from('irmaos')
-        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_licenca, data_desligamento, data_falecimento')
-        .eq('status', 'ativo');
-
-      // Filtrar por grau
-      if (grauMinimo === 2) {
-        query = query.not('data_elevacao', 'is', null);
-      } else if (grauMinimo === 3) {
-        query = query.not('data_exaltacao', 'is', null);
-      }
-
-      const { data: irmaosData, error: irmaosError } = await query.order('nome');
+      // Buscar irmãos elegíveis usando a função SQL
+      const { data: irmaos, error: irmaosError } = await supabase
+        .rpc('obter_membros_elegiveis_sessao', {
+          p_grau_sessao_id: sessaoData.grau_sessao_id,
+          p_data_sessao: sessaoData.data_sessao
+        });
 
       console.log('DEBUG - Sessão:', sessaoData);
-      console.log('DEBUG - Irmãos retornados:', irmaosData);
+      console.log('DEBUG - Irmãos retornados:', irmaos);
       console.log('DEBUG - Erro ao buscar irmãos:', irmaosError);
 
       if (irmaosError) {
-        console.error('Erro ao buscar irmãos:', irmaosError);
+        console.error('Erro na função RPC:', irmaosError);
         throw irmaosError;
       }
 
-      // Aplicar lógica de filtro APENAS por datas de situação (falecimento/desligamento)
-      const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
-      const irmaosFiltrados = irmaosData?.filter(i => {
-        // FILTRO 1: FALECIDO - só aparece se sessão for ANTES da data de falecimento
-        if (i.situacao === 'falecido' && i.data_falecimento) {
-          const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
-          return dataSessao < dataFalecimento;
-        }
-        
-        // LICENCIADO: sempre aparece (antes e depois da data)
-        if (i.situacao === 'licenciado') {
-          return true;
-        }
-        
-        // DESLIGADO: só aparece se sessão for ANTES da data de desligamento
-        if (i.situacao === 'desligado' && i.data_desligamento) {
-          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
-          return dataSessao < dataDesligamento;
-        }
-        
-        // EX-OFÍCIO: só aparece se sessão for ANTES da data de desligamento
-        if (i.situacao === 'ex_oficio' && i.data_desligamento) {
-          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
-          return dataSessao < dataDesligamento;
-        }
-        
-        // Outras situações: sempre aparecem
-        return true;
-      }) || [];
+      // Buscar data_nascimento dos irmãos para calcular idade
+      const idsIrmaos = irmaos?.map(i => i.membro_id) || [];
+      const { data: datasNascimento } = await supabase
+        .from('irmaos')
+        .select('id, data_nascimento')
+        .in('id', idsIrmaos);
 
-      // Mapear para formato esperado
-      const irmaos = irmaosFiltrados.map(i => ({
-        membro_id: i.id,
-        nome_completo: i.nome,
-        cim: i.cim,
-        grau_atual: i.data_exaltacao ? 'Mestre' : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
-        foto_url: i.foto_url,
-        situacao: i.situacao,
-        data_nascimento: i.data_nascimento,
-        data_licenca: i.data_licenca
-      }));
-
-      // Adicionar idade e verificar se está licenciado efetivo
-      const irmaosComIdade = irmaos.map(irmao => {
-        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-        
-        // Verificar se está licenciado APÓS a data da licença
-        let estaLicenciadoEfetivo = false;
-        if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
-          const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-          estaLicenciadoEfetivo = dataSessao >= dataLicenca;
-        }
-        
+      // Adicionar idade aos irmãos
+      const irmaosComIdade = irmaos?.map(irmao => {
+        const dadosNasc = datasNascimento?.find(d => d.id === irmao.membro_id);
+        const idade = dadosNasc?.data_nascimento ? calcularIdade(dadosNasc.data_nascimento) : null;
         return {
           ...irmao,
           idade,
-          tem_prerrogativa: idade >= 70,
-          esta_licenciado_efetivo: estaLicenciadoEfetivo
+          tem_prerrogativa: idade >= 70
         };
-      });
+      }) || [];
 
+      // TODO: Adicionar licenciados depois
       setIrmaosElegiveis(irmaosComIdade);
 
       // Buscar presenças já registradas (se houver)
@@ -410,7 +358,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.esta_licenciado_efetivo && (
+                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
                           </span>
