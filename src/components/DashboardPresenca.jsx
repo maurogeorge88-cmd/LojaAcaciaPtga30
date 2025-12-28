@@ -250,9 +250,17 @@ export default function DashboardPresenca({ onEditarPresenca }) {
       // Calcular estatísticas para cada irmão
       const problemasCompleto = [];
       for (const irmao of todosIrmaos) {
-        // Verificar idade - se tem 70+ anos, tem prerrogativa (não cobrar presença)
+        // Verificar situação - pular se licenciado ou 70+
+        const situacao = (irmao.situacao || '').toLowerCase();
+        if (situacao === 'licenciado') {
+          continue; // Licenciados não são cobrados
+        }
+
+        // Verificar idade - se tem 70+ anos, pular (tem prerrogativa)
         const idade = calcularIdade(irmao.data_nascimento);
-        const temPrerrogativa = idade !== null && idade >= 70;
+        if (idade !== null && idade >= 70) {
+          continue; // Pula para o próximo irmão
+        }
 
         // Calcular grau
         let grau = 'Sem Grau';
@@ -260,37 +268,10 @@ export default function DashboardPresenca({ onEditarPresenca }) {
         else if (irmao.data_elevacao) grau = 'Companheiro';
         else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
-        // Filtrar sessões que o irmão PODE participar baseado no grau E datas
+        // Filtrar sessões que o irmão PODE participar baseado no grau
         const sessoesElegiveis = sessoesPeriodo.filter(sessao => {
-          const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
           const tipoSessao = sessao.graus_sessao?.nome;
           
-          // FILTRO 1: Verificar se já estava iniciado/elevado/exaltado na data da sessão
-          if (grau === 'Aprendiz' && irmao.data_iniciacao) {
-            const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-            if (dataSessao < dataIniciacao) return false;
-          }
-          if (grau === 'Companheiro' && irmao.data_elevacao) {
-            const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            if (dataSessao < dataElevacao) return false;
-          }
-          if (grau === 'Mestre' && irmao.data_exaltacao) {
-            const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            if (dataSessao < dataExaltacao) return false;
-          }
-          
-          // FILTRO 2: Verificar se estava licenciado na data da sessão
-          const situacao = (irmao.situacao || '').toLowerCase();
-          if (situacao === 'licenciado' && irmao.data_licenca) {
-            const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-            // Se sessão for APÓS a data de licença, NÃO cobra presença
-            if (dataSessao >= dataLicenca) return false;
-          }
-          
-          // FILTRO 3: Se tem prerrogativa, não cobra presença
-          if (temPrerrogativa) return false;
-          
-          // FILTRO 4: Verificar tipo de sessão permitido pelo grau
           if (grau === 'Aprendiz') {
             return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
           }
