@@ -120,6 +120,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
 
       // 3. Buscar todos os registros de presença do período
       const sessaoIds = sessoesData.map(s => s.id);
+      console.log('🔍 DEBUG: Sessões do período:', sessaoIds.length, sessaoIds);
+      
       if (sessaoIds.length > 0) {
         const { data: presencasData, error: erroPresencas } = await supabase
           .from('registros_presenca')
@@ -127,6 +129,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
           .in('sessao_id', sessaoIds);
 
         if (erroPresencas) throw erroPresencas;
+        
+        console.log('🔍 DEBUG: Registros retornados:', presencasData?.length, presencasData);
 
         // Criar grade de presença: { [irmaoId]: { [sessaoId]: { presente, justificativa } } }
         const grade = {};
@@ -137,6 +141,9 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
             justificativa: reg.justificativa
           };
         });
+        
+        console.log('🔍 DEBUG: Grade montada:', grade);
+        console.log('🔍 DEBUG: IDs dos irmãos:', irmaosComGrau.map(i => ({id: i.id, nome: i.nome})));
 
         setGradePresenca(grade);
       }
