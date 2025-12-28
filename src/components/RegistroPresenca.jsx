@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-// Função auxiliar para calcular idade
-const calcularIdade = (dataNascimento) => {
-  if (!dataNascimento) return null;
-  const hoje = new Date();
-  const nascimento = new Date(dataNascimento);
-  let idade = hoje.getFullYear() - nascimento.getFullYear();
-  const mes = hoje.getMonth() - nascimento.getMonth();
-  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
-    idade--;
-  }
-  return idade;
-};
-
 export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -70,26 +57,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         throw irmaosError;
       }
 
-      // Buscar data_nascimento dos irmãos para calcular idade
-      const idsIrmaos = irmaos?.map(i => i.membro_id) || [];
-      const { data: datasNascimento } = await supabase
-        .from('irmaos')
-        .select('id, data_nascimento')
-        .in('id', idsIrmaos);
-
-      // Adicionar idade aos irmãos
-      const irmaosComIdade = irmaos?.map(irmao => {
-        const dadosNasc = datasNascimento?.find(d => d.id === irmao.membro_id);
-        const idade = dadosNasc?.data_nascimento ? calcularIdade(dadosNasc.data_nascimento) : null;
-        return {
-          ...irmao,
-          idade,
-          tem_prerrogativa: idade >= 70
-        };
-      }) || [];
-
       // TODO: Adicionar licenciados depois
-      setIrmaosElegiveis(irmaosComIdade);
+      setIrmaosElegiveis(irmaos || []);
 
       // Buscar presenças já registradas (se houver)
       const { data: presencasExistentes, error: presencasError } = await supabase
@@ -358,14 +327,9 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
+                        {irmao.eh_licenciado && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
-                          </span>
-                        )}
-                        {irmao.tem_prerrogativa && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
-                            Com Prerrogativa
                           </span>
                         )}
                       </div>
