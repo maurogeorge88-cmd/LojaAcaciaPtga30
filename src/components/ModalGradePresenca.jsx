@@ -1,19 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-// Função auxiliar para calcular idade
-const calcularIdade = (dataNascimento) => {
-  if (!dataNascimento) return null;
-  const hoje = new Date();
-  const nascimento = new Date(dataNascimento);
-  let idade = hoje.getFullYear() - nascimento.getFullYear();
-  const mes = hoje.getMonth() - nascimento.getMonth();
-  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
-    idade--;
-  }
-  return idade;
-};
-
 export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
@@ -94,27 +81,22 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
       if (erroSessoes) throw erroSessoes;
       setSessoes(sessoesData || []);
 
-      // 2. Buscar todos os irmãos regulares e licenciados
+      // 2. Buscar todos os irmãos regulares
       const { data: irmaosData, error: erroIrmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, situacao, data_iniciacao, data_elevacao, data_exaltacao')
-        .in('situacao', ['regular', 'licenciado'])
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .ilike('situacao', 'regular')
         .order('nome');
 
       if (erroIrmaos) throw erroIrmaos;
 
-      // Adicionar grau, idade e prerrogativa aos irmãos
-      const irmaosComGrau = irmaosData.map(irmao => {
-        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-        return {
-          ...irmao,
-          grau: irmao.data_exaltacao ? 'Mestre' : 
-                irmao.data_elevacao ? 'Companheiro' : 
-                irmao.data_iniciacao ? 'Aprendiz' : 'Sem Grau',
-          idade,
-          tem_prerrogativa: idade >= 70
-        };
-      });
+      // Adicionar grau aos irmãos
+      const irmaosComGrau = irmaosData.map(irmao => ({
+        ...irmao,
+        grau: irmao.data_exaltacao ? 'Mestre' : 
+              irmao.data_elevacao ? 'Companheiro' : 
+              irmao.data_iniciacao ? 'Aprendiz' : 'Sem Grau'
+      }));
 
       setIrmaos(irmaosComGrau || []);
 
@@ -240,20 +222,12 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                     <th className="border border-gray-300 px-2 py-3 text-center font-semibold text-sm bg-gray-100 sticky left-[200px] z-20">
                       Grau
                     </th>
-                    {sessoes.map((sessao) => {
-                      // Simplificar nome da sessão
-                      let nomeSessao = sessao.graus_sessao?.nome || 'Sessão';
-                      nomeSessao = nomeSessao
-                        .replace('Sessão de ', '')
-                        .replace('Sessão ', '');
-                      
-                      return (
-                        <th key={sessao.id} className="border border-gray-300 px-2 py-2 text-center text-xs whitespace-nowrap">
-                          <div className="font-semibold text-xs">{formatarData(sessao.data_sessao)}</div>
-                          <div className="text-gray-600 font-normal text-xs">{nomeSessao}</div>
-                        </th>
-                      );
-                    })}
+                    {sessoes.map((sessao) => (
+                      <th key={sessao.id} className="border border-gray-300 px-3 py-3 text-center text-xs whitespace-nowrap">
+                        <div className="font-semibold">{formatarData(sessao.data_sessao)}</div>
+                        <div className="text-gray-600 font-normal">{sessao.graus_sessao?.nome}</div>
+                      </th>
+                    ))}
                     <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-sm bg-gray-100 sticky right-0 z-20">
                       Taxa
                     </th>
@@ -293,21 +267,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                     return (
                       <tr key={irmao.id} className="hover:bg-gray-50">
                         <td className="border border-gray-300 px-4 py-3 font-medium text-sm whitespace-nowrap bg-white sticky left-0 z-10">
-                          <div>
-                            <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
-                            <div className="flex gap-1 mt-1">
-                              {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
-                                <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
-                                  Licenciado
-                                </span>
-                              )}
-                              {irmao.tem_prerrogativa && (
-                                <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
-                                  Com Prerrogativa
-                                </span>
-                              )}
-                            </div>
-                          </div>
+                          {irmao.nome}
                         </td>
                         <td className="border border-gray-300 px-2 py-3 text-center text-xs bg-white sticky left-[200px] z-10">
                           <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-semibold">
@@ -334,7 +294,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           // Se não pode participar, mostrar N/A
                           if (!podeParticipar) {
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-200">
+                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-gray-200">
                                 <span className="text-gray-500 text-xs font-semibold">N/A</span>
                               </td>
                             );
@@ -345,8 +305,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           if (!reg) {
                             // Sem registro
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-                                <span className="text-gray-400 text-sm">-</span>
+                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-gray-100">
+                                <span className="text-gray-400 text-xs">-</span>
                               </td>
                             );
                           }
@@ -354,8 +314,8 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           if (reg.presente) {
                             // Presente
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
-                                <span className="text-green-600 text-lg font-bold">✓</span>
+                              <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-green-50">
+                                <span className="text-green-600 text-2xl font-bold">✓</span>
                               </td>
                             );
                           }
@@ -365,18 +325,18 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                             return (
                               <td 
                                 key={sessao.id} 
-                                className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
+                                className="border border-gray-300 px-3 py-3 text-center bg-yellow-50"
                                 title={reg.justificativa}
                               >
-                                <span className="text-yellow-600 text-lg font-bold">J</span>
+                                <span className="text-yellow-600 text-2xl font-bold">J</span>
                               </td>
                             );
                           }
 
                           // Ausente injustificado
                           return (
-                            <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
-                              <span className="text-red-600 text-lg font-bold">✗</span>
+                            <td key={sessao.id} className="border border-gray-300 px-3 py-3 text-center bg-red-50">
+                              <span className="text-red-600 text-2xl font-bold">✗</span>
                             </td>
                           );
                         })}
