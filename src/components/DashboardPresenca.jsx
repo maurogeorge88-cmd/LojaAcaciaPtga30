@@ -60,11 +60,16 @@ export default function DashboardPresenca() {
 
       console.log('✅ Irmãos:', irmaos?.length);
 
-      // 3. Buscar TODOS os registros
+      // 3. Buscar TODOS os registros do período (SEM .in() que tem limite)
       const { data: registros } = await supabase
         .from('registros_presenca')
-        .select('membro_id, presente')
-        .in('sessao_id', sessoes.map(s => s.id));
+        .select(`
+          membro_id, 
+          presente,
+          sessoes_presenca!inner(data_sessao)
+        `)
+        .gte('sessoes_presenca.data_sessao', dataInicio)
+        .lte('sessoes_presenca.data_sessao', dataFim);
 
       console.log('✅ Registros:', registros?.length);
 
@@ -74,6 +79,19 @@ export default function DashboardPresenca() {
         const presentes = regsIrmao.filter(r => r.presente).length;
         const ausentes = regsIrmao.filter(r => !r.presente).length;
         const total = regsIrmao.length;
+
+        // Debug para Mauro
+        if (irmao.nome.includes('Mauro George')) {
+          const sessoesComRegistro = regsIrmao.map(r => {
+            const reg = registros.find(x => x.membro_id === irmao.id);
+            return reg;
+          });
+          
+          console.log('🔍 MAURO - Sessões no período:', sessoes.length);
+          console.log('🔍 MAURO - IDs das sessões:', sessoes.map(s => s.id));
+          console.log('🔍 MAURO - Registros encontrados:', regsIrmao.length);
+          console.log('🔍 MAURO - Detalhes registros:', registros.filter(r => r.membro_id === irmao.id));
+        }
 
         return {
           id: irmao.id,
