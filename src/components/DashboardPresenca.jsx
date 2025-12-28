@@ -60,17 +60,25 @@ export default function DashboardPresenca() {
 
       console.log('✅ Irmãos:', irmaos?.length);
 
-      // 3. Buscar TODOS os registros do período (SEM .in() que tem limite)
-      const { data: registros } = await supabase
-        .from('registros_presenca')
-        .select(`
-          membro_id, 
-          presente,
-          sessoes_presenca!inner(data_sessao)
-        `)
-        .gte('sessoes_presenca.data_sessao', dataInicio)
-        .lte('sessoes_presenca.data_sessao', dataFim);
-
+      // 3. Buscar registros - método direto com subquery
+      const sessaoIds = sessoes.map(s => s.id);
+      
+      console.log('🔍 Buscando registros para', sessaoIds.length, 'sessões');
+      console.log('🔍 IDs:', sessaoIds);
+      
+      // Buscar em lotes de 50 para evitar limite do .in()
+      let todosRegistros = [];
+      for (let i = 0; i < sessaoIds.length; i += 50) {
+        const lote = sessaoIds.slice(i, i + 50);
+        const { data } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, presente, sessao_id')
+          .in('sessao_id', lote);
+        
+        if (data) todosRegistros = [...todosRegistros, ...data];
+      }
+      
+      const registros = todosRegistros;
       console.log('✅ Registros:', registros?.length);
 
       // 4. Calcular resumo por irmão
