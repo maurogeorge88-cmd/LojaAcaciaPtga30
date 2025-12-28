@@ -44,37 +44,41 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
     // Filtro 100%
     if (filtro100) {
       filtrados = filtrados.filter(irmao => {
-        // Filtrar sessões relevantes para o grau do irmão E considerando datas
-        const sessoesRelevantes = sessoes.filter(sessao => {
+        // Filtrar sessões obrigatórias (não isentas)
+        const sessoesObrigatorias = sessoes.filter(sessao => {
           const tipoSessao = sessao.graus_sessao?.nome;
           const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
           
-          // Verificar se já estava no grau
-          let jaEstavaNoGrau = true;
+          // 1. Verificar se já estava no grau
           if (irmao.grau === 'Aprendiz' && irmao.data_iniciacao) {
             const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-            jaEstavaNoGrau = dataSessao >= dataIniciacao;
+            if (dataSessao < dataIniciacao) return false; // Ainda não era aprendiz
           } else if (irmao.grau === 'Companheiro' && irmao.data_elevacao) {
             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            jaEstavaNoGrau = dataSessao >= dataElevacao;
+            if (dataSessao < dataElevacao) return false; // Ainda não era companheiro
           } else if (irmao.grau === 'Mestre' && irmao.data_exaltacao) {
             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            jaEstavaNoGrau = dataSessao >= dataExaltacao;
+            if (dataSessao < dataExaltacao) return false; // Ainda não era mestre
           }
           
-          // Verificar se está isento
-          let estaIsento = false;
+          // 2. Verificar se estava licenciado (isento APÓS data_licenca)
           if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
             const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-            estaIsento = dataSessao >= dataLicenca;
-          }
-          if (irmao.tem_prerrogativa) {
-            estaIsento = true;
+            if (dataSessao >= dataLicenca) return false; // Isento após licença
           }
           
-          // Se está isento ou não estava no grau, não conta
-          if (estaIsento || !jaEstavaNoGrau) return false;
+          // 3. Verificar prerrogativa - calcular idade na data da sessão
+          if (irmao.data_nascimento) {
+            const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
+            let idadeNaSessao = dataSessao.getFullYear() - dataNasc.getFullYear();
+            const mes = dataSessao.getMonth() - dataNasc.getMonth();
+            if (mes < 0 || (mes === 0 && dataSessao.getDate() < dataNasc.getDate())) {
+              idadeNaSessao--;
+            }
+            if (idadeNaSessao >= 70) return false; // Isento com 70+
+          }
           
+          // 4. Verificar tipo de sessão permitido pelo grau
           if (irmao.grau === 'Aprendiz') {
             return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
           }
@@ -90,12 +94,12 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
         });
 
         const presencasIrmao = gradePresenca[irmao.id] || {};
-        const totalRelevantes = sessoesRelevantes.length;
-        const presentesRelevantes = sessoesRelevantes.filter(s => 
+        const totalObrigatorias = sessoesObrigatorias.length;
+        const presentesObrigatorias = sessoesObrigatorias.filter(s => 
           presencasIrmao[s.id]?.presente
         ).length;
 
-        return totalRelevantes > 0 && presentesRelevantes === totalRelevantes;
+        return totalObrigatorias > 0 && presentesObrigatorias === totalObrigatorias;
       });
     }
 
@@ -291,37 +295,41 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                 </thead>
                 <tbody>
                   {irmaosExibidos.map((irmao) => {
-                    // Filtrar sessões relevantes para o grau do irmão E considerando datas
-                    const sessoesRelevantes = sessoes.filter(sessao => {
+                    // Filtrar sessões obrigatórias (não isentas)
+                    const sessoesObrigatorias = sessoes.filter(sessao => {
                       const tipoSessao = sessao.graus_sessao?.nome;
                       const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
                       
-                      // Verificar se já estava no grau
-                      let jaEstavaNoGrau = true;
+                      // 1. Verificar se já estava no grau
                       if (irmao.grau === 'Aprendiz' && irmao.data_iniciacao) {
                         const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-                        jaEstavaNoGrau = dataSessao >= dataIniciacao;
+                        if (dataSessao < dataIniciacao) return false;
                       } else if (irmao.grau === 'Companheiro' && irmao.data_elevacao) {
                         const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-                        jaEstavaNoGrau = dataSessao >= dataElevacao;
+                        if (dataSessao < dataElevacao) return false;
                       } else if (irmao.grau === 'Mestre' && irmao.data_exaltacao) {
                         const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-                        jaEstavaNoGrau = dataSessao >= dataExaltacao;
+                        if (dataSessao < dataExaltacao) return false;
                       }
                       
-                      // Verificar se está isento
-                      let estaIsento = false;
+                      // 2. Licenciado isento APÓS data_licenca
                       if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
                         const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-                        estaIsento = dataSessao >= dataLicenca;
-                      }
-                      if (irmao.tem_prerrogativa) {
-                        estaIsento = true;
+                        if (dataSessao >= dataLicenca) return false;
                       }
                       
-                      // Se está isento ou não estava no grau, não conta
-                      if (estaIsento || !jaEstavaNoGrau) return false;
+                      // 3. Prerrogativa - idade NA DATA DA SESSÃO
+                      if (irmao.data_nascimento) {
+                        const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
+                        let idadeNaSessao = dataSessao.getFullYear() - dataNasc.getFullYear();
+                        const mes = dataSessao.getMonth() - dataNasc.getMonth();
+                        if (mes < 0 || (mes === 0 && dataSessao.getDate() < dataNasc.getDate())) {
+                          idadeNaSessao--;
+                        }
+                        if (idadeNaSessao >= 70) return false;
+                      }
                       
+                      // 4. Tipo de sessão permitido
                       if (irmao.grau === 'Aprendiz') {
                         return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
                       }
@@ -331,20 +339,20 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                                tipoSessao === 'Sessão Administrativa';
                       }
                       if (irmao.grau === 'Mestre') {
-                        return true; // Mestre pode participar de todas
+                        return true;
                       }
-                      return tipoSessao === 'Sessão Administrativa'; // Sem grau só administrativa
+                      return tipoSessao === 'Sessão Administrativa';
                     });
 
                     const presencasIrmao = gradePresenca[irmao.id] || {};
                     
-                    // Calcular taxa baseada apenas nas sessões relevantes
-                    const totalRelevantes = sessoesRelevantes.length;
-                    const presentesRelevantes = sessoesRelevantes.filter(s => 
+                    // Calcular taxa baseada apenas nas sessões obrigatórias
+                    const totalObrigatorias = sessoesObrigatorias.length;
+                    const presentesObrigatorias = sessoesObrigatorias.filter(s => 
                       presencasIrmao[s.id]?.presente
                     ).length;
-                    const taxa = totalRelevantes > 0 
-                      ? Math.round((presentesRelevantes / totalRelevantes) * 100) 
+                    const taxa = totalObrigatorias > 0 
+                      ? Math.round((presentesObrigatorias / totalObrigatorias) * 100) 
                       : 0;
 
                     return (
@@ -375,43 +383,29 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           const tipoSessao = sessao.graus_sessao?.nome;
                           const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
                           
-                          // FILTRO 1: Verificar se já estava iniciado/elevado/exaltado
-                          let jaEstavaNoGrau = true;
+                          // VERIFICAR SE AINDA NÃO ESTAVA NO GRAU (mostra traço -)
+                          let aindaNaoTinhaGrau = false;
                           if (irmao.grau === 'Aprendiz' && irmao.data_iniciacao) {
                             const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-                            jaEstavaNoGrau = dataSessao >= dataIniciacao;
+                            aindaNaoTinhaGrau = dataSessao < dataIniciacao;
                           } else if (irmao.grau === 'Companheiro' && irmao.data_elevacao) {
                             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-                            jaEstavaNoGrau = dataSessao >= dataElevacao;
+                            aindaNaoTinhaGrau = dataSessao < dataElevacao;
                           } else if (irmao.grau === 'Mestre' && irmao.data_exaltacao) {
                             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-                            jaEstavaNoGrau = dataSessao >= dataExaltacao;
+                            aindaNaoTinhaGrau = dataSessao < dataExaltacao;
                           }
                           
-                          // FILTRO 2: Verificar se está licenciado/com prerrogativa nesta sessão
-                          let estaIsento = false;
-                          
-                          // Licenciado: isento APÓS data_licenca
-                          if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
-                            const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-                            estaIsento = dataSessao >= dataLicenca;
-                          }
-                          
-                          // Prerrogativa: sempre isento
-                          if (irmao.tem_prerrogativa) {
-                            estaIsento = true;
-                          }
-                          
-                          // Se está isento OU não estava no grau ainda, mostrar "Isento"
-                          if (estaIsento || !jaEstavaNoGrau) {
+                          // Se ainda não tinha o grau, mostrar apenas traço
+                          if (aindaNaoTinhaGrau) {
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-blue-50">
-                                <span className="text-blue-600 text-xs font-semibold">Isento</span>
+                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+                                <span className="text-gray-400 text-sm">-</span>
                               </td>
                             );
                           }
                           
-                          // Verificar se o irmão pode participar desta sessão (tipo)
+                          // VERIFICAR SE PODE PARTICIPAR PELO TIPO DE SESSÃO (grau)
                           let podeParticipar = false;
                           if (irmao.grau === 'Aprendiz') {
                             podeParticipar = tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
@@ -425,15 +419,16 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                             podeParticipar = tipoSessao === 'Sessão Administrativa';
                           }
 
-                          // Se não pode participar, mostrar N/A
+                          // Se não pode participar (grau superior), mostrar traço
                           if (!podeParticipar) {
                             return (
-                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-200">
-                                <span className="text-gray-500 text-xs font-semibold">N/A</span>
+                              <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+                                <span className="text-gray-400 text-sm">-</span>
                               </td>
                             );
                           }
 
+                          // Licenciados e prerrogativa mostram normalmente (✓, X, J)
                           const reg = presencasIrmao[sessao.id];
                           
                           if (!reg) {
