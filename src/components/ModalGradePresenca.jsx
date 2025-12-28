@@ -2,73 +2,56 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim }) {
-  const [dados, setDados] = useState({ sessoes: [], irmaos: [], registros: [] });
+  const [sessoes, setSessoes] = useState([]);
 
   useEffect(() => {
-    carregarTudo();
-  }, []);
+    buscar();
+  }, [periodoInicio, periodoFim]);
 
-  const carregarTudo = async () => {
-    // Buscar TUDO sem filtro
-    const { data: s } = await supabase.from('sessoes_presenca').select('*').order('data_sessao');
-    const { data: i } = await supabase.from('irmaos').select('*').eq('status', 'ativo').order('nome');
-    const { data: r } = await supabase.from('registros_presenca').select('*');
+  const buscar = async () => {
+    console.log('🔍 PARAMETROS:', { periodoInicio, periodoFim });
     
-    console.log('SESSÕES:', s?.length, s);
-    console.log('IRMÃOS:', i?.length, i);
-    console.log('REGISTROS:', r?.length, r);
+    const { data } = await supabase
+      .from('sessoes_presenca')
+      .select('*')
+      .gte('data_sessao', periodoInicio)
+      .lte('data_sessao', periodoFim)
+      .order('data_sessao');
     
-    setDados({ sessoes: s || [], irmaos: i || [], registros: r || [] });
-  };
-
-  const obterReg = (irmaoId, sessaoId) => {
-    return dados.registros.find(r => r.membro_id === irmaoId && r.sessao_id === sessaoId);
+    console.log('✅ SESSOES RETORNADAS:', data?.length, data);
+    setSessoes(data || []);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded w-full h-[90vh] max-w-[95vw] flex flex-col">
-        <div className="bg-blue-600 text-white p-4 flex justify-between">
-          <div>
-            <h2 className="text-xl font-bold">TESTE MODAL</h2>
-            <p>Sessões: {dados.sessoes.length} | Irmãos: {dados.irmaos.length} | Registros: {dados.registros.length}</p>
-          </div>
-          <button onClick={onFechar} className="hover:bg-blue-700 p-2">✕</button>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded p-8 max-w-2xl max-h-[80vh] overflow-auto">
+        <div className="flex justify-between mb-4">
+          <h2 className="text-xl font-bold">TESTE - Lista de Sessões</h2>
+          <button onClick={onFechar} className="text-xl">✕</button>
         </div>
         
-        <div className="flex-1 overflow-auto p-4">
-          <table className="w-full border-collapse text-xs">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border p-2">Irmão</th>
-                {dados.sessoes.map(s => (
-                  <th key={s.id} className="border p-1 text-xs">
-                    {new Date(s.data_sessao).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {dados.irmaos.slice(0, 10).map(i => (
-                <tr key={i.id}>
-                  <td className="border p-2">{i.nome.split(' ')[0]}</td>
-                  {dados.sessoes.map(s => {
-                    const reg = obterReg(i.id, s.id);
-                    return (
-                      <td key={s.id} className="border p-1 text-center">
-                        {!reg ? '-' : reg.presente ? '✓' : '✗'}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="mb-4">
+          <p><strong>Período:</strong> {periodoInicio} até {periodoFim}</p>
+          <p><strong>Total encontrado:</strong> {sessoes.length}</p>
         </div>
         
-        <div className="bg-gray-50 p-4">
-          <button onClick={onFechar} className="px-4 py-2 bg-gray-600 text-white rounded">Fechar</button>
+        <div className="border rounded p-4 bg-gray-50">
+          <h3 className="font-bold mb-2">Lista de sessões:</h3>
+          <ol className="list-decimal list-inside">
+            {sessoes.map((s, i) => (
+              <li key={s.id}>
+                {s.data_sessao} - ID: {s.id}
+              </li>
+            ))}
+          </ol>
         </div>
+        
+        <button 
+          onClick={onFechar}
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Fechar
+        </button>
       </div>
     </div>
   );
