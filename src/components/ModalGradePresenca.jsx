@@ -267,7 +267,16 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                   </tr>
                 </thead>
                 <tbody>
-                  {irmaosExibidos.map((irmao) => {
+                  {irmaosExibidos.map((irmao, index) => {
+                    // DEBUG - Mostrar ID de cada irmão
+                    if (index === 0) {
+                      console.log('🔍 TODOS OS IRMÃOS EXIBIDOS:', irmaosExibidos.map(i => ({
+                        index: irmaosExibidos.indexOf(i),
+                        id: i.id,
+                        nome: i.nome
+                      })));
+                    }
+                    
                     // Filtrar sessões relevantes para o grau do irmão
                     const sessoesRelevantes = sessoes.filter(sessao => {
                       const tipoSessao = sessao.graus_sessao?.nome;
@@ -327,13 +336,17 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                           // DEBUG - Mostrar o presencasIrmao para o Mauro
                           if (irmao.nome.includes('Mauro') && sessao.data_sessao === '2025-01-20') {
                             console.log('🚨 VERIFICAÇÃO CRÍTICA Mauro na sessão 20/01:', {
-                              irmao_id: irmao.id,
-                              irmao_nome: irmao.nome,
+                              array_index: 'verificar array acima',
+                              irmao_id_REAL: irmao.id,
+                              irmao_nome_COMPLETO: irmao.nome,
                               sessao_id: sessao.id,
+                              sessao_data: sessao.data_sessao,
                               presencasIrmao_keys: Object.keys(presencasIrmao),
+                              presencasIrmao_keys_count: Object.keys(presencasIrmao).length,
                               tem_sessao_no_presencasIrmao: !!presencasIrmao[sessao.id],
-                              gradePresenca_completa: gradePresenca,
-                              gradePresenca_do_irmao: gradePresenca[irmao.id]
+                              valor_presencasIrmao_sessao: presencasIrmao[sessao.id],
+                              gradePresenca_tem_irmao_id: !!gradePresenca[irmao.id],
+                              gradePresenca_irmao_keys: gradePresenca[irmao.id] ? Object.keys(gradePresenca[irmao.id]).length : 0
                             });
                           }
                           
