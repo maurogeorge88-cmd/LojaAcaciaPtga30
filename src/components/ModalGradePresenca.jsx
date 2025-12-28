@@ -342,6 +342,18 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
 
                           const reg = presencasIrmao[sessao.id];
                           
+                          // DEBUG - Todas as sessões antes de maio
+                          if (irmao.nome.includes('Mauro') && sessao.data_sessao < '2025-05-01') {
+                            console.log('🔍 DEBUG Mauro antes de maio:', {
+                              irmao: irmao.nome,
+                              data_sessao: sessao.data_sessao,
+                              sessao_id: sessao.id,
+                              tem_registro: !!reg,
+                              registro_completo: reg,
+                              presencasIrmao_completo: presencasIrmao
+                            });
+                          }
+                          
                           if (!reg) {
                             // Sem registro
                             return (
