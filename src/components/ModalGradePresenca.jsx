@@ -324,6 +324,19 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                         {sessoes.map((sessao) => {
                           const tipoSessao = sessao.graus_sessao?.nome;
                           
+                          // DEBUG - Mostrar o presencasIrmao para o Mauro
+                          if (irmao.nome.includes('Mauro') && sessao.data_sessao === '2025-01-20') {
+                            console.log('🚨 VERIFICAÇÃO CRÍTICA Mauro na sessão 20/01:', {
+                              irmao_id: irmao.id,
+                              irmao_nome: irmao.nome,
+                              sessao_id: sessao.id,
+                              presencasIrmao_keys: Object.keys(presencasIrmao),
+                              tem_sessao_no_presencasIrmao: !!presencasIrmao[sessao.id],
+                              gradePresenca_completa: gradePresenca,
+                              gradePresenca_do_irmao: gradePresenca[irmao.id]
+                            });
+                          }
+                          
                           // Verificar se o irmão pode participar desta sessão
                           let podeParticipar = false;
                           if (irmao.grau === 'Aprendiz') {
