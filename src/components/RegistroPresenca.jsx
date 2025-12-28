@@ -41,23 +41,44 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar irmãos elegíveis usando a função SQL
-      const { data: irmaos, error: irmaosError } = await supabase
-        .rpc('obter_membros_elegiveis_sessao', {
-          p_grau_sessao_id: sessaoData.grau_sessao_id,
-          p_data_sessao: sessaoData.data_sessao
-        });
+      // Buscar irmãos elegíveis DIRETO (sem função RPC que filtra por data)
+      const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
+      
+      let query = supabase
+        .from('irmaos')
+        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao')
+        .eq('status', 'ativo')
+        .in('situacao', ['regular', 'licenciado']);
 
-      console.log('DEBUG - Sessão:', sessaoData);
-      console.log('DEBUG - Irmãos retornados:', irmaos);
-      console.log('DEBUG - Erro ao buscar irmãos:', irmaosError);
+      // Filtrar APENAS por grau (sem filtrar por data)
+      if (grauMinimo === 2) {
+        query = query.not('data_elevacao', 'is', null);
+      } else if (grauMinimo === 3) {
+        query = query.not('data_exaltacao', 'is', null);
+      }
+
+      const { data: irmaosData, error: irmaosError } = await query.order('nome');
 
       if (irmaosError) {
-        console.error('Erro na função RPC:', irmaosError);
+        console.error('Erro ao buscar irmãos:', irmaosError);
         throw irmaosError;
       }
 
-      // TODO: Adicionar licenciados depois
+      // Mapear para o formato esperado
+      const irmaos = irmaosData.map(i => ({
+        membro_id: i.id,
+        nome_completo: i.nome,
+        cim: i.cim,
+        foto_url: i.foto_url,
+        situacao: i.situacao,
+        grau_atual: i.data_exaltacao ? 'Mestre' : 
+                    i.data_elevacao ? 'Companheiro' : 
+                    i.data_iniciacao ? 'Aprendiz' : 'Sem Grau'
+      }));
+
+      console.log('DEBUG - Sessão:', sessaoData);
+      console.log('DEBUG - Irmãos retornados:', irmaos);
+
       setIrmaosElegiveis(irmaos || []);
 
       // Buscar presenças já registradas (se houver)
@@ -327,7 +348,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome_completo}
                         </div>
-                        {irmao.eh_licenciado && (
+                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                             Licenciado
                           </span>
