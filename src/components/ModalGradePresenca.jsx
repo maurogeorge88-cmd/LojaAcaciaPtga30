@@ -44,46 +44,18 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
     // Filtro 100%
     if (filtro100) {
       filtrados = filtrados.filter(irmao => {
-        // Filtrar sessões OBRIGATÓRIAS (excluir todas as isentas)
-        const sessoesObrigatorias = sessoes.filter(sessao => {
+        // Filtrar sessões relevantes para o grau do irmão
+        const sessoesRelevantes = sessoes.filter(sessao => {
           const tipoSessao = sessao.graus_sessao?.nome;
-          const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
           
-          // FILTRO 1: ANTES DA INICIAÇÃO = ISENTO
-          if (irmao.data_iniciacao) {
-            const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-            if (dataSessao < dataIniciacao) return false; // Isento antes de ser iniciado
-          }
-          
-          // FILTRO 2: Licenciado isento APÓS data_licenca
-          if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
-            const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-            if (dataSessao >= dataLicenca) return false; // Isento após licença
-          }
-          
-          // FILTRO 3: Prerrogativa - idade NA DATA DA SESSÃO >= 70
-          if (irmao.data_nascimento) {
-            const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
-            let idadeNaSessao = dataSessao.getFullYear() - dataNasc.getFullYear();
-            const mes = dataSessao.getMonth() - dataNasc.getMonth();
-            if (mes < 0 || (mes === 0 && dataSessao.getDate() < dataNasc.getDate())) {
-              idadeNaSessao--;
-            }
-            if (idadeNaSessao >= 70) return false; // Isento com 70+
-          }
-          
-          // FILTRO 4: GRAU SUPERIOR = ISENTO
-          // Aprendiz: só em Aprendiz e Administrativa
           if (irmao.grau === 'Aprendiz') {
             return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
           }
-          // Companheiro: em Aprendiz, Companheiro e Administrativa (isento em Mestre)
           if (irmao.grau === 'Companheiro') {
             return tipoSessao === 'Sessão de Aprendiz' || 
                    tipoSessao === 'Sessão de Companheiro' || 
                    tipoSessao === 'Sessão Administrativa';
           }
-          // Mestre: em todas
           if (irmao.grau === 'Mestre') {
             return true;
           }
@@ -91,12 +63,12 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
         });
 
         const presencasIrmao = gradePresenca[irmao.id] || {};
-        const totalObrigatorias = sessoesObrigatorias.length;
-        const presentesObrigatorias = sessoesObrigatorias.filter(s => 
+        const totalRelevantes = sessoesRelevantes.length;
+        const presentesRelevantes = sessoesRelevantes.filter(s => 
           presencasIrmao[s.id]?.presente
         ).length;
 
-        return totalObrigatorias > 0 && presentesObrigatorias === totalObrigatorias;
+        return totalRelevantes > 0 && presentesRelevantes === totalRelevantes;
       });
     }
 
@@ -125,7 +97,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
       // 2. Buscar todos os irmãos regulares e licenciados
       const { data: irmaosData, error: erroIrmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, situacao, data_iniciacao, data_elevacao, data_exaltacao, data_licenca')
+        .select('id, nome, data_nascimento, situacao, data_iniciacao, data_elevacao, data_exaltacao')
         .in('situacao', ['regular', 'licenciado'])
         .order('nome');
 
@@ -140,8 +112,7 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                 irmao.data_elevacao ? 'Companheiro' : 
                 irmao.data_iniciacao ? 'Aprendiz' : 'Sem Grau',
           idade,
-          tem_prerrogativa: idade >= 70,
-          data_licenca: irmao.data_licenca
+          tem_prerrogativa: idade >= 70
         };
       });
 
@@ -290,61 +261,33 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
                 </thead>
                 <tbody>
                   {irmaosExibidos.map((irmao) => {
-                    // Filtrar sessões OBRIGATÓRIAS (excluir todas as isentas)
-                    const sessoesObrigatorias = sessoes.filter(sessao => {
+                    // Filtrar sessões relevantes para o grau do irmão
+                    const sessoesRelevantes = sessoes.filter(sessao => {
                       const tipoSessao = sessao.graus_sessao?.nome;
-                      const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
                       
-                      // FILTRO 1: ANTES DA INICIAÇÃO = ISENTO
-                      if (irmao.data_iniciacao) {
-                        const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-                        if (dataSessao < dataIniciacao) return false;
-                      }
-                      
-                      // FILTRO 2: Licenciado isento APÓS data_licenca
-                      if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
-                        const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-                        if (dataSessao >= dataLicenca) return false;
-                      }
-                      
-                      // FILTRO 3: Prerrogativa - idade NA DATA DA SESSÃO >= 70
-                      if (irmao.data_nascimento) {
-                        const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
-                        let idadeNaSessao = dataSessao.getFullYear() - dataNasc.getFullYear();
-                        const mes = dataSessao.getMonth() - dataNasc.getMonth();
-                        if (mes < 0 || (mes === 0 && dataSessao.getDate() < dataNasc.getDate())) {
-                          idadeNaSessao--;
-                        }
-                        if (idadeNaSessao >= 70) return false;
-                      }
-                      
-                      // FILTRO 4: GRAU SUPERIOR = ISENTO
-                      // Aprendiz: só Aprendiz e Administrativa
                       if (irmao.grau === 'Aprendiz') {
                         return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
                       }
-                      // Companheiro: Aprendiz, Companheiro e Administrativa (isento em Mestre)
                       if (irmao.grau === 'Companheiro') {
                         return tipoSessao === 'Sessão de Aprendiz' || 
                                tipoSessao === 'Sessão de Companheiro' || 
                                tipoSessao === 'Sessão Administrativa';
                       }
-                      // Mestre: todas
                       if (irmao.grau === 'Mestre') {
-                        return true;
+                        return true; // Mestre pode participar de todas
                       }
-                      return tipoSessao === 'Sessão Administrativa';
+                      return tipoSessao === 'Sessão Administrativa'; // Sem grau só administrativa
                     });
 
                     const presencasIrmao = gradePresenca[irmao.id] || {};
                     
-                    // Calcular taxa baseada apenas nas sessões obrigatórias
-                    const totalObrigatorias = sessoesObrigatorias.length;
-                    const presentesObrigatorias = sessoesObrigatorias.filter(s => 
+                    // Calcular taxa baseada apenas nas sessões relevantes
+                    const totalRelevantes = sessoesRelevantes.length;
+                    const presentesRelevantes = sessoesRelevantes.filter(s => 
                       presencasIrmao[s.id]?.presente
                     ).length;
-                    const taxa = totalObrigatorias > 0 
-                      ? Math.round((presentesObrigatorias / totalObrigatorias) * 100) 
+                    const taxa = totalRelevantes > 0 
+                      ? Math.round((presentesRelevantes / totalRelevantes) * 100) 
                       : 0;
 
                     return (
