@@ -80,10 +80,26 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         throw irmaosError;
       }
 
-      // Aplicar lógica de filtro por datas de situação
+      // Aplicar lógica de filtro por datas de situação E datas de grau
       const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
       const irmaosFiltrados = irmaosData?.filter(i => {
-        // FALECIDO: só aparece se sessão for ANTES da data de falecimento
+        // FILTRO 1: Verificar se já foi iniciado/elevado/exaltado na data da sessão
+        if (grauMinimo === 1 && i.data_iniciacao) {
+          const dataIniciacao = new Date(i.data_iniciacao + 'T00:00:00');
+          if (dataSessao < dataIniciacao) return false; // Sessão antes da iniciação
+        }
+        
+        if (grauMinimo === 2 && i.data_elevacao) {
+          const dataElevacao = new Date(i.data_elevacao + 'T00:00:00');
+          if (dataSessao < dataElevacao) return false; // Sessão antes da elevação
+        }
+        
+        if (grauMinimo === 3 && i.data_exaltacao) {
+          const dataExaltacao = new Date(i.data_exaltacao + 'T00:00:00');
+          if (dataSessao < dataExaltacao) return false; // Sessão antes da exaltação
+        }
+        
+        // FILTRO 2: FALECIDO - só aparece se sessão for ANTES da data de falecimento
         if (i.situacao === 'falecido' && i.data_falecimento) {
           const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
           return dataSessao < dataFalecimento;
