@@ -1,6 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
+// Função auxiliar para calcular idade
+const calcularIdade = (dataNascimento) => {
+  if (!dataNascimento) return null;
+  const hoje = new Date();
+  const nascimento = new Date(dataNascimento);
+  let idade = hoje.getFullYear() - nascimento.getFullYear();
+  const mes = hoje.getMonth() - nascimento.getMonth();
+  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
+    idade--;
+  }
+  return idade;
+};
+
 export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -41,133 +54,104 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar irmãos elegíveis baseado no grau da sessão
-      const tipoSessao = sessaoData.graus_sessao?.nome || '';
-
-      console.log('🔍 DEBUG - Tipo sessão:', tipoSessao);
-      console.log('🔍 DEBUG - Data sessão:', sessaoData.data_sessao);
-
-      // Buscar TODOS os irmãos (incluir falecidos/desligados)
-      const { data: todosIrmaos, error: irmaosError } = await supabase
+      // Buscar irmãos elegíveis DIRETO da tabela (sem usar função RPC)
+      const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
+      
+      let query = supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_desligamento, data_falecimento, data_nascimento, data_licenca, situacao, status')
-        .order('nome');
+        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_licenca, data_desligamento, data_falecimento, data_ingresso_loja')
+        .eq('status', 'ativo');
+
+      // Filtrar por grau
+      if (grauMinimo === 2) {
+        query = query.not('data_elevacao', 'is', null);
+      } else if (grauMinimo === 3) {
+        query = query.not('data_exaltacao', 'is', null);
+      }
+
+      const { data: irmaosData, error: irmaosError } = await query.order('nome');
+
+      console.log('DEBUG - Sessão:', sessaoData);
+      console.log('DEBUG - Irmãos retornados:', irmaosData);
+      console.log('DEBUG - Erro ao buscar irmãos:', irmaosError);
 
       if (irmaosError) {
-        console.error('❌ Erro ao buscar irmãos:', irmaosError);
+        console.error('Erro ao buscar irmãos:', irmaosError);
         throw irmaosError;
       }
 
-      console.log('✅ Total de irmãos ativos:', todosIrmaos?.length);
-
-      // Filtrar por data da sessão
-      const dataSessaoObj = new Date(sessaoData.data_sessao);
-      
-      const irmaosAtivosVivos = todosIrmaos.filter(i => {
-        // Se tem data de falecimento, só aparece se sessão for ANTES
-        if (i.data_falecimento) {
-          const dataFalec = new Date(i.data_falecimento);
-          if (dataSessaoObj >= dataFalec) return false;
+      // Aplicar lógica de filtro por datas (ingresso/falecimento/desligamento)
+      const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
+      const irmaosFiltrados = irmaosData?.filter(i => {
+        // FILTRO 0: INGRESSO NA LOJA - só aparece se sessão for DEPOIS do ingresso
+        // Prioridade: data_ingresso_loja > data_iniciacao
+        const dataIngresso = i.data_ingresso_loja ? new Date(i.data_ingresso_loja + 'T00:00:00') : null;
+        const dataIniciacao = i.data_iniciacao ? new Date(i.data_iniciacao + 'T00:00:00') : null;
+        const dataInicio = dataIngresso || dataIniciacao;
+        
+        if (dataInicio && dataSessao < dataInicio) {
+          return false; // Sessão antes do ingresso na loja
         }
-        // Se tem data de desligamento, só aparece se sessão for ANTES
-        if (i.data_desligamento) {
-          const dataDeslg = new Date(i.data_desligamento);
-          if (dataSessaoObj >= dataDeslg) return false;
+        
+        // FILTRO 1: FALECIDO - só aparece se sessão for ANTES da data de falecimento
+        if (i.situacao === 'falecido' && i.data_falecimento) {
+          const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
+          return dataSessao < dataFalecimento;
         }
+        
+        // LICENCIADO: sempre aparece (antes e depois da data)
+        if (i.situacao === 'licenciado') {
+          return true;
+        }
+        
+        // DESLIGADO: só aparece se sessão for ANTES da data de desligamento
+        if (i.situacao === 'desligado' && i.data_desligamento) {
+          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
+          return dataSessao < dataDesligamento;
+        }
+        
+        // EX-OFÍCIO: só aparece se sessão for ANTES da data de desligamento
+        if (i.situacao === 'ex_oficio' && i.data_desligamento) {
+          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
+          return dataSessao < dataDesligamento;
+        }
+        
+        // Outras situações: sempre aparecem
         return true;
-      });
+      }) || [];
 
-      console.log('✅ Irmãos ativos e vivos:', irmaosAtivosVivos.length);
+      // Mapear para formato esperado
+      const irmaos = irmaosFiltrados.map(i => ({
+        membro_id: i.id,
+        nome_completo: i.nome,
+        cim: i.cim,
+        grau_atual: i.data_exaltacao ? 'Mestre' : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
+        foto_url: i.foto_url,
+        situacao: i.situacao,
+        data_nascimento: i.data_nascimento,
+        data_licenca: i.data_licenca
+      }));
 
-      // Adicionar grau calculado, idade e prerrogativas a cada irmão
-      const irmaosComGrau = irmaosAtivosVivos.map(irmao => {
-        let grauIrmao = 0;
-        let grauTexto = 'Sem Grau';
+      // Adicionar idade e verificar se está licenciado efetivo
+      const irmaosComIdade = irmaos.map(irmao => {
+        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
         
-        if (irmao.data_exaltacao) {
-          grauIrmao = 3;
-          grauTexto = 'Mestre';
-        } else if (irmao.data_elevacao) {
-          grauIrmao = 2;
-          grauTexto = 'Companheiro';
-        } else if (irmao.data_iniciacao) {
-          grauIrmao = 1;
-          grauTexto = 'Aprendiz';
+        // Verificar se está licenciado APÓS a data da licença
+        let estaLicenciadoEfetivo = false;
+        if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
+          const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
+          estaLicenciadoEfetivo = dataSessao >= dataLicenca;
         }
-
-        // Calcular idade
-        let idade = null;
-        let temPrerrogativa = false;
-        let dataPrerrogativa = null;
         
-        if (irmao.data_nascimento) {
-          const nascimento = new Date(irmao.data_nascimento);
-          const hoje = new Date();
-          idade = hoje.getFullYear() - nascimento.getFullYear();
-          const mesAtual = hoje.getMonth();
-          const mesNasc = nascimento.getMonth();
-          
-          if (mesAtual < mesNasc || (mesAtual === mesNasc && hoje.getDate() < nascimento.getDate())) {
-            idade--;
-          }
-
-          // Verificar prerrogativa (70 anos ou mais)
-          if (idade >= 70) {
-            temPrerrogativa = true;
-            // Data em que completou 70 anos
-            dataPrerrogativa = new Date(nascimento);
-            dataPrerrogativa.setFullYear(nascimento.getFullYear() + 70);
-          }
-        }
-
-        // Verificar se a sessão é ANTES ou DEPOIS da prerrogativa/licença
-        const dataSessaoObj = new Date(sessaoData.data_sessao);
-        let sessaoAntesPrerrogativa = true;
-        let sessaoAntesLicenca = true;
-
-        if (temPrerrogativa && dataPrerrogativa) {
-          sessaoAntesPrerrogativa = dataSessaoObj < dataPrerrogativa;
-        }
-
-        if (irmao.data_licenca) {
-          const dataLicencaObj = new Date(irmao.data_licenca);
-          sessaoAntesLicenca = dataSessaoObj < dataLicencaObj;
-        }
-
         return {
           ...irmao,
-          grau_numerico: grauIrmao,
-          grau: grauTexto,
           idade,
-          tem_prerrogativa: temPrerrogativa,
-          data_prerrogativa: dataPrerrogativa,
-          sessao_antes_prerrogativa: sessaoAntesPrerrogativa,
-          sessao_antes_licenca: sessaoAntesLicenca,
-          // Se sessão for DEPOIS da prerrogativa OU licença, não computa
-          computa_presenca: sessaoAntesPrerrogativa && sessaoAntesLicenca
+          tem_prerrogativa: idade >= 70,
+          esta_licenciado_efetivo: estaLicenciadoEfetivo
         };
       });
 
-      console.log('✅ Irmãos com grau calculado:', irmaosComGrau.length);
-
-      // Filtrar por grau baseado no tipo de sessão
-      const irmaosElegiveisArray = irmaosComGrau.filter(irmao => {
-        console.log(`👤 ${irmao.nome} - Grau: ${irmao.grau_numerico}`);
-
-        // Filtrar baseado no tipo de sessão
-        if (tipoSessao.includes('Aprendiz') || tipoSessao.includes('Administrativa')) {
-          return irmao.grau_numerico >= 1;
-        } else if (tipoSessao.includes('Companheiro')) {
-          return irmao.grau_numerico >= 2;
-        } else if (tipoSessao.includes('Mestre')) {
-          return irmao.grau_numerico >= 3;
-        }
-        
-        return false;
-      });
-
-      console.log('✅ Irmãos elegíveis para essa sessão:', irmaosElegiveisArray.length);
-      setIrmaosElegiveis(irmaosElegiveisArray);
+      setIrmaosElegiveis(irmaosComIdade);
 
       // Buscar presenças já registradas (se houver)
       const { data: presencasExistentes, error: presencasError } = await supabase
@@ -226,7 +210,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const marcarTodosPresentes = () => {
     const todasPresencas = {};
     irmaosElegiveis.forEach(irmao => {
-      todasPresencas[irmao.id] = true;
+      todasPresencas[irmao.membro_id] = true;
     });
     setPresencas(todasPresencas);
     setJustificativas({});
@@ -249,10 +233,10 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       // Preparar registros de presença (SEM registrado_por)
       const registros = irmaosElegiveis.map(irmaoElegivel => ({
         sessao_id: sessaoId,
-        membro_id: irmaoElegivel.id,
-        presente: presencas[irmaoElegivel.id] || false,
-        justificativa: (!presencas[irmaoElegivel.id] && justificativas[irmaoElegivel.id]) 
-          ? justificativas[irmaoElegivel.id] 
+        membro_id: irmaoElegivel.membro_id,
+        presente: presencas[irmaoElegivel.membro_id] || false,
+        justificativa: (!presencas[irmaoElegivel.membro_id] && justificativas[irmaoElegivel.membro_id]) 
+          ? justificativas[irmaoElegivel.membro_id] 
           : null
       }));
 
@@ -289,7 +273,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
   // Filtrar irmãos pela busca
   const irmaosFiltrados = irmaosElegiveis.filter(irmao =>
-    irmao.nome?.toLowerCase().includes(busca.toLowerCase())
+    irmao.nome_completo?.toLowerCase().includes(busca.toLowerCase())
   );
 
   // Estatísticas
@@ -422,55 +406,58 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {irmaosFiltrados.map((irmao) => (
-                <tr key={irmao.id} className="hover:bg-gray-50">
+                <tr key={irmao.membro_id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
+                      {irmao.foto_url && (
+                        <img
+                          src={irmao.foto_url}
+                          alt={irmao.nome_completo}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      )}
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {irmao.nome}
+                          {irmao.nome_completo}
                         </div>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {/* Badge Licenciado - só aparece se sessão for DEPOIS da licença */}
-                          {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && !irmao.sessao_antes_licenca && (
-                            <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
-                              Licenciado
-                            </span>
-                          )}
-                          {/* Badge Prerrogativa - só aparece se sessão for DEPOIS dos 70 anos */}
-                          {irmao.tem_prerrogativa && !irmao.sessao_antes_prerrogativa && (
-                            <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
-                              Com Prerrogativa
-                            </span>
-                          )}
-                        </div>
+                        {irmao.esta_licenciado_efetivo && (
+                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                            Licenciado
+                          </span>
+                        )}
+                        {irmao.tem_prerrogativa && (
+                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                            Com Prerrogativa
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {irmao.grau}
+                      {irmao.grau_atual}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
                     <label className="inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={presencas[irmao.id] || false}
-                        onChange={(e) => handlePresencaChange(irmao.id, e.target.checked)}
+                        checked={presencas[irmao.membro_id] || false}
+                        onChange={(e) => handlePresencaChange(irmao.membro_id, e.target.checked)}
                         className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500"
                       />
                       <span className="ml-2 text-sm font-medium text-gray-700">
-                        {presencas[irmao.id] ? 'Presente' : 'Ausente'}
+                        {presencas[irmao.membro_id] ? 'Presente' : 'Ausente'}
                       </span>
                     </label>
                   </td>
                   <td className="px-6 py-4">
-                    {!presencas[irmao.id] && (
+                    {!presencas[irmao.membro_id] && (
                       <input
                         type="text"
                         placeholder="Motivo da ausência..."
-                        value={justificativas[irmao.id] || ''}
-                        onChange={(e) => handleJustificativaChange(irmao.id, e.target.value)}
+                        value={justificativas[irmao.membro_id] || ''}
+                        onChange={(e) => handleJustificativaChange(irmao.membro_id, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     )}
