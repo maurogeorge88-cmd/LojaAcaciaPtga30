@@ -129,7 +129,7 @@ export default function DashboardPresenca() {
 
         if (grauIrmao === 0) return;
 
-        // Contar APENAS registros VÁLIDOS (após iniciação/ingresso e do grau permitido)
+        // Contar APENAS registros VÁLIDOS (após iniciação e do grau permitido)
         let totalRegistros = 0;
         let presentes = 0;
         let aprendiz = 0, companheiro = 0, mestre = 0;
@@ -208,16 +208,10 @@ export default function DashboardPresenca() {
         .eq('status', 'ativo');
 
       // 3. Buscar irmãos com datas
-      const { data: irmaos, error: errIrmaos } = await supabase
+      const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso')
-        .eq('status', 'ativo')
-        .order('nome');
-
-      if (errIrmaos) {
-        console.error('Erro ao buscar irmãos:', errIrmaos);
-        return;
-      }
+        .eq('status', 'ativo');
 
       // 4. Buscar registros com paginação
       let registros = [];
@@ -283,10 +277,8 @@ export default function DashboardPresenca() {
 
         const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
         const dataIngresso = irmao.data_ingresso ? new Date(irmao.data_ingresso) : null;
-        const dataLicenca = irmao.data_licenca ? new Date(irmao.data_licenca) : null;
-        
-        // Data de início = iniciação OU ingresso (o que existir)
         const dataInicio = dataIniciacao || dataIngresso;
+        const dataLicenca = irmao.data_licenca ? new Date(irmao.data_licenca) : null;
 
         // Contar apenas registros VÁLIDOS
         let totalRegistros = 0;
