@@ -70,7 +70,7 @@ export default function DashboardPresenca() {
       // 1. Buscar todas as sessões do ano
       const { data: sessoesAno } = await supabase
         .from('sessoes_presenca')
-        .select('*')
+        .select('id, data_sessao, grau_sessao_id')
         .gte('data_sessao', inicioAno)
         .lte('data_sessao', fimAno);
 
@@ -123,11 +123,11 @@ export default function DashboardPresenca() {
               presentes++;
               
               const sessao = sessoesMap[reg.sessao_id];
-              const tipo = sessao?.tipo || sessao?.tipo_sessao || sessao?.grau_sessao || '';
+              const grauSessao = sessao?.grau_sessao_id;
               
-              if (tipo.includes('Aprendiz')) aprendiz++;
-              else if (tipo.includes('Companheiro')) companheiro++;
-              else if (tipo.includes('Mestre')) mestre++;
+              if (grauSessao === 1) aprendiz++;
+              else if (grauSessao === 2) companheiro++;
+              else if (grauSessao === 3) mestre++;
             }
           }
         });
