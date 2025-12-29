@@ -67,26 +67,42 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPresenca100}-01-01`;
       const fimAno = `${anoPresenca100}-12-31`;
 
-      // Query com todas presenças E ausências
-      const { data: todosRegistros } = await supabase
+      // 1. Buscar sessões do ano
+      const { data: sessoesAno } = await supabase
+        .from('sessoes_presenca')
+        .select('id, tipo_sessao')
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      const sessaoIds = sessoesAno?.map(s => s.id) || [];
+      if (sessaoIds.length === 0) {
+        setResumoAno([]);
+        return;
+      }
+
+      // 2. Buscar registros
+      const { data: registros } = await supabase
         .from('registros_presenca')
-        .select(`
-          membro_id,
-          presente,
-          irmaos!inner(nome),
-          sessoes_presenca!inner(data_sessao, tipo_sessao)
-        `)
-        .gte('sessoes_presenca.data_sessao', inicioAno)
-        .lte('sessoes_presenca.data_sessao', fimAno)
-        .eq('irmaos.status', 'ativo');
+        .select('membro_id, presente, sessao_id')
+        .in('sessao_id', sessaoIds);
+
+      // 3. Buscar nomes dos irmãos
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome')
+        .eq('status', 'ativo');
+
+      // Mapear tipo de sessão
+      const tipoSessao = {};
+      sessoesAno?.forEach(s => {
+        tipoSessao[s.id] = s.tipo_sessao || '';
+      });
 
       // Agrupar por irmão
       const grupos = {};
-      todosRegistros?.forEach(reg => {
+      registros?.forEach(reg => {
         if (!grupos[reg.membro_id]) {
           grupos[reg.membro_id] = {
-            id: reg.membro_id,
-            nome: reg.irmaos.nome,
             aprendiz: 0,
             companheiro: 0,
             mestre: 0,
@@ -99,25 +115,28 @@ export default function DashboardPresenca() {
         if (reg.presente) {
           grupos[reg.membro_id].presentes++;
           
-          // Contar por tipo
-          const tipo = reg.sessoes_presenca.tipo_sessao || '';
+          const tipo = tipoSessao[reg.sessao_id] || '';
           if (tipo.includes('Aprendiz')) grupos[reg.membro_id].aprendiz++;
           else if (tipo.includes('Companheiro')) grupos[reg.membro_id].companheiro++;
           else if (tipo.includes('Mestre')) grupos[reg.membro_id].mestre++;
         }
       });
 
-      // Filtrar apenas quem tem 100% (presentes = total)
-      const com100 = Object.values(grupos)
-        .filter(g => g.total > 0 && g.presentes === g.total)
-        .map(g => ({ 
-          id: g.id, 
-          nome: g.nome, 
-          total_sessoes: g.total,
-          aprendiz: g.aprendiz,
-          companheiro: g.companheiro,
-          mestre: g.mestre
-        }));
+      // Filtrar 100%
+      const com100 = [];
+      irmaos?.forEach(irmao => {
+        const g = grupos[irmao.id];
+        if (g && g.total > 0 && g.presentes === g.total) {
+          com100.push({
+            id: irmao.id,
+            nome: irmao.nome,
+            total_sessoes: g.total,
+            aprendiz: g.aprendiz,
+            companheiro: g.companheiro,
+            mestre: g.mestre
+          });
+        }
+      });
 
       setResumoAno(com100);
 
