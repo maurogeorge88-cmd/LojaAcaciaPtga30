@@ -35,7 +35,12 @@ export default function DashboardPresenca() {
 
     switch (p) {
       case 'mes':
-        inicio.setMonth(hoje.getMonth() - 1);
+        // Primeiro dia do mês atual
+        inicio.setDate(1);
+        inicio.setHours(0, 0, 0, 0);
+        // Último dia do mês atual
+        fim.setMonth(hoje.getMonth() + 1, 0);
+        fim.setHours(23, 59, 59, 999);
         break;
       case 'trimestre':
         inicio.setMonth(hoje.getMonth() - 3);
@@ -44,7 +49,12 @@ export default function DashboardPresenca() {
         inicio.setMonth(hoje.getMonth() - 6);
         break;
       case 'ano':
-        inicio.setFullYear(hoje.getFullYear() - 1);
+        // Primeiro dia do ano atual
+        inicio.setMonth(0, 1);
+        inicio.setHours(0, 0, 0, 0);
+        // Último dia do ano atual
+        fim.setMonth(11, 31);
+        fim.setHours(23, 59, 59, 999);
         break;
     }
 
@@ -206,13 +216,13 @@ export default function DashboardPresenca() {
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
-                className={`px-4 py-2 rounded font-medium transition-colors ${
+                className={`px-6 py-2.5 rounded-lg font-semibold transition-all shadow-sm ${
                   periodo === p
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-blue-600 text-white shadow-md scale-105'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow'
                 }`}
               >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
+                {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
           </div>
