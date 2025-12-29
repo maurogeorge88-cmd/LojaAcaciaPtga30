@@ -27,8 +27,7 @@ export default function ModalGradePresenca({ onFechar }) {
       // 2. Buscar TODOS os irmãos (incluir datas de grau)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso, situacao, status')
-        .order('nome');
+        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso, situacao, status');
 
       console.log('Irmãos:', irmaosData?.length);
 
@@ -83,6 +82,9 @@ export default function ModalGradePresenca({ onFechar }) {
           data_prerrogativa: dataPrerrogativa
         };
       });
+
+      // Ordenar por nome
+      irmaosComFlags.sort((a, b) => a.nome.localeCompare(b.nome));
 
       // 3. Buscar TODOS os registros em lotes (paginação)
       const sessaoIds = sessoesData?.map(s => s.id) || [];
