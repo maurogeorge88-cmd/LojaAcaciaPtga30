@@ -365,19 +365,12 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {irmaosFiltrados.map((irmao) => (
-                <tr key={irmao.membro_id} className="hover:bg-gray-50">
+                <tr key={irmao.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center gap-2">
-                      {irmao.foto_url && (
-                        <img
-                          src={irmao.foto_url}
-                          alt={irmao.nome_completo}
-                          className="h-10 w-10 rounded-full object-cover"
-                        />
-                      )}
                       <div>
                         <div className="text-sm font-medium text-gray-900">
-                          {irmao.nome_completo}
+                          {irmao.nome}
                         </div>
                         {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
                           <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
@@ -389,7 +382,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {irmao.grau_atual}
+                      {irmao.grau}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
