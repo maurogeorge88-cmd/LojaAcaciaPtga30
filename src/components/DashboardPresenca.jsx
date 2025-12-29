@@ -67,30 +67,42 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPresenca100}-01-01`;
       const fimAno = `${anoPresenca100}-12-31`;
 
+      console.log('🔍 Buscando presença 100% para:', inicioAno, 'até', fimAno);
+
       // 1. Buscar sessões do ano
-      const { data: sessoesAno } = await supabase
+      const { data: sessoesAno, error: errSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, tipo_sessao')
         .gte('data_sessao', inicioAno)
         .lte('data_sessao', fimAno);
 
+      console.log('✅ Sessões encontradas:', sessoesAno?.length);
+      if (errSessoes) console.error('❌ Erro sessões:', errSessoes);
+
       const sessaoIds = sessoesAno?.map(s => s.id) || [];
       if (sessaoIds.length === 0) {
+        console.log('⚠️ Nenhuma sessão no período');
         setResumoAno([]);
         return;
       }
 
       // 2. Buscar registros
-      const { data: registros } = await supabase
+      const { data: registros, error: errReg } = await supabase
         .from('registros_presenca')
         .select('membro_id, presente, sessao_id')
         .in('sessao_id', sessaoIds);
 
+      console.log('✅ Registros encontrados:', registros?.length);
+      if (errReg) console.error('❌ Erro registros:', errReg);
+
       // 3. Buscar nomes dos irmãos
-      const { data: irmaos } = await supabase
+      const { data: irmaos, error: errIrmaos } = await supabase
         .from('irmaos')
         .select('id, nome')
         .eq('status', 'ativo');
+
+      console.log('✅ Irmãos ativos:', irmaos?.length);
+      if (errIrmaos) console.error('❌ Erro irmãos:', errIrmaos);
 
       // Mapear tipo de sessão
       const tipoSessao = {};
@@ -122,11 +134,14 @@ export default function DashboardPresenca() {
         }
       });
 
+      console.log('📊 Grupos processados:', Object.keys(grupos).length);
+
       // Filtrar 100%
       const com100 = [];
       irmaos?.forEach(irmao => {
         const g = grupos[irmao.id];
         if (g && g.total > 0 && g.presentes === g.total) {
+          console.log('🏆 100%:', irmao.nome, '- Total:', g.total, 'Presentes:', g.presentes);
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
@@ -138,10 +153,11 @@ export default function DashboardPresenca() {
         }
       });
 
+      console.log('🎯 Total com 100%:', com100.length);
       setResumoAno(com100);
 
     } catch (error) {
-      console.error('Erro ao carregar resumo do ano:', error);
+      console.error('❌ Erro ao carregar resumo do ano:', error);
     }
   };
 
