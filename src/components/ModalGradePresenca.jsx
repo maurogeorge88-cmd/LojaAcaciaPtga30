@@ -161,24 +161,26 @@ export default function ModalGradePresenca({ onFechar }) {
 
     const dataSessao = new Date(sessao.data_sessao);
     
-    // 1. Verificar se sessão é ANTES da iniciação OU ingresso na loja
-    const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+    // 1. Verificar data de início na LOJA
+    // PRIORIDADE: data_ingresso_loja (se existir) > data_iniciacao
+    // Porque ingresso indica quando começou nesta loja (pode ser transferência/retorno)
     const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
-    const dataInicio = dataIniciacao || dataIngresso;
+    const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+    const dataInicio = dataIngresso || dataIniciacao;
     
     // Debug para Michel
     if (irmao.nome.includes('Michel')) {
       console.log('Michel:', {
         sessao: sessao.data_sessao,
-        dataIniciacao,
         dataIngresso,
-        dataInicio,
+        dataIniciacao,
+        dataInicio: dataInicio?.toLocaleDateString(),
         antes: dataInicio && dataSessao < dataInicio
       });
     }
     
     if (dataInicio && dataSessao < dataInicio) {
-      // Sessão antes de iniciar/ingressar → não se aplica
+      // Sessão antes de ingressar na loja → não se aplica
       return (
         <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
@@ -194,6 +196,15 @@ export default function ModalGradePresenca({ onFechar }) {
 
     // 3. Verificar grau da sessão
     const grauSessao = sessao.grau_sessao_id || 1;
+
+    // Debug Michel
+    if (irmao.nome.includes('Michel')) {
+      console.log('Michel graus:', {
+        grauIrmao,
+        grauSessao,
+        bloqueado: grauSessao > grauIrmao
+      });
+    }
 
     // 4. Se sessão é de grau superior ao do irmão → não pode participar
     if (grauSessao > grauIrmao) {
