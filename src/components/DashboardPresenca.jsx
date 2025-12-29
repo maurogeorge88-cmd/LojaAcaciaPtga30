@@ -375,6 +375,11 @@ export default function DashboardPresenca() {
         const total = dadosIrmao?.total_registros || 0;
         const percentual = total > 0 ? Math.round((presencas / total) * 100) : 0;
 
+        // Debug
+        if (temPrerrogativa) {
+          console.log('Prerrogativa:', irmao.nome, { dadosIrmao, presencas, total });
+        }
+
         if (temPrerrogativa) {
           comPrerrogativa.push({
             id: irmao.id,
