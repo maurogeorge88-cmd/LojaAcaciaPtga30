@@ -1,93 +1,93 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import ModalGradePresenca from './ModalGradePresenca';
 
-export default function ModalGradePresenca({ onFechar }) {
-  const [loading, setLoading] = useState(true);
-  const [sessoes, setSessoes] = useState([]);
-  const [irmaos, setIrmaos] = useState([]);
-  const [grade, setGrade] = useState({});
-  const [busca, setBusca] = useState('');
+export default function DashboardPresenca() {
+  const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
+  const [resumo, setResumo] = useState([]);
+  const [resumoAno, setResumoAno] = useState([]);
+  const [mostrarGrade, setMostrarGrade] = useState(false);
+  const [periodo, setPeriodo] = useState('ano');
+  const [percentualAlerta, setPercentualAlerta] = useState(30);
+  const [anoPresenca100, setAnoPresenca100] = useState(2025);
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
 
   useEffect(() => {
-    carregar();
+    definirPeriodo('ano');
   }, []);
 
-  const carregar = async () => {
+  useEffect(() => {
+    if (dataInicio && dataFim) {
+      carregar();
+    }
+  }, [dataInicio, dataFim]);
+
+  useEffect(() => {
+    carregarResumoAno();
+  }, [anoPresenca100]);
+
+  const definirPeriodo = (p) => {
+    setPeriodo(p);
+    const hoje = new Date();
+    const inicio = new Date();
+    const fim = new Date();
+
+    switch (p) {
+      case 'mes':
+        // Primeiro dia do mês atual
+        inicio.setDate(1);
+        inicio.setHours(0, 0, 0, 0);
+        // Último dia do mês atual
+        fim.setMonth(hoje.getMonth() + 1, 0);
+        fim.setHours(23, 59, 59, 999);
+        break;
+      case 'trimestre':
+        inicio.setMonth(hoje.getMonth() - 3);
+        break;
+      case 'semestre':
+        inicio.setMonth(hoje.getMonth() - 6);
+        break;
+      case 'ano':
+        // Primeiro dia do ano atual
+        inicio.setMonth(0, 1);
+        inicio.setHours(0, 0, 0, 0);
+        // Último dia do ano atual
+        fim.setMonth(11, 31);
+        fim.setHours(23, 59, 59, 999);
+        break;
+    }
+
+    setDataInicio(inicio.toISOString().split('T')[0]);
+    setDataFim(fim.toISOString().split('T')[0]);
+  };
+
+  const carregarResumoAno = async () => {
     try {
-      setLoading(true);
+      const inicioAno = `${anoPresenca100}-01-01`;
+      const fimAno = `${anoPresenca100}-12-31`;
 
-      // 1. Buscar TODAS as sessões
-      const { data: sessoesData } = await supabase
+      // 1. Buscar todas as sessões do ano
+      const { data: sessoesAno } = await supabase
         .from('sessoes_presenca')
-        .select('id, data_sessao')
-        .order('data_sessao');
+        .select('id, data_sessao, grau_sessao_id')
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
 
-      console.log('Sessões:', sessoesData?.length);
+      const sessaoIds = sessoesAno?.map(s => s.id) || [];
+      if (sessaoIds.length === 0) {
+        setResumoAno([]);
+        return;
+      }
 
-      // 2. Buscar TODOS os irmãos (incluir datas de grau)
-      const { data: irmaosData } = await supabase
+      // 2. Buscar irmãos com grau
+      const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, situacao, status')
-        .order('nome');
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .eq('status', 'ativo');
 
-      console.log('Irmãos:', irmaosData?.length);
-
-      // Filtrar: remover falecidos/desligados de MESES ANTERIORES
-      const hoje = new Date();
-      const mesAtual = hoje.getMonth();
-      const anoAtual = hoje.getFullYear();
-
-      const irmaosValidos = irmaosData.filter(i => {
-        if (i.data_falecimento) {
-          const dataFalec = new Date(i.data_falecimento);
-          // Se faleceu em mês anterior, remove
-          if (dataFalec.getFullYear() < anoAtual || 
-             (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
-            return false;
-          }
-        }
-        if (i.data_desligamento) {
-          const dataDeslg = new Date(i.data_desligamento);
-          // Se desligou em mês anterior, remove
-          if (dataDeslg.getFullYear() < anoAtual || 
-             (dataDeslg.getFullYear() === anoAtual && dataDeslg.getMonth() < mesAtual)) {
-            return false;
-          }
-        }
-        return true;
-      });
-
-      // Adicionar flags de prerrogativa
-      const irmaosComFlags = irmaosValidos.map(i => {
-        let idade = null;
-        let dataPrerrogativa = null;
-        
-        if (i.data_nascimento) {
-          const nasc = new Date(i.data_nascimento);
-          const hoje = new Date();
-          idade = hoje.getFullYear() - nasc.getFullYear();
-          if (hoje.getMonth() < nasc.getMonth() || 
-             (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) {
-            idade--;
-          }
-          
-          if (idade >= 70) {
-            dataPrerrogativa = new Date(nasc);
-            dataPrerrogativa.setFullYear(nasc.getFullYear() + 70);
-          }
-        }
-        
-        return {
-          ...i,
-          idade,
-          data_prerrogativa: dataPrerrogativa
-        };
-      });
-
-      // 3. Buscar TODOS os registros em lotes (paginação)
-      const sessaoIds = sessoesData?.map(s => s.id) || [];
-      
-      let todosRegistros = [];
+      // 3. Buscar registros com paginação
+      let registros = [];
       let inicio = 0;
       const tamanhoPagina = 1000;
       let continuar = true;
@@ -95,15 +95,14 @@ export default function ModalGradePresenca({ onFechar }) {
       while (continuar) {
         const { data: lote } = await supabase
           .from('registros_presenca')
-          .select('membro_id, sessao_id, presente, justificativa')
+          .select('membro_id, presente, sessao_id')
           .in('sessao_id', sessaoIds)
           .range(inicio, inicio + tamanhoPagina - 1);
 
         if (lote && lote.length > 0) {
-          todosRegistros = [...todosRegistros, ...lote];
+          registros = [...registros, ...lote];
           inicio += tamanhoPagina;
           
-          // Se retornou menos que o tamanho da página, acabou
           if (lote.length < tamanhoPagina) {
             continuar = false;
           }
@@ -112,277 +111,405 @@ export default function ModalGradePresenca({ onFechar }) {
         }
       }
 
-      console.log('📊 Registros carregados:', todosRegistros.length);
-
-      // Criar grade agrupando por irmão
-      const gradeCompleta = {};
-      todosRegistros.forEach(reg => {
-        if (!gradeCompleta[reg.membro_id]) {
-          gradeCompleta[reg.membro_id] = {};
-        }
-        gradeCompleta[reg.membro_id][reg.sessao_id] = {
-          presente: reg.presente,
-          justificativa: reg.justificativa
-        };
+      // Mapear sessões por ID
+      const sessoesMap = {};
+      sessoesAno?.forEach(s => {
+        sessoesMap[s.id] = s;
       });
 
-      console.log('Grade montada');
+      // Processar cada irmão
+      const com100 = [];
+      
+      irmaos?.forEach(irmao => {
+        // Calcular grau do irmão
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao) grauIrmao = 3;
+        else if (irmao.data_elevacao) grauIrmao = 2;
+        else if (irmao.data_iniciacao) grauIrmao = 1;
 
-      setSessoes(sessoesData || []);
-      setIrmaos(irmaosComFlags || []);
-      setGrade(gradeCompleta);
+        if (grauIrmao === 0) return;
+
+        // Contar APENAS registros VÁLIDOS (após iniciação e do grau permitido)
+        let totalRegistros = 0;
+        let presentes = 0;
+        let aprendiz = 0, companheiro = 0, mestre = 0;
+
+        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+
+        registros.forEach(reg => {
+          if (reg.membro_id === irmao.id) {
+            const sessao = sessoesMap[reg.sessao_id];
+            if (!sessao) return;
+
+            const dataSessao = new Date(sessao.data_sessao);
+            const grauSessao = sessao.grau_sessao_id || 1;
+
+            // Ignorar se sessão é ANTES da iniciação
+            if (dataIniciacao && dataSessao < dataIniciacao) return;
+
+            // Ignorar se sessão é de grau SUPERIOR ao do irmão
+            if (grauSessao > grauIrmao) return;
+
+            // Registro válido
+            totalRegistros++;
+            
+            if (reg.presente) {
+              presentes++;
+              
+              if (grauSessao === 1) aprendiz++;
+              else if (grauSessao === 2) companheiro++;
+              else if (grauSessao === 3) mestre++;
+            }
+          }
+        });
+
+        // 100% = presentes em TODAS as sessões que tem registro
+        if (totalRegistros > 0 && presentes === totalRegistros) {
+          // Debug Mauro
+          if (irmao.nome.includes('Mauro')) {
+            console.log('🏆 Mauro 100%:', { totalRegistros, presentes, aprendiz, companheiro, mestre });
+          }
+          
+          com100.push({
+            id: irmao.id,
+            nome: irmao.nome,
+            total_sessoes: totalRegistros,
+            aprendiz,
+            companheiro,
+            mestre
+          });
+        }
+      });
+
+      setResumoAno(com100);
+
+    } catch (error) {
+      console.error('❌ Erro ao carregar resumo do ano:', error);
+    }
+  };
+
+  const carregar = async () => {
+    try {
+      // 1. Contar sessões DO PERÍODO
+      const { count: totalSessoes } = await supabase
+        .from('sessoes_presenca')
+        .select('*', { count: 'exact', head: true })
+        .gte('data_sessao', dataInicio)
+        .lte('data_sessao', dataFim);
+
+      // 2. Contar irmãos ativos
+      const { count: totalIrmaos } = await supabase
+        .from('irmaos')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ativo');
+
+      // 3. Buscar registros com paginação (evitar limite de 1000)
+      let registros = [];
+      let inicio = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
+
+      while (continuar) {
+        const { data: lote } = await supabase
+          .from('registros_presenca')
+          .select(`
+            membro_id,
+            presente,
+            irmaos!inner(nome),
+            sessoes_presenca!inner(data_sessao)
+          `)
+          .gte('sessoes_presenca.data_sessao', dataInicio)
+          .lte('sessoes_presenca.data_sessao', dataFim)
+          .eq('irmaos.status', 'ativo')
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (lote && lote.length > 0) {
+          registros = [...registros, ...lote];
+          inicio += tamanhoPagina;
+          
+          if (lote.length < tamanhoPagina) {
+            continuar = false;
+          }
+        } else {
+          continuar = false;
+        }
+      }
+
+      // Agrupar por irmão
+      const grupos = {};
+      registros.forEach(reg => {
+        if (!grupos[reg.membro_id]) {
+          grupos[reg.membro_id] = {
+            id: reg.membro_id,
+            nome: reg.irmaos.nome,
+            total_registros: 0,
+            presentes: 0
+          };
+        }
+        grupos[reg.membro_id].total_registros++;
+        if (reg.presente) grupos[reg.membro_id].presentes++;
+      });
+
+      // Calcular taxas
+      const resumoCompleto = Object.values(grupos).map(g => ({
+        ...g,
+        ausentes: g.total_registros - g.presentes,
+        taxa: g.total_registros > 0 ? Math.round((g.presentes / g.total_registros) * 100) : 0
+      }));
+
+      // Média de presença
+      const somaPresencas = resumoCompleto.reduce((sum, r) => sum + r.taxa, 0);
+      const totalComRegistros = resumoCompleto.filter(r => r.total_registros > 0).length;
+      const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
+
+      setDados({
+        sessoes: totalSessoes || 0,
+        irmaos: totalIrmaos || 0,
+        mediaPresenca
+      });
+
+      setResumo(resumoCompleto);
 
     } catch (error) {
       console.error('Erro:', error);
-    } finally {
-      setLoading(false);
     }
   };
-
-  const formatarData = (data) => {
-    return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit' 
-    });
-  };
-
-  const renderizarCelula = (irmaoId, sessaoId) => {
-    const reg = grade[irmaoId]?.[sessaoId];
-    const irmao = irmaos.find(i => i.id === irmaoId);
-    const sessao = sessoes.find(s => s.id === sessaoId);
-    
-    if (!irmao || !sessao) {
-      return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
-        </td>
-      );
-    }
-
-    const dataSessao = new Date(sessao.data_sessao);
-    
-    // 1. Verificar se sessão é ANTES da iniciação
-    if (irmao.data_iniciacao) {
-      const dataIniciacao = new Date(irmao.data_iniciacao);
-      if (dataSessao < dataIniciacao) {
-        // Sessão antes de iniciar → não se aplica
-        return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-            <span className="text-gray-400">-</span>
-          </td>
-        );
-      }
-    }
-
-    // 2. Calcular grau do irmão
-    let grauIrmao = 0;
-    if (irmao.data_exaltacao) grauIrmao = 3;
-    else if (irmao.data_elevacao) grauIrmao = 2;
-    else if (irmao.data_iniciacao) grauIrmao = 1;
-
-    // 3. Verificar grau da sessão
-    const grauSessao = sessao.grau_sessao_id || 1;
-
-    // 4. Se sessão é de grau superior ao do irmão → não pode participar
-    if (grauSessao > grauIrmao) {
-      return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
-        </td>
-      );
-    }
-
-    // 5. Verificar se computa (prerrogativa/licença/falecimento/desligamento)
-    let computa = true;
-    
-    if (irmao.data_prerrogativa) {
-      const dataPrer = new Date(irmao.data_prerrogativa);
-      if (dataSessao >= dataPrer) computa = false;
-    }
-    if (irmao.data_licenca) {
-      const dataLic = new Date(irmao.data_licenca);
-      if (dataSessao >= dataLic) computa = false;
-    }
-    if (irmao.data_falecimento) {
-      const dataFalec = new Date(irmao.data_falecimento);
-      if (dataSessao >= dataFalec) computa = false;
-    }
-    if (irmao.data_desligamento) {
-      const dataDeslg = new Date(irmao.data_desligamento);
-      if (dataSessao >= dataDeslg) computa = false;
-    }
-
-    // Se NÃO TEM registro
-    if (!reg) {
-      // Se não computa, mostra - (sem obrigação)
-      if (!computa) {
-        return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-            <span className="text-gray-400">-</span>
-          </td>
-        );
-      }
-      // Se computa, mostra ausência (✗ vermelho)
-      return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
-          <span className="text-red-600 text-lg font-bold">✗</span>
-        </td>
-      );
-    }
-
-    // Se TEM registro e não computa
-    if (!computa) {
-      // Se veio (presente), mostra ✓ normal
-      if (reg.presente) {
-        return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
-            <span className="text-green-600 text-lg font-bold">✓</span>
-          </td>
-        );
-      }
-      // Se ausente (não computa), mostra -
-      return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
-        </td>
-      );
-    }
-
-    // Computa normalmente
-    if (reg.presente) {
-      return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
-          <span className="text-green-600 text-lg font-bold">✓</span>
-        </td>
-      );
-    }
-
-    if (reg.justificativa) {
-      return (
-        <td 
-          key={sessaoId} 
-          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
-          title={reg.justificativa}
-        >
-          <span className="text-yellow-600 text-lg font-bold">J</span>
-        </td>
-      );
-    }
-
-    return (
-      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
-        <span className="text-red-600 text-lg font-bold">✗</span>
-      </td>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-8 rounded-lg">
-          <div className="text-center">Carregando grade...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full h-[90vh] max-w-[95vw] flex flex-col">
+    <div className="p-6 max-w-7xl mx-auto">
+      
+      {/* Cabeçalho com Título e Filtros */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard de Presença</h1>
         
-        {/* Cabeçalho */}
-        <div className="bg-blue-600 text-white p-6">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h2 className="text-2xl font-bold">Grade de Presença</h2>
-              <p className="text-sm text-blue-100 mt-1">
-                {sessoes.length} sessões • {irmaos.length} irmãos
-              </p>
-            </div>
-            <button
-              onClick={onFechar}
-              className="hover:bg-blue-700 rounded-full p-2 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+        {/* Seletor de Período */}
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium text-gray-700 min-w-[60px]">Período:</label>
+          <div className="flex gap-3 flex-1">
+            {['mes', 'trimestre', 'semestre', 'ano'].map(p => (
+              <button
+                key={p}
+                onClick={() => definirPeriodo(p)}
+                className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${
+                  periodo === p
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                }`}
+              >
+                {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
+              </button>
+            ))}
           </div>
-
-          {/* Campo de Busca */}
-          <input
-            type="text"
-            placeholder="🔍 Buscar irmão..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="w-full px-4 py-2 rounded text-gray-800 placeholder-gray-500"
-          />
         </div>
 
-        {/* Tabela */}
-        <div className="flex-1 overflow-auto">
-          <table className="w-full border-collapse text-xs">
-            <thead className="bg-gray-100 sticky top-0">
-              <tr>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
-                  Irmão
-                </th>
-                {sessoes.map(s => (
-                  <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
-                    {formatarData(s.data_sessao)}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {irmaos
-                .filter(irmao => 
-                  busca === '' || irmao.nome.toLowerCase().includes(busca.toLowerCase())
-                )
-                .map(irmao => (
-                <tr key={irmao.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
-                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {irmao.situacao === 'licenciado' && irmao.data_licenca && (
-                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
-                          Lic
-                        </span>
-                      )}
-                      {irmao.idade >= 70 && (
-                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
-                          70+
-                        </span>
-                      )}
-                      {irmao.data_falecimento && (
-                        <span className="text-xs bg-gray-200 text-gray-800 px-2 py-0.5 rounded">
-                          †
-                        </span>
-                      )}
-                      {irmao.data_desligamento && (
-                        <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
-                          Deslg
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <p className="mt-3 text-sm text-gray-600">
+          📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
+        </p>
+      </div>
+      {/* Cards Totais */}
+      <div className="grid grid-cols-4 gap-6 mb-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+          <p className="text-blue-600 font-semibold mb-2">Sessões</p>
+          <p className="text-4xl font-bold text-blue-800">{dados.sessoes}</p>
         </div>
-
-        {/* Rodapé */}
-        <div className="bg-gray-50 px-6 py-4 border-t">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+          <p className="text-green-600 font-semibold mb-2">Irmãos</p>
+          <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
+        </div>
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
+          <p className="text-purple-600 font-semibold mb-2">Média Presença</p>
+          <p className="text-4xl font-bold text-purple-800">{dados.mediaPresenca || 0}%</p>
+        </div>
+        <div className="bg-white border border-gray-300 rounded-lg p-6 text-center">
           <button
-            onClick={onFechar}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            onClick={() => setMostrarGrade(true)}
+            className="w-full h-full flex flex-col items-center justify-center hover:bg-gray-50 transition-colors"
           >
-            Fechar
+            <span className="text-3xl mb-2">📊</span>
+            <span className="font-semibold text-gray-700">Matrix Presença</span>
           </button>
         </div>
       </div>
+
+      {/* Quadros lado a lado */}
+      <div className="grid grid-cols-2 gap-6">
+        
+        {/* Quadro: Presença 100% */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-green-600 text-white p-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span>🏆</span>
+              Presença 100%
+            </h3>
+            <select
+              value={anoPresenca100}
+              onChange={(e) => setAnoPresenca100(Number(e.target.value))}
+              className="bg-green-700 text-white px-3 py-1 rounded font-semibold"
+            >
+              {[2025, 2026, 2027, 2028, 2029, 2030].map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
+          </div>
+          <div className="p-4 max-h-96 overflow-y-auto">
+            {resumoAno.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com 100% em {anoPresenca100}</p>
+            ) : (
+              <div className="space-y-2">
+                {resumoAno.map(irmao => (
+                  <div key={irmao.id} className="p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-800">
+                        {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                      </span>
+                      <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                        {irmao.total_sessoes}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-600">
+                      {irmao.aprendiz > 0 && (
+                        <span className="bg-blue-100 px-2 py-1 rounded">
+                          Apr: {irmao.aprendiz}
+                        </span>
+                      )}
+                      {irmao.companheiro > 0 && (
+                        <span className="bg-yellow-100 px-2 py-1 rounded">
+                          Comp: {irmao.companheiro}
+                        </span>
+                      )}
+                      {irmao.mestre > 0 && (
+                        <span className="bg-purple-100 px-2 py-1 rounded">
+                          Mest: {irmao.mestre}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quadro: Ausências acima do percentual configurado */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-orange-600 text-white p-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span>⚠️</span>
+              Ausências
+            </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">≥</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={percentualAlerta}
+                onChange={(e) => setPercentualAlerta(Number(e.target.value))}
+                className="w-16 px-2 py-1 bg-orange-700 text-white rounded font-semibold text-center"
+              />
+              <span className="text-sm">%</span>
+            </div>
+          </div>
+          <div className="p-4 max-h-96 overflow-y-auto">
+            {resumo.filter(i => {
+              const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
+              return percAusencias >= percentualAlerta;
+            }).length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com ≥{percentualAlerta}% ausências</p>
+            ) : (
+              <div className="space-y-2">
+                {resumo
+                  .filter(i => {
+                    const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
+                    return percAusencias >= percentualAlerta;
+                  })
+                  .sort((a, b) => {
+                    const percA = (a.ausentes / a.total_registros) * 100;
+                    const percB = (b.ausentes / b.total_registros) * 100;
+                    return percB - percA;
+                  })
+                  .map(irmao => {
+                    const percAusencias = Math.round((irmao.ausentes / irmao.total_registros) * 100);
+                    return (
+                      <div key={irmao.id} className="flex justify-between items-center p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800">
+                            {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {irmao.ausentes}/{irmao.total_registros}
+                          </p>
+                        </div>
+                        <span className="bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                          {percAusencias}%
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabela - COMENTADA para adicionar quadros
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-gray-800 text-white p-4">
+          <h2 className="text-2xl font-bold">Resumo por Irmão</h2>
+        </div>
+        
+        <table className="min-w-full">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase">Irmão</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Registros</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Presentes</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Ausentes</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Taxa</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {resumo.map(irmao => (
+              <tr key={irmao.id} className="hover:bg-blue-50 transition-colors">
+                <td className="px-6 py-4">
+                  <span className="font-semibold text-gray-900">{irmao.nome}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="text-lg font-bold text-blue-600">{irmao.total_registros}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="text-lg font-bold text-green-600">{irmao.presentes}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="text-lg font-bold text-red-600">{irmao.ausentes}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className={`px-4 py-2 rounded-full font-bold text-sm ${
+                    irmao.taxa >= 90 ? 'bg-green-100 text-green-800' :
+                    irmao.taxa >= 70 ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {irmao.taxa}%
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      */}
+
+      {/* Info */}
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Mostrando dados BRUTOS do banco:</strong> Total geral de sessões, irmãos e registros sem nenhum filtro por período ou grau.
+        </p>
+      </div>
+
+      {/* Modal Grade */}
+      {mostrarGrade && (
+        <ModalGradePresenca onFechar={() => setMostrarGrade(false)} />
+      )}
     </div>
   );
 }
