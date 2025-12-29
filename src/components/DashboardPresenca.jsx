@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import ModalGradePresenca from './ModalGradePresenca';
 
 export default function DashboardPresenca() {
   const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
   const [resumo, setResumo] = useState([]);
+  const [mostrarGrade, setMostrarGrade] = useState(false);
 
   useEffect(() => {
     carregar();
@@ -93,6 +95,16 @@ export default function DashboardPresenca() {
         </div>
       </div>
 
+      {/* Botão Ver Grade */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={() => setMostrarGrade(true)}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors shadow-lg"
+        >
+          📊 Ver Grade de Presença
+        </button>
+      </div>
+
       {/* Tabela */}
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="bg-gray-800 text-white p-4">
@@ -145,6 +157,11 @@ export default function DashboardPresenca() {
           💡 <strong>Mostrando dados BRUTOS do banco:</strong> Total geral de sessões, irmãos e registros sem nenhum filtro por período ou grau.
         </p>
       </div>
+
+      {/* Modal Grade */}
+      {mostrarGrade && (
+        <ModalGradePresenca onFechar={() => setMostrarGrade(false)} />
+      )}
     </div>
   );
 }
