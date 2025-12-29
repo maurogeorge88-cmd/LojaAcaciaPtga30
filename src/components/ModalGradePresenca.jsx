@@ -84,24 +84,22 @@ export default function ModalGradePresenca({ onFechar }) {
         };
       });
 
-      // 3. Para cada irmão, buscar SEUS registros (igual Dashboard)
-      const gradeCompleta = {};
-      
-      for (const irmao of irmaosComFlags || []) {
-        const { data: registrosIrmao } = await supabase
-          .from('registros_presenca')
-          .select('sessao_id, presente, justificativa')
-          .eq('membro_id', irmao.id);
+      // 3. Buscar TODOS os registros de UMA VEZ
+      const { data: todosRegistros } = await supabase
+        .from('registros_presenca')
+        .select('membro_id, sessao_id, presente, justificativa');
 
-        // Criar mapa de registros deste irmão
-        gradeCompleta[irmao.id] = {};
-        registrosIrmao?.forEach(reg => {
-          gradeCompleta[irmao.id][reg.sessao_id] = {
-            presente: reg.presente,
-            justificativa: reg.justificativa
-          };
-        });
-      }
+      // Criar grade agrupando por irmão
+      const gradeCompleta = {};
+      todosRegistros?.forEach(reg => {
+        if (!gradeCompleta[reg.membro_id]) {
+          gradeCompleta[reg.membro_id] = {};
+        }
+        gradeCompleta[reg.membro_id][reg.sessao_id] = {
+          presente: reg.presente,
+          justificativa: reg.justificativa
+        };
+      });
 
       console.log('Grade montada');
 
