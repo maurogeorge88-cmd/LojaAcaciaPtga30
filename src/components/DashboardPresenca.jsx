@@ -69,88 +69,100 @@ export default function DashboardPresenca() {
 
       console.log('🔍 Buscando presença 100% para:', inicioAno, 'até', fimAno);
 
-      // 1. Buscar sessões do ano
-      const { data: sessoesAno, error: errSessoes } = await supabase
+      // 1. Buscar todas as sessões do ano
+      const { data: sessoesAno } = await supabase
         .from('sessoes_presenca')
         .select('*')
         .gte('data_sessao', inicioAno)
         .lte('data_sessao', fimAno);
 
-      console.log('✅ Sessões encontradas:', sessoesAno?.length);
-      console.log('📋 Primeira sessão:', sessoesAno?.[0]);
-      if (errSessoes) console.error('❌ Erro sessões:', errSessoes);
+      console.log('✅ Total sessões no ano:', sessoesAno?.length);
 
       const sessaoIds = sessoesAno?.map(s => s.id) || [];
       if (sessaoIds.length === 0) {
-        console.log('⚠️ Nenhuma sessão no período');
         setResumoAno([]);
         return;
       }
 
-      // 2. Buscar registros
-      const { data: registros, error: errReg } = await supabase
+      // 2. Buscar irmãos com grau
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .eq('status', 'ativo');
+
+      // 3. Buscar todos registros do ano
+      const { data: registros } = await supabase
         .from('registros_presenca')
         .select('membro_id, presente, sessao_id')
         .in('sessao_id', sessaoIds);
 
-      console.log('✅ Registros encontrados:', registros?.length);
-      if (errReg) console.error('❌ Erro registros:', errReg);
-
-      // 3. Buscar nomes dos irmãos
-      const { data: irmaos, error: errIrmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome')
-        .eq('status', 'ativo');
-
-      console.log('✅ Irmãos ativos:', irmaos?.length);
-      if (errIrmaos) console.error('❌ Erro irmãos:', errIrmaos);
-
-      // Mapear tipo de sessão (ajustar nome do campo quando soubermos)
-      const tipoSessao = {};
+      // Mapear sessões por ID
+      const sessoesMap = {};
       sessoesAno?.forEach(s => {
-        // Verificar qual campo tem o tipo
-        tipoSessao[s.id] = s.tipo_sessao || s.tipo || s.grau_sessao || '';
+        sessoesMap[s.id] = s;
       });
 
-      // Agrupar por irmão
-      const grupos = {};
-      registros?.forEach(reg => {
-        if (!grupos[reg.membro_id]) {
-          grupos[reg.membro_id] = {
-            aprendiz: 0,
-            companheiro: 0,
-            mestre: 0,
-            total: 0,
-            presentes: 0
-          };
-        }
-        grupos[reg.membro_id].total++;
-        
-        if (reg.presente) {
-          grupos[reg.membro_id].presentes++;
-          
-          const tipo = tipoSessao[reg.sessao_id] || '';
-          if (tipo.includes('Aprendiz')) grupos[reg.membro_id].aprendiz++;
-          else if (tipo.includes('Companheiro')) grupos[reg.membro_id].companheiro++;
-          else if (tipo.includes('Mestre')) grupos[reg.membro_id].mestre++;
-        }
-      });
-
-      console.log('📊 Grupos processados:', Object.keys(grupos).length);
-
-      // Filtrar 100%
+      // Processar cada irmão
       const com100 = [];
+      
       irmaos?.forEach(irmao => {
-        const g = grupos[irmao.id];
-        if (g && g.total > 0 && g.presentes === g.total) {
-          console.log('🏆 100%:', irmao.nome, '- Total:', g.total, 'Presentes:', g.presentes);
+        // Calcular grau do irmão
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao) grauIrmao = 3;
+        else if (irmao.data_elevacao) grauIrmao = 2;
+        else if (irmao.data_iniciacao) grauIrmao = 1;
+
+        if (grauIrmao === 0) return; // Pula se não tem grau
+
+        // Filtrar sessões ELEGÍVEIS para este irmão baseado no SEU GRAU
+        const sessoesElegiveis = sessoesAno.filter(s => {
+          const tipo = s.tipo || s.tipo_sessao || s.grau_sessao || '';
+          
+          if (grauIrmao === 1) {
+            // Aprendiz: só sessões de Aprendiz (e Administrativa)
+            return tipo.includes('Aprendiz') || tipo.includes('Administrativa');
+          } else if (grauIrmao === 2) {
+            // Companheiro: sessões de Aprendiz + Companheiro (e Administrativa)
+            return tipo.includes('Aprendiz') || tipo.includes('Companheiro') || tipo.includes('Administrativa');
+          } else if (grauIrmao === 3) {
+            // Mestre: TODAS as sessões
+            return true;
+          }
+          return false;
+        });
+
+        const totalElegiveis = sessoesElegiveis.length;
+        if (totalElegiveis === 0) return;
+
+        const idsElegiveis = sessoesElegiveis.map(s => s.id);
+
+        // Contar presenças do irmão APENAS nas sessões elegíveis
+        let presentes = 0;
+        let aprendiz = 0, companheiro = 0, mestre = 0;
+
+        registros?.forEach(reg => {
+          if (reg.membro_id === irmao.id && reg.presente && idsElegiveis.includes(reg.sessao_id)) {
+            presentes++;
+            
+            const sessao = sessoesMap[reg.sessao_id];
+            const tipo = sessao?.tipo || sessao?.tipo_sessao || sessao?.grau_sessao || '';
+            
+            if (tipo.includes('Aprendiz')) aprendiz++;
+            else if (tipo.includes('Companheiro')) companheiro++;
+            else if (tipo.includes('Mestre')) mestre++;
+          }
+        });
+
+        // Verificar se tem 100% (presentes = elegíveis)
+        if (presentes === totalElegiveis && presentes > 0) {
+          console.log('🏆 100%:', irmao.nome, 'Grau:', grauIrmao, '- Elegíveis:', totalElegiveis, 'Presentes:', presentes);
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
-            total_sessoes: g.total,
-            aprendiz: g.aprendiz,
-            companheiro: g.companheiro,
-            mestre: g.mestre
+            total_sessoes: totalElegiveis,
+            aprendiz,
+            companheiro,
+            mestre
           });
         }
       });
