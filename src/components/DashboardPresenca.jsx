@@ -199,7 +199,7 @@ export default function DashboardPresenca() {
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard de Presença</h1>
         
         {/* Seletor de Período */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4">
           <label className="font-semibold text-gray-700">Período:</label>
           <div className="flex gap-2">
             {['mes', 'trimestre', 'semestre', 'ano'].map(p => (
@@ -218,23 +218,7 @@ export default function DashboardPresenca() {
           </div>
         </div>
 
-        {/* Controle de Percentual de Alerta */}
-        <div className="flex items-center gap-4">
-          <label className="font-semibold text-gray-700">% Alerta de Ausência:</label>
-          <input
-            type="number"
-            min="0"
-            max="100"
-            value={percentualAlerta}
-            onChange={(e) => setPercentualAlerta(Number(e.target.value))}
-            className="w-20 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-          <span className="text-sm text-gray-600">
-            (Irmãos com {percentualAlerta}% ou mais de ausências)
-          </span>
-        </div>
-
-        <p className="mt-4 text-sm text-gray-600">
+        <p className="mt-3 text-sm text-gray-600">
           📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
         </p>
       </div>
@@ -249,8 +233,8 @@ export default function DashboardPresenca() {
           <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
         </div>
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
-          <p className="text-purple-600 font-semibold mb-2">Registros</p>
-          <p className="text-4xl font-bold text-purple-800">{dados.registros}</p>
+          <p className="text-purple-600 font-semibold mb-2">Média Presença</p>
+          <p className="text-4xl font-bold text-purple-800">{dados.mediaPresenca || 0}%</p>
         </div>
         <div className="bg-white border border-gray-300 rounded-lg p-6 text-center">
           <button
@@ -268,22 +252,33 @@ export default function DashboardPresenca() {
         
         {/* Quadro: Presença 100% */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-green-600 text-white p-4">
+          <div className="bg-green-600 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>🏆</span>
               Presença 100%
             </h3>
+            <select
+              value={anoPresenca100}
+              onChange={(e) => setAnoPresenca100(Number(e.target.value))}
+              className="bg-green-700 text-white px-3 py-1 rounded font-semibold"
+            >
+              {[2025, 2026, 2027, 2028, 2029, 2030].map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
-            {resumo.filter(i => i.taxa === 100).length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com 100%</p>
+            {resumoAno.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com 100% em {anoPresenca100}</p>
             ) : (
               <div className="space-y-2">
-                {resumo.filter(i => i.taxa === 100).map(irmao => (
+                {resumoAno.map(irmao => (
                   <div key={irmao.id} className="flex justify-between items-center p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
-                    <span className="font-medium text-gray-800">{irmao.nome}</span>
+                    <span className="font-medium text-gray-800">
+                      {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                    </span>
                     <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
-                      {irmao.total_registros}
+                      {irmao.total_sessoes}
                     </span>
                   </div>
                 ))}
@@ -294,18 +289,30 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Ausências acima do percentual configurado */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-orange-600 text-white p-4">
+          <div className="bg-orange-600 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>⚠️</span>
-              Ausências ≥ {percentualAlerta}%
+              Ausências
             </h3>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">≥</span>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={percentualAlerta}
+                onChange={(e) => setPercentualAlerta(Number(e.target.value))}
+                className="w-16 px-2 py-1 bg-orange-700 text-white rounded font-semibold text-center"
+              />
+              <span className="text-sm">%</span>
+            </div>
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
             {resumo.filter(i => {
               const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
               return percAusencias >= percentualAlerta;
             }).length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com {percentualAlerta}% ou mais de ausências</p>
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com ≥{percentualAlerta}% ausências</p>
             ) : (
               <div className="space-y-2">
                 {resumo
@@ -322,10 +329,12 @@ export default function DashboardPresenca() {
                     const percAusencias = Math.round((irmao.ausentes / irmao.total_registros) * 100);
                     return (
                       <div key={irmao.id} className="flex justify-between items-center p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors">
-                        <div>
-                          <p className="font-medium text-gray-800">{irmao.nome}</p>
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-800">
+                            {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                          </p>
                           <p className="text-sm text-gray-600">
-                            {irmao.ausentes} ausências de {irmao.total_registros}
+                            {irmao.ausentes}/{irmao.total_registros}
                           </p>
                         </div>
                         <span className="bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
