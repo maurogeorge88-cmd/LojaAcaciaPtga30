@@ -84,20 +84,39 @@ export default function ModalGradePresenca({ onFechar }) {
         };
       });
 
-      // 3. Buscar registros APENAS das sessões exibidas (aumentar limite)
+      // 3. Buscar TODOS os registros em lotes (paginação)
       const sessaoIds = sessoesData?.map(s => s.id) || [];
       
-      const { data: todosRegistros } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, sessao_id, presente, justificativa')
-        .in('sessao_id', sessaoIds)
-        .limit(5000);
+      let todosRegistros = [];
+      let inicio = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
 
-      console.log('📊 Registros carregados:', todosRegistros?.length);
+      while (continuar) {
+        const { data: lote } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, sessao_id, presente, justificativa')
+          .in('sessao_id', sessaoIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (lote && lote.length > 0) {
+          todosRegistros = [...todosRegistros, ...lote];
+          inicio += tamanhoPagina;
+          
+          // Se retornou menos que o tamanho da página, acabou
+          if (lote.length < tamanhoPagina) {
+            continuar = false;
+          }
+        } else {
+          continuar = false;
+        }
+      }
+
+      console.log('📊 Registros carregados:', todosRegistros.length);
 
       // Criar grade agrupando por irmão
       const gradeCompleta = {};
-      todosRegistros?.forEach(reg => {
+      todosRegistros.forEach(reg => {
         if (!gradeCompleta[reg.membro_id]) {
           gradeCompleta[reg.membro_id] = {};
         }
