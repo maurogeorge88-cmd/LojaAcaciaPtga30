@@ -224,7 +224,7 @@ export default function DashboardPresenca() {
       // 3. Buscar irmãos com datas
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso_loja')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso_loja, data_falecimento')
         .eq('status', 'ativo');
 
       // 4. Buscar registros com paginação
@@ -356,6 +356,9 @@ export default function DashboardPresenca() {
       const licenciados = [];
 
       irmaos?.forEach(irmao => {
+        // Ignorar falecidos
+        if (irmao.data_falecimento) return;
+
         const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
         const temPrerrogativa = idade >= 70;
         const estaLicenciado = irmao.data_licenca !== null;
