@@ -67,52 +67,40 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPresenca100}-01-01`;
       const fimAno = `${anoPresenca100}-12-31`;
 
-      const { data: sessoesAno } = await supabase
-        .from('sessoes_presenca')
-        .select('id')
-        .gte('data_sessao', inicioAno)
-        .lte('data_sessao', fimAno);
+      // Query ÚNICA com JOIN e agregação
+      const { data: resumoCompleto } = await supabase
+        .from('registros_presenca')
+        .select(`
+          membro_id,
+          presente,
+          irmaos!inner(nome),
+          sessoes_presenca!inner(data_sessao)
+        `)
+        .gte('sessoes_presenca.data_sessao', inicioAno)
+        .lte('sessoes_presenca.data_sessao', fimAno)
+        .eq('irmaos.status', 'ativo');
 
-      const sessaoIdsAno = sessoesAno?.map(s => s.id) || [];
-
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome')
-        .eq('status', 'ativo')
-        .order('nome');
-
-      const resumoAnoCompleto = [];
-      
-      for (const irmao of irmaos || []) {
-        if (sessaoIdsAno.length === 0) continue;
-
-        const { count: total } = await supabase
-          .from('registros_presenca')
-          .select('*', { count: 'exact', head: true })
-          .eq('membro_id', irmao.id)
-          .in('sessao_id', sessaoIdsAno);
-
-        const { count: presentes } = await supabase
-          .from('registros_presenca')
-          .select('*', { count: 'exact', head: true })
-          .eq('membro_id', irmao.id)
-          .eq('presente', true)
-          .in('sessao_id', sessaoIdsAno);
-
-        const totalRegs = total || 0;
-        const pres = presentes || 0;
-        const taxa = totalRegs > 0 ? Math.round((pres / totalRegs) * 100) : 0;
-
-        if (taxa === 100 && totalRegs > 0) {
-          resumoAnoCompleto.push({
-            id: irmao.id,
-            nome: irmao.nome,
-            total_sessoes: totalRegs
-          });
+      // Agrupar por irmão
+      const grupos = {};
+      resumoCompleto?.forEach(reg => {
+        if (!grupos[reg.membro_id]) {
+          grupos[reg.membro_id] = {
+            id: reg.membro_id,
+            nome: reg.irmaos.nome,
+            total: 0,
+            presentes: 0
+          };
         }
-      }
+        grupos[reg.membro_id].total++;
+        if (reg.presente) grupos[reg.membro_id].presentes++;
+      });
 
-      setResumoAno(resumoAnoCompleto);
+      // Filtrar 100%
+      const com100 = Object.values(grupos)
+        .filter(g => g.total > 0 && g.presentes === g.total)
+        .map(g => ({ id: g.id, nome: g.nome, total_sessoes: g.total }));
+
+      setResumoAno(com100);
 
     } catch (error) {
       console.error('Erro ao carregar resumo do ano:', error);
@@ -122,13 +110,11 @@ export default function DashboardPresenca() {
   const carregar = async () => {
     try {
       // 1. Contar sessões DO PERÍODO
-      const { data: sessoesData, count: totalSessoes } = await supabase
+      const { count: totalSessoes } = await supabase
         .from('sessoes_presenca')
-        .select('*', { count: 'exact' })
+        .select('*', { count: 'exact', head: true })
         .gte('data_sessao', dataInicio)
         .lte('data_sessao', dataFim);
-
-      const sessaoIds = sessoesData?.map(s => s.id) || [];
 
       // 2. Contar irmãos ativos
       const { count: totalIrmaos } = await supabase
@@ -136,56 +122,44 @@ export default function DashboardPresenca() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'ativo');
 
-      // 4. Buscar resumo por irmão DO PERÍODO
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome')
-        .eq('status', 'ativo')
-        .order('nome');
+      // 3. Query ÚNICA com JOIN e agregação
+      const { data: registros } = await supabase
+        .from('registros_presenca')
+        .select(`
+          membro_id,
+          presente,
+          irmaos!inner(nome),
+          sessoes_presenca!inner(data_sessao)
+        `)
+        .gte('sessoes_presenca.data_sessao', dataInicio)
+        .lte('sessoes_presenca.data_sessao', dataFim)
+        .eq('irmaos.status', 'ativo');
 
-      const resumoCompleto = [];
-      let somaPresencas = 0;
-      let totalComRegistros = 0;
-
-      for (const irmao of irmaos || []) {
-        let totalRegs = 0;
-        let presentes = 0;
-
-        if (sessaoIds.length > 0) {
-          const { count: total } = await supabase
-            .from('registros_presenca')
-            .select('*', { count: 'exact', head: true })
-            .eq('membro_id', irmao.id)
-            .in('sessao_id', sessaoIds);
-          totalRegs = total || 0;
-
-          const { count: pres } = await supabase
-            .from('registros_presenca')
-            .select('*', { count: 'exact', head: true })
-            .eq('membro_id', irmao.id)
-            .eq('presente', true)
-            .in('sessao_id', sessaoIds);
-          presentes = pres || 0;
+      // Agrupar por irmão
+      const grupos = {};
+      registros?.forEach(reg => {
+        if (!grupos[reg.membro_id]) {
+          grupos[reg.membro_id] = {
+            id: reg.membro_id,
+            nome: reg.irmaos.nome,
+            total_registros: 0,
+            presentes: 0
+          };
         }
+        grupos[reg.membro_id].total_registros++;
+        if (reg.presente) grupos[reg.membro_id].presentes++;
+      });
 
-        const ausentes = totalRegs - presentes;
-        const taxa = totalRegs > 0 ? Math.round((presentes / totalRegs) * 100) : 0;
+      // Calcular taxas
+      const resumoCompleto = Object.values(grupos).map(g => ({
+        ...g,
+        ausentes: g.total_registros - g.presentes,
+        taxa: g.total_registros > 0 ? Math.round((g.presentes / g.total_registros) * 100) : 0
+      }));
 
-        resumoCompleto.push({
-          id: irmao.id,
-          nome: irmao.nome,
-          total_registros: totalRegs,
-          presentes,
-          ausentes,
-          taxa
-        });
-
-        if (totalRegs > 0) {
-          somaPresencas += taxa;
-          totalComRegistros++;
-        }
-      }
-
+      // Média de presença
+      const somaPresencas = resumoCompleto.reduce((sum, r) => sum + r.taxa, 0);
+      const totalComRegistros = resumoCompleto.filter(r => r.total_registros > 0).length;
       const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
 
       setDados({
