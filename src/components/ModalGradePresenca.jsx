@@ -166,6 +166,17 @@ export default function ModalGradePresenca({ onFechar }) {
     const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
     const dataInicio = dataIniciacao || dataIngresso;
     
+    // Debug para Michel
+    if (irmao.nome.includes('Michel')) {
+      console.log('Michel:', {
+        sessao: sessao.data_sessao,
+        dataIniciacao,
+        dataIngresso,
+        dataInicio,
+        antes: dataInicio && dataSessao < dataInicio
+      });
+    }
+    
     if (dataInicio && dataSessao < dataInicio) {
       // Sessão antes de iniciar/ingressar → não se aplica
       return (
