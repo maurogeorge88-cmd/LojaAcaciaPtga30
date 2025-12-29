@@ -105,7 +105,67 @@ export default function DashboardPresenca() {
         </button>
       </div>
 
-      {/* Tabela */}
+      {/* Quadros lado a lado */}
+      <div className="grid grid-cols-2 gap-6">
+        
+        {/* Quadro: Presença 100% */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-green-600 text-white p-4 flex items-center gap-2">
+            <span className="text-2xl">🏆</span>
+            <h3 className="text-xl font-bold">Presença 100%</h3>
+          </div>
+          <div className="p-4">
+            {resumo.filter(i => i.taxa === 100).length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com 100% de presença</p>
+            ) : (
+              <div className="space-y-2">
+                {resumo.filter(i => i.taxa === 100).map(irmao => (
+                  <div key={irmao.id} className="flex justify-between items-center p-3 bg-green-50 rounded-lg hover:bg-green-100 transition-colors">
+                    <span className="font-semibold text-gray-800">{irmao.nome}</span>
+                    <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                      {irmao.total_registros} sessões
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quadro: Baixa Frequência */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-red-600 text-white p-4 flex items-center gap-2">
+            <span className="text-2xl">⚠️</span>
+            <h3 className="text-xl font-bold">Baixa Frequência (&lt;70%)</h3>
+          </div>
+          <div className="p-4">
+            {resumo.filter(i => i.taxa < 70 && i.total_registros > 0).length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com frequência abaixo de 70%</p>
+            ) : (
+              <div className="space-y-2">
+                {resumo
+                  .filter(i => i.taxa < 70 && i.total_registros > 0)
+                  .sort((a, b) => a.taxa - b.taxa)
+                  .map(irmao => (
+                    <div key={irmao.id} className="flex justify-between items-center p-3 bg-red-50 rounded-lg hover:bg-red-100 transition-colors">
+                      <div>
+                        <p className="font-semibold text-gray-800">{irmao.nome}</p>
+                        <p className="text-sm text-gray-600">
+                          {irmao.presentes}P / {irmao.ausentes}A de {irmao.total_registros}
+                        </p>
+                      </div>
+                      <span className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+                        {irmao.taxa}%
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabela - COMENTADA para adicionar quadros
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="bg-gray-800 text-white p-4">
           <h2 className="text-2xl font-bold">Resumo por Irmão</h2>
@@ -150,6 +210,7 @@ export default function DashboardPresenca() {
           </tbody>
         </table>
       </div>
+      */}
 
       {/* Info */}
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
