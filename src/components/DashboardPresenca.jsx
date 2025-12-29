@@ -47,13 +47,15 @@ export default function DashboardPresenca() {
 
   const carregar = async () => {
     try {
-      // 1. Contar sessões DO PERÍODO
-      const { data: sessoesData, count: totalSessoes } = await supabase
+      // 1. Buscar sessões DO PERÍODO (SEM JOIN)
+      const { data: sessoesData } = await supabase
         .from('sessoes_presenca')
-        .select('*, graus_sessao:grau_sessao_id(nome)', { count: 'exact' })
+        .select('id, data_sessao, grau_sessao_id')
         .gte('data_sessao', dataInicio)
         .lte('data_sessao', dataFim)
         .order('data_sessao', { ascending: false });
+
+      const totalSessoes = sessoesData?.length || 0;
 
       // 2. Contar irmãos ativos
       const { count: totalIrmaos } = await supabase
@@ -82,8 +84,24 @@ export default function DashboardPresenca() {
         registros: totalRegistros
       });
 
-      // 4. Sessões recentes (últimas 5)
-      setSessoesRecentes(sessoesData?.slice(0, 5) || []);
+      // 4. Sessões recentes (últimas 5) - buscar graus separadamente
+      const recentes = sessoesData?.slice(0, 5) || [];
+      const recentesComGrau = [];
+      
+      for (const s of recentes) {
+        const { data: grauData } = await supabase
+          .from('graus_sessao')
+          .select('nome')
+          .eq('id', s.grau_sessao_id)
+          .single();
+        
+        recentesComGrau.push({
+          ...s,
+          grau_nome: grauData?.nome || 'Sem grau'
+        });
+      }
+      
+      setSessoesRecentes(recentesComGrau);
 
       // 5. Buscar resumo por irmão
       const { data: irmaos } = await supabase
@@ -194,7 +212,7 @@ export default function DashboardPresenca() {
                           year: 'numeric' 
                         })}
                       </p>
-                      <p className="text-sm text-gray-600">{s.graus_sessao?.nome}</p>
+                      <p className="text-sm text-gray-600">{s.grau_nome}</p>
                     </div>
                   </li>
                 ))}
