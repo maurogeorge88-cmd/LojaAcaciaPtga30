@@ -24,17 +24,41 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Sessões:', sessoesData?.length);
 
-      // 2. Buscar TODOS os irmãos ativos
+      // 2. Buscar TODOS os irmãos (incluir falecidos/desligados do mês atual)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_licenca, situacao')
-        .eq('status', 'ativo')
+        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, situacao, status')
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
 
+      // Filtrar: remover falecidos/desligados de MESES ANTERIORES
+      const hoje = new Date();
+      const mesAtual = hoje.getMonth();
+      const anoAtual = hoje.getFullYear();
+
+      const irmaosValidos = irmaosData.filter(i => {
+        if (i.data_falecimento) {
+          const dataFalec = new Date(i.data_falecimento);
+          // Se faleceu em mês anterior, remove
+          if (dataFalec.getFullYear() < anoAtual || 
+             (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
+            return false;
+          }
+        }
+        if (i.data_desligamento) {
+          const dataDeslg = new Date(i.data_desligamento);
+          // Se desligou em mês anterior, remove
+          if (dataDeslg.getFullYear() < anoAtual || 
+             (dataDeslg.getFullYear() === anoAtual && dataDeslg.getMonth() < mesAtual)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
       // Adicionar flags de prerrogativa
-      const irmaosComFlags = irmaosData.map(i => {
+      const irmaosComFlags = irmaosValidos.map(i => {
         let idade = null;
         let dataPrerrogativa = null;
         
@@ -104,7 +128,7 @@ export default function ModalGradePresenca({ onFechar }) {
     const irmao = irmaos.find(i => i.id === irmaoId);
     const sessao = sessoes.find(s => s.id === sessaoId);
     
-    // Verificar se computa (antes de prerrogativa/licença)
+    // Verificar se computa (antes de prerrogativa/licença/falecimento/desligamento)
     let computa = true;
     if (irmao && sessao) {
       const dataSessao = new Date(sessao.data_sessao);
@@ -113,6 +137,12 @@ export default function ModalGradePresenca({ onFechar }) {
         computa = false;
       }
       if (irmao.data_licenca && dataSessao >= new Date(irmao.data_licenca)) {
+        computa = false;
+      }
+      if (irmao.data_falecimento && dataSessao >= new Date(irmao.data_falecimento)) {
+        computa = false;
+      }
+      if (irmao.data_desligamento && dataSessao >= new Date(irmao.data_desligamento)) {
         computa = false;
       }
     }
