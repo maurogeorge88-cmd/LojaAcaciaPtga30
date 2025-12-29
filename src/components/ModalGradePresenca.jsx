@@ -27,11 +27,38 @@ export default function ModalGradePresenca({ onFechar }) {
       // 2. Buscar TODOS os irmãos ativos
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome')
+        .select('id, nome, data_nascimento, data_licenca, situacao')
         .eq('status', 'ativo')
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
+
+      // Adicionar flags de prerrogativa
+      const irmaosComFlags = irmaosData.map(i => {
+        let idade = null;
+        let dataPrerrogativa = null;
+        
+        if (i.data_nascimento) {
+          const nasc = new Date(i.data_nascimento);
+          const hoje = new Date();
+          idade = hoje.getFullYear() - nasc.getFullYear();
+          if (hoje.getMonth() < nasc.getMonth() || 
+             (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) {
+            idade--;
+          }
+          
+          if (idade >= 70) {
+            dataPrerrogativa = new Date(nasc);
+            dataPrerrogativa.setFullYear(nasc.getFullYear() + 70);
+          }
+        }
+        
+        return {
+          ...i,
+          idade,
+          data_prerrogativa: dataPrerrogativa
+        };
+      });
 
       // 3. Para cada irmão, buscar SEUS registros (igual Dashboard)
       const gradeCompleta = {};
@@ -55,7 +82,7 @@ export default function ModalGradePresenca({ onFechar }) {
       console.log('Grade montada');
 
       setSessoes(sessoesData || []);
-      setIrmaos(irmaosData || []);
+      setIrmaos(irmaosComFlags || []);
       setGrade(gradeCompleta);
 
     } catch (error) {
@@ -74,6 +101,21 @@ export default function ModalGradePresenca({ onFechar }) {
 
   const renderizarCelula = (irmaoId, sessaoId) => {
     const reg = grade[irmaoId]?.[sessaoId];
+    const irmao = irmaos.find(i => i.id === irmaoId);
+    const sessao = sessoes.find(s => s.id === sessaoId);
+    
+    // Verificar se computa (antes de prerrogativa/licença)
+    let computa = true;
+    if (irmao && sessao) {
+      const dataSessao = new Date(sessao.data_sessao);
+      
+      if (irmao.data_prerrogativa && dataSessao >= new Date(irmao.data_prerrogativa)) {
+        computa = false;
+      }
+      if (irmao.data_licenca && dataSessao >= new Date(irmao.data_licenca)) {
+        computa = false;
+      }
+    }
 
     if (!reg) {
       return (
@@ -83,6 +125,25 @@ export default function ModalGradePresenca({ onFechar }) {
       );
     }
 
+    // Se não computa
+    if (!computa) {
+      // Se veio (presente), mostra ✓ normal
+      if (reg.presente) {
+        return (
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+            <span className="text-green-600 text-lg font-bold">✓</span>
+          </td>
+        );
+      }
+      // Se ausente (não computa), mostra -
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    // Computa normalmente
     if (reg.presente) {
       return (
         <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
@@ -176,7 +237,19 @@ export default function ModalGradePresenca({ onFechar }) {
                 .map(irmao => (
                 <tr key={irmao.id} className="hover:bg-gray-50">
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
-                    {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {irmao.situacao === 'licenciado' && irmao.data_licenca && (
+                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                          Lic
+                        </span>
+                      )}
+                      {irmao.idade >= 70 && (
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                          70+
+                        </span>
+                      )}
+                    </div>
                   </td>
                   {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
                 </tr>
