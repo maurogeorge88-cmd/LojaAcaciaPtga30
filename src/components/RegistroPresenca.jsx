@@ -47,11 +47,10 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       console.log('🔍 DEBUG - Tipo sessão:', tipoSessao);
       console.log('🔍 DEBUG - Data sessão:', sessaoData.data_sessao);
 
-      // Buscar TODOS os irmãos ativos
+      // Buscar TODOS os irmãos (incluir falecidos/desligados)
       const { data: todosIrmaos, error: irmaosError } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_desligamento, data_falecimento, data_nascimento, data_licenca, situacao, status')
-        .eq('status', 'ativo')
         .order('nome');
 
       if (irmaosError) {
@@ -61,10 +60,22 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
       console.log('✅ Total de irmãos ativos:', todosIrmaos?.length);
 
-      // Filtrar manualmente (não usar .is() que pode dar problema)
-      const irmaosAtivosVivos = todosIrmaos.filter(i => 
-        !i.data_desligamento && !i.data_falecimento
-      );
+      // Filtrar por data da sessão
+      const dataSessaoObj = new Date(sessaoData.data_sessao);
+      
+      const irmaosAtivosVivos = todosIrmaos.filter(i => {
+        // Se tem data de falecimento, só aparece se sessão for ANTES
+        if (i.data_falecimento) {
+          const dataFalec = new Date(i.data_falecimento);
+          if (dataSessaoObj >= dataFalec) return false;
+        }
+        // Se tem data de desligamento, só aparece se sessão for ANTES
+        if (i.data_desligamento) {
+          const dataDeslg = new Date(i.data_desligamento);
+          if (dataSessaoObj >= dataDeslg) return false;
+        }
+        return true;
+      });
 
       console.log('✅ Irmãos ativos e vivos:', irmaosAtivosVivos.length);
 
