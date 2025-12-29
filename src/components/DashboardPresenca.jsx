@@ -67,8 +67,8 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPresenca100}-01-01`;
       const fimAno = `${anoPresenca100}-12-31`;
 
-      // Query ÚNICA com JOIN e agregação (incluindo tipo de sessão)
-      const { data: resumoCompleto } = await supabase
+      // Query com todas presenças E ausências
+      const { data: todosRegistros } = await supabase
         .from('registros_presenca')
         .select(`
           membro_id,
@@ -78,12 +78,11 @@ export default function DashboardPresenca() {
         `)
         .gte('sessoes_presenca.data_sessao', inicioAno)
         .lte('sessoes_presenca.data_sessao', fimAno)
-        .eq('irmaos.status', 'ativo')
-        .eq('presente', true);
+        .eq('irmaos.status', 'ativo');
 
       // Agrupar por irmão
       const grupos = {};
-      resumoCompleto?.forEach(reg => {
+      todosRegistros?.forEach(reg => {
         if (!grupos[reg.membro_id]) {
           grupos[reg.membro_id] = {
             id: reg.membro_id,
@@ -91,28 +90,26 @@ export default function DashboardPresenca() {
             aprendiz: 0,
             companheiro: 0,
             mestre: 0,
-            total: 0
+            total: 0,
+            presentes: 0
           };
         }
         grupos[reg.membro_id].total++;
         
-        // Contar por tipo
-        const tipo = reg.sessoes_presenca.tipo_sessao || '';
-        if (tipo.includes('Aprendiz')) grupos[reg.membro_id].aprendiz++;
-        else if (tipo.includes('Companheiro')) grupos[reg.membro_id].companheiro++;
-        else if (tipo.includes('Mestre')) grupos[reg.membro_id].mestre++;
+        if (reg.presente) {
+          grupos[reg.membro_id].presentes++;
+          
+          // Contar por tipo
+          const tipo = reg.sessoes_presenca.tipo_sessao || '';
+          if (tipo.includes('Aprendiz')) grupos[reg.membro_id].aprendiz++;
+          else if (tipo.includes('Companheiro')) grupos[reg.membro_id].companheiro++;
+          else if (tipo.includes('Mestre')) grupos[reg.membro_id].mestre++;
+        }
       });
 
-      // Buscar total de sessões do ano para verificar 100%
-      const { count: totalSessoesAno } = await supabase
-        .from('sessoes_presenca')
-        .select('*', { count: 'exact', head: true })
-        .gte('data_sessao', inicioAno)
-        .lte('data_sessao', fimAno);
-
-      // Filtrar apenas quem tem 100% (comparar com total de sessões)
+      // Filtrar apenas quem tem 100% (presentes = total)
       const com100 = Object.values(grupos)
-        .filter(g => g.total === totalSessoesAno && g.total > 0)
+        .filter(g => g.total > 0 && g.presentes === g.total)
         .map(g => ({ 
           id: g.id, 
           nome: g.nome, 
@@ -206,16 +203,16 @@ export default function DashboardPresenca() {
         
         {/* Seletor de Período */}
         <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-600">Período:</label>
-          <div className="flex gap-2">
+          <label className="text-sm font-medium text-gray-700 min-w-[60px]">Período:</label>
+          <div className="flex gap-3 flex-1">
             {['mes', 'trimestre', 'semestre', 'ano'].map(p => (
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${
                   periodo === p
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50'
                 }`}
               >
                 {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
