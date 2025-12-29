@@ -87,7 +87,7 @@ export default function ModalGradePresenca({ onFechar }) {
       // 3. Para cada irmão, buscar SEUS registros (igual Dashboard)
       const gradeCompleta = {};
       
-      for (const irmao of irmaosData || []) {
+      for (const irmao of irmaosComFlags || []) {
         const { data: registrosIrmao } = await supabase
           .from('registros_presenca')
           .select('sessao_id, presente, justificativa')
