@@ -106,68 +106,83 @@ export default function DashboardPresenca() {
       const com100 = [];
       
       irmaos?.forEach(irmao => {
-        // Calcular grau do irmão
-        let grauIrmao = 0;
-        if (irmao.data_exaltacao) grauIrmao = 3;
-        else if (irmao.data_elevacao) grauIrmao = 2;
-        else if (irmao.data_iniciacao) grauIrmao = 1;
+        // Determinar grau ATUAL e data correspondente
+        let grauAtual = 0;
+        let dataGrauAtual = null;
+        
+        if (irmao.data_exaltacao) {
+          grauAtual = 3;
+          dataGrauAtual = new Date(irmao.data_exaltacao);
+        } else if (irmao.data_elevacao) {
+          grauAtual = 2;
+          dataGrauAtual = new Date(irmao.data_elevacao);
+        } else if (irmao.data_iniciacao) {
+          grauAtual = 1;
+          dataGrauAtual = new Date(irmao.data_iniciacao);
+        }
 
-        if (grauIrmao === 0) return; // Pula se não tem grau
+        if (grauAtual === 0 || !dataGrauAtual) return;
 
-        // Filtrar sessões ELEGÍVEIS para este irmão baseado no SEU GRAU
-        const sessoesElegiveis = sessoesAno.filter(s => {
+        // Filtrar sessões: APÓS data do grau E do tipo permitido
+        const sessoesAplicaveis = sessoesAno.filter(s => {
+          const dataSessao = new Date(s.data_sessao);
+          
+          // Sessão ANTES da data do grau? Não aplica
+          if (dataSessao < dataGrauAtual) return false;
+          
           const tipo = s.tipo || s.tipo_sessao || s.grau_sessao || '';
           
-          if (grauIrmao === 1) {
-            // Aprendiz: só sessões de Aprendiz (e Administrativa)
+          // Aprendiz: só sessões Aprendiz
+          if (grauAtual === 1) {
             return tipo.includes('Aprendiz') || tipo.includes('Administrativa');
-          } else if (grauIrmao === 2) {
-            // Companheiro: sessões de Aprendiz + Companheiro (e Administrativa)
+          }
+          
+          // Companheiro: Aprendiz + Companheiro
+          if (grauAtual === 2) {
             return tipo.includes('Aprendiz') || tipo.includes('Companheiro') || tipo.includes('Administrativa');
-          } else if (grauIrmao === 3) {
-            // Mestre: TODAS as sessões
+          }
+          
+          // Mestre: TODAS
+          if (grauAtual === 3) {
             return true;
           }
+          
           return false;
         });
 
-        const totalElegiveis = sessoesElegiveis.length;
-        if (totalElegiveis === 0) return;
+        const totalAplicaveis = sessoesAplicaveis.length;
+        if (totalAplicaveis === 0) return;
 
-        const idsElegiveis = sessoesElegiveis.map(s => s.id);
-
-        // Contar PRESENÇAS percorrendo TODAS as sessões elegíveis
+        // Contar presenças
         let presentes = 0;
         let aprendiz = 0, companheiro = 0, mestre = 0;
 
-        idsElegiveis.forEach(sessaoId => {
-          const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === sessaoId);
+        sessoesAplicaveis.forEach(sessao => {
+          const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === sessao.id);
           
           if (reg && reg.presente) {
             presentes++;
             
-            const sessao = sessoesMap[sessaoId];
-            const tipo = sessao?.tipo || sessao?.tipo_sessao || sessao?.grau_sessao || '';
-            
+            const tipo = sessao.tipo || sessao.tipo_sessao || sessao.grau_sessao || '';
             if (tipo.includes('Aprendiz')) aprendiz++;
             else if (tipo.includes('Companheiro')) companheiro++;
             else if (tipo.includes('Mestre')) mestre++;
           }
         });
 
-        // Log para Mauro, Deni, Robison
+        // Debug
         if (irmao.nome.includes('Mauro') || irmao.nome.includes('Deni') || irmao.nome.includes('Robison')) {
-          console.log('👤', irmao.nome, 'Grau:', grauIrmao);
-          console.log('   Total elegíveis:', totalElegiveis, 'Presentes:', presentes);
+          console.log('👤', irmao.nome, '| Grau:', grauAtual, '| Data:', dataGrauAtual.toLocaleDateString());
+          console.log('   Aplicáveis:', totalAplicaveis, '| Presentes:', presentes);
         }
 
-        // Verificar se tem 100% (presentes = total elegíveis)
-        if (presentes === totalElegiveis && presentes > 0) {
-          console.log('🏆 100%:', irmao.nome, 'Grau:', grauIrmao, '- Elegíveis:', totalElegiveis, 'Presentes:', presentes);
+        // 100% = presentes em TODAS aplicáveis
+        if (presentes === totalAplicaveis && presentes > 0) {
+          console.log('🏆', irmao.nome, '- 100% com', presentes, 'presenças');
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
-            total_sessoes: totalElegiveis,
+            total_sessoes: totalAplicaveis,
             aprendiz,
             companheiro,
             mestre
