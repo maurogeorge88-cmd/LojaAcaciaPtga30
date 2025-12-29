@@ -5,9 +5,11 @@ import ModalGradePresenca from './ModalGradePresenca';
 export default function DashboardPresenca() {
   const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
   const [resumo, setResumo] = useState([]);
+  const [resumoAno, setResumoAno] = useState([]);
   const [mostrarGrade, setMostrarGrade] = useState(false);
   const [periodo, setPeriodo] = useState('ano');
   const [percentualAlerta, setPercentualAlerta] = useState(30);
+  const [anoPresenca100, setAnoPresenca100] = useState(2025);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
 
@@ -20,6 +22,10 @@ export default function DashboardPresenca() {
       carregar();
     }
   }, [dataInicio, dataFim]);
+
+  useEffect(() => {
+    carregarResumoAno();
+  }, [anoPresenca100]);
 
   const definirPeriodo = (p) => {
     setPeriodo(p);
@@ -46,6 +52,63 @@ export default function DashboardPresenca() {
     setDataFim(fim.toISOString().split('T')[0]);
   };
 
+  const carregarResumoAno = async () => {
+    try {
+      const inicioAno = `${anoPresenca100}-01-01`;
+      const fimAno = `${anoPresenca100}-12-31`;
+
+      const { data: sessoesAno } = await supabase
+        .from('sessoes_presenca')
+        .select('id')
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      const sessaoIdsAno = sessoesAno?.map(s => s.id) || [];
+
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome')
+        .eq('status', 'ativo')
+        .order('nome');
+
+      const resumoAnoCompleto = [];
+      
+      for (const irmao of irmaos || []) {
+        if (sessaoIdsAno.length === 0) continue;
+
+        const { count: total } = await supabase
+          .from('registros_presenca')
+          .select('*', { count: 'exact', head: true })
+          .eq('membro_id', irmao.id)
+          .in('sessao_id', sessaoIdsAno);
+
+        const { count: presentes } = await supabase
+          .from('registros_presenca')
+          .select('*', { count: 'exact', head: true })
+          .eq('membro_id', irmao.id)
+          .eq('presente', true)
+          .in('sessao_id', sessaoIdsAno);
+
+        const totalRegs = total || 0;
+        const pres = presentes || 0;
+        const taxa = totalRegs > 0 ? Math.round((pres / totalRegs) * 100) : 0;
+
+        if (taxa === 100 && totalRegs > 0) {
+          resumoAnoCompleto.push({
+            id: irmao.id,
+            nome: irmao.nome,
+            total_sessoes: totalRegs
+          });
+        }
+      }
+
+      setResumoAno(resumoAnoCompleto);
+
+    } catch (error) {
+      console.error('Erro ao carregar resumo do ano:', error);
+    }
+  };
+
   const carregar = async () => {
     try {
       // 1. Contar sessões DO PERÍODO
@@ -63,22 +126,6 @@ export default function DashboardPresenca() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'ativo');
 
-      // 3. Contar registros DO PERÍODO
-      let totalRegs = 0;
-      if (sessaoIds.length > 0) {
-        const { count } = await supabase
-          .from('registros_presenca')
-          .select('*', { count: 'exact', head: true })
-          .in('sessao_id', sessaoIds);
-        totalRegs = count || 0;
-      }
-
-      setDados({
-        sessoes: totalSessoes || 0,
-        irmaos: totalIrmaos || 0,
-        registros: totalRegs
-      });
-
       // 4. Buscar resumo por irmão DO PERÍODO
       const { data: irmaos } = await supabase
         .from('irmaos')
@@ -87,8 +134,10 @@ export default function DashboardPresenca() {
         .order('nome');
 
       const resumoCompleto = [];
+      let somaPresencas = 0;
+      let totalComRegistros = 0;
+
       for (const irmao of irmaos || []) {
-        // Registros do irmão NO PERÍODO
         let totalRegs = 0;
         let presentes = 0;
 
@@ -120,7 +169,20 @@ export default function DashboardPresenca() {
           ausentes,
           taxa
         });
+
+        if (totalRegs > 0) {
+          somaPresencas += taxa;
+          totalComRegistros++;
+        }
       }
+
+      const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
+
+      setDados({
+        sessoes: totalSessoes || 0,
+        irmaos: totalIrmaos || 0,
+        mediaPresenca
+      });
 
       setResumo(resumoCompleto);
 
