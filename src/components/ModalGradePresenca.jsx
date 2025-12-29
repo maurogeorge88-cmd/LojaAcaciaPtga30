@@ -6,6 +6,7 @@ export default function ModalGradePresenca({ onFechar }) {
   const [sessoes, setSessoes] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
   const [grade, setGrade] = useState({});
+  const [busca, setBusca] = useState('');
 
   useEffect(() => {
     carregar();
@@ -124,21 +125,32 @@ export default function ModalGradePresenca({ onFechar }) {
       <div className="bg-white rounded-lg shadow-2xl w-full h-[90vh] max-w-[95vw] flex flex-col">
         
         {/* Cabeçalho */}
-        <div className="bg-blue-600 text-white p-6 flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold">Grade de Presença</h2>
-            <p className="text-sm text-blue-100 mt-1">
-              {sessoes.length} sessões • {irmaos.length} irmãos
-            </p>
+        <div className="bg-blue-600 text-white p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-2xl font-bold">Grade de Presença</h2>
+              <p className="text-sm text-blue-100 mt-1">
+                {sessoes.length} sessões • {irmaos.length} irmãos
+              </p>
+            </div>
+            <button
+              onClick={onFechar}
+              className="hover:bg-blue-700 rounded-full p-2 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
-          <button
-            onClick={onFechar}
-            className="hover:bg-blue-700 rounded-full p-2 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+
+          {/* Campo de Busca */}
+          <input
+            type="text"
+            placeholder="🔍 Buscar irmão..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full px-4 py-2 rounded text-gray-800 placeholder-gray-500"
+          />
         </div>
 
         {/* Tabela */}
@@ -157,7 +169,11 @@ export default function ModalGradePresenca({ onFechar }) {
               </tr>
             </thead>
             <tbody>
-              {irmaos.map(irmao => (
+              {irmaos
+                .filter(irmao => 
+                  busca === '' || irmao.nome.toLowerCase().includes(busca.toLowerCase())
+                )
+                .map(irmao => (
                 <tr key={irmao.id} className="hover:bg-gray-50">
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
                     {irmao.nome.split(' ').slice(0, 2).join(' ')}
