@@ -134,6 +134,11 @@ export default function DashboardPresenca() {
 
         // 100% = presentes em TODAS as sessões que tem registro
         if (totalRegistros > 0 && presentes === totalRegistros) {
+          // Debug Mauro
+          if (irmao.nome.includes('Mauro')) {
+            console.log('🏆 Mauro 100%:', { totalRegistros, presentes, aprendiz, companheiro, mestre });
+          }
+          
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
@@ -167,22 +172,41 @@ export default function DashboardPresenca() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'ativo');
 
-      // 3. Query ÚNICA com JOIN e agregação
-      const { data: registros } = await supabase
-        .from('registros_presenca')
-        .select(`
-          membro_id,
-          presente,
-          irmaos!inner(nome),
-          sessoes_presenca!inner(data_sessao)
-        `)
-        .gte('sessoes_presenca.data_sessao', dataInicio)
-        .lte('sessoes_presenca.data_sessao', dataFim)
-        .eq('irmaos.status', 'ativo');
+      // 3. Buscar registros com paginação (evitar limite de 1000)
+      let registros = [];
+      let inicio = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
+
+      while (continuar) {
+        const { data: lote } = await supabase
+          .from('registros_presenca')
+          .select(`
+            membro_id,
+            presente,
+            irmaos!inner(nome),
+            sessoes_presenca!inner(data_sessao)
+          `)
+          .gte('sessoes_presenca.data_sessao', dataInicio)
+          .lte('sessoes_presenca.data_sessao', dataFim)
+          .eq('irmaos.status', 'ativo')
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (lote && lote.length > 0) {
+          registros = [...registros, ...lote];
+          inicio += tamanhoPagina;
+          
+          if (lote.length < tamanhoPagina) {
+            continuar = false;
+          }
+        } else {
+          continuar = false;
+        }
+      }
 
       // Agrupar por irmão
       const grupos = {};
-      registros?.forEach(reg => {
+      registros.forEach(reg => {
         if (!grupos[reg.membro_id]) {
           grupos[reg.membro_id] = {
             id: reg.membro_id,
