@@ -67,16 +67,12 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPresenca100}-01-01`;
       const fimAno = `${anoPresenca100}-12-31`;
 
-      console.log('🔍 Buscando presença 100% para:', inicioAno, 'até', fimAno);
-
       // 1. Buscar todas as sessões do ano
       const { data: sessoesAno } = await supabase
         .from('sessoes_presenca')
         .select('*')
         .gte('data_sessao', inicioAno)
         .lte('data_sessao', fimAno);
-
-      console.log('✅ Total sessões no ano:', sessoesAno?.length);
 
       const sessaoIds = sessoesAno?.map(s => s.id) || [];
       if (sessaoIds.length === 0) {
@@ -170,27 +166,8 @@ export default function DashboardPresenca() {
           }
         });
 
-        // Debug detalhado para Mauro, Deni, Robison
-        if (irmao.nome.includes('Mauro') || irmao.nome.includes('Deni') || irmao.nome.includes('Robison')) {
-          console.log('👤', irmao.nome, '| Grau:', grauAtual, '| Data:', dataGrauAtual.toLocaleDateString());
-          console.log('   Aplicáveis:', totalAplicaveis, '| Presentes:', presentes);
-          
-          // Contar TODAS participações (independente da data)
-          let todasPresencas = 0;
-          let todasAusencias = 0;
-          sessoesAno.forEach(s => {
-            const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === s.id);
-            if (reg) {
-              if (reg.presente) todasPresencas++;
-              else todasAusencias++;
-            }
-          });
-          console.log('   📊 Total no ano: Presenças =', todasPresencas, '| Ausências =', todasAusencias, '| Registros =', (todasPresencas + todasAusencias));
-        }
-
         // 100% = presentes em TODAS aplicáveis
         if (presentes === totalAplicaveis && presentes > 0) {
-          console.log('🏆', irmao.nome, '- 100% com', presentes, 'presenças');
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
@@ -202,7 +179,6 @@ export default function DashboardPresenca() {
         }
       });
 
-      console.log('🎯 Total com 100%:', com100.length);
       setResumoAno(com100);
 
     } catch (error) {
