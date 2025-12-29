@@ -200,19 +200,14 @@ export default function DashboardPresenca() {
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
-      // 2. Contar irmãos ativos (sem desligados e falecidos)
-      const { count: totalIrmaos } = await supabase
+      // 2. Buscar TODOS irmãos e filtrar no JS
+      const { data: todosIrmaos } = await supabase
         .from('irmaos')
-        .select('*', { count: 'exact', head: true })
-        .is('data_desligamento', null)
-        .is('data_falecimento', null);
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso, data_desligamento, data_falecimento');
 
-      // 3. Buscar irmãos com datas (sem desligados e falecidos)
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso')
-        .is('data_desligamento', null)
-        .is('data_falecimento', null);
+      // Filtrar: excluir desligados e falecidos
+      const irmaos = todosIrmaos?.filter(i => !i.data_desligamento && !i.data_falecimento) || [];
+      const totalIrmaos = irmaos.length;
 
       // 4. Buscar registros com paginação
       let registros = [];
