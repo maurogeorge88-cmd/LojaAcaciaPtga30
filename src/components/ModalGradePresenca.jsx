@@ -279,6 +279,16 @@ export default function ModalGradePresenca({ onFechar }) {
                           70+
                         </span>
                       )}
+                      {irmao.data_falecimento && (
+                        <span className="text-xs bg-gray-200 text-gray-800 px-2 py-0.5 rounded">
+                          †
+                        </span>
+                      )}
+                      {irmao.data_desligamento && (
+                        <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                          Deslg
+                        </span>
+                      )}
                     </div>
                   </td>
                   {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
