@@ -67,18 +67,19 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPresenca100}-01-01`;
       const fimAno = `${anoPresenca100}-12-31`;
 
-      // Query ÚNICA com JOIN e agregação
+      // Query ÚNICA com JOIN e agregação (incluindo tipo de sessão)
       const { data: resumoCompleto } = await supabase
         .from('registros_presenca')
         .select(`
           membro_id,
           presente,
           irmaos!inner(nome),
-          sessoes_presenca!inner(data_sessao)
+          sessoes_presenca!inner(data_sessao, tipo_sessao)
         `)
         .gte('sessoes_presenca.data_sessao', inicioAno)
         .lte('sessoes_presenca.data_sessao', fimAno)
-        .eq('irmaos.status', 'ativo');
+        .eq('irmaos.status', 'ativo')
+        .eq('presente', true);
 
       // Agrupar por irmão
       const grupos = {};
@@ -87,18 +88,39 @@ export default function DashboardPresenca() {
           grupos[reg.membro_id] = {
             id: reg.membro_id,
             nome: reg.irmaos.nome,
-            total: 0,
-            presentes: 0
+            aprendiz: 0,
+            companheiro: 0,
+            mestre: 0,
+            total: 0
           };
         }
         grupos[reg.membro_id].total++;
-        if (reg.presente) grupos[reg.membro_id].presentes++;
+        
+        // Contar por tipo
+        const tipo = reg.sessoes_presenca.tipo_sessao || '';
+        if (tipo.includes('Aprendiz')) grupos[reg.membro_id].aprendiz++;
+        else if (tipo.includes('Companheiro')) grupos[reg.membro_id].companheiro++;
+        else if (tipo.includes('Mestre')) grupos[reg.membro_id].mestre++;
       });
 
-      // Filtrar 100%
+      // Buscar total de sessões do ano para verificar 100%
+      const { count: totalSessoesAno } = await supabase
+        .from('sessoes_presenca')
+        .select('*', { count: 'exact', head: true })
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      // Filtrar apenas quem tem 100% (comparar com total de sessões)
       const com100 = Object.values(grupos)
-        .filter(g => g.total > 0 && g.presentes === g.total)
-        .map(g => ({ id: g.id, nome: g.nome, total_sessoes: g.total }));
+        .filter(g => g.total === totalSessoesAno && g.total > 0)
+        .map(g => ({ 
+          id: g.id, 
+          nome: g.nome, 
+          total_sessoes: g.total,
+          aprendiz: g.aprendiz,
+          companheiro: g.companheiro,
+          mestre: g.mestre
+        }));
 
       setResumoAno(com100);
 
@@ -184,16 +206,16 @@ export default function DashboardPresenca() {
         
         {/* Seletor de Período */}
         <div className="flex items-center gap-4">
-          <label className="font-semibold text-gray-700">Período:</label>
+          <label className="text-sm font-medium text-gray-600">Período:</label>
           <div className="flex gap-2">
             {['mes', 'trimestre', 'semestre', 'ano'].map(p => (
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
-                className={`px-6 py-2.5 rounded-lg font-semibold transition-all shadow-sm ${
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
                   periodo === p
-                    ? 'bg-blue-600 text-white shadow-md scale-105'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow'
+                    ? 'bg-blue-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
@@ -226,7 +248,7 @@ export default function DashboardPresenca() {
             className="w-full h-full flex flex-col items-center justify-center hover:bg-gray-50 transition-colors"
           >
             <span className="text-3xl mb-2">📊</span>
-            <span className="font-semibold text-gray-700">Ver Grade</span>
+            <span className="font-semibold text-gray-700">Matrix Presença</span>
           </button>
         </div>
       </div>
@@ -257,13 +279,32 @@ export default function DashboardPresenca() {
             ) : (
               <div className="space-y-2">
                 {resumoAno.map(irmao => (
-                  <div key={irmao.id} className="flex justify-between items-center p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
-                    <span className="font-medium text-gray-800">
-                      {irmao.nome.split(' ').slice(0, 2).join(' ')}
-                    </span>
-                    <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
-                      {irmao.total_sessoes}
-                    </span>
+                  <div key={irmao.id} className="p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium text-gray-800">
+                        {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                      </span>
+                      <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                        {irmao.total_sessoes}
+                      </span>
+                    </div>
+                    <div className="flex gap-3 text-xs text-gray-600">
+                      {irmao.aprendiz > 0 && (
+                        <span className="bg-blue-100 px-2 py-1 rounded">
+                          Apr: {irmao.aprendiz}
+                        </span>
+                      )}
+                      {irmao.companheiro > 0 && (
+                        <span className="bg-yellow-100 px-2 py-1 rounded">
+                          Comp: {irmao.companheiro}
+                        </span>
+                      )}
+                      {irmao.mestre > 0 && (
+                        <span className="bg-purple-100 px-2 py-1 rounded">
+                          Mest: {irmao.mestre}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
