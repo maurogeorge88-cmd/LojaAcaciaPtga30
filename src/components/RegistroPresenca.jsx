@@ -50,7 +50,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       // Buscar TODOS os irmãos ativos
       const { data: todosIrmaos, error: irmaosError } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_desligamento, data_falecimento, situacao, status')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_desligamento, data_falecimento, data_nascimento, data_licenca, situacao, status')
         .eq('status', 'ativo')
         .order('nome');
 
@@ -68,7 +68,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
       console.log('✅ Irmãos ativos e vivos:', irmaosAtivosVivos.length);
 
-      // Adicionar grau calculado a cada irmão
+      // Adicionar grau calculado, idade e prerrogativas a cada irmão
       const irmaosComGrau = irmaosAtivosVivos.map(irmao => {
         let grauIrmao = 0;
         let grauTexto = 'Sem Grau';
@@ -84,10 +84,56 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           grauTexto = 'Aprendiz';
         }
 
+        // Calcular idade
+        let idade = null;
+        let temPrerrogativa = false;
+        let dataPrerrogativa = null;
+        
+        if (irmao.data_nascimento) {
+          const nascimento = new Date(irmao.data_nascimento);
+          const hoje = new Date();
+          idade = hoje.getFullYear() - nascimento.getFullYear();
+          const mesAtual = hoje.getMonth();
+          const mesNasc = nascimento.getMonth();
+          
+          if (mesAtual < mesNasc || (mesAtual === mesNasc && hoje.getDate() < nascimento.getDate())) {
+            idade--;
+          }
+
+          // Verificar prerrogativa (70 anos ou mais)
+          if (idade >= 70) {
+            temPrerrogativa = true;
+            // Data em que completou 70 anos
+            dataPrerrogativa = new Date(nascimento);
+            dataPrerrogativa.setFullYear(nascimento.getFullYear() + 70);
+          }
+        }
+
+        // Verificar se a sessão é ANTES ou DEPOIS da prerrogativa/licença
+        const dataSessaoObj = new Date(sessaoData.data_sessao);
+        let sessaoAntesPrerrogativa = true;
+        let sessaoAntesLicenca = true;
+
+        if (temPrerrogativa && dataPrerrogativa) {
+          sessaoAntesPrerrogativa = dataSessaoObj < dataPrerrogativa;
+        }
+
+        if (irmao.data_licenca) {
+          const dataLicencaObj = new Date(irmao.data_licenca);
+          sessaoAntesLicenca = dataSessaoObj < dataLicencaObj;
+        }
+
         return {
           ...irmao,
           grau_numerico: grauIrmao,
-          grau: grauTexto
+          grau: grauTexto,
+          idade,
+          tem_prerrogativa: temPrerrogativa,
+          data_prerrogativa: dataPrerrogativa,
+          sessao_antes_prerrogativa: sessaoAntesPrerrogativa,
+          sessao_antes_licenca: sessaoAntesLicenca,
+          // Se sessão for DEPOIS da prerrogativa OU licença, não computa
+          computa_presenca: sessaoAntesPrerrogativa && sessaoAntesLicenca
         };
       });
 
@@ -372,11 +418,20 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         <div className="text-sm font-medium text-gray-900">
                           {irmao.nome}
                         </div>
-                        {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
-                            Licenciado
-                          </span>
-                        )}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {/* Badge Licenciado - só aparece se sessão for DEPOIS da licença */}
+                          {irmao.situacao && irmao.situacao.toLowerCase() === 'licenciado' && !irmao.sessao_antes_licenca && (
+                            <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                              Licenciado
+                            </span>
+                          )}
+                          {/* Badge Prerrogativa - só aparece se sessão for DEPOIS dos 70 anos */}
+                          {irmao.tem_prerrogativa && !irmao.sessao_antes_prerrogativa && (
+                            <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                              Com Prerrogativa
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
