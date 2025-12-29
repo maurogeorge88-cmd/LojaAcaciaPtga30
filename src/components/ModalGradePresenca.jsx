@@ -27,7 +27,7 @@ export default function ModalGradePresenca({ onFechar }) {
       // 2. Buscar TODOS os irmãos (incluir datas de grau)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, situacao, status')
+        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso, situacao, status')
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
@@ -161,17 +161,18 @@ export default function ModalGradePresenca({ onFechar }) {
 
     const dataSessao = new Date(sessao.data_sessao);
     
-    // 1. Verificar se sessão é ANTES da iniciação
-    if (irmao.data_iniciacao) {
-      const dataIniciacao = new Date(irmao.data_iniciacao);
-      if (dataSessao < dataIniciacao) {
-        // Sessão antes de iniciar → não se aplica
-        return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-            <span className="text-gray-400">-</span>
-          </td>
-        );
-      }
+    // 1. Verificar se sessão é ANTES da iniciação OU ingresso
+    const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+    const dataIngresso = irmao.data_ingresso ? new Date(irmao.data_ingresso) : null;
+    const dataInicio = dataIniciacao || dataIngresso;
+    
+    if (dataInicio && dataSessao < dataInicio) {
+      // Sessão antes de iniciar/ingressar → não se aplica
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
     }
 
     // 2. Calcular grau do irmão
