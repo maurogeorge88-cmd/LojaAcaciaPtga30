@@ -208,10 +208,16 @@ export default function DashboardPresenca() {
         .eq('status', 'ativo');
 
       // 3. Buscar irmãos com datas
-      const { data: irmaos } = await supabase
+      const { data: irmaos, error: errIrmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso')
-        .eq('status', 'ativo');
+        .eq('status', 'ativo')
+        .order('nome');
+
+      if (errIrmaos) {
+        console.error('Erro ao buscar irmãos:', errIrmaos);
+        return;
+      }
 
       // 4. Buscar registros com paginação
       let registros = [];
