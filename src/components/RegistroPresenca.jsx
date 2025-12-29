@@ -42,47 +42,55 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       setSessao(sessaoData);
 
       // Buscar irmãos elegíveis baseado no grau da sessão
-      const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
       const tipoSessao = sessaoData.graus_sessao?.nome || '';
 
-      console.log('DEBUG - Grau mínimo:', grauMinimo);
-      console.log('DEBUG - Tipo sessão:', tipoSessao);
+      console.log('🔍 DEBUG - Tipo sessão:', tipoSessao);
+      console.log('🔍 DEBUG - Data sessão:', sessaoData.data_sessao);
 
-      // Buscar TODOS os irmãos ativos (não desligados, não falecidos)
+      // Buscar TODOS os irmãos ativos
       const { data: todosIrmaos, error: irmaosError } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, situacao')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_desligamento, data_falecimento, situacao, status')
         .eq('status', 'ativo')
-        .is('data_desligamento', null)
-        .is('data_falecimento', null)
         .order('nome');
 
-      if (irmaosError) throw irmaosError;
+      if (irmaosError) {
+        console.error('❌ Erro ao buscar irmãos:', irmaosError);
+        throw irmaosError;
+      }
+
+      console.log('✅ Total de irmãos ativos:', todosIrmaos?.length);
+
+      // Filtrar manualmente (não usar .is() que pode dar problema)
+      const irmaosAtivosVivos = todosIrmaos.filter(i => 
+        !i.data_desligamento && !i.data_falecimento
+      );
+
+      console.log('✅ Irmãos ativos e vivos:', irmaosAtivosVivos.length);
 
       // Filtrar por grau baseado no tipo de sessão
-      const irmaosElegiveisArray = todosIrmaos.filter(irmao => {
+      const irmaosElegiveisArray = irmaosAtivosVivos.filter(irmao => {
         // Calcular grau do irmão
         let grauIrmao = 0;
         if (irmao.data_exaltacao) grauIrmao = 3; // Mestre
-        else if (irmao.data_elevacao) grauIrmao = 2; // Companheiro
+        else if (irmao.data_elevacao) grauIrmao = 2; // Companheiro  
         else if (irmao.data_iniciacao) grauIrmao = 1; // Aprendiz
+
+        console.log(`👤 ${irmao.nome} - Grau: ${grauIrmao}`);
 
         // Filtrar baseado no tipo de sessão
         if (tipoSessao.includes('Aprendiz') || tipoSessao.includes('Administrativa')) {
-          // Sessão de Aprendiz: TODOS podem participar
           return grauIrmao >= 1;
         } else if (tipoSessao.includes('Companheiro')) {
-          // Sessão de Companheiro: apenas Companheiros e Mestres
           return grauIrmao >= 2;
         } else if (tipoSessao.includes('Mestre')) {
-          // Sessão de Mestre: apenas Mestres
-          return grauIrmao >= 3;
+          return grauIrmao === 3;
         }
         
         return false;
       });
 
-      console.log('DEBUG - Irmãos elegíveis:', irmaosElegiveisArray);
+      console.log('✅ Irmãos elegíveis para essa sessão:', irmaosElegiveisArray.length);
       setIrmaosElegiveis(irmaosElegiveisArray);
 
       // Buscar presenças já registradas (se houver)
