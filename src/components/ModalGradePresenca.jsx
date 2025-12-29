@@ -24,10 +24,10 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Sessões:', sessoesData?.length);
 
-      // 2. Buscar TODOS os irmãos (incluir falecidos/desligados do mês atual)
+      // 2. Buscar TODOS os irmãos (incluir datas de grau)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, situacao, status')
+        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, situacao, status')
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
@@ -151,27 +151,65 @@ export default function ModalGradePresenca({ onFechar }) {
     const irmao = irmaos.find(i => i.id === irmaoId);
     const sessao = sessoes.find(s => s.id === sessaoId);
     
-    // Verificar se computa (antes de prerrogativa/licença/falecimento/desligamento)
+    if (!irmao || !sessao) {
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    const dataSessao = new Date(sessao.data_sessao);
+    
+    // 1. Verificar se sessão é ANTES da iniciação
+    if (irmao.data_iniciacao) {
+      const dataIniciacao = new Date(irmao.data_iniciacao);
+      if (dataSessao < dataIniciacao) {
+        // Sessão antes de iniciar → não se aplica
+        return (
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+            <span className="text-gray-400">-</span>
+          </td>
+        );
+      }
+    }
+
+    // 2. Calcular grau do irmão
+    let grauIrmao = 0;
+    if (irmao.data_exaltacao) grauIrmao = 3;
+    else if (irmao.data_elevacao) grauIrmao = 2;
+    else if (irmao.data_iniciacao) grauIrmao = 1;
+
+    // 3. Verificar grau da sessão
+    const grauSessao = sessao.grau_sessao_id || 1;
+
+    // 4. Se sessão é de grau superior ao do irmão → não pode participar
+    if (grauSessao > grauIrmao) {
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    // 5. Verificar se computa (prerrogativa/licença/falecimento/desligamento)
     let computa = true;
-    if (irmao && sessao) {
-      const dataSessao = new Date(sessao.data_sessao);
-      
-      if (irmao.data_prerrogativa) {
-        const dataPrer = new Date(irmao.data_prerrogativa);
-        if (dataSessao >= dataPrer) computa = false;
-      }
-      if (irmao.data_licenca) {
-        const dataLic = new Date(irmao.data_licenca);
-        if (dataSessao >= dataLic) computa = false;
-      }
-      if (irmao.data_falecimento) {
-        const dataFalec = new Date(irmao.data_falecimento);
-        if (dataSessao >= dataFalec) computa = false;
-      }
-      if (irmao.data_desligamento) {
-        const dataDeslg = new Date(irmao.data_desligamento);
-        if (dataSessao >= dataDeslg) computa = false;
-      }
+    
+    if (irmao.data_prerrogativa) {
+      const dataPrer = new Date(irmao.data_prerrogativa);
+      if (dataSessao >= dataPrer) computa = false;
+    }
+    if (irmao.data_licenca) {
+      const dataLic = new Date(irmao.data_licenca);
+      if (dataSessao >= dataLic) computa = false;
+    }
+    if (irmao.data_falecimento) {
+      const dataFalec = new Date(irmao.data_falecimento);
+      if (dataSessao >= dataFalec) computa = false;
+    }
+    if (irmao.data_desligamento) {
+      const dataDeslg = new Date(irmao.data_desligamento);
+      if (dataSessao >= dataDeslg) computa = false;
     }
 
     // Se NÃO TEM registro
