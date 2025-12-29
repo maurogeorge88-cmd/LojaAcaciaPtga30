@@ -83,7 +83,7 @@ export default function DashboardPresenca() {
       // 2. Buscar irmãos com grau
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
         .eq('status', 'ativo');
 
       // 3. Buscar registros com paginação
@@ -134,7 +134,10 @@ export default function DashboardPresenca() {
         let presentes = 0;
         let aprendiz = 0, companheiro = 0, mestre = 0;
 
+        // Prioridade: data_ingresso_loja > data_iniciacao
+        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
         const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+        const dataInicio = dataIngresso || dataIniciacao;
 
         registros.forEach(reg => {
           if (reg.membro_id === irmao.id) {
@@ -144,8 +147,8 @@ export default function DashboardPresenca() {
             const dataSessao = new Date(sessao.data_sessao);
             const grauSessao = sessao.grau_sessao_id || 1;
 
-            // Ignorar se sessão é ANTES da iniciação
-            if (dataIniciacao && dataSessao < dataIniciacao) return;
+            // Ignorar se sessão é ANTES do ingresso na loja
+            if (dataInicio && dataSessao < dataInicio) return;
 
             // Ignorar se sessão é de grau SUPERIOR ao do irmão
             if (grauSessao > grauIrmao) return;
@@ -208,7 +211,7 @@ export default function DashboardPresenca() {
       // 3. Buscar irmãos com datas
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso_loja')
         .eq('status', 'ativo');
 
       // 4. Buscar registros com paginação
@@ -273,7 +276,10 @@ export default function DashboardPresenca() {
           }
         }
 
+        // Prioridade: data_ingresso_loja > data_iniciacao
+        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
         const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+        const dataInicio = dataIngresso || dataIniciacao;
         const dataLicenca = irmao.data_licenca ? new Date(irmao.data_licenca) : null;
 
         // Contar apenas registros VÁLIDOS
@@ -288,8 +294,8 @@ export default function DashboardPresenca() {
             const dataSessao = new Date(sessao.data_sessao);
             const grauSessao = sessao.grau_sessao_id || 1;
 
-            // Ignorar sessão ANTES da iniciação
-            if (dataIniciacao && dataSessao < dataIniciacao) return;
+            // Ignorar sessão ANTES do ingresso na loja
+            if (dataInicio && dataSessao < dataInicio) return;
 
             // Ignorar sessão de grau SUPERIOR
             if (grauSessao > grauIrmao) return;
