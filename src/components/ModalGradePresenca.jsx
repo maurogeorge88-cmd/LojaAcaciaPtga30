@@ -104,6 +104,8 @@ export default function ModalGradePresenca({ onFechar }) {
       }
 
       console.log('Grade montada');
+      console.log('Evandro:', irmaosComFlags.find(i => i.nome.includes('Evandro')));
+      console.log('Luiz Antonio:', irmaosComFlags.find(i => i.nome.includes('Luiz Antonio')));
 
       setSessoes(sessoesData || []);
       setIrmaos(irmaosComFlags || []);
@@ -133,26 +135,17 @@ export default function ModalGradePresenca({ onFechar }) {
     if (irmao && sessao) {
       const dataSessao = new Date(sessao.data_sessao);
       
-      console.log('Irmão:', irmao.nome, 'Sessão:', sessao.data_sessao);
-      console.log('data_falecimento:', irmao.data_falecimento);
-      console.log('data_desligamento:', irmao.data_desligamento);
-      console.log('data_licenca:', irmao.data_licenca);
-      
       if (irmao.data_prerrogativa && dataSessao >= new Date(irmao.data_prerrogativa)) {
         computa = false;
-        console.log('→ Não computa (prerrogativa)');
       }
       if (irmao.data_licenca && dataSessao >= new Date(irmao.data_licenca)) {
         computa = false;
-        console.log('→ Não computa (licença)');
       }
       if (irmao.data_falecimento && dataSessao >= new Date(irmao.data_falecimento)) {
         computa = false;
-        console.log('→ Não computa (falecimento)');
       }
       if (irmao.data_desligamento && dataSessao >= new Date(irmao.data_desligamento)) {
         computa = false;
-        console.log('→ Não computa (desligamento)');
       }
     }
 
