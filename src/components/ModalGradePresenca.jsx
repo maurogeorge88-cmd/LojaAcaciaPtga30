@@ -26,7 +26,7 @@ export default function ModalGradePresenca({ onFechar }) {
       // 2. Buscar TODOS os irmãos ativos
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, situacao')
+        .select('id, nome')
         .eq('status', 'ativo')
         .order('nome');
 
@@ -150,12 +150,7 @@ export default function ModalGradePresenca({ onFechar }) {
               {irmaos.map(irmao => (
                 <tr key={irmao.id} className="hover:bg-gray-50">
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
-                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
-                    {irmao.situacao === 'licenciado' && (
-                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded mt-1 inline-block">
-                        Licenciado
-                      </span>
-                    )}
+                    {irmao.nome.split(' ').slice(0, 2).join(' ')}
                   </td>
                   {sessoes.map(sessao => renderizarCelula(irmao, sessao))}
                 </tr>
