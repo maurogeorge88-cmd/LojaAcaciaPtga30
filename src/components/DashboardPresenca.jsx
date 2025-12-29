@@ -4,12 +4,25 @@ import ModalGradePresenca from './ModalGradePresenca';
 
 export default function DashboardPresenca() {
   const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
+
+  const calcularIdade = (dataNascimento) => {
+    const nasc = new Date(dataNascimento);
+    const hoje = new Date();
+    let idade = hoje.getFullYear() - nasc.getFullYear();
+    if (hoje.getMonth() < nasc.getMonth() || 
+       (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) {
+      idade--;
+    }
+    return idade;
+  };
   const [resumo, setResumo] = useState([]);
   const [resumoAno, setResumoAno] = useState([]);
   const [mostrarGrade, setMostrarGrade] = useState(false);
   const [periodo, setPeriodo] = useState('ano');
   const [percentualAlerta, setPercentualAlerta] = useState(30);
   const [anoPresenca100, setAnoPresenca100] = useState(2025);
+  const [resumoPrerrogativa, setResumoPrerrogativa] = useState([]);
+  const [resumoLicenciados, setResumoLicenciados] = useState([]);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
 
@@ -338,6 +351,53 @@ export default function DashboardPresenca() {
 
       setResumo(resumoCompleto);
 
+      // Calcular prerrogativas e licenciados
+      const comPrerrogativa = [];
+      const licenciados = [];
+
+      irmaos?.forEach(irmao => {
+        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
+        const temPrerrogativa = idade >= 70;
+        const estaLicenciado = irmao.data_licenca !== null;
+
+        // Calcular grau
+        let grauTexto = 'Não iniciado';
+        if (irmao.data_exaltacao) grauTexto = 'Mestre';
+        else if (irmao.data_elevacao) grauTexto = 'Companheiro';
+        else if (irmao.data_iniciacao) grauTexto = 'Aprendiz';
+
+        // Buscar dados de presença do irmão
+        const dadosIrmao = resumoCompleto.find(r => r.id === irmao.id);
+        const presencas = dadosIrmao?.presentes || 0;
+        const total = dadosIrmao?.total_registros || 0;
+        const percentual = total > 0 ? Math.round((presencas / total) * 100) : 0;
+
+        if (temPrerrogativa) {
+          comPrerrogativa.push({
+            id: irmao.id,
+            nome: irmao.nome,
+            grau: grauTexto,
+            presencas,
+            total,
+            percentual
+          });
+        }
+
+        if (estaLicenciado) {
+          licenciados.push({
+            id: irmao.id,
+            nome: irmao.nome,
+            grau: grauTexto,
+            presencas,
+            total,
+            percentual
+          });
+        }
+      });
+
+      setResumoPrerrogativa(comPrerrogativa);
+      setResumoLicenciados(licenciados);
+
     } catch (error) {
       console.error('Erro:', error);
     }
@@ -455,6 +515,114 @@ export default function DashboardPresenca() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quadro: Irmãos com Prerrogativa (70+) */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-purple-600 text-white p-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span>👴</span>
+              Irmãos com Prerrogativa (70+) - {resumoPrerrogativa.length} {resumoPrerrogativa.length === 1 ? 'Irmão' : 'Irmãos'}
+            </h3>
+          </div>
+          <div className="p-4">
+            {resumoPrerrogativa.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com prerrogativa no período</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {resumoPrerrogativa
+                      .sort((a, b) => b.percentual - a.percentual)
+                      .map(irmao => (
+                      <tr key={irmao.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-600">
+                          {irmao.grau}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-800">
+                          {irmao.presencas}/{irmao.total}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
+                            irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
+                            irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {irmao.percentual}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Quadro: Irmãos Licenciados */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div className="bg-orange-500 text-white p-4">
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <span>📋</span>
+              Irmãos Licenciados - {resumoLicenciados.length} {resumoLicenciados.length === 1 ? 'Irmão' : 'Irmãos'}
+            </h3>
+          </div>
+          <div className="p-4">
+            {resumoLicenciados.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão licenciado no período</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {resumoLicenciados
+                      .sort((a, b) => b.percentual - a.percentual)
+                      .map(irmao => (
+                      <tr key={irmao.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm text-gray-800">
+                          {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm text-gray-600">
+                          {irmao.grau}
+                        </td>
+                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-800">
+                          {irmao.presencas}/{irmao.total}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
+                            irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
+                            irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                          }`}>
+                            {irmao.percentual}%
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
