@@ -86,11 +86,30 @@ export default function DashboardPresenca() {
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
         .eq('status', 'ativo');
 
-      // 3. Buscar todos registros do ano
-      const { data: registros } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, presente, sessao_id')
-        .in('sessao_id', sessaoIds);
+      // 3. Buscar registros com paginação
+      let registros = [];
+      let inicio = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
+
+      while (continuar) {
+        const { data: lote } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, presente, sessao_id')
+          .in('sessao_id', sessaoIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
+
+        if (lote && lote.length > 0) {
+          registros = [...registros, ...lote];
+          inicio += tamanhoPagina;
+          
+          if (lote.length < tamanhoPagina) {
+            continuar = false;
+          }
+        } else {
+          continuar = false;
+        }
+      }
 
       // Mapear sessões por ID
       const sessoesMap = {};
@@ -115,7 +134,7 @@ export default function DashboardPresenca() {
         let presentes = 0;
         let aprendiz = 0, companheiro = 0, mestre = 0;
 
-        registros?.forEach(reg => {
+        registros.forEach(reg => {
           if (reg.membro_id === irmao.id) {
             totalRegistros++;
             
