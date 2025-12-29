@@ -1,40 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim }) {
+export default function ModalGradePresenca({ onFechar }) {
   const [loading, setLoading] = useState(true);
-  const [dados, setDados] = useState({ sessoes: [], irmaos: [], registros: [] });
+  const [sessoes, setSessoes] = useState([]);
+  const [irmaos, setIrmaos] = useState([]);
+  const [registros, setRegistros] = useState([]);
 
   useEffect(() => {
     carregar();
-  }, [periodoInicio, periodoFim]);
+  }, []);
 
   const carregar = async () => {
     try {
       setLoading(true);
 
-      const { data: s } = await supabase
+      // 1. Buscar TODAS as sessões
+      const { data: sessoesData } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao')
-        .gte('data_sessao', periodoInicio)
-        .lte('data_sessao', periodoFim)
         .order('data_sessao');
 
-      const { data: i } = await supabase
+      console.log('Sessões:', sessoesData?.length);
+
+      // 2. Buscar TODOS os irmãos ativos
+      const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome')
+        .select('id, nome, situacao')
         .eq('status', 'ativo')
-        .in('situacao', ['regular', 'licenciado'])
         .order('nome');
 
-      const ids = s.map(x => x.id);
-      const { data: r } = await supabase
-        .from('registros_presenca')
-        .select('sessao_id, membro_id, presente')
-        .in('sessao_id', ids);
+      console.log('Irmãos:', irmaosData?.length);
 
-      console.log('CARREGADO:', s?.length, 'sessões,', i?.length, 'irmãos,', r?.length, 'registros');
-      setDados({ sessoes: s || [], irmaos: i || [], registros: r || [] });
+      // 3. Buscar TODOS os registros de presença
+      const { data: registrosData } = await supabase
+        .from('registros_presenca')
+        .select('membro_id, sessao_id, presente, justificativa');
+
+      console.log('Registros:', registrosData?.length);
+
+      setSessoes(sessoesData || []);
+      setIrmaos(irmaosData || []);
+      setRegistros(registrosData || []);
 
     } catch (error) {
       console.error('Erro:', error);
@@ -43,76 +50,114 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
     }
   };
 
-  const getReg = (irmaoId, sessaoId) => {
-    const reg = dados.registros.find(r => r.membro_id === irmaoId && r.sessao_id === sessaoId);
-    
-    // Debug apenas primeira linha, primeira coluna
-    if (irmaoId === dados.irmaos[0]?.id && sessaoId === dados.sessoes[0]?.id) {
-      console.log('🔍 DEBUG PRIMEIRA CÉLULA:', {
-        irmaoId,
-        sessaoId,
-        tipoIrmaoId: typeof irmaoId,
-        tipoSessaoId: typeof sessaoId,
-        encontrou: !!reg,
-        registro: reg,
-        amostraRegistros: dados.registros.slice(0, 3).map(r => ({
-          membro_id: r.membro_id,
-          sessao_id: r.sessao_id,
-          tipoMembro: typeof r.membro_id,
-          tipoSessao: typeof r.sessao_id
-        }))
-      });
+  const obterRegistro = (irmaoId, sessaoId) => {
+    return registros.find(r => r.membro_id === irmaoId && r.sessao_id === sessaoId);
+  };
+
+  const formatarData = (data) => {
+    return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit' 
+    });
+  };
+
+  const renderizarCelula = (irmao, sessao) => {
+    const reg = obterRegistro(irmao.id, sessao.id);
+
+    if (!reg) {
+      return (
+        <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
     }
-    
-    return reg;
+
+    if (reg.presente) {
+      return (
+        <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+          <span className="text-green-600 text-lg font-bold">✓</span>
+        </td>
+      );
+    }
+
+    if (reg.justificativa) {
+      return (
+        <td 
+          key={sessao.id} 
+          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
+          title={reg.justificativa}
+        >
+          <span className="text-yellow-600 text-lg font-bold">J</span>
+        </td>
+      );
+    }
+
+    return (
+      <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+        <span className="text-red-600 text-lg font-bold">✗</span>
+      </td>
+    );
   };
 
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-8 rounded">Carregando...</div>
+        <div className="bg-white p-8 rounded-lg">
+          <div className="text-center">Carregando grade...</div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded w-full h-[90vh] max-w-[95vw] flex flex-col">
+      <div className="bg-white rounded-lg shadow-2xl w-full h-[90vh] max-w-[95vw] flex flex-col">
         
         {/* Cabeçalho */}
-        <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
+        <div className="bg-blue-600 text-white p-6 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold">Grade de Presença</h2>
-            <p className="text-sm">{dados.sessoes.length} sessões | {dados.irmaos.length} irmãos | {dados.registros.length} registros</p>
+            <h2 className="text-2xl font-bold">Grade de Presença</h2>
+            <p className="text-sm text-blue-100 mt-1">
+              {sessoes.length} sessões • {irmaos.length} irmãos • {registros.length} registros
+            </p>
           </div>
-          <button onClick={onFechar} className="hover:bg-blue-700 p-2 rounded">✕</button>
+          <button
+            onClick={onFechar}
+            className="hover:bg-blue-700 rounded-full p-2 transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Tabela */}
         <div className="flex-1 overflow-auto">
-          <table className="border-collapse text-xs">
+          <table className="w-full border-collapse text-xs">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
-                <th className="border p-2 sticky left-0 bg-gray-100 z-10">Irmão</th>
-                {dados.sessoes.map(s => (
-                  <th key={s.id} className="border p-1">
-                    {new Date(s.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
+                  Irmão
+                </th>
+                {sessoes.map(s => (
+                  <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
+                    {formatarData(s.data_sessao)}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {dados.irmaos.map(i => (
-                <tr key={i.id} className="hover:bg-gray-50">
-                  <td className="border p-2 sticky left-0 bg-white">{i.nome.split(' ').slice(0,2).join(' ')}</td>
-                  {dados.sessoes.map(s => {
-                    const reg = getReg(i.id, s.id);
-                    return (
-                      <td key={s.id} className="border p-1 text-center">
-                        {!reg ? '-' : reg.presente ? '✓' : '✗'}
-                      </td>
-                    );
-                  })}
+              {irmaos.map(irmao => (
+                <tr key={irmao.id} className="hover:bg-gray-50">
+                  <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
+                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
+                    {irmao.situacao === 'licenciado' && (
+                      <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded mt-1 inline-block">
+                        Licenciado
+                      </span>
+                    )}
+                  </td>
+                  {sessoes.map(sessao => renderizarCelula(irmao, sessao))}
                 </tr>
               ))}
             </tbody>
@@ -120,8 +165,11 @@ export default function ModalGradePresenca({ onFechar, periodoInicio, periodoFim
         </div>
 
         {/* Rodapé */}
-        <div className="bg-gray-50 p-4">
-          <button onClick={onFechar} className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+        <div className="bg-gray-50 px-6 py-4 border-t">
+          <button
+            onClick={onFechar}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+          >
             Fechar
           </button>
         </div>
