@@ -84,7 +84,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         } else if (tipoSessao.includes('Companheiro')) {
           return grauIrmao >= 2;
         } else if (tipoSessao.includes('Mestre')) {
-          return grauIrmao === 3;
+          return grauIrmao >= 3;  // Mestres (grau 3 ou superior)
         }
         
         return false;
@@ -213,7 +213,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
   // Filtrar irmãos pela busca
   const irmaosFiltrados = irmaosElegiveis.filter(irmao =>
-    irmao.nome_completo?.toLowerCase().includes(busca.toLowerCase())
+    irmao.nome?.toLowerCase().includes(busca.toLowerCase())
   );
 
   // Estatísticas
