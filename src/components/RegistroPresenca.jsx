@@ -226,7 +226,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const marcarTodosPresentes = () => {
     const todasPresencas = {};
     irmaosElegiveis.forEach(irmao => {
-      todasPresencas[irmao.membro_id] = true;
+      todasPresencas[irmao.id] = true;
     });
     setPresencas(todasPresencas);
     setJustificativas({});
@@ -249,10 +249,10 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       // Preparar registros de presença (SEM registrado_por)
       const registros = irmaosElegiveis.map(irmaoElegivel => ({
         sessao_id: sessaoId,
-        membro_id: irmaoElegivel.membro_id,
-        presente: presencas[irmaoElegivel.membro_id] || false,
-        justificativa: (!presencas[irmaoElegivel.membro_id] && justificativas[irmaoElegivel.membro_id]) 
-          ? justificativas[irmaoElegivel.membro_id] 
+        membro_id: irmaoElegivel.id,
+        presente: presencas[irmaoElegivel.id] || false,
+        justificativa: (!presencas[irmaoElegivel.id] && justificativas[irmaoElegivel.id]) 
+          ? justificativas[irmaoElegivel.id] 
           : null
       }));
 
@@ -455,22 +455,22 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                     <label className="inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
-                        checked={presencas[irmao.membro_id] || false}
-                        onChange={(e) => handlePresencaChange(irmao.membro_id, e.target.checked)}
+                        checked={presencas[irmao.id] || false}
+                        onChange={(e) => handlePresencaChange(irmao.id, e.target.checked)}
                         className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500"
                       />
                       <span className="ml-2 text-sm font-medium text-gray-700">
-                        {presencas[irmao.membro_id] ? 'Presente' : 'Ausente'}
+                        {presencas[irmao.id] ? 'Presente' : 'Ausente'}
                       </span>
                     </label>
                   </td>
                   <td className="px-6 py-4">
-                    {!presencas[irmao.membro_id] && (
+                    {!presencas[irmao.id] && (
                       <input
                         type="text"
                         placeholder="Motivo da ausência..."
-                        value={justificativas[irmao.membro_id] || ''}
-                        onChange={(e) => handleJustificativaChange(irmao.membro_id, e.target.value)}
+                        value={justificativas[irmao.id] || ''}
+                        onChange={(e) => handleJustificativaChange(irmao.id, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     )}
