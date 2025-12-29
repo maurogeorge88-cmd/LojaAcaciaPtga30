@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
+import GestaoSituacoes from './GestaoSituacoes';
 import {
   formatarCPF,
   formatarTelefone,
@@ -721,6 +722,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         >
           🔺 Vida Maçônica
         </button>
+
+        {edicao && irmaoId && (
+          <button
+            type="button"
+            onClick={() => setAbaSelecionada('situacoes')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              abaSelecionada === 'situacoes'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            📋 Situações
+          </button>
+        )}
       </div>
 
       {/* Formulário */}
@@ -1784,6 +1799,25 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
                   A vida maçônica só pode ser cadastrada após criar o registro do irmão
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ABA: Situações */}
+        {abaSelecionada === 'situacoes' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            {irmaoEditando?.id ? (
+              <GestaoSituacoes irmaId={irmaoEditando.id} />
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-6xl mb-4">📋</div>
+                <p className="text-gray-600 text-lg font-medium">
+                  Salve o irmão primeiro para gerenciar situações
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Licenças, desligamentos e outras situações só podem ser cadastradas após criar o registro do irmão
                 </p>
               </div>
             )}
