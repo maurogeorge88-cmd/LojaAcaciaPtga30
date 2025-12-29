@@ -190,12 +190,14 @@ export default function DashboardPresenca() {
 
   const carregar = async () => {
     try {
-      // 1. Contar sessões DO PERÍODO
-      const { count: totalSessoes } = await supabase
+      // 1. Buscar sessões do período
+      const { data: sessoesPerio, count: totalSessoes } = await supabase
         .from('sessoes_presenca')
-        .select('*', { count: 'exact', head: true })
+        .select('id, data_sessao, grau_sessao_id', { count: 'exact' })
         .gte('data_sessao', dataInicio)
         .lte('data_sessao', dataFim);
+
+      const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
       // 2. Contar irmãos ativos
       const { count: totalIrmaos } = await supabase
@@ -203,7 +205,13 @@ export default function DashboardPresenca() {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'ativo');
 
-      // 3. Buscar registros com paginação (evitar limite de 1000)
+      // 3. Buscar irmãos com datas
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca')
+        .eq('status', 'ativo');
+
+      // 4. Buscar registros com paginação
       let registros = [];
       let inicio = 0;
       const tamanhoPagina = 1000;
@@ -212,15 +220,8 @@ export default function DashboardPresenca() {
       while (continuar) {
         const { data: lote } = await supabase
           .from('registros_presenca')
-          .select(`
-            membro_id,
-            presente,
-            irmaos!inner(nome),
-            sessoes_presenca!inner(data_sessao)
-          `)
-          .gte('sessoes_presenca.data_sessao', dataInicio)
-          .lte('sessoes_presenca.data_sessao', dataFim)
-          .eq('irmaos.status', 'ativo')
+          .select('membro_id, presente, sessao_id')
+          .in('sessao_id', sessaoIds)
           .range(inicio, inicio + tamanhoPagina - 1);
 
         if (lote && lote.length > 0) {
@@ -235,27 +236,88 @@ export default function DashboardPresenca() {
         }
       }
 
-      // Agrupar por irmão
-      const grupos = {};
-      registros.forEach(reg => {
-        if (!grupos[reg.membro_id]) {
-          grupos[reg.membro_id] = {
-            id: reg.membro_id,
-            nome: reg.irmaos.nome,
-            total_registros: 0,
-            presentes: 0
-          };
-        }
-        grupos[reg.membro_id].total_registros++;
-        if (reg.presente) grupos[reg.membro_id].presentes++;
+      // Mapear sessões
+      const sessoesMap = {};
+      sessoesPerio?.forEach(s => {
+        sessoesMap[s.id] = s;
       });
 
-      // Calcular taxas
-      const resumoCompleto = Object.values(grupos).map(g => ({
-        ...g,
-        ausentes: g.total_registros - g.presentes,
-        taxa: g.total_registros > 0 ? Math.round((g.presentes / g.total_registros) * 100) : 0
-      }));
+      // Processar cada irmão
+      const resumoCompleto = [];
+
+      irmaos?.forEach(irmao => {
+        // Calcular grau
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao) grauIrmao = 3;
+        else if (irmao.data_elevacao) grauIrmao = 2;
+        else if (irmao.data_iniciacao) grauIrmao = 1;
+
+        if (grauIrmao === 0) return;
+
+        // Calcular idade e prerrogativa
+        let temPrerrogativa = false;
+        let dataPrerrogativa = null;
+        if (irmao.data_nascimento) {
+          const nasc = new Date(irmao.data_nascimento);
+          const hoje = new Date();
+          let idade = hoje.getFullYear() - nasc.getFullYear();
+          if (hoje.getMonth() < nasc.getMonth() || 
+             (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) {
+            idade--;
+          }
+          
+          if (idade >= 70) {
+            temPrerrogativa = true;
+            dataPrerrogativa = new Date(nasc);
+            dataPrerrogativa.setFullYear(nasc.getFullYear() + 70);
+          }
+        }
+
+        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+        const dataLicenca = irmao.data_licenca ? new Date(irmao.data_licenca) : null;
+
+        // Contar apenas registros VÁLIDOS
+        let totalRegistros = 0;
+        let presentes = 0;
+
+        registros.forEach(reg => {
+          if (reg.membro_id === irmao.id) {
+            const sessao = sessoesMap[reg.sessao_id];
+            if (!sessao) return;
+
+            const dataSessao = new Date(sessao.data_sessao);
+            const grauSessao = sessao.grau_sessao_id || 1;
+
+            // Ignorar sessão ANTES da iniciação
+            if (dataIniciacao && dataSessao < dataIniciacao) return;
+
+            // Ignorar sessão de grau SUPERIOR
+            if (grauSessao > grauIrmao) return;
+
+            // Ignorar sessão APÓS licença
+            if (dataLicenca && dataSessao >= dataLicenca) return;
+
+            // Ignorar sessão APÓS prerrogativa
+            if (temPrerrogativa && dataPrerrogativa && dataSessao >= dataPrerrogativa) return;
+
+            // Registro válido
+            totalRegistros++;
+            if (reg.presente) presentes++;
+          }
+        });
+
+        const ausentes = totalRegistros - presentes;
+        const taxa = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+
+        resumoCompleto.push({
+          id: irmao.id,
+          nome: irmao.nome,
+          total_registros: totalRegistros,
+          presentes,
+          ausentes,
+          taxa
+        });
+      });
 
       // Média de presença
       const somaPresencas = resumoCompleto.reduce((sum, r) => sum + r.taxa, 0);
@@ -339,7 +401,7 @@ export default function DashboardPresenca() {
           <div className="bg-green-600 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>🏆</span>
-              Presença 100%
+              Presença 100% - {resumoAno.length} {resumoAno.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
             <select
               value={anoPresenca100}
@@ -356,7 +418,9 @@ export default function DashboardPresenca() {
               <p className="text-gray-500 text-center py-8">Nenhum irmão com 100% em {anoPresenca100}</p>
             ) : (
               <div className="space-y-2">
-                {resumoAno.map(irmao => (
+                {resumoAno
+                  .sort((a, b) => b.total_sessoes - a.total_sessoes)
+                  .map(irmao => (
                   <div key={irmao.id} className="p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-gray-800">
