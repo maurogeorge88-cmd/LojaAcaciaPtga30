@@ -170,10 +170,22 @@ export default function DashboardPresenca() {
           }
         });
 
-        // Debug
+        // Debug detalhado para Mauro, Deni, Robison
         if (irmao.nome.includes('Mauro') || irmao.nome.includes('Deni') || irmao.nome.includes('Robison')) {
           console.log('👤', irmao.nome, '| Grau:', grauAtual, '| Data:', dataGrauAtual.toLocaleDateString());
           console.log('   Aplicáveis:', totalAplicaveis, '| Presentes:', presentes);
+          
+          // Contar TODAS participações (independente da data)
+          let todasPresencas = 0;
+          let todasAusencias = 0;
+          sessoesAno.forEach(s => {
+            const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === s.id);
+            if (reg) {
+              if (reg.presente) todasPresencas++;
+              else todasAusencias++;
+            }
+          });
+          console.log('   📊 Total no ano: Presenças =', todasPresencas, '| Ausências =', todasAusencias, '| Registros =', (todasPresencas + todasAusencias));
         }
 
         // 100% = presentes em TODAS aplicáveis
