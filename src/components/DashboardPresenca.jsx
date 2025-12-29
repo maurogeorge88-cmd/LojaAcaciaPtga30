@@ -655,6 +655,10 @@ export default function DashboardPresenca() {
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
             {resumo.filter(i => {
+              // Excluir irmãos com prerrogativa
+              const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
+              if (temPrerrogativa) return false;
+              
               const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
               return percAusencias >= percentualAlerta;
             }).length === 0 ? (
@@ -663,6 +667,10 @@ export default function DashboardPresenca() {
               <div className="space-y-2">
                 {resumo
                   .filter(i => {
+                    // Excluir irmãos com prerrogativa
+                    const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
+                    if (temPrerrogativa) return false;
+                    
                     const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
                     return percAusencias >= percentualAlerta;
                   })
