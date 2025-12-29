@@ -133,9 +133,6 @@ export default function ModalGradePresenca({ onFechar }) {
     if (irmao && sessao) {
       const dataSessao = new Date(sessao.data_sessao);
       
-      // ANTES da data = COMPUTA
-      // DEPOIS da data = NÃO COMPUTA
-      
       if (irmao.data_prerrogativa) {
         const dataPrer = new Date(irmao.data_prerrogativa);
         if (dataSessao >= dataPrer) computa = false;
@@ -154,15 +151,25 @@ export default function ModalGradePresenca({ onFechar }) {
       }
     }
 
+    // Se NÃO TEM registro
     if (!reg) {
+      // Se não computa, mostra - (sem obrigação)
+      if (!computa) {
+        return (
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+            <span className="text-gray-400">-</span>
+          </td>
+        );
+      }
+      // Se computa, mostra ausência (✗ vermelho)
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+          <span className="text-red-600 text-lg font-bold">✗</span>
         </td>
       );
     }
 
-    // Se não computa
+    // Se TEM registro e não computa
     if (!computa) {
       // Se veio (presente), mostra ✓ normal
       if (reg.presente) {
