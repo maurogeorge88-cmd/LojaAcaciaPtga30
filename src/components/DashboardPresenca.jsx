@@ -1,183 +1,134 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import ModalGradePresenca from './ModalGradePresenca';
 
 export default function DashboardPresenca() {
-  const [loading, setLoading] = useState(true);
+  const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
   const [resumo, setResumo] = useState([]);
-  const [mostrarGrade, setMostrarGrade] = useState(false);
-  const [periodo, setPeriodo] = useState('ano');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
 
   useEffect(() => {
-    definirPeriodo('ano');
+    carregar();
   }, []);
 
-  useEffect(() => {
-    if (dataInicio && dataFim) {
-      carregarDados();
-    }
-  }, [dataInicio, dataFim]);
-
-  const definirPeriodo = (p) => {
-    setPeriodo(p);
-    const hoje = new Date();
-    const inicio = new Date();
-    const fim = new Date();
-
-    if (p === 'ano') {
-      inicio.setFullYear(hoje.getFullYear() - 1);
-      fim.setDate(hoje.getDate() + 7);
-    }
-
-    setDataInicio(inicio.toISOString().split('T')[0]);
-    setDataFim(fim.toISOString().split('T')[0]);
-  };
-
-  const carregarDados = async () => {
+  const carregar = async () => {
     try {
-      setLoading(true);
-
-      console.log('📅 Período:', dataInicio, 'até', dataFim);
-
-      // 1. Buscar sessões
-      const { data: sessoes } = await supabase
+      // 1. Contar sessões
+      const { count: totalSessoes } = await supabase
         .from('sessoes_presenca')
-        .select('id')
-        .gte('data_sessao', dataInicio)
-        .lte('data_sessao', dataFim);
+        .select('*', { count: 'exact', head: true });
 
-      console.log('✅ Sessões:', sessoes?.length);
+      // 2. Contar irmãos ativos
+      const { count: totalIrmaos } = await supabase
+        .from('irmaos')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'ativo');
 
-      // 2. Buscar irmãos
+      // 3. Contar registros
+      const { count: totalRegistros } = await supabase
+        .from('registros_presenca')
+        .select('*', { count: 'exact', head: true });
+
+      setDados({
+        sessoes: totalSessoes || 0,
+        irmaos: totalIrmaos || 0,
+        registros: totalRegistros || 0
+      });
+
+      // 4. Buscar resumo por irmão - SEM FILTROS
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome')
         .eq('status', 'ativo')
-        .in('situacao', ['regular', 'licenciado'])
         .order('nome');
 
-      console.log('✅ Irmãos:', irmaos?.length);
-
-      // 3. Buscar registros - método direto com subquery
-      const sessaoIds = sessoes.map(s => s.id);
-      
-      console.log('🔍 Buscando registros para', sessaoIds.length, 'sessões');
-      console.log('🔍 IDs:', sessaoIds);
-      
-      // Buscar em lotes de 50 para evitar limite do .in()
-      let todosRegistros = [];
-      for (let i = 0; i < sessaoIds.length; i += 50) {
-        const lote = sessaoIds.slice(i, i + 50);
-        const { data } = await supabase
+      // Para cada irmão, contar registros
+      const resumoCompleto = [];
+      for (const irmao of irmaos || []) {
+        const { count: totalRegs } = await supabase
           .from('registros_presenca')
-          .select('membro_id, presente, sessao_id')
-          .in('sessao_id', lote);
-        
-        if (data) todosRegistros = [...todosRegistros, ...data];
-      }
-      
-      const registros = todosRegistros;
-      console.log('✅ Registros:', registros?.length);
+          .select('*', { count: 'exact', head: true })
+          .eq('membro_id', irmao.id);
 
-      // 4. Calcular resumo por irmão
-      const resumoIrmaos = irmaos.map(irmao => {
-        const regsIrmao = registros.filter(r => r.membro_id === irmao.id);
-        const presentes = regsIrmao.filter(r => r.presente).length;
-        const ausentes = regsIrmao.filter(r => !r.presente).length;
-        const total = regsIrmao.length;
+        const { count: presentes } = await supabase
+          .from('registros_presenca')
+          .select('*', { count: 'exact', head: true })
+          .eq('membro_id', irmao.id)
+          .eq('presente', true);
 
-        // Debug para Mauro
-        if (irmao.nome.includes('Mauro George')) {
-          const sessoesComRegistro = regsIrmao.map(r => {
-            const reg = registros.find(x => x.membro_id === irmao.id);
-            return reg;
-          });
-          
-          console.log('🔍 MAURO - Sessões no período:', sessoes.length);
-          console.log('🔍 MAURO - IDs das sessões:', sessoes.map(s => s.id));
-          console.log('🔍 MAURO - Registros encontrados:', regsIrmao.length);
-          console.log('🔍 MAURO - Detalhes registros:', registros.filter(r => r.membro_id === irmao.id));
-        }
+        const ausentes = (totalRegs || 0) - (presentes || 0);
+        const taxa = totalRegs > 0 ? Math.round((presentes / totalRegs) * 100) : 0;
 
-        return {
+        resumoCompleto.push({
           id: irmao.id,
           nome: irmao.nome,
-          total_sessoes: sessoes.length,
-          total_registros: total,
-          presentes,
+          total_registros: totalRegs || 0,
+          presentes: presentes || 0,
           ausentes,
-          taxa: total > 0 ? Math.round((presentes / total) * 100) : 0
-        };
-      });
+          taxa
+        });
+      }
 
-      console.log('✅ Resumo:', resumoIrmaos);
-      setResumo(resumoIrmaos);
+      setResumo(resumoCompleto);
 
     } catch (error) {
-      console.error('❌ Erro:', error);
-    } finally {
-      setLoading(false);
+      console.error('Erro:', error);
     }
   };
-
-  if (loading) {
-    return <div className="p-8 text-center">Carregando...</div>;
-  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       
-      {/* Cabeçalho */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Dashboard de Presença SIMPLES</h1>
-        
-        <div className="flex gap-4 items-center">
-          <button
-            onClick={() => definirPeriodo('ano')}
-            className={`px-4 py-2 rounded ${periodo === 'ano' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
-          >
-            Último Ano
-          </button>
-          
-          <button
-            onClick={() => setMostrarGrade(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            📊 Ver Grade
-          </button>
+      {/* Cards Totais */}
+      <div className="grid grid-cols-3 gap-6 mb-6">
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 text-center">
+          <p className="text-blue-600 font-semibold mb-2">Total de Sessões</p>
+          <p className="text-4xl font-bold text-blue-800">{dados.sessoes}</p>
         </div>
-
-        <div className="mt-4 text-sm text-gray-600">
-          Período: {dataInicio} até {dataFim}
+        <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center">
+          <p className="text-green-600 font-semibold mb-2">Total de Irmãos</p>
+          <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
+        </div>
+        <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6 text-center">
+          <p className="text-purple-600 font-semibold mb-2">Total de Registros</p>
+          <p className="text-4xl font-bold text-purple-800">{dados.registros}</p>
         </div>
       </div>
 
-      {/* Tabela Resumo */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Tabela */}
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-gray-800 text-white p-4">
+          <h2 className="text-2xl font-bold">Resumo por Irmão</h2>
+        </div>
+        
         <table className="min-w-full">
           <thead className="bg-gray-100">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Irmão</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total Sessões</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Registros</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Presentes</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ausentes</th>
-              <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Taxa %</th>
+              <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase">Irmão</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Registros</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Presentes</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Ausentes</th>
+              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Taxa</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {resumo.map(irmao => (
-              <tr key={irmao.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">{irmao.nome}</td>
-                <td className="px-6 py-4 text-sm text-center">{irmao.total_sessoes}</td>
-                <td className="px-6 py-4 text-sm text-center">{irmao.total_registros}</td>
-                <td className="px-6 py-4 text-sm text-center text-green-600 font-semibold">{irmao.presentes}</td>
-                <td className="px-6 py-4 text-sm text-center text-red-600 font-semibold">{irmao.ausentes}</td>
-                <td className="px-6 py-4 text-sm text-center">
-                  <span className={`px-3 py-1 rounded font-semibold ${
-                    irmao.taxa >= 70 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+              <tr key={irmao.id} className="hover:bg-blue-50 transition-colors">
+                <td className="px-6 py-4">
+                  <span className="font-semibold text-gray-900">{irmao.nome}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="text-lg font-bold text-blue-600">{irmao.total_registros}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="text-lg font-bold text-green-600">{irmao.presentes}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="text-lg font-bold text-red-600">{irmao.ausentes}</span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className={`px-4 py-2 rounded-full font-bold text-sm ${
+                    irmao.taxa >= 90 ? 'bg-green-100 text-green-800' :
+                    irmao.taxa >= 70 ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
                   }`}>
                     {irmao.taxa}%
                   </span>
@@ -188,14 +139,12 @@ export default function DashboardPresenca() {
         </table>
       </div>
 
-      {/* Modal Grade */}
-      {mostrarGrade && (
-        <ModalGradePresenca
-          onFechar={() => setMostrarGrade(false)}
-          periodoInicio={dataInicio}
-          periodoFim={dataFim}
-        />
-      )}
+      {/* Info */}
+      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          💡 <strong>Mostrando dados BRUTOS do banco:</strong> Total geral de sessões, irmãos e registros sem nenhum filtro por período ou grau.
+        </p>
+      </div>
     </div>
   );
 }
