@@ -83,8 +83,7 @@ export default function DashboardPresenca() {
       // 2. Buscar irmãos com grau
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso')
-        .eq('status', 'ativo');
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso');
 
       // 3. Buscar registros com paginação
       let registros = [];
@@ -201,17 +200,19 @@ export default function DashboardPresenca() {
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
-      // 2. Contar irmãos ativos
+      // 2. Contar irmãos ativos (sem desligados e falecidos)
       const { count: totalIrmaos } = await supabase
         .from('irmaos')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'ativo');
+        .is('data_desligamento', null)
+        .is('data_falecimento', null);
 
-      // 3. Buscar irmãos com datas
+      // 3. Buscar irmãos com datas (sem desligados e falecidos)
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso')
-        .eq('status', 'ativo');
+        .is('data_desligamento', null)
+        .is('data_falecimento', null);
 
       // 4. Buscar registros com paginação
       let registros = [];
