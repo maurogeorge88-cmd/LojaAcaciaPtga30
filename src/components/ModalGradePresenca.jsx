@@ -5,7 +5,7 @@ export default function ModalGradePresenca({ onFechar }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
-  const [registros, setRegistros] = useState([]);
+  const [grade, setGrade] = useState({});
 
   useEffect(() => {
     carregar();
@@ -32,26 +32,36 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Irmãos:', irmaosData?.length);
 
-      // 3. Buscar TODOS os registros de presença
-      const { data: registrosData } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, sessao_id, presente, justificativa');
+      // 3. Para cada irmão, buscar SEUS registros (igual Dashboard)
+      const gradeCompleta = {};
+      
+      for (const irmao of irmaosData || []) {
+        const { data: registrosIrmao } = await supabase
+          .from('registros_presenca')
+          .select('sessao_id, presente, justificativa')
+          .eq('membro_id', irmao.id);
 
-      console.log('Registros:', registrosData?.length);
+        // Criar mapa de registros deste irmão
+        gradeCompleta[irmao.id] = {};
+        registrosIrmao?.forEach(reg => {
+          gradeCompleta[irmao.id][reg.sessao_id] = {
+            presente: reg.presente,
+            justificativa: reg.justificativa
+          };
+        });
+      }
+
+      console.log('Grade montada');
 
       setSessoes(sessoesData || []);
       setIrmaos(irmaosData || []);
-      setRegistros(registrosData || []);
+      setGrade(gradeCompleta);
 
     } catch (error) {
       console.error('Erro:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const obterRegistro = (irmaoId, sessaoId) => {
-    return registros.find(r => r.membro_id === irmaoId && r.sessao_id === sessaoId);
   };
 
   const formatarData = (data) => {
@@ -61,12 +71,12 @@ export default function ModalGradePresenca({ onFechar }) {
     });
   };
 
-  const renderizarCelula = (irmao, sessao) => {
-    const reg = obterRegistro(irmao.id, sessao.id);
+  const renderizarCelula = (irmaoId, sessaoId) => {
+    const reg = grade[irmaoId]?.[sessaoId];
 
     if (!reg) {
       return (
-        <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -74,7 +84,7 @@ export default function ModalGradePresenca({ onFechar }) {
 
     if (reg.presente) {
       return (
-        <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
           <span className="text-green-600 text-lg font-bold">✓</span>
         </td>
       );
@@ -83,7 +93,7 @@ export default function ModalGradePresenca({ onFechar }) {
     if (reg.justificativa) {
       return (
         <td 
-          key={sessao.id} 
+          key={sessaoId} 
           className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
           title={reg.justificativa}
         >
@@ -93,7 +103,7 @@ export default function ModalGradePresenca({ onFechar }) {
     }
 
     return (
-      <td key={sessao.id} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
         <span className="text-red-600 text-lg font-bold">✗</span>
       </td>
     );
@@ -118,7 +128,7 @@ export default function ModalGradePresenca({ onFechar }) {
           <div>
             <h2 className="text-2xl font-bold">Grade de Presença</h2>
             <p className="text-sm text-blue-100 mt-1">
-              {sessoes.length} sessões • {irmaos.length} irmãos • {registros.length} registros
+              {sessoes.length} sessões • {irmaos.length} irmãos
             </p>
           </div>
           <button
@@ -152,7 +162,7 @@ export default function ModalGradePresenca({ onFechar }) {
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
                     {irmao.nome.split(' ').slice(0, 2).join(' ')}
                   </td>
-                  {sessoes.map(sessao => renderizarCelula(irmao, sessao))}
+                  {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
                 </tr>
               ))}
             </tbody>
