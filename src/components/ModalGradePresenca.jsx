@@ -84,10 +84,15 @@ export default function ModalGradePresenca({ onFechar }) {
         };
       });
 
-      // 3. Buscar TODOS os registros de UMA VEZ
+      // 3. Buscar registros APENAS das sessões exibidas
+      const sessaoIds = sessoesData?.map(s => s.id) || [];
+      
       const { data: todosRegistros } = await supabase
         .from('registros_presenca')
-        .select('membro_id, sessao_id, presente, justificativa');
+        .select('membro_id, sessao_id, presente, justificativa')
+        .in('sessao_id', sessaoIds);
+
+      console.log('📊 Registros carregados:', todosRegistros?.length);
 
       // Criar grade agrupando por irmão
       const gradeCompleta = {};
