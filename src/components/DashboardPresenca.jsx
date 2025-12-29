@@ -72,11 +72,12 @@ export default function DashboardPresenca() {
       // 1. Buscar sessões do ano
       const { data: sessoesAno, error: errSessoes } = await supabase
         .from('sessoes_presenca')
-        .select('id, tipo_sessao')
+        .select('*')
         .gte('data_sessao', inicioAno)
         .lte('data_sessao', fimAno);
 
       console.log('✅ Sessões encontradas:', sessoesAno?.length);
+      console.log('📋 Primeira sessão:', sessoesAno?.[0]);
       if (errSessoes) console.error('❌ Erro sessões:', errSessoes);
 
       const sessaoIds = sessoesAno?.map(s => s.id) || [];
@@ -104,10 +105,11 @@ export default function DashboardPresenca() {
       console.log('✅ Irmãos ativos:', irmaos?.length);
       if (errIrmaos) console.error('❌ Erro irmãos:', errIrmaos);
 
-      // Mapear tipo de sessão
+      // Mapear tipo de sessão (ajustar nome do campo quando soubermos)
       const tipoSessao = {};
       sessoesAno?.forEach(s => {
-        tipoSessao[s.id] = s.tipo_sessao || '';
+        // Verificar qual campo tem o tipo
+        tipoSessao[s.id] = s.tipo_sessao || s.tipo || s.grau_sessao || '';
       });
 
       // Agrupar por irmão
