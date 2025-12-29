@@ -316,9 +316,6 @@ export default function DashboardPresenca() {
             // Ignorar sessão APÓS licença
             if (dataLicenca && dataSessao >= dataLicenca) return;
 
-            // Ignorar sessão APÓS prerrogativa
-            if (temPrerrogativa && dataPrerrogativa && dataSessao >= dataPrerrogativa) return;
-
             // Registro válido
             totalRegistros++;
             if (reg.presente) presentes++;
