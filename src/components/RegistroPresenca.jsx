@@ -68,23 +68,42 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
       console.log('✅ Irmãos ativos e vivos:', irmaosAtivosVivos.length);
 
-      // Filtrar por grau baseado no tipo de sessão
-      const irmaosElegiveisArray = irmaosAtivosVivos.filter(irmao => {
-        // Calcular grau do irmão
+      // Adicionar grau calculado a cada irmão
+      const irmaosComGrau = irmaosAtivosVivos.map(irmao => {
         let grauIrmao = 0;
-        if (irmao.data_exaltacao) grauIrmao = 3; // Mestre
-        else if (irmao.data_elevacao) grauIrmao = 2; // Companheiro  
-        else if (irmao.data_iniciacao) grauIrmao = 1; // Aprendiz
+        let grauTexto = 'Sem Grau';
+        
+        if (irmao.data_exaltacao) {
+          grauIrmao = 3;
+          grauTexto = 'Mestre';
+        } else if (irmao.data_elevacao) {
+          grauIrmao = 2;
+          grauTexto = 'Companheiro';
+        } else if (irmao.data_iniciacao) {
+          grauIrmao = 1;
+          grauTexto = 'Aprendiz';
+        }
 
-        console.log(`👤 ${irmao.nome} - Grau: ${grauIrmao}`);
+        return {
+          ...irmao,
+          grau_numerico: grauIrmao,
+          grau: grauTexto
+        };
+      });
+
+      console.log('✅ Irmãos com grau calculado:', irmaosComGrau.length);
+
+      // Filtrar por grau baseado no tipo de sessão
+      const irmaosElegiveisArray = irmaosComGrau.filter(irmao => {
+        console.log(`👤 ${irmao.nome} - Grau: ${irmao.grau_numerico}`);
 
         // Filtrar baseado no tipo de sessão
         if (tipoSessao.includes('Aprendiz') || tipoSessao.includes('Administrativa')) {
-          return grauIrmao >= 1;
+          return irmao.grau_numerico >= 1;
         } else if (tipoSessao.includes('Companheiro')) {
-          return grauIrmao >= 2;
+          return irmao.grau_numerico >= 2;
         } else if (tipoSessao.includes('Mestre')) {
-          return grauIrmao >= 3;  // Mestres (grau 3 ou superior)
+          return irmao.grau_numerico >= 3;
         }
         
         return false;
