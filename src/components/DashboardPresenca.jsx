@@ -102,76 +102,42 @@ export default function DashboardPresenca() {
       const com100 = [];
       
       irmaos?.forEach(irmao => {
-        // Determinar grau ATUAL e data correspondente
-        let grauAtual = 0;
-        let dataGrauAtual = null;
-        
-        if (irmao.data_exaltacao) {
-          grauAtual = 3;
-          dataGrauAtual = new Date(irmao.data_exaltacao);
-        } else if (irmao.data_elevacao) {
-          grauAtual = 2;
-          dataGrauAtual = new Date(irmao.data_elevacao);
-        } else if (irmao.data_iniciacao) {
-          grauAtual = 1;
-          dataGrauAtual = new Date(irmao.data_iniciacao);
-        }
+        // Calcular grau do irmão
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao) grauIrmao = 3;
+        else if (irmao.data_elevacao) grauIrmao = 2;
+        else if (irmao.data_iniciacao) grauIrmao = 1;
 
-        if (grauAtual === 0 || !dataGrauAtual) return;
+        if (grauIrmao === 0) return;
 
-        // Filtrar sessões: APÓS data do grau E do tipo permitido
-        const sessoesAplicaveis = sessoesAno.filter(s => {
-          const dataSessao = new Date(s.data_sessao);
-          
-          // Sessão ANTES da data do grau? Não aplica
-          if (dataSessao < dataGrauAtual) return false;
-          
-          const tipo = s.tipo || s.tipo_sessao || s.grau_sessao || '';
-          
-          // Aprendiz: só sessões Aprendiz
-          if (grauAtual === 1) {
-            return tipo.includes('Aprendiz') || tipo.includes('Administrativa');
-          }
-          
-          // Companheiro: Aprendiz + Companheiro
-          if (grauAtual === 2) {
-            return tipo.includes('Aprendiz') || tipo.includes('Companheiro') || tipo.includes('Administrativa');
-          }
-          
-          // Mestre: TODAS
-          if (grauAtual === 3) {
-            return true;
-          }
-          
-          return false;
-        });
-
-        const totalAplicaveis = sessoesAplicaveis.length;
-        if (totalAplicaveis === 0) return;
-
-        // Contar presenças
+        // Contar registros do irmão no ano (presentes + ausentes)
+        let totalRegistros = 0;
         let presentes = 0;
         let aprendiz = 0, companheiro = 0, mestre = 0;
 
-        sessoesAplicaveis.forEach(sessao => {
-          const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === sessao.id);
-          
-          if (reg && reg.presente) {
-            presentes++;
+        registros?.forEach(reg => {
+          if (reg.membro_id === irmao.id) {
+            totalRegistros++;
             
-            const tipo = sessao.tipo || sessao.tipo_sessao || sessao.grau_sessao || '';
-            if (tipo.includes('Aprendiz')) aprendiz++;
-            else if (tipo.includes('Companheiro')) companheiro++;
-            else if (tipo.includes('Mestre')) mestre++;
+            if (reg.presente) {
+              presentes++;
+              
+              const sessao = sessoesMap[reg.sessao_id];
+              const tipo = sessao?.tipo || sessao?.tipo_sessao || sessao?.grau_sessao || '';
+              
+              if (tipo.includes('Aprendiz')) aprendiz++;
+              else if (tipo.includes('Companheiro')) companheiro++;
+              else if (tipo.includes('Mestre')) mestre++;
+            }
           }
         });
 
-        // 100% = presentes em TODAS aplicáveis
-        if (presentes === totalAplicaveis && presentes > 0) {
+        // 100% = presentes em TODAS as sessões que tem registro
+        if (totalRegistros > 0 && presentes === totalRegistros) {
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
-            total_sessoes: totalAplicaveis,
+            total_sessoes: totalRegistros,
             aprendiz,
             companheiro,
             mestre
