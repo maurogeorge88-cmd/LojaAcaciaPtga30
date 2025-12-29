@@ -84,13 +84,14 @@ export default function ModalGradePresenca({ onFechar }) {
         };
       });
 
-      // 3. Buscar registros APENAS das sessões exibidas
+      // 3. Buscar registros APENAS das sessões exibidas (aumentar limite)
       const sessaoIds = sessoesData?.map(s => s.id) || [];
       
       const { data: todosRegistros } = await supabase
         .from('registros_presenca')
         .select('membro_id, sessao_id, presente, justificativa')
-        .in('sessao_id', sessaoIds);
+        .in('sessao_id', sessaoIds)
+        .limit(5000);
 
       console.log('📊 Registros carregados:', todosRegistros?.length);
 
