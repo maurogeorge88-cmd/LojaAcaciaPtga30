@@ -153,6 +153,12 @@ export default function DashboardPresenca() {
           }
         });
 
+        // Log para Mauro, Deni, Robison
+        if (irmao.nome.includes('Mauro') || irmao.nome.includes('Deni') || irmao.nome.includes('Robison')) {
+          console.log('👤', irmao.nome, 'Grau:', grauIrmao);
+          console.log('   Elegíveis:', totalElegiveis, 'Presentes:', presentes);
+        }
+
         // Verificar se tem 100% (presentes = elegíveis)
         if (presentes === totalElegiveis && presentes > 0) {
           console.log('🏆 100%:', irmao.nome, 'Grau:', grauIrmao, '- Elegíveis:', totalElegiveis, 'Presentes:', presentes);
