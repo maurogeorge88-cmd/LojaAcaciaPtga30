@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import VidaMaconica from '../vida-maconica/VidaMaconica';
+import GestaoSituacoes from './GestaoSituacoes';
 
 export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError, permissoes, userEmail, userData }) {
   const [irmao, setIrmao] = useState(null);
@@ -367,6 +368,16 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             }`}
           >
             🔺 Vida Maçônica
+          </button>
+          <button
+            onClick={() => setAbaSelecionada('situacoes')}
+            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+              abaSelecionada === 'situacoes'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            📋 Situações
           </button>
         </div>
 
@@ -1421,6 +1432,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               showSuccess={showSuccess}
               showError={showError}
             />
+          )}
+
+          {/* ABA: Situações (Licenças, Desligamentos, etc) */}
+          {abaSelecionada === 'situacoes' && (
+            <GestaoSituacoes irmaId={irmaoId} />
           )}
         </div>
       </div>
