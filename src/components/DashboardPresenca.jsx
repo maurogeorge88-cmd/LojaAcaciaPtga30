@@ -136,41 +136,38 @@ export default function DashboardPresenca() {
 
         const idsElegiveis = sessoesElegiveis.map(s => s.id);
 
-        // Contar TODOS os registros (presentes + ausentes) nas sessões elegíveis
-        let totalRegistros = 0;
+        // Contar PRESENÇAS percorrendo TODAS as sessões elegíveis
         let presentes = 0;
         let aprendiz = 0, companheiro = 0, mestre = 0;
 
-        registros?.forEach(reg => {
-          if (reg.membro_id === irmao.id && idsElegiveis.includes(reg.sessao_id)) {
-            totalRegistros++;
+        idsElegiveis.forEach(sessaoId => {
+          const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === sessaoId);
+          
+          if (reg && reg.presente) {
+            presentes++;
             
-            if (reg.presente) {
-              presentes++;
-              
-              const sessao = sessoesMap[reg.sessao_id];
-              const tipo = sessao?.tipo || sessao?.tipo_sessao || sessao?.grau_sessao || '';
-              
-              if (tipo.includes('Aprendiz')) aprendiz++;
-              else if (tipo.includes('Companheiro')) companheiro++;
-              else if (tipo.includes('Mestre')) mestre++;
-            }
+            const sessao = sessoesMap[sessaoId];
+            const tipo = sessao?.tipo || sessao?.tipo_sessao || sessao?.grau_sessao || '';
+            
+            if (tipo.includes('Aprendiz')) aprendiz++;
+            else if (tipo.includes('Companheiro')) companheiro++;
+            else if (tipo.includes('Mestre')) mestre++;
           }
         });
 
         // Log para Mauro, Deni, Robison
         if (irmao.nome.includes('Mauro') || irmao.nome.includes('Deni') || irmao.nome.includes('Robison')) {
           console.log('👤', irmao.nome, 'Grau:', grauIrmao);
-          console.log('   Elegíveis:', totalElegiveis, 'Registros:', totalRegistros, 'Presentes:', presentes);
+          console.log('   Total elegíveis:', totalElegiveis, 'Presentes:', presentes);
         }
 
-        // Verificar se tem 100% (presentes = registros)
-        if (totalRegistros > 0 && presentes === totalRegistros) {
-          console.log('🏆 100%:', irmao.nome, 'Grau:', grauIrmao, '- Registros:', totalRegistros, 'Presentes:', presentes);
+        // Verificar se tem 100% (presentes = total elegíveis)
+        if (presentes === totalElegiveis && presentes > 0) {
+          console.log('🏆 100%:', irmao.nome, 'Grau:', grauIrmao, '- Elegíveis:', totalElegiveis, 'Presentes:', presentes);
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
-            total_sessoes: totalRegistros,
+            total_sessoes: totalElegiveis,
             aprendiz,
             companheiro,
             mestre
