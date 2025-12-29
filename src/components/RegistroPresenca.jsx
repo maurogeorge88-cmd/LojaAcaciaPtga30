@@ -54,6 +54,12 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
+      // Buscar histórico de situações (licenças, desligamentos, etc)
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
       // Buscar irmãos elegíveis DIRETO da tabela (sem usar função RPC)
       const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
       
@@ -93,30 +99,14 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           return false; // Sessão antes do ingresso na loja
         }
         
-        // FILTRO 1: FALECIDO - só aparece se sessão for ANTES da data de falecimento
+        // FILTRO: FALECIDO - só aparece se sessão for ANTES da data de falecimento
         if (i.situacao === 'falecido' && i.data_falecimento) {
           const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
           return dataSessao < dataFalecimento;
         }
         
-        // LICENCIADO: sempre aparece (antes e depois da data)
-        if (i.situacao === 'licenciado') {
-          return true;
-        }
-        
-        // DESLIGADO: só aparece se sessão for ANTES da data de desligamento
-        if (i.situacao === 'desligado' && i.data_desligamento) {
-          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
-          return dataSessao < dataDesligamento;
-        }
-        
-        // EX-OFÍCIO: só aparece se sessão for ANTES da data de desligamento
-        if (i.situacao === 'ex_oficio' && i.data_desligamento) {
-          const dataDesligamento = new Date(i.data_desligamento + 'T00:00:00');
-          return dataSessao < dataDesligamento;
-        }
-        
-        // Outras situações: sempre aparecem
+        // Outros aparecem (vamos marcar visualmente se estão de licença/desligados)
+        return true;
         return true;
       }) || [];
 
@@ -132,22 +122,23 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         data_licenca: i.data_licenca
       }));
 
-      // Adicionar idade e verificar se está licenciado efetivo
+      // Adicionar idade e verificar situação na data da sessão
       const irmaosComIdade = irmaos.map(irmao => {
         const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
         
-        // Verificar se está licenciado APÓS a data da licença
-        let estaLicenciadoEfetivo = false;
-        if (irmao.situacao === 'licenciado' && irmao.data_licenca) {
-          const dataLicenca = new Date(irmao.data_licenca + 'T00:00:00');
-          estaLicenciadoEfetivo = dataSessao >= dataLicenca;
-        }
+        // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
+        const situacaoNaData = historicoSituacoes?.find(sit => 
+          sit.membro_id === irmao.membro_id &&
+          dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+          (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+        );
         
         return {
           ...irmao,
           idade,
           tem_prerrogativa: idade >= 70,
-          esta_licenciado_efetivo: estaLicenciadoEfetivo
+          esta_licenciado_efetivo: situacaoNaData?.tipo_situacao === 'licenca',
+          situacao_na_data: situacaoNaData // guardar para usar depois
         };
       });
 
