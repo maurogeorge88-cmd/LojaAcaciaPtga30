@@ -1219,7 +1219,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       const { data: irmaoData, error: irmaoError } = await supabase
         .from('irmaos')
-        .select('nome, cpf, cim')
+        .select('nome, cpf, cim, data_iniciacao, data_elevacao, data_exaltacao')
         .eq('id', irmaoId)
         .single();
 
@@ -1693,14 +1693,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           else if (irmaoData.data_elevacao && data >= new Date(irmaoData.data_elevacao)) grau = 2;
           else if (irmaoData.data_iniciacao && data >= new Date(irmaoData.data_iniciacao)) grau = 1;
           
-          console.log('🔍 DEBUG Grau:', {
-            dataSessao,
-            iniciacao: irmaoData.data_iniciacao,
-            elevacao: irmaoData.data_elevacao,
-            exaltacao: irmaoData.data_exaltacao,
-            grauCalculado: grau
-          });
-          
           return grau;
         };
 
@@ -1711,18 +1703,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         let justificadas5 = 0;
         let semRegistro5 = 0;
 
-        console.log('📊 DEBUG Últimas Sessões:', ultimasSessoes);
-
         ultimasSessoes.forEach(sessao => {
           const grauSessao = sessao.grau_sessao_id || 1;
           const grauIrmao = obterGrauNaData(sessao.data_sessao);
-          
-          console.log('🎯 DEBUG Comparação:', {
-            sessaoId: sessao.id,
-            grauSessao,
-            grauIrmao,
-            elegivel: grauIrmao >= grauSessao
-          });
           
           // Só contar se irmão tinha grau suficiente
           if (grauIrmao >= grauSessao) {
