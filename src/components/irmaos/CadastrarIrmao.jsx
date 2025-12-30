@@ -1099,48 +1099,24 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               })()}
             </div>
 
-            {/* LINHA 3: TRANSFERÊNCIAS ENTRE LOJAS */}
+            {/* LINHA 3: DATA DE INGRESSO NA LOJA */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-              <h4 className="text-sm font-semibold text-blue-800 mb-3 flex items-center gap-2">
-                <span>🔄</span> Transferências entre Lojas
-              </h4>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Ingresso na Loja
-                    <span className="block text-xs text-gray-500 font-normal mt-0.5">
-                      Quando veio transferido de outra loja
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={irmaoForm.data_ingresso_loja}
-                    onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    ℹ️ Deixe vazio se foi iniciado nesta loja
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Transferência (Saída)
-                    <span className="block text-xs text-gray-500 font-normal mt-0.5">
-                      Quando se transferiu para outra loja
-                    </span>
-                  </label>
-                  <input
-                    type="date"
-                    value={irmaoForm.data_transferencia_saida}
-                    onChange={(e) => setIrmaoForm({ ...irmaoForm, data_transferencia_saida: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    ℹ️ Deixe vazio se ainda está ativo na loja
-                  </p>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Data de Ingresso na Loja
+                  <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                    Quando veio transferido de outra loja
+                  </span>
+                </label>
+                <input
+                  type="date"
+                  value={irmaoForm.data_ingresso_loja}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  ℹ️ Deixe vazio se foi iniciado nesta loja. Para registrar transferências de saída, use a aba "Situações"
+                </p>
               </div>
             </div>
 
