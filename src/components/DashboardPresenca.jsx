@@ -3,9 +3,26 @@
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
-export const Dashboard = ({ irmaos, balaustres, cronograma = [], historicoSituacoes = [] }) => {
+export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+
+  // Carregar histórico de situações
+  useEffect(() => {
+    const carregarHistorico = async () => {
+      const { data } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+      
+      setHistoricoSituacoes(data || []);
+    };
+    
+    carregarHistorico();
+  }, []);
+
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
