@@ -93,13 +93,19 @@ export default function DashboardPresenca() {
         return;
       }
 
-      // 2. Buscar irmãos com grau
+      // 2. Buscar histórico de situações
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
+      // 3. Buscar irmãos com grau
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
         .eq('status', 'ativo');
 
-      // 3. Buscar registros com paginação
+      // 4. Buscar registros com paginação
       let registros = [];
       let inicio = 0;
       const tamanhoPagina = 1000;
@@ -166,6 +172,16 @@ export default function DashboardPresenca() {
             // Ignorar se sessão é de grau SUPERIOR ao do irmão
             if (grauSessao > grauIrmao) return;
 
+            // Verificar se tem situação ativa na data da sessão
+            const situacaoNaData = historicoSituacoes?.find(sit => 
+              sit.membro_id === irmao.id &&
+              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+            );
+            
+            // Se tem situação ativa, ignora
+            if (situacaoNaData) return;
+
             // Registro válido
             totalRegistros++;
             
@@ -215,19 +231,25 @@ export default function DashboardPresenca() {
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
-      // 2. Contar irmãos ativos
+      // 2. Buscar histórico de situações (licenças, desligamentos, etc)
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
+      // 3. Contar irmãos ativos
       const { count: totalIrmaos } = await supabase
         .from('irmaos')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'ativo');
 
-      // 3. Buscar irmãos com datas
+      // 4. Buscar irmãos com datas
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_licenca, data_ingresso_loja, data_falecimento')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_ingresso_loja, data_falecimento')
         .eq('status', 'ativo');
 
-      // 4. Buscar registros com paginação
+      // 5. Buscar registros com paginação
       let registros = [];
       let inicio = 0;
       const tamanhoPagina = 1000;
@@ -293,7 +315,6 @@ export default function DashboardPresenca() {
         const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
         const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
         const dataInicio = dataIngresso || dataIniciacao;
-        const dataLicenca = irmao.data_licenca ? new Date(irmao.data_licenca) : null;
 
         // Contar apenas registros VÁLIDOS
         let totalRegistros = 0;
@@ -313,8 +334,15 @@ export default function DashboardPresenca() {
             // Ignorar sessão de grau SUPERIOR
             if (grauSessao > grauIrmao) return;
 
-            // Ignorar sessão APÓS licença
-            if (dataLicenca && dataSessao >= dataLicenca) return;
+            // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
+            const situacaoNaData = historicoSituacoes?.find(sit => 
+              sit.membro_id === irmao.id &&
+              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+            );
+            
+            // Se tem situação ativa (licença/desligamento), ignora
+            if (situacaoNaData) return;
 
             // Registro válido
             totalRegistros++;
