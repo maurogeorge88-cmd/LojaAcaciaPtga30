@@ -389,13 +389,10 @@ export default function DashboardPresenca() {
         
         const hoje = new Date();
         const estaLicenciado = historicoSituacoes?.some(sit => {
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           const match = sit.membro_id === irmao.id &&
-            sit.tipo_situacao?.toLowerCase() === 'licença' &&
+            tipoNormalizado === 'licenca' &&
             (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
-          
-          if (sit.membro_id === irmao.id && sit.tipo_situacao?.toLowerCase().includes('lic')) {
-            console.log('🔍 Licença encontrada:', irmao.nome, sit);
-          }
           
           return match;
         }) || false;
