@@ -3,9 +3,23 @@
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
 export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+
+  useEffect(() => {
+    const carregar = async () => {
+      const { data } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+      setHistoricoSituacoes(data || []);
+    };
+    carregar();
+  }, []);
+
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
@@ -14,10 +28,26 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     return 'Não Iniciado';
   };
 
-  // Contagens por situação (case-insensitive)
+  // Contagens por situação
+  const hoje = new Date();
+  
+  // Licenciados: filtrar por coluna situacao E validar se tem no histórico
+  const irmaosLicenciados = irmaos.filter(i => {
+    // Se não tem histórico carregado, usar coluna situacao
+    if (historicoSituacoes.length === 0) {
+      return i.situacao?.toLowerCase() === 'licenciado';
+    }
+    
+    // Se tem histórico, buscar situação ativa
+    return historicoSituacoes.some(sit => 
+      sit.membro_id === i.id &&
+      sit.tipo_situacao?.toLowerCase() === 'licenciado' &&
+      (sit.data_fim === null || new Date(sit.data_fim) >= hoje)
+    );
+  });
+
   const irmaosRegulares = irmaos.filter(i => i.situacao?.toLowerCase() === 'regular');
   const irmaosIrregulares = irmaos.filter(i => i.situacao?.toLowerCase() === 'irregular');
-  const irmaosLicenciados = irmaos.filter(i => i.situacao?.toLowerCase() === 'licenciado');
   const irmaosSuspensos = irmaos.filter(i => i.situacao?.toLowerCase() === 'suspenso');
   const irmaosDesligados = irmaos.filter(i => i.situacao?.toLowerCase() === 'desligado');
   const irmaosExcluidos = irmaos.filter(i => i.situacao?.toLowerCase() === 'excluído');
