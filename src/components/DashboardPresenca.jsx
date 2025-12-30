@@ -9,18 +9,15 @@ import { supabase } from '../supabaseClient';
 export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
 
-  // Carregar histórico de situações ativas
   useEffect(() => {
-    const carregarHistorico = async () => {
+    const carregar = async () => {
       const { data } = await supabase
         .from('historico_situacoes')
         .select('*')
         .eq('status', 'ativa');
-      
       setHistoricoSituacoes(data || []);
     };
-    
-    carregarHistorico();
+    carregar();
   }, []);
 
   // Função para determinar o grau do irmão
@@ -34,7 +31,6 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   // Contagens por situação
   const hoje = new Date();
   
-  // Licenciados: buscar no histórico de situações com tipo "Licenciado" ativo
   const irmaosLicenciados = irmaos.filter(i => {
     return historicoSituacoes.some(sit => 
       sit.membro_id === i.id &&
@@ -43,7 +39,6 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     );
   });
 
-  // Outras situações pela coluna situacao
   const irmaosRegulares = irmaos.filter(i => i.situacao?.toLowerCase() === 'regular');
   const irmaosIrregulares = irmaos.filter(i => i.situacao?.toLowerCase() === 'irregular');
   const irmaosSuspensos = irmaos.filter(i => i.situacao?.toLowerCase() === 'suspenso');
