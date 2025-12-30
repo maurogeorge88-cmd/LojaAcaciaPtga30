@@ -146,6 +146,7 @@ function App() {
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
   const [cronograma, setCronograma] = useState([]);
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   
   // Estados para Comissões
   const [comissoes, setComissoes] = useState([]);
@@ -228,6 +229,7 @@ function App() {
         loadLivros();
         loadEmprestimos();
         loadCronograma();
+        loadHistoricoSituacoes();
       }
       setLoading(false);
     });
@@ -390,6 +392,16 @@ function App() {
       setIrmaos(irmaosComSituacao);
     }
     if (error) console.error('Erro ao carregar irmãos:', error);
+  };
+
+  const loadHistoricoSituacoes = async () => {
+    const { data, error } = await supabase
+      .from('historico_situacoes')
+      .select('*')
+      .eq('status', 'ativa');
+    
+    if (data) setHistoricoSituacoes(data);
+    if (error) console.error('Erro ao carregar histórico de situações:', error);
   };
 
   const loadTiposSessao = async () => {
@@ -2209,6 +2221,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             balaustres={balaustres}
             cronograma={cronograma}
+            historicoSituacoes={historicoSituacoes}
           />
         )}
 
