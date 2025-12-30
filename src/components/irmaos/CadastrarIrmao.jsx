@@ -1017,8 +1017,11 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </h4>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* CAMPOS DESATIVADOS - Agora usam histórico de situações
+                Data de Licença e Desligamento movidos para aba "Situações"
+                
                 {/* Data de Licença - aparece se situação for "licenciado" */}
-                {irmaoForm.situacao === 'licenciado' && (
+                {/* {irmaoForm.situacao === 'licenciado' && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Data de Início da Licença *
@@ -1033,10 +1036,10 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                )}
+                )} */}
 
                 {/* Data de Desligamento - aparece se situação for "desligado" ou "ex_oficio" */}
-                {(irmaoForm.situacao === 'desligado' || irmaoForm.situacao === 'ex_oficio') && (
+                {/* {(irmaoForm.situacao === 'desligado' || irmaoForm.situacao === 'ex_oficio') && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Data do Desligamento *
@@ -1053,7 +1056,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                )}
+                )} */}
 
                 {/* Data de Falecimento - aparece se situação for "falecido" */}
                 {irmaoForm.situacao === 'falecido' && (
@@ -1074,9 +1077,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 )}
               </div>
 
-              {!['licenciado', 'desligado', 'falecido', 'ex_oficio'].includes(irmaoForm.situacao) && (
+              {!['falecido'].includes(irmaoForm.situacao) && (
                 <p className="text-sm text-gray-600 italic">
-                  ℹ️ Campos de data específicos aparecerão quando selecionar: Licenciado, Desligado, Falecido ou Ex-Ofício
+                  ℹ️ Para registrar licenças e desligamentos, use a aba "Situações" após salvar o irmão
                 </p>
               )}
               
