@@ -39,13 +39,13 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Irmãos:', irmaosData?.length);
 
-      // Filtrar: remover falecidos de MESES ANTERIORES e desligados sem retorno
+      // Filtrar: remover falecidos de MESES ANTERIORES e desligados sem data de retorno
       const hoje = new Date();
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
 
       const irmaosValidos = irmaosData.filter(i => {
-        // Remover falecidos de meses anteriores
+        // 1. Remover falecidos de meses anteriores
         if (i.data_falecimento) {
           const dataFalec = new Date(i.data_falecimento);
           if (dataFalec.getFullYear() < anoAtual || 
@@ -54,11 +54,11 @@ export default function ModalGradePresenca({ onFechar }) {
           }
         }
 
-        // Remover irmãos com situação DESLIGADO ativa sem data de retorno
+        // 2. Remover irmãos com situação DESLIGADO ativa sem data de retorno
         const situacaoDesligado = historicoSituacoes.find(sit => 
           sit.membro_id === i.id &&
           sit.tipo_situacao === 'Desligado' &&
-          sit.data_fim === null
+          sit.data_fim === null // Sem data de retorno = desligamento definitivo
         );
         
         if (situacaoDesligado) {
