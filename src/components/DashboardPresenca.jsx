@@ -388,11 +388,17 @@ export default function DashboardPresenca() {
         const temPrerrogativa = idade >= 70;
         
         const hoje = new Date();
-        const estaLicenciado = historicoSituacoes?.some(sit => 
-          sit.membro_id === irmao.id &&
-          sit.tipo_situacao?.toLowerCase() === 'licença' &&
-          (sit.data_fim === null || new Date(sit.data_fim) >= hoje)
-        ) || false;
+        const estaLicenciado = historicoSituacoes?.some(sit => {
+          const match = sit.membro_id === irmao.id &&
+            sit.tipo_situacao?.toLowerCase() === 'licença' &&
+            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+          
+          if (sit.membro_id === irmao.id && sit.tipo_situacao?.toLowerCase().includes('lic')) {
+            console.log('🔍 Licença encontrada:', irmao.nome, sit);
+          }
+          
+          return match;
+        }) || false;
 
         // Calcular grau
         let grauTexto = 'Não iniciado';
