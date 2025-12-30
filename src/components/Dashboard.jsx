@@ -25,63 +25,129 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     const carregarPresenca100 = async () => {
       try {
         const anoAtual = new Date().getFullYear();
-        
-        // Buscar todas as sessões do ano
-        const { data: sessoes } = await supabase
+        const inicioAno = `${anoAtual}-01-01`;
+        const fimAno = `${anoAtual}-12-31`;
+
+        // 1. Buscar todas as sessões do ano
+        const { data: sessoesAno } = await supabase
           .from('sessoes_presenca')
           .select('id, data_sessao, grau_sessao_id')
-          .gte('data_sessao', `${anoAtual}-01-01`)
-          .lte('data_sessao', `${anoAtual}-12-31`);
+          .gte('data_sessao', inicioAno)
+          .lte('data_sessao', fimAno);
 
-        // Buscar todos os irmãos ativos
+        const sessaoIds = sessoesAno?.map(s => s.id) || [];
+        if (sessaoIds.length === 0) {
+          setIrmaos100([]);
+          return;
+        }
+
+        // 2. Buscar histórico de situações
+        const { data: historicoSituacoes } = await supabase
+          .from('historico_situacoes')
+          .select('*')
+          .eq('status', 'ativa');
+
+        // 3. Buscar irmãos com grau
         const { data: todosIrmaos } = await supabase
           .from('irmaos')
-          .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+          .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
           .eq('status', 'ativo');
 
-        // Buscar todos os registros de presença
-        const { data: registros } = await supabase
-          .from('registros_presenca')
-          .select('membro_id, sessao_id, presente')
-          .in('sessao_id', sessoes?.map(s => s.id) || []);
+        // 4. Buscar registros com paginação
+        let registros = [];
+        let inicio = 0;
+        const tamanhoPagina = 1000;
+        let continuar = true;
 
-        const irmaosCom100 = [];
+        while (continuar) {
+          const { data: lote } = await supabase
+            .from('registros_presenca')
+            .select('membro_id, presente, sessao_id')
+            .in('sessao_id', sessaoIds)
+            .range(inicio, inicio + tamanhoPagina - 1);
 
+          if (lote && lote.length > 0) {
+            registros = [...registros, ...lote];
+            inicio += tamanhoPagina;
+            
+            if (lote.length < tamanhoPagina) {
+              continuar = false;
+            }
+          } else {
+            continuar = false;
+          }
+        }
+
+        // Mapear sessões por ID
+        const sessoesMap = {};
+        sessoesAno?.forEach(s => {
+          sessoesMap[s.id] = s;
+        });
+
+        // Processar cada irmão
+        const com100 = [];
+        
         todosIrmaos?.forEach(irmao => {
-          // Calcular sessões elegíveis
-          const sessoesElegiveis = sessoes?.filter(s => {
-            const dataSessao = new Date(s.data_sessao);
-            const grauSessao = s.grau_sessao_id || 1;
-            
-            let grauIrmao = 0;
-            if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao)) grauIrmao = 3;
-            else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao)) grauIrmao = 2;
-            else if (irmao.data_iniciacao && dataSessao >= new Date(irmao.data_iniciacao)) grauIrmao = 1;
-            
-            return grauIrmao >= grauSessao;
-          }) || [];
+          // Calcular grau do irmão
+          let grauIrmao = 0;
+          if (irmao.data_exaltacao) grauIrmao = 3;
+          else if (irmao.data_elevacao) grauIrmao = 2;
+          else if (irmao.data_iniciacao) grauIrmao = 1;
 
-          if (sessoesElegiveis.length === 0) return;
+          if (grauIrmao === 0) return;
 
-          // Verificar presenças
-          const presencasIrmao = registros?.filter(r => 
-            r.membro_id === irmao.id && 
-            r.presente &&
-            sessoesElegiveis.some(s => s.id === r.sessao_id)
-          ) || [];
+          let totalRegistros = 0;
+          let presentes = 0;
 
-          const taxa = (presencasIrmao.length / sessoesElegiveis.length) * 100;
-          
-          if (taxa === 100) {
-            irmaosCom100.push({
+          // Prioridade: data_ingresso_loja > data_iniciacao
+          const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
+          const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+          const dataInicio = dataIngresso || dataIniciacao;
+
+          registros.forEach(reg => {
+            if (reg.membro_id === irmao.id) {
+              const sessao = sessoesMap[reg.sessao_id];
+              if (!sessao) return;
+
+              const dataSessao = new Date(sessao.data_sessao);
+              const grauSessao = sessao.grau_sessao_id || 1;
+
+              // Ignorar se sessão é ANTES do ingresso na loja
+              if (dataInicio && dataSessao < dataInicio) return;
+
+              // Ignorar se sessão é de grau SUPERIOR ao do irmão
+              if (grauSessao > grauIrmao) return;
+
+              // Verificar se tem situação ativa na data da sessão
+              const situacaoNaData = historicoSituacoes?.find(sit => 
+                sit.membro_id === irmao.id &&
+                dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+                (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+              );
+              
+              // Se tem situação ativa, ignora
+              if (situacaoNaData) return;
+
+              // Registro válido
+              totalRegistros++;
+              
+              if (reg.presente) {
+                presentes++;
+              }
+            }
+          });
+
+          // 100% = presentes em TODAS as sessões que tem registro
+          if (totalRegistros > 0 && presentes === totalRegistros) {
+            com100.push({
               id: irmao.id,
               nome: irmao.nome,
-              total: sessoesElegiveis.length
+              total: totalRegistros
             });
           }
         });
 
-        setIrmaos100(irmaosCom100);
+        setIrmaos100(com100);
       } catch (error) {
         console.error('Erro ao carregar presença 100%:', error);
       }
