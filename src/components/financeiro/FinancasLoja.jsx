@@ -1688,10 +1688,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         // Determinar grau do irmão em cada sessão (baseado nas datas)
         const obterGrauNaData = (dataSessao) => {
           const data = new Date(dataSessao);
-          if (irmaoData.data_exaltacao && data >= new Date(irmaoData.data_exaltacao)) return 3;
-          if (irmaoData.data_elevacao && data >= new Date(irmaoData.data_elevacao)) return 2;
-          if (irmaoData.data_iniciacao && data >= new Date(irmaoData.data_iniciacao)) return 1;
-          return 0;
+          let grau = 0;
+          if (irmaoData.data_exaltacao && data >= new Date(irmaoData.data_exaltacao)) grau = 3;
+          else if (irmaoData.data_elevacao && data >= new Date(irmaoData.data_elevacao)) grau = 2;
+          else if (irmaoData.data_iniciacao && data >= new Date(irmaoData.data_iniciacao)) grau = 1;
+          
+          console.log('🔍 DEBUG Grau:', {
+            dataSessao,
+            iniciacao: irmaoData.data_iniciacao,
+            elevacao: irmaoData.data_elevacao,
+            exaltacao: irmaoData.data_exaltacao,
+            grauCalculado: grau
+          });
+          
+          return grau;
         };
 
         // Calcular estatísticas das últimas 5 sessões (apenas sessões elegíveis)
@@ -1701,9 +1711,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         let justificadas5 = 0;
         let semRegistro5 = 0;
 
+        console.log('📊 DEBUG Últimas Sessões:', ultimasSessoes);
+
         ultimasSessoes.forEach(sessao => {
           const grauSessao = sessao.grau_sessao_id || 1;
           const grauIrmao = obterGrauNaData(sessao.data_sessao);
+          
+          console.log('🎯 DEBUG Comparação:', {
+            sessaoId: sessao.id,
+            grauSessao,
+            grauIrmao,
+            elegivel: grauIrmao >= grauSessao
+          });
           
           // Só contar se irmão tinha grau suficiente
           if (grauIrmao >= grauSessao) {
