@@ -226,6 +226,7 @@ export default function GestaoSituacoes({ irmaId }) {
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-xl font-bold text-gray-800">Histórico de Situações</h3>
         <button
+          type="button"
           onClick={() => abrirModal()}
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
@@ -291,9 +292,10 @@ export default function GestaoSituacoes({ irmaId }) {
                 </div>
 
                 {/* Ações */}
-                {sit.status === 'ativa' && getStatusTexto(sit) === 'ATIVA' && (
+                {sit.status === 'ativa' && (getStatusTexto(sit) === 'ATIVA' || getStatusTexto(sit) === 'AGENDADA') && (
                   <div className="flex gap-2">
                     <button
+                      type="button"
                       onClick={() => abrirModal(sit)}
                       className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
                     >
@@ -301,6 +303,7 @@ export default function GestaoSituacoes({ irmaId }) {
                     </button>
                     {sit.data_fim === null && (
                       <button
+                        type="button"
                         onClick={() => encerrar(sit.id)}
                         className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
                       >
@@ -308,6 +311,7 @@ export default function GestaoSituacoes({ irmaId }) {
                       </button>
                     )}
                     <button
+                      type="button"
                       onClick={() => cancelar(sit.id)}
                       className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
                     >
@@ -442,12 +446,14 @@ export default function GestaoSituacoes({ irmaId }) {
               {/* Botões */}
               <div className="flex gap-3 pt-4">
                 <button
+                  type="button"
                   onClick={salvar}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                 >
                   {editando ? 'Atualizar' : 'Salvar'}
                 </button>
                 <button
+                  type="button"
                   onClick={fecharModal}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
                 >
