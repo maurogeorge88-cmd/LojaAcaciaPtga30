@@ -1747,12 +1747,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         let ausenciasAno = 0;
         let justificadasAno = 0;
 
+        console.log('📊 Total sessões ano:', totalSessoesAnoGeral);
+        console.log('👤 Irmão:', irmaoData.nome);
+        console.log('📅 Datas grau:', {
+          iniciacao: irmaoData.data_iniciacao,
+          elevacao: irmaoData.data_elevacao,
+          exaltacao: irmaoData.data_exaltacao
+        });
+
         sessoesAno?.forEach(sessao => {
           const grauSessao = sessao.grau_sessao_id || 1;
           const grauIrmao = obterGrauNaData(sessao.data_sessao);
           
+          const elegivel = grauIrmao >= grauSessao;
+          
+          if (elegivel) {
+            console.log('✅ Elegível:', sessao.data_sessao, 'Grau sessão:', grauSessao, 'Grau irmão:', grauIrmao);
+          } else {
+            console.log('❌ NÃO elegível:', sessao.data_sessao, 'Grau sessão:', grauSessao, 'Grau irmão:', grauIrmao);
+          }
+          
           // Só contar se irmão tinha grau suficiente
-          if (grauIrmao >= grauSessao) {
+          if (elegivel) {
             totalSessoesElegiveis++;
             const reg = registrosAno?.find(r => r.sessao_id === sessao.id);
             if (reg) {
@@ -1768,6 +1784,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               ausenciasAno++;
             }
           }
+        });
+
+        console.log('🎯 RESULTADO:', {
+          totalGeral: totalSessoesAnoGeral,
+          elegiveis: totalSessoesElegiveis,
+          presencas: presencasContadasAno,
+          ausencias: ausenciasAno
         });
 
         const taxaAno = totalSessoesElegiveis > 0 ? ((presencasContadasAno / totalSessoesElegiveis) * 100).toFixed(1) : '0.0';
