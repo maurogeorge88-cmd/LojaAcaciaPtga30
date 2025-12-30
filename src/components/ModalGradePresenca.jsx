@@ -363,11 +363,18 @@ export default function ModalGradePresenca({ onFechar }) {
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
                   Irmão
                 </th>
-                {sessoes.map(s => (
-                  <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
-                    {formatarData(s.data_sessao)}
-                  </th>
-                ))}
+                {sessoes.map(s => {
+                  const grauNome = s.grau_sessao_id === 3 ? 'M' : 
+                                   s.grau_sessao_id === 2 ? 'C' : 'A';
+                  return (
+                    <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
+                      <div>{formatarData(s.data_sessao)}</div>
+                      <div className="text-[10px] font-normal text-gray-600 mt-1">
+                        {grauNome}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
