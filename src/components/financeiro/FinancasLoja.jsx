@@ -1727,13 +1727,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         const taxa5 = totalSessoes5 > 0 ? ((presencas5 / totalSessoes5) * 100).toFixed(1) : '0.0';
 
-        // Buscar estatísticas anuais
+        // Buscar estatísticas anuais com paginação
         const anoAtual = new Date().getFullYear();
-        const { data: sessoesAno } = await supabase
-          .from('sessoes_presenca')
-          .select('id, data_sessao, grau_sessao_id')
-          .gte('data_sessao', `${anoAtual}-01-01`)
-          .lte('data_sessao', `${anoAtual}-12-31`);
+        
+        let sessoesAno = [];
+        let inicio = 0;
+        const tamanhoPagina = 1000;
+        let continuar = true;
+
+        while (continuar) {
+          const { data: lote } = await supabase
+            .from('sessoes_presenca')
+            .select('id, data_sessao, grau_sessao_id')
+            .gte('data_sessao', `${anoAtual}-01-01`)
+            .lte('data_sessao', `${anoAtual}-12-31`)
+            .order('data_sessao', { ascending: true })
+            .range(inicio, inicio + tamanhoPagina - 1);
+
+          if (lote && lote.length > 0) {
+            sessoesAno = [...sessoesAno, ...lote];
+            inicio += tamanhoPagina;
+            
+            if (lote.length < tamanhoPagina) {
+              continuar = false;
+            }
+          } else {
+            continuar = false;
+          }
+        }
+
+        console.log('📊 Sessões do ano BUSCADAS:', sessoesAno?.length);
+        console.log('📅 Primeira sessão:', sessoesAno?.[0]);
+        console.log('📅 Última sessão:', sessoesAno?.[sessoesAno.length - 1]);
 
         const { data: registrosAno } = await supabase
           .from('registros_presenca')
