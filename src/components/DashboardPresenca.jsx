@@ -88,17 +88,21 @@ export default function DashboardPresenca() {
         const dataSessao = new Date(sessao.data_sessao);
 
         const elegiveis = irmaos.filter(i => {
+          // Verificar grau
           let grauIrmao = 0;
           if (i.data_exaltacao) grauIrmao = 3;
           else if (i.data_elevacao) grauIrmao = 2;
           else if (i.data_iniciacao) grauIrmao = 1;
 
+          // Sessão de grau superior - não pode
           if (grauSessao > grauIrmao) return false;
 
+          // Verificar data de ingresso
           const dataInicio = i.data_ingresso_loja ? new Date(i.data_ingresso_loja) : 
                             i.data_iniciacao ? new Date(i.data_iniciacao) : null;
           if (dataInicio && dataSessao < dataInicio) return false;
 
+          // Verificar situações (licença, desligamento, etc) - EXCLUIR se tiver
           const situacaoNaData = historicoSituacoes?.find(sit => 
             sit.membro_id === i.id &&
             dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
@@ -106,14 +110,8 @@ export default function DashboardPresenca() {
           );
           if (situacaoNaData) return false;
 
-          const idade = i.data_nascimento ? calcularIdade(i.data_nascimento) : null;
-          if (idade >= 70) {
-            const nasc = new Date(i.data_nascimento);
-            const dataPrer = new Date(nasc);
-            dataPrer.setFullYear(nasc.getFullYear() + 70);
-            if (dataSessao >= dataPrer) return false;
-          }
-
+          // NÃO excluir prerrogativa - eles são elegíveis!
+          
           return true;
         });
 
@@ -141,15 +139,16 @@ export default function DashboardPresenca() {
 
   // Filtrar ausências por ano/mês selecionado
   const ausenciasFiltradas = useMemo(() => {
+    // TODO: Implementar filtro real por ano/mês quando necessário
+    // Por enquanto, mantém o filtro básico por percentual
     return resumo.filter(i => {
-      // Excluir irmãos com prerrogativa
       const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
       if (temPrerrogativa) return false;
       
       const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
       return percAusencias >= percentualAlerta;
     });
-  }, [resumo, resumoPrerrogativa, percentualAlerta, anoAusencias, mesAusencias]);
+  }, [resumo, resumoPrerrogativa, percentualAlerta]);
 
   const definirPeriodo = (p) => {
     setPeriodo(p);
