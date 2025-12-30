@@ -5,6 +5,7 @@ export default function ModalGradePresenca({ onFechar }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   const [grade, setGrade] = useState({});
   const [busca, setBusca] = useState('');
 
@@ -24,15 +25,21 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Sessões:', sessoesData?.length);
 
-      // 2. Buscar TODOS os irmãos (incluir datas de grau e ingresso)
+      // 2. Buscar histórico de situações
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
+      // 3. Buscar TODOS os irmãos (incluir datas de grau e ingresso)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_licenca, data_falecimento, data_desligamento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, situacao, status')
+        .select('id, nome, data_nascimento, data_falecimento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, situacao, status')
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
 
-      // Filtrar: remover falecidos/desligados de MESES ANTERIORES
+      // Filtrar: remover falecidos de MESES ANTERIORES
       const hoje = new Date();
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
@@ -43,14 +50,6 @@ export default function ModalGradePresenca({ onFechar }) {
           // Se faleceu em mês anterior, remove
           if (dataFalec.getFullYear() < anoAtual || 
              (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
-            return false;
-          }
-        }
-        if (i.data_desligamento) {
-          const dataDeslg = new Date(i.data_desligamento);
-          // Se desligou em mês anterior, remove
-          if (dataDeslg.getFullYear() < anoAtual || 
-             (dataDeslg.getFullYear() === anoAtual && dataDeslg.getMonth() < mesAtual)) {
             return false;
           }
         }
@@ -130,6 +129,7 @@ export default function ModalGradePresenca({ onFechar }) {
 
       setSessoes(sessoesData || []);
       setIrmaos(irmaosComFlags || []);
+      setHistoricoSituacoes(historicoSituacoes || []);
       setGrade(gradeCompleta);
 
     } catch (error) {
@@ -215,24 +215,26 @@ export default function ModalGradePresenca({ onFechar }) {
       );
     }
 
-    // 5. Verificar se computa (prerrogativa/licença/falecimento/desligamento)
+    // 5. Verificar se computa (prerrogativa/situação ativa/falecimento)
     let computa = true;
     
     if (irmao.data_prerrogativa) {
       const dataPrer = new Date(irmao.data_prerrogativa);
       if (dataSessao >= dataPrer) computa = false;
     }
-    if (irmao.data_licenca) {
-      const dataLic = new Date(irmao.data_licenca);
-      if (dataSessao >= dataLic) computa = false;
-    }
+    
+    // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
+    const situacaoNaData = historicoSituacoes?.find(sit => 
+      sit.membro_id === irmao.id &&
+      dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+      (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+    );
+    
+    if (situacaoNaData) computa = false;
+    
     if (irmao.data_falecimento) {
       const dataFalec = new Date(irmao.data_falecimento);
       if (dataSessao >= dataFalec) computa = false;
-    }
-    if (irmao.data_desligamento) {
-      const dataDeslg = new Date(irmao.data_desligamento);
-      if (dataSessao >= dataDeslg) computa = false;
     }
 
     // Se NÃO TEM registro
