@@ -723,7 +723,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           🔺 Vida Maçônica
         </button>
 
-        {edicao && irmaoId && (
+        {irmaoEditando?.id && (
           <button
             type="button"
             onClick={() => setAbaSelecionada('situacoes')}
