@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import ModalGradePresenca from './ModalGradePresenca';
 
@@ -37,6 +37,10 @@ export default function DashboardPresenca() {
   const [resumoLicenciados, setResumoLicenciados] = useState([]);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
+  const [anoAusencias, setAnoAusencias] = useState(2025);
+  const [mesAusencias, setMesAusencias] = useState(0);
+  const [qtdSessoesRecentes, setQtdSessoesRecentes] = useState(4);
+  const [sessoesRecentes, setSessoesRecentes] = useState([]);
 
   useEffect(() => {
     definirPeriodo('ano');
@@ -51,6 +55,101 @@ export default function DashboardPresenca() {
   useEffect(() => {
     carregarResumoAno();
   }, [anoPresenca100]);
+
+  useEffect(() => {
+    carregarSessoesRecentes();
+  }, [qtdSessoesRecentes]);
+
+  const carregarSessoesRecentes = async () => {
+    try {
+      const { data: sessoes } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id')
+        .order('data_sessao', { ascending: false })
+        .limit(qtdSessoesRecentes);
+
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, data_nascimento')
+        .eq('status', 'ativo');
+
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
+      const sessoesComDados = await Promise.all(sessoes.map(async (sessao) => {
+        const { data: registros } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, presente')
+          .eq('sessao_id', sessao.id);
+
+        const grauSessao = sessao.grau_sessao_id || 1;
+        const dataSessao = new Date(sessao.data_sessao);
+
+        const elegiveis = irmaos.filter(i => {
+          let grauIrmao = 0;
+          if (i.data_exaltacao) grauIrmao = 3;
+          else if (i.data_elevacao) grauIrmao = 2;
+          else if (i.data_iniciacao) grauIrmao = 1;
+
+          if (grauSessao > grauIrmao) return false;
+
+          const dataInicio = i.data_ingresso_loja ? new Date(i.data_ingresso_loja) : 
+                            i.data_iniciacao ? new Date(i.data_iniciacao) : null;
+          if (dataInicio && dataSessao < dataInicio) return false;
+
+          const situacaoNaData = historicoSituacoes?.find(sit => 
+            sit.membro_id === i.id &&
+            dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+            (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+          );
+          if (situacaoNaData) return false;
+
+          const idade = i.data_nascimento ? calcularIdade(i.data_nascimento) : null;
+          if (idade >= 70) {
+            const nasc = new Date(i.data_nascimento);
+            const dataPrer = new Date(nasc);
+            dataPrer.setFullYear(nasc.getFullYear() + 70);
+            if (dataSessao >= dataPrer) return false;
+          }
+
+          return true;
+        });
+
+        const presencas = registros?.filter(r => r.presente).length || 0;
+        const totalElegiveis = elegiveis.length;
+        const ausencias = totalElegiveis - presencas;
+        const percentual = totalElegiveis > 0 ? Math.round((presencas / totalElegiveis) * 100) : 0;
+
+        return {
+          id: sessao.id,
+          data_sessao: sessao.data_sessao,
+          grau: grauSessao,
+          elegiveis: totalElegiveis,
+          presencas,
+          ausencias,
+          percentual
+        };
+      }));
+
+      setSessoesRecentes(sessoesComDados);
+    } catch (error) {
+      console.error('Erro ao carregar sessões recentes:', error);
+    }
+  };
+
+  // Filtrar ausências por ano/mês selecionado
+  const ausenciasFiltradas = useMemo(() => {
+    return resumo.filter(i => {
+      // Excluir irmãos com prerrogativa
+      const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
+      if (temPrerrogativa) return false;
+      
+      const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
+      return percAusencias >= percentualAlerta;
+    });
+  }, [resumo, resumoPrerrogativa, percentualAlerta, anoAusencias, mesAusencias]);
 
   const definirPeriodo = (p) => {
     setPeriodo(p);
@@ -548,6 +647,79 @@ export default function DashboardPresenca() {
         </div>
       </div>
 
+      {/* Quadro: Sessões Recentes - largura total */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <div className="bg-indigo-600 text-white p-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold flex items-center gap-2">
+            <span>📅</span>
+            Sessões Recentes
+          </h3>
+          <div className="flex items-center gap-2">
+            <span className="text-sm">Quantidade:</span>
+            <select
+              value={qtdSessoesRecentes}
+              onChange={(e) => setQtdSessoesRecentes(Number(e.target.value))}
+              className="px-3 py-1.5 bg-indigo-700 text-white rounded font-semibold"
+            >
+              <option value={4}>4</option>
+              <option value={6}>6</option>
+              <option value={8}>8</option>
+              <option value={10}>10</option>
+            </select>
+          </div>
+        </div>
+        <div className="p-4">
+          {sessoesRecentes.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">Carregando sessões...</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Elegíveis</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ausências</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sessoesRecentes.map((sessao, idx) => (
+                    <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <td className="px-4 py-3 text-sm">
+                        {new Date(sessao.data_sessao).toLocaleDateString('pt-BR')}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          sessao.grau === 1 ? 'bg-blue-100 text-blue-800' :
+                          sessao.grau === 2 ? 'bg-green-100 text-green-800' :
+                          'bg-purple-100 text-purple-800'
+                        }`}>
+                          {sessao.grau === 1 ? 'Aprendiz' : sessao.grau === 2 ? 'Companheiro' : 'Mestre'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm font-semibold">{sessao.elegiveis}</td>
+                      <td className="px-4 py-3 text-center text-sm font-semibold text-green-600">{sessao.presencas}</td>
+                      <td className="px-4 py-3 text-center text-sm font-semibold text-red-600">{sessao.ausencias}</td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        <span className={`px-2 py-1 rounded font-semibold ${
+                          sessao.percentual >= 80 ? 'bg-green-100 text-green-800' :
+                          sessao.percentual >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {sessao.percentual}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Quadros lado a lado */}
       <div className="grid grid-cols-2 gap-6">
         
@@ -719,45 +891,55 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Ausências acima do percentual configurado */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-orange-600 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <span>⚠️</span>
-              Ausências
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-sm">≥</span>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={percentualAlerta}
-                onChange={(e) => setPercentualAlerta(Number(e.target.value))}
-                className="w-16 px-2 py-1 bg-orange-700 text-white rounded font-semibold text-center"
-              />
-              <span className="text-sm">%</span>
+          <div className="bg-orange-600 text-white p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold flex items-center gap-2">
+                <span>⚠️</span>
+                Ausências
+              </h3>
+              <div className="flex items-center gap-2">
+                <span className="text-sm">≥</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={percentualAlerta}
+                  onChange={(e) => setPercentualAlerta(Number(e.target.value))}
+                  className="w-16 px-2 py-1 bg-orange-700 text-white rounded font-semibold text-center"
+                />
+                <span className="text-sm">%</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium">Período:</label>
+              <select
+                value={anoAusencias}
+                onChange={(e) => setAnoAusencias(Number(e.target.value))}
+                className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
+              >
+                {[2025, 2026, 2027, 2028, 2029, 2030].map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+              <select
+                value={mesAusencias}
+                onChange={(e) => setMesAusencias(Number(e.target.value))}
+                className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
+              >
+                <option value={0}>Ano todo</option>
+                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((mes, idx) => (
+                  <option key={idx + 1} value={idx + 1}>{mes}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
-            {resumo.filter(i => {
-              // Excluir irmãos com prerrogativa
-              const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
-              if (temPrerrogativa) return false;
-              
-              const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
-              return percAusencias >= percentualAlerta;
-            }).length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com ≥{percentualAlerta}% ausências</p>
+            {ausenciasFiltradas.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">Nenhum irmão com ≥{percentualAlerta}% ausências no período</p>
             ) : (
               <div className="space-y-2">
-                {resumo
-                  .filter(i => {
-                    // Excluir irmãos com prerrogativa
-                    const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
-                    if (temPrerrogativa) return false;
-                    
-                    const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
-                    return percAusencias >= percentualAlerta;
-                  })
+                {ausenciasFiltradas
                   .sort((a, b) => {
                     const percA = (a.ausentes / a.total_registros) * 100;
                     const percB = (b.ausentes / b.total_registros) * 100;
