@@ -108,6 +108,7 @@ export default function MinhaPresenca({ userData }) {
         .select(`
           id,
           data_sessao,
+          grau_sessao_id,
           graus_sessao:grau_sessao_id (nome, grau_minimo_requerido)
         `)
         .gte('data_sessao', periodo.inicio)
@@ -116,22 +117,23 @@ export default function MinhaPresenca({ userData }) {
 
       if (sessoesError) throw sessoesError;
 
-      // Filtrar apenas sessões que o irmão pode participar
+      // Filtrar apenas sessões que o irmão podia participar NA DATA
       const sessoesElegiveis = sessoesData.filter(sessao => {
-        const tipoSessao = sessao.graus_sessao?.nome;
+        const dataSessao = new Date(sessao.data_sessao);
+        const grauSessao = sessao.grau_sessao_id || 1;
         
-        if (grau === 'Aprendiz') {
-          return tipoSessao === 'Sessão de Aprendiz' || tipoSessao === 'Sessão Administrativa';
+        // Calcular grau do irmão NA DATA da sessão
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao)) {
+          grauIrmao = 3;
+        } else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao)) {
+          grauIrmao = 2;
+        } else if (irmao.data_iniciacao && dataSessao >= new Date(irmao.data_iniciacao)) {
+          grauIrmao = 1;
         }
-        if (grau === 'Companheiro') {
-          return tipoSessao === 'Sessão de Aprendiz' || 
-                 tipoSessao === 'Sessão de Companheiro' || 
-                 tipoSessao === 'Sessão Administrativa';
-        }
-        if (grau === 'Mestre') {
-          return true;
-        }
-        return tipoSessao === 'Sessão Administrativa';
+        
+        // Só incluir se tinha grau suficiente
+        return grauIrmao >= grauSessao;
       });
 
       setSessoes(sessoesElegiveis);
