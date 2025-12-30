@@ -31,17 +31,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   // Contagens por situação
   const hoje = new Date();
   
-  // Licenciados: filtrar por coluna situacao E validar se tem no histórico
   const irmaosLicenciados = irmaos.filter(i => {
-    // Se não tem histórico carregado, usar coluna situacao
-    if (historicoSituacoes.length === 0) {
-      return i.situacao?.toLowerCase() === 'licenciado';
-    }
-    
-    // Se tem histórico, buscar situação ativa
     return historicoSituacoes.some(sit => 
       sit.membro_id === i.id &&
-      sit.tipo_situacao?.toLowerCase() === 'licenciado' &&
+      sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'licenca' &&
       (sit.data_fim === null || new Date(sit.data_fim) >= hoje)
     );
   });
