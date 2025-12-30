@@ -93,12 +93,12 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     return 'bg-red-100 text-red-800';
   };
 
-  // Gerar opções de anos (últimos 5 anos + próximos 2)
+  // Gerar opções de anos (2025 a 2030)
   const anosDisponiveis = [];
-  const anoAtual = new Date().getFullYear();
-  for (let i = anoAtual - 5; i <= anoAtual + 2; i++) {
+  for (let i = 2025; i <= 2030; i++) {
     anosDisponiveis.push(i);
   }
+  const anoAtual = new Date().getFullYear();
 
   const meses = [
     { valor: '', nome: 'Todos os meses' },
