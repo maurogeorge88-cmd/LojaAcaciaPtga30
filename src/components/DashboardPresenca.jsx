@@ -70,7 +70,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, data_nascimento')
+        .select('id, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, data_nascimento, data_falecimento')
         .eq('status', 'ativo');
 
       const { data: historicoSituacoes } = await supabase
@@ -88,6 +88,12 @@ export default function DashboardPresenca() {
         const dataSessao = new Date(sessao.data_sessao);
 
         const elegiveis = irmaos.filter(i => {
+          // Excluir falecidos até a data da sessão
+          if (i.data_falecimento) {
+            const dataFalec = new Date(i.data_falecimento);
+            if (dataSessao >= dataFalec) return false;
+          }
+
           // Verificar grau
           let grauIrmao = 0;
           if (i.data_exaltacao) grauIrmao = 3;
@@ -110,8 +116,6 @@ export default function DashboardPresenca() {
           );
           if (situacaoNaData) return false;
 
-          // NÃO excluir prerrogativa - eles são elegíveis!
-          
           return true;
         });
 
@@ -913,7 +917,23 @@ export default function DashboardPresenca() {
               <label className="text-sm font-medium">Período:</label>
               <select
                 value={anoAusencias}
-                onChange={(e) => setAnoAusencias(Number(e.target.value))}
+                onChange={(e) => {
+                  setAnoAusencias(Number(e.target.value));
+                  const ano = Number(e.target.value);
+                  const mes = mesAusencias;
+                  
+                  // Definir período baseado no ano/mês
+                  if (mes === 0) {
+                    // Ano todo
+                    setDataInicio(`${ano}-01-01`);
+                    setDataFim(`${ano}-12-31`);
+                  } else {
+                    // Mês específico
+                    const ultimoDia = new Date(ano, mes, 0).getDate();
+                    setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
+                    setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
+                  }
+                }}
                 className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
               >
                 {[2025, 2026, 2027, 2028, 2029, 2030].map(ano => (
@@ -922,7 +942,23 @@ export default function DashboardPresenca() {
               </select>
               <select
                 value={mesAusencias}
-                onChange={(e) => setMesAusencias(Number(e.target.value))}
+                onChange={(e) => {
+                  setMesAusencias(Number(e.target.value));
+                  const ano = anoAusencias;
+                  const mes = Number(e.target.value);
+                  
+                  // Definir período baseado no ano/mês
+                  if (mes === 0) {
+                    // Ano todo
+                    setDataInicio(`${ano}-01-01`);
+                    setDataFim(`${ano}-12-31`);
+                  } else {
+                    // Mês específico
+                    const ultimoDia = new Date(ano, mes, 0).getDate();
+                    setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
+                    setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
+                  }
+                }}
                 className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
               >
                 <option value={0}>Ano todo</option>
