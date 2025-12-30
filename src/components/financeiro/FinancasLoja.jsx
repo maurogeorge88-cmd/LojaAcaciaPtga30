@@ -1701,7 +1701,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         let presencas5 = 0;
         let ausencias5 = 0;
         let justificadas5 = 0;
-        let semRegistro5 = 0;
 
         ultimasSessoes.forEach(sessao => {
           const grauSessao = sessao.grau_sessao_id || 1;
@@ -1720,7 +1719,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 ausencias5++;
               }
             } else {
-              semRegistro5++;
+              // Sem registro = ausência
+              ausencias5++;
             }
           }
         });
@@ -1741,7 +1741,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           .eq('membro_id', irmaoId)
           .in('sessao_id', sessoesAno?.map(s => s.id) || []);
 
-        let totalSessoesAno = 0;
+        let totalSessoesAnoGeral = sessoesAno?.length || 0;
+        let totalSessoesElegiveis = 0;
         let presencasContadasAno = 0;
         let ausenciasAno = 0;
         let justificadasAno = 0;
@@ -1752,7 +1753,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           
           // Só contar se irmão tinha grau suficiente
           if (grauIrmao >= grauSessao) {
-            totalSessoesAno++;
+            totalSessoesElegiveis++;
             const reg = registrosAno?.find(r => r.sessao_id === sessao.id);
             if (reg) {
               if (reg.presente) {
@@ -1762,11 +1763,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               } else {
                 ausenciasAno++;
               }
+            } else {
+              // Sem registro = ausência
+              ausenciasAno++;
             }
           }
         });
 
-        const taxaAno = totalSessoesAno > 0 ? ((presencasContadasAno / totalSessoesAno) * 100).toFixed(1) : '0.0';
+        const taxaAno = totalSessoesElegiveis > 0 ? ((presencasContadasAno / totalSessoesElegiveis) * 100).toFixed(1) : '0.0';
 
         // Desenhar quadro de estatísticas
         if (yPos > 230) {
@@ -1782,9 +1786,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         // Tabela de estatísticas
         const estatisticas = [
-          ['Período', 'Total Sessões', 'Presenças', 'Ausências', 'Justificadas', 'Taxa %'],
+          ['Período', 'Total', 'Elegíveis', 'Presenças', 'Ausências', 'Justif.', 'Taxa %'],
           [
             'Últimas 5 Sessões',
+            '5',
             totalSessoes5.toString(),
             presencas5.toString(),
             ausencias5.toString(),
@@ -1793,7 +1798,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           ],
           [
             `Ano ${anoAtual}`,
-            totalSessoesAno.toString(),
+            totalSessoesAnoGeral.toString(),
+            totalSessoesElegiveis.toString(),
             presencasContadasAno.toString(),
             ausenciasAno.toString(),
             justificadasAno.toString(),
