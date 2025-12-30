@@ -147,6 +147,14 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           }
         });
 
+        // Ordenar: 1º por total de sessões (maior -> menor), 2º alfabético
+        com100.sort((a, b) => {
+          if (b.total !== a.total) {
+            return b.total - a.total; // Maior número primeiro
+          }
+          return a.nome.localeCompare(b.nome); // Alfabético
+        });
+
         setIrmaos100(com100);
       } catch (error) {
         console.error('Erro ao carregar presença 100%:', error);
