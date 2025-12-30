@@ -57,7 +57,7 @@ export default function ModalGradePresenca({ onFechar }) {
         // 2. Remover irmãos com situação DESLIGADO ativa sem data de retorno
         const situacaoDesligado = historicoSituacoes.find(sit => 
           sit.membro_id === i.id &&
-          sit.tipo_situacao === 'Desligado' &&
+          sit.tipo_situacao?.toLowerCase() === 'desligado' &&
           sit.data_fim === null // Sem data de retorno = desligamento definitivo
         );
         
@@ -180,17 +180,6 @@ export default function ModalGradePresenca({ onFechar }) {
     const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
     const dataInicio = dataIngresso || dataIniciacao;
     
-    // Debug para Michel
-    if (irmao.nome.includes('Michel')) {
-      console.log('Michel:', {
-        sessao: sessao.data_sessao,
-        dataIngresso,
-        dataIniciacao,
-        dataInicio: dataInicio?.toLocaleDateString(),
-        antes: dataInicio && dataSessao < dataInicio
-      });
-    }
-    
     if (dataInicio && dataSessao < dataInicio) {
       // Sessão antes de ingressar na loja → não se aplica
       return (
@@ -208,15 +197,6 @@ export default function ModalGradePresenca({ onFechar }) {
 
     // 3. Verificar grau da sessão
     const grauSessao = sessao.grau_sessao_id || 1;
-
-    // Debug Michel
-    if (irmao.nome.includes('Michel')) {
-      console.log('Michel graus:', {
-        grauIrmao,
-        grauSessao,
-        bloqueado: grauSessao > grauIrmao
-      });
-    }
 
     // 4. Se sessão é de grau superior ao do irmão → não pode participar
     if (grauSessao > grauIrmao) {
