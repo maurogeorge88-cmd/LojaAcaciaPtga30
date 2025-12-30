@@ -88,12 +88,6 @@ export default function DashboardPresenca() {
         const dataSessao = new Date(sessao.data_sessao);
 
         const elegiveis = irmaos.filter(i => {
-          // Excluir falecidos até a data da sessão
-          if (i.data_falecimento) {
-            const dataFalec = new Date(i.data_falecimento);
-            if (dataSessao >= dataFalec) return false;
-          }
-
           // Verificar grau
           let grauIrmao = 0;
           if (i.data_exaltacao) grauIrmao = 3;
@@ -108,13 +102,21 @@ export default function DashboardPresenca() {
                             i.data_iniciacao ? new Date(i.data_iniciacao) : null;
           if (dataInicio && dataSessao < dataInicio) return false;
 
-          // Verificar situações (licença, desligamento, etc) - EXCLUIR se tiver
+          // Verificar situações (licença, desligamento, etc) na data da sessão
           const situacaoNaData = historicoSituacoes?.find(sit => 
             sit.membro_id === i.id &&
             dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
             (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
           );
           if (situacaoNaData) return false;
+
+          // Verificar falecimento - SE faleceu ANTES da sessão, NÃO é elegível
+          // SE faleceu DEPOIS da sessão, continua elegível
+          if (i.data_falecimento) {
+            const dataFalec = new Date(i.data_falecimento);
+            // Sessão foi no mesmo dia ou DEPOIS do falecimento = não elegível
+            if (dataSessao >= dataFalec) return false;
+          }
 
           return true;
         });
