@@ -8,6 +8,7 @@ import { supabase } from '../supabaseClient';
 
 export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+  const [irmaos100, setIrmaos100] = useState([]);
 
   useEffect(() => {
     const carregar = async () => {
@@ -18,6 +19,75 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       setHistoricoSituacoes(data || []);
     };
     carregar();
+  }, []);
+
+  useEffect(() => {
+    const carregarPresenca100 = async () => {
+      try {
+        const anoAtual = new Date().getFullYear();
+        
+        // Buscar todas as sessões do ano
+        const { data: sessoes } = await supabase
+          .from('sessoes_presenca')
+          .select('id, data_sessao, grau_sessao_id')
+          .gte('data_sessao', `${anoAtual}-01-01`)
+          .lte('data_sessao', `${anoAtual}-12-31`);
+
+        // Buscar todos os irmãos ativos
+        const { data: todosIrmaos } = await supabase
+          .from('irmaos')
+          .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao')
+          .eq('status', 'ativo');
+
+        // Buscar todos os registros de presença
+        const { data: registros } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, sessao_id, presente')
+          .in('sessao_id', sessoes?.map(s => s.id) || []);
+
+        const irmaosCom100 = [];
+
+        todosIrmaos?.forEach(irmao => {
+          // Calcular sessões elegíveis
+          const sessoesElegiveis = sessoes?.filter(s => {
+            const dataSessao = new Date(s.data_sessao);
+            const grauSessao = s.grau_sessao_id || 1;
+            
+            let grauIrmao = 0;
+            if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao)) grauIrmao = 3;
+            else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao)) grauIrmao = 2;
+            else if (irmao.data_iniciacao && dataSessao >= new Date(irmao.data_iniciacao)) grauIrmao = 1;
+            
+            return grauIrmao >= grauSessao;
+          }) || [];
+
+          if (sessoesElegiveis.length === 0) return;
+
+          // Verificar presenças
+          const presencasIrmao = registros?.filter(r => 
+            r.membro_id === irmao.id && 
+            r.presente &&
+            sessoesElegiveis.some(s => s.id === r.sessao_id)
+          ) || [];
+
+          const taxa = (presencasIrmao.length / sessoesElegiveis.length) * 100;
+          
+          if (taxa === 100) {
+            irmaosCom100.push({
+              id: irmao.id,
+              nome: irmao.nome,
+              total: sessoesElegiveis.length
+            });
+          }
+        });
+
+        setIrmaos100(irmaosCom100);
+      } catch (error) {
+        console.error('Erro ao carregar presença 100%:', error);
+      }
+    };
+
+    carregarPresenca100();
   }, []);
 
   // Função para determinar o grau do irmão
@@ -323,6 +393,48 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           </div>
         </div>
       </div>
+
+      {/* PRESENÇA 100% - 3 COLUNAS */}
+      {irmaos100.length > 0 && (
+        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <span className="text-2xl">🏆</span>
+              Presença 100% no Ano ({irmaos100.length} {irmaos100.length === 1 ? 'Irmão' : 'Irmãos'})
+            </h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Dividir irmãos em 3 colunas */}
+            {[0, 1, 2].map(coluna => {
+              const porColuna = Math.ceil(irmaos100.length / 3);
+              const inicio = coluna * porColuna;
+              const fim = inicio + porColuna;
+              const irmaosColuna = irmaos100.slice(inicio, fim);
+              
+              return (
+                <div key={coluna} className="space-y-2">
+                  {irmaosColuna.map(irmao => (
+                    <div 
+                      key={irmao.id}
+                      className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-3 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-600 text-xl">✅</span>
+                        <div className="flex-1">
+                          <div className="font-semibold text-gray-800 text-sm">{irmao.nome}</div>
+                          <div className="text-xs text-gray-600">{irmao.total} sessões</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ANIVERSARIANTES - LAYOUT COMPACTO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* ANIVERSARIANTES DO DIA - COR MAIS CLARA */}
