@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 export default function GestaoSituacoes({ irmaId }) {
+
+export default function GestaoSituacoes({ irmaId }) {
   const [situacoes, setSituacoes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarModal, setMostrarModal] = useState(false);
