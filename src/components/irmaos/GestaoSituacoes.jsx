@@ -292,7 +292,7 @@ export default function GestaoSituacoes({ irmaId }) {
                 </div>
 
                 {/* Ações */}
-                {sit.status === 'ativa' && (getStatusTexto(sit) === 'ATIVA' || getStatusTexto(sit) === 'AGENDADA') && (
+                {sit.status !== 'cancelada' && (
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -301,7 +301,7 @@ export default function GestaoSituacoes({ irmaId }) {
                     >
                       Editar
                     </button>
-                    {sit.data_fim === null && (
+                    {sit.status === 'ativa' && sit.data_fim === null && getStatusTexto(sit) === 'ATIVA' && (
                       <button
                         type="button"
                         onClick={() => encerrar(sit.id)}
@@ -310,13 +310,15 @@ export default function GestaoSituacoes({ irmaId }) {
                         Encerrar
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => cancelar(sit.id)}
-                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
-                    >
-                      Cancelar
-                    </button>
+                    {sit.status === 'ativa' && (
+                      <button
+                        type="button"
+                        onClick={() => cancelar(sit.id)}
+                        className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      >
+                        Cancelar
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
