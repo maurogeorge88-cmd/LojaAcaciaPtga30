@@ -693,8 +693,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 </h4>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* CAMPOS DESATIVADOS - Agora usam histórico de situações
+                  
                   {/* Data de Licença */}
-                  {(modoEdicao ? irmaoForm.situacao === 'licenciado' : irmao.situacao === 'licenciado') && (
+                  {/* {(modoEdicao ? irmaoForm.situacao === 'licenciado' : irmao.situacao === 'licenciado') && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         Data de Início da Licença
@@ -717,10 +719,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         </p>
                       )}
                     </div>
-                  )}
+                  )} */}
 
                   {/* Data de Desligamento - para Desligado e Ex-Ofício */}
-                  {(modoEdicao 
+                  {/* {(modoEdicao 
                     ? (irmaoForm.situacao === 'desligado' || irmaoForm.situacao === 'ex_oficio')
                     : (irmao.situacao === 'desligado' || irmao.situacao === 'ex_oficio')
                   ) && (
@@ -748,7 +750,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         </p>
                       )}
                     </div>
-                  )}
+                  )} */}
 
                   {/* Data de Falecimento */}
                   {(modoEdicao ? irmaoForm.situacao === 'falecido' : irmao.situacao === 'falecido') && (
@@ -777,9 +779,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )}
                 </div>
 
-                {modoEdicao && !['licenciado', 'desligado', 'falecido', 'ex_oficio'].includes(irmaoForm.situacao) && (
+                {modoEdicao && !['falecido'].includes(irmaoForm.situacao) && (
                   <p className="text-sm text-gray-600 italic mt-2">
-                    ℹ️ Campos de data específicos aparecerão quando selecionar: Licenciado, Desligado, Falecido ou Ex-Ofício
+                    ℹ️ Para registrar licenças e desligamentos, use a aba "Situações"
                   </p>
                 )}
                 
