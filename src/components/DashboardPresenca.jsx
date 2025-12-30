@@ -249,6 +249,7 @@ export default function DashboardPresenca() {
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_ingresso_loja, data_falecimento')
         .eq('status', 'ativo');
 
+
       const { data: historicoSituacoes } = await supabase.from("historico_situacoes").select("*").eq("status", "ativa");
       // 5. Buscar registros com paginação
       let registros = [];
@@ -386,8 +387,8 @@ export default function DashboardPresenca() {
         if (irmao.data_falecimento) return;
 
         const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-        const estaLicenciado = historicoSituacoes?.some(s => s.membro_id === irmao.id && s.tipo_situacao?.toLowerCase() === "licenciado" && (s.data_fim === null || new Date(s.data_fim) >= new Date()));
-        const estaLicenciado = irmao.data_licenca !== null;
+        const temPrerrogativa = idade >= 70;
+        const estaLicenciado = historicoSituacoes?.some(s => s.membro_id === irmao.id && s.tipo_situacao?.toLowerCase() === "licença" && (s.data_fim === null || new Date(s.data_fim) >= new Date())) || false;
 
         // Calcular grau
         let grauTexto = 'Não iniciado';
