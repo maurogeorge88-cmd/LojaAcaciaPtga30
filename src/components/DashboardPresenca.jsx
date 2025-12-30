@@ -544,7 +544,7 @@ export default function DashboardPresenca() {
                   <div key={irmao.id} className="p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-gray-800">
-                        {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                        {formatarNome(irmao.nome)}
                       </span>
                       <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
                         {irmao.total_sessoes}
@@ -602,7 +602,7 @@ export default function DashboardPresenca() {
                       .map(irmao => (
                       <tr key={irmao.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm text-gray-800">
-                          {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                          {formatarNome(irmao.nome)}
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600">
                           {irmao.grau}
@@ -656,7 +656,7 @@ export default function DashboardPresenca() {
                       .map(irmao => (
                       <tr key={irmao.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3 text-sm text-gray-800">
-                          {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                          {formatarNome(irmao.nome)}
                         </td>
                         <td className="px-4 py-3 text-center text-sm text-gray-600">
                           {irmao.grau}
@@ -734,7 +734,7 @@ export default function DashboardPresenca() {
                       <div key={irmao.id} className="flex justify-between items-center p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors">
                         <div className="flex-1">
                           <p className="font-medium text-gray-800">
-                            {irmao.nome.split(' ').slice(0, 2).join(' ')}
+                            {formatarNome(irmao.nome)}
                           </p>
                           <p className="text-sm text-gray-600">
                             {irmao.ausentes}/{irmao.total_registros}
