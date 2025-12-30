@@ -204,16 +204,20 @@ export default function ModalGradePresenca({ onFechar }) {
       );
     }
 
-    // 2. Calcular grau do irmão
+    // 2. Calcular grau do irmão NA DATA DA SESSÃO
     let grauIrmao = 0;
-    if (irmao.data_exaltacao) grauIrmao = 3;
-    else if (irmao.data_elevacao) grauIrmao = 2;
-    else if (irmao.data_iniciacao) grauIrmao = 1;
+    if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao)) {
+      grauIrmao = 3;
+    } else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao)) {
+      grauIrmao = 2;
+    } else if (irmao.data_iniciacao && dataSessao >= new Date(irmao.data_iniciacao)) {
+      grauIrmao = 1;
+    }
 
     // 3. Verificar grau da sessão
     const grauSessao = sessao.grau_sessao_id || 1;
 
-    // 4. Se sessão é de grau superior ao do irmão → não pode participar
+    // 4. Se sessão é de grau superior ao do irmão NA DATA → não pode participar
     if (grauSessao > grauIrmao) {
       return (
         <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
