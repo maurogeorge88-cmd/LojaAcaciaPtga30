@@ -380,9 +380,40 @@ export default function DashboardPresenca() {
       const totalComRegistros = resumoCompleto.filter(r => r.total_registros > 0).length;
       const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
 
+      // Irmãos ativos = regulares + licenciados (com licença ativa)
+      const hoje = new Date();
+      const irmaosAtivos = irmaos?.filter(i => {
+        // Se faleceu, não é ativo
+        if (i.data_falecimento) return false;
+        
+        // Se tem licença ativa, é ativo
+        const temLicencaAtiva = historicoSituacoes?.some(sit => {
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return sit.membro_id === i.id &&
+            tipoNormalizado === 'licenca' &&
+            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+        });
+        
+        if (temLicencaAtiva) return true;
+        
+        // Se tem desligamento ativo, não é ativo
+        const temDesligamentoAtivo = historicoSituacoes?.some(sit => {
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return sit.membro_id === i.id &&
+            tipoNormalizado === 'desligado' &&
+            sit.data_fim === null;
+        });
+        
+        if (temDesligamentoAtivo) return false;
+        
+        // Demais casos: é ativo
+        return true;
+      }).length || 0;
+
       setDados({
         sessoes: totalSessoes || 0,
         irmaos: totalIrmaos || 0,
+        irmaosAtivos,
         mediaPresenca
       });
 
@@ -472,10 +503,10 @@ export default function DashboardPresenca() {
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
-                className={`flex-1 py-3 rounded-lg text-sm font-semibold transition-all ${
+                className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all ${
                   periodo === p
-                    ? 'bg-blue-600 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                    ? 'bg-green-400 text-white shadow-lg scale-105'
+                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
                 }`}
               >
                 {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
@@ -489,14 +520,18 @@ export default function DashboardPresenca() {
         </p>
       </div>
       {/* Cards Totais */}
-      <div className="grid grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-5 gap-6 mb-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
           <p className="text-blue-600 font-semibold mb-2">Sessões</p>
           <p className="text-4xl font-bold text-blue-800">{dados.sessoes}</p>
         </div>
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-          <p className="text-green-600 font-semibold mb-2">Irmãos</p>
+          <p className="text-green-600 font-semibold mb-2">Total de Irmãos</p>
           <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
+        </div>
+        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 text-center">
+          <p className="text-teal-600 font-semibold mb-2">Irmãos Ativos</p>
+          <p className="text-4xl font-bold text-teal-800">{dados.irmaosAtivos || 0}</p>
         </div>
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
           <p className="text-purple-600 font-semibold mb-2">Média Presença</p>
