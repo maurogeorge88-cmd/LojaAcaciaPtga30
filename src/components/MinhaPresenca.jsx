@@ -21,8 +21,9 @@ export default function MinhaPresenca({ userData }) {
     taxa: 0
   });
   const [periodoSelecionado, setPeriodoSelecionado] = useState('ano-atual');
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
+  const anoAtual = new Date().getFullYear();
+  const [dataInicio, setDataInicio] = useState(`${anoAtual}-01-01`);
+  const [dataFim, setDataFim] = useState(`${anoAtual}-12-31`);
 
   useEffect(() => {
     carregarDados();
