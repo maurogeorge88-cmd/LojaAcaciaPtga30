@@ -17,6 +17,7 @@ export default function MinhasFinancas({ userEmail }) {
   const [totalReceitas, setTotalReceitas] = useState(0); // O que o irmão DEVE
   const [totalDespesas, setTotalDespesas] = useState(0); // O que a loja DEVE (créditos)
   const [saldoLiquido, setSaldoLiquido] = useState(0);
+  const [totalPago, setTotalPago] = useState(0); // Total já pago pelo irmão
 
   useEffect(() => {
     carregarMinhasFinancas();
@@ -81,6 +82,7 @@ export default function MinhasFinancas({ userEmail }) {
       setTotalReceitas(totalReceitasPendentes);
       setTotalDespesas(totalDespesasPendentes);
       setSaldoLiquido(saldoFinal);
+      setTotalPago(totalReceitasPagas); // Total já pago pelo irmão
 
       // SEGUNDO: Buscar lançamentos FILTRADOS para exibição
       let query = supabase
@@ -177,8 +179,8 @@ export default function MinhasFinancas({ userEmail }) {
     <div className="p-6">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">💰 Minhas Finanças</h2>
 
-      {/* Cards de resumo - NOVO LAYOUT */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      {/* Cards de resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-lg p-4 text-white shadow-lg">
           <p className="text-sm opacity-90">Você Deve</p>
           <p className="text-2xl font-bold mt-1">{formatarMoeda(totalReceitas)}</p>
@@ -189,9 +191,14 @@ export default function MinhasFinancas({ userEmail }) {
           <p className="text-2xl font-bold mt-1">{formatarMoeda(totalDespesas)}</p>
         </div>
 
+        <div className="bg-gradient-to-br from-green-400 to-green-500 rounded-lg p-4 text-white shadow-lg">
+          <p className="text-sm opacity-90">Total Pago</p>
+          <p className="text-2xl font-bold mt-1">{formatarMoeda(totalPago)}</p>
+        </div>
+
         <div className={`rounded-lg p-4 text-white shadow-lg ${
           saldoLiquido > 0 ? 'bg-gradient-to-br from-orange-400 to-orange-500' : 
-          saldoLiquido < 0 ? 'bg-gradient-to-br from-green-400 to-green-500' : 
+          saldoLiquido < 0 ? 'bg-gradient-to-br from-purple-400 to-purple-500' : 
           'bg-gradient-to-br from-gray-400 to-gray-500'
         }`}>
           <p className="text-sm opacity-90">Saldo Final</p>
