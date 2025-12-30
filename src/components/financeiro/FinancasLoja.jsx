@@ -1685,25 +1685,41 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         // ESTATÍSTICAS DE PRESENÇA
         // ========================================
         
-        // Calcular estatísticas das últimas 5 sessões
-        let totalSessoes5 = ultimasSessoes.length;
+        // Determinar grau do irmão em cada sessão (baseado nas datas)
+        const obterGrauNaData = (dataSessao) => {
+          const data = new Date(dataSessao);
+          if (irmaoData.data_exaltacao && data >= new Date(irmaoData.data_exaltacao)) return 3;
+          if (irmaoData.data_elevacao && data >= new Date(irmaoData.data_elevacao)) return 2;
+          if (irmaoData.data_iniciacao && data >= new Date(irmaoData.data_iniciacao)) return 1;
+          return 0;
+        };
+
+        // Calcular estatísticas das últimas 5 sessões (apenas sessões elegíveis)
+        let totalSessoes5 = 0;
         let presencas5 = 0;
         let ausencias5 = 0;
         let justificadas5 = 0;
         let semRegistro5 = 0;
 
         ultimasSessoes.forEach(sessao => {
-          const registro = presencas?.find(p => p.sessao_id === sessao.id);
-          if (registro) {
-            if (registro.presente) {
-              presencas5++;
-            } else if (registro.justificativa) {
-              justificadas5++;
+          const grauSessao = sessao.grau_sessao_id || 1;
+          const grauIrmao = obterGrauNaData(sessao.data_sessao);
+          
+          // Só contar se irmão tinha grau suficiente
+          if (grauIrmao >= grauSessao) {
+            totalSessoes5++;
+            const registro = presencas?.find(p => p.sessao_id === sessao.id);
+            if (registro) {
+              if (registro.presente) {
+                presencas5++;
+              } else if (registro.justificativa) {
+                justificadas5++;
+              } else {
+                ausencias5++;
+              }
             } else {
-              ausencias5++;
+              semRegistro5++;
             }
-          } else {
-            semRegistro5++;
           }
         });
 
@@ -1713,7 +1729,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const anoAtual = new Date().getFullYear();
         const { data: sessoesAno } = await supabase
           .from('sessoes_presenca')
-          .select('id')
+          .select('id, data_sessao, grau_sessao_id')
           .gte('data_sessao', `${anoAtual}-01-01`)
           .lte('data_sessao', `${anoAtual}-12-31`);
 
@@ -1723,18 +1739,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           .eq('membro_id', irmaoId)
           .in('sessao_id', sessoesAno?.map(s => s.id) || []);
 
-        let totalSessoesAno = sessoesAno?.length || 0;
+        let totalSessoesAno = 0;
         let presencasContadasAno = 0;
         let ausenciasAno = 0;
         let justificadasAno = 0;
 
-        registrosAno?.forEach(reg => {
-          if (reg.presente) {
-            presencasContadasAno++;
-          } else if (reg.justificativa) {
-            justificadasAno++;
-          } else {
-            ausenciasAno++;
+        sessoesAno?.forEach(sessao => {
+          const grauSessao = sessao.grau_sessao_id || 1;
+          const grauIrmao = obterGrauNaData(sessao.data_sessao);
+          
+          // Só contar se irmão tinha grau suficiente
+          if (grauIrmao >= grauSessao) {
+            totalSessoesAno++;
+            const reg = registrosAno?.find(r => r.sessao_id === sessao.id);
+            if (reg) {
+              if (reg.presente) {
+                presencasContadasAno++;
+              } else if (reg.justificativa) {
+                justificadasAno++;
+              } else {
+                ausenciasAno++;
+              }
+            }
           }
         });
 
