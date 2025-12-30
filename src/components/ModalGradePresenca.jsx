@@ -9,6 +9,21 @@ export default function ModalGradePresenca({ onFechar }) {
   const [grade, setGrade] = useState({});
   const [busca, setBusca] = useState('');
 
+  // Função para formatar nome (primeiro + último, ou 3 primeiros se tiver "de/da/dos")
+  const formatarNome = (nomeCompleto) => {
+    const partes = nomeCompleto.split(' ');
+    if (partes.length <= 2) return nomeCompleto;
+    
+    // Se segundo nome é "de", "da", "dos", "das", pega 3 primeiros
+    const segundoNome = partes[1]?.toLowerCase();
+    if (['de', 'da', 'do', 'dos', 'das'].includes(segundoNome)) {
+      return partes.slice(0, 3).join(' ');
+    }
+    
+    // Senão: primeiro + último
+    return `${partes[0]} ${partes[partes.length - 1]}`;
+  };
+
   useEffect(() => {
     carregar();
   }, []);
@@ -359,7 +374,7 @@ export default function ModalGradePresenca({ onFechar }) {
                 .map(irmao => (
                 <tr key={irmao.id} className="hover:bg-gray-50">
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
-                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
+                    <div>{formatarNome(irmao.nome)}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {irmao.situacao === 'licenciado' && irmao.data_licenca && (
                         <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
