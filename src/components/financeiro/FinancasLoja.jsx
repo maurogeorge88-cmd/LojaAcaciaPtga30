@@ -1614,19 +1614,40 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           // Preencher com abreviações
           ultimasSessoes.forEach((s, colIdx) => {
             if (idx === colIdx) {
-              // Mesma sessão - pegar a abreviação
-              const registro = presencas?.find(p => p.sessao_id === s.id);
-              let status = 'N/A';
-              if (registro) {
-                if (registro.presente) {
-                  status = 'Pres.';
-                } else if (registro.justificativa) {
-                  status = 'Just.';
+              // Mesma sessão - verificar elegibilidade primeiro
+              const grauSessao = s.grau_sessao_id || 1;
+              const dataSessao = new Date(s.data_sessao);
+              
+              // Calcular grau do irmão na data
+              let grauIrmao = 0;
+              if (irmaoData.data_exaltacao && dataSessao >= new Date(irmaoData.data_exaltacao)) {
+                grauIrmao = 3;
+              } else if (irmaoData.data_elevacao && dataSessao >= new Date(irmaoData.data_elevacao)) {
+                grauIrmao = 2;
+              } else if (irmaoData.data_iniciacao && dataSessao >= new Date(irmaoData.data_iniciacao)) {
+                grauIrmao = 1;
+              }
+              
+              // Se não é elegível, mostrar "-"
+              if (grauSessao > grauIrmao) {
+                linha.push('-');
+              } else {
+                // Elegível - pegar o registro
+                const registro = presencas?.find(p => p.sessao_id === s.id);
+                let status = 'N/A';
+                if (registro) {
+                  if (registro.presente) {
+                    status = 'Pres.';
+                  } else if (registro.justificativa) {
+                    status = 'Just.';
+                  } else {
+                    status = 'Aus.';
+                  }
                 } else {
                   status = 'Aus.';
                 }
+                linha.push(status);
               }
-              linha.push(status);
             } else {
               // Sessão diferente - vazio
               linha.push('');
