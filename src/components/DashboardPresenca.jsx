@@ -3,26 +3,9 @@
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { supabase } from '../supabaseClient';
+import React, { useMemo } from 'react';
 
-export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
-  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
-
-  // Carregar histórico de situações
-  useEffect(() => {
-    const carregarHistorico = async () => {
-      const { data } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
-      
-      setHistoricoSituacoes(data || []);
-    };
-    
-    carregarHistorico();
-  }, []);
-
+export const Dashboard = ({ irmaos, balaustres, cronograma = [], historicoSituacoes = [] }) => {
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
     if (irmao.data_exaltacao) return 'Mestre';
@@ -31,7 +14,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     return 'Não Iniciado';
   };
 
-  // Contagens por situação usando histórico_situacoes
+  // Contagens por situação usando histórico_situacoes para licenciados
   const hoje = new Date();
   
   // Licenciados: apenas quem tem situação ATIVA do tipo "Licenciado"
