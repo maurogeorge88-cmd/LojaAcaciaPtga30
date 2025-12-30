@@ -15,6 +15,18 @@ export default function DashboardPresenca() {
     }
     return idade;
   };
+
+  const formatarNome = (nomeCompleto) => {
+    const partes = nomeCompleto.split(' ');
+    if (partes.length <= 2) return nomeCompleto;
+    
+    const segundoNome = partes[1]?.toLowerCase();
+    if (['de', 'da', 'do', 'dos', 'das'].includes(segundoNome)) {
+      return partes.slice(0, 3).join(' ');
+    }
+    
+    return `${partes[0]} ${partes[partes.length - 1]}`;
+  };
   const [resumo, setResumo] = useState([]);
   const [resumoAno, setResumoAno] = useState([]);
   const [mostrarGrade, setMostrarGrade] = useState(false);
@@ -760,7 +772,7 @@ export default function DashboardPresenca() {
             {resumo.map(irmao => (
               <tr key={irmao.id} className="hover:bg-blue-50 transition-colors">
                 <td className="px-6 py-4">
-                  <span className="font-semibold text-gray-900">{irmao.nome}</span>
+                  <span className="font-semibold text-gray-900">{formatarNome(irmao.nome)}</span>
                 </td>
                 <td className="px-6 py-4 text-center">
                   <span className="text-lg font-bold text-blue-600">{irmao.total_registros}</span>
