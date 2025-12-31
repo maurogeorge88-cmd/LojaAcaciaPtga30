@@ -1077,7 +1077,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const depositos = lancamentos
-      .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago' && l.eh_transferencia_interna === true)
+      .filter(l => 
+        l.categorias_financeiras?.tipo === 'receita' && 
+        l.status === 'pago' && 
+        l.eh_transferencia_interna === true &&
+        !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') // Depósitos Tronco já estão em receitasBancarias
+      )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitas = receitasBancarias + receitasDinheiro;
