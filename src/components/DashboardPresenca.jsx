@@ -50,6 +50,7 @@ export default function DashboardPresenca() {
   // Buscar anos disponíveis na base
   useEffect(() => {
     const buscarAnos = async () => {
+      console.log('🔍 Buscando anos disponíveis...');
       const { data } = await supabase
         .from('sessoes_presenca')
         .select('data_sessao')
@@ -58,10 +59,12 @@ export default function DashboardPresenca() {
       if (data && data.length > 0) {
         const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
         const anosSorted = anos.sort((a, b) => b - a); // Mais recente primeiro
+        console.log('📅 Anos encontrados:', anosSorted);
         setAnosDisponiveis(anosSorted);
         
         // Definir ano mais recente como padrão
         const anoMaisRecente = anosSorted[0];
+        console.log('✅ Definindo ano mais recente:', anoMaisRecente);
         setAnoSelecionado(anoMaisRecente);
         setAnoPresenca100(anoMaisRecente);
         setAnoAusencias(anoMaisRecente);
@@ -76,6 +79,7 @@ export default function DashboardPresenca() {
   useEffect(() => {
     // Quando ano selecionado mudar, atualizar datas
     if (anoSelecionado) {
+      console.log('📆 Atualizando datas para ano:', anoSelecionado);
       setDataInicio(`${anoSelecionado}-01-01`);
       setDataFim(`${anoSelecionado}-12-31`);
     }
@@ -83,6 +87,7 @@ export default function DashboardPresenca() {
 
   useEffect(() => {
     if (dataInicio && dataFim) {
+      console.log('🔄 Carregando dados:', dataInicio, 'até', dataFim);
       carregar();
     }
   }, [dataInicio, dataFim]);
