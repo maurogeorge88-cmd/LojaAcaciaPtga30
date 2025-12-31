@@ -963,22 +963,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       setLoading(true);
       
-      // Buscar categoria Tronco de Solidariedade
-      const categoriaTronco = categorias.find(c => 
+      // Buscar categoria Tronco Saída (despesa)
+      const categoriaTroncoSaida = categorias.find(c => 
+        c.nome.toLowerCase().includes('tronco') && 
+        c.nome.toLowerCase().includes('saida')
+      );
+      
+      // Buscar categoria Tronco de Solidariedade (receita)
+      const categoriaTroncoReceita = categorias.find(c => 
         c.nome.toLowerCase().includes('tronco') && 
         c.nome.toLowerCase().includes('solidariedade')
       );
       
-      if (!categoriaTronco) {
-        showError('Categoria "Tronco de Solidariedade" não encontrada!');
+      if (!categoriaTroncoSaida || !categoriaTroncoReceita) {
+        showError('Categorias "Tronco Saída" e "Tronco de Solidariedade" não encontradas!');
         setLoading(false);
         return;
       }
       
-      // 1. Lançar despesa em dinheiro (saída da espécie)
+      // 1. Despesa (saída de dinheiro do Tronco)
       const { error: errorSaida } = await supabase.from('lancamentos_loja').insert([{
         tipo: 'despesa',
-        categoria_id: categoriaTronco.id,
+        categoria_id: categoriaTroncoSaida.id,
         descricao: `🔻 Sangria Tronco${observacao ? ` - ${observacao}` : ''}`,
         valor: valorSangria,
         data_lancamento: data,
@@ -995,10 +1001,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       if (errorSaida) throw errorSaida;
       
-      // 2. Lançar receita em transferência (entrada no banco)
+      // 2. Receita (entrada no banco do Tronco)
       const { error: errorEntrada } = await supabase.from('lancamentos_loja').insert([{
         tipo: 'receita',
-        categoria_id: categoriaTronco.id,
+        categoria_id: categoriaTroncoReceita.id,
         descricao: `🔺 Depósito Tronco${observacao ? ` - ${observacao}` : ''}`,
         valor: valorSangria,
         data_lancamento: data,
