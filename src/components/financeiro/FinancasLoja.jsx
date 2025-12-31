@@ -1570,15 +1570,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const tableData = [];
         
         ultimasSessoes.forEach(sessao => {
-          const dataPartes = sessao.data_sessao.split('-');
-          const dataFormatada = `${dataPartes[2]}/${dataPartes[1]}`;
+          // Data completa
+          const dataSessao = new Date(sessao.data_sessao);
+          const dataFormatada = dataSessao.toLocaleDateString('pt-BR');
           
-          // Determinar grau da sessão
+          // Determinar grau da sessão - nome completo
           const grauSessao = sessao.grau_sessao_id || 1;
-          const grauAbreviado = grauSessao === 3 ? 'M' : grauSessao === 2 ? 'C' : 'A';
+          const grauNome = grauSessao === 3 ? 'Mestre' : grauSessao === 2 ? 'Companheiro' : 'Aprendiz';
           
           // Calcular grau do irmão na data
-          const dataSessao = new Date(sessao.data_sessao);
           let grauIrmao = 0;
           if (irmaoData.data_exaltacao && dataSessao >= new Date(irmaoData.data_exaltacao)) {
             grauIrmao = 3;
@@ -1588,7 +1588,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             grauIrmao = 1;
           }
           
-          // Determinar status
+          // Determinar status - nomes completos
           let status = 'N/A';
           if (grauSessao > grauIrmao) {
             status = '-';
@@ -1596,18 +1596,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             const registro = presencas?.find(p => p.sessao_id === sessao.id);
             if (registro) {
               if (registro.presente) {
-                status = '✓ Pres.';
+                status = '✓ Presente';
               } else if (registro.justificativa) {
-                status = 'J Just.';
+                status = 'J Justificado';
               } else {
-                status = '✗ Aus.';
+                status = '✗ Ausente';
               }
             } else {
-              status = '✗ Aus.';
+              status = '✗ Ausente';
             }
           }
           
-          tableData.push([dataFormatada, grauAbreviado, status]);
+          tableData.push([dataFormatada, grauNome, status]);
         });
 
         await import('jspdf-autotable');
@@ -1628,9 +1628,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             halign: 'center'
           },
           columnStyles: {
-            0: { cellWidth: 25, halign: 'center' },
-            1: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
-            2: { cellWidth: 35, halign: 'left' }
+            0: { cellWidth: 30, halign: 'center' },
+            1: { cellWidth: 35, halign: 'center', fontStyle: 'bold' },
+            2: { cellWidth: 45, halign: 'left' }
           },
           alternateRowStyles: {
             fillColor: [245, 245, 245]
