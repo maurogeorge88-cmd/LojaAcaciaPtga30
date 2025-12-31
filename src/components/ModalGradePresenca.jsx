@@ -86,12 +86,13 @@ export default function ModalGradePresenca({ onFechar }) {
         const tipos = [...new Set(historicoSituacoes.map(s => s.tipo_situacao))];
         console.log('Tipos de situação encontrados:', tipos);
         
-        // Mostrar todas as situações do Luiz Antonio
-        const situacoesLuiz = historicoSituacoes.filter(s => {
-          const irmao = irmaosData.find(i => i.id === s.membro_id);
-          return irmao?.nome.includes('Luiz');
+        // Mostrar TODAS as situações com seus nomes
+        historicoSituacoes.forEach(sit => {
+          const irmao = irmaosData.find(i => i.id === sit.membro_id);
+          if (irmao) {
+            console.log(`Situação: ${irmao.nome} - ${sit.tipo_situacao} (${sit.data_inicio} até ${sit.data_fim || 'sem previsão'})`);
+          }
         });
-        console.log('Situações do Luiz:', situacoesLuiz);
       }
 
       // Filtrar: remover falecidos de MESES ANTERIORES e desligados
@@ -114,28 +115,38 @@ export default function ModalGradePresenca({ onFechar }) {
           if (sit.membro_id !== i.id) return false;
           
           const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          if (tipo !== 'desligamento') return false;
+          // Aceitar tanto "desligado" quanto "desligamento"
+          if (tipo !== 'desligado' && tipo !== 'desligamento') return false;
+          
+          console.log(`Verificando desligamento para ${i.nome}:`, sit);
           
           // Verificar se é ativo: data_inicio já passou E (sem data_fim OU data_fim no futuro)
           const dataInicio = new Date(sit.data_inicio);
-          if (dataInicio > hoje) return false; // Ainda não começou
+          if (dataInicio > hoje) {
+            console.log('  -> Ainda não começou');
+            return false; // Ainda não começou
+          }
           
           // Se não tem data_fim OU data_fim é futura = está ativo
-          if (sit.data_fim === null) {
-            console.log('Desligado sem previsão:', i.nome, sit);
+          if (sit.data_fim === null || sit.data_fim === undefined) {
+            console.log(`  -> DESLIGADO SEM PREVISÃO: ${i.nome}`);
             return true;
           }
           
           const dataFim = new Date(sit.data_fim);
           if (dataFim >= hoje) {
-            console.log('Desligado com data fim futura:', i.nome, sit);
+            console.log(`  -> Desligado até ${sit.data_fim}`);
             return true;
           }
           
+          console.log('  -> Desligamento já terminou');
           return false;
         });
         
-        if (temDesligamentoAtivo) return false;
+        if (temDesligamentoAtivo) {
+          console.log(`❌ REMOVENDO: ${i.nome}`);
+          return false;
+        }
         
         return true;
       });
