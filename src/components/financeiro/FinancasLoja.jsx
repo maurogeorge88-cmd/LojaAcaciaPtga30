@@ -2374,36 +2374,49 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* COLUNA DIREITA: Tronco de Solidariedade (1/4 da largura) */}
       <div className="lg:col-span-1">
         <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 h-full">
-          <div className="flex flex-col items-center text-center mb-3">
-            <span className="text-3xl mb-2">💰</span>
-            <p className="text-sm font-bold text-amber-800">Tronco de Solidariedade</p>
-            <p className="text-xs text-amber-600 mb-2">Saldo acumulado</p>
-            <p className={`text-2xl font-bold ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
-              {formatarMoeda(troncoTotalGlobal.total)}
-            </p>
+          {/* Cabeçalho */}
+          <div className="flex items-start gap-3 mb-4 pb-3 border-b border-amber-300">
+            <span className="text-3xl">💰</span>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-amber-800 leading-tight">Tronco de Solidariedade</p>
+              <p className="text-xs text-amber-600 mt-0.5">Saldo acumulado</p>
+              <p className={`text-xl font-bold mt-1 ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
+                {formatarMoeda(troncoTotalGlobal.total)}
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3">
+            {/* Card Banco */}
             <div className="bg-white/70 rounded-lg p-3 border border-amber-200">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">🏦</span>
-                <p className="text-xs font-semibold text-gray-700">Banco</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">🏦</span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">Banco</p>
+                    <p className="text-[10px] text-gray-500 leading-tight">PIX, Transf., Cartão</p>
+                  </div>
+                </div>
+                <p className={`text-xl font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                  {formatarMoeda(troncoTotalGlobal.banco)}
+                </p>
               </div>
-              <p className={`text-lg font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                {formatarMoeda(troncoTotalGlobal.banco)}
-              </p>
-              <p className="text-[10px] text-gray-500 mt-1">PIX, Transf., Cartão</p>
             </div>
 
+            {/* Card Espécie */}
             <div className="bg-white/70 rounded-lg p-3 border border-amber-200">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">💵</span>
-                <p className="text-xs font-semibold text-gray-700">Espécie</p>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-start gap-2">
+                  <span className="text-xl">💵</span>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-700">Espécie</p>
+                    <p className="text-[10px] text-gray-500 leading-tight">Dinheiro físico</p>
+                  </div>
+                </div>
+                <p className={`text-xl font-bold ${troncoTotalGlobal.especie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                  {formatarMoeda(troncoTotalGlobal.especie)}
+                </p>
               </div>
-              <p className={`text-lg font-bold ${troncoTotalGlobal.especie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                {formatarMoeda(troncoTotalGlobal.especie)}
-              </p>
-              <p className="text-[10px] text-gray-500 mt-1 mb-2">Dinheiro físico</p>
               {troncoTotalGlobal.especie > 0 && (
                 <button
                   onClick={() => setModalSangriaTroncoAberto(true)}
