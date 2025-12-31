@@ -78,23 +78,6 @@ export default function ModalGradePresenca({ onFechar }) {
         .eq('status', 'ativo')
         .order('nome');
 
-      console.log('Irmãos:', irmaosData?.length);
-      console.log('Histórico situações:', historicoSituacoes?.length);
-      
-      // Debug: mostrar tipos de situação únicos
-      if (historicoSituacoes && historicoSituacoes.length > 0) {
-        const tipos = [...new Set(historicoSituacoes.map(s => s.tipo_situacao))];
-        console.log('Tipos de situação encontrados:', tipos);
-        
-        // Mostrar TODAS as situações com seus nomes
-        historicoSituacoes.forEach(sit => {
-          const irmao = irmaosData.find(i => i.id === sit.membro_id);
-          if (irmao) {
-            console.log(`Situação: ${irmao.nome} - ${sit.tipo_situacao} (${sit.data_inicio} até ${sit.data_fim || 'sem previsão'})`);
-          }
-        });
-      }
-
       // Filtrar: remover falecidos de MESES ANTERIORES e desligados
       const hoje = new Date();
       const mesAtual = hoje.getMonth();
@@ -115,43 +98,21 @@ export default function ModalGradePresenca({ onFechar }) {
           if (sit.membro_id !== i.id) return false;
           
           const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          // Aceitar tanto "desligado" quanto "desligamento"
           if (tipo !== 'desligado' && tipo !== 'desligamento') return false;
           
-          console.log(`Verificando desligamento para ${i.nome}:`, sit);
-          
-          // Verificar se é ativo: data_inicio já passou E (sem data_fim OU data_fim no futuro)
           const dataInicio = new Date(sit.data_inicio);
-          if (dataInicio > hoje) {
-            console.log('  -> Ainda não começou');
-            return false; // Ainda não começou
-          }
+          if (dataInicio > hoje) return false;
           
-          // Se não tem data_fim OU data_fim é futura = está ativo
-          if (sit.data_fim === null || sit.data_fim === undefined) {
-            console.log(`  -> DESLIGADO SEM PREVISÃO: ${i.nome}`);
-            return true;
-          }
+          if (sit.data_fim === null || sit.data_fim === undefined) return true;
           
           const dataFim = new Date(sit.data_fim);
-          if (dataFim >= hoje) {
-            console.log(`  -> Desligado até ${sit.data_fim}`);
-            return true;
-          }
-          
-          console.log('  -> Desligamento já terminou');
-          return false;
+          return dataFim >= hoje;
         });
         
-        if (temDesligamentoAtivo) {
-          console.log(`❌ REMOVENDO: ${i.nome}`);
-          return false;
-        }
+        if (temDesligamentoAtivo) return false;
         
         return true;
       });
-      
-      console.log('Irmãos válidos (após filtros):', irmaosValidos.length);
 
       // Adicionar flags de prerrogativa
       const irmaosComFlags = irmaosValidos.map(i => {
@@ -478,11 +439,29 @@ export default function ModalGradePresenca({ onFechar }) {
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
                     <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {irmao.situacao === 'licenciado' && irmao.data_licenca && (
-                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
-                          Lic
-                        </span>
-                      )}
+                      {(() => {
+                        // Verificar se tem licença ativa no histórico
+                        const hoje = new Date();
+                        const temLicencaAtiva = historicoSituacoes?.some(sit => {
+                          if (sit.membro_id !== irmao.id) return false;
+                          const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                          if (tipo !== 'licenca') return false;
+                          
+                          const dataInicio = new Date(sit.data_inicio);
+                          if (dataInicio > hoje) return false;
+                          
+                          if (sit.data_fim === null) return true;
+                          
+                          const dataFim = new Date(sit.data_fim);
+                          return dataFim >= hoje;
+                        });
+                        
+                        return temLicencaAtiva && (
+                          <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                            Licenciado
+                          </span>
+                        );
+                      })()}
                       {irmao.idade >= 70 && (
                         <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
                           70+
