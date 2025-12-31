@@ -71,45 +71,31 @@ export default function ModalGradePresenca({ onFechar }) {
         .select('*')
         .eq('status', 'ativa');
 
-      // 3. Buscar TODOS os irmãos (incluir datas de grau e ingresso)
+      // 3. Buscar irmãos ATIVOS (incluir datas de grau e ingresso)
       const { data: irmaosData } = await supabase
         .from('irmaos')
         .select('id, nome, data_nascimento, data_falecimento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, situacao, status')
+        .eq('status', 'ativo')
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
-      console.log('Histórico situações:', historicoSituacoes?.length);
 
-      // Filtrar: remover falecidos e desligados
+      // Filtrar: remover falecidos de MESES ANTERIORES
       const hoje = new Date();
+      const mesAtual = hoje.getMonth();
+      const anoAtual = hoje.getFullYear();
 
       const irmaosValidos = irmaosData.filter(i => {
-        // Remover falecidos
         if (i.data_falecimento) {
           const dataFalec = new Date(i.data_falecimento);
-          if (dataFalec <= hoje) return false;
-        }
-        
-        // Remover desligados (verificar histórico de situações)
-        const estaDesligado = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          const match = sit.membro_id === i.id &&
-            tipoNormalizado === 'desligamento' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
-          
-          if (match) {
-            console.log('Desligado encontrado:', i.nome, sit);
+          // Se faleceu em mês anterior, remove
+          if (dataFalec.getFullYear() < anoAtual || 
+             (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
+            return false;
           }
-          
-          return match;
-        }) || false;
-        
-        if (estaDesligado) return false;
-        
+        }
         return true;
       });
-      
-      console.log('Irmãos válidos:', irmaosValidos.length);
 
       // Adicionar flags de prerrogativa
       const irmaosComFlags = irmaosValidos.map(i => {
