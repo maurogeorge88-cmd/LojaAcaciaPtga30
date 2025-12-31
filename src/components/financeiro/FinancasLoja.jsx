@@ -1564,14 +1564,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(`${irmaoData.nome} - CIM: ${irmaoData.cim || 'N/A'}`, 15, yPos);
-        yPos += 8;
+        yPos += 15;
 
         // Título do quadro
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
         doc.text('Quadro de Situações das 05 Últimas Sessões', 15, yPos);
-        yPos += 6;
+        yPos += 4;
 
         // Preparar dados da tabela vertical
         const tableData = [];
