@@ -80,6 +80,19 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Irmãos:', irmaosData?.length);
       console.log('Histórico situações:', historicoSituacoes?.length);
+      
+      // Debug: mostrar tipos de situação únicos
+      if (historicoSituacoes && historicoSituacoes.length > 0) {
+        const tipos = [...new Set(historicoSituacoes.map(s => s.tipo_situacao))];
+        console.log('Tipos de situação encontrados:', tipos);
+        
+        // Mostrar todas as situações do Luiz Antonio
+        const situacoesLuiz = historicoSituacoes.filter(s => {
+          const irmao = irmaosData.find(i => i.id === s.membro_id);
+          return irmao?.nome.includes('Luiz');
+        });
+        console.log('Situações do Luiz:', situacoesLuiz);
+      }
 
       // Filtrar: remover falecidos de MESES ANTERIORES e desligados
       const hoje = new Date();
