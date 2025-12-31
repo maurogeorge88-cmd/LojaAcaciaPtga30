@@ -2271,50 +2271,52 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </div>
       </div>
 
-      {/* RESUMO FINANCEIRO - NOVA ESTRUTURA */}
-      <div className="space-y-3">
-        {/* LINHA 1: Resumo Geral */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
-            <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
-            <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
-              {formatarMoeda(saldoAnterior)}
-            </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">
-              {filtros.mes > 0 && filtros.ano > 0 
-                ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
-                : filtros.ano > 0 
-                ? `Antes de ${filtros.ano}`
-                : 'Período base'}
-            </p>
+      {/* RESUMO FINANCEIRO - LAYOUT COM TRONCO AO LADO */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
+        <div className="lg:col-span-3 space-y-3">
+          {/* LINHA 1: Resumo Geral */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
+              <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+                {formatarMoeda(saldoAnterior)}
+              </p>
+              <p className="text-[10px] text-gray-500 mt-0.5">
+                {filtros.mes > 0 && filtros.ano > 0 
+                  ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
+                  : filtros.ano > 0 
+                  ? `Antes de ${filtros.ano}`
+                  : 'Período base'}
+              </p>
+            </div>
+            
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 relative">
+              <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas</p>
+              <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
+              <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
+              <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
+              <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Total pago</p>
+              <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+            </div>
+            
+            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative">
+              <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
+              <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
+                {formatarMoeda(resumo.saldoPeriodo)}
+              </p>
+              <p className="text-[10px] text-gray-500 mt-0.5">Receitas - Despesas</p>
+              <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+            </div>
           </div>
-          
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3 relative">
-            <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas</p>
-            <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
-            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
-          </div>
-          
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative">
-            <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
-            <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Total pago</p>
-            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
-          </div>
-          
-          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative">
-            <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
-            <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
-              {formatarMoeda(resumo.saldoPeriodo)}
-            </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Receitas - Despesas</p>
-            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
-          </div>
-        </div>
 
-        {/* LINHA 2: Detalhamento (Bancário, Caixa, Total) */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {/* LINHA 2: Detalhamento */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
           <div className="bg-sky-50 border-2 border-sky-300 rounded-lg p-3">
             <p className="text-xs text-sky-600 font-medium">🏦 Saldo Bancário</p>
             <p className={`text-lg font-bold ${resumo.saldoBancario >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
@@ -2367,27 +2369,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
         </div>
+      </div>
 
-        {/* QUADRO TRONCO DE SOLIDARIEDADE */}
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 mt-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">💰</span>
-              <div>
-                <p className="text-sm font-bold text-amber-800">Tronco de Solidariedade</p>
-                <p className="text-xs text-amber-600">Saldo acumulado (todos os períodos)</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-amber-600">Total Disponível</p>
-              <p className={`text-2xl font-bold ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
-                {formatarMoeda(troncoTotalGlobal.total)}
-              </p>
-            </div>
+      {/* COLUNA DIREITA: Tronco de Solidariedade (1/4 da largura) */}
+      <div className="lg:col-span-1">
+        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 h-full">
+          <div className="flex flex-col items-center text-center mb-3">
+            <span className="text-3xl mb-2">💰</span>
+            <p className="text-sm font-bold text-amber-800">Tronco de Solidariedade</p>
+            <p className="text-xs text-amber-600 mb-2">Saldo acumulado</p>
+            <p className={`text-2xl font-bold ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
+              {formatarMoeda(troncoTotalGlobal.total)}
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+          <div className="space-y-3">
+            <div className="bg-white/70 rounded-lg p-3 border border-amber-200">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">🏦</span>
                 <p className="text-xs font-semibold text-gray-700">Banco</p>
@@ -2395,10 +2392,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <p className={`text-lg font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
                 {formatarMoeda(troncoTotalGlobal.banco)}
               </p>
-              <p className="text-[10px] text-gray-500 mt-1">PIX, Transferência, Cartão</p>
+              <p className="text-[10px] text-gray-500 mt-1">PIX, Transf., Cartão</p>
             </div>
 
-            <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+            <div className="bg-white/70 rounded-lg p-3 border border-amber-200">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-lg">💵</span>
                 <p className="text-xs font-semibold text-gray-700">Espécie</p>
@@ -2419,6 +2416,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
         </div>
       </div>
+    </div>
 
       {/* FILTROS */}
       <div className="bg-white rounded-lg shadow p-4">
