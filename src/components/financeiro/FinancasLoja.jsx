@@ -1566,6 +1566,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.text(`${irmaoData.nome} - CIM: ${irmaoData.cim || 'N/A'}`, 15, yPos);
         yPos += 8;
 
+        // Título do quadro
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text('Quadro de Situações das 05 Últimas Sessões', 15, yPos);
+        yPos += 6;
+
         // Preparar dados da tabela vertical
         const tableData = [];
         
@@ -1588,7 +1595,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             grauIrmao = 1;
           }
           
-          // Determinar status - nomes completos
+          // Determinar status - usar letras ao invés de símbolos
           let status = 'N/A';
           if (grauSessao > grauIrmao) {
             status = '-';
@@ -1596,14 +1603,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             const registro = presencas?.find(p => p.sessao_id === sessao.id);
             if (registro) {
               if (registro.presente) {
-                status = '✓ Presente';
+                status = 'S Presente';
               } else if (registro.justificativa) {
                 status = 'J Justificado';
               } else {
-                status = '✗ Ausente';
+                status = 'X Ausente';
               }
             } else {
-              status = '✗ Ausente';
+              status = 'X Ausente';
             }
           }
           
@@ -1630,7 +1637,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           columnStyles: {
             0: { cellWidth: 30, halign: 'center' },
             1: { cellWidth: 35, halign: 'center', fontStyle: 'bold' },
-            2: { cellWidth: 45, halign: 'left' }
+            2: { cellWidth: 45, halign: 'left', fontStyle: 'bold' }
           },
           alternateRowStyles: {
             fillColor: [245, 245, 245]
@@ -1642,7 +1649,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
-        doc.text('✓ = Presente | ✗ = Ausente | J = Justificado | - = Não elegível', 15, yPos);
+        doc.text('S = Presente | X = Ausente | J = Justificado | - = Não elegível', 15, yPos);
         yPos += 10;
 
         // ========================================
