@@ -1298,7 +1298,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       if (error) throw error;
 
-      // Receitas Banco
+      // Receitas Banco (já inclui sangrias/depósitos porque são receitas em transferência)
       const receitasBanco = (data || [])
         .filter(l =>
           l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
@@ -1312,7 +1312,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .filter(l =>
           l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
           l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento === 'dinheiro'
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna // Excluir receitas de sangria em dinheiro (não existe)
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1326,7 +1327,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      // Despesas Espécie
+      // Despesas Espécie (já exclui sangrias porque são transferências internas)
       const despesasEspecie = (data || [])
         .filter(l =>
           l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
@@ -1336,26 +1337,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      // Sangrias Banco (entrada)
-      const sangriasBanco = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.eh_transferencia_interna === true &&
-          l.categorias_financeiras?.tipo === 'receita'
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      // Sangrias Espécie (saída)
-      const sangriasEspecie = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.eh_transferencia_interna === true &&
-          l.categorias_financeiras?.tipo === 'despesa'
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      const banco = receitasBanco - despesasBanco + sangriasBanco;
-      const especie = receitasEspecie - despesasEspecie - sangriasEspecie;
+      const banco = receitasBanco - despesasBanco;
+      const especie = receitasEspecie - despesasEspecie;
       const total = banco + especie;
 
       setTroncoTotalGlobal({ banco, especie, total });
