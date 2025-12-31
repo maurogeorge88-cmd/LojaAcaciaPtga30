@@ -37,6 +37,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [viewMode, setViewMode] = useState('lancamentos');
   const [saldoAnterior, setSaldoAnterior] = useState(0);
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
+  const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
   const [totalRegistros, setTotalRegistros] = useState(0);
   
   const [filtros, setFiltros] = useState({
@@ -141,6 +142,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     carregarDados();
     calcularSaldoAnterior();
     calcularCaixaFisicoTotal();
+    calcularTroncoTotal();
     buscarTotalRegistros();
   }, [filtros.mes, filtros.ano]);
 
@@ -935,6 +937,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       setModalSangriaAberto(false);
       carregarLancamentos();
       calcularCaixaFisicoTotal();
+      calcularTroncoTotal();
     } catch (error) {
       console.error('Erro:', error);
       showError('Erro ao fazer sangria: ' + (error.message || ''));
@@ -952,10 +955,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
       
       const valorSangria = parseFloat(valor);
-      const resumoAtual = calcularResumo();
       
-      if (valorSangria > resumoAtual.troncoEspecie) {
-        showError(`Valor maior que o disponível no Tronco (Espécie)`);
+      if (valorSangria > troncoTotalGlobal.especie) {
+        showError(`Valor maior que o disponível no Tronco (Espécie): ${formatarMoeda(troncoTotalGlobal.especie)}`);
         return;
       }
       
@@ -1017,6 +1019,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
       setModalSangriaTroncoAberto(false);
       carregarLancamentos();
+      calcularTroncoTotal();
       
     } catch (error) {
       console.error('Erro:', error);
@@ -1221,7 +1224,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     try {
       const { data, error } = await supabase
         .from('lancamentos_loja')
-        .select('*, categorias_financeiras(tipo)')
+        .select('*, categorias_financeiras(tipo, nome)')
         .eq('status', 'pago');
 
       if (error) throw error;
@@ -1230,12 +1233,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .filter(l => 
           l.categorias_financeiras?.tipo === 'receita' &&
           l.tipo_pagamento === 'dinheiro' &&
-          !l.eh_transferencia_interna
+          !l.eh_transferencia_interna &&
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') // EXCLUIR TRONCO
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       const sangriasFeitas = (data || [])
-        .filter(l => l.eh_transferencia_interna === true && l.categorias_financeiras?.tipo === 'despesa')
+        .filter(l => 
+          l.eh_transferencia_interna === true && 
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') // EXCLUIR TRONCO
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       setCaixaFisicoTotal(dinheiroRecebido - sangriasFeitas);
@@ -1243,6 +1251,83 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     } catch (error) {
       console.error('Erro ao calcular caixa físico:', error);
       setCaixaFisicoTotal(0);
+    }
+  };
+
+  const calcularTroncoTotal = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(tipo, nome)')
+        .eq('status', 'pago');
+
+      if (error) throw error;
+
+      // Receitas Banco
+      const receitasBanco = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento !== 'dinheiro'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Receitas Espécie
+      const receitasEspecie = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento === 'dinheiro'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Despesas Banco
+      const despesasBanco = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Despesas Espécie
+      const despesasEspecie = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Sangrias Banco (entrada)
+      const sangriasBanco = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.eh_transferencia_interna === true &&
+          l.categorias_financeiras?.tipo === 'receita'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      // Sangrias Espécie (saída)
+      const sangriasEspecie = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.eh_transferencia_interna === true &&
+          l.categorias_financeiras?.tipo === 'despesa'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      const banco = receitasBanco - despesasBanco + sangriasBanco;
+      const especie = receitasEspecie - despesasEspecie - sangriasEspecie;
+      const total = banco + especie;
+
+      setTroncoTotalGlobal({ banco, especie, total });
+
+    } catch (error) {
+      console.error('Erro ao calcular Tronco total:', error);
+      setTroncoTotalGlobal({ banco: 0, especie: 0, total: 0 });
     }
   };
 
@@ -2272,13 +2357,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <span className="text-2xl">💰</span>
               <div>
                 <p className="text-sm font-bold text-amber-800">Tronco de Solidariedade</p>
-                <p className="text-xs text-amber-600">Recurso independente da Loja</p>
+                <p className="text-xs text-amber-600">Saldo acumulado (todos os períodos)</p>
               </div>
             </div>
             <div className="text-right">
               <p className="text-xs text-amber-600">Total Disponível</p>
-              <p className={`text-2xl font-bold ${resumo.troncoTotal >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
-                {formatarMoeda(resumo.troncoTotal)}
+              <p className={`text-2xl font-bold ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
+                {formatarMoeda(troncoTotalGlobal.total)}
               </p>
             </div>
           </div>
@@ -2289,8 +2374,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <span className="text-lg">🏦</span>
                 <p className="text-xs font-semibold text-gray-700">Banco</p>
               </div>
-              <p className={`text-lg font-bold ${resumo.troncoBanco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                {formatarMoeda(resumo.troncoBanco)}
+              <p className={`text-lg font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                {formatarMoeda(troncoTotalGlobal.banco)}
               </p>
               <p className="text-[10px] text-gray-500 mt-1">PIX, Transferência, Cartão</p>
             </div>
@@ -2300,11 +2385,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <span className="text-lg">💵</span>
                 <p className="text-xs font-semibold text-gray-700">Espécie</p>
               </div>
-              <p className={`text-lg font-bold ${resumo.troncoEspecie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                {formatarMoeda(resumo.troncoEspecie)}
+              <p className={`text-lg font-bold ${troncoTotalGlobal.especie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {formatarMoeda(troncoTotalGlobal.especie)}
               </p>
               <p className="text-[10px] text-gray-500 mt-1 mb-2">Dinheiro físico</p>
-              {resumo.troncoEspecie > 0 && (
+              {troncoTotalGlobal.especie > 0 && (
                 <button
                   onClick={() => setModalSangriaTroncoAberto(true)}
                   className="w-full px-2 py-1.5 bg-amber-600 text-white text-[11px] rounded hover:bg-amber-700 font-semibold transition-colors"
@@ -3365,7 +3450,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             
             <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6">
               <p className="text-sm text-amber-700 font-semibold mb-1">💵 Espécie Disponível</p>
-              <p className="text-3xl font-bold text-amber-800">{formatarMoeda(resumo.troncoEspecie)}</p>
+              <p className="text-3xl font-bold text-amber-800">{formatarMoeda(troncoTotalGlobal.especie)}</p>
               <p className="text-xs text-amber-600 mt-2">Será transferido para conta bancária</p>
             </div>
             
@@ -3379,7 +3464,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} 
                   className="w-full px-4 py-2 border rounded-lg" 
                   placeholder="0.00"
-                  max={resumo.troncoEspecie}
+                  max={troncoTotalGlobal.especie}
                 />
               </div>
               
@@ -3417,7 +3502,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </button>
               <button 
                 onClick={() => fazerSangriaTronco()} 
-                disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > resumo.troncoEspecie} 
+                disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > troncoTotalGlobal.especie} 
                 className="flex-1 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50 hover:bg-amber-700 transition-colors"
               >
                 Confirmar
