@@ -78,6 +78,7 @@ export default function ModalGradePresenca({ onFechar }) {
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
+      console.log('Histórico situações:', historicoSituacoes?.length);
 
       // Filtrar: remover falecidos e desligados
       const hoje = new Date();
@@ -92,15 +93,23 @@ export default function ModalGradePresenca({ onFechar }) {
         // Remover desligados (verificar histórico de situações)
         const estaDesligado = historicoSituacoes?.some(sit => {
           const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return sit.membro_id === i.id &&
+          const match = sit.membro_id === i.id &&
             tipoNormalizado === 'desligamento' &&
             (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+          
+          if (match) {
+            console.log('Desligado encontrado:', i.nome, sit);
+          }
+          
+          return match;
         }) || false;
         
         if (estaDesligado) return false;
         
         return true;
       });
+      
+      console.log('Irmãos válidos:', irmaosValidos.length);
 
       // Adicionar flags de prerrogativa
       const irmaosComFlags = irmaosValidos.map(i => {
@@ -214,17 +223,6 @@ export default function ModalGradePresenca({ onFechar }) {
     const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
     const dataInicio = dataIngresso || dataIniciacao;
     
-    // Debug para Michel
-    if (irmao.nome.includes('Michel')) {
-      console.log('Michel:', {
-        sessao: sessao.data_sessao,
-        dataIngresso,
-        dataIniciacao,
-        dataInicio: dataInicio?.toLocaleDateString(),
-        antes: dataInicio && dataSessao < dataInicio
-      });
-    }
-    
     if (dataInicio && dataSessao < dataInicio) {
       // Sessão antes de ingressar na loja → não se aplica
       return (
@@ -242,15 +240,6 @@ export default function ModalGradePresenca({ onFechar }) {
 
     // 3. Verificar grau da sessão
     const grauSessao = sessao.grau_sessao_id || 1;
-
-    // Debug Michel
-    if (irmao.nome.includes('Michel')) {
-      console.log('Michel graus:', {
-        grauIrmao,
-        grauSessao,
-        bloqueado: grauSessao > grauIrmao
-      });
-    }
 
     // 4. Se sessão é de grau superior ao do irmão → não pode participar
     if (grauSessao > grauIrmao) {
