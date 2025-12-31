@@ -40,6 +40,8 @@ export default function DashboardPresenca() {
   const [dataFim, setDataFim] = useState('');
   const [anoAusencias, setAnoAusencias] = useState(anoAtual);
   const [mesAusencias, setMesAusencias] = useState(0);
+  const [anoPrerrogativa, setAnoPrerrogativa] = useState(anoAtual);
+  const [anoLicenciados, setAnoLicenciados] = useState(anoAtual);
   const [qtdSessoesRecentes, setQtdSessoesRecentes] = useState(4);
   const [sessoesRecentes, setSessoesRecentes] = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
@@ -55,7 +57,16 @@ export default function DashboardPresenca() {
       
       if (data && data.length > 0) {
         const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
-        setAnosDisponiveis(anos.sort((a, b) => b - a)); // Mais recente primeiro
+        const anosSorted = anos.sort((a, b) => b - a); // Mais recente primeiro
+        setAnosDisponiveis(anosSorted);
+        
+        // Definir ano mais recente como padrão
+        const anoMaisRecente = anosSorted[0];
+        setAnoSelecionado(anoMaisRecente);
+        setAnoPresenca100(anoMaisRecente);
+        setAnoAusencias(anoMaisRecente);
+        setAnoPrerrogativa(anoMaisRecente);
+        setAnoLicenciados(anoMaisRecente);
       }
     };
     buscarAnos();
@@ -76,8 +87,203 @@ export default function DashboardPresenca() {
   }, [anoPresenca100]);
 
   useEffect(() => {
+    carregarPrerrogativa();
+  }, [anoPrerrogativa]);
+
+  useEffect(() => {
+    carregarLicenciados();
+  }, [anoLicenciados]);
+
+  useEffect(() => {
     carregarSessoesRecentes();
   }, [qtdSessoesRecentes]);
+
+  const carregarPrerrogativa = async () => {
+    try {
+      const inicioAno = `${anoPrerrogativa}-01-01`;
+      const fimAno = `${anoPrerrogativa}-12-31`;
+
+      const { data: sessoes } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id')
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      const { data: registros } = await supabase
+        .from('registros_presenca')
+        .select('membro_id, presente, sessao_id')
+        .in('sessao_id', sessoes?.map(s => s.id) || []);
+
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_falecimento, data_ingresso_loja')
+        .eq('status', 'ativo');
+
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
+      const sessoesMap = {};
+      sessoes?.forEach(s => { sessoesMap[s.id] = s; });
+
+      const comPrerrogativa = [];
+
+      irmaos?.forEach(irmao => {
+        if (irmao.data_falecimento) return;
+        
+        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
+        if (idade < 70) return;
+
+        let grauTexto = 'Não iniciado';
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao) { grauTexto = 'Mestre'; grauIrmao = 3; }
+        else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
+        else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
+
+        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
+        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+        const dataInicio = dataIngresso || dataIniciacao;
+
+        let totalRegistros = 0;
+        let presentes = 0;
+
+        registros?.forEach(reg => {
+          if (reg.membro_id === irmao.id) {
+            const sessao = sessoesMap[reg.sessao_id];
+            if (!sessao) return;
+
+            const dataSessao = new Date(sessao.data_sessao);
+            const grauSessao = sessao.grau_sessao_id || 1;
+
+            if (dataInicio && dataSessao < dataInicio) return;
+            if (grauSessao > grauIrmao) return;
+
+            const situacaoNaData = historicoSituacoes?.find(sit => 
+              sit.membro_id === irmao.id &&
+              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+            );
+            if (situacaoNaData) return;
+
+            totalRegistros++;
+            if (reg.presente) presentes++;
+          }
+        });
+
+        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+
+        comPrerrogativa.push({
+          id: irmao.id,
+          nome: irmao.nome,
+          grau: grauTexto,
+          presencas: presentes,
+          total: totalRegistros,
+          percentual
+        });
+      });
+
+      setResumoPrerrogativa(comPrerrogativa);
+    } catch (error) {
+      console.error('Erro ao carregar prerrogativa:', error);
+    }
+  };
+
+  const carregarLicenciados = async () => {
+    try {
+      const inicioAno = `${anoLicenciados}-01-01`;
+      const fimAno = `${anoLicenciados}-12-31`;
+
+      const { data: sessoes } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id')
+        .gte('data_sessao', inicioAno)
+        .lte('data_sessao', fimAno);
+
+      const { data: registros } = await supabase
+        .from('registros_presenca')
+        .select('membro_id, presente, sessao_id')
+        .in('sessao_id', sessoes?.map(s => s.id) || []);
+
+      const { data: irmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
+        .eq('status', 'ativo');
+
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
+      const hoje = new Date();
+      const sessoesMap = {};
+      sessoes?.forEach(s => { sessoesMap[s.id] = s; });
+
+      const licenciados = [];
+
+      irmaos?.forEach(irmao => {
+        const estaLicenciado = historicoSituacoes?.some(sit => {
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return sit.membro_id === irmao.id &&
+            tipoNormalizado === 'licenca' &&
+            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+        }) || false;
+
+        if (!estaLicenciado) return;
+
+        let grauTexto = 'Não iniciado';
+        let grauIrmao = 0;
+        if (irmao.data_exaltacao) { grauTexto = 'Mestre'; grauIrmao = 3; }
+        else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
+        else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
+
+        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
+        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+        const dataInicio = dataIngresso || dataIniciacao;
+
+        let totalRegistros = 0;
+        let presentes = 0;
+
+        registros?.forEach(reg => {
+          if (reg.membro_id === irmao.id) {
+            const sessao = sessoesMap[reg.sessao_id];
+            if (!sessao) return;
+
+            const dataSessao = new Date(sessao.data_sessao);
+            const grauSessao = sessao.grau_sessao_id || 1;
+
+            if (dataInicio && dataSessao < dataInicio) return;
+            if (grauSessao > grauIrmao) return;
+
+            const situacaoNaData = historicoSituacoes?.find(sit => 
+              sit.membro_id === irmao.id &&
+              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+            );
+            if (situacaoNaData) return;
+
+            totalRegistros++;
+            if (reg.presente) presentes++;
+          }
+        });
+
+        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+
+        licenciados.push({
+          id: irmao.id,
+          nome: irmao.nome,
+          grau: grauTexto,
+          presencas: presentes,
+          total: totalRegistros,
+          percentual
+        });
+      });
+
+      setResumoLicenciados(licenciados);
+    } catch (error) {
+      console.error('Erro ao carregar licenciados:', error);
+    }
+  };
 
   const carregarSessoesRecentes = async () => {
     try {
@@ -544,70 +750,6 @@ export default function DashboardPresenca() {
 
       setResumo(resumoCompleto);
 
-      // Calcular prerrogativas e licenciados
-      const comPrerrogativa = [];
-      const licenciados = [];
-
-      irmaos?.forEach(irmao => {
-        // Ignorar falecidos
-        if (irmao.data_falecimento) return;
-
-        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-        const temPrerrogativa = idade >= 70;
-        
-        const hoje = new Date();
-        const estaLicenciado = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          const match = sit.membro_id === irmao.id &&
-            tipoNormalizado === 'licenca' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
-          
-          return match;
-        }) || false;
-
-        // Calcular grau
-        let grauTexto = 'Não iniciado';
-        if (irmao.data_exaltacao) grauTexto = 'Mestre';
-        else if (irmao.data_elevacao) grauTexto = 'Companheiro';
-        else if (irmao.data_iniciacao) grauTexto = 'Aprendiz';
-
-        // Buscar dados de presença do irmão
-        const dadosIrmao = resumoCompleto.find(r => r.id === irmao.id);
-        const presencas = dadosIrmao?.presentes || 0;
-        const total = dadosIrmao?.total_registros || 0;
-        const percentual = total > 0 ? Math.round((presencas / total) * 100) : 0;
-
-        // Debug
-        if (temPrerrogativa) {
-          console.log('Prerrogativa:', irmao.nome, { dadosIrmao, presencas, total });
-        }
-
-        if (temPrerrogativa) {
-          comPrerrogativa.push({
-            id: irmao.id,
-            nome: irmao.nome,
-            grau: grauTexto,
-            presencas,
-            total,
-            percentual
-          });
-        }
-
-        if (estaLicenciado) {
-          licenciados.push({
-            id: irmao.id,
-            nome: irmao.nome,
-            grau: grauTexto,
-            presencas,
-            total,
-            percentual
-          });
-        }
-      });
-
-      setResumoPrerrogativa(comPrerrogativa);
-      setResumoLicenciados(licenciados);
-
     } catch (error) {
       console.error('Erro:', error);
     }
@@ -828,11 +970,20 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Irmãos com Prerrogativa (70+) */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-purple-600 text-white p-4">
+          <div className="bg-purple-600 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>👴</span>
               Irmãos com Prerrogativa (70+) - {resumoPrerrogativa.length} {resumoPrerrogativa.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
+            <select
+              value={anoPrerrogativa}
+              onChange={(e) => setAnoPrerrogativa(Number(e.target.value))}
+              className="bg-purple-700 text-white px-3 py-1 rounded font-semibold"
+            >
+              {anosDisponiveis.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
           <div className="p-4">
             {resumoPrerrogativa.length === 0 ? (
@@ -882,11 +1033,20 @@ export default function DashboardPresenca() {
 
         {/* Quadro: Irmãos Licenciados */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-orange-500 text-white p-4">
+          <div className="bg-orange-500 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>📋</span>
               Irmãos Licenciados - {resumoLicenciados.length} {resumoLicenciados.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
+            <select
+              value={anoLicenciados}
+              onChange={(e) => setAnoLicenciados(Number(e.target.value))}
+              className="bg-orange-600 text-white px-3 py-1 rounded font-semibold"
+            >
+              {anosDisponiveis.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
           <div className="p-4">
             {resumoLicenciados.length === 0 ? (
@@ -938,10 +1098,35 @@ export default function DashboardPresenca() {
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <div className="bg-orange-600 text-white p-4">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-bold flex items-center gap-2">
-                <span>⚠️</span>
-                Ausências
-              </h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold flex items-center gap-2">
+                  <span>⚠️</span>
+                  Ausências
+                </h3>
+                <select
+                  value={anoAusencias}
+                  onChange={(e) => {
+                    setAnoAusencias(Number(e.target.value));
+                    const ano = Number(e.target.value);
+                    const mes = mesAusencias;
+                    
+                    // Definir período baseado no ano/mês
+                    if (mes === 0) {
+                      setDataInicio(`${ano}-01-01`);
+                      setDataFim(`${ano}-12-31`);
+                    } else {
+                      const ultimoDia = new Date(ano, mes, 0).getDate();
+                      setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
+                      setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
+                    }
+                  }}
+                  className="bg-orange-700 text-white px-3 py-1 rounded font-semibold"
+                >
+                  {anosDisponiveis.map(ano => (
+                    <option key={ano} value={ano}>{ano}</option>
+                  ))}
+                </select>
+              </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm">≥</span>
                 <input
@@ -956,32 +1141,7 @@ export default function DashboardPresenca() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <label className="text-sm font-medium">Período:</label>
-              <select
-                value={anoAusencias}
-                onChange={(e) => {
-                  setAnoAusencias(Number(e.target.value));
-                  const ano = Number(e.target.value);
-                  const mes = mesAusencias;
-                  
-                  // Definir período baseado no ano/mês
-                  if (mes === 0) {
-                    // Ano todo
-                    setDataInicio(`${ano}-01-01`);
-                    setDataFim(`${ano}-12-31`);
-                  } else {
-                    // Mês específico
-                    const ultimoDia = new Date(ano, mes, 0).getDate();
-                    setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
-                    setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
-                  }
-                }}
-                className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
-              >
-                {anosDisponiveis.map(ano => (
-                  <option key={ano} value={ano}>{ano}</option>
-                ))}
-              </select>
+              <label className="text-sm font-medium">Mês:</label>
               <select
                 value={mesAusencias}
                 onChange={(e) => {
@@ -991,11 +1151,9 @@ export default function DashboardPresenca() {
                   
                   // Definir período baseado no ano/mês
                   if (mes === 0) {
-                    // Ano todo
                     setDataInicio(`${ano}-01-01`);
                     setDataFim(`${ano}-12-31`);
                   } else {
-                    // Mês específico
                     const ultimoDia = new Date(ano, mes, 0).getDate();
                     setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
                     setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
