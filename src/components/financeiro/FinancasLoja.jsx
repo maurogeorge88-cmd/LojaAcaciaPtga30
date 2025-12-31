@@ -1598,19 +1598,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           // Determinar status - usar letras ao invés de símbolos
           let status = 'N/A';
           if (grauSessao > grauIrmao) {
-            status = '-';
+            status = '( - )';
           } else {
             const registro = presencas?.find(p => p.sessao_id === sessao.id);
             if (registro) {
               if (registro.presente) {
-                status = 'S Presente';
+                status = '( S ) Presente';
               } else if (registro.justificativa) {
-                status = 'J Justificado';
+                status = '( J ) Justificado';
               } else {
-                status = 'X Ausente';
+                status = '( X ) Ausente';
               }
             } else {
-              status = 'X Ausente';
+              status = '( X ) Ausente';
             }
           }
           
