@@ -79,23 +79,55 @@ export default function ModalGradePresenca({ onFechar }) {
         .order('nome');
 
       console.log('Irmãos:', irmaosData?.length);
+      console.log('Histórico situações:', historicoSituacoes?.length);
 
-      // Filtrar: remover falecidos de MESES ANTERIORES
+      // Filtrar: remover falecidos de MESES ANTERIORES e desligados
       const hoje = new Date();
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
 
       const irmaosValidos = irmaosData.filter(i => {
+        // 1. Remover falecidos de meses anteriores
         if (i.data_falecimento) {
           const dataFalec = new Date(i.data_falecimento);
-          // Se faleceu em mês anterior, remove
           if (dataFalec.getFullYear() < anoAtual || 
              (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
             return false;
           }
         }
+        
+        // 2. Remover desligados (situação ativa de desligamento)
+        const temDesligamentoAtivo = historicoSituacoes?.some(sit => {
+          if (sit.membro_id !== i.id) return false;
+          
+          const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (tipo !== 'desligamento') return false;
+          
+          // Verificar se é ativo: data_inicio já passou E (sem data_fim OU data_fim no futuro)
+          const dataInicio = new Date(sit.data_inicio);
+          if (dataInicio > hoje) return false; // Ainda não começou
+          
+          // Se não tem data_fim OU data_fim é futura = está ativo
+          if (sit.data_fim === null) {
+            console.log('Desligado sem previsão:', i.nome, sit);
+            return true;
+          }
+          
+          const dataFim = new Date(sit.data_fim);
+          if (dataFim >= hoje) {
+            console.log('Desligado com data fim futura:', i.nome, sit);
+            return true;
+          }
+          
+          return false;
+        });
+        
+        if (temDesligamentoAtivo) return false;
+        
         return true;
       });
+      
+      console.log('Irmãos válidos (após filtros):', irmaosValidos.length);
 
       // Adicionar flags de prerrogativa
       const irmaosComFlags = irmaosValidos.map(i => {
