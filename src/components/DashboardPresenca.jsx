@@ -1,440 +1,69 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import ModalGradePresenca from './ModalGradePresenca';
 
-export default function DashboardPresenca() {
-  const [dados, setDados] = useState({ sessoes: 0, irmaos: 0, registros: 0 });
-
-  const calcularIdade = (dataNascimento) => {
-    const nasc = new Date(dataNascimento);
-    const hoje = new Date();
-    let idade = hoje.getFullYear() - nasc.getFullYear();
-    if (hoje.getMonth() < nasc.getMonth() || 
-       (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) {
-      idade--;
-    }
-    return idade;
-  };
-
-  const formatarNome = (nomeCompleto) => {
-    const partes = nomeCompleto.split(' ');
-    if (partes.length <= 2) return nomeCompleto;
-    
-    const segundoNome = partes[1]?.toLowerCase();
-    if (['de', 'da', 'do', 'dos', 'das'].includes(segundoNome)) {
-      return partes.slice(0, 3).join(' ');
-    }
-    
-    return `${partes[0]} ${partes[partes.length - 1]}`;
-  };
-  const [resumo, setResumo] = useState([]);
-  const [resumoAno, setResumoAno] = useState([]);
-  const [mostrarGrade, setMostrarGrade] = useState(false);
-  const [periodo, setPeriodo] = useState('ano');
-  const [percentualAlerta, setPercentualAlerta] = useState(30);
-  const anoAtual = new Date().getFullYear();
-  const [anoPresenca100, setAnoPresenca100] = useState(anoAtual);
-  const [resumoPrerrogativa, setResumoPrerrogativa] = useState([]);
-  const [resumoLicenciados, setResumoLicenciados] = useState([]);
-  const [dataInicio, setDataInicio] = useState('');
-  const [dataFim, setDataFim] = useState('');
-  const [anoAusencias, setAnoAusencias] = useState(anoAtual);
-  const [mesAusencias, setMesAusencias] = useState(0);
-  const [anoPrerrogativa, setAnoPrerrogativa] = useState(anoAtual);
-  const [anoLicenciados, setAnoLicenciados] = useState(anoAtual);
-  const [qtdSessoesRecentes, setQtdSessoesRecentes] = useState(4);
-  const [sessoesRecentes, setSessoesRecentes] = useState([]);
+export default function ModalGradePresenca({ onFechar }) {
+  const [loading, setLoading] = useState(true);
+  const [sessoes, setSessoes] = useState([]);
+  const [irmaos, setIrmaos] = useState([]);
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
+  const [grade, setGrade] = useState({});
+  const [busca, setBusca] = useState('');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const anoAtual = new Date().getFullYear();
   const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
+  const [mesSelecionado, setMesSelecionado] = useState(0);
 
-  // Buscar anos disponíveis na base
+  // Buscar anos disponíveis
   useEffect(() => {
     const buscarAnos = async () => {
       const { data } = await supabase
         .from('sessoes_presenca')
-        .select('data_sessao')
-        .order('data_sessao', { ascending: true });
+        .select('data_sessao');
       
       if (data && data.length > 0) {
         const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
-        const anosSorted = anos.sort((a, b) => b - a); // Mais recente primeiro
+        const anosSorted = anos.sort((a, b) => b - a);
         setAnosDisponiveis(anosSorted);
         
         // Definir ano mais recente como padrão
-        const anoMaisRecente = anosSorted[0];
-        setAnoSelecionado(anoMaisRecente);
-        setAnoPresenca100(anoMaisRecente);
-        setAnoAusencias(anoMaisRecente);
-        setAnoPrerrogativa(anoMaisRecente);
-        setAnoLicenciados(anoMaisRecente);
+        setAnoSelecionado(anosSorted[0]);
       }
     };
     buscarAnos();
   }, []);
 
   useEffect(() => {
-    definirPeriodo('ano');
-  }, []);
-
-  useEffect(() => {
-    if (dataInicio && dataFim) {
+    if (anosDisponiveis.length > 0) {
       carregar();
     }
-  }, [dataInicio, dataFim]);
+  }, [anoSelecionado, mesSelecionado, anosDisponiveis]);
 
-  useEffect(() => {
-    carregarResumoAno();
-  }, [anoPresenca100]);
-
-  useEffect(() => {
-    carregarPrerrogativa();
-  }, [anoPrerrogativa]);
-
-  useEffect(() => {
-    carregarLicenciados();
-  }, [anoLicenciados]);
-
-  useEffect(() => {
-    carregarSessoesRecentes();
-  }, [qtdSessoesRecentes]);
-
-  const carregarPrerrogativa = async () => {
+  const carregar = async () => {
     try {
-      const inicioAno = `${anoPrerrogativa}-01-01`;
-      const fimAno = `${anoPrerrogativa}-12-31`;
+      setLoading(true);
 
-      const { data: sessoes } = await supabase
-        .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id')
-        .gte('data_sessao', inicioAno)
-        .lte('data_sessao', fimAno);
-
-      const { data: registros } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, presente, sessao_id')
-        .in('sessao_id', sessoes?.map(s => s.id) || []);
-
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_falecimento, data_ingresso_loja')
-        .eq('status', 'ativo');
-
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
-
-      const sessoesMap = {};
-      sessoes?.forEach(s => { sessoesMap[s.id] = s; });
-
-      const comPrerrogativa = [];
-
-      irmaos?.forEach(irmao => {
-        if (irmao.data_falecimento) return;
-        
-        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-        if (idade < 70) return;
-
-        let grauTexto = 'Não iniciado';
-        let grauIrmao = 0;
-        if (irmao.data_exaltacao) { grauTexto = 'Mestre'; grauIrmao = 3; }
-        else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
-        else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
-
-        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
-        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
-        const dataInicio = dataIngresso || dataIniciacao;
-
-        let totalRegistros = 0;
-        let presentes = 0;
-
-        registros?.forEach(reg => {
-          if (reg.membro_id === irmao.id) {
-            const sessao = sessoesMap[reg.sessao_id];
-            if (!sessao) return;
-
-            const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
-
-            if (dataInicio && dataSessao < dataInicio) return;
-            if (grauSessao > grauIrmao) return;
-
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
-            if (situacaoNaData) return;
-
-            totalRegistros++;
-            if (reg.presente) presentes++;
-          }
-        });
-
-        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
-
-        comPrerrogativa.push({
-          id: irmao.id,
-          nome: irmao.nome,
-          grau: grauTexto,
-          presencas: presentes,
-          total: totalRegistros,
-          percentual
-        });
-      });
-
-      setResumoPrerrogativa(comPrerrogativa);
-    } catch (error) {
-      console.error('Erro ao carregar prerrogativa:', error);
-    }
-  };
-
-  const carregarLicenciados = async () => {
-    try {
-      const inicioAno = `${anoLicenciados}-01-01`;
-      const fimAno = `${anoLicenciados}-12-31`;
-
-      const { data: sessoes } = await supabase
-        .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id')
-        .gte('data_sessao', inicioAno)
-        .lte('data_sessao', fimAno);
-
-      const { data: registros } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, presente, sessao_id')
-        .in('sessao_id', sessoes?.map(s => s.id) || []);
-
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
-        .eq('status', 'ativo');
-
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
-
-      const hoje = new Date();
-      const sessoesMap = {};
-      sessoes?.forEach(s => { sessoesMap[s.id] = s; });
-
-      const licenciados = [];
-
-      irmaos?.forEach(irmao => {
-        const estaLicenciado = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return sit.membro_id === irmao.id &&
-            tipoNormalizado === 'licenca' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
-        }) || false;
-
-        if (!estaLicenciado) return;
-
-        let grauTexto = 'Não iniciado';
-        let grauIrmao = 0;
-        if (irmao.data_exaltacao) { grauTexto = 'Mestre'; grauIrmao = 3; }
-        else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
-        else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
-
-        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
-        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
-        const dataInicio = dataIngresso || dataIniciacao;
-
-        let totalRegistros = 0;
-        let presentes = 0;
-
-        registros?.forEach(reg => {
-          if (reg.membro_id === irmao.id) {
-            const sessao = sessoesMap[reg.sessao_id];
-            if (!sessao) return;
-
-            const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
-
-            if (dataInicio && dataSessao < dataInicio) return;
-            if (grauSessao > grauIrmao) return;
-
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
-            if (situacaoNaData) return;
-
-            totalRegistros++;
-            if (reg.presente) presentes++;
-          }
-        });
-
-        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
-
-        licenciados.push({
-          id: irmao.id,
-          nome: irmao.nome,
-          grau: grauTexto,
-          presencas: presentes,
-          total: totalRegistros,
-          percentual
-        });
-      });
-
-      setResumoLicenciados(licenciados);
-    } catch (error) {
-      console.error('Erro ao carregar licenciados:', error);
-    }
-  };
-
-  const carregarSessoesRecentes = async () => {
-    try {
-      const { data: sessoes } = await supabase
-        .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id')
-        .order('data_sessao', { ascending: false })
-        .limit(qtdSessoesRecentes);
-
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, data_nascimento, data_falecimento')
-        .eq('status', 'ativo');
-
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
-
-      const sessoesComDados = await Promise.all(sessoes.map(async (sessao) => {
-        const { data: registros } = await supabase
-          .from('registros_presenca')
-          .select('membro_id, presente')
-          .eq('sessao_id', sessao.id);
-
-        const grauSessao = sessao.grau_sessao_id || 1;
-        const dataSessao = new Date(sessao.data_sessao);
-
-        const elegiveis = irmaos.filter(i => {
-          // 1. Verificar grau
-          let grauIrmao = 0;
-          if (i.data_exaltacao) grauIrmao = 3;
-          else if (i.data_elevacao) grauIrmao = 2;
-          else if (i.data_iniciacao) grauIrmao = 1;
-
-          // Sessão de grau superior - não pode
-          if (grauSessao > grauIrmao) return false;
-
-          // 2. Verificar data de ingresso
-          const dataInicio = i.data_ingresso_loja ? new Date(i.data_ingresso_loja) : 
-                            i.data_iniciacao ? new Date(i.data_iniciacao) : null;
-          if (dataInicio && dataSessao < dataInicio) return false;
-
-          // 3. Verificar DESLIGAMENTO na data da sessão - EXCLUIR se desligado
-          const temDesligamento = historicoSituacoes?.find(sit => {
-            const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            return sit.membro_id === i.id &&
-              tipoNormalizado === 'desligado' &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
-          });
-          if (temDesligamento) return false;
-
-          // 4. Verificar falecimento - SE faleceu ANTES da sessão, NÃO é elegível
-          if (i.data_falecimento) {
-            const dataFalec = new Date(i.data_falecimento);
-            if (dataSessao >= dataFalec) return false;
-          }
-
-          // 5. Licenciados e Prerrogativa CONTAM como elegíveis (não excluir)
-
-          return true;
-        });
-
-        const presencas = registros?.filter(r => r.presente).length || 0;
-        const totalElegiveis = elegiveis.length;
-        const ausencias = totalElegiveis - presencas;
-        const percentual = totalElegiveis > 0 ? Math.round((presencas / totalElegiveis) * 100) : 0;
-
-        return {
-          id: sessao.id,
-          data_sessao: sessao.data_sessao,
-          grau: grauSessao,
-          elegiveis: totalElegiveis,
-          presencas,
-          ausencias,
-          percentual
-        };
-      }));
-
-      setSessoesRecentes(sessoesComDados);
-    } catch (error) {
-      console.error('Erro ao carregar sessões recentes:', error);
-    }
-  };
-
-  // Filtrar ausências por ano/mês selecionado
-  const ausenciasFiltradas = useMemo(() => {
-    // TODO: Implementar filtro real por ano/mês quando necessário
-    // Por enquanto, mantém o filtro básico por percentual
-    return resumo.filter(i => {
-      const temPrerrogativa = resumoPrerrogativa.some(p => p.id === i.id);
-      if (temPrerrogativa) return false;
-      
-      const percAusencias = i.total_registros > 0 ? (i.ausentes / i.total_registros) * 100 : 0;
-      return percAusencias >= percentualAlerta;
-    });
-  }, [resumo, resumoPrerrogativa, percentualAlerta]);
-
-  const definirPeriodo = (p) => {
-    setPeriodo(p);
-    const hoje = new Date();
-    const inicio = new Date();
-    const fim = new Date();
-
-    switch (p) {
-      case 'mes':
-        // Primeiro dia do mês atual
-        inicio.setDate(1);
-        inicio.setHours(0, 0, 0, 0);
-        // Último dia do mês atual
-        fim.setMonth(hoje.getMonth() + 1, 0);
-        fim.setHours(23, 59, 59, 999);
-        break;
-      case 'trimestre':
-        inicio.setMonth(hoje.getMonth() - 3);
-        break;
-      case 'semestre':
-        inicio.setMonth(hoje.getMonth() - 6);
-        break;
-      case 'ano':
-        // Primeiro dia do ano atual
-        inicio.setMonth(0, 1);
-        inicio.setHours(0, 0, 0, 0);
-        // Último dia do ano atual
-        fim.setMonth(11, 31);
-        fim.setHours(23, 59, 59, 999);
-        break;
-    }
-
-    setDataInicio(inicio.toISOString().split('T')[0]);
-    setDataFim(fim.toISOString().split('T')[0]);
-  };
-
-  const carregarResumoAno = async () => {
-    try {
-      const inicioAno = `${anoPresenca100}-01-01`;
-      const fimAno = `${anoPresenca100}-12-31`;
-
-      // 1. Buscar todas as sessões do ano
-      const { data: sessoesAno } = await supabase
-        .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id')
-        .gte('data_sessao', inicioAno)
-        .lte('data_sessao', fimAno);
-
-      const sessaoIds = sessoesAno?.map(s => s.id) || [];
-      if (sessaoIds.length === 0) {
-        setResumoAno([]);
-        return;
+      // Calcular período baseado em ano e mês
+      let dataInicio, dataFim;
+      if (mesSelecionado === 0) {
+        // Ano inteiro
+        dataInicio = `${anoSelecionado}-01-01`;
+        dataFim = `${anoSelecionado}-12-31`;
+      } else {
+        // Mês específico
+        const ultimoDia = new Date(anoSelecionado, mesSelecionado, 0).getDate();
+        dataInicio = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-01`;
+        dataFim = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-${ultimoDia}`;
       }
+
+      // 1. Buscar sessões do período
+      const { data: sessoesData } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao, grau_sessao_id')
+        .gte('data_sessao', dataInicio)
+        .lte('data_sessao', dataFim)
+        .order('data_sessao');
+
+      console.log('Sessões:', sessoesData?.length);
 
       // 2. Buscar histórico de situações
       const { data: historicoSituacoes } = await supabase
@@ -442,826 +71,421 @@ export default function DashboardPresenca() {
         .select('*')
         .eq('status', 'ativa');
 
-      // 3. Buscar irmãos com grau
-      const { data: irmaos } = await supabase
+      // 3. Buscar TODOS os irmãos (incluir datas de grau e ingresso)
+      const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
-        .eq('status', 'ativo');
+        .select('id, nome, data_nascimento, data_falecimento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, situacao, status')
+        .order('nome');
 
-      // 4. Buscar registros com paginação
-      let registros = [];
-      let inicio = 0;
-      const tamanhoPagina = 1000;
-      let continuar = true;
+      console.log('Irmãos:', irmaosData?.length);
 
-      while (continuar) {
-        const { data: lote } = await supabase
-          .from('registros_presenca')
-          .select('membro_id, presente, sessao_id')
-          .in('sessao_id', sessaoIds)
-          .range(inicio, inicio + tamanhoPagina - 1);
+      // Filtrar: remover falecidos e desligados
+      const hoje = new Date();
 
-        if (lote && lote.length > 0) {
-          registros = [...registros, ...lote];
-          inicio += tamanhoPagina;
-          
-          if (lote.length < tamanhoPagina) {
-            continuar = false;
-          }
-        } else {
-          continuar = false;
+      const irmaosValidos = irmaosData.filter(i => {
+        // Remover falecidos
+        if (i.data_falecimento) {
+          const dataFalec = new Date(i.data_falecimento);
+          if (dataFalec <= hoje) return false;
         }
-      }
-
-      // Mapear sessões por ID
-      const sessoesMap = {};
-      sessoesAno?.forEach(s => {
-        sessoesMap[s.id] = s;
+        
+        // Remover desligados (verificar histórico de situações)
+        const estaDesligado = historicoSituacoes?.some(sit => {
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return sit.membro_id === i.id &&
+            tipoNormalizado === 'desligamento' &&
+            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+        }) || false;
+        
+        if (estaDesligado) return false;
+        
+        return true;
       });
 
-      // Processar cada irmão
-      const com100 = [];
-      
-      irmaos?.forEach(irmao => {
-        // Calcular grau do irmão
-        let grauIrmao = 0;
-        if (irmao.data_exaltacao) grauIrmao = 3;
-        else if (irmao.data_elevacao) grauIrmao = 2;
-        else if (irmao.data_iniciacao) grauIrmao = 1;
-
-        if (grauIrmao === 0) return;
-
-        // Contar APENAS registros VÁLIDOS (após iniciação e do grau permitido)
-        let totalRegistros = 0;
-        let presentes = 0;
-        let aprendiz = 0, companheiro = 0, mestre = 0;
-
-        // Prioridade: data_ingresso_loja > data_iniciacao
-        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
-        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
-        const dataInicio = dataIngresso || dataIniciacao;
-
-        registros.forEach(reg => {
-          if (reg.membro_id === irmao.id) {
-            const sessao = sessoesMap[reg.sessao_id];
-            if (!sessao) return;
-
-            const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
-
-            // Ignorar se sessão é ANTES do ingresso na loja
-            if (dataInicio && dataSessao < dataInicio) return;
-
-            // Ignorar se sessão é de grau SUPERIOR ao do irmão
-            if (grauSessao > grauIrmao) return;
-
-            // Verificar se tem situação ativa na data da sessão
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
-            
-            // Se tem situação ativa, ignora
-            if (situacaoNaData) return;
-
-            // Registro válido
-            totalRegistros++;
-            
-            if (reg.presente) {
-              presentes++;
-              
-              if (grauSessao === 1) aprendiz++;
-              else if (grauSessao === 2) companheiro++;
-              else if (grauSessao === 3) mestre++;
-            }
-          }
-        });
-
-        // 100% = presentes em TODAS as sessões que tem registro
-        if (totalRegistros > 0 && presentes === totalRegistros) {
-          // Debug Mauro
-          if (irmao.nome.includes('Mauro')) {
-            console.log('🏆 Mauro 100%:', { totalRegistros, presentes, aprendiz, companheiro, mestre });
-          }
-          
-          com100.push({
-            id: irmao.id,
-            nome: irmao.nome,
-            total_sessoes: totalRegistros,
-            aprendiz,
-            companheiro,
-            mestre
-          });
-        }
-      });
-
-      setResumoAno(com100);
-
-    } catch (error) {
-      console.error('❌ Erro ao carregar resumo do ano:', error);
-    }
-  };
-
-  const carregar = async () => {
-    try {
-      // 1. Buscar sessões do período
-      const { data: sessoesPerio, count: totalSessoes } = await supabase
-        .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id', { count: 'exact' })
-        .gte('data_sessao', dataInicio)
-        .lte('data_sessao', dataFim);
-
-      const sessaoIds = sessoesPerio?.map(s => s.id) || [];
-
-      // 2. Buscar histórico de situações (licenças, desligamentos, etc)
-      const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
-
-      // 3. Contar irmãos ativos
-      const { count: totalIrmaos } = await supabase
-        .from('irmaos')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'ativo');
-
-      // 4. Buscar irmãos com datas
-      const { data: irmaos } = await supabase
-        .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_ingresso_loja, data_falecimento')
-        .eq('status', 'ativo');
-
-      // 5. Buscar registros com paginação
-      let registros = [];
-      let inicio = 0;
-      const tamanhoPagina = 1000;
-      let continuar = true;
-
-      while (continuar) {
-        const { data: lote } = await supabase
-          .from('registros_presenca')
-          .select('membro_id, presente, sessao_id')
-          .in('sessao_id', sessaoIds)
-          .range(inicio, inicio + tamanhoPagina - 1);
-
-        if (lote && lote.length > 0) {
-          registros = [...registros, ...lote];
-          inicio += tamanhoPagina;
-          
-          if (lote.length < tamanhoPagina) {
-            continuar = false;
-          }
-        } else {
-          continuar = false;
-        }
-      }
-
-      // Mapear sessões
-      const sessoesMap = {};
-      sessoesPerio?.forEach(s => {
-        sessoesMap[s.id] = s;
-      });
-
-      // Processar cada irmão
-      const resumoCompleto = [];
-
-      irmaos?.forEach(irmao => {
-        // Calcular grau
-        let grauIrmao = 0;
-        if (irmao.data_exaltacao) grauIrmao = 3;
-        else if (irmao.data_elevacao) grauIrmao = 2;
-        else if (irmao.data_iniciacao) grauIrmao = 1;
-
-        if (grauIrmao === 0) return;
-
-        // Calcular idade e prerrogativa
-        let temPrerrogativa = false;
+      // Adicionar flags de prerrogativa
+      const irmaosComFlags = irmaosValidos.map(i => {
+        let idade = null;
         let dataPrerrogativa = null;
-        if (irmao.data_nascimento) {
-          const nasc = new Date(irmao.data_nascimento);
+        
+        if (i.data_nascimento) {
+          const nasc = new Date(i.data_nascimento);
           const hoje = new Date();
-          let idade = hoje.getFullYear() - nasc.getFullYear();
+          idade = hoje.getFullYear() - nasc.getFullYear();
           if (hoje.getMonth() < nasc.getMonth() || 
              (hoje.getMonth() === nasc.getMonth() && hoje.getDate() < nasc.getDate())) {
             idade--;
           }
           
           if (idade >= 70) {
-            temPrerrogativa = true;
             dataPrerrogativa = new Date(nasc);
             dataPrerrogativa.setFullYear(nasc.getFullYear() + 70);
           }
         }
+        
+        return {
+          ...i,
+          idade,
+          data_prerrogativa: dataPrerrogativa
+        };
+      });
 
-        // Prioridade: data_ingresso_loja > data_iniciacao
-        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
-        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
-        const dataInicio = dataIngresso || dataIniciacao;
+      // 3. Buscar TODOS os registros em lotes (paginação)
+      const sessaoIds = sessoesData?.map(s => s.id) || [];
+      
+      let todosRegistros = [];
+      let inicio = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
 
-        // Contar apenas registros VÁLIDOS
-        let totalRegistros = 0;
-        let presentes = 0;
+      while (continuar) {
+        const { data: lote } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, sessao_id, presente, justificativa')
+          .in('sessao_id', sessaoIds)
+          .range(inicio, inicio + tamanhoPagina - 1);
 
-        registros.forEach(reg => {
-          if (reg.membro_id === irmao.id) {
-            const sessao = sessoesMap[reg.sessao_id];
-            if (!sessao) return;
-
-            const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
-
-            // Ignorar sessão ANTES do ingresso na loja
-            if (dataInicio && dataSessao < dataInicio) return;
-
-            // Ignorar sessão de grau SUPERIOR
-            if (grauSessao > grauIrmao) return;
-
-            // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
-            
-            // Se tem situação ativa (licença/desligamento), ignora
-            if (situacaoNaData) return;
-
-            // Registro válido
-            totalRegistros++;
-            if (reg.presente) presentes++;
+        if (lote && lote.length > 0) {
+          todosRegistros = [...todosRegistros, ...lote];
+          inicio += tamanhoPagina;
+          
+          // Se retornou menos que o tamanho da página, acabou
+          if (lote.length < tamanhoPagina) {
+            continuar = false;
           }
-        });
+        } else {
+          continuar = false;
+        }
+      }
 
-        const ausentes = totalRegistros - presentes;
-        const taxa = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+      console.log('📊 Registros carregados:', todosRegistros.length);
 
-        resumoCompleto.push({
-          id: irmao.id,
-          nome: irmao.nome,
-          total_registros: totalRegistros,
-          presentes,
-          ausentes,
-          taxa
-        });
+      // Criar grade agrupando por irmão
+      const gradeCompleta = {};
+      todosRegistros.forEach(reg => {
+        if (!gradeCompleta[reg.membro_id]) {
+          gradeCompleta[reg.membro_id] = {};
+        }
+        gradeCompleta[reg.membro_id][reg.sessao_id] = {
+          presente: reg.presente,
+          justificativa: reg.justificativa
+        };
       });
 
-      // Média de presença
-      const somaPresencas = resumoCompleto.reduce((sum, r) => sum + r.taxa, 0);
-      const totalComRegistros = resumoCompleto.filter(r => r.total_registros > 0).length;
-      const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
+      console.log('Grade montada');
 
-      // Irmãos ativos = regulares + licenciados (com licença ativa)
-      const hoje = new Date();
-      const irmaosAtivos = irmaos?.filter(i => {
-        // Se faleceu, não é ativo
-        if (i.data_falecimento) return false;
-        
-        // Se tem licença ativa, é ativo
-        const temLicencaAtiva = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return sit.membro_id === i.id &&
-            tipoNormalizado === 'licenca' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
-        });
-        
-        if (temLicencaAtiva) return true;
-        
-        // Se tem desligamento ativo, não é ativo
-        const temDesligamentoAtivo = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return sit.membro_id === i.id &&
-            tipoNormalizado === 'desligado' &&
-            sit.data_fim === null;
-        });
-        
-        if (temDesligamentoAtivo) return false;
-        
-        // Demais casos: é ativo
-        return true;
-      }).length || 0;
-
-      setDados({
-        sessoes: totalSessoes || 0,
-        irmaos: totalIrmaos || 0,
-        irmaosAtivos,
-        mediaPresenca
-      });
-
-      setResumo(resumoCompleto);
+      setSessoes(sessoesData || []);
+      setIrmaos(irmaosComFlags || []);
+      setHistoricoSituacoes(historicoSituacoes || []);
+      setGrade(gradeCompleta);
 
     } catch (error) {
       console.error('Erro:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const formatarData = (data) => {
+    return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR', { 
+      day: '2-digit', 
+      month: '2-digit' 
+    });
+  };
+
+  const renderizarCelula = (irmaoId, sessaoId) => {
+    const reg = grade[irmaoId]?.[sessaoId];
+    const irmao = irmaos.find(i => i.id === irmaoId);
+    const sessao = sessoes.find(s => s.id === sessaoId);
+    
+    if (!irmao || !sessao) {
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    const dataSessao = new Date(sessao.data_sessao);
+    
+    // 1. Verificar data de início na LOJA
+    // PRIORIDADE: data_ingresso_loja (se existir) > data_iniciacao
+    // Porque ingresso indica quando começou nesta loja (pode ser transferência/retorno)
+    const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
+    const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+    const dataInicio = dataIngresso || dataIniciacao;
+    
+    // Debug para Michel
+    if (irmao.nome.includes('Michel')) {
+      console.log('Michel:', {
+        sessao: sessao.data_sessao,
+        dataIngresso,
+        dataIniciacao,
+        dataInicio: dataInicio?.toLocaleDateString(),
+        antes: dataInicio && dataSessao < dataInicio
+      });
+    }
+    
+    if (dataInicio && dataSessao < dataInicio) {
+      // Sessão antes de ingressar na loja → não se aplica
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    // 2. Calcular grau do irmão
+    let grauIrmao = 0;
+    if (irmao.data_exaltacao) grauIrmao = 3;
+    else if (irmao.data_elevacao) grauIrmao = 2;
+    else if (irmao.data_iniciacao) grauIrmao = 1;
+
+    // 3. Verificar grau da sessão
+    const grauSessao = sessao.grau_sessao_id || 1;
+
+    // Debug Michel
+    if (irmao.nome.includes('Michel')) {
+      console.log('Michel graus:', {
+        grauIrmao,
+        grauSessao,
+        bloqueado: grauSessao > grauIrmao
+      });
+    }
+
+    // 4. Se sessão é de grau superior ao do irmão → não pode participar
+    if (grauSessao > grauIrmao) {
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    // 5. Verificar se computa (prerrogativa/situação ativa/falecimento)
+    let computa = true;
+    
+    if (irmao.data_prerrogativa) {
+      const dataPrer = new Date(irmao.data_prerrogativa);
+      if (dataSessao >= dataPrer) computa = false;
+    }
+    
+    // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
+    const situacaoNaData = historicoSituacoes?.find(sit => 
+      sit.membro_id === irmao.id &&
+      dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+      (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+    );
+    
+    if (situacaoNaData) computa = false;
+    
+    if (irmao.data_falecimento) {
+      const dataFalec = new Date(irmao.data_falecimento);
+      if (dataSessao >= dataFalec) computa = false;
+    }
+
+    // Se NÃO TEM registro
+    if (!reg) {
+      // Se não computa, mostra - (sem obrigação)
+      if (!computa) {
+        return (
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+            <span className="text-gray-400">-</span>
+          </td>
+        );
+      }
+      // Se computa, mostra ausência (✗ vermelho)
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+          <span className="text-red-600 text-lg font-bold">✗</span>
+        </td>
+      );
+    }
+
+    // Se TEM registro e não computa
+    if (!computa) {
+      // Se veio (presente), mostra ✓ normal
+      if (reg.presente) {
+        return (
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+            <span className="text-green-600 text-lg font-bold">✓</span>
+          </td>
+        );
+      }
+      // Se ausente (não computa), mostra -
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <span className="text-gray-400">-</span>
+        </td>
+      );
+    }
+
+    // Computa normalmente
+    if (reg.presente) {
+      return (
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+          <span className="text-green-600 text-lg font-bold">✓</span>
+        </td>
+      );
+    }
+
+    if (reg.justificativa) {
+      return (
+        <td 
+          key={sessaoId} 
+          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
+          title={reg.justificativa}
+        >
+          <span className="text-yellow-600 text-lg font-bold">J</span>
+        </td>
+      );
+    }
+
+    return (
+      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+        <span className="text-red-600 text-lg font-bold">✗</span>
+      </td>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-8 rounded-lg">
+          <div className="text-center">Carregando grade...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      
-      {/* Cabeçalho com Título e Filtros */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard de Presença</h1>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full h-[90vh] max-w-[95vw] flex flex-col">
         
-        {/* Seletor de Período */}
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700 min-w-[60px]">Período:</label>
-          <div className="flex gap-3 flex-1">
-            {['mes', 'trimestre', 'semestre'].map(p => (
-              <button
-                key={p}
-                onClick={() => definirPeriodo(p)}
-                className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all ${
-                  periodo === p
-                    ? 'bg-green-400 text-white shadow-lg scale-105'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                }`}
-              >
-                {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
-              </button>
-            ))}
+        {/* Cabeçalho */}
+        <div className="bg-blue-600 text-white p-6">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h2 className="text-2xl font-bold">Grade de Presença</h2>
+              <p className="text-sm text-blue-100 mt-1">
+                {sessoes.length} sessões • {irmaos.length} irmãos
+              </p>
+            </div>
+            <button
+              onClick={onFechar}
+              className="hover:bg-blue-700 rounded-full p-2 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Filtros de Período */}
+          <div className="flex gap-3 mb-4">
             <select
               value={anoSelecionado}
-              onChange={(e) => {
-                const ano = Number(e.target.value);
-                setAnoSelecionado(ano);
-                setPeriodo('ano');
-                setDataInicio(`${ano}-01-01`);
-                setDataFim(`${ano}-12-31`);
-              }}
-              className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                periodo === 'ano'
-                  ? 'bg-green-400 text-white shadow-lg'
-                  : 'bg-blue-100 text-blue-700'
-              }`}
+              onChange={(e) => setAnoSelecionado(Number(e.target.value))}
+              className="px-4 py-2 rounded text-gray-800 font-semibold"
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
               ))}
             </select>
+            <select
+              value={mesSelecionado}
+              onChange={(e) => setMesSelecionado(Number(e.target.value))}
+              className="px-4 py-2 rounded text-gray-800 font-semibold"
+            >
+              <option value={0}>Ano todo</option>
+              <option value={1}>Janeiro</option>
+              <option value={2}>Fevereiro</option>
+              <option value={3}>Março</option>
+              <option value={4}>Abril</option>
+              <option value={5}>Maio</option>
+              <option value={6}>Junho</option>
+              <option value={7}>Julho</option>
+              <option value={8}>Agosto</option>
+              <option value={9}>Setembro</option>
+              <option value={10}>Outubro</option>
+              <option value={11}>Novembro</option>
+              <option value={12}>Dezembro</option>
+            </select>
           </div>
+
+          {/* Campo de Busca */}
+          <input
+            type="text"
+            placeholder="🔍 Buscar irmão..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="w-full px-4 py-2 rounded text-gray-800 placeholder-gray-500"
+          />
         </div>
 
-        <p className="mt-3 text-sm text-gray-600">
-          📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
-        </p>
-      </div>
-      {/* Cards Totais */}
-      <div className="grid grid-cols-5 gap-6 mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <p className="text-blue-600 font-semibold mb-2">Sessões</p>
-          <p className="text-4xl font-bold text-blue-800">{dados.sessoes}</p>
+        {/* Tabela */}
+        <div className="flex-1 overflow-auto">
+          <table className="w-full border-collapse text-xs">
+            <thead className="bg-gray-100 sticky top-0">
+              <tr>
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
+                  Irmão
+                </th>
+                {sessoes.map(s => (
+                  <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
+                    {formatarData(s.data_sessao)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {irmaos
+                .filter(irmao => 
+                  busca === '' || irmao.nome.toLowerCase().includes(busca.toLowerCase())
+                )
+                .map(irmao => (
+                <tr key={irmao.id} className="hover:bg-gray-50">
+                  <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
+                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {irmao.situacao === 'licenciado' && irmao.data_licenca && (
+                        <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
+                          Lic
+                        </span>
+                      )}
+                      {irmao.idade >= 70 && (
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                          70+
+                        </span>
+                      )}
+                      {irmao.data_falecimento && (
+                        <span className="text-xs bg-gray-200 text-gray-800 px-2 py-0.5 rounded">
+                          †
+                        </span>
+                      )}
+                      {irmao.data_desligamento && (
+                        <span className="text-xs bg-red-100 text-red-800 px-2 py-0.5 rounded">
+                          Deslg
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-          <p className="text-green-600 font-semibold mb-2">Total de Irmãos</p>
-          <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
-        </div>
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 text-center">
-          <p className="text-teal-600 font-semibold mb-2">Irmãos Ativos</p>
-          <p className="text-4xl font-bold text-teal-800">{dados.irmaosAtivos || 0}</p>
-        </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
-          <p className="text-purple-600 font-semibold mb-2">Média Presença</p>
-          <p className="text-4xl font-bold text-purple-800">{dados.mediaPresenca || 0}%</p>
-        </div>
-        <div className="bg-white border border-gray-300 rounded-lg p-6 text-center">
+
+        {/* Rodapé */}
+        <div className="bg-gray-50 px-6 py-4 border-t">
           <button
-            onClick={() => setMostrarGrade(true)}
-            className="w-full h-full flex flex-col items-center justify-center hover:bg-gray-50 transition-colors"
+            onClick={onFechar}
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
           >
-            <span className="text-3xl mb-2">📊</span>
-            <span className="font-semibold text-gray-700">Matrix Presença</span>
+            Fechar
           </button>
         </div>
       </div>
-
-      {/* Quadro: Sessões Recentes - largura total */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-        <div className="bg-indigo-600 text-white p-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold flex items-center gap-2">
-            <span>📅</span>
-            Sessões Recentes
-          </h3>
-          <div className="flex items-center gap-2">
-            <span className="text-sm">Quantidade:</span>
-            <select
-              value={qtdSessoesRecentes}
-              onChange={(e) => setQtdSessoesRecentes(Number(e.target.value))}
-              className="px-3 py-1.5 bg-indigo-700 text-white rounded font-semibold"
-            >
-              <option value={4}>4</option>
-              <option value={6}>6</option>
-              <option value={8}>8</option>
-              <option value={10}>10</option>
-            </select>
-          </div>
-        </div>
-        <div className="p-4">
-          {sessoesRecentes.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">Carregando sessões...</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Elegíveis</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ausências</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sessoesRecentes.map((sessao, idx) => (
-                    <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-4 py-3 text-sm">
-                        {new Date(sessao.data_sessao).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          sessao.grau === 1 ? 'bg-blue-100 text-blue-800' :
-                          sessao.grau === 2 ? 'bg-green-100 text-green-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}>
-                          {sessao.grau === 1 ? 'Aprendiz' : sessao.grau === 2 ? 'Companheiro' : 'Mestre'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm font-semibold">{sessao.elegiveis}</td>
-                      <td className="px-4 py-3 text-center text-sm font-semibold text-green-600">{sessao.presencas}</td>
-                      <td className="px-4 py-3 text-center text-sm font-semibold text-red-600">{sessao.ausencias}</td>
-                      <td className="px-4 py-3 text-center text-sm">
-                        <span className={`px-2 py-1 rounded font-semibold ${
-                          sessao.percentual >= 80 ? 'bg-green-100 text-green-800' :
-                          sessao.percentual >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {sessao.percentual}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Quadros lado a lado */}
-      <div className="grid grid-cols-2 gap-6">
-        
-        {/* Quadro: Presença 100% */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-green-600 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <span>🏆</span>
-              Presença 100% - {resumoAno.length} {resumoAno.length === 1 ? 'Irmão' : 'Irmãos'}
-            </h3>
-            <select
-              value={anoPresenca100}
-              onChange={(e) => setAnoPresenca100(Number(e.target.value))}
-              className="bg-green-700 text-white px-3 py-1 rounded font-semibold"
-            >
-              {anosDisponiveis.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
-          <div className="p-4 max-h-96 overflow-y-auto">
-            {resumoAno.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com 100% em {anoPresenca100}</p>
-            ) : (
-              <div className="space-y-2">
-                {resumoAno
-                  .sort((a, b) => b.total_sessoes - a.total_sessoes)
-                  .map(irmao => (
-                  <div key={irmao.id} className="p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-800">
-                        {formatarNome(irmao.nome)}
-                      </span>
-                      <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
-                        {irmao.total_sessoes}
-                      </span>
-                    </div>
-                    <div className="flex gap-3 text-xs text-gray-600">
-                      {irmao.aprendiz > 0 && (
-                        <span className="bg-blue-100 px-2 py-1 rounded">
-                          Apr: {irmao.aprendiz}
-                        </span>
-                      )}
-                      {irmao.companheiro > 0 && (
-                        <span className="bg-yellow-100 px-2 py-1 rounded">
-                          Comp: {irmao.companheiro}
-                        </span>
-                      )}
-                      {irmao.mestre > 0 && (
-                        <span className="bg-purple-100 px-2 py-1 rounded">
-                          Mest: {irmao.mestre}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quadro: Irmãos com Prerrogativa (70+) */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-purple-600 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <span>👴</span>
-              Irmãos com Prerrogativa (70+) - {resumoPrerrogativa.length} {resumoPrerrogativa.length === 1 ? 'Irmão' : 'Irmãos'}
-            </h3>
-            <select
-              value={anoPrerrogativa}
-              onChange={(e) => setAnoPrerrogativa(Number(e.target.value))}
-              className="bg-purple-700 text-white px-3 py-1 rounded font-semibold"
-            >
-              {anosDisponiveis.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
-          <div className="p-4">
-            {resumoPrerrogativa.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com prerrogativa no período</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {resumoPrerrogativa
-                      .sort((a, b) => b.percentual - a.percentual)
-                      .map(irmao => (
-                      <tr key={irmao.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-800">
-                          {formatarNome(irmao.nome)}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">
-                          {irmao.grau}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-800">
-                          {irmao.presencas}/{irmao.total}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
-                            irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
-                            irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {irmao.percentual}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quadro: Irmãos Licenciados */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-orange-500 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <span>📋</span>
-              Irmãos Licenciados - {resumoLicenciados.length} {resumoLicenciados.length === 1 ? 'Irmão' : 'Irmãos'}
-            </h3>
-            <select
-              value={anoLicenciados}
-              onChange={(e) => setAnoLicenciados(Number(e.target.value))}
-              className="bg-orange-600 text-white px-3 py-1 rounded font-semibold"
-            >
-              {anosDisponiveis.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-          </div>
-          <div className="p-4">
-            {resumoLicenciados.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão licenciado no período</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {resumoLicenciados
-                      .sort((a, b) => b.percentual - a.percentual)
-                      .map(irmao => (
-                      <tr key={irmao.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-800">
-                          {formatarNome(irmao.nome)}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">
-                          {irmao.grau}
-                        </td>
-                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-800">
-                          {irmao.presencas}/{irmao.total}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
-                            irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
-                            irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
-                            {irmao.percentual}%
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Quadro: Ausências acima do percentual configurado */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-orange-600 text-white p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <span>⚠️</span>
-                  Ausências
-                </h3>
-                <select
-                  value={anoAusencias}
-                  onChange={(e) => {
-                    setAnoAusencias(Number(e.target.value));
-                    const ano = Number(e.target.value);
-                    const mes = mesAusencias;
-                    
-                    // Definir período baseado no ano/mês
-                    if (mes === 0) {
-                      setDataInicio(`${ano}-01-01`);
-                      setDataFim(`${ano}-12-31`);
-                    } else {
-                      const ultimoDia = new Date(ano, mes, 0).getDate();
-                      setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
-                      setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
-                    }
-                  }}
-                  className="bg-orange-700 text-white px-3 py-1 rounded font-semibold"
-                >
-                  {anosDisponiveis.map(ano => (
-                    <option key={ano} value={ano}>{ano}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">≥</span>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={percentualAlerta}
-                  onChange={(e) => setPercentualAlerta(Number(e.target.value))}
-                  className="w-16 px-2 py-1 bg-orange-700 text-white rounded font-semibold text-center"
-                />
-                <span className="text-sm">%</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium">Mês:</label>
-              <select
-                value={mesAusencias}
-                onChange={(e) => {
-                  setMesAusencias(Number(e.target.value));
-                  const ano = anoAusencias;
-                  const mes = Number(e.target.value);
-                  
-                  // Definir período baseado no ano/mês
-                  if (mes === 0) {
-                    setDataInicio(`${ano}-01-01`);
-                    setDataFim(`${ano}-12-31`);
-                  } else {
-                    const ultimoDia = new Date(ano, mes, 0).getDate();
-                    setDataInicio(`${ano}-${String(mes).padStart(2, '0')}-01`);
-                    setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
-                  }
-                }}
-                className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
-              >
-                <option value={0}>Ano todo</option>
-                {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'].map((mes, idx) => (
-                  <option key={idx + 1} value={idx + 1}>{mes}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <div className="p-4 max-h-96 overflow-y-auto">
-            {ausenciasFiltradas.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com ≥{percentualAlerta}% ausências no período</p>
-            ) : (
-              <div className="space-y-2">
-                {ausenciasFiltradas
-                  .sort((a, b) => {
-                    const percA = (a.ausentes / a.total_registros) * 100;
-                    const percB = (b.ausentes / b.total_registros) * 100;
-                    return percB - percA;
-                  })
-                  .map(irmao => {
-                    const percAusencias = Math.round((irmao.ausentes / irmao.total_registros) * 100);
-                    return (
-                      <div key={irmao.id} className="flex justify-between items-center p-3 bg-orange-50 rounded hover:bg-orange-100 transition-colors">
-                        <div className="flex-1">
-                          <p className="font-medium text-gray-800">
-                            {formatarNome(irmao.nome)}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {irmao.ausentes}/{irmao.total_registros}
-                          </p>
-                        </div>
-                        <span className="bg-orange-600 text-white px-3 py-1 rounded text-sm font-semibold">
-                          {percAusencias}%
-                        </span>
-                      </div>
-                    );
-                  })}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Tabela - COMENTADA para adicionar quadros
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gray-800 text-white p-4">
-          <h2 className="text-2xl font-bold">Resumo por Irmão</h2>
-        </div>
-        
-        <table className="min-w-full">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase">Irmão</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Registros</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Presentes</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Ausentes</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Taxa</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {resumo.map(irmao => (
-              <tr key={irmao.id} className="hover:bg-blue-50 transition-colors">
-                <td className="px-6 py-4">
-                  <span className="font-semibold text-gray-900">{formatarNome(irmao.nome)}</span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-lg font-bold text-blue-600">{irmao.total_registros}</span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-lg font-bold text-green-600">{irmao.presentes}</span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-lg font-bold text-red-600">{irmao.ausentes}</span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <span className={`px-4 py-2 rounded-full font-bold text-sm ${
-                    irmao.taxa >= 90 ? 'bg-green-100 text-green-800' :
-                    irmao.taxa >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {irmao.taxa}%
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      */}
-
-      {/* Info */}
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-800">
-          💡 <strong>Mostrando dados BRUTOS do banco:</strong> Total geral de sessões, irmãos e registros sem nenhum filtro por período ou grau.
-        </p>
-      </div>
-
-      {/* Modal Grade */}
-      {mostrarGrade && (
-        <ModalGradePresenca onFechar={() => setMostrarGrade(false)} />
-      )}
     </div>
   );
 }
