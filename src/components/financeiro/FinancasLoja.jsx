@@ -65,6 +65,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [creditosIrmao, setCreditosIrmao] = useState([]);
 
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
+  const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [formSangria, setFormSangria] = useState({
     valor: '',
     data: new Date().toISOString().split('T')[0],
@@ -942,6 +943,89 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
+  const fazerSangriaTronco = async () => {
+    try {
+      const { valor, data, observacao } = formSangria;
+      if (!valor || parseFloat(valor) <= 0) {
+        showError('Informe um valor válido');
+        return;
+      }
+      
+      const valorSangria = parseFloat(valor);
+      const resumoAtual = calcularResumo();
+      
+      if (valorSangria > resumoAtual.troncoEspecie) {
+        showError(`Valor maior que o disponível no Tronco (Espécie)`);
+        return;
+      }
+      
+      setLoading(true);
+      
+      // Buscar categoria Tronco de Solidariedade
+      const categoriaTronco = categorias.find(c => 
+        c.nome.toLowerCase().includes('tronco') && 
+        c.nome.toLowerCase().includes('solidariedade')
+      );
+      
+      if (!categoriaTronco) {
+        showError('Categoria "Tronco de Solidariedade" não encontrada!');
+        setLoading(false);
+        return;
+      }
+      
+      // 1. Lançar despesa em dinheiro (saída da espécie)
+      const { error: errorSaida } = await supabase.from('lancamentos_loja').insert([{
+        tipo: 'despesa',
+        categoria_id: categoriaTronco.id,
+        descricao: `🔻 Sangria Tronco${observacao ? ` - ${observacao}` : ''}`,
+        valor: valorSangria,
+        data_lancamento: data,
+        data_vencimento: data,
+        data_pagamento: data,
+        tipo_pagamento: 'dinheiro',
+        status: 'pago',
+        eh_transferencia_interna: true,
+        origem_tipo: 'Loja',
+        origem_irmao_id: null,
+        comprovante_url: null,
+        observacoes: `Sangria Tronco - Espécie → Banco. ${observacao || ''}`
+      }]);
+      
+      if (errorSaida) throw errorSaida;
+      
+      // 2. Lançar receita em transferência (entrada no banco)
+      const { error: errorEntrada } = await supabase.from('lancamentos_loja').insert([{
+        tipo: 'receita',
+        categoria_id: categoriaTronco.id,
+        descricao: `🔺 Depósito Tronco${observacao ? ` - ${observacao}` : ''}`,
+        valor: valorSangria,
+        data_lancamento: data,
+        data_vencimento: data,
+        data_pagamento: data,
+        tipo_pagamento: 'transferencia',
+        status: 'pago',
+        eh_transferencia_interna: true,
+        origem_tipo: 'Loja',
+        origem_irmao_id: null,
+        comprovante_url: null,
+        observacoes: `Depósito Tronco - Espécie → Banco. ${observacao || ''}`
+      }]);
+      
+      if (errorEntrada) throw errorEntrada;
+      
+      showSuccess(`✅ Sangria Tronco de ${formatarMoeda(valorSangria)} realizada!`);
+      setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
+      setModalSangriaTroncoAberto(false);
+      carregarLancamentos();
+      
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao fazer sangria do Tronco: ' + (error.message || ''));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calcularResumo = () => {
     const receitasBancarias = lancamentos
       .filter(l => 
@@ -997,6 +1081,65 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     
     const saldoTotal = saldoBancario + caixaFisico;
 
+    // CÁLCULO TRONCO DE SOLIDARIEDADE
+    const troncoReceitasBanco = lancamentos
+      .filter(l =>
+        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+        l.categorias_financeiras?.tipo === 'receita' &&
+        l.status === 'pago' &&
+        l.tipo_pagamento !== 'dinheiro'
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const troncoReceitasEspecie = lancamentos
+      .filter(l =>
+        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+        l.categorias_financeiras?.tipo === 'receita' &&
+        l.status === 'pago' &&
+        l.tipo_pagamento === 'dinheiro'
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const troncoDespesasBanco = lancamentos
+      .filter(l =>
+        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+        l.categorias_financeiras?.tipo === 'despesa' &&
+        l.status === 'pago' &&
+        l.tipo_pagamento !== 'dinheiro' &&
+        !l.eh_transferencia_interna
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const troncoDespesasEspecie = lancamentos
+      .filter(l =>
+        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+        l.categorias_financeiras?.tipo === 'despesa' &&
+        l.status === 'pago' &&
+        l.tipo_pagamento === 'dinheiro' &&
+        !l.eh_transferencia_interna
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const troncoSangriasBanco = lancamentos
+      .filter(l =>
+        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+        l.eh_transferencia_interna === true &&
+        l.categorias_financeiras?.tipo === 'receita'
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const troncoSangriasEspecie = lancamentos
+      .filter(l =>
+        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+        l.eh_transferencia_interna === true &&
+        l.categorias_financeiras?.tipo === 'despesa'
+      )
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const troncoBanco = troncoReceitasBanco - troncoDespesasBanco + troncoSangriasBanco;
+    const troncoEspecie = troncoReceitasEspecie - troncoDespesasEspecie - troncoSangriasEspecie;
+    const troncoTotal = troncoBanco + troncoEspecie;
+
     return {
       receitas,            
       receitasBancarias,     
@@ -1009,7 +1152,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       caixaFisico,           
       saldoTotal,
       receitasPendentes,
-      despesasPendentes
+      despesasPendentes,
+      troncoBanco,
+      troncoEspecie,
+      troncoTotal
     };
   };
 
@@ -1564,14 +1710,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         doc.text(`${irmaoData.nome} - CIM: ${irmaoData.cim || 'N/A'}`, 15, yPos);
-        yPos += 15;
+        yPos += 8;
 
         // Título do quadro
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
         doc.text('Quadro de Situações das 05 Últimas Sessões', 15, yPos);
-        yPos += 4;
+        yPos += 6;
 
         // Preparar dados da tabela vertical
         const tableData = [];
@@ -1598,19 +1744,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           // Determinar status - usar letras ao invés de símbolos
           let status = 'N/A';
           if (grauSessao > grauIrmao) {
-            status = '( - )';
+            status = '-';
           } else {
             const registro = presencas?.find(p => p.sessao_id === sessao.id);
             if (registro) {
               if (registro.presente) {
-                status = '( S ) Presente';
+                status = 'S Presente';
               } else if (registro.justificativa) {
-                status = '( J ) Justificado';
+                status = 'J Justificado';
               } else {
-                status = '( X ) Ausente';
+                status = 'X Ausente';
               }
             } else {
-              status = '( X ) Ausente';
+              status = 'X Ausente';
             }
           }
           
@@ -1650,7 +1796,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
         doc.text('S = Presente | X = Ausente | J = Justificado | - = Não elegível', 15, yPos);
-        yPos += 15;
+        yPos += 10;
 
         // ========================================
         // ESTATÍSTICAS DE PRESENÇA
@@ -2116,6 +2262,57 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+          </div>
+        </div>
+
+        {/* QUADRO TRONCO DE SOLIDARIEDADE */}
+        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 mt-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">💰</span>
+              <div>
+                <p className="text-sm font-bold text-amber-800">Tronco de Solidariedade</p>
+                <p className="text-xs text-amber-600">Recurso independente da Loja</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-amber-600">Total Disponível</p>
+              <p className={`text-2xl font-bold ${resumo.troncoTotal >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
+                {formatarMoeda(resumo.troncoTotal)}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">🏦</span>
+                <p className="text-xs font-semibold text-gray-700">Banco</p>
+              </div>
+              <p className={`text-lg font-bold ${resumo.troncoBanco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                {formatarMoeda(resumo.troncoBanco)}
+              </p>
+              <p className="text-[10px] text-gray-500 mt-1">PIX, Transferência, Cartão</p>
+            </div>
+
+            <div className="bg-white/60 rounded-lg p-3 border border-amber-200">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-lg">💵</span>
+                <p className="text-xs font-semibold text-gray-700">Espécie</p>
+              </div>
+              <p className={`text-lg font-bold ${resumo.troncoEspecie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                {formatarMoeda(resumo.troncoEspecie)}
+              </p>
+              <p className="text-[10px] text-gray-500 mt-1 mb-2">Dinheiro físico</p>
+              {resumo.troncoEspecie > 0 && (
+                <button
+                  onClick={() => setModalSangriaTroncoAberto(true)}
+                  className="w-full px-2 py-1.5 bg-amber-600 text-white text-[11px] rounded hover:bg-amber-700 font-semibold transition-colors"
+                >
+                  🔥 Fazer Sangria
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -3144,6 +3341,87 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="flex-1 px-4 py-3 bg-gray-200 rounded-lg font-medium">Cancelar</button>
               <button onClick={fazerSangria} disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Sangria Tronco */}
+      {modalSangriaTroncoAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-amber-800">💰 Sangria - Tronco</h3>
+              <button 
+                onClick={() => { 
+                  setModalSangriaTroncoAberto(false); 
+                  setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); 
+                }} 
+                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6">
+              <p className="text-sm text-amber-700 font-semibold mb-1">💵 Espécie Disponível</p>
+              <p className="text-3xl font-bold text-amber-800">{formatarMoeda(resumo.troncoEspecie)}</p>
+              <p className="text-xs text-amber-600 mt-2">Será transferido para conta bancária</p>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Valor *</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={formSangria.valor} 
+                  onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} 
+                  className="w-full px-4 py-2 border rounded-lg" 
+                  placeholder="0.00"
+                  max={resumo.troncoEspecie}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data *</label>
+                <input 
+                  type="date" 
+                  value={formSangria.data} 
+                  onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} 
+                  className="w-full px-4 py-2 border rounded-lg" 
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observação</label>
+                <textarea 
+                  value={formSangria.observacao} 
+                  onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} 
+                  className="w-full px-4 py-2 border rounded-lg" 
+                  rows="2"
+                  placeholder="Ex: Depósito em conta - Tronco"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button 
+                onClick={() => { 
+                  setModalSangriaTroncoAberto(false); 
+                  setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); 
+                }} 
+                className="flex-1 px-4 py-3 bg-gray-200 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => fazerSangriaTronco()} 
+                disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > resumo.troncoEspecie} 
+                className="flex-1 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50 hover:bg-amber-700 transition-colors"
+              >
+                Confirmar
+              </button>
             </div>
           </div>
         </div>
