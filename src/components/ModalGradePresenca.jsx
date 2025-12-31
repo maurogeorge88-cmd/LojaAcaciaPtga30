@@ -79,20 +79,26 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Irmãos:', irmaosData?.length);
 
-      // Filtrar: remover falecidos de MESES ANTERIORES
+      // Filtrar: remover falecidos e desligados
       const hoje = new Date();
-      const mesAtual = hoje.getMonth();
-      const anoAtual = hoje.getFullYear();
 
       const irmaosValidos = irmaosData.filter(i => {
+        // Remover falecidos
         if (i.data_falecimento) {
           const dataFalec = new Date(i.data_falecimento);
-          // Se faleceu em mês anterior, remove
-          if (dataFalec.getFullYear() < anoAtual || 
-             (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
-            return false;
-          }
+          if (dataFalec <= hoje) return false;
         }
+        
+        // Remover desligados (verificar histórico de situações)
+        const estaDesligado = historicoSituacoes?.some(sit => {
+          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          return sit.membro_id === i.id &&
+            tipoNormalizado === 'desligamento' &&
+            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+        }) || false;
+        
+        if (estaDesligado) return false;
+        
         return true;
       });
 
