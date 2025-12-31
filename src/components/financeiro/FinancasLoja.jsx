@@ -1307,13 +1307,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      // Receitas Espécie
+      // Receitas Espécie (não inclui sangrias - só receitas normais em dinheiro)
       const receitasEspecie = (data || [])
         .filter(l =>
           l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
           l.categorias_financeiras?.tipo === 'receita' &&
           l.tipo_pagamento === 'dinheiro' &&
-          !l.eh_transferencia_interna // Excluir receitas de sangria em dinheiro (não existe)
+          !l.eh_transferencia_interna
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1327,13 +1327,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      // Despesas Espécie (já exclui sangrias porque são transferências internas)
+      // Despesas Espécie (INCLUI sangrias em dinheiro - são despesas que diminuem espécie)
       const despesasEspecie = (data || [])
         .filter(l =>
           l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
           l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento === 'dinheiro' &&
-          !l.eh_transferencia_interna
+          l.tipo_pagamento === 'dinheiro'
+          // NÃO excluir transferências internas - sangrias devem diminuir espécie
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
