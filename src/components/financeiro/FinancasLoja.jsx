@@ -1043,6 +1043,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.tipo_pagamento !== 'compensacao' &&
         l.tipo_pagamento !== 'dinheiro' &&
         !l.eh_transferencia_interna
+        // TRONCO PIX/TRANSFERÊNCIA ENTRA AQUI (conta no saldo bancário da loja)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1051,7 +1052,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.tipo === 'receita' && 
         l.status === 'pago' &&
         l.tipo_pagamento === 'dinheiro' &&
-        !l.eh_transferencia_interna
+        !l.eh_transferencia_interna &&
+        !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') // TRONCO DINHEIRO NÃO ENTRA (não conta no caixa físico)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1066,12 +1068,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     const receitas = receitasBancarias + receitasDinheiro;
 
     const despesas = lancamentos
-      .filter(l => 
-        l.categorias_financeiras?.tipo === 'despesa' && 
-        l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao' &&
-        !l.eh_transferencia_interna
-      )
+      .filter(l => {
+        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+        const isDinheiro = l.tipo_pagamento === 'dinheiro';
+        
+        // TRONCO DINHEIRO: não conta nas despesas da loja
+        if (isTronco && isDinheiro) return false;
+        
+        // Demais regras normais (TRONCO PIX/TRANSFERÊNCIA entra aqui)
+        return l.categorias_financeiras?.tipo === 'despesa' && 
+          l.status === 'pago' &&
+          l.tipo_pagamento !== 'compensacao' &&
+          !l.eh_transferencia_interna;
+      })
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitasPendentes = lancamentos
