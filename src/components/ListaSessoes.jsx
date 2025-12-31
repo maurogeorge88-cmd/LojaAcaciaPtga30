@@ -7,6 +7,23 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+
+  // Buscar anos disponíveis
+  useEffect(() => {
+    const buscarAnos = async () => {
+      const { data } = await supabase
+        .from('sessoes_presenca')
+        .select('data_sessao')
+        .order('data_sessao', { ascending: true });
+      
+      if (data && data.length > 0) {
+        const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
+        setAnosDisponiveis(anos.sort((a, b) => b - a)); // Mais recente primeiro
+      }
+    };
+    buscarAnos();
+  }, []);
 
   useEffect(() => {
     carregarSessoes();
@@ -93,11 +110,7 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     return 'bg-red-100 text-red-800';
   };
 
-  // Gerar opções de anos (2025 a 2030)
-  const anosDisponiveis = [];
-  for (let i = 2025; i <= 2030; i++) {
-    anosDisponiveis.push(i);
-  }
+  // Gerar opções de anos dinâmicas
   const anoAtual = new Date().getFullYear();
 
   const meses = [
