@@ -45,7 +45,7 @@ export default function DashboardPresenca() {
   const [qtdSessoesRecentes, setQtdSessoesRecentes] = useState(4);
   const [sessoesRecentes, setSessoesRecentes] = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
-  const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
+  const [anoSelecionado, setAnoSelecionado] = useState(null); // Inicia null, define depois de buscar
 
   // Buscar anos disponíveis na base
   useEffect(() => {
@@ -785,7 +785,7 @@ export default function DashboardPresenca() {
               </button>
             ))}
             <select
-              value={anoSelecionado}
+              value={anoSelecionado || ''}
               onChange={(e) => {
                 const ano = Number(e.target.value);
                 setAnoSelecionado(ano);
@@ -793,6 +793,7 @@ export default function DashboardPresenca() {
                 setDataInicio(`${ano}-01-01`);
                 setDataFim(`${ano}-12-31`);
               }}
+              disabled={!anoSelecionado}
               className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
                 periodo === 'ano'
                   ? 'bg-green-400 text-white shadow-lg'
