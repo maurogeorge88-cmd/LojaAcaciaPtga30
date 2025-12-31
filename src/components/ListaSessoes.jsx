@@ -19,7 +19,11 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
       
       if (data && data.length > 0) {
         const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
-        setAnosDisponiveis(anos.sort((a, b) => b - a)); // Mais recente primeiro
+        const anosSorted = anos.sort((a, b) => b - a); // Mais recente primeiro
+        setAnosDisponiveis(anosSorted);
+        
+        // Definir ano mais recente como padrão
+        setFiltroAno(anosSorted[0].toString());
       }
     };
     buscarAnos();
