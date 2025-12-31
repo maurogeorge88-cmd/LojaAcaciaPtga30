@@ -149,7 +149,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // Recarregar lançamentos quando mudar filtros
   useEffect(() => {
     if (categorias.length > 0) {
-      carregarLancamentos();
+      recarregarDados();
     }
   }, [filtros.tipo, filtros.categoria, filtros.status, filtros.origem_tipo, filtros.origem_irmao_id]); 
 
@@ -230,7 +230,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       setIrmaos(irmaosDisponiveis);
 
-      await carregarLancamentos();
+      await recarregarDados();
 
     } catch (error) {
       console.error('❌ Erro ao carregar dados:', error);
@@ -428,7 +428,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       limparFormulario();
-      await carregarLancamentos();
+      await recarregarDados();
 
     } catch (error) {
       console.error('Erro ao salvar lançamento:', error);
@@ -470,7 +470,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       showSuccess(`${lancamentosParaInserir.length} lançamentos criados com sucesso!`);
       setMostrarModalIrmaos(false);
       limparLancamentoIrmaos();
-      await carregarLancamentos();
+      await recarregarDados();
 
     } catch (error) {
       console.error('Erro ao criar lançamentos:', error);
@@ -531,7 +531,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       showSuccess('Lançamento quitado com sucesso!');
       setMostrarModalQuitacao(false);
-      await carregarLancamentos();
+      await recarregarDados();
 
     } catch (error) {
       console.error('Erro ao quitar lançamento:', error);
@@ -593,7 +593,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         data_pagamento: new Date().toISOString().split('T')[0],
         tipo_pagamento: 'dinheiro'
       });
-      await carregarLancamentos();
+      await recarregarDados();
 
     } catch (error) {
       console.error('Erro ao quitar lançamentos:', error);
@@ -617,7 +617,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (error) throw error;
 
       showSuccess(`Status atualizado para ${novoStatus === 'pago' ? 'PAGO' : 'PENDENTE'}!`);
-      await carregarLancamentos();
+      await recarregarDados();
 
     } catch (error) {
       console.error('Erro ao atualizar status:', error);
@@ -644,6 +644,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     });
     setEditando(lancamento.id);
     setModalLancamentoAberto(true);
+  };
+
+  const recarregarDados = async () => {
+    await recarregarDados();
+    calcularCaixaFisicoTotal();
+    calcularTroncoTotal();
   };
 
   const excluirLancamento = async (id) => {
@@ -677,7 +683,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       showSuccess('Lançamento excluído com sucesso!');
-      await carregarLancamentos();
+      await recarregarDados();
+      calcularCaixaFisicoTotal();
+      calcularTroncoTotal();
 
     } catch (error) {
       console.error('Erro ao excluir lançamento:', error);
@@ -935,7 +943,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada!`);
       setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
       setModalSangriaAberto(false);
-      carregarLancamentos();
+      recarregarDados();
       calcularCaixaFisicoTotal();
       calcularTroncoTotal();
     } catch (error) {
@@ -1024,7 +1032,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       showSuccess(`✅ Sangria Tronco de ${formatarMoeda(valorSangria)} realizada!`);
       setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
       setModalSangriaTroncoAberto(false);
-      carregarLancamentos();
+      recarregarDados();
       calcularTroncoTotal();
       
     } catch (error) {
@@ -1037,14 +1045,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const calcularResumo = () => {
     const receitasBancarias = lancamentos
-      .filter(l => 
-        l.categorias_financeiras?.tipo === 'receita' && 
-        l.status === 'pago' &&
-        l.tipo_pagamento !== 'compensacao' &&
-        l.tipo_pagamento !== 'dinheiro' &&
-        !l.eh_transferencia_interna
-        // TRONCO PIX/TRANSFERÊNCIA ENTRA AQUI (conta no saldo bancário da loja)
-      )
+      .filter(l => {
+        const isTroncoDeposito = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') && 
+                                 l.eh_transferencia_interna === true && 
+                                 l.categorias_financeiras?.tipo === 'receita';
+        
+        // DEPÓSITO TRONCO: conta como receita bancária
+        if (isTroncoDeposito) return true;
+        
+        // Demais receitas bancárias normais
+        return l.categorias_financeiras?.tipo === 'receita' && 
+          l.status === 'pago' &&
+          l.tipo_pagamento !== 'compensacao' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna;
+      })
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
     const receitasDinheiro = lancamentos
@@ -1072,10 +1087,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
         const isDinheiro = l.tipo_pagamento === 'dinheiro';
         
-        // TRONCO DINHEIRO: não conta nas despesas da loja
+        // TRONCO DINHEIRO (incluindo sangrias): NÃO conta nas despesas da loja
         if (isTronco && isDinheiro) return false;
         
-        // Demais regras normais (TRONCO PIX/TRANSFERÊNCIA entra aqui)
+        // Demais despesas normais (TRONCO PIX/TRANSFERÊNCIA entra aqui)
         return l.categorias_financeiras?.tipo === 'despesa' && 
           l.status === 'pago' &&
           l.tipo_pagamento !== 'compensacao' &&
