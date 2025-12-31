@@ -647,7 +647,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const recarregarDados = async () => {
-    await recarregarDados();
+    await carregarLancamentos();
     calcularCaixaFisicoTotal();
     calcularTroncoTotal();
   };
