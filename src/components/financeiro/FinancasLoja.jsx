@@ -1566,128 +1566,71 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.text(`${irmaoData.nome} - CIM: ${irmaoData.cim || 'N/A'}`, 15, yPos);
         yPos += 8;
 
-        // Preparar cabeçalho (tipos de sessão)
-        const headers = ['Data'];
-        ultimasSessoes.forEach(sessao => {
-          const tipo = sessao.graus_sessao?.nome || 'Sessão';
-          headers.push(tipo);
-        });
-
-        // Criar UMA ÚNICA LINHA com todos os símbolos
-        const primeiraLinha = [];
+        // Preparar dados da tabela vertical
+        const tableData = [];
         
-        // Primeira célula: data da primeira sessão
-        const primeiraData = new Date(ultimasSessoes[0].data_sessao).toLocaleDateString('pt-BR', { 
-          day: '2-digit', 
-          month: '2-digit' 
-        });
-        primeiraLinha.push(primeiraData);
-        
-        // Demais células: símbolos de presença
         ultimasSessoes.forEach(sessao => {
-          const registro = presencas?.find(p => p.sessao_id === sessao.id);
+          const dataPartes = sessao.data_sessao.split('-');
+          const dataFormatada = `${dataPartes[2]}/${dataPartes[1]}`;
           
-          let simbolo = '-';
-          if (registro) {
-            if (registro.presente) {
-              simbolo = '✓';
-            } else if (registro.justificativa) {
-              simbolo = 'J';
+          // Determinar grau da sessão
+          const grauSessao = sessao.grau_sessao_id || 1;
+          const grauAbreviado = grauSessao === 3 ? 'M' : grauSessao === 2 ? 'C' : 'A';
+          
+          // Calcular grau do irmão na data
+          const dataSessao = new Date(sessao.data_sessao);
+          let grauIrmao = 0;
+          if (irmaoData.data_exaltacao && dataSessao >= new Date(irmaoData.data_exaltacao)) {
+            grauIrmao = 3;
+          } else if (irmaoData.data_elevacao && dataSessao >= new Date(irmaoData.data_elevacao)) {
+            grauIrmao = 2;
+          } else if (irmaoData.data_iniciacao && dataSessao >= new Date(irmaoData.data_iniciacao)) {
+            grauIrmao = 1;
+          }
+          
+          // Determinar status
+          let status = 'N/A';
+          if (grauSessao > grauIrmao) {
+            status = '-';
+          } else {
+            const registro = presencas?.find(p => p.sessao_id === sessao.id);
+            if (registro) {
+              if (registro.presente) {
+                status = '✓ Pres.';
+              } else if (registro.justificativa) {
+                status = 'J Just.';
+              } else {
+                status = '✗ Aus.';
+              }
             } else {
-              simbolo = '✗';
+              status = '✗ Aus.';
             }
           }
           
-          primeiraLinha.push(simbolo);
-        });
-
-        // Criar linhas restantes (uma para cada sessão)
-        const tableBody = [];
-        
-        ultimasSessoes.forEach((sessao, idx) => {
-          // Corrigir data - usar string diretamente sem criar Date
-          const dataPartes = sessao.data_sessao.split('-');
-          const data = `${dataPartes[2]}/${dataPartes[1]}`;
-          
-          const linha = [data];
-          
-          // Preencher com abreviações
-          ultimasSessoes.forEach((s, colIdx) => {
-            if (idx === colIdx) {
-              // Mesma sessão - verificar elegibilidade primeiro
-              const grauSessao = s.grau_sessao_id || 1;
-              const dataSessao = new Date(s.data_sessao);
-              
-              // Calcular grau do irmão na data
-              let grauIrmao = 0;
-              if (irmaoData.data_exaltacao && dataSessao >= new Date(irmaoData.data_exaltacao)) {
-                grauIrmao = 3;
-              } else if (irmaoData.data_elevacao && dataSessao >= new Date(irmaoData.data_elevacao)) {
-                grauIrmao = 2;
-              } else if (irmaoData.data_iniciacao && dataSessao >= new Date(irmaoData.data_iniciacao)) {
-                grauIrmao = 1;
-              }
-              
-              // Se não é elegível, mostrar "-"
-              if (grauSessao > grauIrmao) {
-                linha.push('-');
-              } else {
-                // Elegível - pegar o registro
-                const registro = presencas?.find(p => p.sessao_id === s.id);
-                let status = 'N/A';
-                if (registro) {
-                  if (registro.presente) {
-                    status = 'Pres.';
-                  } else if (registro.justificativa) {
-                    status = 'Just.';
-                  } else {
-                    status = 'Aus.';
-                  }
-                } else {
-                  status = 'Aus.';
-                }
-                linha.push(status);
-              }
-            } else {
-              // Sessão diferente - vazio
-              linha.push('');
-            }
-          });
-          
-          tableBody.push(linha);
+          tableData.push([dataFormatada, grauAbreviado, status]);
         });
 
         await import('jspdf-autotable');
         
         doc.autoTable({
           startY: yPos,
-          head: [headers],
-          body: tableBody,
+          head: [['Data', 'Grau', 'Status']],
+          body: tableData,
           headStyles: { 
             fillColor: [33, 150, 243],
             textColor: [255, 255, 255],
-            fontSize: 9,
+            fontSize: 10,
             fontStyle: 'bold',
-            halign: 'center',
-            valign: 'middle',
-            lineWidth: 0.5,
-            lineColor: [200, 200, 200]
+            halign: 'center'
           },
           bodyStyles: { 
-            fontSize: 12,
-            halign: 'center',
-            valign: 'middle',
-            lineWidth: 0.5,
-            lineColor: [200, 200, 200],
-            minCellHeight: 8
+            fontSize: 10,
+            halign: 'center'
           },
           columnStyles: {
-            0: { 
-              cellWidth: 20,
-              halign: 'center',
-              fontStyle: 'bold',
-              fontSize: 9
-            }
+            0: { cellWidth: 25, halign: 'center' },
+            1: { cellWidth: 20, halign: 'center', fontStyle: 'bold' },
+            2: { cellWidth: 35, halign: 'left' }
           },
           alternateRowStyles: {
             fillColor: [245, 245, 245]
@@ -1699,7 +1642,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(9);
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
-        doc.text('Pres. = Presente  |  Aus. = Ausente  |  Just. = Justificado  |  N/A = Sem obrigatoriedade', 15, yPos);
+        doc.text('✓ = Presente | ✗ = Ausente | J = Justificado | - = Não elegível', 15, yPos);
         yPos += 10;
 
         // ========================================
