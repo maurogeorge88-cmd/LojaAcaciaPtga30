@@ -1650,7 +1650,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFont('helvetica', 'italic');
         doc.setTextColor(80, 80, 80);
         doc.text('S = Presente | X = Ausente | J = Justificado | - = Não elegível', 15, yPos);
-        yPos += 10;
+        yPos += 15;
 
         // ========================================
         // ESTATÍSTICAS DE PRESENÇA
