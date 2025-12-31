@@ -32,15 +32,34 @@ export default function DashboardPresenca() {
   const [mostrarGrade, setMostrarGrade] = useState(false);
   const [periodo, setPeriodo] = useState('ano');
   const [percentualAlerta, setPercentualAlerta] = useState(30);
-  const [anoPresenca100, setAnoPresenca100] = useState(2025);
+  const anoAtual = new Date().getFullYear();
+  const [anoPresenca100, setAnoPresenca100] = useState(anoAtual);
   const [resumoPrerrogativa, setResumoPrerrogativa] = useState([]);
   const [resumoLicenciados, setResumoLicenciados] = useState([]);
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
-  const [anoAusencias, setAnoAusencias] = useState(2025);
+  const [anoAusencias, setAnoAusencias] = useState(anoAtual);
   const [mesAusencias, setMesAusencias] = useState(0);
   const [qtdSessoesRecentes, setQtdSessoesRecentes] = useState(4);
   const [sessoesRecentes, setSessoesRecentes] = useState([]);
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
+
+  // Buscar anos disponíveis na base
+  useEffect(() => {
+    const buscarAnos = async () => {
+      const { data } = await supabase
+        .from('sessoes_presenca')
+        .select('data_sessao')
+        .order('data_sessao', { ascending: true });
+      
+      if (data && data.length > 0) {
+        const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
+        setAnosDisponiveis(anos.sort((a, b) => b - a)); // Mais recente primeiro
+      }
+    };
+    buscarAnos();
+  }, []);
 
   useEffect(() => {
     definirPeriodo('ano');
@@ -605,7 +624,7 @@ export default function DashboardPresenca() {
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-gray-700 min-w-[60px]">Período:</label>
           <div className="flex gap-3 flex-1">
-            {['mes', 'trimestre', 'semestre', 'ano'].map(p => (
+            {['mes', 'trimestre', 'semestre'].map(p => (
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
@@ -618,6 +637,25 @@ export default function DashboardPresenca() {
                 {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
+            <select
+              value={anoSelecionado}
+              onChange={(e) => {
+                const ano = Number(e.target.value);
+                setAnoSelecionado(ano);
+                setPeriodo('ano');
+                setDataInicio(`${ano}-01-01`);
+                setDataFim(`${ano}-12-31`);
+              }}
+              className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                periodo === 'ano'
+                  ? 'bg-green-400 text-white shadow-lg'
+                  : 'bg-blue-100 text-blue-700'
+              }`}
+            >
+              {anosDisponiveis.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -742,7 +780,7 @@ export default function DashboardPresenca() {
               onChange={(e) => setAnoPresenca100(Number(e.target.value))}
               className="bg-green-700 text-white px-3 py-1 rounded font-semibold"
             >
-              {[2025, 2026, 2027, 2028, 2029, 2030].map(ano => (
+              {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
               ))}
             </select>
@@ -940,7 +978,7 @@ export default function DashboardPresenca() {
                 }}
                 className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
               >
-                {[2025, 2026, 2027, 2028, 2029, 2030].map(ano => (
+                {anosDisponiveis.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
               </select>
