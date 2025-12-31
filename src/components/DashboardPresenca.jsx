@@ -67,13 +67,10 @@ export default function DashboardPresenca() {
         setAnoAusencias(anoMaisRecente);
         setAnoPrerrogativa(anoMaisRecente);
         setAnoLicenciados(anoMaisRecente);
+        setPeriodo('ano'); // Definir período como 'ano'
       }
     };
     buscarAnos();
-  }, []);
-
-  useEffect(() => {
-    definirPeriodo('ano');
   }, []);
 
   useEffect(() => {
@@ -548,11 +545,6 @@ export default function DashboardPresenca() {
 
         // 100% = presentes em TODAS as sessões que tem registro
         if (totalRegistros > 0 && presentes === totalRegistros) {
-          // Debug Mauro
-          if (irmao.nome.includes('Mauro')) {
-            console.log('🏆 Mauro 100%:', { totalRegistros, presentes, aprendiz, companheiro, mestre });
-          }
-          
           com100.push({
             id: irmao.id,
             nome: irmao.nome,
