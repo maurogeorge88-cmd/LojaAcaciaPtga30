@@ -8,34 +8,59 @@ export default function ModalGradePresenca({ onFechar }) {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   const [grade, setGrade] = useState({});
   const [busca, setBusca] = useState('');
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const anoAtual = new Date().getFullYear();
+  const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
+  const [mesSelecionado, setMesSelecionado] = useState(0);
 
-  // Função para formatar nome (primeiro + último, ou 3 primeiros se tiver "de/da/dos")
-  const formatarNome = (nomeCompleto) => {
-    const partes = nomeCompleto.split(' ');
-    if (partes.length <= 2) return nomeCompleto;
-    
-    // Se segundo nome é "de", "da", "dos", "das", pega 3 primeiros
-    const segundoNome = partes[1]?.toLowerCase();
-    if (['de', 'da', 'do', 'dos', 'das'].includes(segundoNome)) {
-      return partes.slice(0, 3).join(' ');
-    }
-    
-    // Senão: primeiro + último
-    return `${partes[0]} ${partes[partes.length - 1]}`;
-  };
+  // Buscar anos disponíveis
+  useEffect(() => {
+    const buscarAnos = async () => {
+      const { data } = await supabase
+        .from('sessoes_presenca')
+        .select('data_sessao');
+      
+      if (data && data.length > 0) {
+        const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
+        const anosSorted = anos.sort((a, b) => b - a);
+        setAnosDisponiveis(anosSorted);
+        
+        // Definir ano mais recente como padrão
+        setAnoSelecionado(anosSorted[0]);
+      }
+    };
+    buscarAnos();
+  }, []);
 
   useEffect(() => {
-    carregar();
-  }, []);
+    if (anosDisponiveis.length > 0) {
+      carregar();
+    }
+  }, [anoSelecionado, mesSelecionado, anosDisponiveis]);
 
   const carregar = async () => {
     try {
       setLoading(true);
 
-      // 1. Buscar TODAS as sessões
+      // Calcular período baseado em ano e mês
+      let dataInicio, dataFim;
+      if (mesSelecionado === 0) {
+        // Ano inteiro
+        dataInicio = `${anoSelecionado}-01-01`;
+        dataFim = `${anoSelecionado}-12-31`;
+      } else {
+        // Mês específico
+        const ultimoDia = new Date(anoSelecionado, mesSelecionado, 0).getDate();
+        dataInicio = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-01`;
+        dataFim = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-${ultimoDia}`;
+      }
+
+      // 1. Buscar sessões do período
       const { data: sessoesData } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id')
+        .gte('data_sessao', dataInicio)
+        .lte('data_sessao', dataFim)
         .order('data_sessao');
 
       console.log('Sessões:', sessoesData?.length);
@@ -54,32 +79,20 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Irmãos:', irmaosData?.length);
 
-      // Filtrar: remover falecidos de MESES ANTERIORES e desligados sem data de retorno
+      // Filtrar: remover falecidos de MESES ANTERIORES
       const hoje = new Date();
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
 
       const irmaosValidos = irmaosData.filter(i => {
-        // 1. Remover falecidos de meses anteriores
         if (i.data_falecimento) {
           const dataFalec = new Date(i.data_falecimento);
+          // Se faleceu em mês anterior, remove
           if (dataFalec.getFullYear() < anoAtual || 
              (dataFalec.getFullYear() === anoAtual && dataFalec.getMonth() < mesAtual)) {
             return false;
           }
         }
-
-        // 2. Remover irmãos com situação DESLIGADO ativa sem data de retorno
-        const situacaoDesligado = historicoSituacoes.find(sit => 
-          sit.membro_id === i.id &&
-          sit.tipo_situacao?.toLowerCase() === 'desligado' &&
-          sit.data_fim === null // Sem data de retorno = desligamento definitivo
-        );
-        
-        if (situacaoDesligado) {
-          return false;
-        }
-
         return true;
       });
 
@@ -195,6 +208,17 @@ export default function ModalGradePresenca({ onFechar }) {
     const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
     const dataInicio = dataIngresso || dataIniciacao;
     
+    // Debug para Michel
+    if (irmao.nome.includes('Michel')) {
+      console.log('Michel:', {
+        sessao: sessao.data_sessao,
+        dataIngresso,
+        dataIniciacao,
+        dataInicio: dataInicio?.toLocaleDateString(),
+        antes: dataInicio && dataSessao < dataInicio
+      });
+    }
+    
     if (dataInicio && dataSessao < dataInicio) {
       // Sessão antes de ingressar na loja → não se aplica
       return (
@@ -204,20 +228,25 @@ export default function ModalGradePresenca({ onFechar }) {
       );
     }
 
-    // 2. Calcular grau do irmão NA DATA DA SESSÃO
+    // 2. Calcular grau do irmão
     let grauIrmao = 0;
-    if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao)) {
-      grauIrmao = 3;
-    } else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao)) {
-      grauIrmao = 2;
-    } else if (irmao.data_iniciacao && dataSessao >= new Date(irmao.data_iniciacao)) {
-      grauIrmao = 1;
-    }
+    if (irmao.data_exaltacao) grauIrmao = 3;
+    else if (irmao.data_elevacao) grauIrmao = 2;
+    else if (irmao.data_iniciacao) grauIrmao = 1;
 
     // 3. Verificar grau da sessão
     const grauSessao = sessao.grau_sessao_id || 1;
 
-    // 4. Se sessão é de grau superior ao do irmão NA DATA → não pode participar
+    // Debug Michel
+    if (irmao.nome.includes('Michel')) {
+      console.log('Michel graus:', {
+        grauIrmao,
+        grauSessao,
+        bloqueado: grauSessao > grauIrmao
+      });
+    }
+
+    // 4. Se sessão é de grau superior ao do irmão → não pode participar
     if (grauSessao > grauIrmao) {
       return (
         <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
@@ -345,6 +374,38 @@ export default function ModalGradePresenca({ onFechar }) {
             </button>
           </div>
 
+          {/* Filtros de Período */}
+          <div className="flex gap-3 mb-4">
+            <select
+              value={anoSelecionado}
+              onChange={(e) => setAnoSelecionado(Number(e.target.value))}
+              className="px-4 py-2 rounded text-gray-800 font-semibold"
+            >
+              {anosDisponiveis.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
+            <select
+              value={mesSelecionado}
+              onChange={(e) => setMesSelecionado(Number(e.target.value))}
+              className="px-4 py-2 rounded text-gray-800 font-semibold"
+            >
+              <option value={0}>Ano todo</option>
+              <option value={1}>Janeiro</option>
+              <option value={2}>Fevereiro</option>
+              <option value={3}>Março</option>
+              <option value={4}>Abril</option>
+              <option value={5}>Maio</option>
+              <option value={6}>Junho</option>
+              <option value={7}>Julho</option>
+              <option value={8}>Agosto</option>
+              <option value={9}>Setembro</option>
+              <option value={10}>Outubro</option>
+              <option value={11}>Novembro</option>
+              <option value={12}>Dezembro</option>
+            </select>
+          </div>
+
           {/* Campo de Busca */}
           <input
             type="text"
@@ -363,18 +424,11 @@ export default function ModalGradePresenca({ onFechar }) {
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
                   Irmão
                 </th>
-                {sessoes.map(s => {
-                  const grauNome = s.grau_sessao_id === 3 ? 'M' : 
-                                   s.grau_sessao_id === 2 ? 'C' : 'A';
-                  return (
-                    <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
-                      <div>{formatarData(s.data_sessao)}</div>
-                      <div className="text-[10px] font-normal text-gray-600 mt-1">
-                        {grauNome}
-                      </div>
-                    </th>
-                  );
-                })}
+                {sessoes.map(s => (
+                  <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
+                    {formatarData(s.data_sessao)}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -385,7 +439,7 @@ export default function ModalGradePresenca({ onFechar }) {
                 .map(irmao => (
                 <tr key={irmao.id} className="hover:bg-gray-50">
                   <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
-                    <div>{formatarNome(irmao.nome)}</div>
+                    <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {irmao.situacao === 'licenciado' && irmao.data_licenca && (
                         <span className="text-xs bg-orange-100 text-orange-800 px-2 py-0.5 rounded">
