@@ -29,6 +29,27 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         .order('data_pagamento', { ascending: false });
 
       if (error) throw error;
+      
+      console.log('=== LANÇAMENTOS CARREGADOS ===');
+      console.log('Total:', data?.length);
+      
+      // Debug: mostrar lançamentos de 2026
+      const lanc2026 = data?.filter(l => {
+        const ano = new Date(l.data_pagamento || l.data_vencimento).getFullYear();
+        return ano === 2026;
+      });
+      console.log('Lançamentos 2026:', lanc2026?.length);
+      lanc2026?.forEach(l => {
+        console.log({
+          descricao: l.descricao,
+          tipo: l.categorias_financeiras?.tipo,
+          status: l.status,
+          data_pagamento: l.data_pagamento,
+          data_vencimento: l.data_vencimento,
+          valor: l.valor
+        });
+      });
+      
       setLancamentosCompletos(data || []);
       
       // Extrair anos únicos dos lançamentos com datas válidas
@@ -257,11 +278,11 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* RECEITAS TOTAL */}
-              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
-                <h5 className="text-md font-bold text-green-700 mb-4">📈 Total de Receitas</h5>
-                <div className="text-center py-6">
+              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+                <h5 className="text-sm font-bold text-green-700 mb-2">📈 Total de Receitas</h5>
+                <div className="text-center py-3">
                   {(() => {
-                    const totalReceitas = lancamentosCompletos
+                    const receitasFiltradas = lancamentosCompletos
                       .filter(l => {
                         if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
                         
@@ -277,17 +298,36 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                         const dataRef = l.data_pagamento || l.data_vencimento;
                         if (!dataRef) return false;
                         const data = new Date(dataRef);
-                        if (data.getFullYear() !== filtroAnalise.ano) return false;
-                        if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                        const anoLanc = data.getFullYear();
+                        const mesLanc = data.getMonth() + 1;
+                        
+                        // Debug
+                        if (anoLanc === 2026) {
+                          console.log('Receita 2026:', {
+                            descricao: l.descricao,
+                            valor: l.valor,
+                            data: dataRef,
+                            anoLanc,
+                            mesLanc,
+                            filtroAno: filtroAnalise.ano,
+                            filtroMes: filtroAnalise.mes,
+                            passa: anoLanc === filtroAnalise.ano && (filtroAnalise.mes === 0 || mesLanc === filtroAnalise.mes)
+                          });
+                        }
+                        
+                        if (anoLanc !== filtroAnalise.ano) return false;
+                        if (filtroAnalise.mes > 0 && mesLanc !== filtroAnalise.mes) return false;
                         
                         return true;
-                      })
-                      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+                      });
+                    
+                    const totalReceitas = receitasFiltradas.reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
                     return (
                       <>
-                        <p className="text-4xl font-bold text-green-700 mb-2">{formatarMoeda(totalReceitas)}</p>
-                        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                        <p className="text-2xl font-bold text-green-700 mb-1">{formatarMoeda(totalReceitas)}</p>
+                        <p className="text-xs text-gray-500">({receitasFiltradas.length} lançamentos)</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                           <div 
                             className="bg-gradient-to-r from-green-500 to-green-700 h-3 rounded-full transition-all"
                             style={{ width: '100%' }}
@@ -300,11 +340,11 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               </div>
 
               {/* DESPESAS TOTAL */}
-              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                <h5 className="text-md font-bold text-red-700 mb-4">📉 Total de Despesas</h5>
-                <div className="text-center py-6">
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+                <h5 className="text-sm font-bold text-red-700 mb-2">📉 Total de Despesas</h5>
+                <div className="text-center py-3">
                   {(() => {
-                    const totalDespesas = lancamentosCompletos
+                    const despesasFiltradas = lancamentosCompletos
                       .filter(l => {
                         if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
                         
@@ -326,15 +366,17 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                         if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                         
                         return true;
-                      })
-                      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+                      });
+                    
+                    const totalDespesas = despesasFiltradas.reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
                     return (
                       <>
-                        <p className="text-4xl font-bold text-red-700 mb-2">{formatarMoeda(totalDespesas)}</p>
-                        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                        <p className="text-2xl font-bold text-red-700 mb-1">{formatarMoeda(totalDespesas)}</p>
+                        <p className="text-xs text-gray-500">({despesasFiltradas.length} lançamentos)</p>
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                           <div 
-                            className="bg-gradient-to-r from-red-500 to-red-700 h-3 rounded-full transition-all"
+                            className="bg-gradient-to-r from-red-500 to-red-700 h-2 rounded-full transition-all"
                             style={{ width: '100%' }}
                           ></div>
                         </div>
@@ -345,9 +387,9 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               </div>
 
               {/* SALDO TOTAL */}
-              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
-                <h5 className="text-md font-bold text-blue-700 mb-4">💎 Saldo do Período</h5>
-                <div className="text-center py-6">
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-3">
+                <h5 className="text-sm font-bold text-blue-700 mb-2">💎 Saldo do Período</h5>
+                <div className="text-center py-3">
                   {(() => {
                     // Calcular receitas
                     const totalReceitas = lancamentosCompletos
@@ -390,12 +432,12 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
                     return (
                       <>
-                        <p className={`text-4xl font-bold mb-2 ${isPositivo ? 'text-green-700' : 'text-red-700'}`}>
+                        <p className={`text-2xl font-bold mb-1 ${isPositivo ? 'text-green-700' : 'text-red-700'}`}>
                           {formatarMoeda(saldo)}
                         </p>
-                        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                        <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                           <div 
-                            className={`h-3 rounded-full transition-all ${
+                            className={`h-2 rounded-full transition-all ${
                               isPositivo 
                                 ? 'bg-gradient-to-r from-green-500 to-green-700' 
                                 : 'bg-gradient-to-r from-red-500 to-red-700'
