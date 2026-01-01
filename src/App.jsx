@@ -273,6 +273,7 @@ function App() {
       .single();
 
     if (data) {
+      alert('🔍 TESTE: pode_editar_presenca = ' + data.pode_editar_presenca);
       console.log('📋 DEBUG userData carregado:', {
         nome: data.nome,
         nivel_acesso: data.nivel_acesso,
