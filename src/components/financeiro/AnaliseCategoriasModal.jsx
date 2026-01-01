@@ -34,9 +34,14 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       // Extrair anos únicos dos lançamentos com datas válidas
       const anosUnicos = [...new Set(
         (data || [])
-          .filter(l => l.data_pagamento) // Filtrar apenas com data
-          .map(l => new Date(l.data_pagamento).getFullYear())
-          .filter(ano => ano >= 2000 && ano <= 2100) // Filtrar anos válidos
+          .map(l => {
+            // Tentar data_pagamento primeiro, senão data_vencimento
+            const data = l.data_pagamento || l.data_vencimento;
+            if (!data) return null;
+            const ano = new Date(data).getFullYear();
+            return ano >= 2000 && ano <= 2100 ? ano : null;
+          })
+          .filter(ano => ano !== null)
       )];
       const anosOrdenados = anosUnicos.sort((a, b) => b - a); // Mais recente primeiro
       setAnosDisponiveis(anosOrdenados);
