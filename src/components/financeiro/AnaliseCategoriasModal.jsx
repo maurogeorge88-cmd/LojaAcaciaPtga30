@@ -21,6 +21,13 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
     }).format(valor);
   };
 
+  // Corrigir problema de timezone ao parsear datas
+  const parseData = (dataStr) => {
+    if (!dataStr) return null;
+    // Adicionar T00:00:00 força interpretação como hora local, não UTC
+    return new Date(dataStr + 'T00:00:00');
+  };
+
   const carregarLancamentosCompletos = async () => {
     try {
       const { data, error } = await supabase
@@ -37,7 +44,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       console.log('Lançamentos 01/01/2026:');
       lanc0101?.forEach(l => {
         const dataRef = l.data_pagamento || l.data_vencimento;
-        const dataObj = new Date(dataRef);
+        const dataObj = parseData(dataRef);
         console.log({
           id: l.id,
           descricao: l.descricao,
@@ -60,9 +67,9 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       const anosUnicos = [...new Set(
         (data || [])
           .map(l => {
-            const data = l.data_pagamento || l.data_vencimento;
-            if (!data) return null;
-            const ano = new Date(data).getFullYear();
+            const dataStr = l.data_pagamento || l.data_vencimento;
+            if (!dataStr) return null;
+            const ano = new Date(dataStr + 'T00:00:00').getFullYear();
             return ano >= 2000 && ano <= 2100 ? ano : null;
           })
           .filter(ano => ano !== null)
@@ -161,7 +168,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return false;
-                      const data = new Date(dataRef);
+                      const data = parseData(dataRef);
                       if (data.getFullYear() !== filtroAnalise.ano) return false;
                       if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                       return true;
@@ -219,7 +226,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return false;
-                      const data = new Date(dataRef);
+                      const data = parseData(dataRef);
                       if (data.getFullYear() !== filtroAnalise.ano) return false;
                       if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                       return true;
@@ -284,7 +291,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return false;
-                      const data = new Date(dataRef);
+                      const data = parseData(dataRef);
                       if (data.getFullYear() !== filtroAnalise.ano) return false;
                       if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                       return true;
@@ -322,7 +329,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return false;
-                      const data = new Date(dataRef);
+                      const data = parseData(dataRef);
                       if (data.getFullYear() !== filtroAnalise.ano) return false;
                       if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                       return true;
@@ -354,7 +361,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       if (l.tipo_pagamento === 'compensacao') return false;
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return false;
-                      const data = new Date(dataRef);
+                      const data = parseData(dataRef);
                       if (data.getFullYear() !== filtroAnalise.ano) return false;
                       if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                       return true;
@@ -371,7 +378,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       if (isDespesaPagaPeloIrmao) return false;
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return false;
-                      const data = new Date(dataRef);
+                      const data = parseData(dataRef);
                       if (data.getFullYear() !== filtroAnalise.ano) return false;
                       if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
                       return true;
