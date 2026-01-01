@@ -1370,6 +1370,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 }`}
                 title="Visualizar Irmãos"
               >
+                {console.log('🟢 MENU RENDERIZANDO - userData:', userData)}
                 <span className="text-base">👥</span>
                 {menuAberto && <span className="font-semibold">Visualizar Irmãos</span>}
               </button>
