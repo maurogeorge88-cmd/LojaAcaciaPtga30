@@ -273,10 +273,11 @@ function App() {
       .single();
 
     if (data) {
-      alert('🔍 TESTE: pode_editar_presenca = ' + data.pode_editar_presenca);
+      alert('🔍 TESTE:\nnivel_acesso: ' + data.nivel_acesso + '\ncargo: ' + data.cargo + '\nis_admin: ' + data.is_admin + '\npode_editar_presenca: ' + data.pode_editar_presenca);
       console.log('📋 DEBUG userData carregado:', {
         nome: data.nome,
         nivel_acesso: data.nivel_acesso,
+        cargo: data.cargo,
         is_admin: data.is_admin,
         pode_editar_presenca: data.pode_editar_presenca
       });
@@ -1967,8 +1968,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
-                {console.log('🔍 RENDER Presença:', { is_admin: userData.is_admin, pode_editar_presenca: userData.pode_editar_presenca, resultado: (userData.is_admin || userData.pode_editar_presenca) })}
-                {(userData.is_admin || userData.pode_editar_presenca) && (
+                {console.log('🔍 RENDER Presença:', { userData, is_admin: userData?.is_admin, pode_editar_presenca: userData?.pode_editar_presenca, resultado: (userData?.is_admin || userData?.pode_editar_presenca) })}
+                {(userData?.is_admin || userData?.pode_editar_presenca) && (
                 <div className="border-t border-blue-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
