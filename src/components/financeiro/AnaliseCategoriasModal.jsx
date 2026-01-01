@@ -30,6 +30,12 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
       if (error) throw error;
       
+      // Debug: ver lançamentos 01/01/2026
+      const lanc0101 = data?.filter(l => 
+        (l.data_pagamento?.includes('2026-01-01') || l.data_vencimento?.includes('2026-01-01'))
+      );
+      console.log('Lançamentos 01/01/2026:', lanc0101);
+      
       setLancamentosCompletos(data || []);
       
       // Extrair anos únicos
