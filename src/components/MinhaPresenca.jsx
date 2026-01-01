@@ -108,8 +108,7 @@ export default function MinhaPresenca({ userData }) {
       else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
       // Buscar sessões do período
-      const hoje = new Date();
-      const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+      const dataHoje = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`;
       
       const { data: sessoesData, error: sessoesError } = await supabase
         .from('sessoes_presenca')
