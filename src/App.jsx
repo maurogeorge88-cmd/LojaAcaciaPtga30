@@ -1960,6 +1960,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
 
+                {console.log('🔍 ANTES DE PRESENÇA:', {
+                  userData_nivel: userData?.nivel_acesso,
+                  userData_pode: userData?.pode_editar_presenca,
+                  isAdmin: userData?.nivel_acesso === 'admin',
+                  temPermissao: userData?.pode_editar_presenca,
+                  RESULTADO: (userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca)
+                })}
+
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
                 {userData && console.log('✅ userData existe:', userData.nivel_acesso, userData.pode_editar_presenca)}
                 {!userData && console.log('❌ userData é NULL')}
