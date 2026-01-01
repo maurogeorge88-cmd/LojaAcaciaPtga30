@@ -55,6 +55,12 @@ export default function ModalGradePresenca({ onFechar }) {
         dataFim = `${anoSelecionado}-${String(mesSelecionado).padStart(2, '0')}-${ultimoDia}`;
       }
 
+      // IMPORTANTE: Não incluir sessões futuras
+      const hoje = new Date().toISOString().split('T')[0];
+      if (dataFim > hoje) {
+        dataFim = hoje;
+      }
+
       // 1. Buscar sessões do período
       const { data: sessoesData } = await supabase
         .from('sessoes_presenca')
