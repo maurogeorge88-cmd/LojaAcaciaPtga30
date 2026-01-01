@@ -3769,7 +3769,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <div className="space-y-3">
                       {(() => {
                         const receitasPorAno = lancamentosCompletos
-                          .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago')
+                          .filter(l => {
+                            if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                            
+                            // Excluir Tronco em dinheiro
+                            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                            const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                            if (isTronco && isDinheiro) return false;
+                            
+                            return true;
+                          })
                           .reduce((acc, l) => {
                             const ano = new Date(l.data_pagamento).getFullYear();
                             acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
@@ -3809,7 +3818,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <div className="space-y-3">
                       {(() => {
                         const despesasPorAno = lancamentosCompletos
-                          .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago')
+                          .filter(l => {
+                            if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                            
+                            // Excluir Tronco em dinheiro
+                            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                            const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                            if (isTronco && isDinheiro) return false;
+                            
+                            // Excluir Despesas Pagas pelo Irmão
+                            const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                          l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                            if (isDespesaPagaPeloIrmao) return false;
+                            
+                            return true;
+                          })
                           .reduce((acc, l) => {
                             const ano = new Date(l.data_pagamento).getFullYear();
                             acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
@@ -3848,18 +3871,41 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <h5 className="text-md font-bold text-blue-700 mb-4">💎 Saldo por Ano</h5>
                     <div className="space-y-3">
                       {(() => {
-                        // Calcular receitas por ano
+                        // Calcular receitas por ano (excluindo Tronco dinheiro)
                         const receitasPorAno = lancamentosCompletos
-                          .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago')
+                          .filter(l => {
+                            if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                            
+                            // Excluir Tronco em dinheiro
+                            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                            const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                            if (isTronco && isDinheiro) return false;
+                            
+                            return true;
+                          })
                           .reduce((acc, l) => {
                             const ano = new Date(l.data_pagamento).getFullYear();
                             acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
                             return acc;
                           }, {});
 
-                        // Calcular despesas por ano
+                        // Calcular despesas por ano (excluindo Tronco dinheiro e Despesas Pagas pelo Irmão)
                         const despesasPorAno = lancamentosCompletos
-                          .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago')
+                          .filter(l => {
+                            if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                            
+                            // Excluir Tronco em dinheiro
+                            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                            const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                            if (isTronco && isDinheiro) return false;
+                            
+                            // Excluir Despesas Pagas pelo Irmão
+                            const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                          l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                            if (isDespesaPagaPeloIrmao) return false;
+                            
+                            return true;
+                          })
                           .reduce((acc, l) => {
                             const ano = new Date(l.data_pagamento).getFullYear();
                             acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
