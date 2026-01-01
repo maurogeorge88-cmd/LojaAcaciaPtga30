@@ -669,8 +669,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (error) throw error;
       setLancamentosCompletos(data || []);
       
-      // Extrair anos únicos dos lançamentos
-      const anosUnicos = [...new Set((data || []).map(l => new Date(l.data_pagamento).getFullYear()))];
+      // Extrair anos únicos dos lançamentos com datas válidas
+      const anosUnicos = [...new Set(
+        (data || [])
+          .filter(l => l.data_pagamento) // Filtrar apenas com data
+          .map(l => new Date(l.data_pagamento).getFullYear())
+          .filter(ano => ano >= 2000 && ano <= 2100) // Filtrar anos válidos
+      )];
       const anosOrdenados = anosUnicos.sort((a, b) => b - a); // Mais recente primeiro
       setAnosDisponiveis(anosOrdenados);
       
