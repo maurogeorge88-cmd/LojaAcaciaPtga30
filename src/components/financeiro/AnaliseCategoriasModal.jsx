@@ -438,7 +438,6 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               </div>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
