@@ -66,6 +66,11 @@ export default function MinhaPresenca({ userData }) {
         fim = new Date(hoje.getFullYear(), 11, 31);
     }
 
+    // IMPORTANTE: Não incluir datas futuras
+    if (fim > hoje) {
+      fim = hoje;
+    }
+
     return {
       inicio: inicio.toISOString().split('T')[0],
       fim: fim.toISOString().split('T')[0]
