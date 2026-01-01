@@ -69,6 +69,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [lancamentosCompletos, setLancamentosCompletos] = useState([]);
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [filtroAnalise, setFiltroAnalise] = useState({
     mes: new Date().getMonth() + 1,
     ano: new Date().getFullYear()
@@ -667,6 +668,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       if (error) throw error;
       setLancamentosCompletos(data || []);
+      
+      // Extrair anos únicos dos lançamentos
+      const anosUnicos = [...new Set((data || []).map(l => new Date(l.data_pagamento).getFullYear()))];
+      const anosOrdenados = anosUnicos.sort((a, b) => b - a); // Mais recente primeiro
+      setAnosDisponiveis(anosOrdenados);
+      
+      // Selecionar ano mais recente
+      if (anosOrdenados.length > 0) {
+        setFiltroAnalise(prev => ({ ...prev, ano: anosOrdenados[0] }));
+      }
     } catch (error) {
       console.error('Erro ao carregar lançamentos completos:', error);
       showError('Erro ao carregar dados para análise');
@@ -3629,10 +3640,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       onChange={(e) => setFiltroAnalise({ ...filtroAnalise, ano: parseInt(e.target.value) })}
                       className="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium bg-white hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all"
                     >
-                      {[...Array(5)].map((_, i) => {
-                        const ano = new Date().getFullYear() - i;
-                        return <option key={ano} value={ano}>{ano}</option>;
-                      })}
+                      {anosDisponiveis.map(ano => (
+                        <option key={ano} value={ano}>{ano}</option>
+                      ))}
                     </select>
                   </div>
                 </div>
