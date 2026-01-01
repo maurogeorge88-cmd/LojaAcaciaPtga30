@@ -26,19 +26,20 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       const { data, error } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(id, nome, tipo)')
-        .order('data_pagamento', { ascending: false });
+        .order('data_vencimento', { ascending: false });
 
       if (error) throw error;
       
       console.log('=== LANÇAMENTOS CARREGADOS ===');
       console.log('Total:', data?.length);
       
-      // Debug: mostrar lançamentos de 2026
+      // Debug: mostrar TODOS os lançamentos de 2026 (por qualquer data)
       const lanc2026 = data?.filter(l => {
-        const ano = new Date(l.data_pagamento || l.data_vencimento).getFullYear();
-        return ano === 2026;
+        const dataPgto = l.data_pagamento ? new Date(l.data_pagamento).getFullYear() : null;
+        const dataVenc = l.data_vencimento ? new Date(l.data_vencimento).getFullYear() : null;
+        return dataPgto === 2026 || dataVenc === 2026;
       });
-      console.log('Lançamentos 2026:', lanc2026?.length);
+      console.log('Lançamentos 2026 (qualquer data):', lanc2026?.length);
       lanc2026?.forEach(l => {
         console.log({
           descricao: l.descricao,
