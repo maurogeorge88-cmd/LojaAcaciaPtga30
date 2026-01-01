@@ -1966,7 +1966,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
-                {(userData.is_admin || permissoes?.pode_editar_presenca) && (
+                {(userData.is_admin || userData.pode_editar_presenca) && (
                 <div className="border-t border-blue-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
