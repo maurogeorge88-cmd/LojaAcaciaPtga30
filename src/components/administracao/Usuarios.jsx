@@ -259,7 +259,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
           pode_editar_balaustres: usuarioForm.pode_editar_balaustres,
           pode_editar_pranchas: usuarioForm.pode_editar_pranchas,
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
-          pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin
+          pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
+          pode_editar_presenca: usuarioForm.pode_editar_presenca
         }]);
 
       if (dbError) throw dbError;
@@ -317,7 +318,8 @@ IMPORTANTE: Copie estas informações agora!
           pode_editar_balaustres: usuarioForm.pode_editar_balaustres,
           pode_editar_pranchas: usuarioForm.pode_editar_pranchas,
           pode_editar_comissoes: usuarioForm.pode_editar_comissoes,
-          pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin
+          pode_editar_corpo_admin: usuarioForm.pode_editar_corpo_admin,
+          pode_editar_presenca: usuarioForm.pode_editar_presenca
         })
         .eq('id', usuarioEditando.id);
 
