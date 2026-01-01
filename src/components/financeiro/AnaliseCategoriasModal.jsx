@@ -249,9 +249,167 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
           </div>
 
-          {/* SEÇÃO 2: TOTAL POR MÊS (barras horizontais) */}
+          {/* SEÇÃO 2: TOTAIS ANUAIS (respondem ao filtro) */}
           <div className="border-t pt-6 space-y-4">
-            <h4 className="text-lg font-bold text-gray-700">Comparativo Mensal - {filtroAnalise.ano}</h4>
+            <h4 className="text-lg font-bold text-gray-700">
+              Totais do Período - {filtroAnalise.mes === 0 ? filtroAnalise.ano : `${meses[filtroAnalise.mes - 1]}/${filtroAnalise.ano}`}
+            </h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* RECEITAS TOTAL */}
+              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                <h5 className="text-md font-bold text-green-700 mb-4">📈 Total de Receitas</h5>
+                <div className="text-center py-6">
+                  {(() => {
+                    const totalReceitas = lancamentosCompletos
+                      .filter(l => {
+                        if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                        
+                        // Excluir Tronco em dinheiro
+                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                        if (isTronco && isDinheiro) return false;
+                        
+                        // Excluir compensações
+                        if (l.tipo_pagamento === 'compensacao') return false;
+                        
+                        // Filtrar pelo período selecionado
+                        const dataRef = l.data_pagamento || l.data_vencimento;
+                        if (!dataRef) return false;
+                        const data = new Date(dataRef);
+                        if (data.getFullYear() !== filtroAnalise.ano) return false;
+                        if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                        
+                        return true;
+                      })
+                      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+                    return (
+                      <>
+                        <p className="text-4xl font-bold text-green-700 mb-2">{formatarMoeda(totalReceitas)}</p>
+                        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                          <div 
+                            className="bg-gradient-to-r from-green-500 to-green-700 h-3 rounded-full transition-all"
+                            style={{ width: '100%' }}
+                          ></div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* DESPESAS TOTAL */}
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                <h5 className="text-md font-bold text-red-700 mb-4">📉 Total de Despesas</h5>
+                <div className="text-center py-6">
+                  {(() => {
+                    const totalDespesas = lancamentosCompletos
+                      .filter(l => {
+                        if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                        
+                        // Excluir Tronco em dinheiro
+                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                        if (isTronco && isDinheiro) return false;
+                        
+                        // Excluir Despesas Pagas pelo Irmão
+                        const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                      l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                        if (isDespesaPagaPeloIrmao) return false;
+                        
+                        // Filtrar pelo período selecionado
+                        const dataRef = l.data_pagamento || l.data_vencimento;
+                        if (!dataRef) return false;
+                        const data = new Date(dataRef);
+                        if (data.getFullYear() !== filtroAnalise.ano) return false;
+                        if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                        
+                        return true;
+                      })
+                      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+                    return (
+                      <>
+                        <p className="text-4xl font-bold text-red-700 mb-2">{formatarMoeda(totalDespesas)}</p>
+                        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                          <div 
+                            className="bg-gradient-to-r from-red-500 to-red-700 h-3 rounded-full transition-all"
+                            style={{ width: '100%' }}
+                          ></div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+
+              {/* SALDO TOTAL */}
+              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                <h5 className="text-md font-bold text-blue-700 mb-4">💎 Saldo do Período</h5>
+                <div className="text-center py-6">
+                  {(() => {
+                    // Calcular receitas
+                    const totalReceitas = lancamentosCompletos
+                      .filter(l => {
+                        if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                        if (isTronco && isDinheiro) return false;
+                        if (l.tipo_pagamento === 'compensacao') return false;
+                        const dataRef = l.data_pagamento || l.data_vencimento;
+                        if (!dataRef) return false;
+                        const data = new Date(dataRef);
+                        if (data.getFullYear() !== filtroAnalise.ano) return false;
+                        if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                        return true;
+                      })
+                      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+                    // Calcular despesas
+                    const totalDespesas = lancamentosCompletos
+                      .filter(l => {
+                        if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                        if (isTronco && isDinheiro) return false;
+                        const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                      l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                        if (isDespesaPagaPeloIrmao) return false;
+                        const dataRef = l.data_pagamento || l.data_vencimento;
+                        if (!dataRef) return false;
+                        const data = new Date(dataRef);
+                        if (data.getFullYear() !== filtroAnalise.ano) return false;
+                        if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                        return true;
+                      })
+                      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+                    const saldo = totalReceitas - totalDespesas;
+                    const isPositivo = saldo >= 0;
+
+                    return (
+                      <>
+                        <p className={`text-4xl font-bold mb-2 ${isPositivo ? 'text-green-700' : 'text-red-700'}`}>
+                          {formatarMoeda(saldo)}
+                        </p>
+                        <div className="w-full bg-gray-200 rounded-full h-3 mt-4">
+                          <div 
+                            className={`h-3 rounded-full transition-all ${
+                              isPositivo 
+                                ? 'bg-gradient-to-r from-green-500 to-green-700' 
+                                : 'bg-gradient-to-r from-red-500 to-red-700'
+                            }`}
+                            style={{ width: '100%' }}
+                          ></div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+          </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* RECEITAS POR ANO */}
@@ -313,154 +471,6 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 </div>
               </div>
 
-              {/* DESPESAS POR MÊS */}
-              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-                <h5 className="text-md font-bold text-red-700 mb-4">📉 Despesas por Mês</h5>
-                <div className="space-y-3">
-                  {(() => {
-                    const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    
-                    const despesasPorMes = lancamentosCompletos
-                      .filter(l => {
-                        if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
-                        
-                        // Excluir Tronco em dinheiro
-                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
-                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
-                        if (isTronco && isDinheiro) return false;
-                        
-                        // Excluir Despesas Pagas pelo Irmão
-                        const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
-                                                      l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
-                        if (isDespesaPagaPeloIrmao) return false;
-                        
-                        // Filtrar pelo ano selecionado
-                        const dataRef = l.data_pagamento || l.data_vencimento;
-                        if (!dataRef) return false;
-                        const ano = new Date(dataRef).getFullYear();
-                        return ano === filtroAnalise.ano;
-                      })
-                      .reduce((acc, l) => {
-                        const dataRef = l.data_pagamento || l.data_vencimento;
-                        const mes = new Date(dataRef).getMonth();
-                        acc[mes] = (acc[mes] || 0) + parseFloat(l.valor);
-                        return acc;
-                      }, {});
-
-                    const maxDespesa = Math.max(...Object.values(despesasPorMes), 0);
-
-                    return Object.entries(despesasPorMes)
-                      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-                      .map(([mesNum, valor]) => {
-                        const largura = maxDespesa > 0 ? (valor / maxDespesa) * 100 : 0;
-                        return (
-                          <div key={mesNum} className="space-y-1">
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="font-semibold text-gray-700">{mesesNomes[parseInt(mesNum)]}/{filtroAnalise.ano}</span>
-                              <span className="font-bold text-red-700">{formatarMoeda(valor)}</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-6 relative">
-                              <div 
-                                className="bg-gradient-to-r from-red-500 to-red-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
-                                style={{ width: `${largura}%` }}
-                              >
-                                {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      });
-                  })()}
-                </div>
-              </div>
-
-              {/* SALDO POR MÊS */}
-              <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
-                <h5 className="text-md font-bold text-blue-700 mb-4">💎 Saldo por Mês</h5>
-                <div className="space-y-3">
-                  {(() => {
-                    const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    
-                    // Receitas por mês
-                    const receitasPorMes = lancamentosCompletos
-                      .filter(l => {
-                        if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
-                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
-                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
-                        if (isTronco && isDinheiro) return false;
-                        if (l.tipo_pagamento === 'compensacao') return false;
-                        const dataRef = l.data_pagamento || l.data_vencimento;
-                        if (!dataRef) return false;
-                        return new Date(dataRef).getFullYear() === filtroAnalise.ano;
-                      })
-                      .reduce((acc, l) => {
-                        const mes = new Date(l.data_pagamento || l.data_vencimento).getMonth();
-                        acc[mes] = (acc[mes] || 0) + parseFloat(l.valor);
-                        return acc;
-                      }, {});
-
-                    // Despesas por mês
-                    const despesasPorMes = lancamentosCompletos
-                      .filter(l => {
-                        if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
-                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
-                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
-                        if (isTronco && isDinheiro) return false;
-                        const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
-                                                      l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
-                        if (isDespesaPagaPeloIrmao) return false;
-                        const dataRef = l.data_pagamento || l.data_vencimento;
-                        if (!dataRef) return false;
-                        return new Date(dataRef).getFullYear() === filtroAnalise.ano;
-                      })
-                      .reduce((acc, l) => {
-                        const mes = new Date(l.data_pagamento || l.data_vencimento).getMonth();
-                        acc[mes] = (acc[mes] || 0) + parseFloat(l.valor);
-                        return acc;
-                      }, {});
-
-                    // Calcular saldo por mês
-                    const todosMeses = [...new Set([...Object.keys(receitasPorMes), ...Object.keys(despesasPorMes)])];
-                    const saldosPorMes = todosMeses.reduce((acc, mes) => {
-                      acc[mes] = (receitasPorMes[mes] || 0) - (despesasPorMes[mes] || 0);
-                      return acc;
-                    }, {});
-
-                    const maxAbsoluto = Math.max(...Object.values(saldosPorMes).map(v => Math.abs(v)), 0);
-
-                    return Object.entries(saldosPorMes)
-                      .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
-                      .map(([mesNum, valor]) => {
-                        const largura = maxAbsoluto > 0 ? (Math.abs(valor) / maxAbsoluto) * 100 : 0;
-                        const isPositivo = valor >= 0;
-                        return (
-                          <div key={mesNum} className="space-y-1">
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="font-semibold text-gray-700">{mesesNomes[parseInt(mesNum)]}/{filtroAnalise.ano}</span>
-                              <span className={`font-bold ${isPositivo ? 'text-green-700' : 'text-red-700'}`}>
-                                {formatarMoeda(valor)}
-                              </span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-6 relative">
-                              <div 
-                                className={`h-6 rounded-full flex items-center justify-end pr-2 transition-all ${
-                                  isPositivo 
-                                    ? 'bg-gradient-to-r from-green-500 to-green-700' 
-                                    : 'bg-gradient-to-r from-red-500 to-red-700'
-                                }`}
-                                style={{ width: `${largura}%` }}
-                              >
-                                {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      });
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
       </div>
     </div>
   );
