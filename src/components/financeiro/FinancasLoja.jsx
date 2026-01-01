@@ -1524,6 +1524,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const { data: ultimasSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome)')
+        .lte('data_sessao', new Date().toISOString().split('T')[0]) // Não incluir sessões futuras
         .order('data_sessao', { ascending: false })
         .limit(5);
 
@@ -1990,6 +1991,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             .select('id, data_sessao, grau_sessao_id')
             .gte('data_sessao', `${anoAtual}-01-01`)
             .lte('data_sessao', `${anoAtual}-12-31`)
+            .lte('data_sessao', new Date().toISOString().split('T')[0]) // Não incluir sessões futuras
             .order('data_sessao', { ascending: true })
             .range(inicio, inicio + tamanhoPagina - 1);
 
