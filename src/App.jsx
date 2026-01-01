@@ -1968,8 +1968,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
-                {console.log('🔍 RENDER Presença:', { userData, is_admin: userData?.is_admin, pode_editar_presenca: userData?.pode_editar_presenca, resultado: (userData?.is_admin || userData?.pode_editar_presenca) })}
-                {(userData?.is_admin || userData?.pode_editar_presenca) && (
+                {console.log('🔍 RENDER Presença:', { userData, nivel_acesso: userData?.nivel_acesso, pode_editar_presenca: userData?.pode_editar_presenca, resultado: (userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) })}
+                {(userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) && (
                 <div className="border-t border-blue-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
