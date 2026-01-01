@@ -2302,10 +2302,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>dos Irmãos</span>
         </button>
         <button
-          onClick={() => {
-            setModalAnaliseAberto(true);
-            carregarLancamentosCompletos();
-          }}
+          onClick={() => setModalAnaliseAberto(true)}
           className="w-28 h-[55px] px-3 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>📊 Análise</span>
