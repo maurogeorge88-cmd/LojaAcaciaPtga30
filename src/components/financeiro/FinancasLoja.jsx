@@ -3568,6 +3568,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         />
       )}
 
+      {/* COMPONENTE MODAL DE ANÁLISE POR CATEGORIA */}
+      <AnaliseCategoriasModal 
+        isOpen={modalAnaliseAberto}
+        onClose={() => setModalAnaliseAberto(false)}
+        showError={showError}
+      />
+
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
       <ModalResumoIrmaos
         isOpen={modalResumoAberto}
