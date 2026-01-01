@@ -1370,7 +1370,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 }`}
                 title="Visualizar Irmãos"
               >
-                {console.log('🟢 MENU RENDERIZANDO - userData:', userData)}
                 <span className="text-base">👥</span>
                 {menuAberto && <span className="font-semibold">Visualizar Irmãos</span>}
               </button>
@@ -1570,6 +1569,79 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   <span className="text-base">🎉</span>
                   {menuAberto && <span className="font-semibold">Festividades</span>}
                 </button>
+
+                {/* SUBMENU: PRESENÇA IRMÃOS */}
+                {(userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) && (
+                <div className="border-t border-blue-700 mt-2 pt-2">
+                  <button
+                    onClick={() => setSubmenuPresenca(!submenuPresenca)}
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                    title="Presença Irmãos"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✅</span>
+                      {menuAberto && <span className="font-semibold">Presença Irmãos</span>}
+                    </div>
+                    {menuAberto && (
+                      <svg 
+                        className={`w-4 h-4 transition-transform ${submenuPresenca ? 'rotate-180' : ''}`} 
+                        fill="none" 
+                        stroke="currentColor" 
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Subitens do submenu Presença */}
+                  {(submenuPresenca && menuAberto) && (
+                    <div className="bg-blue-950 bg-opacity-50">
+                      {/* DASHBOARD DE PRESENÇA */}
+                      <button
+                        onClick={() => setCurrentPage('dashboard-presenca')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'dashboard-presenca'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                        title="Dashboard de Presença"
+                      >
+                        <span>📊</span>
+                        <span>Dashboard</span>
+                      </button>
+
+                      {/* CADASTRO DE SESSÃO */}
+                      <button
+                        onClick={() => setCurrentPage('cadastro-sessao')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'cadastro-sessao'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                        title="Cadastro de Sessão"
+                      >
+                        <span>📋</span>
+                        <span>Cadastrar Sessão</span>
+                      </button>
+
+                      {/* LISTA DE SESSÕES */}
+                      <button
+                        onClick={() => setCurrentPage('lista-sessoes')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                          currentPage === 'lista-sessoes'
+                            ? 'bg-blue-700 border-l-4 border-white'
+                            : 'hover:bg-blue-800'
+                        }`}
+                        title="Sessões Realizadas"
+                      >
+                        <span>📑</span>
+                        <span>Sessões Realizadas</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+                )}
 
                 <button
                   onClick={() => setCurrentPage('corpo-admin')}
@@ -1967,88 +2039,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   temPermissao: userData?.pode_editar_presenca,
                   RESULTADO: (userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca)
                 })}
-
-                {/* SUBMENU: PRESENÇA IRMÃOS */}
-                {userData && console.log('✅ userData existe:', userData.nivel_acesso, userData.pode_editar_presenca)}
-                {!userData && console.log('❌ userData é NULL')}
-                {(userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) && (
-                <div className="border-t border-blue-700 mt-2 pt-2">
-                  <button
-                    onClick={() => setSubmenuPresenca(!submenuPresenca)}
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
-                    title="Presença Irmãos"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">✅</span>
-                      {menuAberto && <span className="font-semibold">Presença Irmãos</span>}
-                    </div>
-                    {menuAberto && (
-                      <svg 
-                        className={`w-4 h-4 transition-transform ${submenuPresenca ? 'rotate-180' : ''}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {/* Subitens do submenu Presença */}
-                  {(submenuPresenca && menuAberto) && (
-                    <div className="bg-blue-950 bg-opacity-50">
-                      {/* DASHBOARD DE PRESENÇA */}
-                      <button
-                        onClick={() => setCurrentPage('dashboard-presenca')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'dashboard-presenca'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
-                        }`}
-                        title="Dashboard de Presença"
-                      >
-                        <span>📊</span>
-                        <span>Dashboard</span>
-                      </button>
-
-                      {/* CADASTRO DE SESSÃO */}
-                      <button
-                        onClick={() => setCurrentPage('cadastro-sessao')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'cadastro-sessao'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
-                        }`}
-                        title="Cadastro de Sessão"
-                      >
-                        <span>📋</span>
-                        <span>Cadastrar Sessão</span>
-                      </button>
-
-                      {/* LISTA DE SESSÕES */}
-                      <button
-                        onClick={() => setCurrentPage('lista-sessoes')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'lista-sessoes'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
-                        }`}
-                        title="Sessões Realizadas"
-                      >
-                        <span>📑</span>
-                        <span>Sessões Realizadas</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-                )}
-
-                {/* SUBMENU: GESTÃO DO SISTEMA */}
-                {permissoes?.canManageUsers && (
-                  <div className="border-t border-blue-700 mt-2 pt-2">
-                    <button
-                      onClick={() => setSubmenuGestaoSistema(!submenuGestaoSistema)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
                       title="Gestão do Sistema"
                     >
                       <div className="flex items-center gap-2">
