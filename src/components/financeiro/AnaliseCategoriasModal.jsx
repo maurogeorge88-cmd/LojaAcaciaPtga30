@@ -34,7 +34,18 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       const lanc0101 = data?.filter(l => 
         (l.data_pagamento?.includes('2026-01-01') || l.data_vencimento?.includes('2026-01-01'))
       );
-      console.log('Lançamentos 01/01/2026:', lanc0101);
+      console.log('Lançamentos 01/01/2026:');
+      lanc0101?.forEach(l => {
+        console.log({
+          id: l.id,
+          descricao: l.descricao,
+          status: l.status,
+          tipo_pagamento: l.tipo_pagamento,
+          categoria: l.categorias_financeiras?.nome,
+          tipo: l.categorias_financeiras?.tipo,
+          valor: l.valor
+        });
+      });
       
       setLancamentosCompletos(data || []);
       
