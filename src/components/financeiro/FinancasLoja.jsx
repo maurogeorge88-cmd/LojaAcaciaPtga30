@@ -40,6 +40,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
   const [totalRegistros, setTotalRegistros] = useState(0);
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   
   const [filtros, setFiltros] = useState({
     mes: new Date().getMonth() + 1, // Mês atual (1-12)
@@ -155,6 +156,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   }, [filtros.tipo, filtros.categoria, filtros.status, filtros.origem_tipo, filtros.origem_irmao_id]); 
 
+  const buscarAnosDisponiveis = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('data_pagamento, data_vencimento, status');
+
+      if (error) throw error;
+
+      const anosSet = new Set();
+      
+      data.forEach(lanc => {
+        const dataRef = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
+        if (dataRef) {
+          const ano = new Date(dataRef + 'T00:00:00').getFullYear();
+          anosSet.add(ano);
+        }
+      });
+
+      const anosOrdenados = Array.from(anosSet).sort((a, b) => b - a);
+      setAnosDisponiveis(anosOrdenados);
+    } catch (error) {
+      console.error('Erro ao buscar anos:', error);
+    }
+  };
+
   const carregarDados = async () => {
     setLoading(true);
     try {
@@ -232,6 +258,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       
       setIrmaos(irmaosDisponiveis);
 
+      await buscarAnosDisponiveis();
       await recarregarDados();
 
     } catch (error) {
@@ -2467,7 +2494,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value={0}>Todos</option>
-              {[2023, 2024, 2025, 2026, 2027, 2028].map(ano => (
+              {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
               ))}
             </select>
