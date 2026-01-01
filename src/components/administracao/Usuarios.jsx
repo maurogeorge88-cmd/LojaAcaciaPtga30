@@ -54,7 +54,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: false,
       pode_editar_pranchas: false,
       pode_editar_comissoes: false,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     },
     'secretario': {
       pode_editar_cadastros: true,
@@ -67,7 +68,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: true,
       pode_editar_pranchas: true,
       pode_editar_comissoes: true,
-      pode_editar_corpo_admin: true
+      pode_editar_corpo_admin: true,
+      pode_editar_presenca: true
     },
     'tesoureiro': {
       pode_editar_cadastros: false,
@@ -80,7 +82,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: false,
       pode_editar_pranchas: false,
       pode_editar_comissoes: false,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     },
     'chanceler': {
       pode_editar_cadastros: true,
@@ -93,7 +96,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: true,
       pode_editar_pranchas: true,
       pode_editar_comissoes: false,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     },
     'primeiro_vigilante': {
       pode_editar_cadastros: true,
@@ -106,7 +110,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: true,
       pode_editar_pranchas: false,
       pode_editar_comissoes: true,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     },
     'segundo_vigilante': {
       pode_editar_cadastros: true,
@@ -119,7 +124,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: true,
       pode_editar_pranchas: false,
       pode_editar_comissoes: true,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     },
     'orador': {
       pode_editar_cadastros: false,
@@ -132,7 +138,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: false,
       pode_editar_pranchas: true,
       pode_editar_comissoes: false,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     },
     'veneravel': {
       pode_editar_cadastros: true,
@@ -145,7 +152,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: true,
       pode_editar_pranchas: true,
       pode_editar_comissoes: true,
-      pode_editar_corpo_admin: true
+      pode_editar_corpo_admin: true,
+      pode_editar_presenca: true
     },
     'administrador': {
       pode_editar_cadastros: true,
@@ -158,7 +166,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: true,
       pode_editar_pranchas: true,
       pode_editar_comissoes: true,
-      pode_editar_corpo_admin: true
+      pode_editar_corpo_admin: true,
+      pode_editar_presenca: true
     }
   };
 
@@ -187,7 +196,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_balaustres: false,
       pode_editar_pranchas: false,
       pode_editar_comissoes: false,
-      pode_editar_corpo_admin: false
+      pode_editar_corpo_admin: false,
+      pode_editar_presenca: false
     });
     setModoEdicao(false);
     setUsuarioEditando(null);
@@ -387,7 +397,8 @@ IMPORTANTE: Copie estas informações agora!
       pode_editar_balaustres: usuario.pode_editar_balaustres || false,
       pode_editar_pranchas: usuario.pode_editar_pranchas || false,
       pode_editar_comissoes: usuario.pode_editar_comissoes || false,
-      pode_editar_corpo_admin: usuario.pode_editar_corpo_admin || false
+      pode_editar_corpo_admin: usuario.pode_editar_corpo_admin || false,
+      pode_editar_presenca: usuario.pode_editar_presenca || false
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -699,6 +710,19 @@ IMPORTANTE: Copie estas informações agora!
                   <div>
                     <span className="font-medium text-gray-900">👔 Corpo Administrativo</span>
                     <p className="text-xs text-gray-600">Gerenciar cargos admin</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_presenca}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_presenca: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">✅ Presença</span>
+                    <p className="text-xs text-gray-600">Gerenciar presença nas sessões</p>
                   </div>
                 </label>
               </div>
