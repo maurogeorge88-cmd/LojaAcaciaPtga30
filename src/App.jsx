@@ -1960,6 +1960,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
+                {userData && console.log('✅ userData existe:', userData.nivel_acesso, userData.pode_editar_presenca)}
+                {!userData && console.log('❌ userData é NULL')}
                 {(userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) && (
                 <div className="border-t border-blue-700 mt-2 pt-2">
                   <button
