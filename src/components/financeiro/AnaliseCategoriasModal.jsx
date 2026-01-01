@@ -60,19 +60,27 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between z-10">
-          <h3 className="text-2xl font-bold text-gray-800">📊 Análise por Categoria</h3>
-          <button 
-            onClick={onClose} 
-            className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
-          >
-            ×
-          </button>
+    <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+      {/* CABEÇALHO FIXO */}
+      <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg p-6 flex items-center justify-between z-10">
+        <div className="flex items-center gap-3">
+          <span className="text-4xl">📊</span>
+          <div>
+            <h3 className="text-2xl font-bold text-white">Análise por Categoria</h3>
+            <p className="text-blue-100 text-sm">Visualização completa de receitas e despesas</p>
+          </div>
         </div>
+        <button 
+          onClick={onClose} 
+          className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2"
+        >
+          <span>←</span>
+          <span>Voltar ao Dashboard</span>
+        </button>
+      </div>
 
-        <div className="p-6 space-y-6">
+      {/* CONTEÚDO */}
+      <div className="container mx-auto p-6 pb-20 max-w-[1600px] space-y-8">
           {/* SEÇÃO 1: ANÁLISE POR CATEGORIA (com filtro mês/ano) */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -430,15 +438,6 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               </div>
             </div>
           </div>
-        </div>
-
-        <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
-          >
-            Fechar
-          </button>
         </div>
       </div>
     </div>
