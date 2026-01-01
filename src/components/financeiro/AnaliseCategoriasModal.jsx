@@ -433,6 +433,33 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       return acc;
                     }, {});
 
+                  // Calcular despesas para pegar todos os anos
+                  const despesasPorAno = lancamentosCompletos
+                    .filter(l => {
+                      if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                      const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                      if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+                      const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                    l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                      if (isDespesaPagaPeloIrmao) return false;
+                      return true;
+                    })
+                    .reduce((acc, l) => {
+                      const dataRef = l.data_pagamento || l.data_vencimento;
+                      if (!dataRef) return acc;
+                      const ano = parseData(dataRef).getFullYear();
+                      acc[ano] = true;
+                      return acc;
+                    }, {});
+
+                  // Garantir que todos os anos de despesas também apareçam em receitas
+                  const todosAnos = [...new Set([...Object.keys(receitasPorAno), ...Object.keys(despesasPorAno)])];
+                  todosAnos.forEach(ano => {
+                    if (!(ano in receitasPorAno)) {
+                      receitasPorAno[ano] = 0;
+                    }
+                  });
+
                   const maxReceita = Math.max(...Object.values(receitasPorAno), 0);
 
                   return Object.entries(receitasPorAno)
@@ -465,6 +492,23 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               <h5 className="text-md font-bold text-red-700 mb-3">📉 Despesas por Ano</h5>
               <div className="space-y-2">
                 {(() => {
+                  // Calcular receitas para pegar todos os anos
+                  const receitasPorAno = lancamentosCompletos
+                    .filter(l => {
+                      if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                      const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                      if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+                      if (l.tipo_pagamento === 'compensacao') return false;
+                      return true;
+                    })
+                    .reduce((acc, l) => {
+                      const dataRef = l.data_pagamento || l.data_vencimento;
+                      if (!dataRef) return acc;
+                      const ano = parseData(dataRef).getFullYear();
+                      acc[ano] = true;
+                      return acc;
+                    }, {});
+
                   const despesasPorAno = lancamentosCompletos
                     .filter(l => {
                       if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
@@ -482,6 +526,14 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
                       return acc;
                     }, {});
+
+                  // Garantir que todos os anos de receitas também apareçam em despesas
+                  const todosAnos = [...new Set([...Object.keys(receitasPorAno), ...Object.keys(despesasPorAno)])];
+                  todosAnos.forEach(ano => {
+                    if (!(ano in despesasPorAno)) {
+                      despesasPorAno[ano] = 0;
+                    }
+                  });
 
                   const maxDespesa = Math.max(...Object.values(despesasPorAno), 0);
 
