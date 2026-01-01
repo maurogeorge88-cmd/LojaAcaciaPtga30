@@ -410,68 +410,6 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               </div>
             </div>
           </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* RECEITAS POR ANO */}
-              <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
-                <h5 className="text-md font-bold text-green-700 mb-4">📈 Receitas por Mês</h5>
-                <div className="space-y-3">
-                  {(() => {
-                    const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-                    
-                    const receitasPorMes = lancamentosCompletos
-                      .filter(l => {
-                        if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
-                        
-                        // Excluir Tronco em dinheiro
-                        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
-                        const isDinheiro = l.tipo_pagamento === 'dinheiro';
-                        if (isTronco && isDinheiro) return false;
-                        
-                        // Excluir compensações
-                        if (l.tipo_pagamento === 'compensacao') return false;
-                        
-                        // Filtrar pelo ano selecionado
-                        const dataRef = l.data_pagamento || l.data_vencimento;
-                        if (!dataRef) return false;
-                        const ano = new Date(dataRef).getFullYear();
-                        return ano === filtroAnalise.ano;
-                      })
-                      .reduce((acc, l) => {
-                        const dataRef = l.data_pagamento || l.data_vencimento;
-                        const mes = new Date(dataRef).getMonth();
-                        acc[mes] = (acc[mes] || 0) + parseFloat(l.valor);
-                        return acc;
-                      }, {});
-
-                    const maxReceita = Math.max(...Object.values(receitasPorMes), 0);
-
-                    return Object.entries(receitasPorMes)
-                      .sort((a, b) => parseInt(a[0]) - parseInt(b[0])) // Ordem crescente (Jan -> Dez)
-                      .map(([mesNum, valor]) => {
-                        const largura = maxReceita > 0 ? (valor / maxReceita) * 100 : 0;
-                        return (
-                          <div key={mesNum} className="space-y-1">
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="font-semibold text-gray-700">{mesesNomes[parseInt(mesNum)]}/{filtroAnalise.ano}</span>
-                              <span className="font-bold text-green-700">{formatarMoeda(valor)}</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-6 relative">
-                              <div 
-                                className="bg-gradient-to-r from-green-500 to-green-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
-                                style={{ width: `${largura}%` }}
-                              >
-                                {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      });
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>
       </div>
     </div>
   );
