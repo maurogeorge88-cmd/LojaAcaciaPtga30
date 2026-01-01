@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
+import AnaliseCategoriasModal from './AnaliseCategoriasModal';
 import { 
   verificarVencido,
   filtrarIrmaosPorStatus,
@@ -3991,6 +3992,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
         </div>
       )}
+
+      {/* COMPONENTE MODAL DE ANÁLISE POR CATEGORIA */}
+      <AnaliseCategoriasModal 
+        isOpen={modalAnaliseAberto}
+        onClose={() => setModalAnaliseAberto(false)}
+        showError={showError}
+      />
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
       <ModalResumoIrmaos
