@@ -68,6 +68,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
+  const [lancamentosCompletos, setLancamentosCompletos] = useState([]);
   const [filtroAnalise, setFiltroAnalise] = useState({
     mes: new Date().getMonth() + 1,
     ano: new Date().getFullYear()
@@ -655,6 +656,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     await carregarLancamentos();
     calcularCaixaFisicoTotal();
     calcularTroncoTotal();
+  };
+
+  const carregarLancamentosCompletos = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(id, nome, tipo)')
+        .order('data_pagamento', { ascending: false });
+
+      if (error) throw error;
+      setLancamentosCompletos(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar lançamentos completos:', error);
+      showError('Erro ao carregar dados para análise');
+    }
   };
 
   const excluirLancamento = async (id) => {
@@ -2269,7 +2285,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>dos Irmãos</span>
         </button>
         <button
-          onClick={() => setModalAnaliseAberto(true)}
+          onClick={() => {
+            setModalAnaliseAberto(true);
+            carregarLancamentosCompletos();
+          }}
           className="w-28 h-[55px] px-3 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>📊 Análise</span>
@@ -3627,7 +3646,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     </h5>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {(() => {
-                        const receitasPorCategoria = lancamentos
+                        const receitasPorCategoria = lancamentosCompletos
                           .filter(l => {
                             if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
                             const data = new Date(l.data_pagamento);
@@ -3675,7 +3694,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     </h5>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
                       {(() => {
-                        const despesasPorCategoria = lancamentos
+                        const despesasPorCategoria = lancamentosCompletos
                           .filter(l => {
                             if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
                             const data = new Date(l.data_pagamento);
@@ -3727,7 +3746,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <h5 className="text-md font-bold text-green-700 mb-4">📈 Receitas por Ano</h5>
                     <div className="space-y-3">
                       {(() => {
-                        const receitasPorAno = lancamentos
+                        const receitasPorAno = lancamentosCompletos
                           .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago')
                           .reduce((acc, l) => {
                             const ano = new Date(l.data_pagamento).getFullYear();
@@ -3767,7 +3786,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <h5 className="text-md font-bold text-red-700 mb-4">📉 Despesas por Ano</h5>
                     <div className="space-y-3">
                       {(() => {
-                        const despesasPorAno = lancamentos
+                        const despesasPorAno = lancamentosCompletos
                           .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago')
                           .reduce((acc, l) => {
                             const ano = new Date(l.data_pagamento).getFullYear();
