@@ -53,6 +53,10 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
   useEffect(() => {
     if (isOpen) {
+      // Limpar dados anteriores
+      setLancamentosCompletos([]);
+      setAnosDisponiveis([]);
+      // Recarregar
       carregarLancamentosCompletos();
     }
   }, [isOpen]);
