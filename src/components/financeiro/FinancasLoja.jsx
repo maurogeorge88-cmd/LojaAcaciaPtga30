@@ -2206,27 +2206,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   return (
     <div className="space-y-6">
       {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
-      <div className="flex gap-3 items-center flex-nowrap">
+      <div className="flex gap-2 items-center flex-nowrap">
         {/* Botões de visualização */}
         <button
           onClick={() => setViewMode('lancamentos')}
-          className={`px-4 h-[55px] rounded-lg font-medium whitespace-nowrap ${
+          className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
             viewMode === 'lancamentos'
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          📊 Lançamentos
+          📊 Lançam.
         </button>
         <button
           onClick={() => setViewMode('inadimplentes')}
-          className={`px-4 h-[55px] rounded-lg font-medium whitespace-nowrap ${
+          className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
             viewMode === 'inadimplentes'
               ? 'bg-red-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
-          ⚠️ Inadimplentes
+          ⚠️ Inadimp.
         </button>
         
         {/* Espaçador menor */}
@@ -3611,13 +3611,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <h4 className="text-lg font-bold text-gray-700">Detalhamento por Categoria</h4>
                   
                   {/* Filtros Mês/Ano */}
-                  <div className="flex gap-3">
+                  <div className="flex gap-2 items-center">
+                    <label className="text-sm font-medium text-gray-600">Período:</label>
                     <select
                       value={filtroAnalise.mes}
                       onChange={(e) => setFiltroAnalise({ ...filtroAnalise, mes: parseInt(e.target.value) })}
-                      className="px-3 py-2 border rounded-lg text-sm"
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium bg-white hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all"
                     >
-                      <option value={0}>Ano inteiro</option>
+                      <option value={0}>📅 Ano inteiro</option>
                       {meses.map((mes, i) => (
                         <option key={i} value={i + 1}>{mes}</option>
                       ))}
@@ -3626,7 +3627,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <select
                       value={filtroAnalise.ano}
                       onChange={(e) => setFiltroAnalise({ ...filtroAnalise, ano: parseInt(e.target.value) })}
-                      className="px-3 py-2 border rounded-lg text-sm"
+                      className="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium bg-white hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all"
                     >
                       {[...Array(5)].map((_, i) => {
                         const ano = new Date().getFullYear() - i;
@@ -3649,6 +3650,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         const receitasPorCategoria = lancamentosCompletos
                           .filter(l => {
                             if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                            
+                            // Excluir Tronco em dinheiro (não deve contar nas receitas)
+                            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                            const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                            if (isTronco && isDinheiro) return false;
+                            
                             const data = new Date(l.data_pagamento);
                             if (data.getFullYear() !== filtroAnalise.ano) return false;
                             if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
@@ -3667,18 +3674,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           .map(([cat, valor]) => {
                             const percentual = total > 0 ? (valor / total) * 100 : 0;
                             return (
-                              <div key={cat} className="bg-white rounded-lg p-3 border border-green-200">
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-sm font-semibold text-gray-700">{cat}</span>
+                              <div key={cat} className="bg-white rounded-lg p-2 border border-green-200">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-green-700 min-w-[45px] text-center">
+                                    {percentual.toFixed(1)}%
+                                  </span>
+                                  <span className="text-sm font-semibold text-gray-700 flex-1">{cat}</span>
                                   <span className="text-sm font-bold text-green-700">{formatarMoeda(valor)}</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                                   <div 
-                                    className="bg-green-600 h-2 rounded-full transition-all"
+                                    className="bg-green-600 h-1.5 rounded-full transition-all"
                                     style={{ width: `${percentual}%` }}
                                   ></div>
                                 </div>
-                                <span className="text-xs text-gray-500">{percentual.toFixed(1)}%</span>
                               </div>
                             );
                           });
@@ -3697,6 +3706,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         const despesasPorCategoria = lancamentosCompletos
                           .filter(l => {
                             if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                            
+                            // Excluir Tronco em dinheiro (não deve contar nas despesas)
+                            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                            const isDinheiro = l.tipo_pagamento === 'dinheiro';
+                            if (isTronco && isDinheiro) return false;
+                            
+                            // Excluir "Despesas Pagas pelo Irmão" (são compensações, irmão já pagou)
+                            const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                          l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                            if (isDespesaPagaPeloIrmao) return false;
+                            
                             const data = new Date(l.data_pagamento);
                             if (data.getFullYear() !== filtroAnalise.ano) return false;
                             if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
@@ -3715,18 +3735,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           .map(([cat, valor]) => {
                             const percentual = total > 0 ? (valor / total) * 100 : 0;
                             return (
-                              <div key={cat} className="bg-white rounded-lg p-3 border border-red-200">
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-sm font-semibold text-gray-700">{cat}</span>
+                              <div key={cat} className="bg-white rounded-lg p-2 border border-red-200">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-red-700 min-w-[45px] text-center">
+                                    {percentual.toFixed(1)}%
+                                  </span>
+                                  <span className="text-sm font-semibold text-gray-700 flex-1">{cat}</span>
                                   <span className="text-sm font-bold text-red-700">{formatarMoeda(valor)}</span>
                                 </div>
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
                                   <div 
-                                    className="bg-red-600 h-2 rounded-full transition-all"
+                                    className="bg-red-600 h-1.5 rounded-full transition-all"
                                     style={{ width: `${percentual}%` }}
                                   ></div>
                                 </div>
-                                <span className="text-xs text-gray-500">{percentual.toFixed(1)}%</span>
                               </div>
                             );
                           });
@@ -3740,7 +3762,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="border-t pt-6 space-y-4">
                 <h4 className="text-lg font-bold text-gray-700">Comparativo Anual</h4>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* RECEITAS POR ANO */}
                   <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
                     <h5 className="text-md font-bold text-green-700 mb-4">📈 Receitas por Ano</h5>
@@ -3809,6 +3831,70 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                 <div className="w-full bg-gray-200 rounded-full h-6 relative">
                                   <div 
                                     className="bg-gradient-to-r from-red-500 to-red-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
+                                    style={{ width: `${largura}%` }}
+                                  >
+                                    {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          });
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* SALDO POR ANO */}
+                  <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+                    <h5 className="text-md font-bold text-blue-700 mb-4">💎 Saldo por Ano</h5>
+                    <div className="space-y-3">
+                      {(() => {
+                        // Calcular receitas por ano
+                        const receitasPorAno = lancamentosCompletos
+                          .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago')
+                          .reduce((acc, l) => {
+                            const ano = new Date(l.data_pagamento).getFullYear();
+                            acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
+                            return acc;
+                          }, {});
+
+                        // Calcular despesas por ano
+                        const despesasPorAno = lancamentosCompletos
+                          .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago')
+                          .reduce((acc, l) => {
+                            const ano = new Date(l.data_pagamento).getFullYear();
+                            acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
+                            return acc;
+                          }, {});
+
+                        // Combinar anos e calcular saldo
+                        const todosAnos = [...new Set([...Object.keys(receitasPorAno), ...Object.keys(despesasPorAno)])];
+                        const saldosPorAno = todosAnos.reduce((acc, ano) => {
+                          acc[ano] = (receitasPorAno[ano] || 0) - (despesasPorAno[ano] || 0);
+                          return acc;
+                        }, {});
+
+                        const maxAbsoluto = Math.max(...Object.values(saldosPorAno).map(v => Math.abs(v)));
+
+                        return Object.entries(saldosPorAno)
+                          .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                          .map(([ano, valor]) => {
+                            const largura = maxAbsoluto > 0 ? (Math.abs(valor) / maxAbsoluto) * 100 : 0;
+                            const isPositivo = valor >= 0;
+                            return (
+                              <div key={ano} className="space-y-1">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="font-semibold text-gray-700">{ano}</span>
+                                  <span className={`font-bold ${isPositivo ? 'text-green-700' : 'text-red-700'}`}>
+                                    {formatarMoeda(valor)}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-6 relative">
+                                  <div 
+                                    className={`h-6 rounded-full flex items-center justify-end pr-2 transition-all ${
+                                      isPositivo 
+                                        ? 'bg-gradient-to-r from-green-500 to-green-700' 
+                                        : 'bg-gradient-to-r from-red-500 to-red-700'
+                                    }`}
                                     style={{ width: `${largura}%` }}
                                   >
                                     {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
