@@ -146,6 +146,7 @@ function App() {
   const [tiposSessao, setTiposSessao] = useState([]);
   const [cargosLoja, setCargosLoja] = useState([]);
   const [cronograma, setCronograma] = useState([]);
+  const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   
   // Estados para Comissões
   const [comissoes, setComissoes] = useState([]);
@@ -228,6 +229,7 @@ function App() {
         loadLivros();
         loadEmprestimos();
         loadCronograma();
+        loadHistoricoSituacoes();
       }
       setLoading(false);
     });
@@ -310,6 +312,7 @@ function App() {
           pode_editar_pranchas: data.pode_editar_pranchas || false,
           pode_editar_comissoes: data.pode_editar_comissoes || false,
           pode_editar_corpo_admin: false,
+          pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: false
         });
       } else if (data.nivel_acesso === 'admin') {
@@ -328,6 +331,7 @@ function App() {
           pode_editar_pranchas: true,
           pode_editar_comissoes: true,
           pode_editar_corpo_admin: true,
+          pode_editar_presenca: true,
           pode_gerenciar_usuarios: true
         });
       } else if (data.nivel_acesso === 'cargo') {
@@ -346,6 +350,7 @@ function App() {
           pode_editar_pranchas: data.pode_editar_pranchas || false,
           pode_editar_comissoes: data.pode_editar_comissoes || false,
           pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
+          pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       } else {
@@ -364,6 +369,7 @@ function App() {
           pode_editar_pranchas: data.pode_editar_pranchas || false,
           pode_editar_comissoes: data.pode_editar_comissoes || false,
           pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
+          pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       }
@@ -390,6 +396,16 @@ function App() {
       setIrmaos(irmaosComSituacao);
     }
     if (error) console.error('Erro ao carregar irmãos:', error);
+  };
+
+  const loadHistoricoSituacoes = async () => {
+    const { data, error } = await supabase
+      .from('historico_situacoes')
+      .select('*')
+      .eq('status', 'ativa');
+    
+    if (data) setHistoricoSituacoes(data);
+    if (error) console.error('Erro ao carregar histórico de situações:', error);
   };
 
   const loadTiposSessao = async () => {
@@ -1944,6 +1960,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
+                {(userData.is_admin || userData.pode_editar_presenca) && (
                 <div className="border-t border-blue-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
@@ -2013,6 +2030,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
@@ -2209,6 +2227,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             balaustres={balaustres}
             cronograma={cronograma}
+            historicoSituacoes={historicoSituacoes}
           />
         )}
 
