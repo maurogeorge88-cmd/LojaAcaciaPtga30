@@ -108,6 +108,9 @@ export default function MinhaPresenca({ userData }) {
       else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
       // Buscar sessões do período
+      const hoje = new Date();
+      const dataHoje = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
+      
       const { data: sessoesData, error: sessoesError } = await supabase
         .from('sessoes_presenca')
         .select(`
@@ -118,6 +121,7 @@ export default function MinhaPresenca({ userData }) {
         `)
         .gte('data_sessao', periodo.inicio)
         .lte('data_sessao', periodo.fim)
+        .lte('data_sessao', dataHoje) // Garantir: não incluir futuras (timezone-safe)
         .order('data_sessao', { ascending: true });
 
       if (sessoesError) throw sessoesError;
