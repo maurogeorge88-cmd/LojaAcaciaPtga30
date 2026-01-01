@@ -273,6 +273,12 @@ function App() {
       .single();
 
     if (data) {
+      console.log('📋 DEBUG userData carregado:', {
+        nome: data.nome,
+        nivel_acesso: data.nivel_acesso,
+        is_admin: data.is_admin,
+        pode_editar_presenca: data.pode_editar_presenca
+      });
       setUserData(data);
       
       // Buscar grau do irmão logado (se for irmão)
@@ -1960,7 +1966,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
-                {(userData.is_admin || userData.pode_editar_presenca) && (
+                {(userData.is_admin || permissoes?.pode_editar_presenca) && (
                 <div className="border-t border-blue-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
