@@ -3656,6 +3656,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             const isDinheiro = l.tipo_pagamento === 'dinheiro';
                             if (isTronco && isDinheiro) return false;
                             
+                            // Excluir compensações (não houve entrada real de dinheiro)
+                            if (l.tipo_pagamento === 'compensacao') return false;
+                            
                             const data = new Date(l.data_pagamento);
                             if (data.getFullYear() !== filtroAnalise.ano) return false;
                             if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
@@ -3777,6 +3780,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             const isDinheiro = l.tipo_pagamento === 'dinheiro';
                             if (isTronco && isDinheiro) return false;
                             
+                            // Excluir compensações
+                            if (l.tipo_pagamento === 'compensacao') return false;
+                            
                             return true;
                           })
                           .reduce((acc, l) => {
@@ -3871,7 +3877,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <h5 className="text-md font-bold text-blue-700 mb-4">💎 Saldo por Ano</h5>
                     <div className="space-y-3">
                       {(() => {
-                        // Calcular receitas por ano (excluindo Tronco dinheiro)
+                        // Calcular receitas por ano (excluindo Tronco dinheiro e compensações)
                         const receitasPorAno = lancamentosCompletos
                           .filter(l => {
                             if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
@@ -3880,6 +3886,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
                             const isDinheiro = l.tipo_pagamento === 'dinheiro';
                             if (isTronco && isDinheiro) return false;
+                            
+                            // Excluir compensações
+                            if (l.tipo_pagamento === 'compensacao') return false;
                             
                             return true;
                           })
