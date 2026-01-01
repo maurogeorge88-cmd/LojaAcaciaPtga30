@@ -300,6 +300,7 @@ export default function DashboardPresenca() {
       const { data: sessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id')
+        .lte('data_sessao', new Date().toISOString().split('T')[0]) // Não incluir sessões futuras
         .order('data_sessao', { ascending: false })
         .limit(qtdSessoesRecentes);
 
