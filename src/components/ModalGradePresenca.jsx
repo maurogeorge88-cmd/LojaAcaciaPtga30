@@ -56,9 +56,10 @@ export default function ModalGradePresenca({ onFechar }) {
       }
 
       // IMPORTANTE: Não incluir sessões futuras
-      const hoje = new Date().toISOString().split('T')[0];
-      if (dataFim > hoje) {
-        dataFim = hoje;
+      const hoje = new Date();
+      const dataHoje = hoje.toISOString().split('T')[0];
+      if (dataFim > dataHoje) {
+        dataFim = dataHoje;
       }
 
       // 1. Buscar sessões do período
@@ -85,7 +86,6 @@ export default function ModalGradePresenca({ onFechar }) {
         .order('nome');
 
       // Filtrar: remover falecidos de MESES ANTERIORES e desligados
-      const hoje = new Date();
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
 
