@@ -36,13 +36,20 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       );
       console.log('Lançamentos 01/01/2026:');
       lanc0101?.forEach(l => {
+        const dataRef = l.data_pagamento || l.data_vencimento;
+        const dataObj = new Date(dataRef);
         console.log({
           id: l.id,
           descricao: l.descricao,
+          data_pagamento: l.data_pagamento,
+          data_vencimento: l.data_vencimento,
+          dataRef,
+          dataObj,
+          ano_extraido: dataObj.getFullYear(),
+          mes_extraido: dataObj.getMonth() + 1,
           status: l.status,
           tipo_pagamento: l.tipo_pagamento,
           categoria: l.categorias_financeiras?.nome,
-          tipo: l.categorias_financeiras?.tipo,
           valor: l.valor
         });
       });
