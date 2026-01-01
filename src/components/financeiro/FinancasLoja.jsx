@@ -67,6 +67,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
+  const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
+  const [filtroAnalise, setFiltroAnalise] = useState({
+    mes: new Date().getMonth() + 1,
+    ano: new Date().getFullYear()
+  });
   const [formSangria, setFormSangria] = useState({
     valor: '',
     data: new Date().toISOString().split('T')[0],
@@ -2263,6 +2268,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>💰 Resumo</span>
           <span>dos Irmãos</span>
         </button>
+        <button
+          onClick={() => setModalAnaliseAberto(true)}
+          className="w-28 h-[55px] px-3 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+        >
+          <span>📊 Análise</span>
+          <span>Categorias</span>
+        </button>
         
         {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap">
@@ -3557,6 +3569,252 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           showSuccess={showSuccess}
           showError={showError}
         />
+      )}
+
+      {/* MODAL ANÁLISE POR CATEGORIA */}
+      {modalAnaliseAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between z-10">
+              <h3 className="text-2xl font-bold text-gray-800">📊 Análise por Categoria</h3>
+              <button 
+                onClick={() => setModalAnaliseAberto(false)} 
+                className="text-gray-500 hover:text-gray-700 text-3xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* SEÇÃO 1: ANÁLISE POR CATEGORIA (com filtro mês/ano) */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-bold text-gray-700">Detalhamento por Categoria</h4>
+                  
+                  {/* Filtros Mês/Ano */}
+                  <div className="flex gap-3">
+                    <select
+                      value={filtroAnalise.mes}
+                      onChange={(e) => setFiltroAnalise({ ...filtroAnalise, mes: parseInt(e.target.value) })}
+                      className="px-3 py-2 border rounded-lg text-sm"
+                    >
+                      <option value={0}>Ano inteiro</option>
+                      {meses.map((mes, i) => (
+                        <option key={i} value={i + 1}>{mes}</option>
+                      ))}
+                    </select>
+                    
+                    <select
+                      value={filtroAnalise.ano}
+                      onChange={(e) => setFiltroAnalise({ ...filtroAnalise, ano: parseInt(e.target.value) })}
+                      className="px-3 py-2 border rounded-lg text-sm"
+                    >
+                      {[...Array(5)].map((_, i) => {
+                        const ano = new Date().getFullYear() - i;
+                        return <option key={ano} value={ano}>{ano}</option>;
+                      })}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Grid com Receitas e Despesas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* RECEITAS POR CATEGORIA */}
+                  <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                    <h5 className="text-md font-bold text-green-700 mb-3 flex items-center gap-2">
+                      <span>📈</span>
+                      <span>Receitas por Categoria</span>
+                    </h5>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {(() => {
+                        const receitasPorCategoria = lancamentos
+                          .filter(l => {
+                            if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                            const data = new Date(l.data_pagamento);
+                            if (data.getFullYear() !== filtroAnalise.ano) return false;
+                            if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                            return true;
+                          })
+                          .reduce((acc, l) => {
+                            const cat = l.categorias_financeiras?.nome || 'Sem categoria';
+                            acc[cat] = (acc[cat] || 0) + parseFloat(l.valor);
+                            return acc;
+                          }, {});
+
+                        const total = Object.values(receitasPorCategoria).reduce((sum, v) => sum + v, 0);
+
+                        return Object.entries(receitasPorCategoria)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([cat, valor]) => {
+                            const percentual = total > 0 ? (valor / total) * 100 : 0;
+                            return (
+                              <div key={cat} className="bg-white rounded-lg p-3 border border-green-200">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-sm font-semibold text-gray-700">{cat}</span>
+                                  <span className="text-sm font-bold text-green-700">{formatarMoeda(valor)}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-green-600 h-2 rounded-full transition-all"
+                                    style={{ width: `${percentual}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-gray-500">{percentual.toFixed(1)}%</span>
+                              </div>
+                            );
+                          });
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* DESPESAS POR CATEGORIA */}
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <h5 className="text-md font-bold text-red-700 mb-3 flex items-center gap-2">
+                      <span>📉</span>
+                      <span>Despesas por Categoria</span>
+                    </h5>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {(() => {
+                        const despesasPorCategoria = lancamentos
+                          .filter(l => {
+                            if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                            const data = new Date(l.data_pagamento);
+                            if (data.getFullYear() !== filtroAnalise.ano) return false;
+                            if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                            return true;
+                          })
+                          .reduce((acc, l) => {
+                            const cat = l.categorias_financeiras?.nome || 'Sem categoria';
+                            acc[cat] = (acc[cat] || 0) + parseFloat(l.valor);
+                            return acc;
+                          }, {});
+
+                        const total = Object.values(despesasPorCategoria).reduce((sum, v) => sum + v, 0);
+
+                        return Object.entries(despesasPorCategoria)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([cat, valor]) => {
+                            const percentual = total > 0 ? (valor / total) * 100 : 0;
+                            return (
+                              <div key={cat} className="bg-white rounded-lg p-3 border border-red-200">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-sm font-semibold text-gray-700">{cat}</span>
+                                  <span className="text-sm font-bold text-red-700">{formatarMoeda(valor)}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                  <div 
+                                    className="bg-red-600 h-2 rounded-full transition-all"
+                                    style={{ width: `${percentual}%` }}
+                                  ></div>
+                                </div>
+                                <span className="text-xs text-gray-500">{percentual.toFixed(1)}%</span>
+                              </div>
+                            );
+                          });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO 2: TOTAL POR ANO (barras horizontais) */}
+              <div className="border-t pt-6 space-y-4">
+                <h4 className="text-lg font-bold text-gray-700">Comparativo Anual</h4>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* RECEITAS POR ANO */}
+                  <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                    <h5 className="text-md font-bold text-green-700 mb-4">📈 Receitas por Ano</h5>
+                    <div className="space-y-3">
+                      {(() => {
+                        const receitasPorAno = lancamentos
+                          .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago')
+                          .reduce((acc, l) => {
+                            const ano = new Date(l.data_pagamento).getFullYear();
+                            acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
+                            return acc;
+                          }, {});
+
+                        const maxReceita = Math.max(...Object.values(receitasPorAno));
+
+                        return Object.entries(receitasPorAno)
+                          .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                          .map(([ano, valor]) => {
+                            const largura = maxReceita > 0 ? (valor / maxReceita) * 100 : 0;
+                            return (
+                              <div key={ano} className="space-y-1">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="font-semibold text-gray-700">{ano}</span>
+                                  <span className="font-bold text-green-700">{formatarMoeda(valor)}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-6 relative">
+                                  <div 
+                                    className="bg-gradient-to-r from-green-500 to-green-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
+                                    style={{ width: `${largura}%` }}
+                                  >
+                                    {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          });
+                      })()}
+                    </div>
+                  </div>
+
+                  {/* DESPESAS POR ANO */}
+                  <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <h5 className="text-md font-bold text-red-700 mb-4">📉 Despesas por Ano</h5>
+                    <div className="space-y-3">
+                      {(() => {
+                        const despesasPorAno = lancamentos
+                          .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago')
+                          .reduce((acc, l) => {
+                            const ano = new Date(l.data_pagamento).getFullYear();
+                            acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
+                            return acc;
+                          }, {});
+
+                        const maxDespesa = Math.max(...Object.values(despesasPorAno));
+
+                        return Object.entries(despesasPorAno)
+                          .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
+                          .map(([ano, valor]) => {
+                            const largura = maxDespesa > 0 ? (valor / maxDespesa) * 100 : 0;
+                            return (
+                              <div key={ano} className="space-y-1">
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="font-semibold text-gray-700">{ano}</span>
+                                  <span className="font-bold text-red-700">{formatarMoeda(valor)}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-6 relative">
+                                  <div 
+                                    className="bg-gradient-to-r from-red-500 to-red-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
+                                    style={{ width: `${largura}%` }}
+                                  >
+                                    {largura > 20 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-50 border-t p-4 flex justify-end">
+              <button
+                onClick={() => setModalAnaliseAberto(false)}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
