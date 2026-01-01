@@ -489,10 +489,10 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
             {/* DESPESAS POR ANO */}
             <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-              <h5 className="text-md font-bold text-red-700 mb-3">📉 Despesas por Ano</h5>
+              <h5 className="text-md font-bold text-red-700 mb-3">📉 Despesas por Ano (% da Receita)</h5>
               <div className="space-y-2">
                 {(() => {
-                  // Calcular receitas para pegar todos os anos
+                  // Calcular receitas
                   const receitasPorAno = lancamentosCompletos
                     .filter(l => {
                       if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
@@ -505,7 +505,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       const dataRef = l.data_pagamento || l.data_vencimento;
                       if (!dataRef) return acc;
                       const ano = parseData(dataRef).getFullYear();
-                      acc[ano] = true;
+                      acc[ano] = (acc[ano] || 0) + parseFloat(l.valor);
                       return acc;
                     }, {});
 
@@ -527,32 +527,31 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       return acc;
                     }, {});
 
-                  // Garantir que todos os anos de receitas também apareçam em despesas
+                  // Garantir que todos os anos apareçam
                   const todosAnos = [...new Set([...Object.keys(receitasPorAno), ...Object.keys(despesasPorAno)])];
                   todosAnos.forEach(ano => {
-                    if (!(ano in despesasPorAno)) {
-                      despesasPorAno[ano] = 0;
-                    }
+                    if (!(ano in despesasPorAno)) despesasPorAno[ano] = 0;
+                    if (!(ano in receitasPorAno)) receitasPorAno[ano] = 0;
                   });
-
-                  const maxDespesa = Math.max(...Object.values(despesasPorAno), 0);
 
                   return Object.entries(despesasPorAno)
                     .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
-                    .map(([ano, valor]) => {
-                      const largura = maxDespesa > 0 ? (valor / maxDespesa) * 100 : 0;
+                    .map(([ano, valorDespesa]) => {
+                      const valorReceita = receitasPorAno[ano] || 0;
+                      const percentual = valorReceita > 0 ? (valorDespesa / valorReceita) * 100 : 0;
+                      
                       return (
                         <div key={ano} className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
                             <span className="font-semibold text-gray-700">{ano}</span>
-                            <span className="font-bold text-red-700">{formatarMoeda(valor)}</span>
+                            <span className="font-bold text-red-700">{formatarMoeda(valorDespesa)}</span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-6 relative">
                             <div 
                               className="bg-gradient-to-r from-red-500 to-red-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
-                              style={{ width: `${largura}%` }}
+                              style={{ width: `${Math.min(percentual, 100)}%` }}
                             >
-                              {largura > 15 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
+                              <span className="text-xs text-white font-bold">{percentual.toFixed(0)}%</span>
                             </div>
                           </div>
                         </div>
@@ -564,7 +563,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
             {/* SALDO POR ANO */}
             <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
-              <h5 className="text-md font-bold text-blue-700 mb-3">💎 Saldo por Ano</h5>
+              <h5 className="text-md font-bold text-blue-700 mb-3">💎 Saldo por Ano (% da Receita)</h5>
               <div className="space-y-2">
                 {(() => {
                   // Calcular receitas por ano
@@ -603,20 +602,22 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       return acc;
                     }, {});
 
-                  // Combinar anos e calcular saldo
+                  // Combinar anos
                   const todosAnos = [...new Set([...Object.keys(receitasPorAno), ...Object.keys(despesasPorAno)])];
                   const saldosPorAno = {};
                   todosAnos.forEach(ano => {
-                    saldosPorAno[ano] = (receitasPorAno[ano] || 0) - (despesasPorAno[ano] || 0);
+                    const receita = receitasPorAno[ano] || 0;
+                    const despesa = despesasPorAno[ano] || 0;
+                    saldosPorAno[ano] = { valor: receita - despesa, receita };
                   });
-
-                  const maxAbsoluto = Math.max(...Object.values(saldosPorAno).map(v => Math.abs(v)), 0);
 
                   return Object.entries(saldosPorAno)
                     .sort((a, b) => parseInt(b[0]) - parseInt(a[0]))
-                    .map(([ano, valor]) => {
-                      const largura = maxAbsoluto > 0 ? (Math.abs(valor) / maxAbsoluto) * 100 : 0;
+                    .map(([ano, { valor, receita }]) => {
+                      const percentual = receita > 0 ? (valor / receita) * 100 : 0;
                       const isPositivo = valor >= 0;
+                      const largura = Math.min(Math.abs(percentual), 100);
+                      
                       return (
                         <div key={ano} className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
@@ -634,7 +635,9 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                               }`}
                               style={{ width: `${largura}%` }}
                             >
-                              {largura > 15 && <span className="text-xs text-white font-bold">{largura.toFixed(0)}%</span>}
+                              <span className="text-xs text-white font-bold">
+                                {isPositivo ? '+' : ''}{percentual.toFixed(0)}%
+                              </span>
                             </div>
                           </div>
                         </div>
