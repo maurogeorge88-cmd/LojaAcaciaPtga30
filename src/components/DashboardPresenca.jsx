@@ -297,10 +297,15 @@ export default function DashboardPresenca() {
 
   const carregarSessoesRecentes = async () => {
     try {
+      // Obter data atual no Brasil (considerar UTC-3 ou UTC-4)
+      const hoje = new Date();
+      const dataHojeBrasil = new Date(hoje.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+      const dataLimite = dataHojeBrasil.toISOString().split('T')[0];
+      
       const { data: sessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id')
-        .lte('data_sessao', new Date().toISOString().split('T')[0]) // Não incluir sessões futuras
+        .lte('data_sessao', dataLimite) // Não incluir sessões futuras
         .order('data_sessao', { ascending: false })
         .limit(qtdSessoesRecentes);
 
@@ -809,7 +814,7 @@ export default function DashboardPresenca() {
         </div>
 
         <p className="mt-3 text-sm text-gray-600">
-          📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
+          📅 De <strong>{dataInicio.split('-').reverse().join('/')}</strong> até <strong>{dataFim.split('-').reverse().join('/')}</strong>
         </p>
       </div>
       {/* Cards Totais */}
@@ -882,7 +887,7 @@ export default function DashboardPresenca() {
                   {sessoesRecentes.map((sessao, idx) => (
                     <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-4 py-3 text-sm">
-                        {new Date(sessao.data_sessao).toLocaleDateString('pt-BR')}
+                        {sessao.data_sessao.split('-').reverse().join('/')}
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
