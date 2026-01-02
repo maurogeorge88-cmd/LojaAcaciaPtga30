@@ -255,7 +255,7 @@ export const gerarRelatorioResumido = async ({
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 70, yPos);
       doc.text(obs, 110, yPos);
-      doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.text(valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
       
       yPos += 4;
     });
@@ -279,7 +279,7 @@ export const gerarRelatorioResumido = async ({
         doc.text(interessado.substring(0, 22), 32, yPos);
         doc.text(descricao, 70, yPos);
         doc.text(obs, 110, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.text(valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
         
         yPos += 4;
       });
@@ -489,7 +489,7 @@ export const gerarRelatorioResumido = async ({
       doc.text('Irmãos - Acacia', 32, yPos);
       doc.text('Mensalidade e Peculio - Irmao', 80, yPos);
       doc.text('', 110, yPos);
-      doc.text(`R$${subcatMensalidade.subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.text(subcatMensalidade.subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
       yPos += 4;
       
       catPrincipal.subcategorias = catPrincipal.subcategorias.filter(s => s.categoria.nome !== 'Mensalidade');
@@ -524,7 +524,7 @@ export const gerarRelatorioResumido = async ({
       doc.text(interessado.substring(0, 22), 32, yPos);
       doc.text(descricao, 70, yPos);
       doc.text(obs, 110, yPos);
-      doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.text(valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
       
       yPos += 4;
     });
@@ -549,7 +549,7 @@ export const gerarRelatorioResumido = async ({
         doc.text(interessado.substring(0, 22), 32, yPos);
         doc.text(descricao, 70, yPos);
         doc.text(obs, 110, yPos);
-        doc.text(`R$${valor.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.text(valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
         
         yPos += 4;
       });
