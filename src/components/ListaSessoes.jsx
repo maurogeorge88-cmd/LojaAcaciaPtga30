@@ -37,15 +37,10 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     try {
       setLoading(true);
 
-      // Buscar direto da tabela sessoes_presenca ao invés da view
+      // Buscar direto da tabela sessoes_presenca
       let query = supabase
         .from('sessoes_presenca')
-        .select(`
-          *,
-          grau_sessao:grau_sessao_id(nome),
-          total_presencas:registros_presenca(count),
-          total_elegiveis:registros_presenca(count)
-        `)
+        .select('*, graus_sessao:grau_sessao_id(nome)')
         .order('data_sessao', { ascending: false });
 
       // Aplicar filtros se houver
@@ -64,12 +59,17 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erro na query:', error);
+        throw error;
+      }
+
+      console.log('📊 Sessões carregadas:', data?.length);
       
-      // Processar dados para ter o mesmo formato da view
+      // Processar dados para adicionar nome do grau
       const sessoesProcessadas = data?.map(sessao => ({
         ...sessao,
-        grau_sessao: sessao.grau_sessao?.nome || 'Aprendiz'
+        grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz'
       })) || [];
       
       setSessoes(sessoesProcessadas);
@@ -134,14 +134,28 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
       let tabelaCorreta = sessaoPresenca ? 'sessoes_presenca' : 'sessoes';
       console.log(`🔄 Excluindo sessão da tabela: ${tabelaCorreta}...`);
       
-      const { error: errorSessao } = await supabase
+      const { data: deletedData, error: errorSessao, status, statusText } = await supabase
         .from(tabelaCorreta)
         .delete()
-        .eq('id', sessaoId);
+        .eq('id', sessaoId)
+        .select(); // IMPORTANTE: adicionar .select() para ver o que foi deletado
+
+      console.log('📋 Resposta do DELETE:', {
+        data: deletedData,
+        error: errorSessao,
+        status,
+        statusText,
+        qtdDeletados: deletedData?.length || 0
+      });
 
       if (errorSessao) {
         console.error('❌ Erro ao excluir sessão:', errorSessao);
         throw errorSessao;
+      }
+
+      if (!deletedData || deletedData.length === 0) {
+        console.error('⚠️ NENHUM REGISTRO FOI EXCLUÍDO! Pode ser problema de permissão (RLS)');
+        throw new Error('Nenhum registro foi excluído. Verifique as permissões no banco de dados.');
       }
 
       console.log('✅ Sessão excluída com sucesso!');
