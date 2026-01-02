@@ -10,6 +10,8 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   });
   const [tipoGrafico, setTipoGrafico] = useState('barras');
   const [dadosGrafico, setDadosGrafico] = useState([]);
+  const [gerandoPDF, setGerandoPDF] = useState(false);
+  const [mostrarOpcoesRelatorio, setMostrarOpcoesRelatorio] = useState(false);
 
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -190,6 +192,162 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
     }
   };
 
+  // Função para gerar PDF (versão inline simplificada)
+  const gerarPDF = async () => {
+    setGerandoPDF(true);
+    try {
+      // Obter jsPDF
+      const getJsPDF = async () => {
+        if (window.jspdf && window.jspdf.jsPDF) {
+          return window.jspdf.jsPDF;
+        }
+        // Se não estiver disponível globalmente, tenta importar
+        const module = await import('jspdf');
+        return module.default || module.jsPDF;
+      };
+
+      const jsPDF = await getJsPDF();
+      const doc = new jsPDF();
+
+      let yPos = 15;
+
+      // CABEÇALHO
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Relatório Financeiro', 105, yPos, { align: 'center' });
+      yPos += 10;
+
+      const periodoTexto = filtroAnalise.mes > 0 
+        ? `${meses[filtroAnalise.mes - 1]} de ${filtroAnalise.ano}`
+        : `Ano ${filtroAnalise.ano}`;
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Período: ${periodoTexto}`, 105, yPos, { align: 'center' });
+      yPos += 15;
+
+      // RESUMO
+      const totalReceitas = dadosGrafico.reduce((sum, item) => sum + item.receitas, 0);
+      const totalDespesas = dadosGrafico.reduce((sum, item) => sum + item.despesas, 0);
+      const saldoFinal = totalReceitas - totalDespesas;
+
+      doc.setFillColor(250, 250, 250);
+      doc.rect(10, yPos, 190, 30, 'FD');
+
+      doc.setFontSize(10);
+      doc.setTextColor(34, 139, 34);
+      doc.text('Receitas:', 15, yPos + 7);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 65, yPos + 7);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(220, 38, 38);
+      doc.text('Despesas:', 15, yPos + 15);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 65, yPos + 15);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 102, 204);
+      doc.text('Saldo:', 15, yPos + 23);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(saldoFinal >= 0 ? 34 : 220, saldoFinal >= 0 ? 139 : 38, saldoFinal >= 0 ? 34 : 38);
+      doc.text(`R$ ${saldoFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 65, yPos + 23);
+
+      yPos += 40;
+      doc.setTextColor(0, 0, 0);
+
+      // TABELA MENSAL (se ano inteiro)
+      if (filtroAnalise.mes === 0 && dadosGrafico.length > 1) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('MOVIMENTAÇÃO MENSAL', 10, yPos);
+        yPos += 8;
+
+        // Cabeçalho
+        doc.setFontSize(9);
+        doc.setFillColor(230, 230, 230);
+        doc.rect(10, yPos, 190, 8, 'F');
+        doc.text('Mês', 15, yPos + 5);
+        doc.text('Receitas', 70, yPos + 5, { align: 'right' });
+        doc.text('Despesas', 115, yPos + 5, { align: 'right' });
+        doc.text('Saldo', 155, yPos + 5, { align: 'right' });
+        doc.text('Gráfico', 175, yPos + 5);
+        yPos += 10;
+
+        doc.setFont('helvetica', 'normal');
+        const maxValor = Math.max(...dadosGrafico.map(d => Math.max(d.receitas, d.despesas)));
+
+        dadosGrafico.forEach((dado, index) => {
+          if (yPos > 260) {
+            doc.addPage();
+            yPos = 20;
+          }
+
+          if (index % 2 === 0) {
+            doc.setFillColor(248, 248, 248);
+            doc.rect(10, yPos - 2, 190, 10, 'F');
+          }
+
+          doc.setTextColor(0, 0, 0);
+          doc.text(dado.mes, 15, yPos + 4);
+          doc.setTextColor(34, 139, 34);
+          doc.text(`R$ ${dado.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 70, yPos + 4, { align: 'right' });
+          doc.setTextColor(220, 38, 38);
+          doc.text(`R$ ${dado.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 115, yPos + 4, { align: 'right' });
+          
+          const saldo = dado.receitas - dado.despesas;
+          doc.setTextColor(saldo >= 0 ? 34 : 220, saldo >= 0 ? 139 : 38, saldo >= 0 ? 34 : 38);
+          doc.text(`R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 155, yPos + 4, { align: 'right' });
+
+          // Mini barras
+          const alturaMaxBarra = 6;
+          const alturaReceitas = maxValor > 0 ? (dado.receitas / maxValor) * alturaMaxBarra : 0;
+          const alturaDespesas = maxValor > 0 ? (dado.despesas / maxValor) * alturaMaxBarra : 0;
+          
+          doc.setFillColor(34, 139, 34);
+          doc.rect(165, yPos + 6 - alturaReceitas, 3, alturaReceitas, 'F');
+          doc.setFillColor(220, 38, 38);
+          doc.rect(168.5, yPos + 6 - alturaDespesas, 3, alturaDespesas, 'F');
+
+          yPos += 10;
+        });
+      }
+
+      // Salvar
+      const nomeArquivo = filtroAnalise.mes > 0
+        ? `Relatorio_${meses[filtroAnalise.mes - 1]}_${filtroAnalise.ano}.pdf`
+        : `Relatorio_Anual_${filtroAnalise.ano}.pdf`;
+      
+      doc.save(nomeArquivo);
+      alert(`✅ Relatório gerado!\n\n${nomeArquivo}`);
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      alert(`❌ Erro ao gerar PDF:\n${error.message}`);
+    } finally {
+      setGerandoPDF(false);
+      setMostrarOpcoesRelatorio(false);
+    }
+  };
+
+  const compartilharWhatsApp = () => {
+    const periodoTexto = filtroAnalise.mes > 0 
+      ? `${meses[filtroAnalise.mes - 1]}/${filtroAnalise.ano}`
+      : `${filtroAnalise.ano}`;
+
+    const totalReceitas = dadosGrafico.reduce((sum, item) => sum + item.receitas, 0);
+    const totalDespesas = dadosGrafico.reduce((sum, item) => sum + item.despesas, 0);
+    const totalLucro = totalReceitas - totalDespesas;
+
+    const mensagem = `📊 *Relatório Financeiro - ${periodoTexto}*\n\n` +
+      `💰 Receitas: R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+      `💸 Despesas: R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+      `📈 Saldo: R$ ${totalLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+      `_Relatório completo disponível em PDF_`;
+
+    const mensagemFormatada = encodeURIComponent(mensagem);
+    window.open(`https://wa.me/?text=${mensagemFormatada}`, '_blank');
+    setMostrarOpcoesRelatorio(false);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -203,13 +361,112 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             <p className="text-blue-100 text-sm">Visualização completa de receitas e despesas</p>
           </div>
         </div>
-        <button 
-          onClick={onClose} 
-          className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2"
-        >
-          <span>←</span>
-          <span>Voltar ao Dashboard</span>
-        </button>
+        
+        {/* Botões do cabeçalho */}
+        <div className="flex items-center gap-3">
+          {/* Botão Gerar Relatório - INLINE */}
+          <div className="relative">
+            <button
+              onClick={() => setMostrarOpcoesRelatorio(!mostrarOpcoesRelatorio)}
+              disabled={gerandoPDF}
+              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg"
+            >
+              {gerandoPDF ? (
+                <>
+                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Gerando...</span>
+                </>
+              ) : (
+                <>
+                  <span>📤</span>
+                  <span>Enviar Relatório</span>
+                </>
+              )}
+            </button>
+
+            {/* Menu de Opções */}
+            {mostrarOpcoesRelatorio && !gerandoPDF && (
+              <>
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-2xl border-2 border-gray-200 z-50">
+                  <div className="p-3 border-b border-gray-200">
+                    <p className="text-sm font-semibold text-gray-700">Escolha uma opção:</p>
+                  </div>
+                  
+                  <div className="p-2 space-y-1">
+                    <button
+                      onClick={gerarPDF}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-left"
+                    >
+                      <div className="bg-blue-100 p-2 rounded-lg">
+                        <span className="text-2xl">📄</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-sm">Baixar PDF</p>
+                        <p className="text-xs text-gray-600">Relatório completo</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={compartilharWhatsApp}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-50 transition-colors text-left"
+                    >
+                      <div className="bg-green-100 p-2 rounded-lg">
+                        <span className="text-2xl">📱</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-sm">WhatsApp</p>
+                        <p className="text-xs text-gray-600">Compartilhar resumo</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={async () => {
+                        await gerarPDF();
+                        setTimeout(() => compartilharWhatsApp(), 1000);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-purple-50 transition-colors text-left"
+                    >
+                      <div className="bg-purple-100 p-2 rounded-lg">
+                        <span className="text-2xl">🚀</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800 text-sm">PDF + WhatsApp</p>
+                        <p className="text-xs text-gray-600">Baixar e compartilhar</p>
+                      </div>
+                    </button>
+                  </div>
+
+                  <div className="p-2 border-t border-gray-200">
+                    <button
+                      onClick={() => setMostrarOpcoesRelatorio(false)}
+                      className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+
+                {/* Overlay */}
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setMostrarOpcoesRelatorio(false)}
+                />
+              </>
+            )}
+          </div>
+          
+          {/* Botão Voltar */}
+          <button 
+            onClick={onClose} 
+            className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2"
+          >
+            <span>←</span>
+            <span>Voltar ao Dashboard</span>
+          </button>
+        </div>
       </div>
 
       {/* CONTEÚDO */}
