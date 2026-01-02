@@ -78,27 +78,49 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     }
 
     try {
-      // 1. PRIMEIRO: Excluir todos os registros de presença da sessão
-      const { error: errorPresenca } = await supabase
+      console.log('🗑️ Iniciando exclusão da sessão ID:', sessaoId);
+
+      // 1. Verificar se a sessão existe
+      const { data: sessaoExiste, error: errorCheck } = await supabase
+        .from('sessoes_presenca')
+        .select('id, data_sessao')
+        .eq('id', sessaoId)
+        .single();
+
+      if (errorCheck) {
+        console.error('❌ Erro ao verificar sessão:', errorCheck);
+        throw new Error('Sessão não encontrada: ' + errorCheck.message);
+      }
+
+      console.log('✅ Sessão encontrada:', sessaoExiste);
+
+      // 2. PRIMEIRO: Excluir todos os registros de presença da sessão
+      console.log('🔄 Excluindo registros de presença...');
+      const { error: errorPresenca, count: countPresenca } = await supabase
         .from('registros_presenca')
         .delete()
         .eq('sessao_id', sessaoId);
 
       if (errorPresenca) {
-        console.error('Erro ao excluir registros de presença:', errorPresenca);
+        console.error('❌ Erro ao excluir registros de presença:', errorPresenca);
         throw new Error('Erro ao excluir registros de presença: ' + errorPresenca.message);
       }
 
-      // 2. DEPOIS: Excluir a sessão
-      const { error: errorSessao } = await supabase
+      console.log(`✅ Registros de presença excluídos: ${countPresenca || 0}`);
+
+      // 3. DEPOIS: Excluir a sessão
+      console.log('🔄 Excluindo sessão...');
+      const { error: errorSessao, count: countSessao } = await supabase
         .from('sessoes_presenca')
         .delete()
         .eq('id', sessaoId);
 
       if (errorSessao) {
-        console.error('Erro ao excluir sessão:', errorSessao);
+        console.error('❌ Erro ao excluir sessão:', errorSessao);
         throw new Error('Erro ao excluir sessão: ' + errorSessao.message);
       }
+
+      console.log(`✅ Sessão excluída: ${countSessao || 0} registro(s)`);
 
       setMensagem({
         tipo: 'sucesso',
@@ -109,7 +131,7 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
       await carregarSessoes();
 
     } catch (error) {
-      console.error('Erro ao excluir sessão:', error);
+      console.error('💥 Erro ao excluir sessão:', error);
       setMensagem({
         tipo: 'erro',
         texto: error.message || 'Erro ao excluir sessão. Tente novamente.'
