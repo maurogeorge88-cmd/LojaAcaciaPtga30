@@ -8,6 +8,8 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
     mes: 0,
     ano: new Date().getFullYear()
   });
+  const [tipoGrafico, setTipoGrafico] = useState('barras');
+  const [dadosGrafico, setDadosGrafico] = useState([]);
 
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -94,6 +96,78 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
     }
   }, [isOpen]);
 
+  // Processar dados do gráfico quando lançamentos ou filtros mudarem
+  useEffect(() => {
+    if (lancamentosCompletos.length > 0) {
+      processarDadosGrafico();
+    }
+  }, [lancamentosCompletos, filtroAnalise]);
+
+  const processarDadosGrafico = () => {
+    const mesesAbrev = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Se filtro é mês específico, mostrar apenas esse mês
+    if (filtroAnalise.mes > 0) {
+      const lancamentosMes = lancamentosCompletos.filter(l => {
+        if (l.status !== 'pago') return false;
+        if (l.tipo_pagamento === 'compensacao') return false;
+        
+        const dataRef = l.data_pagamento || l.data_vencimento;
+        if (!dataRef) return false;
+        const data = parseData(dataRef);
+        return data.getFullYear() === filtroAnalise.ano && data.getMonth() + 1 === filtroAnalise.mes;
+      });
+
+      const receitas = lancamentosMes
+        .filter(l => l.categorias_financeiras?.tipo === 'receita')
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      
+      const despesas = lancamentosMes
+        .filter(l => l.categorias_financeiras?.tipo === 'despesa')
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      setDadosGrafico([{
+        mes: meses[filtroAnalise.mes - 1],
+        receitas,
+        despesas,
+        lucro: receitas - despesas
+      }]);
+    } else {
+      // Ano inteiro - agrupar por mês
+      const dadosPorMes = {};
+      mesesAbrev.forEach((mes, i) => {
+        dadosPorMes[i + 1] = { mes, receitas: 0, despesas: 0 };
+      });
+
+      lancamentosCompletos.forEach(l => {
+        if (l.status !== 'pago') return;
+        if (l.tipo_pagamento === 'compensacao') return;
+        
+        const dataRef = l.data_pagamento || l.data_vencimento;
+        if (!dataRef) return;
+        const data = parseData(dataRef);
+        
+        if (data.getFullYear() !== filtroAnalise.ano) return;
+        
+        const mes = data.getMonth() + 1;
+        const valor = parseFloat(l.valor);
+        
+        if (l.categorias_financeiras?.tipo === 'receita') {
+          dadosPorMes[mes].receitas += valor;
+        } else if (l.categorias_financeiras?.tipo === 'despesa') {
+          dadosPorMes[mes].despesas += valor;
+        }
+      });
+
+      const dados = Object.values(dadosPorMes).map(d => ({
+        ...d,
+        lucro: d.receitas - d.despesas
+      }));
+
+      setDadosGrafico(dados);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -146,6 +220,168 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* SEÇÃO: GRÁFICO FINANCEIRO - CSS PURO */}
+          <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200">
+            <div className="flex items-center justify-between mb-6">
+              <h5 className="text-lg font-bold text-gray-700">📊 Gráfico Financeiro Mensal</h5>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setTipoGrafico('barras')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    tipoGrafico === 'barras'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Barras Verticais
+                </button>
+                <button
+                  onClick={() => setTipoGrafico('lista')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    tipoGrafico === 'lista'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  Lista Detalhada
+                </button>
+              </div>
+            </div>
+
+            {dadosGrafico.length > 0 ? (
+              <div>
+                {/* Gráfico de Barras Verticais em CSS */}
+                {tipoGrafico === 'barras' && (
+                  <div className="space-y-4">
+                    {(() => {
+                      const maxValor = Math.max(...dadosGrafico.map(d => Math.max(d.receitas, d.despesas)));
+                      
+                      return dadosGrafico.map((dado, index) => (
+                        <div key={index} className="space-y-2">
+                          {/* Mês e valores */}
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-sm text-gray-700 w-12">{dado.mes}</span>
+                            <div className="flex-1 flex gap-2 items-center px-4">
+                              {/* Barra de Despesas */}
+                              <div className="flex-1 relative">
+                                <div className="bg-gray-100 rounded-full h-8 overflow-hidden">
+                                  <div 
+                                    className="bg-red-500 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                                    style={{ width: `${(dado.despesas / maxValor) * 100}%` }}
+                                  >
+                                    {dado.despesas > 0 && (
+                                      <span className="text-xs font-bold text-white whitespace-nowrap">
+                                        {formatarMoeda(dado.despesas)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-xs text-red-600 font-medium mt-0.5">Despesas</div>
+                              </div>
+                              
+                              {/* Barra de Receitas */}
+                              <div className="flex-1 relative">
+                                <div className="bg-gray-100 rounded-full h-8 overflow-hidden">
+                                  <div 
+                                    className="bg-green-500 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
+                                    style={{ width: `${(dado.receitas / maxValor) * 100}%` }}
+                                  >
+                                    {dado.receitas > 0 && (
+                                      <span className="text-xs font-bold text-white whitespace-nowrap">
+                                        {formatarMoeda(dado.receitas)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-xs text-green-600 font-medium mt-0.5">Receitas</div>
+                              </div>
+                            </div>
+                            
+                            {/* Lucro */}
+                            <div className={`w-32 text-right ${dado.lucro >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                              <div className="text-xs font-medium">Lucro</div>
+                              <div className="text-sm font-bold">{formatarMoeda(dado.lucro)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                )}
+
+                {/* Lista Detalhada */}
+                {tipoGrafico === 'lista' && (
+                  <div className="space-y-3">
+                    {dadosGrafico.map((dado, index) => (
+                      <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <h6 className="font-bold text-gray-800">{dado.mes}</h6>
+                          <div className={`px-3 py-1 rounded-full text-sm font-bold ${
+                            dado.lucro >= 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            Lucro: {formatarMoeda(dado.lucro)}
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Receitas */}
+                          <div className="bg-white rounded-lg p-3 border-l-4 border-green-500">
+                            <div className="text-xs text-gray-600 mb-1">Receitas</div>
+                            <div className="text-lg font-bold text-green-600">{formatarMoeda(dado.receitas)}</div>
+                            {dado.receitas > 0 && (
+                              <div className="mt-2 bg-green-50 rounded h-2">
+                                <div className="bg-green-500 h-2 rounded" style={{ width: '100%' }}></div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Despesas */}
+                          <div className="bg-white rounded-lg p-3 border-l-4 border-red-500">
+                            <div className="text-xs text-gray-600 mb-1">Despesas</div>
+                            <div className="text-lg font-bold text-red-600">{formatarMoeda(dado.despesas)}</div>
+                            {dado.despesas > 0 && (
+                              <div className="mt-2 bg-red-50 rounded h-2">
+                                <div className="bg-red-500 h-2 rounded" style={{ width: `${(dado.despesas / dado.receitas) * 100}%` }}></div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Cards de resumo - sempre visível */}
+                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t-2 border-gray-200">
+                  <div className="bg-green-50 rounded-lg p-4 border-2 border-green-300">
+                    <p className="text-xs text-green-600 font-semibold mb-1">💰 Total Receitas</p>
+                    <p className="text-xl font-bold text-green-700">
+                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.receitas, 0))}
+                    </p>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
+                    <p className="text-xs text-red-600 font-semibold mb-1">💸 Total Despesas</p>
+                    <p className="text-xl font-bold text-red-700">
+                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.despesas, 0))}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300">
+                    <p className="text-xs text-blue-600 font-semibold mb-1">📊 Lucro Total</p>
+                    <p className={`text-xl font-bold ${
+                      dadosGrafico.reduce((sum, item) => sum + item.lucro, 0) >= 0 ? 'text-blue-700' : 'text-red-700'
+                    }`}>
+                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.lucro, 0))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
+                <p>⏳ Carregando dados do gráfico...</p>
+              </div>
+            )}
           </div>
 
           {/* Grid Receitas e Despesas */}
