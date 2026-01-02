@@ -4,6 +4,8 @@ import { supabase } from '../supabaseClient';
 const CadastroSessao = ({ onSuccess, onClose }) => {
   const [dataSessao, setDataSessao] = useState('');
   const [grauSessao, setGrauSessao] = useState(1);
+  const [tipoSessao, setTipoSessao] = useState('');
+  const [observacao, setObservacao] = useState('');
   const [graus, setGraus] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
@@ -43,14 +45,16 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     setMensagem({ tipo: '', texto: '' });
 
     try {
-      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao });
+      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao, tipoSessao, observacao });
 
       // IMPORTANTE: Remover .single() para evitar erro "Cannot coerce to single JSON object"
       const { data, error } = await supabase
         .from('sessoes_presenca')
         .insert([{
           data_sessao: dataSessao,
-          grau_sessao_id: grauSessao
+          grau_sessao_id: grauSessao,
+          tipo_sessao: tipoSessao || null,
+          observacao: observacao || null
         }])
         .select(); // SEM .single()
 
@@ -69,6 +73,8 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
       // Limpar formulário
       setDataSessao('');
       setGrauSessao(graus[0]?.id || 1);
+      setTipoSessao('');
+      setObservacao('');
 
       // Chamar callback de sucesso
       if (onSuccess) {
@@ -132,6 +138,41 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Tipo de Sessão */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Tipo de Sessão
+          </label>
+          <select
+            value={tipoSessao}
+            onChange={(e) => setTipoSessao(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Selecione o tipo</option>
+            <option value="Ordinária">Ordinária</option>
+            <option value="Extraordinária">Extraordinária</option>
+            <option value="Magna">Magna</option>
+            <option value="Branca">Branca</option>
+            <option value="Fúnebre">Fúnebre</option>
+            <option value="Instalação">Instalação</option>
+            <option value="Especial">Especial</option>
+          </select>
+        </div>
+
+        {/* Observação */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Observação
+          </label>
+          <textarea
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            rows={3}
+            placeholder="Digite observações sobre a sessão (opcional)"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* Botões */}
