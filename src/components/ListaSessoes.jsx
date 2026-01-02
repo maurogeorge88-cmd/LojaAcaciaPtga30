@@ -37,9 +37,15 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     try {
       setLoading(true);
 
+      // Buscar direto da tabela sessoes_presenca ao invés da view
       let query = supabase
-        .from('vw_sessoes_completas')
-        .select('*')
+        .from('sessoes_presenca')
+        .select(`
+          *,
+          grau_sessao:grau_sessao_id(nome),
+          total_presencas:registros_presenca(count),
+          total_elegiveis:registros_presenca(count)
+        `)
         .order('data_sessao', { ascending: false });
 
       // Aplicar filtros se houver
@@ -59,7 +65,14 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
       const { data, error } = await query;
 
       if (error) throw error;
-      setSessoes(data || []);
+      
+      // Processar dados para ter o mesmo formato da view
+      const sessoesProcessadas = data?.map(sessao => ({
+        ...sessao,
+        grau_sessao: sessao.grau_sessao?.nome || 'Aprendiz'
+      })) || [];
+      
+      setSessoes(sessoesProcessadas);
 
     } catch (error) {
       console.error('Erro ao carregar sessões:', error);
@@ -133,12 +146,16 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
 
       console.log('✅ Sessão excluída com sucesso!');
 
+      // IMPORTANTE: Remover do estado IMEDIATAMENTE para atualização visual instantânea
+      setSessoes(prevSessoes => prevSessoes.filter(s => s.id !== sessaoId));
+
       setMensagem({
         tipo: 'sucesso',
         texto: 'Sessão excluída com sucesso!'
       });
 
-      await carregarSessoes();
+      // Recarregar em background para sincronizar
+      setTimeout(() => carregarSessoes(), 500);
 
     } catch (error) {
       console.error('💥 Erro ao excluir sessão:', error);
