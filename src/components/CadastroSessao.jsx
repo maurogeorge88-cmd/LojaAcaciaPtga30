@@ -69,7 +69,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
         .insert([{
           data_sessao: dataSessao,
           grau_sessao_id: grauSessao,
-          classificacao_sessao_id: classificacaoSessaoId || null,
+          classificacao_id: classificacaoSessaoId || null,
           observacoes: observacoes || null
         }])
         .select(); // SEM .single()
