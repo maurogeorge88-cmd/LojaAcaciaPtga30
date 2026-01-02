@@ -222,168 +222,6 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
           </div>
 
-          {/* SEÇÃO: GRÁFICO FINANCEIRO - CSS PURO */}
-          <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h5 className="text-lg font-bold text-gray-700">📊 Gráfico Financeiro Mensal</h5>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setTipoGrafico('barras')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    tipoGrafico === 'barras'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Barras Verticais
-                </button>
-                <button
-                  onClick={() => setTipoGrafico('lista')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    tipoGrafico === 'lista'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  Lista Detalhada
-                </button>
-              </div>
-            </div>
-
-            {dadosGrafico.length > 0 ? (
-              <div>
-                {/* Gráfico de Barras Verticais em CSS */}
-                {tipoGrafico === 'barras' && (
-                  <div className="space-y-4">
-                    {(() => {
-                      const maxValor = Math.max(...dadosGrafico.map(d => Math.max(d.receitas, d.despesas)));
-                      
-                      return dadosGrafico.map((dado, index) => (
-                        <div key={index} className="space-y-2">
-                          {/* Mês e valores */}
-                          <div className="flex items-center justify-between">
-                            <span className="font-semibold text-sm text-gray-700 w-12">{dado.mes}</span>
-                            <div className="flex-1 flex gap-2 items-center px-4">
-                              {/* Barra de Despesas */}
-                              <div className="flex-1 relative">
-                                <div className="bg-gray-100 rounded-full h-8 overflow-hidden">
-                                  <div 
-                                    className="bg-red-500 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                                    style={{ width: `${(dado.despesas / maxValor) * 100}%` }}
-                                  >
-                                    {dado.despesas > 0 && (
-                                      <span className="text-xs font-bold text-white whitespace-nowrap">
-                                        {formatarMoeda(dado.despesas)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="text-xs text-red-600 font-medium mt-0.5">Despesas</div>
-                              </div>
-                              
-                              {/* Barra de Receitas */}
-                              <div className="flex-1 relative">
-                                <div className="bg-gray-100 rounded-full h-8 overflow-hidden">
-                                  <div 
-                                    className="bg-green-500 h-full rounded-full transition-all duration-500 flex items-center justify-end pr-2"
-                                    style={{ width: `${(dado.receitas / maxValor) * 100}%` }}
-                                  >
-                                    {dado.receitas > 0 && (
-                                      <span className="text-xs font-bold text-white whitespace-nowrap">
-                                        {formatarMoeda(dado.receitas)}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                                <div className="text-xs text-green-600 font-medium mt-0.5">Receitas</div>
-                              </div>
-                            </div>
-                            
-                            {/* Lucro */}
-                            <div className={`w-32 text-right ${dado.lucro >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                              <div className="text-xs font-medium">Lucro</div>
-                              <div className="text-sm font-bold">{formatarMoeda(dado.lucro)}</div>
-                            </div>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                )}
-
-                {/* Lista Detalhada */}
-                {tipoGrafico === 'lista' && (
-                  <div className="space-y-3">
-                    {dadosGrafico.map((dado, index) => (
-                      <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center justify-between mb-3">
-                          <h6 className="font-bold text-gray-800">{dado.mes}</h6>
-                          <div className={`px-3 py-1 rounded-full text-sm font-bold ${
-                            dado.lucro >= 0 ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            Lucro: {formatarMoeda(dado.lucro)}
-                          </div>
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Receitas */}
-                          <div className="bg-white rounded-lg p-3 border-l-4 border-green-500">
-                            <div className="text-xs text-gray-600 mb-1">Receitas</div>
-                            <div className="text-lg font-bold text-green-600">{formatarMoeda(dado.receitas)}</div>
-                            {dado.receitas > 0 && (
-                              <div className="mt-2 bg-green-50 rounded h-2">
-                                <div className="bg-green-500 h-2 rounded" style={{ width: '100%' }}></div>
-                              </div>
-                            )}
-                          </div>
-                          
-                          {/* Despesas */}
-                          <div className="bg-white rounded-lg p-3 border-l-4 border-red-500">
-                            <div className="text-xs text-gray-600 mb-1">Despesas</div>
-                            <div className="text-lg font-bold text-red-600">{formatarMoeda(dado.despesas)}</div>
-                            {dado.despesas > 0 && (
-                              <div className="mt-2 bg-red-50 rounded h-2">
-                                <div className="bg-red-500 h-2 rounded" style={{ width: `${(dado.despesas / dado.receitas) * 100}%` }}></div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Cards de resumo - sempre visível */}
-                <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t-2 border-gray-200">
-                  <div className="bg-green-50 rounded-lg p-4 border-2 border-green-300">
-                    <p className="text-xs text-green-600 font-semibold mb-1">💰 Total Receitas</p>
-                    <p className="text-xl font-bold text-green-700">
-                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.receitas, 0))}
-                    </p>
-                  </div>
-                  <div className="bg-red-50 rounded-lg p-4 border-2 border-red-300">
-                    <p className="text-xs text-red-600 font-semibold mb-1">💸 Total Despesas</p>
-                    <p className="text-xl font-bold text-red-700">
-                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.despesas, 0))}
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-4 border-2 border-blue-300">
-                    <p className="text-xs text-blue-600 font-semibold mb-1">📊 Lucro Total</p>
-                    <p className={`text-xl font-bold ${
-                      dadosGrafico.reduce((sum, item) => sum + item.lucro, 0) >= 0 ? 'text-blue-700' : 'text-red-700'
-                    }`}>
-                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.lucro, 0))}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                <p>⏳ Carregando dados do gráfico...</p>
-              </div>
-            )}
-          </div>
-
           {/* Grid Receitas e Despesas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* RECEITAS POR CATEGORIA */}
@@ -882,6 +720,135 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 })()}
               </div>
             </div>
+          </div>
+
+          {/* SEÇÃO: GRÁFICO FINANCEIRO MENSAL - Barras Verticais */}
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border-2 border-blue-200 mt-8">
+            <div className="mb-4">
+              <h5 className="text-lg font-bold text-gray-800 mb-1">📊 Gráfico Financeiro Mensal</h5>
+              <p className="text-sm text-gray-600">Visualização de receitas e despesas por mês</p>
+            </div>
+
+            {dadosGrafico.length > 0 ? (
+              <div className="bg-white rounded-lg p-6 shadow-inner">
+                {/* Gráfico de Barras Verticais */}
+                <div className="flex items-end justify-around gap-2 h-80 border-b-2 border-gray-300 pb-2">
+                  {(() => {
+                    const maxValor = Math.max(...dadosGrafico.flatMap(d => [d.receitas, d.despesas]));
+                    
+                    return dadosGrafico.map((dado, index) => (
+                      <div key={index} className="flex flex-col items-center gap-2 flex-1">
+                        {/* Barras */}
+                        <div className="flex items-end gap-1 h-full w-full justify-center">
+                          {/* Barra Despesas */}
+                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '40%' }}>
+                            <div className="relative group">
+                              <div 
+                                className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
+                                style={{ 
+                                  height: `${(dado.despesas / maxValor) * 280}px`,
+                                  minHeight: dado.despesas > 0 ? '10px' : '0',
+                                  width: '100%',
+                                  minWidth: '20px'
+                                }}
+                              >
+                                {/* Valor no topo */}
+                                {dado.despesas > 0 && (
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                    <span className="text-[9px] font-bold text-red-600 bg-white px-1 rounded shadow">
+                                      {formatarMoeda(dado.despesas).replace('R$', '').trim()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Tooltip */}
+                              <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-10">
+                                <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                  Despesas: {formatarMoeda(dado.despesas)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Barra Receitas */}
+                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '40%' }}>
+                            <div className="relative group">
+                              <div 
+                                className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
+                                style={{ 
+                                  height: `${(dado.receitas / maxValor) * 280}px`,
+                                  minHeight: dado.receitas > 0 ? '10px' : '0',
+                                  width: '100%',
+                                  minWidth: '20px'
+                                }}
+                              >
+                                {/* Valor no topo */}
+                                {dado.receitas > 0 && (
+                                  <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
+                                    <span className="text-[9px] font-bold text-green-600 bg-white px-1 rounded shadow">
+                                      {formatarMoeda(dado.receitas).replace('R$', '').trim()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Tooltip */}
+                              <div className="hidden group-hover:block absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 z-10">
+                                <div className="bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                  Receitas: {formatarMoeda(dado.receitas)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Label do mês */}
+                        <div className="text-xs font-semibold text-gray-700 mt-2">{dado.mes}</div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                {/* Legenda */}
+                <div className="flex items-center justify-center gap-6 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-400 rounded"></div>
+                    <span className="text-sm font-medium text-gray-700">Despesas</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-400 rounded"></div>
+                    <span className="text-sm font-medium text-gray-700">Receitas</span>
+                  </div>
+                </div>
+
+                {/* Cards de resumo compactos */}
+                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-200">
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-200 text-center">
+                    <p className="text-[10px] text-green-600 font-semibold mb-1">Total Receitas</p>
+                    <p className="text-base font-bold text-green-700">
+                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.receitas, 0))}
+                    </p>
+                  </div>
+                  <div className="bg-red-50 rounded-lg p-3 border border-red-200 text-center">
+                    <p className="text-[10px] text-red-600 font-semibold mb-1">Total Despesas</p>
+                    <p className="text-base font-bold text-red-700">
+                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.despesas, 0))}
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 text-center">
+                    <p className="text-[10px] text-blue-600 font-semibold mb-1">Lucro Total</p>
+                    <p className={`text-base font-bold ${
+                      dadosGrafico.reduce((sum, item) => sum + item.lucro, 0) >= 0 ? 'text-blue-700' : 'text-red-700'
+                    }`}>
+                      {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.lucro, 0))}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <p>⏳ Carregando dados do gráfico...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
