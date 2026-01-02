@@ -576,12 +576,20 @@ export default function DashboardPresenca() {
 
   const carregar = async () => {
     try {
-      // 1. Buscar sessões do período
+      // Obter data atual no Brasil (considerar UTC-3 ou UTC-4)
+      const hoje = new Date();
+      const dataHojeBrasil = new Date(hoje.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
+      const dataLimiteHoje = dataHojeBrasil.toISOString().split('T')[0];
+      
+      // Usar a data menor entre dataFim e hoje
+      const dataFimReal = dataFim < dataLimiteHoje ? dataFim : dataLimiteHoje;
+      
+      // 1. Buscar sessões do período (sem incluir futuras)
       const { data: sessoesPerio, count: totalSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id', { count: 'exact' })
         .gte('data_sessao', dataInicio)
-        .lte('data_sessao', dataFim);
+        .lte('data_sessao', dataFimReal);
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
