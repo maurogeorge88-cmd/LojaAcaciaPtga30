@@ -4,14 +4,16 @@ import { supabase } from '../supabaseClient';
 const CadastroSessao = ({ onSuccess, onClose }) => {
   const [dataSessao, setDataSessao] = useState('');
   const [grauSessao, setGrauSessao] = useState(1);
-  const [tipoSessao, setTipoSessao] = useState('');
+  const [tipoSessaoId, setTipoSessaoId] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [graus, setGraus] = useState([]);
+  const [tiposSessao, setTiposSessao] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
 
   useEffect(() => {
     carregarGraus();
+    carregarTiposSessao();
   }, []);
 
   const carregarGraus = async () => {
@@ -33,6 +35,20 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     }
   };
 
+  const carregarTiposSessao = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('tipos_sessao')
+        .select('*')
+        .order('nome');
+
+      if (error) throw error;
+      setTiposSessao(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar tipos de sessão:', error);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -45,7 +61,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     setMensagem({ tipo: '', texto: '' });
 
     try {
-      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao, tipoSessao, observacoes });
+      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao, tipoSessaoId, observacoes });
 
       // IMPORTANTE: Remover .single() para evitar erro "Cannot coerce to single JSON object"
       const { data, error } = await supabase
@@ -53,7 +69,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
         .insert([{
           data_sessao: dataSessao,
           grau_sessao_id: grauSessao,
-          tipo_sessao: tipoSessao || null,
+          tipo_sessao_id: tipoSessaoId || null,
           observacoes: observacoes || null
         }])
         .select(); // SEM .single()
@@ -73,7 +89,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
       // Limpar formulário
       setDataSessao('');
       setGrauSessao(graus[0]?.id || 1);
-      setTipoSessao('');
+      setTipoSessaoId('');
       setObservacoes('');
 
       // Chamar callback de sucesso
@@ -146,18 +162,16 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
             Tipo de Sessão
           </label>
           <select
-            value={tipoSessao}
-            onChange={(e) => setTipoSessao(e.target.value)}
+            value={tipoSessaoId}
+            onChange={(e) => setTipoSessaoId(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Selecione o tipo</option>
-            <option value="Ordinária">Ordinária</option>
-            <option value="Extraordinária">Extraordinária</option>
-            <option value="Magna">Magna</option>
-            <option value="Branca">Branca</option>
-            <option value="Fúnebre">Fúnebre</option>
-            <option value="Instalação">Instalação</option>
-            <option value="Especial">Especial</option>
+            {tiposSessao.map(tipo => (
+              <option key={tipo.id} value={tipo.id}>
+                {tipo.nome}
+              </option>
+            ))}
           </select>
         </div>
 
