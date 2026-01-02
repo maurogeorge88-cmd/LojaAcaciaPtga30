@@ -286,14 +286,14 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se não computa, mostra - (sem obrigação)
       if (!computa) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-gray-100">
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
             <span className="text-gray-400">-</span>
           </td>
         );
       }
       // Se computa, mostra ausência (✗ vermelho)
       return (
-        <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-red-50">
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
           <span className="text-red-600 text-lg font-bold">✗</span>
         </td>
       );
@@ -304,14 +304,14 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se veio (presente), mostra ✓ normal
       if (reg.presente) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-green-50">
+          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
             <span className="text-green-600 text-lg font-bold">✓</span>
           </td>
         );
       }
       // Se ausente (não computa), mostra -
       return (
-        <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -320,7 +320,7 @@ export default function ModalGradePresenca({ onFechar }) {
     // Computa normalmente
     if (reg.presente) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-green-50">
+        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
           <span className="text-green-600 text-lg font-bold">✓</span>
         </td>
       );
@@ -330,7 +330,7 @@ export default function ModalGradePresenca({ onFechar }) {
       return (
         <td 
           key={sessaoId} 
-          className="border border-gray-300 px-1 py-1 text-center bg-yellow-50"
+          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
           title={reg.justificativa}
         >
           <span className="text-yellow-600 text-lg font-bold">J</span>
@@ -339,7 +339,7 @@ export default function ModalGradePresenca({ onFechar }) {
     }
 
     return (
-      <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-red-50">
+      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
         <span className="text-red-600 text-lg font-bold">✗</span>
       </td>
     );
@@ -425,14 +425,18 @@ export default function ModalGradePresenca({ onFechar }) {
           <table className="w-full border-collapse text-xs">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
-                <th className="border border-gray-300 px-2 py-2 text-left font-semibold bg-gray-100 sticky left-0 z-10 text-xs">
+                <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
                   Irmão
                 </th>
-                {sessoes.map(s => (
-                  <th key={s.id} className="border border-gray-300 px-1 py-2 text-center text-xs whitespace-nowrap">
-                    {formatarData(s.data_sessao)}
-                  </th>
-                ))}
+                {sessoes.map(s => {
+                  const grauTexto = s.grau_sessao_id === 1 ? 'A' : s.grau_sessao_id === 2 ? 'C' : 'M';
+                  return (
+                    <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
+                      <div>{formatarData(s.data_sessao)}</div>
+                      <div className="text-xs font-semibold text-blue-600 mt-0.5">{grauTexto}</div>
+                    </th>
+                  );
+                })}
                 <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs whitespace-nowrap">
                   Total
                 </th>
@@ -447,7 +451,7 @@ export default function ModalGradePresenca({ onFechar }) {
                   busca === '' || irmao.nome.toLowerCase().includes(busca.toLowerCase())
                 )
                 .map(irmao => {
-                  // Calcular total de presenças e sessões elegíveis do irmão
+                  // Calcular presenças e sessões elegíveis usando a mesma lógica do renderizarCelula
                   let presencasIrmao = 0;
                   let sessoesElegiveis = 0;
                   
@@ -455,22 +459,23 @@ export default function ModalGradePresenca({ onFechar }) {
                     const reg = grade[irmao.id]?.[sessao.id];
                     const dataSessao = new Date(sessao.data_sessao);
                     
-                    // Verificar se a sessão é elegível para este irmão
                     // 1. Verificar data de início
                     const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
                     const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
                     const dataInicio = dataIngresso || dataIniciacao;
-                    if (dataInicio && dataSessao < dataInicio) return; // Não elegível
+                    if (dataInicio && dataSessao < dataInicio) return;
                     
-                    // 2. Verificar grau
+                    // 2. Calcular grau do irmão
                     let grauIrmao = 0;
                     if (irmao.data_exaltacao) grauIrmao = 3;
                     else if (irmao.data_elevacao) grauIrmao = 2;
                     else if (irmao.data_iniciacao) grauIrmao = 1;
-                    const grauSessao = sessao.grau_sessao_id || 1;
-                    if (grauSessao > grauIrmao) return; // Não elegível
                     
-                    // 3. Verificar se computa
+                    // 3. Verificar grau da sessão
+                    const grauSessao = sessao.grau_sessao_id || 1;
+                    if (grauSessao > grauIrmao) return;
+                    
+                    // 4. Verificar se computa
                     let computa = true;
                     
                     if (irmao.data_prerrogativa) {
@@ -490,7 +495,6 @@ export default function ModalGradePresenca({ onFechar }) {
                       if (dataSessao >= dataFalec) computa = false;
                     }
                     
-                    // Se não computa, não conta como elegível
                     if (!computa) return;
                     
                     // É elegível
@@ -502,7 +506,7 @@ export default function ModalGradePresenca({ onFechar }) {
                   
                   return (
                 <tr key={irmao.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-2 py-2 font-medium bg-white sticky left-0 z-10 text-xs">
+                  <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
                     <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(() => {
