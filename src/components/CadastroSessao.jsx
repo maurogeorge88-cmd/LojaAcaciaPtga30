@@ -5,7 +5,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
   const [dataSessao, setDataSessao] = useState('');
   const [grauSessao, setGrauSessao] = useState(1);
   const [tipoSessao, setTipoSessao] = useState('');
-  const [observacao, setObservacao] = useState('');
+  const [observacoes, setObservacoes] = useState('');
   const [graus, setGraus] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
@@ -45,7 +45,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     setMensagem({ tipo: '', texto: '' });
 
     try {
-      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao, tipoSessao, observacao });
+      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao, tipoSessao, observacoes });
 
       // IMPORTANTE: Remover .single() para evitar erro "Cannot coerce to single JSON object"
       const { data, error } = await supabase
@@ -54,7 +54,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
           data_sessao: dataSessao,
           grau_sessao_id: grauSessao,
           tipo_sessao: tipoSessao || null,
-          observacao: observacao || null
+          observacoes: observacoes || null
         }])
         .select(); // SEM .single()
 
@@ -74,7 +74,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
       setDataSessao('');
       setGrauSessao(graus[0]?.id || 1);
       setTipoSessao('');
-      setObservacao('');
+      setObservacoes('');
 
       // Chamar callback de sucesso
       if (onSuccess) {
@@ -164,11 +164,11 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
         {/* Observação */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Observação
+            Observações
           </label>
           <textarea
-            value={observacao}
-            onChange={(e) => setObservacao(e.target.value)}
+            value={observacoes}
+            onChange={(e) => setObservacoes(e.target.value)}
             rows={3}
             placeholder="Digite observações sobre a sessão (opcional)"
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
