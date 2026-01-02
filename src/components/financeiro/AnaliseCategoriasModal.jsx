@@ -112,6 +112,17 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         if (l.status !== 'pago') return false;
         if (l.tipo_pagamento === 'compensacao') return false;
         
+        // Excluir Tronco em dinheiro
+        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+        if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+        
+        // Excluir Despesas pagas pelo irmão
+        if (l.categorias_financeiras?.tipo === 'despesa') {
+          const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                        l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+          if (isDespesaPagaPeloIrmao) return false;
+        }
+        
         const dataRef = l.data_pagamento || l.data_vencimento;
         if (!dataRef) return false;
         const data = parseData(dataRef);
@@ -142,6 +153,17 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       lancamentosCompletos.forEach(l => {
         if (l.status !== 'pago') return;
         if (l.tipo_pagamento === 'compensacao') return;
+        
+        // Excluir Tronco em dinheiro
+        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+        if (isTronco && l.tipo_pagamento === 'dinheiro') return;
+        
+        // Excluir Despesas pagas pelo irmão
+        if (l.categorias_financeiras?.tipo === 'despesa') {
+          const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                        l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+          if (isDespesaPagaPeloIrmao) return;
+        }
         
         const dataRef = l.data_pagamento || l.data_vencimento;
         if (!dataRef) return;
