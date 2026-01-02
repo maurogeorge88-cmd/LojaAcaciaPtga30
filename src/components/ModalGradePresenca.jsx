@@ -429,16 +429,14 @@ export default function ModalGradePresenca({ onFechar }) {
                   Irmão
                 </th>
                 {sessoes.map(s => (
-                  <th key={s.id} className="border border-gray-300 px-1 py-2 text-center" style={{ minWidth: '32px' }}>
-                    <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '11px' }}>
-                      {formatarData(s.data_sessao)}
-                    </div>
+                  <th key={s.id} className="border border-gray-300 px-1 py-2 text-center text-xs whitespace-nowrap">
+                    {formatarData(s.data_sessao)}
                   </th>
                 ))}
-                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs" style={{ minWidth: '60px' }}>
+                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs whitespace-nowrap">
                   Total
                 </th>
-                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs" style={{ minWidth: '50px' }}>
+                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs">
                   %
                 </th>
               </tr>
@@ -450,15 +448,55 @@ export default function ModalGradePresenca({ onFechar }) {
                 )
                 .map(irmao => {
                   // Calcular total de presenças e sessões elegíveis do irmão
-                  const presencasIrmao = sessoes.filter(sessao => {
-                    const reg = grade[irmao.id]?.[sessao.id];
-                    return reg?.presente === true;
-                  }).length;
+                  let presencasIrmao = 0;
+                  let sessoesElegiveis = 0;
                   
-                  const sessoesElegiveis = sessoes.filter(sessao => {
+                  sessoes.forEach(sessao => {
                     const reg = grade[irmao.id]?.[sessao.id];
-                    return reg?.computa === true;
-                  }).length;
+                    const dataSessao = new Date(sessao.data_sessao);
+                    
+                    // Verificar se a sessão é elegível para este irmão
+                    // 1. Verificar data de início
+                    const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
+                    const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+                    const dataInicio = dataIngresso || dataIniciacao;
+                    if (dataInicio && dataSessao < dataInicio) return; // Não elegível
+                    
+                    // 2. Verificar grau
+                    let grauIrmao = 0;
+                    if (irmao.data_exaltacao) grauIrmao = 3;
+                    else if (irmao.data_elevacao) grauIrmao = 2;
+                    else if (irmao.data_iniciacao) grauIrmao = 1;
+                    const grauSessao = sessao.grau_sessao_id || 1;
+                    if (grauSessao > grauIrmao) return; // Não elegível
+                    
+                    // 3. Verificar se computa
+                    let computa = true;
+                    
+                    if (irmao.data_prerrogativa) {
+                      const dataPrer = new Date(irmao.data_prerrogativa);
+                      if (dataSessao >= dataPrer) computa = false;
+                    }
+                    
+                    const situacaoNaData = historicoSituacoes?.find(sit => 
+                      sit.membro_id === irmao.id &&
+                      dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+                      (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+                    );
+                    if (situacaoNaData) computa = false;
+                    
+                    if (irmao.data_falecimento) {
+                      const dataFalec = new Date(irmao.data_falecimento);
+                      if (dataSessao >= dataFalec) computa = false;
+                    }
+                    
+                    // Se não computa, não conta como elegível
+                    if (!computa) return;
+                    
+                    // É elegível
+                    sessoesElegiveis++;
+                    if (reg?.presente) presencasIrmao++;
+                  });
                   
                   const percentual = sessoesElegiveis > 0 ? Math.round((presencasIrmao / sessoesElegiveis) * 100) : 0;
                   
