@@ -11,7 +11,6 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   const [tipoGrafico, setTipoGrafico] = useState('barras');
   const [dadosGrafico, setDadosGrafico] = useState([]);
   const [gerandoPDF, setGerandoPDF] = useState(false);
-  const [mostrarOpcoesRelatorio, setMostrarOpcoesRelatorio] = useState(false);
 
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -196,12 +195,22 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   const gerarPDF = async () => {
     setGerandoPDF(true);
     try {
+      // Buscar dados da loja
+      let dadosLoja = null;
+      try {
+        const { data, error } = await supabase.from('dados_loja').select('*').single();
+        if (!error && data) {
+          dadosLoja = data;
+        }
+      } catch (e) {
+        console.log('Dados da loja não encontrados:', e);
+      }
+
       // Obter jsPDF
       const getJsPDF = async () => {
         if (window.jspdf && window.jspdf.jsPDF) {
           return window.jspdf.jsPDF;
         }
-        // Se não estiver disponível globalmente, tenta importar
         const module = await import('jspdf');
         return module.default || module.jsPDF;
       };
@@ -211,21 +220,99 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
       let yPos = 15;
 
-      // CABEÇALHO
+      // ========================================
+      // LOGO (se existir)
+      // ========================================
+      if (dadosLoja?.logo_url) {
+        try {
+          // Tentar adicionar logo
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          await new Promise((resolve, reject) => {
+            img.onload = () => {
+              try {
+                doc.addImage(img, 'PNG', 85, yPos, 40, 40);
+                resolve();
+              } catch (e) {
+                console.log('Erro ao adicionar logo:', e);
+                resolve(); // Continua mesmo se der erro
+              }
+            };
+            img.onerror = () => {
+              console.log('Erro ao carregar logo');
+              resolve(); // Continua mesmo se der erro
+            };
+            img.src = dadosLoja.logo_url;
+            
+            // Timeout de 3 segundos
+            setTimeout(() => resolve(), 3000);
+          });
+          
+          yPos += 45;
+        } catch (e) {
+          console.log('Logo não disponível:', e);
+        }
+      }
+
+      // ========================================
+      // CABEÇALHO COM DADOS DA LOJA
+      // ========================================
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      
+      // Nome da Loja
+      if (dadosLoja?.nome_loja) {
+        const nomeLoja = dadosLoja.numero_loja 
+          ? `${dadosLoja.nome_loja} nº ${dadosLoja.numero_loja}`
+          : dadosLoja.nome_loja;
+        doc.text(nomeLoja, 105, yPos, { align: 'center' });
+        yPos += 8;
+      }
+
+      // Oriente/Vale/Cidade
+      if (dadosLoja?.oriente || dadosLoja?.cidade) {
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'normal');
+        const localizacao = [];
+        if (dadosLoja.oriente) localizacao.push(`Or∴ ${dadosLoja.oriente}`);
+        if (dadosLoja.vale) localizacao.push(`Vale ${dadosLoja.vale}`);
+        if (dadosLoja.cidade && dadosLoja.estado) {
+          localizacao.push(`${dadosLoja.cidade}/${dadosLoja.estado}`);
+        } else if (dadosLoja.cidade) {
+          localizacao.push(dadosLoja.cidade);
+        }
+        doc.setTextColor(100, 100, 100);
+        doc.text(localizacao.join(' - '), 105, yPos, { align: 'center' });
+        yPos += 6;
+        doc.setTextColor(0, 0, 0);
+      }
+
+      yPos += 5;
+
+      // Título do Relatório
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('Relatório Financeiro', 105, yPos, { align: 'center' });
       yPos += 10;
 
+      // Período
       const periodoTexto = filtroAnalise.mes > 0 
         ? `${meses[filtroAnalise.mes - 1]} de ${filtroAnalise.ano}`
         : `Ano ${filtroAnalise.ano}`;
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
       doc.text(`Período: ${periodoTexto}`, 105, yPos, { align: 'center' });
-      yPos += 15;
+      yPos += 3;
 
+      // Linha separadora
+      doc.setDrawColor(200, 200, 200);
+      doc.line(10, yPos, 200, yPos);
+      yPos += 10;
+
+      // ========================================
       // RESUMO
+      // ========================================
       const totalReceitas = dadosGrafico.reduce((sum, item) => sum + item.receitas, 0);
       const totalDespesas = dadosGrafico.reduce((sum, item) => sum + item.despesas, 0);
       const saldoFinal = totalReceitas - totalDespesas;
@@ -312,6 +399,48 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         });
       }
 
+      // ========================================
+      // RODAPÉ
+      // ========================================
+      const totalPages = doc.internal.getNumberOfPages();
+      
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        
+        // Linha superior do rodapé
+        doc.setDrawColor(200, 200, 200);
+        doc.line(10, 280, 200, 280);
+        
+        // Data de geração (esquerda)
+        const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
+          day: '2-digit',
+          month: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+        
+        doc.setTextColor(128, 128, 128);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text(`Gerado em: ${dataGeracao}`, 10, 285);
+        
+        // Informações da loja (centro) - se existirem
+        if (dadosLoja?.email || dadosLoja?.telefone) {
+          const contatos = [];
+          if (dadosLoja.telefone) contatos.push(`Tel: ${dadosLoja.telefone}`);
+          if (dadosLoja.email) contatos.push(`Email: ${dadosLoja.email}`);
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(7);
+          doc.text(contatos.join(' | '), 105, 285, { align: 'center' });
+        }
+        
+        // Página (direita)
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text(`Página ${i} de ${totalPages}`, 200, 285, { align: 'right' });
+      }
+
       // Salvar
       const nomeArquivo = filtroAnalise.mes > 0
         ? `Relatorio_${meses[filtroAnalise.mes - 1]}_${filtroAnalise.ano}.pdf`
@@ -324,28 +453,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       alert(`❌ Erro ao gerar PDF:\n${error.message}`);
     } finally {
       setGerandoPDF(false);
-      setMostrarOpcoesRelatorio(false);
     }
-  };
-
-  const compartilharWhatsApp = () => {
-    const periodoTexto = filtroAnalise.mes > 0 
-      ? `${meses[filtroAnalise.mes - 1]}/${filtroAnalise.ano}`
-      : `${filtroAnalise.ano}`;
-
-    const totalReceitas = dadosGrafico.reduce((sum, item) => sum + item.receitas, 0);
-    const totalDespesas = dadosGrafico.reduce((sum, item) => sum + item.despesas, 0);
-    const totalLucro = totalReceitas - totalDespesas;
-
-    const mensagem = `📊 *Relatório Financeiro - ${periodoTexto}*\n\n` +
-      `💰 Receitas: R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
-      `💸 Despesas: R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
-      `📈 Saldo: R$ ${totalLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
-      `_Relatório completo disponível em PDF_`;
-
-    const mensagemFormatada = encodeURIComponent(mensagem);
-    window.open(`https://wa.me/?text=${mensagemFormatada}`, '_blank');
-    setMostrarOpcoesRelatorio(false);
   };
 
   if (!isOpen) return null;
@@ -364,99 +472,27 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         
         {/* Botões do cabeçalho */}
         <div className="flex items-center gap-3">
-          {/* Botão Gerar Relatório - INLINE */}
-          <div className="relative">
-            <button
-              onClick={() => setMostrarOpcoesRelatorio(!mostrarOpcoesRelatorio)}
-              disabled={gerandoPDF}
-              className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg"
-            >
-              {gerandoPDF ? (
-                <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  <span>Gerando...</span>
-                </>
-              ) : (
-                <>
-                  <span>📤</span>
-                  <span>Enviar Relatório</span>
-                </>
-              )}
-            </button>
-
-            {/* Menu de Opções */}
-            {mostrarOpcoesRelatorio && !gerandoPDF && (
+          {/* Botão Gerar Relatório PDF */}
+          <button
+            onClick={gerarPDF}
+            disabled={gerandoPDF}
+            className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {gerandoPDF ? (
               <>
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-2xl border-2 border-gray-200 z-50">
-                  <div className="p-3 border-b border-gray-200">
-                    <p className="text-sm font-semibold text-gray-700">Escolha uma opção:</p>
-                  </div>
-                  
-                  <div className="p-2 space-y-1">
-                    <button
-                      onClick={gerarPDF}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-blue-50 transition-colors text-left"
-                    >
-                      <div className="bg-blue-100 p-2 rounded-lg">
-                        <span className="text-2xl">📄</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">Baixar PDF</p>
-                        <p className="text-xs text-gray-600">Relatório completo</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={compartilharWhatsApp}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-50 transition-colors text-left"
-                    >
-                      <div className="bg-green-100 p-2 rounded-lg">
-                        <span className="text-2xl">📱</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">WhatsApp</p>
-                        <p className="text-xs text-gray-600">Compartilhar resumo</p>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={async () => {
-                        await gerarPDF();
-                        setTimeout(() => compartilharWhatsApp(), 1000);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-purple-50 transition-colors text-left"
-                    >
-                      <div className="bg-purple-100 p-2 rounded-lg">
-                        <span className="text-2xl">🚀</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-800 text-sm">PDF + WhatsApp</p>
-                        <p className="text-xs text-gray-600">Baixar e compartilhar</p>
-                      </div>
-                    </button>
-                  </div>
-
-                  <div className="p-2 border-t border-gray-200">
-                    <button
-                      onClick={() => setMostrarOpcoesRelatorio(false)}
-                      className="w-full px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
-                </div>
-
-                {/* Overlay */}
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setMostrarOpcoesRelatorio(false)}
-                />
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Gerando PDF...</span>
+              </>
+            ) : (
+              <>
+                <span>📄</span>
+                <span>Baixar Relatório</span>
               </>
             )}
-          </div>
+          </button>
           
           {/* Botão Voltar */}
           <button 
