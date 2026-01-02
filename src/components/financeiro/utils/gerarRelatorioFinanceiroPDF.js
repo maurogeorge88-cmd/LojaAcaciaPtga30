@@ -1,8 +1,6 @@
-import html2canvas from 'html2canvas';
-
 /**
- * 📄 GERADOR DE PDF - RELATÓRIO FINANCEIRO MENSAL
- * Gera PDF completo com gráfico, categorias e resumos
+ * 📄 GERADOR DE PDF - RELATÓRIO FINANCEIRO SIMPLES
+ * Gera PDF organizado com situação financeira mensal e anual
  */
 
 export const gerarRelatorioFinanceiroPDF = async ({
@@ -37,126 +35,199 @@ export const gerarRelatorioFinanceiroPDF = async ({
       console.log('Dados da loja não encontrados');
     }
 
-    let yPos = 10;
+    let yPos = 15;
 
     // ========================================
-    // LOGO E CABEÇALHO
+    // CABEÇALHO
     // ========================================
-    if (dadosLoja?.logo_url) {
-      try {
-        doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-        yPos += 37;
-      } catch (e) {
-        console.log('Logo não disponível');
-      }
-    }
-
-    doc.setFontSize(18);
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    const nomeLoja = `${dadosLoja?.nome_loja || 'Loja Maçônica'} nº ${dadosLoja?.numero_loja || ''}`;
-    doc.text(nomeLoja, 105, yPos, { align: 'center' });
+    const nomeLoja = dadosLoja?.nome_loja || 'Loja Maçônica';
+    const numeroLoja = dadosLoja?.numero_loja ? ` nº ${dadosLoja.numero_loja}` : '';
+    doc.text(`${nomeLoja}${numeroLoja}`, 105, yPos, { align: 'center' });
     yPos += 8;
 
     doc.setFontSize(14);
-    doc.text('Relatório Financeiro Mensal', 105, yPos, { align: 'center' });
+    doc.text('Relatório Financeiro', 105, yPos, { align: 'center' });
     yPos += 10;
 
     // Período
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const periodoTexto = filtroAnalise.mes > 0 
-      ? `${meses[filtroAnalise.mes - 1]} / ${filtroAnalise.ano}`
-      : `Ano Completo: ${filtroAnalise.ano}`;
-    doc.text(`Período: ${periodoTexto}`, 105, yPos, { align: 'center' });
+      ? `Período: ${meses[filtroAnalise.mes - 1]} de ${filtroAnalise.ano}`
+      : `Período: Ano ${filtroAnalise.ano} (Janeiro a Dezembro)`;
+    doc.text(periodoTexto, 105, yPos, { align: 'center' });
     yPos += 12;
 
+    // Linha separadora
+    doc.setDrawColor(200, 200, 200);
+    doc.line(10, yPos, 200, yPos);
+    yPos += 10;
+
     // ========================================
-    // CARDS DE RESUMO
+    // RESUMO GERAL
     // ========================================
     const totalReceitas = dadosGrafico.reduce((sum, item) => sum + item.receitas, 0);
     const totalDespesas = dadosGrafico.reduce((sum, item) => sum + item.despesas, 0);
-    const totalLucro = totalReceitas - totalDespesas;
+    const saldoFinal = totalReceitas - totalDespesas;
 
-    doc.setFillColor(240, 240, 240);
-    doc.rect(10, yPos, 190, 25, 'F');
-    
-    doc.setFontSize(10);
+    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(34, 197, 94); // Verde
-    doc.text('Total Receitas', 35, yPos + 6, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(`R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 35, yPos + 14, { align: 'center' });
+    doc.text('RESUMO GERAL', 10, yPos);
+    yPos += 8;
+
+    // Box do resumo
+    doc.setDrawColor(220, 220, 220);
+    doc.setFillColor(250, 250, 250);
+    doc.rect(10, yPos, 190, 30, 'FD');
 
     doc.setFontSize(10);
-    doc.setTextColor(239, 68, 68); // Vermelho
-    doc.text('Total Despesas', 105, yPos + 6, { align: 'center' });
-    doc.setFontSize(14);
-    doc.text(`R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 105, yPos + 14, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    
+    // Receitas
+    doc.setTextColor(34, 139, 34); // Verde
+    doc.text('Total de Receitas:', 15, yPos + 7);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`R$ ${totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 65, yPos + 7);
+    
+    // Despesas
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(220, 38, 38); // Vermelho
+    doc.text('Total de Despesas:', 15, yPos + 15);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`R$ ${totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 65, yPos + 15);
+    
+    // Saldo
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 102, 204); // Azul
+    doc.text('Saldo do Período:', 15, yPos + 23);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(saldoFinal >= 0 ? 34 : 220, saldoFinal >= 0 ? 139 : 38, saldoFinal >= 0 ? 34 : 38);
+    doc.text(`R$ ${saldoFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 65, yPos + 23);
 
-    doc.setFontSize(10);
-    doc.setTextColor(59, 130, 246); // Azul
-    doc.text('Lucro do Período', 175, yPos + 6, { align: 'center' });
-    doc.setFontSize(14);
-    doc.setTextColor(totalLucro >= 0 ? 34 : 239, totalLucro >= 0 ? 197 : 68, totalLucro >= 0 ? 94 : 68);
-    doc.text(`R$ ${totalLucro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 175, yPos + 14, { align: 'center' });
-
-    yPos += 30;
+    yPos += 35;
     doc.setTextColor(0, 0, 0);
 
     // ========================================
-    // GRÁFICO DE BARRAS
+    // DETALHAMENTO MENSAL (se for ano inteiro)
     // ========================================
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('📊 Gráfico Financeiro Mensal', 10, yPos);
-    yPos += 8;
+    if (filtroAnalise.mes === 0 && dadosGrafico.length > 1) {
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.text('MOVIMENTAÇÃO MENSAL', 10, yPos);
+      yPos += 8;
 
-    // Capturar o gráfico como imagem
-    const graficoElement = document.querySelector('#grafico-financeiro-container');
-    if (graficoElement) {
-      try {
-        const canvas = await html2canvas(graficoElement, {
-          scale: 2,
-          backgroundColor: '#ffffff',
-          logging: false
-        });
-        const imgData = canvas.toDataURL('image/png');
-        
-        // Adicionar imagem do gráfico
-        const imgWidth = 190;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        
-        // Se o gráfico não couber na página, adicionar nova página
-        if (yPos + imgHeight > 280) {
+      // Cabeçalho da tabela
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setFillColor(230, 230, 230);
+      doc.rect(10, yPos, 190, 8, 'F');
+      
+      doc.text('Mês', 15, yPos + 5);
+      doc.text('Receitas', 70, yPos + 5, { align: 'right' });
+      doc.text('Despesas', 115, yPos + 5, { align: 'right' });
+      doc.text('Saldo', 155, yPos + 5, { align: 'right' });
+      doc.text('Gráfico', 175, yPos + 5);
+      
+      yPos += 10;
+      doc.setFont('helvetica', 'normal');
+
+      // Encontrar valor máximo para as barras
+      const maxValor = Math.max(...dadosGrafico.map(d => Math.max(d.receitas, d.despesas)));
+
+      // Linhas da tabela
+      dadosGrafico.forEach((dado, index) => {
+        // Verificar se precisa de nova página
+        if (yPos > 260) {
           doc.addPage();
           yPos = 20;
+          
+          // Repetir cabeçalho
+          doc.setFont('helvetica', 'bold');
+          doc.setFillColor(230, 230, 230);
+          doc.rect(10, yPos, 190, 8, 'F');
+          doc.text('Mês', 15, yPos + 5);
+          doc.text('Receitas', 70, yPos + 5, { align: 'right' });
+          doc.text('Despesas', 115, yPos + 5, { align: 'right' });
+          doc.text('Saldo', 155, yPos + 5, { align: 'right' });
+          doc.text('Gráfico', 175, yPos + 5);
+          yPos += 10;
+          doc.setFont('helvetica', 'normal');
         }
+
+        // Fundo alternado
+        if (index % 2 === 0) {
+          doc.setFillColor(248, 248, 248);
+          doc.rect(10, yPos - 2, 190, 10, 'F');
+        }
+
+        // Mês
+        doc.setTextColor(0, 0, 0);
+        doc.text(dado.mes, 15, yPos + 4);
         
-        doc.addImage(imgData, 'PNG', 10, yPos, imgWidth, imgHeight);
-        yPos += imgHeight + 10;
-      } catch (error) {
-        console.error('Erro ao capturar gráfico:', error);
-        doc.setFontSize(10);
-        doc.setTextColor(150, 150, 150);
-        doc.text('(Gráfico não disponível)', 105, yPos, { align: 'center' });
+        // Receitas
+        doc.setTextColor(34, 139, 34);
+        doc.text(`R$ ${dado.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 70, yPos + 4, { align: 'right' });
+        
+        // Despesas
+        doc.setTextColor(220, 38, 38);
+        doc.text(`R$ ${dado.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 115, yPos + 4, { align: 'right' });
+        
+        // Saldo
+        const saldo = dado.receitas - dado.despesas;
+        doc.setTextColor(saldo >= 0 ? 34 : 220, saldo >= 0 ? 139 : 38, saldo >= 0 ? 34 : 38);
+        doc.text(`R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 155, yPos + 4, { align: 'right' });
+        
+        // Mini barras verticais (gráfico simplificado)
+        const alturaMaxBarra = 6;
+        const larguraBarra = 3;
+        const espaco = 0.5;
+        
+        // Barra Receitas (verde)
+        const alturaReceitas = maxValor > 0 ? (dado.receitas / maxValor) * alturaMaxBarra : 0;
+        doc.setFillColor(34, 139, 34);
+        doc.rect(165, yPos + 6 - alturaReceitas, larguraBarra, alturaReceitas, 'F');
+        
+        // Barra Despesas (vermelho)
+        const alturaDespesas = maxValor > 0 ? (dado.despesas / maxValor) * alturaMaxBarra : 0;
+        doc.setFillColor(220, 38, 38);
+        doc.rect(165 + larguraBarra + espaco, yPos + 6 - alturaDespesas, larguraBarra, alturaDespesas, 'F');
+        
         yPos += 10;
-      }
+      });
+
+      doc.setTextColor(0, 0, 0);
+      yPos += 5;
+
+      // Legenda das barras
+      doc.setFontSize(7);
+      doc.setFillColor(34, 139, 34);
+      doc.rect(160, yPos, 3, 3, 'F');
+      doc.text('Receita', 165, yPos + 2);
+      
+      doc.setFillColor(220, 38, 38);
+      doc.rect(182, yPos, 3, 3, 'F');
+      doc.text('Despesa', 187, yPos + 2);
+      
+      yPos += 8;
     }
 
     // ========================================
-    // TOP 5 RECEITAS POR CATEGORIA
+    // TOP 5 CATEGORIAS (se tiver espaço, senão nova página)
     // ========================================
-    if (yPos > 200) {
+    if (yPos > 220) {
       doc.addPage();
       yPos = 20;
     }
 
-    doc.setTextColor(0, 0, 0);
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('💰 Top 5 Categorias de Receita', 10, yPos);
-    yPos += 8;
+    doc.setTextColor(0, 0, 0);
+    doc.text('PRINCIPAIS CATEGORIAS', 10, yPos);
+    yPos += 10;
 
+    // RECEITAS
     const receitasPorCategoria = lancamentosCompletos
       .filter(l => {
         if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
@@ -180,42 +251,29 @@ export const gerarRelatorioFinanceiroPDF = async ({
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(34, 139, 34);
+    doc.text('Receitas:', 10, yPos);
+    yPos += 6;
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
 
     topReceitas.forEach(([categoria, valor], index) => {
       const percentual = totalReceitas > 0 ? (valor / totalReceitas) * 100 : 0;
       
-      // Barra de progresso
-      doc.setFillColor(220, 252, 231);
-      doc.rect(10, yPos, 190, 8, 'F');
+      // Nome e valor
+      doc.text(`${index + 1}. ${categoria}`, 12, yPos);
+      doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${percentual.toFixed(1)}%)`, 200, yPos, { align: 'right' });
       
-      doc.setFillColor(34, 197, 94);
-      doc.rect(10, yPos, (percentual / 100) * 190, 8, 'F');
-      
-      // Texto
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${index + 1}. ${categoria}`, 12, yPos + 5);
-      doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${percentual.toFixed(1)}%)`, 195, yPos + 5, { align: 'right' });
-      
-      yPos += 10;
+      yPos += 5;
     });
 
     yPos += 5;
 
-    // ========================================
-    // TOP 5 DESPESAS POR CATEGORIA
-    // ========================================
-    if (yPos > 220) {
-      doc.addPage();
-      yPos = 20;
-    }
-
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'bold');
-    doc.text('💸 Top 5 Categorias de Despesa', 10, yPos);
-    yPos += 8;
-
+    // DESPESAS
     const despesasPorCategoria = lancamentosCompletos
       .filter(l => {
         if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
@@ -241,47 +299,46 @@ export const gerarRelatorioFinanceiroPDF = async ({
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
 
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(220, 38, 38);
+    doc.text('Despesas:', 10, yPos);
+    yPos += 6;
+
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
 
     topDespesas.forEach(([categoria, valor], index) => {
       const percentual = totalDespesas > 0 ? (valor / totalDespesas) * 100 : 0;
       
-      // Barra de progresso
-      doc.setFillColor(254, 226, 226);
-      doc.rect(10, yPos, 190, 8, 'F');
+      // Nome e valor
+      doc.text(`${index + 1}. ${categoria}`, 12, yPos);
+      doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${percentual.toFixed(1)}%)`, 200, yPos, { align: 'right' });
       
-      doc.setFillColor(239, 68, 68);
-      doc.rect(10, yPos, (percentual / 100) * 190, 8, 'F');
-      
-      // Texto
-      doc.setTextColor(0, 0, 0);
-      doc.text(`${index + 1}. ${categoria}`, 12, yPos + 5);
-      doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} (${percentual.toFixed(1)}%)`, 195, yPos + 5, { align: 'right' });
-      
-      yPos += 10;
+      yPos += 5;
     });
 
     // ========================================
     // RODAPÉ
     // ========================================
     const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
     
     doc.setTextColor(128, 128, 128);
     doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
+    doc.setFont('helvetica', 'italic');
     doc.text(`Gerado em: ${dataGeracao}`, 10, 285);
     doc.text(`Página ${doc.internal.getNumberOfPages()}`, 200, 285, { align: 'right' });
 
     // Salvar PDF
     const nomeArquivo = filtroAnalise.mes > 0
-      ? `Relatorio_Financeiro_${meses[filtroAnalise.mes - 1]}_${filtroAnalise.ano}.pdf`
-      : `Relatorio_Financeiro_${filtroAnalise.ano}.pdf`;
+      ? `Relatorio_${meses[filtroAnalise.mes - 1]}_${filtroAnalise.ano}.pdf`
+      : `Relatorio_Anual_${filtroAnalise.ano}.pdf`;
     
     doc.save(nomeArquivo);
 
