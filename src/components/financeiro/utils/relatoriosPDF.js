@@ -286,9 +286,12 @@ export const gerarRelatorioResumido = async ({
     });
 
     yPos += 2;
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(220, 38, 38); // Cor vermelha
     doc.text('Sub Total Despesa', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+    doc.text(catPrincipal.subtotalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
+    doc.setTextColor(0, 0, 0); // Volta para preto
     
     yPos += 8;
   });
@@ -553,9 +556,12 @@ export const gerarRelatorioResumido = async ({
     });
 
     yPos += 2;
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
+    doc.setTextColor(0, 102, 204); // Cor azul
     doc.text('Sub Total Receita', 150, yPos, { align: 'right' });
-    doc.text(`R$ ${catPrincipal.subtotalTotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+    doc.text(catPrincipal.subtotalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), 190, yPos, { align: 'right' });
+    doc.setTextColor(0, 0, 0); // Volta para preto
     
     yPos += 8;
   });
