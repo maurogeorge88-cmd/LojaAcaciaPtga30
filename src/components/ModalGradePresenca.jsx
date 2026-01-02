@@ -475,6 +475,8 @@ export default function ModalGradePresenca({ onFechar }) {
                   // Calcular presenças e sessões elegíveis usando a mesma lógica do renderizarCelula
                   let presencasIrmao = 0;
                   let sessoesElegiveis = 0;
+                  let presencasPrerrogativa = 0; // Informativo
+                  let sessoesPrerrogativa = 0; // Informativo
                   
                   sessoes.forEach(sessao => {
                     const reg = grade[irmao.id]?.[sessao.id];
@@ -519,10 +521,14 @@ export default function ModalGradePresenca({ onFechar }) {
                     
                     // 4. Verificar se computa
                     let computa = true;
+                    let ehPrerrogativa = false;
                     
                     if (irmao.data_prerrogativa) {
                       const dataPrer = new Date(irmao.data_prerrogativa);
-                      if (dataSessao >= dataPrer) computa = false;
+                      if (dataSessao >= dataPrer) {
+                        computa = false;
+                        ehPrerrogativa = true;
+                      }
                     }
                     
                     const situacaoNaData = historicoSituacoes?.find(sit => 
@@ -537,6 +543,13 @@ export default function ModalGradePresenca({ onFechar }) {
                       if (dataSessao >= dataFalec) computa = false;
                     }
                     
+                    // Contar prerrogativa separadamente (informativo)
+                    if (ehPrerrogativa) {
+                      sessoesPrerrogativa++;
+                      if (reg?.presente) presencasPrerrogativa++;
+                      return;
+                    }
+                    
                     if (!computa) return;
                     
                     // É elegível
@@ -545,6 +558,8 @@ export default function ModalGradePresenca({ onFechar }) {
                   });
                   
                   const percentual = sessoesElegiveis > 0 ? Math.round((presencasIrmao / sessoesElegiveis) * 100) : 0;
+                  const percentualPrerrogativa = sessoesPrerrogativa > 0 ? Math.round((presencasPrerrogativa / sessoesPrerrogativa) * 100) : 0;
+                  const temPrerrogativa = sessoesPrerrogativa > 0;
                   
                   return (
                 <tr key={irmao.id} className="hover:bg-gray-50">
@@ -594,10 +609,20 @@ export default function ModalGradePresenca({ onFechar }) {
                   {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
                   <td className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs">
                     {presencasIrmao}/{sessoesElegiveis}
+                    {temPrerrogativa && (
+                      <div className="text-purple-600 text-[10px] mt-0.5">
+                        +{presencasPrerrogativa}/{sessoesPrerrogativa}
+                      </div>
+                    )}
                   </td>
                   <td className="border border-gray-300 px-2 py-2 text-center font-semibold text-xs" 
                       style={{ backgroundColor: percentual >= 75 ? '#dcfce7' : percentual >= 50 ? '#fef9c3' : '#fee2e2' }}>
                     {percentual}%
+                    {temPrerrogativa && (
+                      <div className="text-purple-600 text-[10px] mt-0.5">
+                        +{percentualPrerrogativa}%
+                      </div>
+                    )}
                   </td>
                 </tr>
                   );
