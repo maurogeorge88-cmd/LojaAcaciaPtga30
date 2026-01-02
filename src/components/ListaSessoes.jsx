@@ -78,25 +78,41 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     }
 
     try {
-      const { error } = await supabase
+      // 1. PRIMEIRO: Excluir todos os registros de presença da sessão
+      const { error: errorPresenca } = await supabase
+        .from('registros_presenca')
+        .delete()
+        .eq('sessao_id', sessaoId);
+
+      if (errorPresenca) {
+        console.error('Erro ao excluir registros de presença:', errorPresenca);
+        throw new Error('Erro ao excluir registros de presença: ' + errorPresenca.message);
+      }
+
+      // 2. DEPOIS: Excluir a sessão
+      const { error: errorSessao } = await supabase
         .from('sessoes_presenca')
         .delete()
         .eq('id', sessaoId);
 
-      if (error) throw error;
+      if (errorSessao) {
+        console.error('Erro ao excluir sessão:', errorSessao);
+        throw new Error('Erro ao excluir sessão: ' + errorSessao.message);
+      }
 
       setMensagem({
         tipo: 'sucesso',
         texto: 'Sessão excluída com sucesso!'
       });
 
-      carregarSessoes();
+      // Recarregar lista de sessões
+      await carregarSessoes();
 
     } catch (error) {
       console.error('Erro ao excluir sessão:', error);
       setMensagem({
         tipo: 'erro',
-        texto: 'Erro ao excluir sessão. Tente novamente.'
+        texto: error.message || 'Erro ao excluir sessão. Tente novamente.'
       });
     }
   };
