@@ -731,7 +731,6 @@ export default function DashboardPresenca() {
       const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
 
       // Irmãos ativos = regulares + licenciados (com licença ativa)
-      const hoje = new Date();
       const irmaosAtivos = irmaos?.filter(i => {
         // Se faleceu, não é ativo
         if (i.data_falecimento) return false;
@@ -741,7 +740,7 @@ export default function DashboardPresenca() {
           const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return sit.membro_id === i.id &&
             tipoNormalizado === 'licenca' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
+            (sit.data_fim === null || new Date(sit.data_fim) >= dataHojeBrasil);
         });
         
         if (temLicencaAtiva) return true;
