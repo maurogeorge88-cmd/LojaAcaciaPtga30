@@ -80,61 +80,71 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
     try {
       console.log('🗑️ Iniciando exclusão da sessão ID:', sessaoId);
 
-      // 1. Verificar se a sessão existe
-      const { data: sessaoExiste, error: errorCheck } = await supabase
+      // 1. Verificar em qual tabela a sessão está
+      console.log('🔍 Verificando tabela sessoes_presenca...');
+      const { data: sessaoPresenca } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao')
         .eq('id', sessaoId)
-        .single();
+        .maybeSingle();
 
-      if (errorCheck) {
-        console.error('❌ Erro ao verificar sessão:', errorCheck);
-        throw new Error('Sessão não encontrada: ' + errorCheck.message);
+      console.log('🔍 Verificando tabela sessoes...');
+      const { data: sessao } = await supabase
+        .from('sessoes')
+        .select('id, data_sessao')
+        .eq('id', sessaoId)
+        .maybeSingle();
+
+      if (!sessaoPresenca && !sessao) {
+        throw new Error('Sessão não encontrada em nenhuma tabela');
       }
 
-      console.log('✅ Sessão encontrada:', sessaoExiste);
+      console.log('✅ Sessão encontrada em:', {
+        sessoes_presenca: !!sessaoPresenca,
+        sessoes: !!sessao
+      });
 
-      // 2. PRIMEIRO: Excluir todos os registros de presença da sessão
+      // 2. PRIMEIRO: Excluir registros de presença
       console.log('🔄 Excluindo registros de presença...');
-      const { error: errorPresenca, count: countPresenca } = await supabase
+      const { error: errorPresenca } = await supabase
         .from('registros_presenca')
         .delete()
         .eq('sessao_id', sessaoId);
 
       if (errorPresenca) {
-        console.error('❌ Erro ao excluir registros de presença:', errorPresenca);
-        throw new Error('Erro ao excluir registros de presença: ' + errorPresenca.message);
+        console.error('❌ Erro ao excluir registros:', errorPresenca);
+        throw errorPresenca;
       }
+      console.log('✅ Registros de presença excluídos');
 
-      console.log(`✅ Registros de presença excluídos: ${countPresenca || 0}`);
-
-      // 3. DEPOIS: Excluir a sessão
-      console.log('🔄 Excluindo sessão...');
-      const { error: errorSessao, count: countSessao } = await supabase
-        .from('sessoes_presenca')
+      // 3. Excluir da tabela correta
+      let tabelaCorreta = sessaoPresenca ? 'sessoes_presenca' : 'sessoes';
+      console.log(`🔄 Excluindo sessão da tabela: ${tabelaCorreta}...`);
+      
+      const { error: errorSessao } = await supabase
+        .from(tabelaCorreta)
         .delete()
         .eq('id', sessaoId);
 
       if (errorSessao) {
         console.error('❌ Erro ao excluir sessão:', errorSessao);
-        throw new Error('Erro ao excluir sessão: ' + errorSessao.message);
+        throw errorSessao;
       }
 
-      console.log(`✅ Sessão excluída: ${countSessao || 0} registro(s)`);
+      console.log('✅ Sessão excluída com sucesso!');
 
       setMensagem({
         tipo: 'sucesso',
         texto: 'Sessão excluída com sucesso!'
       });
 
-      // Recarregar lista de sessões
       await carregarSessoes();
 
     } catch (error) {
       console.error('💥 Erro ao excluir sessão:', error);
       setMensagem({
         tipo: 'erro',
-        texto: error.message || 'Erro ao excluir sessão. Tente novamente.'
+        texto: error.message || 'Erro ao excluir sessão. Verifique as permissões.'
       });
     }
   };
