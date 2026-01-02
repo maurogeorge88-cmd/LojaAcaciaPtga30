@@ -286,14 +286,14 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se não computa, mostra - (sem obrigação)
       if (!computa) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+          <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-gray-100">
             <span className="text-gray-400">-</span>
           </td>
         );
       }
       // Se computa, mostra ausência (✗ vermelho)
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+        <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-red-50">
           <span className="text-red-600 text-lg font-bold">✗</span>
         </td>
       );
@@ -304,14 +304,14 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se veio (presente), mostra ✓ normal
       if (reg.presente) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+          <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-green-50">
             <span className="text-green-600 text-lg font-bold">✓</span>
           </td>
         );
       }
       // Se ausente (não computa), mostra -
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
+        <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-gray-100">
           <span className="text-gray-400">-</span>
         </td>
       );
@@ -320,7 +320,7 @@ export default function ModalGradePresenca({ onFechar }) {
     // Computa normalmente
     if (reg.presente) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+        <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-green-50">
           <span className="text-green-600 text-lg font-bold">✓</span>
         </td>
       );
@@ -330,7 +330,7 @@ export default function ModalGradePresenca({ onFechar }) {
       return (
         <td 
           key={sessaoId} 
-          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
+          className="border border-gray-300 px-1 py-1 text-center bg-yellow-50"
           title={reg.justificativa}
         >
           <span className="text-yellow-600 text-lg font-bold">J</span>
@@ -339,7 +339,7 @@ export default function ModalGradePresenca({ onFechar }) {
     }
 
     return (
-      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+      <td key={sessaoId} className="border border-gray-300 px-1 py-1 text-center bg-red-50">
         <span className="text-red-600 text-lg font-bold">✗</span>
       </td>
     );
@@ -425,14 +425,22 @@ export default function ModalGradePresenca({ onFechar }) {
           <table className="w-full border-collapse text-xs">
             <thead className="bg-gray-100 sticky top-0">
               <tr>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
+                <th className="border border-gray-300 px-2 py-2 text-left font-semibold bg-gray-100 sticky left-0 z-10 text-xs">
                   Irmão
                 </th>
                 {sessoes.map(s => (
-                  <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
-                    {formatarData(s.data_sessao)}
+                  <th key={s.id} className="border border-gray-300 px-1 py-2 text-center" style={{ minWidth: '32px' }}>
+                    <div className="flex items-center justify-center" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontSize: '11px' }}>
+                      {formatarData(s.data_sessao)}
+                    </div>
                   </th>
                 ))}
+                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs" style={{ minWidth: '60px' }}>
+                  Total
+                </th>
+                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs" style={{ minWidth: '50px' }}>
+                  %
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -440,9 +448,23 @@ export default function ModalGradePresenca({ onFechar }) {
                 .filter(irmao => 
                   busca === '' || irmao.nome.toLowerCase().includes(busca.toLowerCase())
                 )
-                .map(irmao => (
+                .map(irmao => {
+                  // Calcular total de presenças e sessões elegíveis do irmão
+                  const presencasIrmao = sessoes.filter(sessao => {
+                    const reg = grade[irmao.id]?.[sessao.id];
+                    return reg?.presente === true;
+                  }).length;
+                  
+                  const sessoesElegiveis = sessoes.filter(sessao => {
+                    const reg = grade[irmao.id]?.[sessao.id];
+                    return reg?.computa === true;
+                  }).length;
+                  
+                  const percentual = sessoesElegiveis > 0 ? Math.round((presencasIrmao / sessoesElegiveis) * 100) : 0;
+                  
+                  return (
                 <tr key={irmao.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
+                  <td className="border border-gray-300 px-2 py-2 font-medium bg-white sticky left-0 z-10 text-xs">
                     <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(() => {
@@ -486,8 +508,16 @@ export default function ModalGradePresenca({ onFechar }) {
                     </div>
                   </td>
                   {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
+                  <td className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs">
+                    {presencasIrmao}/{sessoesElegiveis}
+                  </td>
+                  <td className="border border-gray-300 px-2 py-2 text-center font-semibold text-xs" 
+                      style={{ backgroundColor: percentual >= 75 ? '#dcfce7' : percentual >= 50 ? '#fef9c3' : '#fee2e2' }}>
+                    {percentual}%
+                  </td>
                 </tr>
-              ))}
+                  );
+                })}
             </tbody>
           </table>
         </div>
