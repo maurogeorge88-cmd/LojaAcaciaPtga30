@@ -241,16 +241,37 @@ export default function ModalGradePresenca({ onFechar }) {
       );
     }
 
-    // 2. Calcular grau do irmão
+    // 2. Calcular grau do irmão NA DATA DA SESSÃO
     let grauIrmao = 0;
-    if (irmao.data_exaltacao) grauIrmao = 3;
-    else if (irmao.data_elevacao) grauIrmao = 2;
-    else if (irmao.data_iniciacao) grauIrmao = 1;
+    
+    // Verificar exaltação
+    if (irmao.data_exaltacao) {
+      const dataExaltacao = new Date(irmao.data_exaltacao);
+      if (dataSessao >= dataExaltacao) {
+        grauIrmao = 3;
+      }
+    }
+    
+    // Se ainda não foi definido, verificar elevação
+    if (grauIrmao === 0 && irmao.data_elevacao) {
+      const dataElevacao = new Date(irmao.data_elevacao);
+      if (dataSessao >= dataElevacao) {
+        grauIrmao = 2;
+      }
+    }
+    
+    // Se ainda não foi definido, verificar iniciação
+    if (grauIrmao === 0 && irmao.data_iniciacao) {
+      const dataIniciacao = new Date(irmao.data_iniciacao);
+      if (dataSessao >= dataIniciacao) {
+        grauIrmao = 1;
+      }
+    }
 
     // 3. Verificar grau da sessão
     const grauSessao = sessao.grau_sessao_id || 1;
 
-    // 4. Se sessão é de grau superior ao do irmão → não pode participar
+    // 4. Se sessão é de grau superior ao do irmão NA DATA DA SESSÃO → não pode participar
     if (grauSessao > grauIrmao) {
       return (
         <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
@@ -465,11 +486,32 @@ export default function ModalGradePresenca({ onFechar }) {
                     const dataInicio = dataIngresso || dataIniciacao;
                     if (dataInicio && dataSessao < dataInicio) return;
                     
-                    // 2. Calcular grau do irmão
+                    // 2. Calcular grau do irmão NA DATA DA SESSÃO
                     let grauIrmao = 0;
-                    if (irmao.data_exaltacao) grauIrmao = 3;
-                    else if (irmao.data_elevacao) grauIrmao = 2;
-                    else if (irmao.data_iniciacao) grauIrmao = 1;
+                    
+                    // Verificar exaltação
+                    if (irmao.data_exaltacao) {
+                      const dataExaltacao = new Date(irmao.data_exaltacao);
+                      if (dataSessao >= dataExaltacao) {
+                        grauIrmao = 3;
+                      }
+                    }
+                    
+                    // Se ainda não foi definido, verificar elevação
+                    if (grauIrmao === 0 && irmao.data_elevacao) {
+                      const dataElevacao = new Date(irmao.data_elevacao);
+                      if (dataSessao >= dataElevacao) {
+                        grauIrmao = 2;
+                      }
+                    }
+                    
+                    // Se ainda não foi definido, verificar iniciação
+                    if (grauIrmao === 0 && irmao.data_iniciacao) {
+                      const dataIniciacao = new Date(irmao.data_iniciacao);
+                      if (dataSessao >= dataIniciacao) {
+                        grauIrmao = 1;
+                      }
+                    }
                     
                     // 3. Verificar grau da sessão
                     const grauSessao = sessao.grau_sessao_id || 1;
