@@ -248,7 +248,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             setTimeout(() => resolve(), 3000);
           });
           
-          yPos += 42; // Reduzido espaço após logo (era 45)
+          yPos += 50; // Aumentado espaço após logo para evitar sobreposição
         } catch (e) {
           console.log('Logo não disponível:', e);
         }
@@ -266,7 +266,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           ? `${dadosLoja.nome_loja} nº ${dadosLoja.numero_loja}`
           : dadosLoja.nome_loja;
         doc.text(nomeLoja, 105, yPos, { align: 'center' });
-        yPos += 12;
+        yPos += 7;
       }
 
       // Apenas Cidade (sem oriente/vale)
