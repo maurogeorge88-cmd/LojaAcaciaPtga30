@@ -266,7 +266,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           ? `${dadosLoja.nome_loja} nº ${dadosLoja.numero_loja}`
           : dadosLoja.nome_loja;
         doc.text(nomeLoja, 105, yPos, { align: 'center' });
-        yPos += 7;
+        yPos += 12;
       }
 
       // Apenas Cidade (sem oriente/vale)
@@ -282,7 +282,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         doc.setTextColor(0, 0, 0);
       }
 
-      yPos += 10;
+      yPos += 5;
 
       // Título do Relatório
       doc.setFontSize(16);
