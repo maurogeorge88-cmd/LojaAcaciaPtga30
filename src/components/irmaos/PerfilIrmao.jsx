@@ -1213,6 +1213,20 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                 </span>
                               </div>
                             )}
+                            <div className="text-sm">
+                              <span className="font-medium">Status:</span>
+                              <span className={`ml-2 ${familiares.pais.pai.vivo ? 'text-green-600' : 'text-gray-600'}`}>
+                                {familiares.pais.pai.vivo ? '✓ Vivo' : '✝ Falecido'}
+                              </span>
+                            </div>
+                            {!familiares.pais.pai.vivo && familiares.pais.pai.data_obito && (
+                              <div className="text-sm">
+                                <span className="font-medium">Data de Óbito:</span>
+                                <span className="ml-2">
+                                  {familiares.pais.pai.data_obito.split('-').reverse().join('/')}
+                                </span>
+                              </div>
+                            )}
                           </>
                         ) : (
                           <p className="text-sm text-gray-500">Não informado</p>
@@ -1232,6 +1246,20 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                 <span className="font-medium">Nascimento:</span>
                                 <span className="ml-2">
                                   {familiares.pais.mae.data_nascimento.split('-').reverse().join('/')}
+                                </span>
+                              </div>
+                            )}
+                            <div className="text-sm">
+                              <span className="font-medium">Status:</span>
+                              <span className={`ml-2 ${familiares.pais.mae.viva ? 'text-green-600' : 'text-gray-600'}`}>
+                                {familiares.pais.mae.viva ? '✓ Viva' : '✝ Falecida'}
+                              </span>
+                            </div>
+                            {!familiares.pais.mae.viva && familiares.pais.mae.data_obito && (
+                              <div className="text-sm">
+                                <span className="font-medium">Data de Óbito:</span>
+                                <span className="ml-2">
+                                  {familiares.pais.mae.data_obito.split('-').reverse().join('/')}
                                 </span>
                               </div>
                             )}
