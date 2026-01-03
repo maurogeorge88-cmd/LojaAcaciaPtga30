@@ -1199,31 +1199,31 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {/* Visualização Pai */}
                       <div className="space-y-2">
                         <h5 className="font-semibold text-gray-700 border-b pb-1">Pai</h5>
-                        {familiares.pais.pai ? (
+                        {familiares.pais.nome_pai ? (
                           <>
                             <div className="text-sm">
                               <span className="font-medium">Nome:</span>
-                              <span className="ml-2">{familiares.pais.pai.nome}</span>
+                              <span className="ml-2">{familiares.pais.nome_pai}</span>
                             </div>
-                            {familiares.pais.pai.data_nascimento && (
+                            {familiares.pais.data_nascimento_pai && (
                               <div className="text-sm">
                                 <span className="font-medium">Nascimento:</span>
                                 <span className="ml-2">
-                                  {familiares.pais.pai.data_nascimento.split('-').reverse().join('/')}
+                                  {familiares.pais.data_nascimento_pai.split('-').reverse().join('/')}
                                 </span>
                               </div>
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${familiares.pais.pai.vivo ? 'text-green-600' : 'text-gray-600'}`}>
-                                {familiares.pais.pai.vivo ? '✓ Vivo' : '✝ Falecido'}
+                              <span className={`ml-2 ${familiares.pais.pai_vivo ? 'text-green-600' : 'text-gray-600'}`}>
+                                {familiares.pais.pai_vivo ? '✓ Vivo' : '✝ Falecido'}
                               </span>
                             </div>
-                            {!familiares.pais.pai.vivo && familiares.pais.pai.data_obito && (
+                            {!familiares.pais.pai_vivo && familiares.pais.data_obito_pai && (
                               <div className="text-sm">
                                 <span className="font-medium">Data de Óbito:</span>
                                 <span className="ml-2">
-                                  {familiares.pais.pai.data_obito.split('-').reverse().join('/')}
+                                  {familiares.pais.data_obito_pai.split('-').reverse().join('/')}
                                 </span>
                               </div>
                             )}
@@ -1235,31 +1235,31 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {/* Visualização Mãe */}
                       <div className="space-y-2">
                         <h5 className="font-semibold text-gray-700 border-b pb-1">Mãe</h5>
-                        {familiares.pais.mae ? (
+                        {familiares.pais.nome_mae ? (
                           <>
                             <div className="text-sm">
                               <span className="font-medium">Nome:</span>
-                              <span className="ml-2">{familiares.pais.mae.nome}</span>
+                              <span className="ml-2">{familiares.pais.nome_mae}</span>
                             </div>
-                            {familiares.pais.mae.data_nascimento && (
+                            {familiares.pais.data_nascimento_mae && (
                               <div className="text-sm">
                                 <span className="font-medium">Nascimento:</span>
                                 <span className="ml-2">
-                                  {familiares.pais.mae.data_nascimento.split('-').reverse().join('/')}
+                                  {familiares.pais.data_nascimento_mae.split('-').reverse().join('/')}
                                 </span>
                               </div>
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${familiares.pais.mae.viva ? 'text-green-600' : 'text-gray-600'}`}>
-                                {familiares.pais.mae.viva ? '✓ Viva' : '✝ Falecida'}
+                              <span className={`ml-2 ${familiares.pais.mae_viva ? 'text-green-600' : 'text-gray-600'}`}>
+                                {familiares.pais.mae_viva ? '✓ Viva' : '✝ Falecida'}
                               </span>
                             </div>
-                            {!familiares.pais.mae.viva && familiares.pais.mae.data_obito && (
+                            {!familiares.pais.mae_viva && familiares.pais.data_obito_mae && (
                               <div className="text-sm">
                                 <span className="font-medium">Data de Óbito:</span>
                                 <span className="ml-2">
-                                  {familiares.pais.mae.data_obito.split('-').reverse().join('/')}
+                                  {familiares.pais.data_obito_mae.split('-').reverse().join('/')}
                                 </span>
                               </div>
                             )}
