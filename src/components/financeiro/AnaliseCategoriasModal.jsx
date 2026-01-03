@@ -282,7 +282,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         doc.setTextColor(0, 0, 0);
       }
 
-      yPos += 5;
+      yPos += 10;
 
       // Título do Relatório
       doc.setFontSize(16);
