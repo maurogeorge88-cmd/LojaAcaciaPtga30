@@ -340,20 +340,31 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       // CATEGORIAS (quando é mês específico)
       // ========================================
       if (filtroAnalise.mes > 0) {
+        // Filtrar lançamentos do mês com os MESMOS critérios do resumo
+        const lancamentosMesFiltered = lancamentosCompletos.filter(l => {
+          if (l.status !== 'pago') return false;
+          if (l.tipo_pagamento === 'compensacao') return false;
+          
+          // Excluir Tronco em dinheiro
+          const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+          if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+          
+          // Excluir Despesas pagas pelo irmão
+          if (l.categorias_financeiras?.tipo === 'despesa') {
+            const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                          l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+            if (isDespesaPagaPeloIrmao) return false;
+          }
+          
+          const dataRef = l.data_pagamento || l.data_vencimento;
+          if (!dataRef) return false;
+          const data = new Date(dataRef + 'T00:00:00');
+          return data.getFullYear() === filtroAnalise.ano && data.getMonth() + 1 === filtroAnalise.mes;
+        });
+
         // Processar categorias de receitas
-        const receitasPorCategoria = lancamentosCompletos
-          .filter(l => {
-            if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
-            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
-            if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
-            if (l.tipo_pagamento === 'compensacao') return false;
-            const dataRef = l.data_pagamento || l.data_vencimento;
-            if (!dataRef) return false;
-            const data = new Date(dataRef + 'T00:00:00');
-            if (data.getFullYear() !== filtroAnalise.ano) return false;
-            if (data.getMonth() + 1 !== filtroAnalise.mes) return false;
-            return true;
-          })
+        const receitasPorCategoria = lancamentosMesFiltered
+          .filter(l => l.categorias_financeiras?.tipo === 'receita')
           .reduce((acc, l) => {
             const cat = l.categorias_financeiras?.nome || 'Sem categoria';
             acc[cat] = (acc[cat] || 0) + parseFloat(l.valor);
@@ -365,21 +376,8 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           .slice(0, 5);
 
         // Processar categorias de despesas
-        const despesasPorCategoria = lancamentosCompletos
-          .filter(l => {
-            if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
-            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
-            if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
-            const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
-                                          l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
-            if (isDespesaPagaPeloIrmao) return false;
-            const dataRef = l.data_pagamento || l.data_vencimento;
-            if (!dataRef) return false;
-            const data = new Date(dataRef + 'T00:00:00');
-            if (data.getFullYear() !== filtroAnalise.ano) return false;
-            if (data.getMonth() + 1 !== filtroAnalise.mes) return false;
-            return true;
-          })
+        const despesasPorCategoria = lancamentosMesFiltered
+          .filter(l => l.categorias_financeiras?.tipo === 'despesa')
           .reduce((acc, l) => {
             const cat = l.categorias_financeiras?.nome || 'Sem categoria';
             acc[cat] = (acc[cat] || 0) + parseFloat(l.valor);
