@@ -1418,6 +1418,18 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               <span className="ml-2 text-gray-500">({calcularIdade(filho.data_nascimento)})</span>
                             </div>
                           )}
+                          <div className="text-sm text-gray-700">
+                            <span className="font-medium">Status:</span>
+                            <span className={`ml-2 ${!filho.falecido ? 'text-green-600' : 'text-gray-600'}`}>
+                              {!filho.falecido ? '✓ Vivo(a)' : '✝ Falecido(a)'}
+                            </span>
+                          </div>
+                          {filho.falecido && filho.data_obito && (
+                            <div className="text-sm text-gray-700">
+                              <span className="font-medium">Data de Óbito:</span>
+                              <span className="ml-2">{filho.data_obito.split('-').reverse().join('/')}</span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
