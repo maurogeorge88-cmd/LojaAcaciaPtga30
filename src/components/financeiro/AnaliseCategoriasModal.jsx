@@ -372,8 +372,8 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           }, {});
 
         const topReceitas = Object.entries(receitasPorCategoria)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5);
+          .sort((a, b) => b[1] - a[1]);
+          // Removido .slice(0, 5) para mostrar todas
 
         // Processar categorias de despesas
         const despesasPorCategoria = lancamentosMesFiltered
@@ -384,17 +384,9 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             return acc;
           }, {});
 
-        // DEBUG
-        const somaReceitas = Object.values(receitasPorCategoria).reduce((a, b) => a + b, 0);
-        const somaDespesas = Object.values(despesasPorCategoria).reduce((a, b) => a + b, 0);
-        console.log('PDF - Receitas:', somaReceitas, 'Despesas:', somaDespesas);
-        console.log('Resumo - Receitas:', totalReceitas, 'Despesas:', totalDespesas);
-        console.log('Diferença Receitas:', totalReceitas - somaReceitas);
-        console.log('Diferença Despesas:', totalDespesas - somaDespesas);
-
         const topDespesas = Object.entries(despesasPorCategoria)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, 5);
+          .sort((a, b) => b[1] - a[1]);
+          // Removido .slice(0, 5) para mostrar todas
 
         // Título
         doc.setFontSize(12);
