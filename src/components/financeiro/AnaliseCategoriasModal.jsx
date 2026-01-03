@@ -1107,7 +1107,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             {dadosGrafico.length > 0 ? (
               <div className="bg-white rounded-lg p-6 shadow-inner">
                 {/* Gráfico de Barras Verticais */}
-                <div className="flex items-end justify-around gap-1 h-80 border-b-2 border-gray-300 pb-2">
+                <div className="flex items-end justify-around gap-1 h-64 border-b-2 border-gray-300 pb-2">
                   {(() => {
                     const maxValor = Math.max(...dadosGrafico.flatMap(d => [d.receitas, d.despesas]));
                     
@@ -1116,7 +1116,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                         {/* Barras */}
                         <div className="flex items-end gap-0.5 h-full w-full justify-center">
                           {/* Barra Despesas */}
-                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '35%' }}>
+                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '42%' }}>
                             <div className="relative group">
                               <div 
                                 className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
@@ -1146,7 +1146,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                           </div>
 
                           {/* Barra Receitas */}
-                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '35%' }}>
+                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '42%' }}>
                             <div className="relative group">
                               <div 
                                 className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
@@ -1196,22 +1196,22 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 </div>
 
                 {/* Cards de resumo - altura aumentada */}
-                <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-200">
-                  <div className="bg-green-50 rounded-lg p-5 border border-green-200 text-center">
-                    <p className="text-xs text-green-600 font-semibold mb-2">Total Receitas</p>
-                    <p className="text-xl font-bold text-green-700">
+                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+                  <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200 text-center">
+                    <p className="text-sm text-green-600 font-semibold mb-3">Total Receitas</p>
+                    <p className="text-2xl font-bold text-green-700">
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.receitas, 0))}
                     </p>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-5 border border-red-200 text-center">
-                    <p className="text-xs text-red-600 font-semibold mb-2">Total Despesas</p>
-                    <p className="text-xl font-bold text-red-700">
+                  <div className="bg-red-50 rounded-lg p-6 border-2 border-red-200 text-center">
+                    <p className="text-sm text-red-600 font-semibold mb-3">Total Despesas</p>
+                    <p className="text-2xl font-bold text-red-700">
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.despesas, 0))}
                     </p>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-5 border border-blue-200 text-center">
-                    <p className="text-xs text-blue-600 font-semibold mb-2">Lucro Total</p>
-                    <p className={`text-xl font-bold ${
+                  <div className="bg-blue-50 rounded-lg p-6 border-2 border-blue-200 text-center">
+                    <p className="text-sm text-blue-600 font-semibold mb-3">Lucro Total</p>
+                    <p className={`text-2xl font-bold ${
                       dadosGrafico.reduce((sum, item) => sum + item.lucro, 0) >= 0 ? 'text-blue-700' : 'text-red-700'
                     }`}>
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.lucro, 0))}
