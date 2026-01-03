@@ -1420,11 +1420,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           )}
                           <div className="text-sm text-gray-700">
                             <span className="font-medium">Status:</span>
-                            <span className={`ml-2 ${!filho.falecido ? 'text-green-600' : 'text-gray-600'}`}>
-                              {!filho.falecido ? '✓ Vivo(a)' : '✝ Falecido(a)'}
+                            <span className={`ml-2 ${filho.vivo ? 'text-green-600' : 'text-gray-600'}`}>
+                              {filho.vivo ? '✓ Vivo(a)' : '✝ Falecido(a)'}
                             </span>
                           </div>
-                          {filho.falecido && filho.data_obito && (
+                          {!filho.vivo && filho.data_obito && (
                             <div className="text-sm text-gray-700">
                               <span className="font-medium">Data de Óbito:</span>
                               <span className="ml-2">{filho.data_obito.split('-').reverse().join('/')}</span>
