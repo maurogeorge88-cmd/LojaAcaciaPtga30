@@ -218,14 +218,13 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       const jsPDF = await getJsPDF();
       const doc = new jsPDF();
 
-      let yPos = 15;
+      let yPos = 10; // Começando mais alto (era 15)
 
       // ========================================
       // LOGO (se existir)
       // ========================================
       if (dadosLoja?.logo_url) {
         try {
-          // Tentar adicionar logo
           const img = new Image();
           img.crossOrigin = 'anonymous';
           
@@ -236,12 +235,12 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 resolve();
               } catch (e) {
                 console.log('Erro ao adicionar logo:', e);
-                resolve(); // Continua mesmo se der erro
+                resolve();
               }
             };
             img.onerror = () => {
               console.log('Erro ao carregar logo');
-              resolve(); // Continua mesmo se der erro
+              resolve();
             };
             img.src = dadosLoja.logo_url;
             
@@ -249,14 +248,14 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             setTimeout(() => resolve(), 3000);
           });
           
-          yPos += 45;
+          yPos += 42; // Reduzido espaço após logo (era 45)
         } catch (e) {
           console.log('Logo não disponível:', e);
         }
       }
 
       // ========================================
-      // CABEÇALHO COM DADOS DA LOJA
+      // CABEÇALHO - NOME DA LOJA E CIDADE
       // ========================================
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
@@ -267,24 +266,19 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           ? `${dadosLoja.nome_loja} nº ${dadosLoja.numero_loja}`
           : dadosLoja.nome_loja;
         doc.text(nomeLoja, 105, yPos, { align: 'center' });
-        yPos += 8;
+        yPos += 7;
       }
 
-      // Oriente/Vale/Cidade
-      if (dadosLoja?.oriente || dadosLoja?.cidade) {
+      // Apenas Cidade (sem oriente/vale)
+      if (dadosLoja?.cidade) {
         doc.setFontSize(11);
         doc.setFont('helvetica', 'normal');
-        const localizacao = [];
-        if (dadosLoja.oriente) localizacao.push(`Or∴ ${dadosLoja.oriente}`);
-        if (dadosLoja.vale) localizacao.push(`Vale ${dadosLoja.vale}`);
-        if (dadosLoja.cidade && dadosLoja.estado) {
-          localizacao.push(`${dadosLoja.cidade}/${dadosLoja.estado}`);
-        } else if (dadosLoja.cidade) {
-          localizacao.push(dadosLoja.cidade);
-        }
         doc.setTextColor(100, 100, 100);
-        doc.text(localizacao.join(' - '), 105, yPos, { align: 'center' });
-        yPos += 6;
+        const cidadeTexto = dadosLoja.estado 
+          ? `${dadosLoja.cidade}/${dadosLoja.estado}`
+          : dadosLoja.cidade;
+        doc.text(cidadeTexto, 105, yPos, { align: 'center' });
+        yPos += 5;
         doc.setTextColor(0, 0, 0);
       }
 
