@@ -1215,11 +1215,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${familiares.pais.pai.vivo ? 'text-green-600' : 'text-gray-600'}`}>
-                                {familiares.pais.pai.vivo ? '✓ Vivo' : '✝ Falecido'}
+                              <span className={`ml-2 ${!familiares.pais.pai.falecido ? 'text-green-600' : 'text-gray-600'}`}>
+                                {!familiares.pais.pai.falecido ? '✓ Vivo' : '✝ Falecido'}
                               </span>
                             </div>
-                            {!familiares.pais.pai.vivo && familiares.pais.pai.data_obito && (
+                            {familiares.pais.pai.falecido && familiares.pais.pai.data_obito && (
                               <div className="text-sm">
                                 <span className="font-medium">Data de Óbito:</span>
                                 <span className="ml-2">
@@ -1251,11 +1251,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${familiares.pais.mae.viva ? 'text-green-600' : 'text-gray-600'}`}>
-                                {familiares.pais.mae.viva ? '✓ Viva' : '✝ Falecida'}
+                              <span className={`ml-2 ${!familiares.pais.mae.falecido ? 'text-green-600' : 'text-gray-600'}`}>
+                                {!familiares.pais.mae.falecido ? '✓ Viva' : '✝ Falecida'}
                               </span>
                             </div>
-                            {!familiares.pais.mae.viva && familiares.pais.mae.data_obito && (
+                            {familiares.pais.mae.falecido && familiares.pais.mae.data_obito && (
                               <div className="text-sm">
                                 <span className="font-medium">Data de Óbito:</span>
                                 <span className="ml-2">
