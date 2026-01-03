@@ -336,7 +336,141 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
       yPos += 40;
       doc.setTextColor(0, 0, 0);
 
+      // ========================================
+      // CATEGORIAS (quando é mês específico)
+      // ========================================
+      if (filtroAnalise.mes > 0) {
+        // Processar categorias de receitas
+        const receitasPorCategoria = lancamentosCompletos
+          .filter(l => {
+            if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+            if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+            if (l.tipo_pagamento === 'compensacao') return false;
+            const dataRef = l.data_pagamento || l.data_vencimento;
+            if (!dataRef) return false;
+            const data = new Date(dataRef + 'T00:00:00');
+            if (data.getFullYear() !== filtroAnalise.ano) return false;
+            if (data.getMonth() + 1 !== filtroAnalise.mes) return false;
+            return true;
+          })
+          .reduce((acc, l) => {
+            const cat = l.categorias_financeiras?.nome || 'Sem categoria';
+            acc[cat] = (acc[cat] || 0) + parseFloat(l.valor);
+            return acc;
+          }, {});
+
+        const topReceitas = Object.entries(receitasPorCategoria)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+
+        // Processar categorias de despesas
+        const despesasPorCategoria = lancamentosCompletos
+          .filter(l => {
+            if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+            const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+            if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+            const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                          l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+            if (isDespesaPagaPeloIrmao) return false;
+            const dataRef = l.data_pagamento || l.data_vencimento;
+            if (!dataRef) return false;
+            const data = new Date(dataRef + 'T00:00:00');
+            if (data.getFullYear() !== filtroAnalise.ano) return false;
+            if (data.getMonth() + 1 !== filtroAnalise.mes) return false;
+            return true;
+          })
+          .reduce((acc, l) => {
+            const cat = l.categorias_financeiras?.nome || 'Sem categoria';
+            acc[cat] = (acc[cat] || 0) + parseFloat(l.valor);
+            return acc;
+          }, {});
+
+        const topDespesas = Object.entries(despesasPorCategoria)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5);
+
+        // Título
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PRINCIPAIS CATEGORIAS', 10, yPos);
+        yPos += 8;
+
+        // Dois quadros lado a lado
+        const larguraQuadro = 90;
+        const alturaLinha = 6;
+
+        // ===== QUADRO RECEITAS (esquerda) =====
+        let xReceitas = 10;
+        let yReceitas = yPos;
+
+        // Cabeçalho Receitas
+        doc.setFillColor(220, 252, 231); // Verde claro
+        doc.rect(xReceitas, yReceitas, larguraQuadro, 8, 'F');
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(34, 139, 34);
+        doc.text('RECEITAS', xReceitas + 3, yReceitas + 5);
+        yReceitas += 10;
+
+        // Linhas de receitas
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        
+        topReceitas.forEach(([categoria, valor], index) => {
+          if (index % 2 === 0) {
+            doc.setFillColor(248, 248, 248);
+            doc.rect(xReceitas, yReceitas - 1, larguraQuadro, alturaLinha, 'F');
+          }
+          
+          // Limitar tamanho do nome da categoria
+          const nomeCategoria = categoria.length > 20 ? categoria.substring(0, 20) + '...' : categoria;
+          doc.text(nomeCategoria, xReceitas + 2, yReceitas + 3);
+          doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, xReceitas + larguraQuadro - 2, yReceitas + 3, { align: 'right' });
+          
+          yReceitas += alturaLinha;
+        });
+
+        // ===== QUADRO DESPESAS (direita) =====
+        let xDespesas = 110;
+        let yDespesas = yPos;
+
+        // Cabeçalho Despesas
+        doc.setFillColor(254, 226, 226); // Vermelho claro
+        doc.rect(xDespesas, yDespesas, larguraQuadro, 8, 'F');
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(220, 38, 38);
+        doc.text('DESPESAS', xDespesas + 3, yDespesas + 5);
+        yDespesas += 10;
+
+        // Linhas de despesas
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0, 0, 0);
+        
+        topDespesas.forEach(([categoria, valor], index) => {
+          if (index % 2 === 0) {
+            doc.setFillColor(248, 248, 248);
+            doc.rect(xDespesas, yDespesas - 1, larguraQuadro, alturaLinha, 'F');
+          }
+          
+          // Limitar tamanho do nome da categoria
+          const nomeCategoria = categoria.length > 20 ? categoria.substring(0, 20) + '...' : categoria;
+          doc.text(nomeCategoria, xDespesas + 2, yDespesas + 3);
+          doc.text(`R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, xDespesas + larguraQuadro - 2, yDespesas + 3, { align: 'right' });
+          
+          yDespesas += alturaLinha;
+        });
+
+        // Atualizar yPos para o maior dos dois
+        yPos = Math.max(yReceitas, yDespesas) + 5;
+      }
+
+      // ========================================
       // TABELA MENSAL (se ano inteiro)
+      // ========================================
       if (filtroAnalise.mes === 0 && dadosGrafico.length > 1) {
         doc.setFontSize(12);
         doc.setFont('helvetica', 'bold');
