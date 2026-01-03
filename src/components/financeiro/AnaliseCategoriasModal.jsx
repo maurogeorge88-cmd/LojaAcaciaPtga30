@@ -652,12 +652,12 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
           </div>
 
-          {/* Grid Receitas e Despesas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Grid Receitas, Despesas e Totais Anuais */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* RECEITAS POR CATEGORIA */}
-            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
-              <h5 className="text-md font-bold text-green-700 mb-3">📈 Receitas por Categoria</h5>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+              <h5 className="text-sm font-bold text-green-700 mb-2">📈 Receitas por Categoria</h5>
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {(() => {
                   const receitasPorCategoria = lancamentosCompletos
                     .filter(l => {
@@ -690,17 +690,17 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                     .map(([cat, valor]) => {
                       const percentual = total > 0 ? (valor / total) * 100 : 0;
                       return (
-                        <div key={cat} className="bg-white rounded-lg p-2 border border-green-200">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-green-700 min-w-[45px] text-center">
+                        <div key={cat} className="bg-white rounded p-1.5 border border-green-200">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-green-700 min-w-[38px] text-center">
                               {percentual.toFixed(1)}%
                             </span>
-                            <span className="text-sm font-semibold text-gray-700 flex-1">{cat}</span>
-                            <span className="text-sm font-bold text-green-700">{formatarMoeda(valor)}</span>
+                            <span className="text-xs font-semibold text-gray-700 flex-1 truncate">{cat}</span>
+                            <span className="text-xs font-bold text-green-700">{formatarMoeda(valor)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div className="w-full bg-gray-200 rounded-full h-1 mt-0.5">
                             <div 
-                              className="bg-green-600 h-1.5 rounded-full transition-all"
+                              className="bg-green-600 h-1 rounded-full transition-all"
                               style={{ width: `${percentual}%` }}
                             ></div>
                           </div>
@@ -712,9 +712,9 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
 
             {/* DESPESAS POR CATEGORIA */}
-            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-              <h5 className="text-md font-bold text-red-700 mb-3">📉 Despesas por Categoria</h5>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+              <h5 className="text-sm font-bold text-red-700 mb-2">📉 Despesas por Categoria</h5>
+              <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {(() => {
                   const despesasPorCategoria = lancamentosCompletos
                     .filter(l => {
@@ -748,17 +748,17 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                     .map(([cat, valor]) => {
                       const percentual = total > 0 ? (valor / total) * 100 : 0;
                       return (
-                        <div key={cat} className="bg-white rounded-lg p-2 border border-red-200">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-red-700 min-w-[45px] text-center">
+                        <div key={cat} className="bg-white rounded p-1.5 border border-red-200">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-red-700 min-w-[38px] text-center">
                               {percentual.toFixed(1)}%
                             </span>
-                            <span className="text-sm font-semibold text-gray-700 flex-1">{cat}</span>
-                            <span className="text-sm font-bold text-red-700">{formatarMoeda(valor)}</span>
+                            <span className="text-xs font-semibold text-gray-700 flex-1 truncate">{cat}</span>
+                            <span className="text-xs font-bold text-red-700">{formatarMoeda(valor)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1">
+                          <div className="w-full bg-gray-200 rounded-full h-1 mt-0.5">
                             <div 
-                              className="bg-red-600 h-1.5 rounded-full transition-all"
+                              className="bg-red-600 h-1 rounded-full transition-all"
                               style={{ width: `${percentual}%` }}
                             ></div>
                           </div>
@@ -768,14 +768,97 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 })()}
               </div>
             </div>
+
+            {/* TOTAIS DO PERÍODO (3ª coluna) */}
+            <div className="space-y-3">
+              {(() => {
+                const totalReceitas = lancamentosCompletos
+                  .filter(l => {
+                    if (l.categorias_financeiras?.tipo !== 'receita' || l.status !== 'pago') return false;
+                    const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                    if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+                    if (l.tipo_pagamento === 'compensacao') return false;
+                    const dataRef = l.data_pagamento || l.data_vencimento;
+                    if (!dataRef) return false;
+                    const data = parseData(dataRef);
+                    if (data.getFullYear() !== filtroAnalise.ano) return false;
+                    if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                    return true;
+                  })
+                  .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+                const totalDespesas = lancamentosCompletos
+                  .filter(l => {
+                    if (l.categorias_financeiras?.tipo !== 'despesa' || l.status !== 'pago') return false;
+                    const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+                    if (isTronco && l.tipo_pagamento === 'dinheiro') return false;
+                    const isDespesaPagaPeloIrmao = l.categorias_financeiras?.nome?.toLowerCase().includes('despesas pagas pelo irmão') ||
+                                                  l.categorias_financeiras?.nome?.toLowerCase().includes('despesa paga pelo irmão');
+                    if (isDespesaPagaPeloIrmao) return false;
+                    const dataRef = l.data_pagamento || l.data_vencimento;
+                    if (!dataRef) return false;
+                    const data = parseData(dataRef);
+                    if (data.getFullYear() !== filtroAnalise.ano) return false;
+                    if (filtroAnalise.mes > 0 && data.getMonth() + 1 !== filtroAnalise.mes) return false;
+                    return true;
+                  })
+                  .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+                const saldo = totalReceitas - totalDespesas;
+
+                return (
+                  <>
+                    <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                      <h5 className="text-sm font-bold text-green-700 mb-2">📊 Receitas por Ano</h5>
+                      <p className="text-3xl font-bold text-green-700 mb-1">{formatarMoeda(totalReceitas)}</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-gradient-to-r from-green-500 to-green-700 h-2 rounded-full" style={{ width: '100%' }}></div>
+                      </div>
+                    </div>
+
+                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                      <h5 className="text-sm font-bold text-red-700 mb-2">📉 Despesas por Ano (% da Receita)</h5>
+                      <p className="text-3xl font-bold text-red-700 mb-1">{formatarMoeda(totalDespesas)}</p>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-red-700 font-bold">
+                          {totalReceitas > 0 ? Math.round((totalDespesas / totalReceitas) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-gradient-to-r from-red-500 to-red-700 h-2 rounded-full" 
+                             style={{ width: `${totalReceitas > 0 ? Math.min((totalDespesas / totalReceitas) * 100, 100) : 0}%` }}>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className={`${saldo >= 0 ? 'bg-blue-50 border-blue-300' : 'bg-red-50 border-red-300'} border-2 rounded-lg p-4`}>
+                      <h5 className={`text-sm font-bold mb-2 ${saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                        💎 Saldo por Ano (% da Receita)
+                      </h5>
+                      <p className={`text-3xl font-bold mb-1 ${saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                        {formatarMoeda(saldo)}
+                      </p>
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className={`font-bold ${saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                          {saldo >= 0 ? '+' : ''}{totalReceitas > 0 ? Math.round((saldo / totalReceitas) * 100) : 0}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className={`h-2 rounded-full ${saldo >= 0 ? 'bg-gradient-to-r from-blue-500 to-blue-700' : 'bg-gradient-to-r from-red-500 to-red-700'}`}
+                             style={{ width: `${Math.abs(totalReceitas > 0 ? Math.min((saldo / totalReceitas) * 100, 100) : 0)}%` }}>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
           </div>
         </div>
 
-        {/* SEÇÃO 2: TOTAIS */}
+        {/* SEÇÃO 2: EVOLUÇÃO ANUAL */}
         <div className="border-t pt-6 space-y-4">
-          <h4 className="text-lg font-bold text-gray-700">
-            Totais do Período - {filtroAnalise.mes === 0 ? filtroAnalise.ano : `${meses[filtroAnalise.mes - 1]}/${filtroAnalise.ano}`}
-          </h4>
+          <h4 className="text-lg font-bold text-gray-700">Evolução Anual</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* TOTAL RECEITAS */}
@@ -1162,16 +1245,16 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             {dadosGrafico.length > 0 ? (
               <div className="bg-white rounded-lg p-6 shadow-inner">
                 {/* Gráfico de Barras Verticais */}
-                <div className="flex items-end justify-around gap-2 h-80 border-b-2 border-gray-300 pb-2">
+                <div className="flex items-end justify-around gap-1 h-80 border-b-2 border-gray-300 pb-2">
                   {(() => {
                     const maxValor = Math.max(...dadosGrafico.flatMap(d => [d.receitas, d.despesas]));
                     
                     return dadosGrafico.map((dado, index) => (
                       <div key={index} className="flex flex-col items-center gap-2 flex-1">
                         {/* Barras */}
-                        <div className="flex items-end gap-1 h-full w-full justify-center">
+                        <div className="flex items-end gap-0.5 h-full w-full justify-center">
                           {/* Barra Despesas */}
-                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '40%' }}>
+                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '35%' }}>
                             <div className="relative group">
                               <div 
                                 className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
@@ -1179,7 +1262,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                                   height: `${(dado.despesas / maxValor) * 280}px`,
                                   minHeight: dado.despesas > 0 ? '10px' : '0',
                                   width: '100%',
-                                  minWidth: '20px'
+                                  minWidth: '16px'
                                 }}
                               >
                                 {/* Valor no topo */}
@@ -1201,7 +1284,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                           </div>
 
                           {/* Barra Receitas */}
-                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '40%' }}>
+                          <div className="flex flex-col items-center justify-end h-full" style={{ width: '35%' }}>
                             <div className="relative group">
                               <div 
                                 className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
@@ -1209,7 +1292,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                                   height: `${(dado.receitas / maxValor) * 280}px`,
                                   minHeight: dado.receitas > 0 ? '10px' : '0',
                                   width: '100%',
-                                  minWidth: '20px'
+                                  minWidth: '16px'
                                 }}
                               >
                                 {/* Valor no topo */}
@@ -1250,23 +1333,23 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                   </div>
                 </div>
 
-                {/* Cards de resumo compactos */}
+                {/* Cards de resumo - altura aumentada */}
                 <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gray-200">
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-200 text-center">
-                    <p className="text-[10px] text-green-600 font-semibold mb-1">Total Receitas</p>
-                    <p className="text-base font-bold text-green-700">
+                  <div className="bg-green-50 rounded-lg p-5 border border-green-200 text-center">
+                    <p className="text-xs text-green-600 font-semibold mb-2">Total Receitas</p>
+                    <p className="text-xl font-bold text-green-700">
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.receitas, 0))}
                     </p>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-3 border border-red-200 text-center">
-                    <p className="text-[10px] text-red-600 font-semibold mb-1">Total Despesas</p>
-                    <p className="text-base font-bold text-red-700">
+                  <div className="bg-red-50 rounded-lg p-5 border border-red-200 text-center">
+                    <p className="text-xs text-red-600 font-semibold mb-2">Total Despesas</p>
+                    <p className="text-xl font-bold text-red-700">
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.despesas, 0))}
                     </p>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 text-center">
-                    <p className="text-[10px] text-blue-600 font-semibold mb-1">Lucro Total</p>
-                    <p className={`text-base font-bold ${
+                  <div className="bg-blue-50 rounded-lg p-5 border border-blue-200 text-center">
+                    <p className="text-xs text-blue-600 font-semibold mb-2">Lucro Total</p>
+                    <p className={`text-xl font-bold ${
                       dadosGrafico.reduce((sum, item) => sum + item.lucro, 0) >= 0 ? 'text-blue-700' : 'text-red-700'
                     }`}>
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.lucro, 0))}
