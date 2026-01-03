@@ -1121,7 +1121,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                               <div 
                                 className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
                                 style={{ 
-                                  height: `${(dado.despesas / maxValor) * 280}px`,
+                                  height: `${(dado.despesas / maxValor) * 220}px`,
                                   minHeight: dado.despesas > 0 ? '10px' : '0',
                                   width: '100%',
                                   minWidth: '16px'
@@ -1151,7 +1151,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                               <div 
                                 className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
                                 style={{ 
-                                  height: `${(dado.receitas / maxValor) * 280}px`,
+                                  height: `${(dado.receitas / maxValor) * 220}px`,
                                   minHeight: dado.receitas > 0 ? '10px' : '0',
                                   width: '100%',
                                   minWidth: '16px'
