@@ -343,19 +343,17 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         doc.text('MOVIMENTAÇÃO MENSAL', 10, yPos);
         yPos += 8;
 
-        // Cabeçalho
+        // Cabeçalho da tabela (SEM coluna Gráfico)
         doc.setFontSize(9);
         doc.setFillColor(230, 230, 230);
         doc.rect(10, yPos, 190, 8, 'F');
         doc.text('Mês', 15, yPos + 5);
-        doc.text('Receitas', 70, yPos + 5, { align: 'right' });
-        doc.text('Despesas', 115, yPos + 5, { align: 'right' });
-        doc.text('Saldo', 155, yPos + 5, { align: 'right' });
-        doc.text('Gráfico', 175, yPos + 5);
+        doc.text('Receitas', 80, yPos + 5, { align: 'right' });
+        doc.text('Despesas', 135, yPos + 5, { align: 'right' });
+        doc.text('Saldo', 190, yPos + 5, { align: 'right' });
         yPos += 10;
 
         doc.setFont('helvetica', 'normal');
-        const maxValor = Math.max(...dadosGrafico.map(d => Math.max(d.receitas, d.despesas)));
 
         dadosGrafico.forEach((dado, index) => {
           if (yPos > 260) {
@@ -363,33 +361,24 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             yPos = 20;
           }
 
+          // Fundo alternado
           if (index % 2 === 0) {
             doc.setFillColor(248, 248, 248);
-            doc.rect(10, yPos - 2, 190, 10, 'F');
+            doc.rect(10, yPos - 2, 190, 7, 'F'); // Altura reduzida de 10 para 7
           }
 
           doc.setTextColor(0, 0, 0);
-          doc.text(dado.mes, 15, yPos + 4);
+          doc.text(dado.mes, 15, yPos + 3);
           doc.setTextColor(34, 139, 34);
-          doc.text(`R$ ${dado.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 70, yPos + 4, { align: 'right' });
+          doc.text(`R$ ${dado.receitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 80, yPos + 3, { align: 'right' });
           doc.setTextColor(220, 38, 38);
-          doc.text(`R$ ${dado.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 115, yPos + 4, { align: 'right' });
+          doc.text(`R$ ${dado.despesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 135, yPos + 3, { align: 'right' });
           
           const saldo = dado.receitas - dado.despesas;
           doc.setTextColor(saldo >= 0 ? 34 : 220, saldo >= 0 ? 139 : 38, saldo >= 0 ? 34 : 38);
-          doc.text(`R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 155, yPos + 4, { align: 'right' });
+          doc.text(`R$ ${saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 190, yPos + 3, { align: 'right' });
 
-          // Mini barras
-          const alturaMaxBarra = 6;
-          const alturaReceitas = maxValor > 0 ? (dado.receitas / maxValor) * alturaMaxBarra : 0;
-          const alturaDespesas = maxValor > 0 ? (dado.despesas / maxValor) * alturaMaxBarra : 0;
-          
-          doc.setFillColor(34, 139, 34);
-          doc.rect(165, yPos + 6 - alturaReceitas, 3, alturaReceitas, 'F');
-          doc.setFillColor(220, 38, 38);
-          doc.rect(168.5, yPos + 6 - alturaDespesas, 3, alturaDespesas, 'F');
-
-          yPos += 10;
+          yPos += 7; // Reduzido de 10 para 7 (espaço entre linhas menor)
         });
       }
 
