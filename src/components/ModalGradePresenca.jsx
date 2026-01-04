@@ -99,12 +99,14 @@ export default function ModalGradePresenca({ onFechar }) {
           }
         }
         
-        // 2. Remover desligados (situação ativa de desligamento)
-        const temDesligamentoAtivo = historicoSituacoes?.some(sit => {
+        // 2. Remover desligados, irregulares, suspensos, ex-ofício (situações bloqueadoras ativas)
+        const temSituacaoBloqueadoraAtiva = historicoSituacoes?.some(sit => {
           if (sit.membro_id !== i.id) return false;
           
           const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          if (tipo !== 'desligado' && tipo !== 'desligamento') return false;
+          const situacoesExcluidas = ['desligado', 'desligamento', 'irregular', 'suspenso', 'ex-oficio', 'excluido'];
+          
+          if (!situacoesExcluidas.includes(tipo)) return false;
           
           const dataInicio = new Date(sit.data_inicio);
           if (dataInicio > hoje) return false;
@@ -115,7 +117,7 @@ export default function ModalGradePresenca({ onFechar }) {
           return dataFim >= hoje;
         });
         
-        if (temDesligamentoAtivo) return false;
+        if (temSituacaoBloqueadoraAtiva) return false;
         
         return true;
       });
