@@ -441,8 +441,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
             <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
           </div>
-          <div className="bg-blue-50 border-2 border-blue-200 p-4 rounded-lg">
-            <div className="text-blue-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
+          <div className="bg-blue-50 border-2 border-primary-200 p-4 rounded-lg">
+            <div className="text-primary-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
             <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
           </div>
           <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
