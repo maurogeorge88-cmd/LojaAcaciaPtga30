@@ -576,7 +576,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   return (
     <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
       {/* CABEÇALHO */}
-      <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg p-6 flex items-center justify-between z-10">
+      <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg p-6 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
           <span className="text-4xl">📊</span>
           <div>
@@ -888,7 +888,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                         </span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className={`h-2 rounded-full ${saldo >= 0 ? 'bg-gradient-to-r from-blue-500 to-blue-700' : 'bg-gradient-to-r from-red-500 to-red-700'}`}
+                        <div className={`h-2 rounded-full ${saldo >= 0 ? 'bg-gradient-to-r from-blue-500 to-primary-700' : 'bg-gradient-to-r from-red-500 to-red-700'}`}
                              style={{ width: `${Math.abs(totalReceitas > 0 ? Math.min((saldo / totalReceitas) * 100, 100) : 0)}%` }}>
                         </div>
                       </div>
