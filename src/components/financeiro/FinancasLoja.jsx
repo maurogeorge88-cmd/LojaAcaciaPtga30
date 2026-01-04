@@ -4044,7 +4044,10 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="bg-indigo-600 text-white px-6 py-4 rounded-t-lg">
+        <div 
+          className="text-white px-6 py-4 rounded-t-lg"
+          style={{ background: 'linear-gradient(to right, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))' }}
+        >
           <h3 className="text-xl font-bold">
             {lancamentoExistente ? '🔀 Parcelar Lançamento Existente' : '🔢 Parcelar Despesa/Receita'}
           </h3>
