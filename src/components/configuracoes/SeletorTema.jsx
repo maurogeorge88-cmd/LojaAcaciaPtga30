@@ -53,6 +53,22 @@ const SeletorTema = () => {
       cor: 'bg-orange-600',
       preview: 'from-orange-600 to-orange-700',
       emoji: '🔥'
+    },
+    {
+      id: 'grafite',
+      nome: 'Grafite Elegante',
+      descricao: 'Elegância e modernidade',
+      cor: 'bg-gray-600',
+      preview: 'from-gray-600 to-gray-700',
+      emoji: '⚫'
+    },
+    {
+      id: 'cinza',
+      nome: 'Cinza Neutro',
+      descricao: 'Neutro e profissional',
+      cor: 'bg-slate-600',
+      preview: 'from-slate-600 to-slate-700',
+      emoji: '⚪'
     }
   ];
 
