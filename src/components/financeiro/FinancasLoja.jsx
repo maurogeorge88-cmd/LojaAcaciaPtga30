@@ -2222,7 +2222,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           onClick={() => setViewMode('lancamentos')}
           className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
             viewMode === 'lancamentos'
-              ? 'bg-blue-600 text-white'
+              ? 'bg-primary-600 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
         >
@@ -2282,7 +2282,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </button>
         <button
           onClick={gerarPDFResumido}
-          className="w-28 h-[55px] px-3 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>Fechamento</span>
           <span>Mensal</span>
@@ -3038,7 +3038,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="flex gap-2">
                 <button
                   onClick={() => gerarRelatorioDeTodos()}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
                 >
                   📄 Gerar PDFs de Todos
                 </button>
@@ -3221,7 +3221,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                            className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 font-medium transition-colors"
                           >
                             📄 Gerar PDF Individual
                           </button>
@@ -3775,7 +3775,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
               </div>
             </div>
             <div className="flex gap-3">
-              <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+              <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                 {editando ? '✅ Salvar' : '➕ Criar'}
               </button>
               <button type="button" onClick={limparFormulario} className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg">
