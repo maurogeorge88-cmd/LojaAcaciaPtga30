@@ -63,12 +63,12 @@ const SeletorTema = () => {
       emoji: '⚫'
     },
     {
-      id: 'cinza',
-      nome: 'Cinza Neutro',
-      descricao: 'Neutro e profissional',
-      cor: 'bg-slate-600',
-      preview: 'from-slate-600 to-slate-700',
-      emoji: '⚪'
+      id: 'amarelo',
+      nome: 'Amarelo Otimista',
+      descricao: 'Otimismo e alegria',
+      cor: 'bg-yellow-600',
+      preview: 'from-yellow-600 to-yellow-700',
+      emoji: '☀️'
     }
   ];
 
