@@ -297,15 +297,10 @@ export default function DashboardPresenca() {
 
   const carregarSessoesRecentes = async () => {
     try {
-      // Obter data atual no Brasil (considerar UTC-3 ou UTC-4)
-      const hoje = new Date();
-      const dataHojeBrasil = new Date(hoje.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
-      const dataLimite = dataHojeBrasil.toISOString().split('T')[0];
-      
       const { data: sessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id')
-        .lte('data_sessao', dataLimite) // Não incluir sessões futuras
+        .lte('data_sessao', new Date().toISOString().split('T')[0]) // Não incluir sessões futuras
         .order('data_sessao', { ascending: false })
         .limit(qtdSessoesRecentes);
 
@@ -343,15 +338,17 @@ export default function DashboardPresenca() {
                             i.data_iniciacao ? new Date(i.data_iniciacao) : null;
           if (dataInicio && dataSessao < dataInicio) return false;
 
-          // 3. Verificar DESLIGAMENTO na data da sessão - EXCLUIR se desligado
-          const temDesligamento = historicoSituacoes?.find(sit => {
+          // 3. Verificar SITUAÇÕES BLOQUEADORAS na data da sessão - EXCLUIR
+          const temSituacaoBloqueadora = historicoSituacoes?.find(sit => {
             const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const situacoesExcluidas = ['desligado', 'irregular', 'suspenso', 'ex-oficio', 'excluido'];
+            
             return sit.membro_id === i.id &&
-              tipoNormalizado === 'desligado' &&
+              situacoesExcluidas.includes(tipoNormalizado) &&
               dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
               (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
           });
-          if (temDesligamento) return false;
+          if (temSituacaoBloqueadora) return false;
 
           // 4. Verificar falecimento - SE faleceu ANTES da sessão, NÃO é elegível
           if (i.data_falecimento) {
@@ -576,20 +573,12 @@ export default function DashboardPresenca() {
 
   const carregar = async () => {
     try {
-      // Obter data atual no Brasil (considerar UTC-3 ou UTC-4)
-      const hoje = new Date();
-      const dataHojeBrasil = new Date(hoje.getTime() - (3 * 60 * 60 * 1000)); // UTC-3
-      const dataLimiteHoje = dataHojeBrasil.toISOString().split('T')[0];
-      
-      // Usar a data menor entre dataFim e hoje
-      const dataFimReal = dataFim < dataLimiteHoje ? dataFim : dataLimiteHoje;
-      
-      // 1. Buscar sessões do período (sem incluir futuras)
+      // 1. Buscar sessões do período
       const { data: sessoesPerio, count: totalSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id', { count: 'exact' })
         .gte('data_sessao', dataInicio)
-        .lte('data_sessao', dataFimReal);
+        .lte('data_sessao', dataFim);
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
@@ -731,6 +720,7 @@ export default function DashboardPresenca() {
       const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
 
       // Irmãos ativos = regulares + licenciados (com licença ativa)
+      const hoje = new Date();
       const irmaosAtivos = irmaos?.filter(i => {
         // Se faleceu, não é ativo
         if (i.data_falecimento) return false;
@@ -740,20 +730,22 @@ export default function DashboardPresenca() {
           const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           return sit.membro_id === i.id &&
             tipoNormalizado === 'licenca' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= dataHojeBrasil);
+            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
         });
         
         if (temLicencaAtiva) return true;
         
-        // Se tem desligamento ativo, não é ativo
-        const temDesligamentoAtivo = historicoSituacoes?.some(sit => {
+        // Se tem desligamento/irregular/suspenso/ex-ofício ativo, não é ativo
+        const temSituacaoBloqueadoraAtiva = historicoSituacoes?.some(sit => {
           const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesExcluidas = ['desligado', 'irregular', 'suspenso', 'ex-oficio', 'excluido'];
+          
           return sit.membro_id === i.id &&
-            tipoNormalizado === 'desligado' &&
+            situacoesExcluidas.includes(tipoNormalizado) &&
             sit.data_fim === null;
         });
         
-        if (temDesligamentoAtivo) return false;
+        if (temSituacaoBloqueadoraAtiva) return false;
         
         // Demais casos: é ativo
         return true;
@@ -821,7 +813,7 @@ export default function DashboardPresenca() {
         </div>
 
         <p className="mt-3 text-sm text-gray-600">
-          📅 De <strong>{dataInicio.split('-').reverse().join('/')}</strong> até <strong>{dataFim.split('-').reverse().join('/')}</strong>
+          📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
         </p>
       </div>
       {/* Cards Totais */}
@@ -894,7 +886,7 @@ export default function DashboardPresenca() {
                   {sessoesRecentes.map((sessao, idx) => (
                     <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-4 py-3 text-sm">
-                        {sessao.data_sessao.split('-').reverse().join('/')}
+                        {new Date(sessao.data_sessao).toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
