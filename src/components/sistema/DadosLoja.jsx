@@ -137,7 +137,10 @@ export default function DadosLoja({ showSuccess, showError }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">🏛️ Dados da Loja</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">🏛️ Dados da Loja</h2>
+          <p className="text-sm text-gray-600 mt-1">Cadastrar Dados da Loja</p>
+        </div>
         {!editando ? (
           <button
             onClick={() => setEditando(true)}
@@ -168,10 +171,10 @@ export default function DadosLoja({ showSuccess, showError }) {
 
       {/* Conteúdo */}
       <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Logo */}
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               🖼️ Logo da Loja
             </label>
