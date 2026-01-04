@@ -93,6 +93,8 @@ const SeletorTema = () => {
   };
 
   const aplicarTema = (tema) => {
+    console.log('🎨 Aplicando tema:', tema);
+    
     // Remove tema anterior
     document.documentElement.removeAttribute('data-theme');
     
@@ -100,6 +102,8 @@ const SeletorTema = () => {
     if (tema !== 'azul') {
       document.documentElement.setAttribute('data-theme', tema);
     }
+    
+    console.log('✅ data-theme aplicado:', document.documentElement.getAttribute('data-theme') || 'azul (padrão)');
   };
 
   const salvarTema = async (novoTema) => {
@@ -136,7 +140,7 @@ const SeletorTema = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {temas.map((tema) => (
           <div
             key={tema.id}
