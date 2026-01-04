@@ -627,6 +627,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               </div>
             );
           })()}
+        </div>
         
         {/* Botões do cabeçalho */}
         <div className="flex items-center gap-3">
