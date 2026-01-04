@@ -343,6 +343,22 @@ export default function Sobre() {
           </div>
 
           <div className="flex items-start space-x-3">
+            <span className="text-2xl">✅</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Controle de Presença</h3>
+              <p className="text-sm text-gray-600">Registro e acompanhamento de presenças em sessões</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
+            <span className="text-2xl">🔐</span>
+            <div>
+              <h3 className="font-semibold text-gray-800">Gestão de Acesso</h3>
+              <p className="text-sm text-gray-600">Controle de usuários e permissões do sistema</p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-3">
             <span className="text-2xl">❤️</span>
             <div>
               <h3 className="font-semibold text-gray-800">Caridade</h3>
