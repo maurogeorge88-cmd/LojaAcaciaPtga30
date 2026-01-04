@@ -292,31 +292,31 @@ export default function LancamentosLote({ showSuccess, showError }) {
         
         {/* Stepper */}
         <div className="flex items-center justify-center gap-4 mt-4">
-          <div className={`flex items-center gap-2 ${etapa >= 1 ? 'text-blue-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${etapa >= 1 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              etapa >= 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+              etapa >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
               1
             </div>
             <span className="font-medium text-sm hidden sm:inline">Itens</span>
           </div>
           
-          <div className={`w-16 h-0.5 ${etapa >= 2 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+          <div className={`w-16 h-0.5 ${etapa >= 2 ? 'bg-primary-600' : 'bg-gray-300'}`}></div>
           
-          <div className={`flex items-center gap-2 ${etapa >= 2 ? 'text-blue-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${etapa >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              etapa >= 2 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+              etapa >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
               2
             </div>
             <span className="font-medium text-sm hidden sm:inline">Irmãos</span>
           </div>
           
-          <div className={`w-16 h-0.5 ${etapa >= 3 ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+          <div className={`w-16 h-0.5 ${etapa >= 3 ? 'bg-primary-600' : 'bg-gray-300'}`}></div>
           
-          <div className={`flex items-center gap-2 ${etapa >= 3 ? 'text-blue-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${etapa >= 3 ? 'text-primary-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              etapa >= 3 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
+              etapa >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
             }`}>
               3
             </div>
@@ -483,7 +483,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={proximaEtapa}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
             >
               Próximo: Selecionar Irmãos →
             </button>
@@ -578,7 +578,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
             <button
               onClick={proximaEtapa}
               disabled={irmaosSelecionados.length === 0}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               Próximo: Ver Resumo →
             </button>
@@ -627,7 +627,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                       <span>💰 {formatarMoeda(item.valor)}</span>
                       <span>📅 Venc: {new Date(item.data_vencimento).toLocaleDateString('pt-BR')}</span>
                       {item.parcelas > 1 && (
-                        <span className="font-medium text-blue-600">
+                        <span className="font-medium text-primary-600">
                           🔢 {item.parcelas}x de {formatarMoeda(parseFloat(item.valor) / item.parcelas)}
                         </span>
                       )}
