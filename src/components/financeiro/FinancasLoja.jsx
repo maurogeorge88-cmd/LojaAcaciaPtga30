@@ -18,8 +18,8 @@ import ModalResumoIrmaos from './components/ModalResumoIrmaos';
 // Lançamentos pagos: filtrados por data_pagamento | Pendentes: filtrados por data_vencimento
 
 // ⚙️ Configuração de status permitidos
-const STATUS_PERMITIDOS = ['Regular', 'Irregular', 'Licenciado'];
-const STATUS_BLOQUEADOS = ['Suspenso', 'Desligado', 'Excluído', 'Falecido', 'Ex-Ofício'];
+const STATUS_PERMITIDOS = ['Regular', 'Licenciado'];
+const STATUS_BLOQUEADOS = ['Irregular', 'Suspenso', 'Desligado', 'Excluído', 'Falecido', 'Ex-Ofício'];
 
 export default function FinancasLoja({ showSuccess, showError, userEmail, userData }) {
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
