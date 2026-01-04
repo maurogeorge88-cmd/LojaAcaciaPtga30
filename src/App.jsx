@@ -2208,7 +2208,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       {/* CONTEÚDO PRINCIPAL */}
       <main className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
         {/* HEADER SUPERIOR */}
-        <header className="bg-white shadow-md border-b-2 border-primary-200 sticky top-0 z-40">
+        <header 
+          className="shadow-md sticky top-0 z-40"
+          style={{
+            backgroundColor: 'rgb(var(--color-primary-50))',
+            borderBottom: '4px solid rgb(var(--color-primary-600))'
+          }}
+        >
           <div className="px-8 py-4">
             <div className="flex justify-between items-center">
               <div>
