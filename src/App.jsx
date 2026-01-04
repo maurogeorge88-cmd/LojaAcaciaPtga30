@@ -2248,6 +2248,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
                   {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
+                  {currentPage === 'dados-loja' && '🏛️ Dados da Loja'}
                   {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
                 </h2>
               </div>
