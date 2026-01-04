@@ -137,10 +137,7 @@ export default function DadosLoja({ showSuccess, showError }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">🏛️ Dados da Loja</h2>
-          <p className="text-sm text-gray-600 mt-1">Cadastrar Dados da Loja</p>
-        </div>
+        <p className="text-gray-600">Cadastrar Dados da Loja</p>
         {!editando ? (
           <button
             onClick={() => setEditando(true)}
