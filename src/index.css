@@ -1,9 +1,9 @@
+/* Importar sistema de temas */
+@import './styles/themes.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Importar sistema de temas */
-@import './styles/themes.css';
 
 * {
   margin: 0;
