@@ -34,7 +34,7 @@ export default function ModalResumoIrmaos({
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         
         {/* HEADER */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-400 text-white p-6 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-primary-600 to-blue-400 text-white p-6 flex justify-between items-center">
           <h2 className="text-2xl font-bold">💰 Resumo Financeiro dos Irmãos</h2>
           <button
             onClick={onClose}
@@ -53,7 +53,7 @@ export default function ModalResumoIrmaos({
               onClick={() => setFiltroStatus('todos')}
               className={`px-4 py-2 rounded-lg font-semibold transition ${
                 filtroStatus === 'todos'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
@@ -89,7 +89,7 @@ export default function ModalResumoIrmaos({
           {/* ESTATÍSTICAS DO FILTRO ATUAL */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-              <div className="text-sm text-blue-600 font-semibold mb-1">Irmãos Exibindo</div>
+              <div className="text-sm text-primary-600 font-semibold mb-1">Irmãos Exibindo</div>
               <div className="text-2xl font-bold text-blue-700">{irmaosExibir.length}</div>
             </div>
             
