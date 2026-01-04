@@ -34,7 +34,10 @@ export default function ModalResumoIrmaos({
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         
         {/* HEADER */}
-        <div className="bg-gradient-to-r from-primary-600 to-blue-400 text-white p-6 flex justify-between items-center">
+        <div 
+          className="text-white p-6 flex justify-between items-center"
+          style={{ background: 'linear-gradient(to right, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))' }}
+        >
           <h2 className="text-2xl font-bold">💰 Resumo Financeiro dos Irmãos</h2>
           <button
             onClick={onClose}
