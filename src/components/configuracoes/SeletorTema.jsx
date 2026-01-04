@@ -99,7 +99,10 @@ const SeletorTema = () => {
       setTemaAtual(novoTema);
       aplicarTema(novoTema);
       
-      alert('✅ Tema alterado com sucesso!');
+      // Debug: verificar se aplicou
+      const temaAplicado = document.documentElement.getAttribute('data-theme');
+      
+      alert(`✅ Tema alterado!\n\nTema escolhido: ${novoTema}\nTema aplicado no HTML: ${temaAplicado || 'azul (padrão)'}\n\nSe não mudou, recarregue a página (F5)`);
     } catch (error) {
       console.error('Erro ao salvar tema:', error);
       alert('❌ Erro ao salvar tema: ' + error.message);
