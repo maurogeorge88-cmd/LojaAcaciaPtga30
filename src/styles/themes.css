@@ -120,10 +120,59 @@
 }
 
 /* ============================================
-   CLASSES UTILITÁRIAS - DESABILITADAS
-   (Tailwind gera automaticamente via config)
+   CLASSES UTILITÁRIAS
+   Geramos manualmente para garantir funcionamento
    ============================================ */
 
-/* As classes bg-primary-*, text-primary-*, border-primary-*
-   são geradas automaticamente pelo Tailwind usando
-   as variáveis CSS definidas acima */
+/* Backgrounds */
+.bg-primary-50 { background-color: rgb(var(--color-primary-50)); }
+.bg-primary-100 { background-color: rgb(var(--color-primary-100)); }
+.bg-primary-200 { background-color: rgb(var(--color-primary-200)); }
+.bg-primary-300 { background-color: rgb(var(--color-primary-300)); }
+.bg-primary-400 { background-color: rgb(var(--color-primary-400)); }
+.bg-primary-500 { background-color: rgb(var(--color-primary-500)); }
+.bg-primary-600 { background-color: rgb(var(--color-primary-600)); }
+.bg-primary-700 { background-color: rgb(var(--color-primary-700)); }
+.bg-primary-800 { background-color: rgb(var(--color-primary-800)); }
+.bg-primary-900 { background-color: rgb(var(--color-primary-900)); }
+
+/* Textos */
+.text-primary-50 { color: rgb(var(--color-primary-50)); }
+.text-primary-100 { color: rgb(var(--color-primary-100)); }
+.text-primary-200 { color: rgb(var(--color-primary-200)); }
+.text-primary-300 { color: rgb(var(--color-primary-300)); }
+.text-primary-400 { color: rgb(var(--color-primary-400)); }
+.text-primary-500 { color: rgb(var(--color-primary-500)); }
+.text-primary-600 { color: rgb(var(--color-primary-600)); }
+.text-primary-700 { color: rgb(var(--color-primary-700)); }
+.text-primary-800 { color: rgb(var(--color-primary-800)); }
+.text-primary-900 { color: rgb(var(--color-primary-900)); }
+
+/* Bordas */
+.border-primary-50 { border-color: rgb(var(--color-primary-50)); }
+.border-primary-100 { border-color: rgb(var(--color-primary-100)); }
+.border-primary-200 { border-color: rgb(var(--color-primary-200)); }
+.border-primary-300 { border-color: rgb(var(--color-primary-300)); }
+.border-primary-400 { border-color: rgb(var(--color-primary-400)); }
+.border-primary-500 { border-color: rgb(var(--color-primary-500)); }
+.border-primary-600 { border-color: rgb(var(--color-primary-600)); }
+.border-primary-700 { border-color: rgb(var(--color-primary-700)); }
+.border-primary-800 { border-color: rgb(var(--color-primary-800)); }
+.border-primary-900 { border-color: rgb(var(--color-primary-900)); }
+
+/* Hover states */
+.hover\:bg-primary-700:hover { background-color: rgb(var(--color-primary-700)); }
+.hover\:bg-primary-800:hover { background-color: rgb(var(--color-primary-800)); }
+.hover\:text-primary-600:hover { color: rgb(var(--color-primary-600)); }
+.hover\:text-primary-700:hover { color: rgb(var(--color-primary-700)); }
+
+/* Gradientes - IMPORTANTE para from-primary-600 to-primary-700 */
+.from-primary-600 {
+  --tw-gradient-from: rgb(var(--color-primary-600));
+  --tw-gradient-to: rgb(var(--color-primary-600) / 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.to-primary-700 {
+  --tw-gradient-to: rgb(var(--color-primary-700));
+}
