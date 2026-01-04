@@ -584,6 +584,49 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             <p className="text-blue-100 text-sm">Visualização completa de receitas e despesas</p>
           </div>
         </div>
+
+        {/* Indicador de Saúde Financeira */}
+        <div className="flex items-center gap-3">
+          {(() => {
+            const totalReceitas = dadosGrafico.reduce((sum, item) => sum + item.receitas, 0);
+            const totalDespesas = dadosGrafico.reduce((sum, item) => sum + item.despesas, 0);
+            const saldo = totalReceitas - totalDespesas;
+            const percentualSaldo = totalReceitas > 0 ? (saldo / totalReceitas) * 100 : 0;
+
+            let emoji, texto, corBg, corTexto;
+            
+            if (percentualSaldo >= 30) {
+              emoji = '😄';
+              texto = 'Excelente';
+              corBg = 'bg-green-100';
+              corTexto = 'text-green-700';
+            } else if (percentualSaldo >= 15) {
+              emoji = '😊';
+              texto = 'Ótimo';
+              corBg = 'bg-blue-100';
+              corTexto = 'text-blue-700';
+            } else if (percentualSaldo >= 5) {
+              emoji = '😐';
+              texto = 'Bom';
+              corBg = 'bg-yellow-100';
+              corTexto = 'text-yellow-700';
+            } else {
+              emoji = '😟';
+              texto = 'Preocupante';
+              corBg = 'bg-red-100';
+              corTexto = 'text-red-700';
+            }
+
+            return (
+              <div className={`${corBg} rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg`}>
+                <span className="text-3xl">{emoji}</span>
+                <div>
+                  <p className={`text-xs font-semibold ${corTexto}`}>Saúde Financeira</p>
+                  <p className={`text-sm font-bold ${corTexto}`}>{texto}</p>
+                </div>
+              </div>
+            );
+          })()}
         
         {/* Botões do cabeçalho */}
         <div className="flex items-center gap-3">
