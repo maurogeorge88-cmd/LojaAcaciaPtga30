@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
+import SeletorTema from '../configuracoes/SeletorTema';
 
 export default function DadosLoja({ showSuccess, showError }) {
   const [loading, setLoading] = useState(true);
@@ -407,6 +408,11 @@ export default function DadosLoja({ showSuccess, showError }) {
           </div>
 
         </div>
+      </div>
+
+      {/* SELETOR DE TEMA */}
+      <div className="mt-8">
+        <SeletorTema />
       </div>
     </div>
   );
