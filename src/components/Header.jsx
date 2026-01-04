@@ -30,7 +30,13 @@ export const Header = ({ currentPage, userData }) => {
   };
 
   return (
-    <header className="bg-primary-50 shadow-md border-b-4 border-primary-600 sticky top-0 z-40">
+    <header 
+      className="shadow-md sticky top-0 z-40"
+      style={{
+        backgroundColor: `rgb(var(--color-primary-50))`,
+        borderBottom: `4px solid rgb(var(--color-primary-600))`
+      }}
+    >
       <div className="px-8 py-4">
         <div className="flex justify-between items-center">
           <div>
