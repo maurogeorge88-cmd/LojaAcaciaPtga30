@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useTema } from './hooks/useTema';
 
 // ========================================
 // IMPORTAR COMPONENTES REFATORADOS
@@ -107,6 +108,11 @@ const obterDiaSemana = (data) => {
 // ========================================
 // COMPONENTE PRINCIPAL
 function App() {
+  // ========================================
+  // CARREGAR TEMA DO SISTEMA
+  // ========================================
+  useTema();
+
   // ========================================
   // VERIFICAR ROTA DE PRIMEIRO ACESSO
   // ========================================
