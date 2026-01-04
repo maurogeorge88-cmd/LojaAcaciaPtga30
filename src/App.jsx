@@ -1215,7 +1215,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
           <div className="text-center mb-8">
-            <img src={LOGO_URL} alt="Logo" className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-blue-600" />
+            <img src={LOGO_URL} alt="Logo" className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-primary-600" />
             <h1 className="text-3xl font-bold text-blue-900 mb-2">{NOME_LOJA}</h1>
             <p className="text-gray-600">Gestão Maçônica</p>
           </div>
@@ -1252,7 +1252,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition disabled:bg-gray-400"
+              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-lg transition disabled:bg-gray-400"
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -1293,7 +1293,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       {/* SIDEBAR LATERAL COLAPSÁVEL */}
       <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
         {/* Logo e Título */}
-        <div className="p-4 border-b border-blue-700 flex-shrink-0">
+        <div className="p-4 border-b border-primary-700 flex-shrink-0">
           <div className="flex items-center justify-between">
             {menuAberto && (
               <div className="flex flex-col items-center flex-1">
@@ -1309,7 +1309,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           {/* Botão Hamburger */}
           <button
             onClick={() => setMenuAberto(!menuAberto)}
-            className="absolute top-4 right-2 p-2 hover:bg-blue-800 rounded-lg transition"
+            className="absolute top-4 right-2 p-2 hover:bg-primary-800 rounded-lg transition"
             title={menuAberto ? "Fechar menu" : "Abrir menu"}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1329,8 +1329,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             onClick={() => setCurrentPage('dashboard')}
             className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
               currentPage === 'dashboard'
-                ? 'bg-blue-700 border-l-4 border-white'
-                : 'hover:bg-blue-800'
+                ? 'bg-primary-700 border-l-4 border-white'
+                : 'hover:bg-primary-800'
             }`}
             title="Dashboard"
           >
@@ -1346,8 +1346,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 onClick={() => setCurrentPage('meu-cadastro')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'meu-cadastro'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
                 }`}
                 title="Meu Cadastro"
               >
@@ -1359,8 +1359,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 onClick={() => setCurrentPage('visualizar')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'visualizar'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
                 }`}
                 title="Visualizar Irmãos"
               >
@@ -1372,8 +1372,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 onClick={() => setCurrentPage('minhas-financas')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'minhas-financas'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
                 }`}
                 title="Minhas Finanças"
               >
@@ -1385,8 +1385,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 onClick={() => setCurrentPage('minhas-presencas')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'minhas-presencas'
-                    ? 'bg-blue-700 border-l-4 border-white'
-                    : 'hover:bg-blue-800'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
                 }`}
                 title="Minhas Presenças"
               >
@@ -1395,10 +1395,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               {/* SUBMENU: EXPEDIENTES */}
-              <div className="border-t border-blue-700 mt-2 pt-2">
+              <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
                   onClick={() => setSubmenuExpedientes(!submenuExpedientes)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                   title="Expedientes"
                 >
                   <div className="flex items-center gap-2">
@@ -1418,13 +1418,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {(submenuExpedientes && menuAberto) && (
-                  <div className="bg-blue-950 bg-opacity-50">
+                  <div className="bg-primary-900 bg-opacity-50">
                     <button
                       onClick={() => setCurrentPage('balaustres')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'balaustres'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>📜</span>
@@ -1435,8 +1435,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('pranchas')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'pranchas'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>📄</span>
@@ -1447,10 +1447,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </div>
 
               {/* SUBMENU: FILANTROPIA */}
-              <div className="border-t border-blue-700 mt-2 pt-2">
+              <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
                   onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                   title="Filantropia"
                 >
                   <div className="flex items-center gap-2">
@@ -1470,13 +1470,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {(submenuFilantropia && menuAberto) && (
-                  <div className="bg-blue-950 bg-opacity-50">
+                  <div className="bg-primary-900 bg-opacity-50">
                     <button
                       onClick={() => setCurrentPage('comodatos')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'comodatos'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>♿</span>
@@ -1487,8 +1487,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('caridade')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'caridade'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>❤️</span>
@@ -1499,8 +1499,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('eventos')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'eventos'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>🎉</span>
@@ -1511,13 +1511,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </div>
 
               {/* ITENS INDIVIDUAIS */}
-              <div className="border-t border-blue-700 mt-2 pt-2">
+              <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
                   onClick={() => setCurrentPage('comissoes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'comissoes'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Comissões"
                 >
@@ -1529,8 +1529,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('biblioteca')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'biblioteca'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Biblioteca"
                 >
@@ -1542,8 +1542,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('cronograma')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'cronograma'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Cronograma"
                 >
@@ -1555,8 +1555,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('aniversariantes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'aniversariantes'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Festividades"
                 >
@@ -1566,10 +1566,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
                 {(userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) && (
-                <div className="border-t border-blue-700 mt-2 pt-2">
+                <div className="border-t border-primary-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                     title="Presença Irmãos"
                   >
                     <div className="flex items-center gap-2">
@@ -1589,13 +1589,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </button>
 
                   {(submenuPresenca && menuAberto) && (
-                    <div className="bg-blue-950 bg-opacity-50">
+                    <div className="bg-primary-900 bg-opacity-50">
                       <button
                         onClick={() => setCurrentPage('dashboard-presenca')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'dashboard-presenca'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                         title="Dashboard de Presença"
                       >
@@ -1607,8 +1607,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         onClick={() => setCurrentPage('cadastro-sessao')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'cadastro-sessao'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                         title="Cadastro de Sessão"
                       >
@@ -1620,8 +1620,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         onClick={() => setCurrentPage('lista-sessoes')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'lista-sessoes'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                         title="Sessões Realizadas"
                       >
@@ -1637,8 +1637,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('corpo-admin')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'corpo-admin'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Administração"
                 >
@@ -1650,8 +1650,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('altos-graus')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'altos-graus'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Altos Graus"
                 >
@@ -1663,8 +1663,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'sobre'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Sobre"
                 >
@@ -1679,10 +1679,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo') && (
             <>
               {/* SUBMENU: CONTROLE DE IRMÃOS */}
-              <div className="border-t border-blue-700 mt-2 pt-2">
+              <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
                   onClick={() => setSubmenuIrmaos(!submenuIrmaos)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                   title="Controle de Irmãos"
                 >
                   <div className="flex items-center gap-2">
@@ -1703,13 +1703,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                 {/* Subitens do submenu */}
                 {(submenuIrmaos && menuAberto) && (
-                  <div className="bg-blue-950 bg-opacity-50">
+                  <div className="bg-primary-900 bg-opacity-50">
                     <button
                       onClick={() => setCurrentPage('cadastro')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'cadastro'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>➕</span>
@@ -1720,8 +1720,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('visualizar')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'visualizar'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>👁️</span>
@@ -1732,8 +1732,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('quadro')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'quadro'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>📋</span>
@@ -1744,8 +1744,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('altos-graus')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'altos-graus'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>🔺</span>
@@ -1757,8 +1757,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         onClick={() => setCurrentPage('gerenciar-graus')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'gerenciar-graus'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                       >
                         <span>⚙️</span>
@@ -1770,10 +1770,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </div>
 
               {/* SUBMENU: CONTROLE DE EXPEDIENTES */}
-              <div className="border-t border-blue-700 mt-2 pt-2">
+              <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
                   onClick={() => setSubmenuExpedientes(!submenuExpedientes)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                   title="Controle de Expedientes"
                 >
                   <div className="flex items-center gap-2">
@@ -1794,13 +1794,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                 {/* Subitens do submenu */}
                 {(submenuExpedientes && menuAberto) && (
-                  <div className="bg-blue-950 bg-opacity-50">
+                  <div className="bg-primary-900 bg-opacity-50">
                     <button
                       onClick={() => setCurrentPage('balaustres')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'balaustres'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>📜</span>
@@ -1811,8 +1811,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       onClick={() => setCurrentPage('pranchas')}
                       className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                         currentPage === 'pranchas'
-                          ? 'bg-blue-700 border-l-4 border-white'
-                          : 'hover:bg-blue-800'
+                          ? 'bg-primary-700 border-l-4 border-white'
+                          : 'hover:bg-primary-800'
                       }`}
                     >
                       <span>📄</span>
@@ -1825,10 +1825,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
                 <>
                   {/* SUBMENU: CONTROLE FINANCEIRO */}
-                  <div className="border-t border-blue-700 mt-2 pt-2">
+                  <div className="border-t border-primary-700 mt-2 pt-2">
                     <button
                       onClick={() => setSubmenuFinanceiro(!submenuFinanceiro)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                       title="Controle Financeiro"
                     >
                       <div className="flex items-center gap-2">
@@ -1849,13 +1849,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                     {/* Subitens do submenu */}
                     {(submenuFinanceiro && menuAberto) && (
-                      <div className="bg-blue-950 bg-opacity-50">
+                      <div className="bg-primary-900 bg-opacity-50">
                         <button
                           onClick={() => setCurrentPage('financas-loja')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'financas-loja'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>🏦</span>
@@ -1866,8 +1866,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('lancamentos-lote')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'lancamentos-lote'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>📦</span>
@@ -1878,8 +1878,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('creditos-debitos')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'creditos-debitos'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>💵</span>
@@ -1890,8 +1890,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('categorias-financeiras')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'categorias-financeiras'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>🏷️</span>
@@ -1902,10 +1902,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
 
                   {/* SUBMENU: FILANTROPIA */}
-                  <div className="border-t border-blue-700 mt-2 pt-2">
+                  <div className="border-t border-primary-700 mt-2 pt-2">
                     <button
                       onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                       title="Filantropia"
                     >
                       <div className="flex items-center gap-2">
@@ -1926,13 +1926,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                     {/* Subitens do submenu */}
                     {(submenuFilantropia && menuAberto) && (
-                      <div className="bg-blue-950 bg-opacity-50">
+                      <div className="bg-primary-900 bg-opacity-50">
                         <button
                           onClick={() => setCurrentPage('comodatos')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'comodatos'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>♿</span>
@@ -1943,8 +1943,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('caridade')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'caridade'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>❤️</span>
@@ -1955,8 +1955,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('eventos')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'eventos'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>🎉</span>
@@ -1969,13 +1969,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               )}
 
               {/* ITENS INDIVIDUAIS */}
-              <div className="border-t border-blue-700 mt-2 pt-2">
+              <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
                   onClick={() => setCurrentPage('comissoes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'comissoes'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Comissões"
                 >
@@ -1987,8 +1987,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('biblioteca')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'biblioteca'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Biblioteca"
                 >
@@ -2000,8 +2000,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('cronograma')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'cronograma'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Cronograma"
                 >
@@ -2013,8 +2013,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('aniversariantes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'aniversariantes'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Festividades"
                 >
@@ -2023,10 +2023,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 {/* SUBMENU: PRESENÇA IRMÃOS */}
-                <div className="border-t border-blue-700 mt-2 pt-2">
+                <div className="border-t border-primary-700 mt-2 pt-2">
                   <button
                     onClick={() => setSubmenuPresenca(!submenuPresenca)}
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                     title="Presença Irmãos"
                   >
                     <div className="flex items-center gap-2">
@@ -2047,14 +2047,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                   {/* Subitens do submenu Presença */}
                   {(submenuPresenca && menuAberto) && (
-                    <div className="bg-blue-950 bg-opacity-50">
+                    <div className="bg-primary-900 bg-opacity-50">
                       {/* DASHBOARD DE PRESENÇA */}
                       <button
                         onClick={() => setCurrentPage('dashboard-presenca')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'dashboard-presenca'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                         title="Dashboard de Presença"
                       >
@@ -2067,8 +2067,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         onClick={() => setCurrentPage('cadastro-sessao')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'cadastro-sessao'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                         title="Cadastro de Sessão"
                       >
@@ -2081,8 +2081,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         onClick={() => setCurrentPage('lista-sessoes')}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                           currentPage === 'lista-sessoes'
-                            ? 'bg-blue-700 border-l-4 border-white'
-                            : 'hover:bg-blue-800'
+                            ? 'bg-primary-700 border-l-4 border-white'
+                            : 'hover:bg-primary-800'
                         }`}
                         title="Sessões Realizadas"
                       >
@@ -2095,10 +2095,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                 {/* SUBMENU: GESTÃO DO SISTEMA */}
                 {permissoes?.canManageUsers && (
-                  <div className="border-t border-blue-700 mt-2 pt-2">
+                  <div className="border-t border-primary-700 mt-2 pt-2">
                     <button
                       onClick={() => setSubmenuGestaoSistema(!submenuGestaoSistema)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-blue-800 transition text-sm"
+                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
                       title="Gestão do Sistema"
                     >
                       <div className="flex items-center gap-2">
@@ -2119,14 +2119,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                     {/* Subitens do submenu */}
                     {(submenuGestaoSistema && menuAberto) && (
-                      <div className="bg-blue-950 bg-opacity-50">
+                      <div className="bg-primary-900 bg-opacity-50">
                         {/* GERENCIAR USUÁRIOS */}
                         <button
                           onClick={() => setCurrentPage('gestao-sistema-usuarios')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'gestao-sistema-usuarios'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>👤</span>
@@ -2138,8 +2138,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('gestao-sistema-logs')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'gestao-sistema-logs'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>🔐</span>
@@ -2151,8 +2151,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           onClick={() => setCurrentPage('dados-loja')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'dados-loja'
-                              ? 'bg-blue-700 border-l-4 border-white'
-                              : 'hover:bg-blue-800'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
                           }`}
                         >
                           <span>🏛️</span>
@@ -2167,8 +2167,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('corpo-admin')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'corpo-admin'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Administração"
                 >
@@ -2180,8 +2180,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'sobre'
-                      ? 'bg-blue-700 border-l-4 border-white'
-                      : 'hover:bg-blue-800'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
                   }`}
                   title="Sobre o Sistema"
                 >
@@ -2194,7 +2194,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         </nav>
 
         {/* Botão Sair */}
-        <div className="border-t border-blue-700 bg-blue-950 p-3 flex-shrink-0">
+        <div className="border-t border-primary-700 bg-primary-900 p-3 flex-shrink-0">
           <button
             onClick={handleLogout}
             className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm"
@@ -2208,7 +2208,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       {/* CONTEÚDO PRINCIPAL */}
       <main className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
         {/* HEADER SUPERIOR */}
-        <header className="bg-white shadow-md border-b-2 border-blue-200 sticky top-0 z-40">
+        <header className="bg-white shadow-md border-b-2 border-primary-200 sticky top-0 z-40">
           <div className="px-8 py-4">
             <div className="flex justify-between items-center">
               <div>
