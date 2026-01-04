@@ -2211,14 +2211,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         <header 
           className="shadow-md sticky top-0 z-40"
           style={{
-            backgroundColor: 'rgb(var(--color-primary-50))',
-            borderBottom: '4px solid rgb(var(--color-primary-600))'
+            background: 'linear-gradient(to right, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))',
+            borderBottom: '2px solid rgb(var(--color-primary-800))'
           }}
         >
           <div className="px-8 py-4">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-bold text-gray-800">
+                <h2 className="text-2xl font-bold text-white">
                   {currentPage === 'dashboard' && '📊 Dashboard'}
                   {currentPage === 'meu-cadastro' && '👤 Meu Cadastro'}
                   {currentPage === 'minhas-financas' && '💰 Minhas Finanças'}
@@ -2253,10 +2253,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="font-semibold text-sm text-gray-800">{userData?.nome}</p>
-                  <p className="text-xs text-gray-600 capitalize">{userData?.cargo}</p>
+                  <p className="font-semibold text-sm text-white">{userData?.nome}</p>
+                  <p className="text-xs text-white opacity-80 capitalize">{userData?.cargo}</p>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-white opacity-90">
                   {new Date().toLocaleDateString('pt-BR', { 
                     weekday: 'long', 
                     year: 'numeric', 
