@@ -89,7 +89,13 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       // Aplicar lógica de filtro por datas (ingresso/falecimento/desligamento)
       const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
       const irmaosFiltrados = irmaosData?.filter(i => {
-        // FILTRO 0: INGRESSO NA LOJA - só aparece se sessão for DEPOIS do ingresso
+        // FILTRO 0: SITUAÇÕES QUE NÃO PODEM REGISTRAR PRESENÇA
+        const situacoesExcluidas = ['irregular', 'suspenso', 'ex-ofício', 'ex-oficio', 'desligado', 'excluído', 'excluido'];
+        if (i.situacao && situacoesExcluidas.includes(i.situacao.toLowerCase())) {
+          return false; // Não aparece para registro de presença
+        }
+        
+        // FILTRO 1: INGRESSO NA LOJA - só aparece se sessão for DEPOIS do ingresso
         // Prioridade: data_ingresso_loja > data_iniciacao
         const dataIngresso = i.data_ingresso_loja ? new Date(i.data_ingresso_loja + 'T00:00:00') : null;
         const dataIniciacao = i.data_iniciacao ? new Date(i.data_iniciacao + 'T00:00:00') : null;
