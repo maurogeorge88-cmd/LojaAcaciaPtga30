@@ -139,22 +139,22 @@
 }
 
 /* ============================================
-   TEMA CINZA (Neutro, Profissional)
+   TEMA AMARELO (Otimismo, Alegria)
    ============================================ */
-[data-theme="cinza"] {
-  --color-primary-50: 248 250 252;    /* slate-50 */
-  --color-primary-100: 241 245 249;   /* slate-100 */
-  --color-primary-200: 226 232 240;   /* slate-200 */
-  --color-primary-300: 203 213 225;   /* slate-300 */
-  --color-primary-400: 148 163 184;   /* slate-400 */
-  --color-primary-500: 100 116 139;   /* slate-500 */
-  --color-primary-600: 71 85 105;     /* slate-600 - COR PRINCIPAL */
-  --color-primary-700: 51 65 85;      /* slate-700 */
-  --color-primary-800: 30 41 59;      /* slate-800 */
-  --color-primary-900: 15 23 42;      /* slate-900 */
+[data-theme="amarelo"] {
+  --color-primary-50: 254 252 232;    /* yellow-50 */
+  --color-primary-100: 254 249 195;   /* yellow-100 */
+  --color-primary-200: 254 240 138;   /* yellow-200 */
+  --color-primary-300: 253 224 71;    /* yellow-300 */
+  --color-primary-400: 250 204 21;    /* yellow-400 */
+  --color-primary-500: 234 179 8;     /* yellow-500 */
+  --color-primary-600: 202 138 4;     /* yellow-600 - COR PRINCIPAL */
+  --color-primary-700: 161 98 7;      /* yellow-700 */
+  --color-primary-800: 133 77 14;     /* yellow-800 */
+  --color-primary-900: 113 63 18;     /* yellow-900 */
   
-  --gradient-from: 71 85 105;
-  --gradient-to: 51 65 85;
+  --gradient-from: 202 138 4;
+  --gradient-to: 161 98 7;
 }
 
 /* ============================================
