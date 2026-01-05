@@ -253,13 +253,19 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   }, []);
 
   const carregarEventos = async () => {
+    console.log('📥 Carregando eventos...');
     setLoading(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('cronograma')
       .select('*')
       .order('data_evento', { ascending: true });
     
-    if (data) setEventos(data);
+    if (error) {
+      console.error('❌ Erro ao carregar eventos:', error);
+    } else {
+      console.log(`✅ ${data?.length || 0} eventos carregados:`, data);
+      setEventos(data || []);
+    }
     setLoading(false);
   };
 
@@ -289,50 +295,71 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       return;
     }
 
-    if (eventoEditando) {
-      // Ao editar, não envia created_by nem updated_at
-      const { id, created_at, updated_at, created_by, ...dadosEdicao } = eventoForm;
-      
-      console.log('🔄 EDITANDO EVENTO:', {
-        id: eventoEditando.id,
-        dados: dadosEdicao
-      });
-      
-      const { data, error } = await supabase
-        .from('cronograma')
-        .update(dadosEdicao)
-        .eq('id', eventoEditando.id)
-        .select();
+    try {
+      if (eventoEditando) {
+        // Ao editar, não envia campos automáticos do banco
+        const { id, created_at, updated_at, created_by, ...dadosEdicao } = eventoForm;
+        
+        console.log('🔄 EDITANDO EVENTO:', {
+          id: eventoEditando.id,
+          dadosAntigos: eventoEditando,
+          dadosNovos: dadosEdicao
+        });
+        
+        const { data, error } = await supabase
+          .from('cronograma')
+          .update(dadosEdicao)
+          .eq('id', eventoEditando.id)
+          .select();
 
-      if (error) {
-        console.error('❌ Erro ao atualizar:', error);
-        showError('Erro ao atualizar evento: ' + error.message);
-      } else {
-        console.log('✅ Evento atualizado:', data);
+        if (error) {
+          console.error('❌ Erro ao atualizar:', error);
+          showError('Erro ao atualizar evento: ' + error.message);
+          return;
+        }
+        
+        console.log('✅ Evento atualizado no banco:', data);
         showSuccess('Evento atualizado com sucesso!');
+        
+        // Limpar formulário primeiro
+        limparFormulario();
+        
+        // Pequeno delay antes de recarregar
+        setTimeout(async () => {
+          await carregarEventos();
+          console.log('🔄 Eventos recarregados');
+        }, 300);
+        
+      } else {
+        // Ao criar, inclui created_by
+        const dados = {
+          ...eventoForm,
+          created_by: userEmail || 'sistema'
+        };
+        
+        console.log('➕ CRIANDO EVENTO:', dados);
+        
+        const { data, error } = await supabase
+          .from('cronograma')
+          .insert([dados])
+          .select();
+
+        if (error) {
+          console.error('❌ Erro ao cadastrar:', error);
+          showError('Erro ao cadastrar evento: ' + error.message);
+          return;
+        }
+        
+        console.log('✅ Evento criado:', data);
+        showSuccess('Evento cadastrado com sucesso!');
         limparFormulario();
         await carregarEventos();
       }
-    } else {
-      // Ao criar, inclui created_by
-      const dados = {
-        ...eventoForm,
-        created_by: userEmail || 'sistema'
-      };
-      
-      console.log('➕ CRIANDO EVENTO:', dados);
-      
-      const { data, error } = await supabase
-        .from('cronograma')
-        .insert([dados])
-        .select();
-
-      if (error) {
-        console.error('❌ Erro ao cadastrar:', error);
-        showError('Erro ao cadastrar evento: ' + error.message);
-      } else {
-        console.log('✅ Evento criado:', data);
-        showSuccess('Evento cadastrado com sucesso!');
+    } catch (error) {
+      console.error('❌ Erro geral:', error);
+      showError('Erro ao processar: ' + error.message);
+    }
+  };
         limparFormulario();
         await carregarEventos();
       }
