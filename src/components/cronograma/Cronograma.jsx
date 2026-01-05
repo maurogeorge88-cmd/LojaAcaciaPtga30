@@ -289,36 +289,52 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       return;
     }
 
-    const dados = {
-      ...eventoForm,
-      updated_at: new Date().toISOString(),
-      created_by: userEmail || 'sistema'
-    };
-
     if (eventoEditando) {
-      const { error } = await supabase
+      // Ao editar, não envia created_by nem updated_at
+      const { id, created_at, updated_at, created_by, ...dadosEdicao } = eventoForm;
+      
+      console.log('🔄 EDITANDO EVENTO:', {
+        id: eventoEditando.id,
+        dados: dadosEdicao
+      });
+      
+      const { data, error } = await supabase
         .from('cronograma')
-        .update(dados)
-        .eq('id', eventoEditando.id);
+        .update(dadosEdicao)
+        .eq('id', eventoEditando.id)
+        .select();
 
       if (error) {
-        showError('Erro ao atualizar evento');
+        console.error('❌ Erro ao atualizar:', error);
+        showError('Erro ao atualizar evento: ' + error.message);
       } else {
+        console.log('✅ Evento atualizado:', data);
         showSuccess('Evento atualizado com sucesso!');
         limparFormulario();
-        carregarEventos();
+        await carregarEventos();
       }
     } else {
-      const { error } = await supabase
+      // Ao criar, inclui created_by
+      const dados = {
+        ...eventoForm,
+        created_by: userEmail || 'sistema'
+      };
+      
+      console.log('➕ CRIANDO EVENTO:', dados);
+      
+      const { data, error } = await supabase
         .from('cronograma')
-        .insert([dados]);
+        .insert([dados])
+        .select();
 
       if (error) {
-        showError('Erro ao cadastrar evento');
+        console.error('❌ Erro ao cadastrar:', error);
+        showError('Erro ao cadastrar evento: ' + error.message);
       } else {
+        console.log('✅ Evento criado:', data);
         showSuccess('Evento cadastrado com sucesso!');
         limparFormulario();
-        carregarEventos();
+        await carregarEventos();
       }
     }
   };
