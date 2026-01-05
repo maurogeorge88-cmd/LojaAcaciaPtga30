@@ -22,6 +22,9 @@
   /* Gradientes */
   --gradient-from: 37 99 235;         /* from-blue-600 */
   --gradient-to: 29 78 216;           /* to-blue-700 */
+  
+  /* Fundo da tela */
+  --color-background: 249 250 251;    /* gray-50 - neutro claro */
 }
 
 /* ============================================
@@ -41,6 +44,9 @@
   
   --gradient-from: 22 163 74;
   --gradient-to: 21 128 61;
+  
+  /* Fundo da tela */
+  --color-background: 240 253 244;    /* green-50 */
 }
 
 /* ============================================
@@ -60,6 +66,9 @@
   
   --gradient-from: 147 51 234;
   --gradient-to: 126 34 206;
+  
+  /* Fundo da tela */
+  --color-background: 250 245 255;    /* purple-50 */
 }
 
 /* ============================================
@@ -79,6 +88,9 @@
   
   --gradient-from: 79 70 229;
   --gradient-to: 67 56 202;
+  
+  /* Fundo da tela */
+  --color-background: 238 242 255;    /* indigo-50 */
 }
 
 /* ============================================
@@ -98,6 +110,9 @@
   
   --gradient-from: 13 148 136;
   --gradient-to: 15 118 110;
+  
+  /* Fundo da tela */
+  --color-background: 240 253 250;    /* teal-50 */
 }
 
 /* ============================================
@@ -117,6 +132,9 @@
   
   --gradient-from: 234 88 12;
   --gradient-to: 194 65 12;
+  
+  /* Fundo da tela */
+  --color-background: 255 247 237;    /* orange-50 */
 }
 
 /* ============================================
@@ -136,6 +154,9 @@
   
   --gradient-from: 75 85 99;
   --gradient-to: 55 65 81;
+  
+  /* Fundo da tela */
+  --color-background: 249 250 251;    /* gray-50 */
 }
 
 /* ============================================
@@ -155,6 +176,9 @@
   
   --gradient-from: 202 138 4;
   --gradient-to: 161 98 7;
+  
+  /* Fundo da tela */
+  --color-background: 254 252 232;    /* yellow-50 */
 }
 
 /* ============================================
