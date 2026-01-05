@@ -2217,7 +2217,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   return (
     <div className="space-y-6">
       {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
-      <div className="flex gap-2 items-center flex-nowrap">
+      <div className="flex gap-2 items-center flex-nowrap mt-3">
         {/* Botões de visualização */}
         <button
           onClick={() => setViewMode('lancamentos')}
