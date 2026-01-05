@@ -2291,7 +2291,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {/* CONTEÚDO DAS PÁGINAS */}
-        <div className="px-8 py-6">
+        <div>
         {/* DASHBOARD */}
         {currentPage === 'dashboard' && (
           <Dashboard 
