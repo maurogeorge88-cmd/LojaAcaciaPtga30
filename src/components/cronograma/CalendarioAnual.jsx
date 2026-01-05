@@ -17,36 +17,38 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
   const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-  // Mapear tipo de evento para cor
+  // Mapear tipo de evento para cor (baseado nos tipos do Cronograma.jsx)
   const getTipoEvento = (evento) => {
-    const titulo = evento.titulo?.toLowerCase() || '';
     const tipo = evento.tipo?.toLowerCase() || '';
     
-    // Detectar tipo baseado no título ou tipo
-    if (tipo.includes('sessao') || titulo.includes('sessão') || titulo.includes('sessao')) {
-      if (titulo.includes('magna')) return 'sessao_magna';
-      return 'sessao_ordinaria';
+    // Mapeamento exato dos tipos do banco
+    switch(tipo) {
+      case 'sessao':
+        return 'sessao_ordinaria';
+      case 'sessao_magna':
+        return 'sessao_magna';
+      case 'sessao_instalacao':
+      case 'sessao_posse':
+        return 'sessao_especial';
+      case 'trabalho_irmao':
+      case 'instrucao':
+        return 'trabalho';
+      case 'evento_externo':
+        return 'evento_especial';
+      case 'outro':
+      default:
+        return 'default';
     }
-    if (tipo.includes('aniversario') || titulo.includes('aniversário') || titulo.includes('aniversario')) {
-      return 'aniversario';
-    }
-    if (tipo.includes('feriado')) {
-      return 'feriado';
-    }
-    if (tipo.includes('evento')) {
-      return 'evento_especial';
-    }
-    return 'default';
   };
 
-  // Cores por tipo de evento
+  // Cores por tipo de evento (alinhadas com o Cronograma)
   const coresEvento = {
-    'sessao_ordinaria': 'bg-blue-500',
-    'sessao_magna': 'bg-purple-600',
-    'evento_especial': 'bg-yellow-500',
-    'aniversario': 'bg-red-500',
-    'feriado': 'bg-green-500',
-    'default': 'bg-gray-400'
+    'sessao_ordinaria': 'bg-blue-500',      // Sessão comum
+    'sessao_magna': 'bg-red-500',           // Sessão Magna
+    'sessao_especial': 'bg-green-500',      // Instalação/Posse
+    'trabalho': 'bg-purple-600',            // Trabalho/Instrução
+    'evento_especial': 'bg-yellow-500',     // Evento Externo
+    'default': 'bg-gray-400'                // Outro
   };
 
   // Função para obter dias do mês
@@ -209,72 +211,113 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
           <span>🎨</span> Legenda de Eventos
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-            <span className="text-sm text-gray-700">Sessão Ordinária</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-purple-600"></div>
-            <span className="text-sm text-gray-700">Sessão Magna</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-sm text-gray-700">Evento Especial</span>
+            <span className="text-sm text-gray-700">Sessão</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-sm text-gray-700">Aniversário</span>
+            <span className="text-sm text-gray-700">Sessão Magna</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-sm text-gray-700">Feriado</span>
+            <span className="text-sm text-gray-700">Instalação/Posse</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-purple-600"></div>
+            <span className="text-sm text-gray-700">Trabalho/Instrução</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
+            <span className="text-sm text-gray-700">Evento Externo</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-gray-400"></div>
+            <span className="text-sm text-gray-700">Outro</span>
           </div>
         </div>
       </div>
 
-      {/* Painel de Eventos do Dia Selecionado */}
+      {/* Modal Suspenso de Eventos do Dia */}
       {eventosSelecionados.length > 0 && (
-        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-blue-300">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <span>📅</span> Eventos do dia {diaSelecionado}
-            </h3>
-            <button
-              onClick={() => {
-                setEventosSelecionados([]);
-                setDiaSelecionado(null);
-              }}
-              className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
-              title="Fechar"
-            >
-              ×
-            </button>
-          </div>
-          <div className="space-y-3">
-            {eventosSelecionados.map((evento, i) => {
-              const tipoEvento = getTipoEvento(evento);
-              return (
-                <div
-                  key={i}
-                  className="bg-white rounded-lg p-4 border-l-4 shadow"
-                  style={{ borderColor: coresEvento[tipoEvento]?.replace('bg-', '#') || '#9ca3af' }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className={`w-3 h-3 rounded-full mt-1 ${coresEvento[tipoEvento]}`}></div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-gray-800 mb-1">{evento.titulo}</h4>
-                      {evento.descricao && (
-                        <p className="text-sm text-gray-600">{evento.descricao}</p>
-                      )}
-                      {evento.local && (
-                        <p className="text-xs text-gray-500 mt-1">📍 {evento.local}</p>
-                      )}
-                    </div>
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setEventosSelecionados([]);
+            setDiaSelecionado(null);
+          }}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header do Modal */}
+            <div className="bg-gradient-to-r from-yellow-700 via-yellow-600 to-yellow-700 text-white p-6 rounded-t-xl sticky top-0">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">📅</span>
+                  <div>
+                    <h3 className="text-2xl font-bold">Eventos do Dia</h3>
+                    <p className="text-sm text-yellow-100">{diaSelecionado}</p>
                   </div>
                 </div>
-              );
-            })}
+                <button
+                  onClick={() => {
+                    setEventosSelecionados([]);
+                    setDiaSelecionado(null);
+                  }}
+                  className="text-white hover:text-yellow-200 text-4xl leading-none transition"
+                  title="Fechar"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Corpo do Modal */}
+            <div className="p-6 space-y-4">
+              {eventosSelecionados.map((evento, i) => {
+                const tipoEvento = getTipoEvento(evento);
+                const corClass = coresEvento[tipoEvento] || coresEvento.default;
+                
+                return (
+                  <div
+                    key={i}
+                    className="bg-gray-50 rounded-lg p-5 border-l-4 shadow-md hover:shadow-lg transition"
+                    style={{ 
+                      borderColor: corClass.includes('blue') ? '#3b82f6' :
+                                   corClass.includes('red') ? '#ef4444' :
+                                   corClass.includes('green') ? '#22c55e' :
+                                   corClass.includes('purple') ? '#9333ea' :
+                                   corClass.includes('yellow') ? '#eab308' : '#9ca3af'
+                    }}
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${corClass}`}></div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-gray-900 text-lg mb-2">{evento.titulo}</h4>
+                        {evento.descricao && (
+                          <p className="text-sm text-gray-700 mb-2">{evento.descricao}</p>
+                        )}
+                        <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                          {evento.local && (
+                            <span className="flex items-center gap-1">
+                              📍 {evento.local}
+                            </span>
+                          )}
+                          {evento.hora_inicio && (
+                            <span className="flex items-center gap-1">
+                              🕐 {evento.hora_inicio}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
