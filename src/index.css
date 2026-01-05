@@ -17,5 +17,5 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f9fafb !important;
+  background-color: #e5e7eb !important; /* gray-200 - mais escuro para testar */
 }
