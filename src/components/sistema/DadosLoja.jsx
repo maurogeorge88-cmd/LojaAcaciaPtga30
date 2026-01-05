@@ -6,6 +6,7 @@ export default function DadosLoja({ showSuccess, showError }) {
   const [loading, setLoading] = useState(true);
   const [editando, setEditando] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
+  const [simboloPreview, setSimboloPreview] = useState(null);
   
   const [dadosLoja, setDadosLoja] = useState({
     nome_loja: '',
@@ -21,7 +22,8 @@ export default function DadosLoja({ showSuccess, showError }) {
     grande_loja: '',
     oriente: '',
     vale: '',
-    logo_url: ''
+    logo_url: '',
+    simbolo_masonico_url: '' // Símbolo Esquadro e Compasso
   });
 
   useEffect(() => {
@@ -43,6 +45,9 @@ export default function DadosLoja({ showSuccess, showError }) {
         setDadosLoja(data);
         if (data.logo_url) {
           setLogoPreview(data.logo_url);
+        }
+        if (data.simbolo_masonico_url) {
+          setSimboloPreview(data.simbolo_masonico_url);
         }
       }
     } catch (error) {
@@ -85,6 +90,39 @@ export default function DadosLoja({ showSuccess, showError }) {
         setDadosLoja(prev => ({
           ...prev,
           logo_url: base64String
+        }));
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      showError('Erro ao processar a imagem');
+    }
+  };
+
+  const handleSimboloUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith('image/')) {
+      showError('Por favor, selecione uma imagem válida');
+      return;
+    }
+
+    // Validar tamanho (máx 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      showError('A imagem deve ter no máximo 2MB');
+      return;
+    }
+
+    try {
+      // Converter para base64
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setSimboloPreview(base64String);
+        setDadosLoja(prev => ({
+          ...prev,
+          simbolo_masonico_url: base64String
         }));
       };
       reader.readAsDataURL(file);
@@ -194,6 +232,35 @@ export default function DadosLoja({ showSuccess, showError }) {
                     className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
                   />
                   <p className="text-xs text-gray-500 mt-1">PNG, JPG ou GIF (máx. 2MB)</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Símbolo Maçônico */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              ⚜️ Símbolo Maçônico (Esquadro e Compasso)
+            </label>
+            <div className="flex items-center gap-4">
+              {simboloPreview && (
+                <div className="w-32 h-32 border-2 border-yellow-600 rounded-lg overflow-hidden flex items-center justify-center bg-yellow-50">
+                  <img 
+                    src={simboloPreview} 
+                    alt="Símbolo Maçônico" 
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              )}
+              {editando && (
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSimboloUpload}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">PNG com fundo transparente (máx. 2MB)</p>
                 </div>
               )}
             </div>
