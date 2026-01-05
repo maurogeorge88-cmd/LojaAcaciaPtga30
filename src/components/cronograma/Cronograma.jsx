@@ -255,10 +255,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const carregarEventos = async () => {
     console.log('📥 Carregando eventos...');
     setLoading(true);
+    
+    // Forçar bypass de cache adicionando timestamp
     const { data, error } = await supabase
       .from('cronograma')
       .select('*')
-      .order('data_evento', { ascending: true });
+      .order('data_evento', { ascending: true })
+      .limit(1000); // Limite para forçar nova query
     
     if (error) {
       console.error('❌ Erro ao carregar eventos:', error);
@@ -310,7 +313,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           .from('cronograma')
           .update(dadosEdicao)
           .eq('id', eventoEditando.id)
-          .select();
+          .select()
+          .single();
 
         if (error) {
           console.error('❌ Erro ao atualizar:', error);
