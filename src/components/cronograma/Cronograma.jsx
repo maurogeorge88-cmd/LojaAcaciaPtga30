@@ -360,9 +360,6 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       showError('Erro ao processar: ' + error.message);
     }
   };
-        limparFormulario();
-        await carregarEventos();
-      }
     }
   };
 
