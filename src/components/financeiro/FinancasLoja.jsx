@@ -68,6 +68,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [creditosIrmao, setCreditosIrmao] = useState([]);
 
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
+  const [limiteRegistros, setLimiteRegistros] = useState(20); // Limite de registros exibidos
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [formSangria, setFormSangria] = useState({
@@ -3240,9 +3241,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {viewMode === 'lancamentos' && (
         <div className="bg-white rounded-lg shadow">
           <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Lançamentos de {meses[filtros.mes - 1]}/{filtros.ano}
-            </h3>
+            <div className="flex items-center gap-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Lançamentos de {meses[filtros.mes - 1]}/{filtros.ano}
+              </h3>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Mostrar:</label>
+                <select
+                  value={limiteRegistros}
+                  onChange={(e) => setLimiteRegistros(Number(e.target.value))}
+                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={20}>20</option>
+                  <option value={30}>30</option>
+                  <option value={40}>40</option>
+                  <option value={50}>50</option>
+                  <option value={9999}>Todos</option>
+                </select>
+                <span className="text-sm text-gray-600">registros</span>
+              </div>
+            </div>
             {lancamentos.filter(l => l.status === 'pendente').length > 0 && (
               <button
                 onClick={() => setMostrarModalQuitacaoLote(true)}
@@ -3269,7 +3287,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {lancamentos.map((lanc) => (
+                {lancamentos.slice(0, limiteRegistros).map((lanc) => (
                   <tr key={lanc.id} className="hover:bg-gray-50">
                     {/* COMPETÊNCIA: Mostra data relevante (pagamento se pago, vencimento se pendente) */}
                     <td className="px-2 py-3 whitespace-nowrap text-sm w-24">
@@ -3434,6 +3452,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             {lancamentos.length === 0 && (
               <div className="text-center py-12 text-gray-500">
                 Nenhum lançamento encontrado
+              </div>
+            )}
+            {lancamentos.length > limiteRegistros && (
+              <div className="text-center py-4 text-sm text-gray-600 border-t border-gray-200">
+                Exibindo {limiteRegistros} de {lancamentos.length} registros
               </div>
             )}
           </div>
