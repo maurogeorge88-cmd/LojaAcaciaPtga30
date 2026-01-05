@@ -353,7 +353,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   }, [irmaos]);
 
   return (
-    <div>
+    <div className="bg-gray-50 -mx-8 -my-6 px-8 py-6 min-h-screen">
       {/* Cards de Graus */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
