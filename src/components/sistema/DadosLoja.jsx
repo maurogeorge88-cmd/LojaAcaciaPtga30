@@ -134,7 +134,7 @@ export default function DadosLoja({ showSuccess, showError }) {
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 -mx-8 -my-6 px-8 py-6 min-h-screen">
+    <div className="space-y-6 px-8 py-6 min-h-screen" style={{ backgroundColor: '#f3f4f6' }}>
       {/* Header */}
       <div className="flex justify-between items-center">
         <p className="text-gray-600">Cadastrar Dados da Loja</p>
