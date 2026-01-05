@@ -2206,7 +2206,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       </aside>
 
       {/* CONTEÚDO PRINCIPAL */}
-      <main className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300`}>
+      <main 
+        className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300 min-h-screen`}
+        style={{ backgroundColor: 'rgb(var(--color-background))' }}
+      >
         {/* HEADER SUPERIOR */}
         <header 
           className="shadow-md sticky top-0 z-40"
