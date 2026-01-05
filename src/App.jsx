@@ -2208,7 +2208,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       {/* CONTEÚDO PRINCIPAL */}
       <main 
         className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300 min-h-screen`}
-        style={{ backgroundColor: '#fef3c7' }}
+        style={{ backgroundColor: '#f3f4f6' }}
       >
         {/* HEADER SUPERIOR */}
         <header 
