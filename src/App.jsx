@@ -1289,7 +1289,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen">
       {/* SIDEBAR LATERAL COLAPSÁVEL */}
       <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
         {/* Logo e Título */}
