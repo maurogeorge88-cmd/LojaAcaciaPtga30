@@ -17,5 +17,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #e5e7eb !important; /* gray-200 - mais escuro para testar */
+  background-color: #fee2e2 !important; /* red-100 - TESTE VISÍVEL */
+}
+
+#root {
+  background-color: #fef3c7 !important; /* yellow-100 - TESTE */
 }
