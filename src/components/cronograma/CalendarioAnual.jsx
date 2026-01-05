@@ -3,12 +3,33 @@
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../supabaseClient';
 
 export default function CalendarioAnual({ eventos = [], ano = new Date().getFullYear() }) {
   const [semestre, setSemestre] = useState(1); // 1 = Jan-Jun, 2 = Jul-Dez
   const [eventosSelecionados, setEventosSelecionados] = useState([]);
   const [diaSelecionado, setDiaSelecionado] = useState(null);
+  const [simboloMasonico, setSimboloMasonico] = useState(null);
+
+  useEffect(() => {
+    carregarSimbolo();
+  }, []);
+
+  const carregarSimbolo = async () => {
+    try {
+      const { data } = await supabase
+        .from('dados_loja')
+        .select('simbolo_masonico_url')
+        .single();
+      
+      if (data?.simbolo_masonico_url) {
+        setSimboloMasonico(data.simbolo_masonico_url);
+      }
+    } catch (error) {
+      console.log('Símbolo não encontrado');
+    }
+  };
 
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -165,13 +186,21 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     <div className="calendario-anual px-6 py-4">
       {/* Cabeçalho Principal */}
       <div className="bg-gradient-to-r from-yellow-800 via-yellow-700 to-yellow-800 text-white py-6 px-8 rounded-t-xl shadow-lg mb-6">
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-between px-4">
           <span className="text-4xl">📅</span>
-          <div className="text-center">
+          <div className="text-center flex-1">
             <h1 className="text-3xl font-bold">CALENDÁRIO ANUAL {ano}</h1>
             <p className="text-sm opacity-90 mt-1">A∴R∴L∴S∴ Acácia de Paranatinga nº 30</p>
           </div>
-          <span className="text-4xl">⚜️</span>
+          {simboloMasonico ? (
+            <img 
+              src={simboloMasonico} 
+              alt="Símbolo Maçônico" 
+              className="w-16 h-16 object-contain"
+            />
+          ) : (
+            <span className="text-4xl">⚜️</span>
+          )}
         </div>
       </div>
 
