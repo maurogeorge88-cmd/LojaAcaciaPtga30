@@ -7,6 +7,8 @@ import React, { useState } from 'react';
 
 export default function CalendarioAnual({ eventos = [], ano = new Date().getFullYear() }) {
   const [semestre, setSemestre] = useState(1); // 1 = Jan-Jun, 2 = Jul-Dez
+  const [eventosSelecionados, setEventosSelecionados] = useState([]);
+  const [diaSelecionado, setDiaSelecionado] = useState(null);
 
   const meses = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
@@ -14,6 +16,28 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   ];
 
   const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+  // Mapear tipo de evento para cor
+  const getTipoEvento = (evento) => {
+    const titulo = evento.titulo?.toLowerCase() || '';
+    const tipo = evento.tipo?.toLowerCase() || '';
+    
+    // Detectar tipo baseado no título ou tipo
+    if (tipo.includes('sessao') || titulo.includes('sessão') || titulo.includes('sessao')) {
+      if (titulo.includes('magna')) return 'sessao_magna';
+      return 'sessao_ordinaria';
+    }
+    if (tipo.includes('aniversario') || titulo.includes('aniversário') || titulo.includes('aniversario')) {
+      return 'aniversario';
+    }
+    if (tipo.includes('feriado')) {
+      return 'feriado';
+    }
+    if (tipo.includes('evento')) {
+      return 'evento_especial';
+    }
+    return 'default';
+  };
 
   // Cores por tipo de evento
   const coresEvento = {
@@ -92,26 +116,35 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               <div
                 key={index}
                 className={`min-h-[60px] border border-gray-200 p-1 relative ${
-                  !dia ? 'bg-gray-50' : 'bg-white hover:bg-blue-50 cursor-pointer transition'
+                  !dia ? 'bg-gray-50' : temEvento ? 'bg-white hover:bg-blue-100 cursor-pointer transition' : 'bg-white hover:bg-blue-50 transition'
                 }`}
+                onClick={() => {
+                  if (temEvento) {
+                    setDiaSelecionado(`${dia}/${mesIndex + 1}/${ano}`);
+                    setEventosSelecionados(eventosHoje);
+                  }
+                }}
                 title={temEvento ? eventosHoje.map(e => e.titulo).join(', ') : ''}
               >
                 {dia && (
                   <>
-                    <div className="text-sm font-semibold text-gray-700">{dia}</div>
+                    <div className={`text-sm font-semibold ${temEvento ? 'text-blue-700' : 'text-gray-700'}`}>
+                      {dia}
+                    </div>
                     
                     {/* Indicadores de Eventos */}
                     {temEvento && (
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {eventosHoje.map((evento, i) => (
-                          <div
-                            key={i}
-                            className={`w-2 h-2 rounded-full ${
-                              coresEvento[evento.tipo] || coresEvento.default
-                            }`}
-                            title={evento.titulo}
-                          />
-                        ))}
+                        {eventosHoje.map((evento, i) => {
+                          const tipoEvento = getTipoEvento(evento);
+                          return (
+                            <div
+                              key={i}
+                              className={`w-2 h-2 rounded-full ${coresEvento[tipoEvento]}`}
+                              title={evento.titulo}
+                            />
+                          );
+                        })}
                       </div>
                     )}
                   </>
@@ -127,7 +160,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   const mesesSemestre = semestre === 1 ? [0, 1, 2, 3, 4, 5] : [6, 7, 8, 9, 10, 11];
 
   return (
-    <div className="calendario-anual">
+    <div className="calendario-anual px-6 py-4">
       {/* Cabeçalho Principal */}
       <div className="bg-gradient-to-r from-yellow-800 via-yellow-700 to-yellow-800 text-white py-6 px-8 rounded-t-xl shadow-lg mb-6">
         <div className="flex items-center justify-center gap-4">
@@ -199,6 +232,52 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           </div>
         </div>
       </div>
+
+      {/* Painel de Eventos do Dia Selecionado */}
+      {eventosSelecionados.length > 0 && (
+        <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow-lg p-6 border-2 border-blue-300">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+              <span>📅</span> Eventos do dia {diaSelecionado}
+            </h3>
+            <button
+              onClick={() => {
+                setEventosSelecionados([]);
+                setDiaSelecionado(null);
+              }}
+              className="text-gray-500 hover:text-gray-700 text-2xl leading-none"
+              title="Fechar"
+            >
+              ×
+            </button>
+          </div>
+          <div className="space-y-3">
+            {eventosSelecionados.map((evento, i) => {
+              const tipoEvento = getTipoEvento(evento);
+              return (
+                <div
+                  key={i}
+                  className="bg-white rounded-lg p-4 border-l-4 shadow"
+                  style={{ borderColor: coresEvento[tipoEvento]?.replace('bg-', '#') || '#9ca3af' }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-3 h-3 rounded-full mt-1 ${coresEvento[tipoEvento]}`}></div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-gray-800 mb-1">{evento.titulo}</h4>
+                      {evento.descricao && (
+                        <p className="text-sm text-gray-600">{evento.descricao}</p>
+                      )}
+                      {evento.local && (
+                        <p className="text-xs text-gray-500 mt-1">📍 {evento.local}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* CSS customizado para borda maçônica */}
       <style jsx>{`
