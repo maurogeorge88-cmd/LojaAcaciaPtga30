@@ -360,8 +360,6 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       showError('Erro ao processar: ' + error.message);
     }
   };
-    }
-  };
 
   const editarEvento = (evento) => {
     setEventoForm(evento);
