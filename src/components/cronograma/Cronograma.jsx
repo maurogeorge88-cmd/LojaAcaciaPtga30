@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import CalendarioAnual from './CalendarioAnual';
 
 // Funções de geração de PDF (inline para evitar problemas de import)
 const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => {
@@ -658,6 +659,30 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             </button>
           </div>
 
+          {/* Toggle Visualização Lista/Calendário */}
+          <div className="flex items-end gap-2 border-l-2 border-gray-300 pl-4">
+            <button
+              onClick={() => setVisualizacao('lista')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                visualizacao === 'lista'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              📋 Lista
+            </button>
+            <button
+              onClick={() => setVisualizacao('calendario')}
+              className={`px-4 py-2 rounded-lg font-medium transition ${
+                visualizacao === 'calendario'
+                  ? 'bg-yellow-700 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              📅 Calendário
+            </button>
+          </div>
+
           <div className="flex items-end gap-2">
             <button
               onClick={() => {
@@ -813,9 +838,11 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         </div>
       )}
 
-      {/* Lista de Eventos */}
-      <div className="space-y-6">
-        {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => (
+      {/* Conteúdo - Lista ou Calendário */}
+      {visualizacao === 'lista' ? (
+        /* Lista de Eventos */
+        <div className="space-y-6">
+          {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => (
           <div key={mes} className="bg-white rounded-lg shadow-lg overflow-hidden">
             <div 
               className="p-4"
@@ -910,6 +937,18 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           </div>
         )}
       </div>
+      ) : (
+        /* Visualização em Calendário */
+        <CalendarioAnual 
+          eventos={eventos.map(e => ({
+            data: e.data_evento,
+            titulo: e.titulo,
+            tipo: e.tipo,
+            cor: e.cor_destaque
+          }))} 
+          ano={new Date().getFullYear()}
+        />
+      )}
     </div>
   );
 }
