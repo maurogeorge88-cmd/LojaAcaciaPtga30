@@ -370,6 +370,9 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     console.log('✏️ Editando evento ID:', evento.id);
     console.log('📦 Estado antigo (cache):', evento);
     
+    // Fechar formulário primeiro (limpa state)
+    setMostrarFormulario(false);
+    
     // Buscar dados atualizados direto do banco
     const { data, error } = await supabase
       .from('cronograma')
@@ -385,14 +388,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     
     console.log('✅ Dados do banco (atualizados):', data);
     console.log('🔍 Tipo no banco:', data.tipo);
-    setEventoForm(data);
-    setEventoEditando(data);
-    setMostrarFormulario(true);
     
-    // Aguardar React atualizar o estado
+    // Aguardar um tick antes de reabrir (força re-render limpo)
     setTimeout(() => {
-      console.log('📋 eventoForm após setState:', data);
-    }, 100);
+      setEventoForm(data);
+      setEventoEditando(data);
+      setMostrarFormulario(true);
+      console.log('📋 Formulário aberto com dados:', data);
+    }, 50);
   };
 
   const excluirEvento = async (id) => {
