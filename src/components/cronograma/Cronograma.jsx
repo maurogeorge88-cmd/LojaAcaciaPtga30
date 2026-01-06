@@ -491,7 +491,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-indigo-200">
+        <div key={eventoEditando?.id || 'novo'} className="bg-white rounded-lg shadow-lg p-6 border-2 border-indigo-200">
           <h3 className="text-xl font-bold text-gray-900 mb-4">
             {eventoEditando ? '✏️ Editar Evento' : '➕ Cadastrar Novo Evento'}
           </h3>
