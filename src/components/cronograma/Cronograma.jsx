@@ -294,103 +294,77 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     e.preventDefault();
 
     if (!eventoForm.titulo || !eventoForm.data_evento) {
-      showError('Preencha o título e a data do evento');
+      showError('Preencha o título e a data');
       return;
     }
 
     try {
       if (eventoEditando) {
-        // Ao editar, não envia campos automáticos do banco
-        const { id, created_at, updated_at, created_by, ...dadosEdicao } = eventoForm;
-        
-        console.log('🔄 EDITANDO EVENTO:', {
-          id: eventoEditando.id,
-          dadosAntigos: eventoEditando,
-          dadosNovos: dadosEdicao
-        });
-        
+        // EDIÇÃO
         const { error } = await supabase
           .from('cronograma')
-          .update(dadosEdicao)
+          .update({
+            titulo: eventoForm.titulo,
+            tipo: eventoForm.tipo,
+            descricao: eventoForm.descricao,
+            data_evento: eventoForm.data_evento,
+            hora_inicio: eventoForm.hora_inicio,
+            hora_fim: eventoForm.hora_fim,
+            local: eventoForm.local,
+            responsavel: eventoForm.responsavel,
+            observacoes: eventoForm.observacoes,
+            status: eventoForm.status,
+            cor_destaque: eventoForm.cor_destaque
+          })
           .eq('id', eventoEditando.id);
 
-        if (error) {
-          console.error('❌ Erro ao atualizar:', error);
-          showError('Erro ao atualizar evento: ' + error.message);
-          return;
-        }
+        if (error) throw error;
         
-        console.log('✅ Evento atualizado com sucesso!');
-        showSuccess('Evento atualizado com sucesso!');
-        
-        limparFormulario();
-        
-        // Recarregar do banco após 200ms
-        setTimeout(() => {
-          carregarEventos();
-        }, 200);
-        
+        showSuccess('Atualizado!');
       } else {
-        // Ao criar, inclui created_by
-        const dados = {
-          ...eventoForm,
-          created_by: userEmail || 'sistema'
-        };
-        
-        console.log('➕ CRIANDO EVENTO:', dados);
-        
-        const { data, error } = await supabase
+        // CRIAÇÃO
+        const { error } = await supabase
           .from('cronograma')
-          .insert([dados])
-          .select();
+          .insert([{
+            titulo: eventoForm.titulo,
+            tipo: eventoForm.tipo,
+            descricao: eventoForm.descricao,
+            data_evento: eventoForm.data_evento,
+            hora_inicio: eventoForm.hora_inicio,
+            hora_fim: eventoForm.hora_fim,
+            local: eventoForm.local,
+            responsavel: eventoForm.responsavel,
+            observacoes: eventoForm.observacoes,
+            status: eventoForm.status,
+            cor_destaque: eventoForm.cor_destaque,
+            created_by: userEmail || 'sistema'
+          }]);
 
-        if (error) {
-          console.error('❌ Erro ao cadastrar:', error);
-          showError('Erro ao cadastrar evento: ' + error.message);
-          return;
-        }
+        if (error) throw error;
         
-        console.log('✅ Evento criado:', data);
-        showSuccess('Evento cadastrado com sucesso!');
-        limparFormulario();
-        await carregarEventos();
+        showSuccess('Criado!');
       }
+
+      limparFormulario();
+      await carregarEventos();
+      
     } catch (error) {
-      console.error('❌ Erro geral:', error);
-      showError('Erro ao processar: ' + error.message);
+      showError('Erro: ' + error.message);
     }
   };
 
   const editarEvento = async (evento) => {
-    console.log('✏️ Editando evento ID:', evento.id);
-    console.log('📦 Estado antigo (cache):', evento);
-    
-    // Fechar formulário primeiro (limpa state)
-    setMostrarFormulario(false);
-    
-    // Buscar dados atualizados direto do banco
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('cronograma')
       .select('*')
       .eq('id', evento.id)
       .single();
     
-    if (error) {
-      console.error('❌ Erro ao buscar evento:', error);
-      showError('Erro ao carregar evento');
-      return;
-    }
-    
-    console.log('✅ Dados do banco (atualizados):', data);
-    console.log('🔍 Tipo no banco:', data.tipo);
-    
-    // Aguardar um tick antes de reabrir (força re-render limpo)
-    setTimeout(() => {
+    if (data) {
       setEventoForm(data);
       setEventoEditando(data);
       setMostrarFormulario(true);
-      console.log('📋 Formulário aberto com dados:', data);
-    }, 50);
+    }
   };
 
   const excluirEvento = async (id) => {
