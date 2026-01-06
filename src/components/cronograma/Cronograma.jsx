@@ -313,8 +313,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           .from('cronograma')
           .update(dadosEdicao)
           .eq('id', eventoEditando.id)
-          .select()
-          .single();
+          .select();
 
         if (error) {
           console.error('❌ Erro ao atualizar:', error);
@@ -332,7 +331,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         setTimeout(async () => {
           await carregarEventos();
           console.log('🔄 Eventos recarregados');
-        }, 300);
+        }, 500);
         
       } else {
         // Ao criar, inclui created_by
