@@ -102,6 +102,18 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     return eventos.filter(e => e.data === dataStr);
   };
 
+  // Buscar detalhes completos dos eventos
+  const buscarDetalhesEventos = async (dia, mesIndex) => {
+    const dataStr = `${ano}-${String(mesIndex + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+    
+    const { data } = await supabase
+      .from('cronograma')
+      .select('*')
+      .eq('data_evento', dataStr);
+    
+    return data || [];
+  };
+
   // Renderizar um mês
   const renderMes = (mesIndex) => {
     const dias = getDiasMes(mesIndex, ano);
@@ -149,10 +161,11 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                 className={`min-h-[60px] border border-gray-200 p-1 relative ${
                   !dia ? 'bg-gray-50' : temEvento ? 'bg-white hover:bg-blue-100 cursor-pointer transition' : 'bg-white hover:bg-blue-50 transition'
                 }`}
-                onClick={() => {
+                onClick={async () => {
                   if (temEvento) {
+                    const detalhes = await buscarDetalhesEventos(dia, mesIndex);
                     setDiaSelecionado(`${dia}/${mesIndex + 1}/${ano}`);
-                    setEventosSelecionados(eventosHoje);
+                    setEventosSelecionados(detalhes);
                   }
                 }}
                 title={temEvento ? eventosHoje.map(e => e.titulo).join(', ') : ''}
@@ -333,24 +346,66 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                     <div className="flex items-start gap-4">
                       <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${corClass}`}></div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 text-lg mb-3">{evento.titulo}</h4>
+                        <h4 className="font-bold text-gray-900 text-lg mb-2">{evento.titulo}</h4>
+                        
+                        {/* Tipo */}
+                        <div className="mb-3">
+                          <span 
+                            className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"
+                            style={{ 
+                              backgroundColor: corClass.includes('blue') ? '#3b82f6' :
+                                               corClass.includes('red') ? '#ef4444' :
+                                               corClass.includes('green') ? '#22c55e' :
+                                               corClass.includes('purple') ? '#9333ea' :
+                                               corClass.includes('yellow') ? '#eab308' : '#9ca3af'
+                            }}
+                          >
+                            {evento.tipo}
+                          </span>
+                        </div>
+
+                        {/* Descrição */}
                         {evento.descricao && (
                           <div className="bg-gray-100 rounded p-3 mb-3">
                             <p className="text-sm text-gray-800 leading-relaxed">{evento.descricao}</p>
                           </div>
                         )}
-                        <div className="flex flex-wrap gap-3 text-sm text-gray-600">
-                          {evento.local && (
-                            <span className="flex items-center gap-1">
-                              📍 {evento.local}
-                            </span>
-                          )}
+
+                        {/* Informações em grid */}
+                        <div className="grid grid-cols-2 gap-3 text-sm">
                           {evento.hora_inicio && (
-                            <span className="flex items-center gap-1">
-                              🕐 {evento.hora_inicio}
-                            </span>
+                            <div>
+                              <p className="text-gray-600 mb-1">🕐 Início</p>
+                              <p className="font-semibold">{evento.hora_inicio}</p>
+                            </div>
+                          )}
+                          {evento.hora_fim && (
+                            <div>
+                              <p className="text-gray-600 mb-1">🕐 Término</p>
+                              <p className="font-semibold">{evento.hora_fim}</p>
+                            </div>
+                          )}
+                          {evento.local && (
+                            <div className="col-span-2">
+                              <p className="text-gray-600 mb-1">📍 Local</p>
+                              <p className="font-semibold">{evento.local}</p>
+                            </div>
+                          )}
+                          {evento.responsavel && (
+                            <div className="col-span-2">
+                              <p className="text-gray-600 mb-1">👤 Responsável</p>
+                              <p className="font-semibold">{evento.responsavel}</p>
+                            </div>
                           )}
                         </div>
+
+                        {/* Observações */}
+                        {evento.observacoes && (
+                          <div className="mt-3 pt-3 border-t">
+                            <p className="text-xs text-gray-600 mb-1">📝 Observações</p>
+                            <p className="text-sm text-gray-700">{evento.observacoes}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
