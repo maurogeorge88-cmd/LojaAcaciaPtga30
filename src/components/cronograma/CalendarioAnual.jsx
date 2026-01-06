@@ -110,10 +110,18 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
       <div key={mesIndex} className="calendario-mes bg-white rounded-xl shadow-lg overflow-hidden border-4 border-masonico">
         {/* Cabeçalho do Mês com Símbolos Maçônicos */}
         <div className="bg-gradient-to-r from-yellow-700 via-yellow-600 to-yellow-700 text-white py-4 px-6 text-center relative">
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-between px-2">
             <span className="text-2xl">⚒️</span>
-            <h3 className="text-xl font-bold tracking-wide">{meses[mesIndex].toUpperCase()}</h3>
-            <span className="text-2xl">📐</span>
+            <h3 className="text-xl font-bold tracking-wide flex-1">{meses[mesIndex].toUpperCase()}</h3>
+            {simboloMasonico ? (
+              <img 
+                src={simboloMasonico} 
+                alt="Símbolo" 
+                className="w-8 h-8 object-contain"
+              />
+            ) : (
+              <span className="text-2xl">📐</span>
+            )}
           </div>
           <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs opacity-70">
             {ano}
