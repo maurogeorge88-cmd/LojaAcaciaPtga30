@@ -361,6 +361,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
   const editarEvento = async (evento) => {
     console.log('✏️ Editando evento ID:', evento.id);
+    console.log('📦 Estado antigo (cache):', evento);
     
     // Buscar dados atualizados direto do banco
     const { data, error } = await supabase
@@ -375,10 +376,16 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       return;
     }
     
-    console.log('📋 Dados do banco:', data);
+    console.log('✅ Dados do banco (atualizados):', data);
+    console.log('🔍 Tipo no banco:', data.tipo);
     setEventoForm(data);
     setEventoEditando(data);
     setMostrarFormulario(true);
+    
+    // Aguardar React atualizar o estado
+    setTimeout(() => {
+      console.log('📋 eventoForm após setState:', data);
+    }, 100);
   };
 
   const excluirEvento = async (id) => {
