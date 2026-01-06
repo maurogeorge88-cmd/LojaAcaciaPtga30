@@ -359,9 +359,25 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     }
   };
 
-  const editarEvento = (evento) => {
-    setEventoForm(evento);
-    setEventoEditando(evento);
+  const editarEvento = async (evento) => {
+    console.log('✏️ Editando evento ID:', evento.id);
+    
+    // Buscar dados atualizados direto do banco
+    const { data, error } = await supabase
+      .from('cronograma')
+      .select('*')
+      .eq('id', evento.id)
+      .single();
+    
+    if (error) {
+      console.error('❌ Erro ao buscar evento:', error);
+      showError('Erro ao carregar evento');
+      return;
+    }
+    
+    console.log('📋 Dados do banco:', data);
+    setEventoForm(data);
+    setEventoEditando(data);
     setMostrarFormulario(true);
   };
 
