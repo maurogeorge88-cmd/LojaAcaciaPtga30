@@ -309,11 +309,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           dadosNovos: dadosEdicao
         });
         
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('cronograma')
           .update(dadosEdicao)
-          .eq('id', eventoEditando.id)
-          .select();
+          .eq('id', eventoEditando.id);
 
         if (error) {
           console.error('❌ Erro ao atualizar:', error);
@@ -321,19 +320,15 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           return;
         }
         
-        console.log('✅ Evento atualizado no banco:', data);
+        console.log('✅ Evento atualizado com sucesso!');
         showSuccess('Evento atualizado com sucesso!');
         
-        // Atualizar lista localmente (mais rápido que recarregar do banco)
-        setEventos(prevEventos => 
-          prevEventos.map(evt => 
-            evt.id === eventoEditando.id 
-              ? { ...evt, ...dadosEdicao, id: eventoEditando.id } 
-              : evt
-          )
-        );
-        
         limparFormulario();
+        
+        // Recarregar do banco após 200ms
+        setTimeout(() => {
+          carregarEventos();
+        }, 200);
         
       } else {
         // Ao criar, inclui created_by
