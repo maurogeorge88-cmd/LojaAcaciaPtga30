@@ -204,6 +204,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const [eventos, setEventos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [modalVisualizacao, setModalVisualizacao] = useState(false);
+  const [eventoVisualizar, setEventoVisualizar] = useState(null);
   const [eventoEditando, setEventoEditando] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('');
   const [filtroMes, setFiltroMes] = useState('');
@@ -945,6 +947,16 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     {(permissoes?.canEdit || permissoes?.canEditMembers) && (
                       <div className="flex gap-2 ml-4">
                         <button
+                          onClick={() => {
+                            setEventoVisualizar(evento);
+                            setModalVisualizacao(true);
+                          }}
+                          className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+                          title="Visualizar"
+                        >
+                          👁️
+                        </button>
+                        <button
                           onClick={() => editarEvento(evento)}
                           className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
                           title="Editar"
@@ -986,6 +998,61 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           }))} 
           ano={new Date().getFullYear()}
         />
+      )}
+
+      {/* Modal de Visualização */}
+      {modalVisualizacao && eventoVisualizar && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setModalVisualizacao(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+              <div className="flex justify-between items-center">
+                <h3 className="text-2xl font-bold">📅 Detalhes do Evento</h3>
+                <button
+                  onClick={() => setModalVisualizacao(false)}
+                  className="text-white hover:text-gray-200 text-3xl"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <h4 className="text-2xl font-bold text-gray-900 mb-2">{eventoVisualizar.titulo}</h4>
+              </div>
+              
+              {eventoVisualizar.descricao && (
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <p className="text-gray-800">{eventoVisualizar.descricao}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">📅 Data</p>
+                  <p className="font-semibold">{eventoVisualizar.data_evento}</p>
+                </div>
+                {eventoVisualizar.hora_inicio && (
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">🕐 Início</p>
+                    <p className="font-semibold">{eventoVisualizar.hora_inicio}</p>
+                  </div>
+                )}
+                {eventoVisualizar.local && (
+                  <div className="col-span-2">
+                    <p className="text-sm text-gray-600 mb-1">📍 Local</p>
+                    <p className="font-semibold">{eventoVisualizar.local}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
