@@ -323,10 +323,17 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         
         console.log('✅ Evento atualizado no banco:', data);
         showSuccess('Evento atualizado com sucesso!');
-        limparFormulario();
         
-        // Recarregar eventos SEM cache
-        await carregarEventos();
+        // Atualizar lista localmente (mais rápido que recarregar do banco)
+        setEventos(prevEventos => 
+          prevEventos.map(evt => 
+            evt.id === eventoEditando.id 
+              ? { ...evt, ...dadosEdicao, id: eventoEditando.id } 
+              : evt
+          )
+        );
+        
+        limparFormulario();
         
       } else {
         // Ao criar, inclui created_by
