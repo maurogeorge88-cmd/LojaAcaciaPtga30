@@ -129,7 +129,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               <img 
                 src={simboloMasonico} 
                 alt="Símbolo" 
-                className="w-8 h-8 object-contain"
+                className="w-12 h-12 object-contain"
               />
             ) : (
               <span className="text-2xl">📐</span>
