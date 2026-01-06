@@ -171,7 +171,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                           return (
                             <div
                               key={i}
-                              className={`w-2 h-2 rounded-full ${coresEvento[tipoEvento]}`}
+                              className={`w-4 h-4 rounded-full ${coresEvento[tipoEvento]}`}
                               title={evento.titulo}
                             />
                           );
@@ -333,11 +333,13 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                     <div className="flex items-start gap-4">
                       <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${corClass}`}></div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 text-lg mb-2">{evento.titulo}</h4>
+                        <h4 className="font-bold text-gray-900 text-lg mb-3">{evento.titulo}</h4>
                         {evento.descricao && (
-                          <p className="text-sm text-gray-700 mb-2">{evento.descricao}</p>
+                          <div className="bg-gray-100 rounded p-3 mb-3">
+                            <p className="text-sm text-gray-800 leading-relaxed">{evento.descricao}</p>
+                          </div>
                         )}
-                        <div className="flex flex-wrap gap-3 text-xs text-gray-600">
+                        <div className="flex flex-wrap gap-3 text-sm text-gray-600">
                           {evento.local && (
                             <span className="flex items-center gap-1">
                               📍 {evento.local}
