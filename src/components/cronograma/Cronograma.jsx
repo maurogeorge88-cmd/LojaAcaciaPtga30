@@ -1024,6 +1024,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             <div className="p-6 space-y-4">
               <div>
                 <h4 className="text-2xl font-bold text-gray-900 mb-2">{eventoVisualizar.titulo}</h4>
+                <div className="flex items-center gap-2 mb-3">
+                  <span 
+                    className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"
+                    style={{ backgroundColor: tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.cor || '#6b7280' }}
+                  >
+                    {tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.label || eventoVisualizar.tipo}
+                  </span>
+                </div>
               </div>
               
               {eventoVisualizar.descricao && (
