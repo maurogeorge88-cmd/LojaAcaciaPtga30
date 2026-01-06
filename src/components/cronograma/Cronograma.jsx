@@ -327,11 +327,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         // Limpar formulário primeiro
         limparFormulario();
         
-        // Pequeno delay antes de recarregar
-        setTimeout(async () => {
-          await carregarEventos();
-          console.log('🔄 Eventos recarregados');
-        }, 500);
+        // Forçar reload completo da página para limpar cache
+        window.location.reload();
         
       } else {
         // Ao criar, inclui created_by
