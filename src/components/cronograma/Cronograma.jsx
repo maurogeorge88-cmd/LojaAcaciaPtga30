@@ -256,12 +256,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     console.log('📥 Carregando eventos...');
     setLoading(true);
     
-    // Forçar bypass de cache adicionando timestamp
+    // Adicionar filtro com timestamp para evitar cache
     const { data, error } = await supabase
       .from('cronograma')
       .select('*')
-      .order('data_evento', { ascending: true })
-      .limit(1000); // Limite para forçar nova query
+      .or(`id.gte.0,updated_at.gte.1970-01-01`)  // Força query nova
+      .order('data_evento', { ascending: true });
     
     if (error) {
       console.error('❌ Erro ao carregar eventos:', error);
@@ -323,12 +323,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         
         console.log('✅ Evento atualizado no banco:', data);
         showSuccess('Evento atualizado com sucesso!');
-        
-        // Limpar formulário primeiro
         limparFormulario();
         
-        // Forçar reload completo da página para limpar cache
-        window.location.reload();
+        // Recarregar eventos SEM cache
+        await carregarEventos();
         
       } else {
         // Ao criar, inclui created_by
