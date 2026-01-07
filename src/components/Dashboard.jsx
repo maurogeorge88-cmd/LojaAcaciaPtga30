@@ -192,10 +192,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const irmaosExOficio = irmaos.filter(i => i.situacao?.toLowerCase() === 'ex-ofício');
   const totalIrmaos = irmaos.length;
 
-  // Contagem por grau (apenas regulares)
-  const irmaosAprendiz = irmaosRegulares.filter(i => obterGrau(i) === 'Aprendiz').length;
-  const irmaosCompanheiro = irmaosRegulares.filter(i => obterGrau(i) === 'Companheiro').length;
-  const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
+  // Irmãos ativos (Regulares + Licenciados)
+  const irmaosAtivos = [...irmaosRegulares, ...irmaosLicenciados];
+
+  // Contagem por grau (regulares + licenciados)
+  const irmaosAprendiz = irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz').length;
+  const irmaosCompanheiro = irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro').length;
+  const irmaosMestre = irmaosAtivos.filter(i => obterGrau(i) === 'Mestre').length;
 
   // ========================================
   // ANIVERSARIANTES - INCLUINDO FAMILIARES
@@ -358,7 +361,20 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
           <h3 className="text-lg font-semibold mb-3">Irmãos Regulares</h3>
-          <p className="text-5xl font-bold mb-4">{irmaosRegulares.length}</p>
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between text-sm border-b border-blue-400 pb-2">
+              <span>📊 Total de Irmãos Ativos:</span>
+              <span className="font-bold text-xl">{irmaosAtivos.length}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>✅ Irmãos Regulares:</span>
+              <span className="font-bold">{irmaosRegulares.length}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>🎫 Irmãos Licenciados:</span>
+              <span className="font-bold">{irmaosLicenciados.length}</span>
+            </div>
+          </div>
           <div className="border-t border-blue-400 pt-3 space-y-1">
             <div className="flex justify-between text-sm">
               <span>⬜ Aprendizes:</span>
@@ -437,13 +453,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
             <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
           </div>
-          <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
-            <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
-            <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
-          </div>
           <div className="bg-blue-50 border-2 border-primary-200 p-4 rounded-lg">
             <div className="text-primary-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
             <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
+          </div>
+          <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
+            <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
+            <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
           </div>
           <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
             <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
