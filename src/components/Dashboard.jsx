@@ -394,8 +394,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         </div>
         
         <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold mb-2">Total Geral</h3>
-          <p className="text-4xl font-bold mb-2">{totalIrmaos}</p>
+          <h3 className="text-lg font-semibold mb-3">Total Geral</h3>
+          <p className="text-5xl font-bold mb-2">{totalIrmaos}</p>
           <p className="text-sm opacity-90">Todas as situações</p>
         </div>
         
