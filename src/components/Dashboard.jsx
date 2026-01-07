@@ -361,18 +361,20 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
           <h3 className="text-lg font-semibold mb-3">Irmãos Regulares</h3>
-          <div className="space-y-2 mb-4">
-            <div className="flex justify-between text-sm border-b border-blue-400 pb-2">
-              <span>📊 Total de Irmãos Ativos:</span>
-              <span className="font-bold text-xl">{irmaosAtivos.length}</span>
+          <div className="mb-4">
+            <div className="flex justify-between items-center border-b border-blue-400 pb-3 mb-3">
+              <span className="text-sm">📊 Total de Irmãos Ativos:</span>
+              <span className="font-bold text-5xl">{irmaosAtivos.length}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>✅ Irmãos Regulares:</span>
-              <span className="font-bold">{irmaosRegulares.length}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>🎫 Irmãos Licenciados:</span>
-              <span className="font-bold">{irmaosLicenciados.length}</span>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex justify-between">
+                <span>✅ Regulares:</span>
+                <span className="font-bold">{irmaosRegulares.length}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>🎫 Licenciados:</span>
+                <span className="font-bold">{irmaosLicenciados.length}</span>
+              </div>
             </div>
           </div>
           <div className="border-t border-blue-400 pt-3 space-y-1">
