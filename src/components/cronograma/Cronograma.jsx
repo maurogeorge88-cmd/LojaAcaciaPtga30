@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import CalendarioAnual from './CalendarioAnual';
 
 // Funções de geração de PDF (inline para evitar problemas de import)
-const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, simboloBase64 = null) => {
+const gerarRelatorioCronograma = async (eventos, periodo, logoLojaBase64 = null) => {
   // Importar jsPDF dinamicamente
   const { jsPDF } = await import('jspdf');
   await import('jspdf-autotable');
@@ -17,21 +17,12 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
   doc.setFillColor(79, 70, 229);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
-  // Logo à esquerda
-  if (logoBase64) {
+  // 1️⃣ LOGO DA LOJA à direita (não símbolo maçônico)
+  if (logoLojaBase64) {
     try {
-      doc.addImage(logoBase64, 'PNG', 10, 7, 22, 22);
+      doc.addImage(logoLojaBase64, 'PNG', pageWidth - 32, 7, 22, 22);
     } catch (e) {
-      console.log('Erro ao adicionar logo');
-    }
-  }
-
-  // 1️⃣ SÍMBOLO MAÇÔNICO à direita
-  if (simboloBase64) {
-    try {
-      doc.addImage(simboloBase64, 'PNG', pageWidth - 32, 7, 22, 22);
-    } catch (e) {
-      console.log('Erro ao adicionar símbolo');
+      console.log('Erro ao adicionar logo da loja');
     }
   }
   
@@ -50,12 +41,10 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
   doc.setFont('helvetica', 'normal');
   doc.text('Mato Grosso - Brasil', pageWidth / 2, 30, { align: 'center' });
 
-  // Info do relatório
+  // 3️⃣ Info do relatório (SEM data de emissão)
   let yPos = 42;
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(9);
-  doc.text(`Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 14, yPos);
-  // 2️⃣ Ajustar margem direita
   doc.text(`Total de eventos: ${eventos.length}`, pageWidth - 14, yPos, { align: 'right' });
   
   yPos += 5;
@@ -103,7 +92,6 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
 
     // Header do mês
     doc.setFillColor(99, 102, 241);
-    // 2️⃣ Ajustar margem direita
     doc.rect(14, yPos, pageWidth - 28, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
@@ -113,40 +101,40 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
     yPos += 12;
 
     const dadosTabela = eventosDoMes.map(evento => {
-      // 3️⃣ Data + Hora juntas
+      // Data + Hora juntas
       const data = evento.data_evento.split('-').reverse().join('/');
       const hora = evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '';
       const dataHora = hora ? `${data}\n${hora}` : data;
       
+      // 2️⃣ Tipos COMPLETOS (sem abreviação)
       const tipos = { 
         'sessao': 'Sessao', 
         'trabalho_irmao': 'Trabalho', 
         'instrucao': 'Instrucao', 
-        'sessao_magna': 'S. Magna',
-        'sessao_posse': 'S. Posse',
-        'sessao_instalacao': 'S. Instalacao',
-        'evento_externo': 'Externo', 
+        'sessao_magna': 'Sessao Magna',
+        'sessao_posse': 'Sessao de Posse',
+        'sessao_instalacao': 'Sessao de Instalacao',
+        'evento_externo': 'Evento Externo', 
         'outro': 'Outro' 
       };
       
-      // 4️⃣ Tipo + Grau
+      // Tipo + Grau
       const tipo = tipos[evento.tipo] || evento.tipo;
       const grau = getGrauNome(evento.grau_sessao_id);
       const tipoGrau = grau ? `${tipo}\n${grau}` : tipo;
       
       return [
         dataHora,           // Data + Hora
-        tipoGrau,          // Tipo + Grau
-        evento.titulo,     // Evento (menor)
+        tipoGrau,          // Tipo + Grau (nomes completos)
+        evento.titulo,     // Evento
         evento.descricao || '-',  // Descrição
         evento.local || '-',      // Local
-        evento.observacoes || '-' // 6️⃣ Observações
+        evento.observacoes || '-' // Observações
       ];
     });
 
     doc.autoTable({
       startY: yPos,
-      // Ajustar cabeçalhos
       head: [['Data/Hora', 'Tipo/Grau', 'Evento', 'Descricao', 'Local', 'Observacoes']],
       body: dadosTabela,
       theme: 'striped',
@@ -158,7 +146,6 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
         halign: 'center'
       },
       styles: { 
-        // 7️⃣ Fonte mais nítida
         font: 'helvetica',
         fontSize: 9,
         cellPadding: 3,
@@ -168,13 +155,12 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
       },
       columnStyles: { 
         0: { cellWidth: 25, halign: 'center' },    // Data/Hora
-        1: { cellWidth: 30, halign: 'center' },    // Tipo/Grau
-        2: { cellWidth: 55 },                      // 5️⃣ Evento (diminuído)
+        1: { cellWidth: 35, halign: 'center' },    // Tipo/Grau (aumentado para nomes completos)
+        2: { cellWidth: 55 },                      // Evento
         3: { cellWidth: 75 },                      // Descrição
         4: { cellWidth: 35 },                      // Local
-        5: { cellWidth: 50 }                       // 6️⃣ Observações
+        5: { cellWidth: 45 }                       // Observações
       },
-      // 2️⃣ Margem direita ajustada
       margin: { left: 14, right: 14 },
       didDrawPage: (data) => {
         const pageCount = doc.internal.getNumberOfPages();
@@ -202,10 +188,10 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, sim
 };
 
 const gerarRelatorioMensal = async (eventos, mes, ano) => {
-  // Buscar símbolo do DadosLoja
+  // Buscar logo da loja
   const { data: dadosLoja } = await supabase
     .from('dados_loja')
-    .select('simbolo_masonico_url')
+    .select('logo_url')
     .single();
   
   const eventosMes = eventos.filter(e => 
@@ -214,14 +200,14 @@ const gerarRelatorioMensal = async (eventos, mes, ano) => {
   const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const periodo = `${meses[mes - 1]} ${ano}`;
-  await gerarRelatorioCronograma(eventosMes, periodo, null, dadosLoja?.simbolo_masonico_url);
+  await gerarRelatorioCronograma(eventosMes, periodo, dadosLoja?.logo_url);
 };
 
 const gerarRelatorioSemestral = async (eventos, semestre, ano) => {
-  // Buscar símbolo do DadosLoja
+  // Buscar logo da loja
   const { data: dadosLoja } = await supabase
     .from('dados_loja')
-    .select('simbolo_masonico_url')
+    .select('logo_url')
     .single();
   
   const mesesSemestre = semestre === 1 
@@ -232,21 +218,21 @@ const gerarRelatorioSemestral = async (eventos, semestre, ano) => {
     return e.data_evento.startsWith(ano.toString()) && mesesSemestre.includes(mes);
   });
   const periodo = `${semestre}º Semestre ${ano}`;
-  await gerarRelatorioCronograma(eventosSemestre, periodo, null, dadosLoja?.simbolo_masonico_url);
+  await gerarRelatorioCronograma(eventosSemestre, periodo, dadosLoja?.logo_url);
 };
 
 const gerarRelatorioAnual = async (eventos, ano) => {
-  // Buscar símbolo do DadosLoja
+  // Buscar logo da loja
   const { data: dadosLoja } = await supabase
     .from('dados_loja')
-    .select('simbolo_masonico_url')
+    .select('logo_url')
     .single();
   
   const eventosAno = eventos.filter(e => 
     e.data_evento.startsWith(ano.toString())
   );
   const periodo = `Anual ${ano}`;
-  await gerarRelatorioCronograma(eventosAno, periodo, null, dadosLoja?.simbolo_masonico_url);
+  await gerarRelatorioCronograma(eventosAno, periodo, dadosLoja?.logo_url);
 };
 
 export default function Cronograma({ showSuccess, showError, userEmail, permissoes }) {
@@ -663,13 +649,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Local
                 </label>
-                <input
-                  type="text"
+                <textarea
                   value={eventoForm.local}
                   onChange={(e) => setEventoForm({ ...eventoForm, local: e.target.value })}
-                  placeholder="Ex: Templo Maçônico"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Ex: Templo da Loja&#10;Almoço: Espaço Realize"
+                  rows="2"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 resize-none"
                 />
+                <p className="text-xs text-gray-500 mt-1">Pressione Enter para quebrar linha</p>
               </div>
 
               {/* Responsável */}
