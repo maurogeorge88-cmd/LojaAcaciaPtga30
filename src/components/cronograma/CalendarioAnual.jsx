@@ -11,10 +11,35 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   const [eventosSelecionados, setEventosSelecionados] = useState([]);
   const [diaSelecionado, setDiaSelecionado] = useState(null);
   const [simboloMasonico, setSimboloMasonico] = useState(null);
+  const [tema, setTema] = useState({
+    cor_primaria: '#92400e',
+    cor_secundaria: '#b45309',
+    cor_destaque: '#fbbf24'
+  });
 
   useEffect(() => {
     carregarSimbolo();
+    carregarTema();
   }, []);
+
+  const carregarTema = async () => {
+    try {
+      const { data } = await supabase
+        .from('dados_loja')
+        .select('cor_primaria, cor_secundaria, cor_destaque')
+        .single();
+      
+      if (data) {
+        setTema({
+          cor_primaria: data.cor_primaria || '#92400e',
+          cor_secundaria: data.cor_secundaria || '#b45309',
+          cor_destaque: data.cor_destaque || '#fbbf24'
+        });
+      }
+    } catch (error) {
+      console.log('Tema não encontrado, usando padrão');
+    }
+  };
 
   const carregarSimbolo = async () => {
     try {
@@ -121,7 +146,12 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     return (
       <div key={mesIndex} className="calendario-mes bg-white rounded-xl shadow-lg overflow-hidden border-4 border-masonico">
         {/* Cabeçalho do Mês com Símbolos Maçônicos */}
-        <div className="bg-gradient-to-r from-yellow-700 via-yellow-600 to-yellow-700 text-white py-4 px-6 text-center relative">
+        <div 
+          className="text-white py-4 px-6 text-center relative"
+          style={{ 
+            background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria}, ${tema.cor_primaria})` 
+          }}
+        >
           <div className="flex items-center justify-between px-2">
             <span className="text-2xl">⚒️</span>
             <h3 className="text-xl font-bold tracking-wide flex-1">{meses[mesIndex].toUpperCase()}</h3>
@@ -206,7 +236,12 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
   return (
     <div className="calendario-anual px-6 py-4">
       {/* Cabeçalho Principal */}
-      <div className="bg-gradient-to-r from-yellow-800 via-yellow-700 to-yellow-800 text-white py-6 px-8 rounded-t-xl shadow-lg mb-6">
+      <div 
+        className="text-white py-6 px-8 rounded-t-xl shadow-lg mb-6"
+        style={{ 
+          background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria}, ${tema.cor_primaria})` 
+        }}
+      >
         <div className="flex items-center justify-between px-4">
           <span className="text-4xl">📅</span>
           <div className="text-center flex-1">
@@ -232,9 +267,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           disabled={semestre === 1}
           className={`px-6 py-3 rounded-lg font-semibold transition ${
             semestre === 1
-              ? 'bg-yellow-700 text-white'
+              ? 'text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
+          style={semestre === 1 ? { backgroundColor: tema.cor_primaria } : {}}
         >
           📆 1º Semestre (Jan-Jun)
         </button>
@@ -243,6 +279,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           disabled={semestre === 2}
           className={`px-6 py-3 rounded-lg font-semibold transition ${
             semestre === 2
+              ? 'text-white'
+              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          }`}
+          style={semestre === 2 ? { backgroundColor: tema.cor_primaria } : {}}
               ? 'bg-yellow-700 text-white'
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
@@ -303,13 +343,18 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header do Modal */}
-            <div className="bg-gradient-to-r from-yellow-700 via-yellow-600 to-yellow-700 text-white p-6 rounded-t-xl sticky top-0">
+            <div 
+              className="text-white p-6 rounded-t-xl sticky top-0"
+              style={{ 
+                background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria}, ${tema.cor_primaria})` 
+              }}
+            >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">📅</span>
                   <div>
                     <h3 className="text-2xl font-bold">Eventos do Dia</h3>
-                    <p className="text-sm text-yellow-100">{diaSelecionado}</p>
+                    <p className="text-sm opacity-90">{diaSelecionado}</p>
                   </div>
                 </div>
                 <button
@@ -317,7 +362,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                     setEventosSelecionados([]);
                     setDiaSelecionado(null);
                   }}
-                  className="text-white hover:text-yellow-200 text-4xl leading-none transition"
+                  className="text-white hover:opacity-80 text-4xl leading-none transition"
                   title="Fechar"
                 >
                   ×
