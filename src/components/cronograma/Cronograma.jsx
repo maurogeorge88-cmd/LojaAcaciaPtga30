@@ -247,6 +247,11 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const [visualizacao, setVisualizacao] = useState('lista'); // 'lista' ou 'calendario'
   const [mostrarModalRelatorio, setMostrarModalRelatorio] = useState(false);
   const [tipoRelatorio, setTipoRelatorio] = useState('mensal'); // 'mensal', 'semestral', 'anual'
+  const [tema, setTema] = useState({
+    cor_primaria: '#4f46e5',
+    cor_secundaria: '#818cf8',
+    cor_destaque: '#eab308'
+  });
   const [relatorioForm, setRelatorioForm] = useState({
     mes: new Date().getMonth() + 1,
     ano: new Date().getFullYear(),
@@ -294,6 +299,26 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       case 3: return '🔺 Mestre';
       case 4: return '🏛️ Evento Loja';
       default: return '';
+    }
+  };
+
+  useEffect(() => {
+    carregarEventos();
+    carregarTema();
+  }, []);
+
+  const carregarTema = async () => {
+    const { data } = await supabase
+      .from('dados_loja')
+      .select('cor_primaria, cor_secundaria, cor_destaque')
+      .single();
+    
+    if (data) {
+      setTema({
+        cor_primaria: data.cor_primaria || '#4f46e5',
+        cor_secundaria: data.cor_secundaria || '#818cf8',
+        cor_destaque: data.cor_destaque || '#eab308'
+      });
     }
   };
 
@@ -495,11 +520,16 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg p-6 shadow-lg">
+      <div 
+        className="text-white rounded-lg p-6 shadow-lg"
+        style={{ 
+          background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria})` 
+        }}
+      >
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold mb-2">📅 Cronograma Anual</h2>
-            <p className="text-indigo-100">Eventos, sessões e atividades da loja</p>
+            <p className="opacity-90">Eventos, sessões e atividades da loja</p>
           </div>
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
             <button
@@ -515,7 +545,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   setMostrarFormulario(false);
                 }
               }}
-              className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold"
+              className="px-6 py-3 bg-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+              style={{ color: tema.cor_primaria }}
             >
               {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
             </button>
@@ -525,7 +556,11 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div key={eventoEditando?.id || 'novo'} className="bg-white rounded-lg shadow-lg p-6 border-2 border-indigo-200">
+        <div 
+          key={eventoEditando?.id || 'novo'} 
+          className="bg-white rounded-lg shadow-lg p-6 border-2"
+          style={{ borderColor: tema.cor_primaria }}
+        >
           <h3 className="text-xl font-bold text-gray-900 mb-4">
             {eventoEditando ? '✏️ Editar Evento' : '➕ Cadastrar Novo Evento'}
           </h3>
@@ -726,7 +761,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                className="px-6 py-2 text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                style={{ backgroundColor: tema.cor_primaria }}
               >
                 {eventoEditando ? '💾 Salvar Alterações' : '➕ Cadastrar Evento'}
               </button>
@@ -994,7 +1030,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                               {obterLabelStatus(evento.status)}
                             </span>
                             {evento.grau_sessao_id && (
-                              <span className="px-2 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-800">
+                              <span 
+                                className="px-2 py-1 rounded text-xs font-bold"
+                                style={{ 
+                                  backgroundColor: `${tema.cor_primaria}20`,
+                                  color: tema.cor_primaria
+                                }}
+                              >
                                 {getGrauNome(evento.grau_sessao_id)}
                               </span>
                             )}
@@ -1119,7 +1161,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     {tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.label || eventoVisualizar.tipo}
                   </span>
                   {eventoVisualizar.grau_sessao_id && (
-                    <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                    <span 
+                      className="inline-block px-3 py-1 rounded-full text-sm font-medium"
+                      style={{ 
+                        backgroundColor: `${tema.cor_primaria}20`,
+                        color: tema.cor_primaria
+                      }}
+                    >
                       {getGrauNome(eventoVisualizar.grau_sessao_id)}
                     </span>
                   )}
