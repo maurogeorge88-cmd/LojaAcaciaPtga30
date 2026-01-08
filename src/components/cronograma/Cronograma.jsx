@@ -532,7 +532,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       <div 
         className="text-white rounded-lg p-6 shadow-lg"
         style={{ 
-          background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria})` 
+          background: 'linear-gradient(to right, #000080, #0000b3)'
         }}
       >
         <div className="flex items-center justify-between">
@@ -555,7 +555,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 }
               }}
               className="px-6 py-3 bg-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
-              style={{ color: tema.cor_primaria }}
+              style={{ color: '#000080' }}
             >
               {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
             </button>
