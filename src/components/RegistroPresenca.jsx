@@ -61,7 +61,13 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         .eq('status', 'ativa');
 
       // Buscar irmãos elegíveis DIRETO da tabela (sem usar função RPC)
-      const grauMinimo = sessaoData.graus_sessao?.grau_minimo_requerido || 1;
+      const grauMinimoRaw = sessaoData.graus_sessao?.grau_minimo_requerido;
+      const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : 1;
+      
+      console.log('🔍 DEBUG GRAU:');
+      console.log('  - grau_minimo_requerido (raw):', grauMinimoRaw, typeof grauMinimoRaw);
+      console.log('  - grauMinimo (convertido):', grauMinimo, typeof grauMinimo);
+      console.log('  - sessaoData:', sessaoData);
       
       let query = supabase
         .from('irmaos')
@@ -69,10 +75,15 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         .eq('status', 'ativo');
 
       // Filtrar por grau
+      console.log('🔍 Aplicando filtro de grau:', grauMinimo);
       if (grauMinimo === 2) {
+        console.log('  ✅ Filtrando: Companheiros e Mestres (data_elevacao IS NOT NULL)');
         query = query.not('data_elevacao', 'is', null);
       } else if (grauMinimo === 3) {
+        console.log('  ✅ Filtrando: Apenas Mestres (data_exaltacao IS NOT NULL)');
         query = query.not('data_exaltacao', 'is', null);
+      } else {
+        console.log('  ⚠️ SEM FILTRO - Todos os graus (grauMinimo =', grauMinimo, ')');
       }
 
       const { data: irmaosData, error: irmaosError } = await query.order('nome');
