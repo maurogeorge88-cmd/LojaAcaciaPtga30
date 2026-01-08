@@ -333,11 +333,11 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header do Modal */}
+            {/* Header do Modal - COR #000080 */}
             <div 
               className="text-white p-6 rounded-t-xl sticky top-0"
               style={{ 
-                background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria}, ${tema.cor_primaria})` 
+                background: 'linear-gradient(to right, #000080, #0000b3, #000080)'
               }}
             >
               <div className="flex justify-between items-center">
