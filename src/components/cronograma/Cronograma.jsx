@@ -229,7 +229,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     responsavel: '',
     observacoes: '',
     status: 'planejado',
-    cor_destaque: '#3b82f6'
+    cor_destaque: '#3b82f6',
+    grau_sessao_id: 1 // Padrão: Aprendiz (todos podem participar)
   });
 
   const tiposEvento = [
@@ -286,7 +287,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       responsavel: '',
       observacoes: '',
       status: 'planejado',
-      cor_destaque: '#3b82f6'
+      cor_destaque: '#3b82f6',
+      grau_sessao_id: 1
     });
     setEventoEditando(null);
     setMostrarFormulario(false);
@@ -316,7 +318,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             responsavel: eventoForm.responsavel,
             observacoes: eventoForm.observacoes,
             status: eventoForm.status,
-            cor_destaque: eventoForm.cor_destaque
+            cor_destaque: eventoForm.cor_destaque,
+            grau_sessao_id: eventoForm.grau_sessao_id
           })
           .eq('id', eventoEditando.id);
 
@@ -339,6 +342,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             observacoes: eventoForm.observacoes,
             status: eventoForm.status,
             cor_destaque: eventoForm.cor_destaque,
+            grau_sessao_id: eventoForm.grau_sessao_id,
             created_by: userEmail || 'sistema'
           }]);
 
@@ -505,6 +509,23 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Grau da Sessão */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Grau Mínimo Requerido *
+                </label>
+                <select
+                  value={eventoForm.grau_sessao_id}
+                  onChange={(e) => setEventoForm({ ...eventoForm, grau_sessao_id: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value={1}>⬜ Aprendiz (Todos)</option>
+                  <option value={2}>🔷 Companheiro (Comp. e Mestres)</option>
+                  <option value={3}>🔺 Mestre (Somente Mestres)</option>
+                </select>
+                <p className="text-xs text-gray-500 mt-1">Define quem pode participar da sessão</p>
               </div>
 
               {/* Status */}
@@ -1031,6 +1052,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   >
                     {tiposEvento.find(t => t.value === eventoVisualizar.tipo)?.label || eventoVisualizar.tipo}
                   </span>
+                  {eventoVisualizar.grau_sessao_id && (
+                    <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                      {eventoVisualizar.grau_sessao_id === 1 && '⬜ Aprendiz'}
+                      {eventoVisualizar.grau_sessao_id === 2 && '🔷 Companheiro'}
+                      {eventoVisualizar.grau_sessao_id === 3 && '🔺 Mestre'}
+                    </span>
+                  )}
                 </div>
               </div>
               
