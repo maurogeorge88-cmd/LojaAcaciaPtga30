@@ -165,7 +165,6 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             />
           )}
         </div>
-        </div>
 
         {/* Dias da Semana - SIMPLIFICADO */}
         <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-300">
