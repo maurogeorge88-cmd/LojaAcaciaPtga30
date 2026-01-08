@@ -132,6 +132,14 @@ function App() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
+  // Helper: Verificar se é Admin ou Venerável (acesso total)
+  const isAdminOrVeneravel = (user = userData) => {
+    if (!user) return false;
+    return user.nivel_acesso === 'admin' || 
+           user.cargo === 'veneravel' || 
+           user.cargo === 'Veneravel';
+  };
+
   // Estados do menu colapsável
   const [menuAberto, setMenuAberto] = useState(true);
   const [submenuIrmaos, setSubmenuIrmaos] = useState(false);
@@ -319,8 +327,8 @@ function App() {
           pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: false
         });
-      } else if (data.nivel_acesso === 'admin') {
-        // Admin: acesso total
+      } else if (data.nivel_acesso === 'admin' || data.cargo === 'veneravel' || data.cargo === 'Veneravel') {
+        // Admin OU Venerável: acesso total
         setPermissoes({
           canEdit: true,
           canEditMembers: true,
@@ -2382,7 +2390,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
 
         {/* DADOS DA LOJA */}
-        {currentPage === 'dados-loja' && userData?.nivel_acesso === 'admin' && (
+        {currentPage === 'dados-loja' && isAdminOrVeneravel() && (
           <DadosLoja
             showSuccess={showSuccess}
             showError={showError}
