@@ -149,36 +149,28 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     const dias = getDiasMes(mesIndex, ano);
     
     return (
-      <div key={mesIndex} className="calendario-mes bg-white rounded-xl shadow-lg overflow-hidden border-4 border-masonico">
-        {/* Cabeçalho do Mês com Símbolos Maçônicos */}
+      <div key={mesIndex} className="calendario-mes bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+        {/* Cabeçalho do Mês - MINIMALISTA */}
         <div 
-          className="text-white py-4 px-6 text-center relative"
-          style={{ 
-            background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria}, ${tema.cor_primaria})` 
-          }}
+          className="text-white py-2 px-4 flex items-center justify-between"
+          style={{ backgroundColor: tema.cor_primaria }}
         >
-          <div className="flex items-center justify-between px-2">
-            <span className="text-2xl">⚒️</span>
-            <h3 className="text-xl font-bold tracking-wide flex-1">{meses[mesIndex].toUpperCase()}</h3>
-            {simboloMasonico ? (
-              <img 
-                src={simboloMasonico} 
-                alt="Símbolo" 
-                className="w-8 h-8 object-contain"
-              />
-            ) : (
-              <span className="text-2xl">📐</span>
-            )}
-          </div>
-          <div className="absolute top-2 left-1/2 transform -translate-x-1/2 text-xs opacity-70">
-            {ano}
-          </div>
+          <span className="text-xs opacity-70">{ano}</span>
+          <h3 className="text-base font-bold tracking-wide">{meses[mesIndex].toUpperCase()}</h3>
+          {simboloMasonico && (
+            <img 
+              src={simboloMasonico} 
+              alt="" 
+              className="w-5 h-5 object-contain opacity-80"
+            />
+          )}
+        </div>
         </div>
 
-        {/* Dias da Semana */}
-        <div className="grid grid-cols-7 bg-gray-100 border-b-2 border-yellow-600">
+        {/* Dias da Semana - SIMPLIFICADO */}
+        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-300">
           {diasSemana.map((dia, i) => (
-            <div key={i} className="text-center py-2 text-sm font-bold text-gray-700">
+            <div key={i} className="text-center py-1.5 text-xs font-semibold text-gray-600">
               {dia}
             </div>
           ))}
@@ -193,8 +185,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             return (
               <div
                 key={index}
-                className={`min-h-[60px] border border-gray-200 p-1 relative ${
-                  !dia ? 'bg-gray-50' : temEvento ? 'bg-white hover:bg-blue-100 cursor-pointer transition' : 'bg-white hover:bg-blue-50 transition'
+                className={`min-h-[50px] border border-gray-200 p-1.5 relative ${
+                  !dia ? 'bg-gray-50' : temEvento ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer transition' : 'bg-white hover:bg-gray-50 transition'
                 }`}
                 onClick={async () => {
                   if (temEvento) {
@@ -207,23 +199,26 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               >
                 {dia && (
                   <>
-                    <div className={`text-sm font-semibold ${temEvento ? 'text-blue-700' : 'text-gray-700'}`}>
+                    <div className={`text-sm ${temEvento ? 'font-bold text-blue-700' : 'font-medium text-gray-700'}`}>
                       {dia}
                     </div>
                     
-                    {/* Indicadores de Eventos */}
+                    {/* Indicadores de Eventos - MENORES */}
                     {temEvento && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {eventosHoje.map((evento, i) => {
+                      <div className="flex flex-wrap gap-0.5 mt-1">
+                        {eventosHoje.slice(0, 3).map((evento, i) => {
                           const tipoEvento = getTipoEvento(evento);
                           return (
                             <div
                               key={i}
-                              className={`w-4 h-4 rounded-full ${coresEvento[tipoEvento]}`}
+                              className={`w-2 h-2 rounded-full ${coresEvento[tipoEvento]}`}
                               title={evento.titulo}
                             />
                           );
                         })}
+                        {eventosHoje.length > 3 && (
+                          <span className="text-[8px] text-blue-600 ml-0.5">+{eventosHoje.length - 3}</span>
+                        )}
                       </div>
                     )}
                   </>
@@ -240,40 +235,35 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
   return (
     <div className="calendario-anual px-6 py-4">
-      {/* Cabeçalho Principal */}
+      {/* Cabeçalho Principal - SIMPLIFICADO */}
       <div 
-        className="text-white py-6 px-8 rounded-t-xl shadow-lg mb-6"
+        className="text-white py-4 px-6 rounded-xl shadow-md mb-6"
         style={{ 
-          background: `linear-gradient(to right, ${tema.cor_primaria}, ${tema.cor_secundaria}, ${tema.cor_primaria})` 
+          background: `linear-gradient(135deg, ${tema.cor_primaria}, ${tema.cor_secundaria})` 
         }}
       >
-        <div className="flex items-center justify-between px-4">
-          <span className="text-4xl">📅</span>
-          <div className="text-center flex-1">
-            <h1 className="text-3xl font-bold">CALENDÁRIO ANUAL {ano}</h1>
-            <p className="text-sm opacity-90 mt-1">A∴R∴L∴S∴ Acácia de Paranatinga nº 30</p>
-          </div>
-          {simboloMasonico ? (
+        <div className="flex items-center justify-center gap-4">
+          <span className="text-3xl">📅</span>
+          <h1 className="text-2xl font-bold">CALENDÁRIO ANUAL {ano}</h1>
+          {simboloMasonico && (
             <img 
               src={simboloMasonico} 
-              alt="Símbolo Maçônico" 
-              className="w-16 h-16 object-contain"
+              alt="Símbolo" 
+              className="w-10 h-10 object-contain"
             />
-          ) : (
-            <span className="text-4xl">⚜️</span>
           )}
         </div>
       </div>
 
-      {/* Navegação de Semestres */}
-      <div className="flex justify-center items-center gap-4 mb-6">
+      {/* Navegação de Semestres - SIMPLIFICADA */}
+      <div className="flex justify-center items-center gap-3 mb-6">
         <button
           onClick={() => setSemestre(1)}
           disabled={semestre === 1}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
+          className={`px-5 py-2 rounded-lg font-medium text-sm transition ${
             semestre === 1
-              ? 'text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'text-white shadow-md'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
           }`}
           style={semestre === 1 ? { backgroundColor: tema.cor_primaria } : {}}
         >
@@ -282,10 +272,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         <button
           onClick={() => setSemestre(2)}
           disabled={semestre === 2}
-          className={`px-6 py-3 rounded-lg font-semibold transition ${
+          className={`px-5 py-2 rounded-lg font-medium text-sm transition ${
             semestre === 2
-              ? 'text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? 'text-white shadow-md'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
           }`}
           style={semestre === 2 ? { backgroundColor: tema.cor_primaria } : {}}
         >
@@ -293,40 +283,40 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         </button>
       </div>
 
-      {/* Grade de Meses - 3 Colunas x 2 Linhas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Grade de Meses - 3 Colunas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {mesesSemestre.map(mesIndex => renderMes(mesIndex))}
       </div>
 
-      {/* Legenda de Cores */}
-      <div className="mt-8 bg-white rounded-xl shadow-lg p-6 border-2 border-yellow-600">
-        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+      {/* Legenda de Cores - SIMPLIFICADA */}
+      <div className="mt-6 bg-white rounded-lg shadow-md p-4 border border-gray-200">
+        <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
           <span>🎨</span> Legenda de Eventos
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-blue-500"></div>
-            <span className="text-sm text-gray-700">Sessão</span>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <span className="text-xs text-gray-700">Sessão</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-red-500"></div>
-            <span className="text-sm text-gray-700">Sessão Magna</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <span className="text-xs text-gray-700">Sessão Magna</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-green-500"></div>
-            <span className="text-sm text-gray-700">Instalação/Posse</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span className="text-xs text-gray-700">Instalação/Posse</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-purple-600"></div>
-            <span className="text-sm text-gray-700">Trabalho/Instrução</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-purple-600"></div>
+            <span className="text-xs text-gray-700">Trabalho/Instrução</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
-            <span className="text-sm text-gray-700">Evento Externo</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <span className="text-xs text-gray-700">Evento Externo</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-full bg-gray-400"></div>
-            <span className="text-sm text-gray-700">Outro</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-gray-400"></div>
+            <span className="text-xs text-gray-700">Outro</span>
           </div>
         </div>
       </div>
