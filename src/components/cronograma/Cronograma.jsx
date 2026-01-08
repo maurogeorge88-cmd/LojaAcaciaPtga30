@@ -381,6 +381,11 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       setEventoForm(data);
       setEventoEditando(data);
       setMostrarFormulario(true);
+      
+      // Scroll suave para o topo
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     }
   };
 
@@ -464,8 +469,16 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
             <button
               onClick={() => {
-                limparFormulario();
-                setMostrarFormulario(!mostrarFormulario);
+                if (!mostrarFormulario) {
+                  limparFormulario();
+                  setMostrarFormulario(true);
+                  // Scroll para o topo
+                  setTimeout(() => {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }, 100);
+                } else {
+                  setMostrarFormulario(false);
+                }
               }}
               className="px-6 py-3 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors font-semibold"
             >
