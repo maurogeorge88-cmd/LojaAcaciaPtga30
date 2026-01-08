@@ -251,6 +251,17 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     { value: 'cancelado', label: '❌ Cancelado', cor: 'bg-red-100 text-red-800' }
   ];
 
+  // Helper para nome do grau
+  const getGrauNome = (grauId) => {
+    switch(grauId) {
+      case 1: return '⬜ Aprendiz';
+      case 2: return '🔷 Companheiro';
+      case 3: return '🔺 Mestre';
+      case 4: return '🏛️ Evento Loja';
+      default: return '';
+    }
+  };
+
   useEffect(() => {
     carregarEventos();
   }, []);
@@ -524,6 +535,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   <option value={1}>⬜ Aprendiz (Todos)</option>
                   <option value={2}>🔷 Companheiro (Comp. e Mestres)</option>
                   <option value={3}>🔺 Mestre (Somente Mestres)</option>
+                  <option value={4}>🏛️ Evento Loja (Geral)</option>
                 </select>
                 <p className="text-xs text-gray-500 mt-1">Define quem pode participar da sessão</p>
               </div>
@@ -932,6 +944,11 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                             <span className={`px-2 py-1 rounded text-xs font-medium ${obterCorStatus(evento.status)}`}>
                               {obterLabelStatus(evento.status)}
                             </span>
+                            {evento.grau_sessao_id && (
+                              <span className="px-2 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-800">
+                                {getGrauNome(evento.grau_sessao_id)}
+                              </span>
+                            )}
                             <span className="text-sm text-gray-600">
                               📅 {formatarData(evento.data_evento)}
                             </span>
@@ -1054,9 +1071,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   </span>
                   {eventoVisualizar.grau_sessao_id && (
                     <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                      {eventoVisualizar.grau_sessao_id === 1 && '⬜ Aprendiz'}
-                      {eventoVisualizar.grau_sessao_id === 2 && '🔷 Companheiro'}
-                      {eventoVisualizar.grau_sessao_id === 3 && '🔺 Mestre'}
+                      {getGrauNome(eventoVisualizar.grau_sessao_id)}
                     </span>
                   )}
                 </div>
