@@ -182,14 +182,34 @@ export default function DashboardPresenca() {
           }
         });
 
-        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+        // Para prerrogativa 70+: conta todas as sessões que ele PODERIA participar
+        // (após ingresso, não licenciado, não falecido)
+        let sessoesElegiveis = 0;
+        sessoes?.forEach(sessao => {
+          const dataSessao = new Date(sessao.data_sessao);
+          
+          // Só conta se sessão é após ingresso
+          if (dataInicio && dataSessao < dataInicio) return;
+          
+          // Só conta se não estava em situação especial
+          const situacaoNaData = historicoSituacoes?.find(sit => 
+            sit.membro_id === irmao.id &&
+            dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+            (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
+          );
+          if (situacaoNaData) return;
+          
+          sessoesElegiveis++;
+        });
+
+        const percentual = sessoesElegiveis > 0 ? Math.round((presentes / sessoesElegiveis) * 100) : 0;
 
         comPrerrogativa.push({
           id: irmao.id,
           nome: irmao.nome,
           grau: grauTexto,
           presencas: presentes,
-          total: totalRegistros,
+          total: sessoesElegiveis,
           percentual
         });
       });
