@@ -283,9 +283,6 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
           }`}
           style={semestre === 2 ? { backgroundColor: tema.cor_primaria } : {}}
-              ? 'bg-yellow-700 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-          }`}
         >
           📆 2º Semestre (Jul-Dez)
         </button>
