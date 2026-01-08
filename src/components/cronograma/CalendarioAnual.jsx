@@ -150,10 +150,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     
     return (
       <div key={mesIndex} className="calendario-mes bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
-        {/* Cabeçalho do Mês - MINIMALISTA */}
+        {/* Cabeçalho do Mês - COR #008080 */}
         <div 
           className="text-white py-2 px-4 flex items-center justify-between"
-          style={{ backgroundColor: tema.cor_primaria }}
+          style={{ backgroundColor: '#008080' }}
         >
           <span className="text-xs opacity-70">{ano}</span>
           <h3 className="text-base font-bold tracking-wide">{meses[mesIndex].toUpperCase()}</h3>
@@ -234,11 +234,11 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
   return (
     <div className="calendario-anual px-6 py-4">
-      {/* Cabeçalho Principal - SIMPLIFICADO */}
+      {/* Cabeçalho Principal - COR #008080 */}
       <div 
         className="text-white py-4 px-6 rounded-xl shadow-md mb-6"
         style={{ 
-          background: `linear-gradient(135deg, ${tema.cor_primaria}, ${tema.cor_secundaria})` 
+          background: 'linear-gradient(135deg, #008080, #00a0a0)'
         }}
       >
         <div className="flex items-center justify-center gap-4">
@@ -254,7 +254,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         </div>
       </div>
 
-      {/* Navegação de Semestres - SIMPLIFICADA */}
+      {/* Navegação de Semestres - COR #808080 */}
       <div className="flex justify-center items-center gap-3 mb-6">
         <button
           onClick={() => setSemestre(1)}
@@ -264,7 +264,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               ? 'text-white shadow-md'
               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
           }`}
-          style={semestre === 1 ? { backgroundColor: tema.cor_primaria } : {}}
+          style={semestre === 1 ? { backgroundColor: '#808080' } : {}}
         >
           📆 1º Semestre (Jan-Jun)
         </button>
@@ -276,7 +276,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               ? 'text-white shadow-md'
               : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
           }`}
-          style={semestre === 2 ? { backgroundColor: tema.cor_primaria } : {}}
+          style={semestre === 2 ? { backgroundColor: '#808080' } : {}}
         >
           📆 2º Semestre (Jul-Dez)
         </button>
