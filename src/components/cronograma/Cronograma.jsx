@@ -308,17 +308,26 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   }, []);
 
   const carregarTema = async () => {
-    const { data } = await supabase
-      .from('dados_loja')
-      .select('cor_primaria, cor_secundaria, cor_destaque')
-      .single();
-    
-    if (data) {
-      setTema({
-        cor_primaria: data.cor_primaria || '#4f46e5',
-        cor_secundaria: data.cor_secundaria || '#818cf8',
-        cor_destaque: data.cor_destaque || '#eab308'
-      });
+    try {
+      const { data, error } = await supabase
+        .from('dados_loja')
+        .select('cor_primaria, cor_secundaria, cor_destaque')
+        .single();
+      
+      if (error) {
+        console.log('Usando tema padrão (sem dados_loja configurado)');
+        return;
+      }
+      
+      if (data) {
+        setTema({
+          cor_primaria: data.cor_primaria || '#4f46e5',
+          cor_secundaria: data.cor_secundaria || '#818cf8',
+          cor_destaque: data.cor_destaque || '#eab308'
+        });
+      }
+    } catch (error) {
+      console.log('Erro ao carregar tema, usando padrão:', error.message);
     }
   };
 
