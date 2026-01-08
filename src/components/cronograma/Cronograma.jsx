@@ -3,7 +3,7 @@ import { supabase } from '../../supabaseClient';
 import CalendarioAnual from './CalendarioAnual';
 
 // Funções de geração de PDF (inline para evitar problemas de import)
-const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => {
+const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null, simboloBase64 = null) => {
   // Importar jsPDF dinamicamente
   const { jsPDF } = await import('jspdf');
   await import('jspdf-autotable');
@@ -17,12 +17,21 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
   doc.setFillColor(79, 70, 229);
   doc.rect(0, 0, pageWidth, 35, 'F');
   
-  // Logo (se fornecida)
+  // Logo à esquerda
   if (logoBase64) {
     try {
       doc.addImage(logoBase64, 'PNG', 10, 7, 22, 22);
     } catch (e) {
       console.log('Erro ao adicionar logo');
+    }
+  }
+
+  // 1️⃣ SÍMBOLO MAÇÔNICO à direita
+  if (simboloBase64) {
+    try {
+      doc.addImage(simboloBase64, 'PNG', pageWidth - 32, 7, 22, 22);
+    } catch (e) {
+      console.log('Erro ao adicionar símbolo');
     }
   }
   
@@ -46,7 +55,8 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(9);
   doc.text(`Emissao: ${new Date().toLocaleDateString('pt-BR')}`, 14, yPos);
-  doc.text(`Total de eventos: ${eventos.length}`, pageWidth - 50, yPos);
+  // 2️⃣ Ajustar margem direita
+  doc.text(`Total de eventos: ${eventos.length}`, pageWidth - 14, yPos, { align: 'right' });
   
   yPos += 5;
 
@@ -68,6 +78,17 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
     eventosPorMes[mes].push(evento);
   });
 
+  // Helper para nome do grau
+  const getGrauNome = (grauId) => {
+    switch(grauId) {
+      case 1: return 'Aprendiz';
+      case 2: return 'Companheiro';
+      case 3: return 'Mestre';
+      case 4: return 'Evento Loja';
+      default: return '';
+    }
+  };
+
   // Processar cada mês
   Object.entries(eventosPorMes).sort().forEach(([mes, eventosDoMes]) => {
     if (yPos > pageHeight - 50) {
@@ -82,6 +103,7 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
 
     // Header do mês
     doc.setFillColor(99, 102, 241);
+    // 2️⃣ Ajustar margem direita
     doc.rect(14, yPos, pageWidth - 28, 8, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(11);
@@ -91,8 +113,11 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
     yPos += 12;
 
     const dadosTabela = eventosDoMes.map(evento => {
+      // 3️⃣ Data + Hora juntas
       const data = evento.data_evento.split('-').reverse().join('/');
-      const hora = evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '-';
+      const hora = evento.hora_inicio ? evento.hora_inicio.substring(0, 5) : '';
+      const dataHora = hora ? `${data}\n${hora}` : data;
+      
       const tipos = { 
         'sessao': 'Sessao', 
         'trabalho_irmao': 'Trabalho', 
@@ -103,25 +128,26 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
         'evento_externo': 'Externo', 
         'outro': 'Outro' 
       };
-      const statuses = { 
-        'planejado': 'Planejado', 
-        'confirmado': 'Confirmado', 
-        'realizado': 'Realizado', 
-        'cancelado': 'Cancelado' 
-      };
+      
+      // 4️⃣ Tipo + Grau
+      const tipo = tipos[evento.tipo] || evento.tipo;
+      const grau = getGrauNome(evento.grau_sessao_id);
+      const tipoGrau = grau ? `${tipo}\n${grau}` : tipo;
+      
       return [
-        data, 
-        hora, 
-        tipos[evento.tipo] || evento.tipo, 
-        evento.titulo, 
-        evento.descricao || '-',
-        evento.local || '-'
+        dataHora,           // Data + Hora
+        tipoGrau,          // Tipo + Grau
+        evento.titulo,     // Evento (menor)
+        evento.descricao || '-',  // Descrição
+        evento.local || '-',      // Local
+        evento.observacoes || '-' // 6️⃣ Observações
       ];
     });
 
     doc.autoTable({
       startY: yPos,
-      head: [['Data', 'Hora', 'Tipo', 'Evento', 'Descricao', 'Local']],
+      // Ajustar cabeçalhos
+      head: [['Data/Hora', 'Tipo/Grau', 'Evento', 'Descricao', 'Local', 'Observacoes']],
       body: dadosTabela,
       theme: 'striped',
       headStyles: { 
@@ -132,19 +158,24 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
         halign: 'center'
       },
       styles: { 
-        fontSize: 8, 
-        cellPadding: 2.5,
-        overflow: 'linebreak'
+        // 7️⃣ Fonte mais nítida
+        font: 'helvetica',
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: 'linebreak',
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
       },
       columnStyles: { 
-        0: { cellWidth: 22, halign: 'center' },   // Data
-        1: { cellWidth: 18, halign: 'center' },   // Hora
-        2: { cellWidth: 28, halign: 'center' },   // Tipo
-        3: { cellWidth: 80 },                     // Evento
-        4: { cellWidth: 100 },                    // Descricao (MUITO MAIOR)
-        5: { cellWidth: 40 }                      // Local
+        0: { cellWidth: 25, halign: 'center' },    // Data/Hora
+        1: { cellWidth: 30, halign: 'center' },    // Tipo/Grau
+        2: { cellWidth: 55 },                      // 5️⃣ Evento (diminuído)
+        3: { cellWidth: 75 },                      // Descrição
+        4: { cellWidth: 35 },                      // Local
+        5: { cellWidth: 50 }                       // 6️⃣ Observações
       },
-      margin: { left: 10, right: 10 },
+      // 2️⃣ Margem direita ajustada
+      margin: { left: 14, right: 14 },
       didDrawPage: (data) => {
         const pageCount = doc.internal.getNumberOfPages();
         doc.setFontSize(8);
@@ -171,16 +202,28 @@ const gerarRelatorioCronograma = async (eventos, periodo, logoBase64 = null) => 
 };
 
 const gerarRelatorioMensal = async (eventos, mes, ano) => {
+  // Buscar símbolo do DadosLoja
+  const { data: dadosLoja } = await supabase
+    .from('dados_loja')
+    .select('simbolo_masonico_url')
+    .single();
+  
   const eventosMes = eventos.filter(e => 
     e.data_evento.startsWith(`${ano}-${mes.toString().padStart(2, '0')}`)
   );
   const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const periodo = `${meses[mes - 1]} ${ano}`;
-  await gerarRelatorioCronograma(eventosMes, periodo);
+  await gerarRelatorioCronograma(eventosMes, periodo, null, dadosLoja?.simbolo_masonico_url);
 };
 
 const gerarRelatorioSemestral = async (eventos, semestre, ano) => {
+  // Buscar símbolo do DadosLoja
+  const { data: dadosLoja } = await supabase
+    .from('dados_loja')
+    .select('simbolo_masonico_url')
+    .single();
+  
   const mesesSemestre = semestre === 1 
     ? ['01', '02', '03', '04', '05', '06']
     : ['07', '08', '09', '10', '11', '12'];
@@ -189,15 +232,21 @@ const gerarRelatorioSemestral = async (eventos, semestre, ano) => {
     return e.data_evento.startsWith(ano.toString()) && mesesSemestre.includes(mes);
   });
   const periodo = `${semestre}º Semestre ${ano}`;
-  await gerarRelatorioCronograma(eventosSemestre, periodo);
+  await gerarRelatorioCronograma(eventosSemestre, periodo, null, dadosLoja?.simbolo_masonico_url);
 };
 
 const gerarRelatorioAnual = async (eventos, ano) => {
+  // Buscar símbolo do DadosLoja
+  const { data: dadosLoja } = await supabase
+    .from('dados_loja')
+    .select('simbolo_masonico_url')
+    .single();
+  
   const eventosAno = eventos.filter(e => 
     e.data_evento.startsWith(ano.toString())
   );
   const periodo = `Anual ${ano}`;
-  await gerarRelatorioCronograma(eventosAno, periodo);
+  await gerarRelatorioCronograma(eventosAno, periodo, null, dadosLoja?.simbolo_masonico_url);
 };
 
 export default function Cronograma({ showSuccess, showError, userEmail, permissoes }) {
