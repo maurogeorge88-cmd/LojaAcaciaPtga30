@@ -24,10 +24,15 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
   const carregarTema = async () => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('dados_loja')
         .select('cor_primaria, cor_secundaria, cor_destaque')
         .single();
+      
+      if (error) {
+        console.log('Usando tema padrão (sem dados_loja configurado)');
+        return;
+      }
       
       if (data) {
         setTema({
@@ -37,7 +42,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         });
       }
     } catch (error) {
-      console.log('Tema não encontrado, usando padrão');
+      console.log('Erro ao carregar tema, usando padrão:', error.message);
     }
   };
 
