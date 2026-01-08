@@ -307,8 +307,38 @@ function App() {
         setGrauUsuarioLogado('Mestre');
       }
       
-      // Definir permissões baseadas no nível de acesso
-      if (data.nivel_acesso === 'irmao') {
+      console.log('🔍 DEBUG PERMISSÕES:');
+      console.log('  - Email:', data.email);
+      console.log('  - Cargo:', data.cargo);
+      console.log('  - Nível Acesso:', data.nivel_acesso);
+      console.log('  - É Admin/Venerável?', 
+        data.nivel_acesso === 'admin' || 
+        data.cargo === 'veneravel' || 
+        data.cargo === 'Veneravel'
+      );
+      
+      // Definir permissões - VERIFICAR CARGO PRIMEIRO!
+      if (data.cargo === 'veneravel' || data.cargo === 'Veneravel' || data.nivel_acesso === 'admin') {
+        // Venerável OU Admin: acesso total
+        console.log('✅ Aplicando permissões de ACESSO TOTAL');
+        setPermissoes({
+          canEdit: true,
+          canEditMembers: true,
+          canDelete: true,
+          canManageUsers: true,
+          canViewFinancial: true,
+          canEditFinancial: true,
+          pode_editar_biblioteca: true,
+          pode_editar_comodatos: true,
+          pode_editar_caridade: true,
+          pode_editar_balaustres: true,
+          pode_editar_pranchas: true,
+          pode_editar_comissoes: true,
+          pode_editar_corpo_admin: true,
+          pode_editar_presenca: true,
+          pode_gerenciar_usuarios: true
+        });
+      } else if (data.nivel_acesso === 'irmao') {
         // Irmão: usa permissões específicas do banco
         setPermissoes({
           canEdit: data.pode_editar_cadastros || false,
@@ -327,27 +357,9 @@ function App() {
           pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: false
         });
-      } else if (data.nivel_acesso === 'admin' || data.cargo === 'veneravel' || data.cargo === 'Veneravel') {
-        // Admin OU Venerável: acesso total
-        setPermissoes({
-          canEdit: true,
-          canEditMembers: true,
-          canDelete: true,
-          canManageUsers: true,
-          canViewFinancial: true,
-          canEditFinancial: true,
-          pode_editar_biblioteca: true,
-          pode_editar_comodatos: true,
-          pode_editar_caridade: true,
-          pode_editar_balaustres: true,
-          pode_editar_pranchas: true,
-          pode_editar_comissoes: true,
-          pode_editar_corpo_admin: true,
-          pode_editar_presenca: true,
-          pode_gerenciar_usuarios: true
-        });
       } else if (data.nivel_acesso === 'cargo') {
         // Cargo: baseado nas permissões específicas
+        console.log('⚙️ Aplicando permissões de CARGO');
         setPermissoes({
           canEdit: data.pode_editar_cadastros || false,
           canEditMembers: data.pode_editar_cadastros || false,
@@ -383,6 +395,26 @@ function App() {
           pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
           pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
+        });
+      } else {
+        // NULL ou não reconhecido: permissões do banco
+        console.log('⚠️ Aplicando permissões de IRMÃO (fallback)');
+        setPermissoes({
+          canEdit: data.pode_editar_cadastros || false,
+          canEditMembers: data.pode_editar_cadastros || false,
+          canDelete: false,
+          canManageUsers: data.pode_gerenciar_usuarios || false,
+          canViewFinancial: data.pode_visualizar_financeiro || false,
+          canEditFinancial: data.pode_editar_financeiro || false,
+          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
+          pode_editar_comodatos: data.pode_editar_comodatos || false,
+          pode_editar_caridade: data.pode_editar_caridade || false,
+          pode_editar_balaustres: data.pode_editar_balaustres || false,
+          pode_editar_pranchas: data.pode_editar_pranchas || false,
+          pode_editar_comissoes: data.pode_editar_comissoes || false,
+          pode_editar_corpo_admin: false,
+          pode_editar_presenca: data.pode_editar_presenca || false,
+          pode_gerenciar_usuarios: false
         });
       }
     }
