@@ -158,33 +158,7 @@ export default function DashboardPresenca() {
         let totalRegistros = 0;
         let presentes = 0;
 
-        registros?.forEach(reg => {
-          if (reg.membro_id === irmao.id) {
-            const sessao = sessoesMap[reg.sessao_id];
-            if (!sessao) return;
-
-            const dataSessao = new Date(sessao.data_sessao);
-            // PRERROGATIVA 70+: conta TODAS as sessões, independente do grau
-            // const grauSessao = sessao.grau_sessao_id || 1;
-
-            if (dataInicio && dataSessao < dataInicio) return;
-            // REMOVIDO filtro de grau: if (grauSessao > grauIrmao) return;
-
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
-            if (situacaoNaData) return;
-
-            totalRegistros++;
-            if (reg.presente) presentes++;
-          }
-        });
-
-        // Para prerrogativa 70+: conta todas as sessões que ele PODERIA participar
-        // (após ingresso, não licenciado, não falecido)
-        let sessoesElegiveis = 0;
+        // Para prerrogativa 70+: percorre TODAS as sessões do ano
         sessoes?.forEach(sessao => {
           const dataSessao = new Date(sessao.data_sessao);
           
@@ -199,17 +173,24 @@ export default function DashboardPresenca() {
           );
           if (situacaoNaData) return;
           
-          sessoesElegiveis++;
+          // Sessão válida para este irmão
+          totalRegistros++;
+          
+          // Verificar se tem registro de presença
+          const reg = registros?.find(r => r.membro_id === irmao.id && r.sessao_id === sessao.id);
+          if (reg && reg.presente) {
+            presentes++;
+          }
         });
 
-        const percentual = sessoesElegiveis > 0 ? Math.round((presentes / sessoesElegiveis) * 100) : 0;
+        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
 
         comPrerrogativa.push({
           id: irmao.id,
           nome: irmao.nome,
           grau: grauTexto,
           presencas: presentes,
-          total: sessoesElegiveis,
+          total: totalRegistros,
           percentual
         });
       });
