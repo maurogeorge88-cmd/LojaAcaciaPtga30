@@ -127,12 +127,38 @@ export default function DashboardPresenca() {
       console.log('  Erro:', erroSessoes);
       console.log('  Dados:', sessoes);
 
-      const { data: registros, error: erroRegistros } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, presente, sessao_id')
-        .in('sessao_id', sessoes?.map(s => s.id) || []);
+      // Buscar TODOS os registros com paginação
+      let todosRegistros = [];
+      let pagina = 0;
+      const tamanhoPagina = 1000;
+      let continuar = true;
 
-      console.log('  Registros encontrados:', registros?.length || 0);
+      while (continuar) {
+        const { data: lote, error: erroRegistros } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, presente, sessao_id')
+          .in('sessao_id', sessoes?.map(s => s.id) || [])
+          .range(pagina * tamanhoPagina, (pagina + 1) * tamanhoPagina - 1);
+
+        if (erroRegistros) {
+          console.error('Erro ao buscar registros:', erroRegistros);
+          break;
+        }
+
+        if (lote && lote.length > 0) {
+          todosRegistros = [...todosRegistros, ...lote];
+          pagina++;
+          
+          if (lote.length < tamanhoPagina) {
+            continuar = false;
+          }
+        } else {
+          continuar = false;
+        }
+      }
+
+      const registros = todosRegistros;
+      console.log('  Registros encontrados (após paginação):', registros?.length || 0);
 
       const { data: irmaos } = await supabase
         .from('irmaos')
