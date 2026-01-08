@@ -113,16 +113,26 @@ export default function DashboardPresenca() {
       const inicioAno = `${anoPrerrogativa}-01-01`;
       const fimAno = `${anoPrerrogativa}-12-31`;
 
-      const { data: sessoes } = await supabase
+      console.log('🔍 Buscando sessões para prerrogativa:');
+      console.log('  Ano:', anoPrerrogativa);
+      console.log('  Período:', inicioAno, 'até', fimAno);
+
+      const { data: sessoes, error: erroSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id')
         .gte('data_sessao', inicioAno)
         .lte('data_sessao', fimAno);
 
-      const { data: registros } = await supabase
+      console.log('  Sessões encontradas:', sessoes?.length || 0);
+      console.log('  Erro:', erroSessoes);
+      console.log('  Dados:', sessoes);
+
+      const { data: registros, error: erroRegistros } = await supabase
         .from('registros_presenca')
         .select('membro_id, presente, sessao_id')
         .in('sessao_id', sessoes?.map(s => s.id) || []);
+
+      console.log('  Registros encontrados:', registros?.length || 0);
 
       const { data: irmaos } = await supabase
         .from('irmaos')
@@ -139,11 +149,17 @@ export default function DashboardPresenca() {
 
       const comPrerrogativa = [];
 
+      console.log('🔍 DEBUG PRERROGATIVA:');
+      console.log('  Total de sessões no ano:', sessoes?.length);
+      console.log('  Total de registros:', registros?.length);
+
       irmaos?.forEach(irmao => {
         if (irmao.data_falecimento) return;
         
         const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
         if (idade < 70) return;
+
+        console.log(`\n👤 ${irmao.nome}:`);
 
         let grauTexto = 'Não iniciado';
         let grauIrmao = 0;
@@ -182,6 +198,9 @@ export default function DashboardPresenca() {
             presentes++;
           }
         });
+
+        console.log(`  ✅ Sessões elegíveis: ${totalRegistros}`);
+        console.log(`  ✅ Presenças: ${presentes}`);
 
         const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
 
