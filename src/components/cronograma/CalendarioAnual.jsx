@@ -129,7 +129,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               <img 
                 src={simboloMasonico} 
                 alt="Símbolo" 
-                className="w-12 h-12 object-contain"
+                className="w-8 h-8 object-contain"
               />
             ) : (
               <span className="text-2xl">📐</span>
@@ -348,8 +348,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                       <div className="flex-1">
                         <h4 className="font-bold text-gray-900 text-lg mb-2">{evento.titulo}</h4>
                         
-                        {/* Tipo */}
-                        <div className="mb-3">
+                        {/* Tipo e Grau */}
+                        <div className="mb-3 flex flex-wrap gap-2">
                           <span 
                             className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"
                             style={{ 
@@ -362,6 +362,14 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                           >
                             {evento.tipo}
                           </span>
+                          {evento.grau_sessao_id && (
+                            <span className="inline-block px-3 py-1 rounded-full text-sm font-bold bg-indigo-100 text-indigo-800">
+                              {evento.grau_sessao_id === 1 && '⬜ Aprendiz'}
+                              {evento.grau_sessao_id === 2 && '🔷 Companheiro'}
+                              {evento.grau_sessao_id === 3 && '🔺 Mestre'}
+                              {evento.grau_sessao_id === 4 && '🏛️ Evento Loja'}
+                            </span>
+                          )}
                         </div>
 
                         {/* Descrição */}
