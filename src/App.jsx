@@ -396,26 +396,6 @@ function App() {
           pode_editar_presenca: data.pode_editar_presenca || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
-      } else {
-        // NULL ou não reconhecido: permissões do banco
-        console.log('⚠️ Aplicando permissões de IRMÃO (fallback)');
-        setPermissoes({
-          canEdit: data.pode_editar_cadastros || false,
-          canEditMembers: data.pode_editar_cadastros || false,
-          canDelete: false,
-          canManageUsers: data.pode_gerenciar_usuarios || false,
-          canViewFinancial: data.pode_visualizar_financeiro || false,
-          canEditFinancial: data.pode_editar_financeiro || false,
-          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
-          pode_editar_comodatos: data.pode_editar_comodatos || false,
-          pode_editar_caridade: data.pode_editar_caridade || false,
-          pode_editar_balaustres: data.pode_editar_balaustres || false,
-          pode_editar_pranchas: data.pode_editar_pranchas || false,
-          pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: false,
-          pode_editar_presenca: data.pode_editar_presenca || false,
-          pode_gerenciar_usuarios: false
-        });
       }
     }
   };
