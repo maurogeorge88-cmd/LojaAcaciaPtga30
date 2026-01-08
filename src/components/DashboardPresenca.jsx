@@ -164,10 +164,11 @@ export default function DashboardPresenca() {
             if (!sessao) return;
 
             const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
+            // PRERROGATIVA 70+: conta TODAS as sessões, independente do grau
+            // const grauSessao = sessao.grau_sessao_id || 1;
 
             if (dataInicio && dataSessao < dataInicio) return;
-            if (grauSessao > grauIrmao) return;
+            // REMOVIDO filtro de grau: if (grauSessao > grauIrmao) return;
 
             const situacaoNaData = historicoSituacoes?.find(sit => 
               sit.membro_id === irmao.id &&
