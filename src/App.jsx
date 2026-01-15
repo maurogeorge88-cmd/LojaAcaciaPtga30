@@ -2005,6 +2005,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               {/* ITENS INDIVIDUAIS */}
               <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
+                  onClick={() => setCurrentPage('projetos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'projetos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Projetos"
+                >
+                  <span className="text-base">📊</span>
+                  {menuAberto && <span className="font-semibold">Projetos</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('comissoes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'comissoes'
