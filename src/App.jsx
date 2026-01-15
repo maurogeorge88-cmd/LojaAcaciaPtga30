@@ -2475,7 +2475,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
         
         {/* ========================================
-            PÁGINA: COMISSÕES
+            PÁGINA: PROJETOS E COMISSÕES
             ======================================== */}
 
         {/* PROJETOS */}
