@@ -832,8 +832,6 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
           </div>
         </div>
       )}
-        )}
-      </div>
 
       {/* Modal de Custos */}
       {mostrarCustos && projetoSelecionado && (
