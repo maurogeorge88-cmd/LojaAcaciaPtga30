@@ -4,12 +4,15 @@ import { supabase } from '../../supabaseClient';
 export default function Projetos({ showSuccess, showError, permissoes }) {
   const [projetos, setProjetos] = useState([]);
   const [custos, setCustos] = useState([]);
+  const [receitas, setReceitas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [projetoEditando, setProjetoEditando] = useState(null);
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
   const [mostrarCustos, setMostrarCustos] = useState(false);
+  const [mostrarReceitas, setMostrarReceitas] = useState(false);
   const [custoForm, setCustoForm] = useState({});
+  const [receitaForm, setReceitaForm] = useState({});
 
   const [projetoForm, setProjetoForm] = useState({
     nome: '',
@@ -22,7 +25,6 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     responsavel: '',
     observacoes: '',
     valor_previsto: 0,
-    valor_arrecadado: 0,
     fonte_recursos: '',
     status: 'em_andamento'
   });
@@ -48,6 +50,11 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const formasPagamento = [
     'Dinheiro', 'PIX', 'Transferência', 'Cartão', 'Cheque', 'Boleto'
+  ];
+
+  const origensReceita = [
+    'Caixa da Loja', 'Doação', 'Evento', 'Rifa', 'Bazar', 
+    'Contribuição Especial', 'Patrocínio', 'Outro'
   ];
 
   useEffect(() => {
@@ -81,6 +88,18 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     }
   };
 
+  const carregarReceitas = async (projetoId) => {
+    const { data, error } = await supabase
+      .from('receitas_projeto')
+      .select('*')
+      .eq('projeto_id', projetoId)
+      .order('data_receita', { ascending: false });
+
+    if (!error) {
+      setReceitas(data || []);
+    }
+  };
+
   const salvarProjeto = async (e) => {
     e.preventDefault();
 
@@ -88,7 +107,6 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     const dadosParaSalvar = {
       ...projetoForm,
       valor_previsto: parseFloat(projetoForm.valor_previsto) || 0,
-      valor_arrecadado: parseFloat(projetoForm.valor_arrecadado) || 0,
       data_prevista_termino: projetoForm.data_prevista_termino || null,
       data_finalizacao: projetoForm.data_finalizacao || null
     };
@@ -135,7 +153,6 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       responsavel: '',
       observacoes: '',
       valor_previsto: 0,
-      valor_arrecadado: 0,
       fonte_recursos: '',
       status: 'em_andamento'
     });
@@ -208,13 +225,60 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     }
   };
 
+  const adicionarReceita = async (e) => {
+    e.preventDefault();
+
+    // Converter valor numérico antes de salvar
+    const dadosReceita = {
+      ...receitaForm,
+      projeto_id: projetoSelecionado.id,
+      valor: parseFloat(receitaForm.valor) || 0
+    };
+
+    const { error } = await supabase
+      .from('receitas_projeto')
+      .insert([dadosReceita]);
+
+    if (error) {
+      console.error('Erro ao adicionar receita:', error);
+      showError('Erro ao adicionar receita: ' + error.message);
+    } else {
+      showSuccess('Receita adicionada com sucesso!');
+      setReceitaForm({});
+      carregarReceitas(projetoSelecionado.id);
+      carregarProjetos();
+    }
+  };
+
+  const excluirReceita = async (id) => {
+    if (!confirm('Deseja excluir esta receita?')) return;
+
+    const { error } = await supabase
+      .from('receitas_projeto')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      showError('Erro ao excluir receita');
+    } else {
+      showSuccess('Receita excluída com sucesso!');
+      carregarReceitas(projetoSelecionado.id);
+      carregarProjetos();
+    }
+  };
+
   const calcularTotalCustos = (projeto) => {
     const custosDoProjeto = custos.filter(c => c.projeto_id === projeto.id);
     return custosDoProjeto.reduce((total, c) => total + (parseFloat(c.valor) || 0), 0);
   };
 
-  const calcularSaldo = (projeto, totalCustos) => {
-    return (parseFloat(projeto.valor_arrecadado) || 0) - totalCustos;
+  const calcularTotalReceitas = (projeto) => {
+    const receitasDoProjeto = receitas.filter(r => r.projeto_id === projeto.id);
+    return receitasDoProjeto.reduce((total, r) => total + (parseFloat(r.valor) || 0), 0);
+  };
+
+  const calcularSaldo = (projeto, totalCustos, totalReceitas) => {
+    return totalReceitas - totalCustos;
   };
 
   const calcularPercentual = (projeto, totalCustos) => {
@@ -378,7 +442,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             </div>
 
             {/* Valor Previsto */}
-            <div>
+            <div className="md:col-span-2">
               <label className="block text-sm font-bold text-gray-700 mb-1">Valor Previsto (R$)</label>
               <input
                 type="number"
@@ -386,20 +450,6 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 min="0"
                 value={projetoForm.valor_previsto}
                 onChange={(e) => setProjetoForm({ ...projetoForm, valor_previsto: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                placeholder="0.00"
-              />
-            </div>
-
-            {/* Valor Arrecadado */}
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Valor Arrecadado (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={projetoForm.valor_arrecadado}
-                onChange={(e) => setProjetoForm({ ...projetoForm, valor_arrecadado: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
                 placeholder="0.00"
               />
@@ -468,7 +518,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             const tipoInfo = tiposProjeto.find(t => t.value === projeto.tipo);
             const statusInfo = statusLabels[projeto.status];
             const totalCustos = calcularTotalCustos(projeto);
-            const saldo = calcularSaldo(projeto, totalCustos);
+            const totalReceitas = calcularTotalReceitas(projeto);
+            const saldo = calcularSaldo(projeto, totalCustos, totalReceitas);
             const percentual = calcularPercentual(projeto, totalCustos);
 
             return (
@@ -545,9 +596,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-semibold">💵 Arrecadado:</span>
+                    <span className="text-gray-700 font-semibold">💵 Receitas:</span>
                     <span className="text-lg font-bold text-green-600">
-                      R$ {parseFloat(projeto.valor_arrecadado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -582,21 +633,205 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     )}
                   </div>
 
-                  {/* Botão Ver Custos */}
-                  <button
-                    onClick={() => {
-                      setProjetoSelecionado(projeto);
-                      carregarCustos(projeto.id);
-                      setMostrarCustos(true);
-                    }}
-                    className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
-                  >
-                    📋 Ver Custos Detalhados
-                  </button>
+                  {/* Botões de Gerenciamento */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        setProjetoSelecionado(projeto);
+                        carregarReceitas(projeto.id);
+                        setMostrarReceitas(true);
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm"
+                    >
+                      💵 Receitas
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProjetoSelecionado(projeto);
+                        carregarCustos(projeto.id);
+                        setMostrarCustos(true);
+                      }}
+                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm"
+                    >
+                      💸 Custos
+                    </button>
+                  </div>
                 </div>
               </div>
             );
           })
+        )}
+      </div>
+
+      {/* Modal de Receitas */}
+      {mostrarReceitas && projetoSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header do Modal */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 sticky top-0">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold">💵 Receitas do Projeto</h3>
+                  <p className="text-sm opacity-90 mt-1">{projetoSelecionado.nome}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setMostrarReceitas(false);
+                    setProjetoSelecionado(null);
+                    setReceitas([]);
+                  }}
+                  className="text-white hover:opacity-80 text-4xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Formulário de Nova Receita */}
+              {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
+                <form onSubmit={adicionarReceita} className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <h4 className="font-bold text-gray-700 mb-3">➕ Adicionar Receita</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <input
+                      type="date"
+                      required
+                      value={receitaForm.data_receita || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, data_receita: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Descrição"
+                      value={receitaForm.descricao || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, descricao: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    />
+                    <select
+                      required
+                      value={receitaForm.origem || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Origem</option>
+                      {origensReceita.map(origem => (
+                        <option key={origem} value={origem}>{origem}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="Valor"
+                      value={receitaForm.valor || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    />
+                    <select
+                      required
+                      value={receitaForm.forma_pagamento || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Forma Pagamento</option>
+                      {formasPagamento.map(forma => (
+                        <option key={forma} value={forma}>{forma}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="text"
+                      placeholder="Responsável"
+                      value={receitaForm.responsavel || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, responsavel: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Observação"
+                      value={receitaForm.observacao || ''}
+                      onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
+                      className="md:col-span-2 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                    />
+                    <button
+                      type="submit"
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+                    >
+                      ➕ Adicionar
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Tabela de Receitas */}
+              {receitas.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <p>📋 Nenhuma receita registrada para este projeto</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-gray-100 border-b-2 border-gray-300">
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Data</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Descrição</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Origem</th>
+                          <th className="px-4 py-3 text-right text-sm font-bold text-gray-700">Valor</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Pagamento</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Responsável</th>
+                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold text-gray-700">Ações</th>}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {receitas.map((receita, i) => (
+                          <tr key={receita.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-4 py-3 text-sm">
+                              {new Date(receita.data_receita).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-4 py-3 text-sm">{receita.descricao}</td>
+                            <td className="px-4 py-3 text-sm">
+                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                                {receita.origem}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right font-bold text-green-600">
+                              R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td className="px-4 py-3 text-sm">{receita.forma_pagamento}</td>
+                            <td className="px-4 py-3 text-sm">{receita.responsavel}</td>
+                            {permissoes?.canEdit && (
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() => excluirReceita(receita.id)}
+                                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                >
+                                  🗑️
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot>
+                        <tr className="bg-gray-200 border-t-2 border-gray-400">
+                          <td colSpan="3" className="px-4 py-3 text-right font-bold text-gray-800">
+                            TOTAL:
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-green-700 text-lg">
+                            R$ {receitas.reduce((sum, r) => sum + parseFloat(r.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
         )}
       </div>
 
