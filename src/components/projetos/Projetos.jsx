@@ -84,11 +84,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const salvarProjeto = async (e) => {
     e.preventDefault();
 
-    // Converter valores numéricos antes de salvar
+    // Converter valores numéricos e datas vazias antes de salvar
     const dadosParaSalvar = {
       ...projetoForm,
       valor_previsto: parseFloat(projetoForm.valor_previsto) || 0,
-      valor_arrecadado: parseFloat(projetoForm.valor_arrecadado) || 0
+      valor_arrecadado: parseFloat(projetoForm.valor_arrecadado) || 0,
+      data_prevista_termino: projetoForm.data_prevista_termino || null,
+      data_finalizacao: projetoForm.data_finalizacao || null
     };
 
     if (projetoEditando) {
