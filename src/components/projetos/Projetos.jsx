@@ -63,16 +63,32 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const carregarProjetos = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    
+    // Carregar projetos
+    const { data: projetosData, error: projetosError } = await supabase
       .from('projetos')
       .select('*')
       .order('data_inicio', { ascending: false });
 
-    if (error) {
+    if (projetosError) {
       showError('Erro ao carregar projetos');
-    } else {
-      setProjetos(data || []);
+      setLoading(false);
+      return;
     }
+
+    // Carregar todos os custos
+    const { data: custosData } = await supabase
+      .from('custos_projeto')
+      .select('*');
+
+    // Carregar todas as receitas
+    const { data: receitasData } = await supabase
+      .from('receitas_projeto')
+      .select('*');
+
+    setProjetos(projetosData || []);
+    setCustos(custosData || []);
+    setReceitas(receitasData || []);
     setLoading(false);
   };
 
@@ -203,8 +219,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     } else {
       showSuccess('Custo adicionado com sucesso!');
       setCustoForm({});
-      carregarCustos(projetoSelecionado.id);
-      carregarProjetos();
+      // Recarregar custos do modal
+      await carregarCustos(projetoSelecionado.id);
+      // Recarregar todos os dados para atualizar os cards
+      await carregarProjetos();
     }
   };
 
@@ -220,8 +238,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       showError('Erro ao excluir custo');
     } else {
       showSuccess('Custo excluído com sucesso!');
-      carregarCustos(projetoSelecionado.id);
-      carregarProjetos();
+      // Recarregar custos do modal
+      await carregarCustos(projetoSelecionado.id);
+      // Recarregar todos os dados para atualizar os cards
+      await carregarProjetos();
     }
   };
 
@@ -245,8 +265,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     } else {
       showSuccess('Receita adicionada com sucesso!');
       setReceitaForm({});
-      carregarReceitas(projetoSelecionado.id);
-      carregarProjetos();
+      // Recarregar receitas do modal
+      await carregarReceitas(projetoSelecionado.id);
+      // Recarregar todos os dados para atualizar os cards
+      await carregarProjetos();
     }
   };
 
@@ -262,8 +284,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       showError('Erro ao excluir receita');
     } else {
       showSuccess('Receita excluída com sucesso!');
-      carregarReceitas(projetoSelecionado.id);
-      carregarProjetos();
+      // Recarregar receitas do modal
+      await carregarReceitas(projetoSelecionado.id);
+      // Recarregar todos os dados para atualizar os cards
+      await carregarProjetos();
     }
   };
 
