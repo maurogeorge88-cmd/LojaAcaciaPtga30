@@ -18,6 +18,7 @@ import PerfilIrmao from './components/irmaos/PerfilIrmao';
 import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
+import Projetos from './components/projetos/Projetos';
 import Biblioteca from './components/biblioteca/Biblioteca';
 import Cronograma from './components/cronograma/Cronograma';
 import FinancasLoja from './components/financeiro/FinancasLoja';
@@ -1533,6 +1534,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               {/* ITENS INDIVIDUAIS */}
               <div className="border-t border-primary-700 mt-2 pt-2">
                 <button
+                  onClick={() => setCurrentPage('projetos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'projetos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Projetos"
+                >
+                  <span className="text-base">📊</span>
+                  {menuAberto && <span className="font-semibold">Projetos</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('comissoes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'comissoes'
@@ -2252,6 +2266,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'balaustres' && '📜 Balaustres'}
                   {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
+                  {currentPage === 'projetos' && '📊 Projetos'}
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
@@ -2462,6 +2477,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* ========================================
             PÁGINA: COMISSÕES
             ======================================== */}
+
+        {/* PROJETOS */}
+        {currentPage === 'projetos' && (
+          <Projetos
+            showSuccess={showSuccess}
+            showError={showError}
+            permissoes={permissoes}
+          />
+        )}
 
         {/* COMISSÕES */}
         {currentPage === 'comissoes' && (
