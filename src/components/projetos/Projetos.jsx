@@ -334,7 +334,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4">
+    <div className="max-w-7xl mx-auto px-2">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
