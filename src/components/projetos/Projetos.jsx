@@ -84,14 +84,22 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const salvarProjeto = async (e) => {
     e.preventDefault();
 
+    // Converter valores numéricos antes de salvar
+    const dadosParaSalvar = {
+      ...projetoForm,
+      valor_previsto: parseFloat(projetoForm.valor_previsto) || 0,
+      valor_arrecadado: parseFloat(projetoForm.valor_arrecadado) || 0
+    };
+
     if (projetoEditando) {
       const { error } = await supabase
         .from('projetos')
-        .update(projetoForm)
+        .update(dadosParaSalvar)
         .eq('id', projetoEditando.id);
 
       if (error) {
-        showError('Erro ao atualizar projeto');
+        console.error('Erro ao atualizar:', error);
+        showError('Erro ao atualizar projeto: ' + error.message);
       } else {
         showSuccess('Projeto atualizado com sucesso!');
         limparFormulario();
@@ -100,10 +108,11 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     } else {
       const { error } = await supabase
         .from('projetos')
-        .insert([projetoForm]);
+        .insert([dadosParaSalvar]);
 
       if (error) {
-        showError('Erro ao criar projeto');
+        console.error('Erro ao criar:', error);
+        showError('Erro ao criar projeto: ' + error.message);
       } else {
         showSuccess('Projeto cadastrado com sucesso!');
         limparFormulario();
@@ -158,12 +167,20 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const adicionarCusto = async (e) => {
     e.preventDefault();
 
+    // Converter valor numérico antes de salvar
+    const dadosCusto = {
+      ...custoForm,
+      projeto_id: projetoSelecionado.id,
+      valor: parseFloat(custoForm.valor) || 0
+    };
+
     const { error } = await supabase
       .from('custos_projeto')
-      .insert([{ ...custoForm, projeto_id: projetoSelecionado.id }]);
+      .insert([dadosCusto]);
 
     if (error) {
-      showError('Erro ao adicionar custo');
+      console.error('Erro ao adicionar custo:', error);
+      showError('Erro ao adicionar custo: ' + error.message);
     } else {
       showSuccess('Custo adicionado com sucesso!');
       setCustoForm({});
@@ -201,374 +218,356 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const calcularPercentual = (projeto, totalCustos) => {
     const valorPrevisto = parseFloat(projeto.valor_previsto) || 0;
     if (valorPrevisto === 0) return 0;
-    return Math.min(100, (totalCustos / valorPrevisto) * 100);
+    return (totalCustos / valorPrevisto) * 100;
   };
 
-  const getTipoInfo = (tipo) => {
-    return tiposProjeto.find(t => t.value === tipo) || tiposProjeto[0];
-  };
-
-  const getPrazoInfo = (prazo) => {
-    return prazosProjeto.find(p => p.value === prazo) || prazosProjeto[0];
+  const statusLabels = {
+    em_andamento: { label: '🔄 Em Andamento', cor: 'bg-blue-100 text-blue-800' },
+    concluido: { label: '✅ Concluído', cor: 'bg-green-100 text-green-800' },
+    suspenso: { label: '⏸️ Suspenso', cor: 'bg-yellow-100 text-yellow-800' },
+    cancelado: { label: '❌ Cancelado', cor: 'bg-red-100 text-red-800' }
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-gray-600">Carregando projetos...</div>
-      </div>
-    );
+    return <div className="text-center py-12">⏳ Carregando projetos...</div>;
   }
 
   return (
-    <div className="p-6">
+    <div className="max-w-7xl mx-auto px-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-700 text-white rounded-lg p-6 shadow-lg mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold mb-2">📊 Gestão de Projetos</h2>
-            <p className="opacity-90">Controle financeiro e acompanhamento de projetos</p>
-          </div>
-          {permissoes?.canEdit && (
-            <button
-              onClick={() => {
-                if (!mostrarFormulario) {
-                  limparFormulario();
-                  setMostrarFormulario(true);
-                  setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
-                } else {
-                  limparFormulario();
-                }
-              }}
-              className="px-6 py-3 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition font-semibold"
-            >
-              {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Projeto'}
-            </button>
-          )}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">🎯 Projetos da Loja</h2>
+          <p className="text-gray-600 mt-1">Gerencie os projetos e seus custos</p>
         </div>
+        {permissoes?.canEdit && (
+          <button
+            onClick={() => setMostrarFormulario(!mostrarFormulario)}
+            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition font-bold"
+          >
+            {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto'}
+          </button>
+        )}
       </div>
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6 border-2 border-blue-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {projetoEditando ? '✏️ Editar Projeto' : '➕ Novo Projeto'}
+        <form onSubmit={salvarProjeto} className="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-indigo-200">
+          <h3 className="text-xl font-bold text-gray-800 mb-4">
+            {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
           </h3>
 
-          <form onSubmit={salvarProjeto} className="space-y-6">
-            {/* Dados Gerais */}
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h4 className="font-bold text-gray-700 mb-3">📋 Dados Gerais</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome do Projeto *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={projetoForm.nome}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, nome: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ex: Reforma do Templo"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição *
-                  </label>
-                  <textarea
-                    required
-                    rows="3"
-                    value={projetoForm.descricao}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, descricao: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="Descreva os objetivos e escopo do projeto"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tipo do Projeto *
-                  </label>
-                  <select
-                    required
-                    value={projetoForm.tipo}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, tipo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  >
-                    {tiposProjeto.map(tipo => (
-                      <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Prazo *
-                  </label>
-                  <select
-                    required
-                    value={projetoForm.prazo}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, prazo: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  >
-                    {prazosProjeto.map(prazo => (
-                      <option key={prazo.value} value={prazo.value}>{prazo.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Início *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={projetoForm.data_inicio}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, data_inicio: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data Prevista de Término *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={projetoForm.data_prevista_termino}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, data_prevista_termino: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Responsável *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={projetoForm.responsavel}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, responsavel: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="Nome do responsável"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={projetoForm.status}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="em_andamento">🔄 Em Andamento</option>
-                    <option value="finalizado">✅ Finalizado</option>
-                  </select>
-                </div>
-
-                {projetoForm.status === 'finalizado' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Data de Finalização
-                    </label>
-                    <input
-                      type="date"
-                      value={projetoForm.data_finalizacao}
-                      onChange={(e) => setProjetoForm({ ...projetoForm, data_finalizacao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                )}
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Observações
-                  </label>
-                  <textarea
-                    rows="2"
-                    value={projetoForm.observacoes}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, observacoes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="Informações adicionais sobre o projeto"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Nome */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-1">Nome do Projeto *</label>
+              <input
+                type="text"
+                required
+                value={projetoForm.nome}
+                onChange={(e) => setProjetoForm({ ...projetoForm, nome: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="Ex: Campanha de Doação de Alimentos"
+              />
             </div>
 
-            {/* Controle Financeiro */}
-            <div className="bg-green-50 rounded-lg p-4">
-              <h4 className="font-bold text-gray-700 mb-3">💰 Controle Financeiro</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valor Total Previsto *
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={projetoForm.valor_previsto}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, valor_previsto: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valor Já Arrecadado
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={projetoForm.valor_arrecadado}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, valor_arrecadado: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fonte dos Recursos
-                  </label>
-                  <input
-                    type="text"
-                    value={projetoForm.fonte_recursos}
-                    onChange={(e) => setProjetoForm({ ...projetoForm, fonte_recursos: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ex: Doações, Eventos, Caixa da Loja"
-                  />
-                </div>
-              </div>
+            {/* Descrição */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-1">Descrição</label>
+              <textarea
+                value={projetoForm.descricao}
+                onChange={(e) => setProjetoForm({ ...projetoForm, descricao: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                rows="3"
+                placeholder="Descreva o objetivo e escopo do projeto..."
+              />
             </div>
 
-            {/* Botões */}
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+            {/* Tipo */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Tipo *</label>
+              <select
+                required
+                value={projetoForm.tipo}
+                onChange={(e) => setProjetoForm({ ...projetoForm, tipo: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
               >
-                {projetoEditando ? '💾 Salvar Alterações' : '➕ Cadastrar Projeto'}
-              </button>
-              <button
-                type="button"
-                onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition font-medium"
-              >
-                Cancelar
-              </button>
+                {tiposProjeto.map(tipo => (
+                  <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                ))}
+              </select>
             </div>
-          </form>
-        </div>
+
+            {/* Prazo */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Prazo *</label>
+              <select
+                required
+                value={projetoForm.prazo}
+                onChange={(e) => setProjetoForm({ ...projetoForm, prazo: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
+                {prazosProjeto.map(prazo => (
+                  <option key={prazo.value} value={prazo.value}>{prazo.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Data Início */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Data Início *</label>
+              <input
+                type="date"
+                required
+                value={projetoForm.data_inicio}
+                onChange={(e) => setProjetoForm({ ...projetoForm, data_inicio: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Data Prevista Término */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Data Prevista Término</label>
+              <input
+                type="date"
+                value={projetoForm.data_prevista_termino}
+                onChange={(e) => setProjetoForm({ ...projetoForm, data_prevista_termino: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Data Finalização */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Data Finalização</label>
+              <input
+                type="date"
+                value={projetoForm.data_finalizacao}
+                onChange={(e) => setProjetoForm({ ...projetoForm, data_finalizacao: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Status *</label>
+              <select
+                required
+                value={projetoForm.status}
+                onChange={(e) => setProjetoForm({ ...projetoForm, status: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="em_andamento">🔄 Em Andamento</option>
+                <option value="concluido">✅ Concluído</option>
+                <option value="suspenso">⏸️ Suspenso</option>
+                <option value="cancelado">❌ Cancelado</option>
+              </select>
+            </div>
+
+            {/* Responsável */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-1">Responsável</label>
+              <input
+                type="text"
+                value={projetoForm.responsavel}
+                onChange={(e) => setProjetoForm({ ...projetoForm, responsavel: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="Nome do irmão responsável pelo projeto"
+              />
+            </div>
+
+            {/* Valor Previsto */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Valor Previsto (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={projetoForm.valor_previsto}
+                onChange={(e) => setProjetoForm({ ...projetoForm, valor_previsto: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="0.00"
+              />
+            </div>
+
+            {/* Valor Arrecadado */}
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-1">Valor Arrecadado (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={projetoForm.valor_arrecadado}
+                onChange={(e) => setProjetoForm({ ...projetoForm, valor_arrecadado: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="0.00"
+              />
+            </div>
+
+            {/* Fonte de Recursos */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-1">Fonte de Recursos</label>
+              <input
+                type="text"
+                value={projetoForm.fonte_recursos}
+                onChange={(e) => setProjetoForm({ ...projetoForm, fonte_recursos: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                placeholder="Ex: Caixa da Loja, Doações, Eventos"
+              />
+            </div>
+
+            {/* Observações */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-bold text-gray-700 mb-1">Observações</label>
+              <textarea
+                value={projetoForm.observacoes}
+                onChange={(e) => setProjetoForm({ ...projetoForm, observacoes: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                rows="2"
+                placeholder="Informações adicionais relevantes..."
+              />
+            </div>
+          </div>
+
+          {/* Botões */}
+          <div className="flex gap-3 mt-6">
+            <button
+              type="submit"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:shadow-lg transition font-bold"
+            >
+              💾 {projetoEditando ? 'Atualizar Projeto' : 'Cadastrar Projeto'}
+            </button>
+            <button
+              type="button"
+              onClick={limparFormulario}
+              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-bold"
+            >
+              ❌ Cancelar
+            </button>
+          </div>
+        </form>
       )}
 
       {/* Lista de Projetos */}
-      <div className="grid grid-cols-1 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {projetos.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-            <p className="text-lg">📋 Nenhum projeto cadastrado</p>
-            <p className="text-sm mt-2">Clique em "Novo Projeto" para começar</p>
+          <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
+            <p className="text-gray-500 text-lg">📋 Nenhum projeto cadastrado</p>
+            {permissoes?.canEdit && (
+              <button
+                onClick={() => setMostrarFormulario(true)}
+                className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+              >
+                ➕ Cadastrar Primeiro Projeto
+              </button>
+            )}
           </div>
         ) : (
-          projetos.map(projeto => {
-            const tipoInfo = getTipoInfo(projeto.tipo);
-            const prazoInfo = getPrazoInfo(projeto.prazo);
+          projetos.map((projeto) => {
+            const tipoInfo = tiposProjeto.find(t => t.value === projeto.tipo);
+            const statusInfo = statusLabels[projeto.status];
             const totalCustos = calcularTotalCustos(projeto);
             const saldo = calcularSaldo(projeto, totalCustos);
             const percentual = calcularPercentual(projeto, totalCustos);
 
             return (
-              <div key={projeto.id} className="bg-white rounded-lg shadow-lg overflow-hidden border-l-4 border-blue-500">
+              <div key={projeto.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-6 hover:shadow-xl transition">
                 {/* Header do Card */}
-                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 border-b">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-xl font-bold text-gray-800">{projeto.nome}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${tipoInfo.cor}`}>
-                          {tipoInfo.label}
-                        </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          projeto.status === 'finalizado' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {projeto.status === 'finalizado' ? '✅ Finalizado' : '🔄 Em Andamento'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{projeto.descricao}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-gray-600">
-                        <span>{prazoInfo.label}</span>
-                        <span>👤 {projeto.responsavel}</span>
-                        <span>📅 Início: {new Date(projeto.data_inicio).toLocaleDateString('pt-BR')}</span>
-                        <span>🎯 Término: {new Date(projeto.data_prevista_termino).toLocaleDateString('pt-BR')}</span>
-                      </div>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">{projeto.nome}</h3>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${tipoInfo?.cor || 'bg-gray-100 text-gray-800'}`}>
+                        {tipoInfo?.label || projeto.tipo}
+                      </span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusInfo?.cor || 'bg-gray-100 text-gray-800'}`}>
+                        {statusInfo?.label || projeto.status}
+                      </span>
                     </div>
-
-                    {permissoes?.canEdit && (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => editarProjeto(projeto)}
-                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                        >
-                          ✏️ Editar
-                        </button>
-                        <button
-                          onClick={() => excluirProjeto(projeto.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                        >
-                          🗑️ Excluir
-                        </button>
-                      </div>
-                    )}
                   </div>
+                  
+                  {permissoes?.canEdit && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => editarProjeto(projeto)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => excluirProjeto(projeto.id)}
+                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {/* Indicadores Financeiros */}
-                <div className="p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-600 mb-1">💠 Valor Previsto</p>
-                      <p className="text-lg font-bold text-blue-700">
-                        R$ {parseFloat(projeto.valor_previsto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
+                {/* Descrição */}
+                {projeto.descricao && (
+                  <p className="text-gray-600 text-sm mb-4">{projeto.descricao}</p>
+                )}
+
+                {/* Informações do Projeto */}
+                <div className="space-y-2 mb-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">📅 Início:</span>
+                    <span className="font-semibold">{new Date(projeto.data_inicio).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  {projeto.data_prevista_termino && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">🎯 Prev. Término:</span>
+                      <span className="font-semibold">{new Date(projeto.data_prevista_termino).toLocaleDateString('pt-BR')}</span>
                     </div>
-                    <div className="bg-green-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-600 mb-1">💰 Arrecadado</p>
-                      <p className="text-lg font-bold text-green-700">
-                        R$ {parseFloat(projeto.valor_arrecadado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
+                  )}
+                  {projeto.data_finalizacao && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">✅ Finalizado:</span>
+                      <span className="font-semibold">{new Date(projeto.data_finalizacao).toLocaleDateString('pt-BR')}</span>
                     </div>
-                    <div className="bg-orange-50 rounded-lg p-3">
-                      <p className="text-xs text-gray-600 mb-1">📊 Total Custos</p>
-                      <p className="text-lg font-bold text-orange-700">
-                        R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
+                  )}
+                  {projeto.responsavel && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">👤 Responsável:</span>
+                      <span className="font-semibold">{projeto.responsavel}</span>
                     </div>
-                    <div className={`${saldo >= 0 ? 'bg-green-50' : 'bg-red-50'} rounded-lg p-3`}>
-                      <p className="text-xs text-gray-600 mb-1">💵 Saldo</p>
-                      <p className={`text-lg font-bold ${saldo >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                        R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </p>
-                    </div>
+                  )}
+                </div>
+
+                {/* Financeiro */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-semibold">💰 Valor Previsto:</span>
+                    <span className="text-lg font-bold text-blue-600">
+                      R$ {parseFloat(projeto.valor_previsto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-semibold">💵 Arrecadado:</span>
+                    <span className="text-lg font-bold text-green-600">
+                      R$ {parseFloat(projeto.valor_arrecadado || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700 font-semibold">💸 Custos:</span>
+                    <span className="text-lg font-bold text-red-600">
+                      R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t-2 border-gray-300">
+                    <span className="text-gray-700 font-bold">💳 Saldo:</span>
+                    <span className={`text-xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
                   </div>
 
                   {/* Barra de Progresso */}
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium text-gray-700">Progresso Financeiro</span>
-                      <span className="text-sm font-bold text-blue-600">{percentual.toFixed(1)}%</span>
+                  <div>
+                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                      <span>Execução do Orçamento</span>
+                      <span className="font-bold">{percentual.toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                       <div
                         className={`h-3 rounded-full transition-all ${
                           percentual > 100 ? 'bg-red-500' : percentual > 75 ? 'bg-yellow-500' : 'bg-blue-500'
