@@ -107,6 +107,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, permissoes, onLogout }) =
         <MenuItem page="quadro" icon="📋" label="Quadro de Irmãos" />
         <MenuItem page="balaustres" icon="📜" label="Balaustres" />
         <MenuItem page="pranchas" icon="📄" label="Pranchas" />
+        <MenuItem page="projetos" icon="📊" label="Projetos" />
         <MenuItem page="comissoes" icon="📋" label="Comissões" />
         <MenuItem page="biblioteca" icon="📚" label="Biblioteca" />
         
