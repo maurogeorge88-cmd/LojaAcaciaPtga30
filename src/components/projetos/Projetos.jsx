@@ -13,6 +13,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [mostrarReceitas, setMostrarReceitas] = useState(false);
   const [custoForm, setCustoForm] = useState({});
   const [receitaForm, setReceitaForm] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const [projetoForm, setProjetoForm] = useState({
     nome: '',
@@ -223,6 +224,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       await carregarCustos(projetoSelecionado.id);
       // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
+      // Forçar re-render
+      setRefreshKey(prev => prev + 1);
     }
   };
 
@@ -242,6 +245,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       await carregarCustos(projetoSelecionado.id);
       // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
+      // Forçar re-render
+      setRefreshKey(prev => prev + 1);
     }
   };
 
@@ -269,6 +274,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       await carregarReceitas(projetoSelecionado.id);
       // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
+      // Forçar re-render
+      setRefreshKey(prev => prev + 1);
     }
   };
 
@@ -288,6 +295,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       await carregarReceitas(projetoSelecionado.id);
       // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
+      // Forçar re-render
+      setRefreshKey(prev => prev + 1);
     }
   };
 
@@ -524,7 +533,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       )}
 
       {/* Lista de Projetos */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {projetos.length === 0 ? (
           <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
             <p className="text-gray-500 text-lg">📋 Nenhum projeto cadastrado</p>
