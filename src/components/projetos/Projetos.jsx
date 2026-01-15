@@ -3,8 +3,10 @@ import { supabase } from '../../supabaseClient';
 
 export default function Projetos({ showSuccess, showError, permissoes }) {
   const [projetos, setProjetos] = useState([]);
-  const [custos, setCustos] = useState([]);
-  const [receitas, setReceitas] = useState([]);
+  const [todosOsCustos, setTodosOsCustos] = useState([]);
+  const [todasAsReceitas, setTodasAsReceitas] = useState([]);
+  const [custosDoModal, setCustosDoModal] = useState([]);
+  const [receitasDoModal, setReceitasDoModal] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [projetoEditando, setProjetoEditando] = useState(null);
@@ -88,8 +90,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       .select('*');
 
     setProjetos(projetosData || []);
-    setCustos(custosData || []);
-    setReceitas(receitasData || []);
+    setTodosOsCustos(custosData || []);
+    setTodasAsReceitas(receitasData || []);
     setLoading(false);
   };
 
@@ -101,7 +103,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       .order('data_custo', { ascending: false });
 
     if (!error) {
-      setCustos(data || []);
+      setCustosDoModal(data || []);
     }
   };
 
@@ -113,7 +115,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       .order('data_receita', { ascending: false });
 
     if (!error) {
-      setReceitas(data || []);
+      setReceitasDoModal(data || []);
     }
   };
 
@@ -301,12 +303,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   };
 
   const calcularTotalCustos = (projeto) => {
-    const custosDoProjeto = custos.filter(c => c.projeto_id === projeto.id);
+    const custosDoProjeto = todosOsCustos.filter(c => c.projeto_id === projeto.id);
     return custosDoProjeto.reduce((total, c) => total + (parseFloat(c.valor) || 0), 0);
   };
 
   const calcularTotalReceitas = (projeto) => {
-    const receitasDoProjeto = receitas.filter(r => r.projeto_id === projeto.id);
+    const receitasDoProjeto = todasAsReceitas.filter(r => r.projeto_id === projeto.id);
     return receitasDoProjeto.reduce((total, r) => total + (parseFloat(r.valor) || 0), 0);
   };
 
@@ -711,7 +713,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   onClick={() => {
                     setMostrarReceitas(false);
                     setProjetoSelecionado(null);
-                    setReceitas([]);
+                    setReceitasDoModal([]);
                   }}
                   className="text-white hover:opacity-80 text-4xl leading-none"
                 >
@@ -797,7 +799,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               )}
 
               {/* Tabela de Receitas */}
-              {receitas.length === 0 ? (
+              {receitasDoModal.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                   <p>📋 Nenhuma receita registrada para este projeto</p>
                 </div>
@@ -817,7 +819,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {receitas.map((receita, i) => (
+                        {receitasDoModal.map((receita, i) => (
                           <tr key={receita.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <td className="px-4 py-3 text-sm">
                               {new Date(receita.data_receita).toLocaleDateString('pt-BR')}
@@ -852,7 +854,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             TOTAL:
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-green-700 text-lg">
-                            R$ {receitas.reduce((sum, r) => sum + parseFloat(r.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {receitasDoModal.reduce((sum, r) => sum + parseFloat(r.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
                         </tr>
@@ -881,7 +883,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   onClick={() => {
                     setMostrarCustos(false);
                     setProjetoSelecionado(null);
-                    setCustos([]);
+                    setCustosDoModal([]);
                   }}
                   className="text-white hover:opacity-80 text-4xl leading-none"
                 >
@@ -967,7 +969,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               )}
 
               {/* Tabela de Custos */}
-              {custos.length === 0 ? (
+              {custosDoModal.length === 0 ? (
                 <div className="text-center text-gray-500 py-8">
                   <p>📋 Nenhum custo registrado para este projeto</p>
                 </div>
@@ -987,7 +989,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {custos.map((custo, i) => (
+                        {custosDoModal.map((custo, i) => (
                           <tr key={custo.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <td className="px-4 py-3 text-sm">
                               {new Date(custo.data_custo).toLocaleDateString('pt-BR')}
@@ -1022,7 +1024,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             TOTAL:
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-red-700 text-lg">
-                            R$ {custos.reduce((sum, c) => sum + parseFloat(c.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {custosDoModal.reduce((sum, c) => sum + parseFloat(c.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
                         </tr>
