@@ -260,8 +260,11 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     console.log('🎂 Verificando aniversariantes...');
     console.log('Total irmãos:', irmaos.length);
 
-    // Irmãos
+    // Irmãos (apenas VIVOS)
     irmaos.forEach(irmao => {
+      // Não mostrar irmãos falecidos
+      if (irmao.falecido === true || irmao.data_falecimento) return;
+      
       verificarAniversario(irmao, 'Irmão');
 
       // Esposa
