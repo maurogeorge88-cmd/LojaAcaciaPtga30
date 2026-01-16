@@ -537,6 +537,20 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         </div>
       )}
 
+      {/* Card de Visitantes - Só aparece se houver visitantes */}
+      {totalVisitantes > 0 && (
+        <div className="mb-6">
+          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">👥 Visitantes Recebidos</h3>
+              <span className="text-4xl">🏛️</span>
+            </div>
+            <p className="text-5xl font-bold mb-1">{totalVisitantes}</p>
+            <p className="text-sm opacity-90">Registrados em {new Date().getFullYear()}</p>
+          </div>
+        </div>
+      )}
+
       {/* ANIVERSARIANTES - LAYOUT COMPACTO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* ANIVERSARIANTES DO DIA - COR MAIS CLARA */}
@@ -770,20 +784,6 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           })()}
         </div>
       </div>
-
-      {/* Card de Visitantes - Só aparece se houver visitantes */}
-      {totalVisitantes > 0 && (
-        <div className="mb-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">👥 Visitantes Recebidos</h3>
-              <span className="text-4xl">🏛️</span>
-            </div>
-            <p className="text-5xl font-bold mb-1">{totalVisitantes}</p>
-            <p className="text-sm opacity-90">Registrados em {new Date().getFullYear()}</p>
-          </div>
-        </div>
-      )}
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
