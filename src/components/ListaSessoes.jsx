@@ -66,13 +66,27 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
 
       console.log('📊 Sessões carregadas:', data?.length);
       
-      // Processar dados para adicionar nome do grau
-      const sessoesProcessadas = data?.map(sessao => ({
-        ...sessao,
-        grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz'
-      })) || [];
+      // Buscar registros de presença para cada sessão
+      const sessoesComPresenca = await Promise.all(data?.map(async (sessao) => {
+        const { data: registros } = await supabase
+          .from('registros_presenca')
+          .select('presente')
+          .eq('sessao_id', sessao.id);
+        
+        const total_registros = registros?.length || 0;
+        const total_presentes = registros?.filter(r => r.presente).length || 0;
+        const total_ausentes = total_registros - total_presentes;
+        
+        return {
+          ...sessao,
+          grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz',
+          total_registros,
+          total_presentes,
+          total_ausentes
+        };
+      }) || []);
       
-      setSessoes(sessoesProcessadas);
+      setSessoes(sessoesComPresenca);
 
     } catch (error) {
       console.error('Erro ao carregar sessões:', error);
