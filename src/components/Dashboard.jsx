@@ -9,6 +9,7 @@ import { supabase } from '../supabaseClient';
 export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   const [irmaos100, setIrmaos100] = useState([]);
+  const [totalVisitantes, setTotalVisitantes] = useState(0);
 
   useEffect(() => {
     const carregar = async () => {
@@ -17,6 +18,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         .select('*')
         .eq('status', 'ativa');
       setHistoricoSituacoes(data || []);
+      
+      // Carregar visitantes do ano
+      const { count } = await supabase
+        .from('visitantes_sessao')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', `${new Date().getFullYear()}-01-01`);
+      setTotalVisitantes(count || 0);
     };
     carregar();
   }, []);
@@ -449,6 +457,17 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         </div>
       </div>
 
+      {/* Card de Visitantes */}
+      <div className="mb-6">
+        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">👥 Visitantes Recebidos</h3>
+            <span className="text-4xl">🏛️</span>
+          </div>
+          <p className="text-5xl font-bold mb-1">{totalVisitantes}</p>
+          <p className="text-sm opacity-90">Registrados em {new Date().getFullYear()}</p>
+        </div>
+      </div>
 
       {/* Cards de Situações */}
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
