@@ -18,6 +18,8 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
   const [loading, setLoading] = useState(true);
   const [sessao, setSessao] = useState(null);
   const [presencas, setPresencas] = useState([]);
+  const [visitantes, setVisitantes] = useState([]);
+  const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '' });
 
   useEffect(() => {
     if (sessaoId) {
@@ -69,6 +71,17 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
 
       if (registrosError) throw registrosError;
 
+      // Buscar visitantes
+      const { data: visitantesData, error: visitantesError } = await supabase
+        .from('visitantes_sessao')
+        .select('*')
+        .eq('sessao_id', sessaoId)
+        .order('created_at', { ascending: false });
+
+      if (!visitantesError) {
+        setVisitantes(visitantesData || []);
+      }
+
       // Adicionar grau calculado e prerrogativa
       const presencasComGrau = registros.map(reg => {
         const irmao = reg.irmaos;
@@ -100,6 +113,28 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
   const formatarData = (data) => {
     if (!data) return '-';
     return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
+  };
+
+  const adicionarVisitante = async () => {
+    if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
+    
+    const { error } = await supabase
+      .from('visitantes_sessao')
+      .insert([{ sessao_id: sessaoId, ...visitanteForm }]);
+    
+    if (!error) {
+      carregarDados();
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+    }
+  };
+
+  const excluirVisitante = async (id) => {
+    const { error } = await supabase
+      .from('visitantes_sessao')
+      .delete()
+      .eq('id', id);
+    
+    if (!error) carregarDados();
   };
 
   const estatisticas = {
@@ -265,6 +300,76 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
                 </tbody>
               </table>
             </div>
+          )}
+        </div>
+
+        {/* Seção de Visitantes */}
+        <div className="px-6 py-4 border-t bg-gray-50">
+          <h3 className="text-lg font-bold text-gray-800 mb-3">👥 Visitantes</h3>
+          
+          {/* Formulário */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
+            <input
+              type="text"
+              placeholder="Nome do Visitante"
+              value={visitanteForm.nome_visitante}
+              onChange={(e) => setVisitanteForm({...visitanteForm, nome_visitante: e.target.value})}
+              className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Loja"
+              value={visitanteForm.nome_loja}
+              onChange={(e) => setVisitanteForm({...visitanteForm, nome_loja: e.target.value})}
+              className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Cidade"
+              value={visitanteForm.cidade}
+              onChange={(e) => setVisitanteForm({...visitanteForm, cidade: e.target.value})}
+              className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              onClick={adicionarVisitante}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              ➕ Adicionar
+            </button>
+          </div>
+
+          {/* Tabela */}
+          {visitantes.length > 0 && (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-200">
+                  <th className="px-3 py-2 text-left">Nome</th>
+                  <th className="px-3 py-2 text-left">Loja</th>
+                  <th className="px-3 py-2 text-left">Cidade</th>
+                  <th className="px-3 py-2 w-20">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visitantes.map((v) => (
+                  <tr key={v.id} className="border-b">
+                    <td className="px-3 py-2">{v.nome_visitante}</td>
+                    <td className="px-3 py-2">{v.nome_loja}</td>
+                    <td className="px-3 py-2">{v.cidade}</td>
+                    <td className="px-3 py-2">
+                      <button
+                        onClick={() => excluirVisitante(v.id)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {visitantes.length === 0 && (
+            <p className="text-gray-500 text-sm text-center py-3">Nenhum visitante registrado</p>
           )}
         </div>
 
