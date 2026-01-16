@@ -23,6 +23,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const [justificativas, setJustificativas] = useState({});
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [busca, setBusca] = useState('');
+  const [visitantes, setVisitantes] = useState([]);
+  const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '' });
 
   useEffect(() => {
     if (sessaoId) {
@@ -195,6 +197,14 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       setPresencas(presencasObj);
       setJustificativas(justificativasObj);
 
+      // Carregar visitantes
+      const { data: visitantesData } = await supabase
+        .from('visitantes_sessao')
+        .select('*')
+        .eq('sessao_id', sessaoId)
+        .order('created_at', { ascending: false });
+      setVisitantes(visitantesData || []);
+
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       setMensagem({
@@ -239,6 +249,28 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   const desmarcarTodos = () => {
     setPresencas({});
     setJustificativas({});
+  };
+
+  const adicionarVisitante = async () => {
+    if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
+    
+    const { error } = await supabase
+      .from('visitantes_sessao')
+      .insert([{ sessao_id: sessaoId, ...visitanteForm }]);
+    
+    if (!error) {
+      carregarDados();
+      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
+    }
+  };
+
+  const excluirVisitante = async (id) => {
+    const { error } = await supabase
+      .from('visitantes_sessao')
+      .delete()
+      .eq('id', id);
+    
+    if (!error) carregarDados();
   };
 
   const handleSalvar = async () => {
@@ -492,6 +524,75 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           <div className="text-center py-8 text-gray-500">
             {busca ? 'Nenhum irmão encontrado com esse nome.' : 'Nenhum irmão elegível para esta sessão.'}
           </div>
+        )}
+      </div>
+
+      {/* Seção de Visitantes */}
+      <div className="bg-white rounded-lg shadow-md p-6 mt-6">
+        <h3 className="text-lg font-bold text-gray-800 mb-4">👥 Visitantes</h3>
+        
+        {/* Formulário */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Nome do Visitante"
+            value={visitanteForm.nome_visitante}
+            onChange={(e) => setVisitanteForm({...visitanteForm, nome_visitante: e.target.value})}
+            className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Loja"
+            value={visitanteForm.nome_loja}
+            onChange={(e) => setVisitanteForm({...visitanteForm, nome_loja: e.target.value})}
+            className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Cidade"
+            value={visitanteForm.cidade}
+            onChange={(e) => setVisitanteForm({...visitanteForm, cidade: e.target.value})}
+            className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            onClick={adicionarVisitante}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            ➕ Adicionar
+          </button>
+        </div>
+
+        {/* Tabela */}
+        {visitantes.length > 0 ? (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-100 border-b">
+                <th className="px-3 py-2 text-left">Nome</th>
+                <th className="px-3 py-2 text-left">Loja</th>
+                <th className="px-3 py-2 text-left">Cidade</th>
+                <th className="px-3 py-2 w-20">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visitantes.map((v) => (
+                <tr key={v.id} className="border-b hover:bg-gray-50">
+                  <td className="px-3 py-2">{v.nome_visitante}</td>
+                  <td className="px-3 py-2">{v.nome_loja}</td>
+                  <td className="px-3 py-2">{v.cidade}</td>
+                  <td className="px-3 py-2">
+                    <button
+                      onClick={() => excluirVisitante(v.id)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-gray-500 text-sm text-center py-3">Nenhum visitante registrado</p>
         )}
       </div>
 
