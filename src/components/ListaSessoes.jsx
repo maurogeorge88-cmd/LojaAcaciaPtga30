@@ -40,7 +40,7 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
       // Buscar direto da tabela sessoes_presenca
       let query = supabase
         .from('sessoes_presenca')
-        .select('*, graus_sessao:grau_sessao_id(nome)')
+        .select('*, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
         .order('data_sessao', { ascending: false });
 
       // Aplicar filtros se houver
@@ -73,6 +73,12 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
           .select('presente')
           .eq('sessao_id', sessao.id);
         
+        // Buscar visitantes
+        const { count: totalVisitantes } = await supabase
+          .from('visitantes_sessao')
+          .select('*', { count: 'exact', head: true })
+          .eq('sessao_id', sessao.id);
+        
         const total_registros = registros?.length || 0;
         const total_presentes = registros?.filter(r => r.presente).length || 0;
         const total_ausentes = total_registros - total_presentes;
@@ -80,9 +86,11 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
         return {
           ...sessao,
           grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz',
+          classificacao: sessao.classificacoes_sessao?.nome || null,
           total_registros,
           total_presentes,
-          total_ausentes
+          total_ausentes,
+          total_visitantes: totalVisitantes || 0
         };
       }) || []);
       
@@ -379,6 +387,9 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
                           Presença
                         </th>
                         <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Visitantes
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Ações
                         </th>
                       </tr>
@@ -420,6 +431,11 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
                             </div>
                           )}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-center">
+                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800">
+                          {sessao.total_visitantes || 0}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
