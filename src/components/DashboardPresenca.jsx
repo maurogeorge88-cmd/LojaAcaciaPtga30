@@ -110,18 +110,20 @@ export default function DashboardPresenca() {
 
   const carregarPrerrogativa = async () => {
     try {
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const dataHoje = hoje.toISOString().split('T')[0];
       const inicioAno = `${anoPrerrogativa}-01-01`;
-      const fimAno = `${anoPrerrogativa}-12-31`;
 
       console.log('🔍 Buscando sessões para prerrogativa:');
       console.log('  Ano:', anoPrerrogativa);
-      console.log('  Período:', inicioAno, 'até', fimAno);
+      console.log('  Período:', inicioAno, 'até', dataHoje);
 
       const { data: sessoes, error: erroSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id')
         .gte('data_sessao', inicioAno)
-        .lte('data_sessao', fimAno);
+        .lte('data_sessao', dataHoje);
 
       console.log('  Sessões encontradas:', sessoes?.length || 0);
       console.log('  Erro:', erroSessoes);
@@ -193,8 +195,8 @@ export default function DashboardPresenca() {
         else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
         else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
 
-        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
-        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao) : null;
+        const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja + 'T00:00:00') : null;
+        const dataIniciacao = irmao.data_iniciacao ? new Date(irmao.data_iniciacao + 'T00:00:00') : null;
         const dataInicio = dataIngresso || dataIniciacao;
 
         let totalRegistros = 0;
@@ -202,7 +204,7 @@ export default function DashboardPresenca() {
 
         // Para prerrogativa 70+: percorre TODAS as sessões do ano
         sessoes?.forEach(sessao => {
-          const dataSessao = new Date(sessao.data_sessao);
+          const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
           
           // Só conta se sessão é após ingresso
           if (dataInicio && dataSessao < dataInicio) return;
@@ -368,7 +370,7 @@ export default function DashboardPresenca() {
           .eq('sessao_id', sessao.id);
 
         const grauSessao = sessao.grau_sessao_id || 1;
-        const dataSessao = new Date(sessao.data_sessao);
+        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00'); // Adicionar hora para evitar problema de timezone
 
         const elegiveis = irmaos.filter(i => {
           // 1. Verificar grau
@@ -381,8 +383,8 @@ export default function DashboardPresenca() {
           if (grauSessao > grauIrmao) return false;
 
           // 2. Verificar data de ingresso
-          const dataInicio = i.data_ingresso_loja ? new Date(i.data_ingresso_loja) : 
-                            i.data_iniciacao ? new Date(i.data_iniciacao) : null;
+          const dataInicio = i.data_ingresso_loja ? new Date(i.data_ingresso_loja + 'T00:00:00') : 
+                            i.data_iniciacao ? new Date(i.data_iniciacao + 'T00:00:00') : null;
           if (dataInicio && dataSessao < dataInicio) return false;
 
           // 3. Verificar SITUAÇÕES BLOQUEADORAS na data da sessão - EXCLUIR
@@ -399,7 +401,7 @@ export default function DashboardPresenca() {
 
           // 4. Verificar falecimento - SE faleceu ANTES da sessão, NÃO é elegível
           if (i.data_falecimento) {
-            const dataFalec = new Date(i.data_falecimento);
+            const dataFalec = new Date(i.data_falecimento + 'T00:00:00');
             if (dataSessao >= dataFalec) return false;
           }
 
