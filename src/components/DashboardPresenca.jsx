@@ -935,7 +935,7 @@ export default function DashboardPresenca() {
                   {sessoesRecentes.map((sessao, idx) => (
                     <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                       <td className="px-4 py-3 text-sm">
-                        {new Date(sessao.data_sessao).toLocaleDateString('pt-BR')}
+                        {new Date(sessao.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
