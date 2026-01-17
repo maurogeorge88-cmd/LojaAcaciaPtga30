@@ -369,6 +369,12 @@ export default function DashboardPresenca() {
           .select('membro_id, presente')
           .eq('sessao_id', sessao.id);
 
+        // Buscar visitantes da sessão
+        const { data: visitantes, count: totalVisitantes } = await supabase
+          .from('visitantes_sessao')
+          .select('*', { count: 'exact', head: true })
+          .eq('sessao_id', sessao.id);
+
         const grauSessao = sessao.grau_sessao_id || 1;
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00'); // Adicionar hora para evitar problema de timezone
 
@@ -422,7 +428,8 @@ export default function DashboardPresenca() {
           elegiveis: totalElegiveis,
           presencas,
           ausencias,
-          percentual
+          percentual,
+          visitantes: totalVisitantes || 0
         };
       }));
 
@@ -928,6 +935,7 @@ export default function DashboardPresenca() {
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Elegíveis</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ausências</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Visitantes</th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
                   </tr>
                 </thead>
@@ -949,6 +957,11 @@ export default function DashboardPresenca() {
                       <td className="px-4 py-3 text-center text-sm font-semibold">{sessao.elegiveis}</td>
                       <td className="px-4 py-3 text-center text-sm font-semibold text-green-600">{sessao.presencas}</td>
                       <td className="px-4 py-3 text-center text-sm font-semibold text-red-600">{sessao.ausencias}</td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-800 font-semibold">
+                          {sessao.visitantes}
+                        </span>
+                      </td>
                       <td className="px-4 py-3 text-center text-sm">
                         <span className={`px-2 py-1 rounded font-semibold ${
                           sessao.percentual >= 80 ? 'bg-green-100 text-green-800' :
