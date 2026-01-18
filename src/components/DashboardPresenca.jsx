@@ -658,8 +658,12 @@ export default function DashboardPresenca() {
         licenciados: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'licenciado').length || 0,
         irregulares: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'irregular').length || 0,
         suspensos: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'suspenso').length || 0,
-        falecidos: todosIrmaos?.filter(i => i.status === 'falecido').length || 0,
-        desligados: todosIrmaos?.filter(i => i.status === 'desligado').length || 0
+        falecidos: todosIrmaos?.filter(i => 
+          i.status === 'falecido' || i.situacao?.toLowerCase() === 'falecido'
+        ).length || 0,
+        desligados: todosIrmaos?.filter(i => 
+          i.status === 'desligado' || i.situacao?.toLowerCase() === 'desligado'
+        ).length || 0
       };
       stats.ativos = stats.regulares + stats.licenciados;
 
