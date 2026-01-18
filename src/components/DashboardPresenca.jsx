@@ -788,42 +788,13 @@ export default function DashboardPresenca() {
       const totalComRegistros = resumoCompleto.filter(r => r.total_registros > 0).length;
       const mediaPresenca = totalComRegistros > 0 ? Math.round(somaPresencas / totalComRegistros) : 0;
 
-      // Irmãos ativos = regulares + licenciados (com licença ativa)
-      const hoje = new Date();
-      const irmaosAtivos = irmaos?.filter(i => {
-        // Se faleceu, não é ativo
-        if (i.data_falecimento) return false;
-        
-        // Se tem licença ativa, é ativo
-        const temLicencaAtiva = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          return sit.membro_id === i.id &&
-            tipoNormalizado === 'licenca' &&
-            (sit.data_fim === null || new Date(sit.data_fim) >= hoje);
-        });
-        
-        if (temLicencaAtiva) return true;
-        
-        // Se tem desligamento/irregular/suspenso/ex-ofício ativo, não é ativo
-        const temSituacaoBloqueadoraAtiva = historicoSituacoes?.some(sit => {
-          const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          const situacoesExcluidas = ['desligado', 'irregular', 'suspenso', 'ex-oficio', 'excluido'];
-          
-          return sit.membro_id === i.id &&
-            situacoesExcluidas.includes(tipoNormalizado) &&
-            sit.data_fim === null;
-        });
-        
-        if (temSituacaoBloqueadoraAtiva) return false;
-        
-        // Demais casos: é ativo
-        return true;
-      }).length || 0;
+      // Contar irmãos ativos baseado em situações reais
+      const irmaosAtivosCount = stats.ativos; // Já calculado: regulares + licenciados
 
       setDados({
         sessoes: totalSessoes || 0,
         irmaos: stats.total,
-        irmaosAtivos: irmaosAtivos,
+        irmaosAtivos: irmaosAtivosCount,
         stats, // Incluir estatísticas completas
         mediaPresenca
       });
