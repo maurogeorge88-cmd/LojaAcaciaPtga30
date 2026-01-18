@@ -629,12 +629,14 @@ export default function DashboardPresenca() {
 
   const carregar = async () => {
     try {
-      // 1. Buscar sessões do período
+      const hoje = new Date().toISOString().split('T')[0];
+      
+      // 1. Buscar sessões do período ATÉ HOJE
       const { data: sessoesPerio, count: totalSessoes } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id', { count: 'exact' })
         .gte('data_sessao', dataInicio)
-        .lte('data_sessao', dataFim);
+        .lte('data_sessao', dataFim < hoje ? dataFim : hoje); // Não incluir futuras
 
       const sessaoIds = sessoesPerio?.map(s => s.id) || [];
 
@@ -644,13 +646,24 @@ export default function DashboardPresenca() {
         .select('*')
         .eq('status', 'ativa');
 
-      // 3. Contar irmãos ativos
-      const { count: totalIrmaos } = await supabase
+      // 3. Buscar TODOS os irmãos (ativos e inativos) para estatísticas
+      const { data: todosIrmaos } = await supabase
         .from('irmaos')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'ativo');
+        .select('id, situacao, status');
 
-      // 4. Buscar irmãos com datas
+      // Calcular estatísticas por situação
+      const stats = {
+        total: todosIrmaos?.length || 0,
+        regulares: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'regular').length || 0,
+        licenciados: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'licenciado').length || 0,
+        irregulares: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'irregular').length || 0,
+        suspensos: todosIrmaos?.filter(i => i.situacao?.toLowerCase() === 'suspenso').length || 0,
+        falecidos: todosIrmaos?.filter(i => i.status === 'falecido').length || 0,
+        desligados: todosIrmaos?.filter(i => i.status === 'desligado').length || 0
+      };
+      stats.ativos = stats.regulares + stats.licenciados;
+
+      // 4. Buscar irmãos ativos para cálculos de presença
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_ingresso_loja, data_falecimento')
@@ -809,8 +822,9 @@ export default function DashboardPresenca() {
 
       setDados({
         sessoes: totalSessoes || 0,
-        irmaos: totalIrmaos || 0,
-        irmaosAtivos,
+        irmaos: stats.total,
+        irmaosAtivos: irmaosAtivos,
+        stats, // Incluir estatísticas completas
         mediaPresenca
       });
 
@@ -836,7 +850,7 @@ export default function DashboardPresenca() {
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
-                className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all ${
+                className={`flex-1 py-4 rounded-lg text-base font-bold transition-all ${
                   periodo === p
                     ? 'bg-green-400 text-white shadow-lg scale-105'
                     : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
@@ -881,10 +895,25 @@ export default function DashboardPresenca() {
         <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
           <p className="text-green-600 font-semibold mb-2">Total de Irmãos</p>
           <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
+          {dados.stats && (
+            <div className="mt-3 text-xs text-gray-600 space-y-1">
+              <div>✅ Ativos: {dados.stats.ativos} ({dados.stats.regulares} reg + {dados.stats.licenciados} lic)</div>
+              {dados.stats.falecidos > 0 && <div>🕊️ Falecidos: {dados.stats.falecidos}</div>}
+              {dados.stats.irregulares > 0 && <div>⚠️ Irregulares: {dados.stats.irregulares}</div>}
+              {dados.stats.suspensos > 0 && <div>🚫 Suspensos: {dados.stats.suspensos}</div>}
+              {dados.stats.desligados > 0 && <div>📤 Desligados: {dados.stats.desligados}</div>}
+            </div>
+          )}
         </div>
         <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 text-center">
           <p className="text-teal-600 font-semibold mb-2">Irmãos Ativos</p>
           <p className="text-4xl font-bold text-teal-800">{dados.irmaosAtivos || 0}</p>
+          {dados.stats && (
+            <div className="mt-3 text-xs text-gray-600 space-y-1">
+              <div>✅ Regulares: {dados.stats.regulares}</div>
+              <div>🎫 Licenciados: {dados.stats.licenciados}</div>
+            </div>
+          )}
         </div>
         <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
           <p className="text-purple-600 font-semibold mb-2">Média Presença</p>
