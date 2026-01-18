@@ -600,18 +600,18 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <div className="space-y-2 mb-4 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600">📅 Início:</span>
-                    <span className="font-semibold">{new Date(projeto.data_inicio).toLocaleDateString('pt-BR')}</span>
+                    <span className="font-semibold">{new Date(projeto.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                   </div>
                   {projeto.data_prevista_termino && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">🎯 Prev. Término:</span>
-                      <span className="font-semibold">{new Date(projeto.data_prevista_termino).toLocaleDateString('pt-BR')}</span>
+                      <span className="font-semibold">{new Date(projeto.data_prevista_termino + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     </div>
                   )}
                   {projeto.data_finalizacao && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">✅ Finalizado:</span>
-                      <span className="font-semibold">{new Date(projeto.data_finalizacao).toLocaleDateString('pt-BR')}</span>
+                      <span className="font-semibold">{new Date(projeto.data_finalizacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     </div>
                   )}
                   {projeto.responsavel && (
@@ -822,7 +822,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         {receitasDoModal.map((receita, i) => (
                           <tr key={receita.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <td className="px-4 py-3 text-sm">
-                              {new Date(receita.data_receita).toLocaleDateString('pt-BR')}
+                              {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
                             <td className="px-4 py-3 text-sm">{receita.descricao}</td>
                             <td className="px-4 py-3 text-sm">
@@ -992,7 +992,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         {custosDoModal.map((custo, i) => (
                           <tr key={custo.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                             <td className="px-4 py-3 text-sm">
-                              {new Date(custo.data_custo).toLocaleDateString('pt-BR')}
+                              {new Date(custo.data_custo + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
                             <td className="px-4 py-3 text-sm">{custo.descricao}</td>
                             <td className="px-4 py-3 text-sm">
