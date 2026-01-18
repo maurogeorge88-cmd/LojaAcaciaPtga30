@@ -55,7 +55,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: false,
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
+      pode_editar_projetos: false
     },
     'secretario': {
       pode_editar_cadastros: true,
@@ -69,7 +70,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: true,
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: true,
-      pode_editar_presenca: true
+      pode_editar_presenca: true,
+      pode_editar_projetos: true
     },
     'tesoureiro': {
       pode_editar_cadastros: false,
@@ -83,7 +85,8 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: false,
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
+      pode_editar_projetos: true
     },
     'chanceler': {
       pode_editar_cadastros: true,
@@ -98,6 +101,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false
+      pode_editar_projetos: false
     },
     'primeiro_vigilante': {
       pode_editar_cadastros: true,
@@ -112,6 +116,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false
+      pode_editar_projetos: false
     },
     'segundo_vigilante': {
       pode_editar_cadastros: true,
@@ -126,6 +131,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false
+      pode_editar_projetos: false
     },
     'orador': {
       pode_editar_cadastros: false,
@@ -140,6 +146,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false
+      pode_editar_projetos: false
     },
     'veneravel': {
       pode_editar_cadastros: true,
@@ -154,6 +161,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: true,
       pode_editar_presenca: true
+      pode_editar_projetos: true
     },
     'administrador': {
       pode_editar_cadastros: true,
@@ -168,6 +176,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: true,
       pode_editar_presenca: true
+      pode_editar_projetos: true
     }
   };
 
@@ -198,6 +207,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
       pode_editar_presenca: false
+      pode_editar_projetos: false
     });
     setModoEdicao(false);
     setUsuarioEditando(null);
@@ -725,6 +735,19 @@ IMPORTANTE: Copie estas informações agora!
                   <div>
                     <span className="font-medium text-gray-900">✅ Presença</span>
                     <p className="text-xs text-gray-600">Gerenciar presença nas sessões</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={usuarioForm.pode_editar_projetos}
+                    onChange={(e) => setUsuarioForm({ ...usuarioForm, pode_editar_projetos: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <div>
+                    <span className="font-medium text-gray-900">📊 Projetos</span>
+                    <p className="text-xs text-gray-600">Gerenciar projetos da loja</p>
                   </div>
                 </label>
               </div>
