@@ -337,6 +337,7 @@ function App() {
           pode_editar_comissoes: true,
           pode_editar_corpo_admin: true,
           pode_editar_presenca: true,
+          pode_editar_projetos: true,
           pode_gerenciar_usuarios: true
         });
       } else if (data.nivel_acesso === 'irmao') {
@@ -356,6 +357,7 @@ function App() {
           pode_editar_comissoes: data.pode_editar_comissoes || false,
           pode_editar_corpo_admin: false,
           pode_editar_presenca: data.pode_editar_presenca || false,
+          pode_editar_projetos: data.pode_editar_projetos || false,
           pode_gerenciar_usuarios: false
         });
       } else if (data.nivel_acesso === 'cargo') {
@@ -376,6 +378,7 @@ function App() {
           pode_editar_comissoes: data.pode_editar_comissoes || false,
           pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
           pode_editar_presenca: data.pode_editar_presenca || false,
+          pode_editar_projetos: data.pode_editar_projetos || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       } else {
@@ -395,6 +398,7 @@ function App() {
           pode_editar_comissoes: data.pode_editar_comissoes || false,
           pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
           pode_editar_presenca: data.pode_editar_presenca || false,
+          pode_editar_projetos: data.pode_editar_projetos || false,
           pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
         });
       }
