@@ -100,7 +100,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: true,
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
       pode_editar_projetos: false
     },
     'primeiro_vigilante': {
@@ -115,7 +115,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: false,
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
       pode_editar_projetos: false
     },
     'segundo_vigilante': {
@@ -130,7 +130,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: false,
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
       pode_editar_projetos: false
     },
     'orador': {
@@ -145,7 +145,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: true,
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
       pode_editar_projetos: false
     },
     'veneravel': {
@@ -160,7 +160,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: true,
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: true,
-      pode_editar_presenca: true
+      pode_editar_presenca: true,
       pode_editar_projetos: true
     },
     'administrador': {
@@ -175,7 +175,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: true,
       pode_editar_comissoes: true,
       pode_editar_corpo_admin: true,
-      pode_editar_presenca: true
+      pode_editar_presenca: true,
       pode_editar_projetos: true
     }
   };
@@ -206,7 +206,7 @@ export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, sh
       pode_editar_pranchas: false,
       pode_editar_comissoes: false,
       pode_editar_corpo_admin: false,
-      pode_editar_presenca: false
+      pode_editar_presenca: false,
       pode_editar_projetos: false
     });
     setModoEdicao(false);
