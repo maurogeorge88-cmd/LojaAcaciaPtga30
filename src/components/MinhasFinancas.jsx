@@ -11,7 +11,8 @@ export default function MinhasFinancas({ userEmail }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('todos'); // todos, pendentes, pagos
-  const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
+  const [anoFiltro, setAnoFiltro] = useState('todos'); // Padrão: todos
+  const [anosComRegistros, setAnosComRegistros] = useState([]);
 
   // Estatísticas
   const [totalReceitas, setTotalReceitas] = useState(0); // O que o irmão DEVE
@@ -41,18 +42,37 @@ export default function MinhasFinancas({ userEmail }) {
         return;
       }
 
-      // PRIMEIRO: Buscar TODOS os lançamentos do ano para calcular totais corretos
-      const { data: todosLancamentos, error: erroTodos } = await supabase
+      // Buscar anos com registros
+      const { data: todosRegistros } = await supabase
+        .from('lancamentos_loja')
+        .select('data_vencimento')
+        .eq('origem_irmao_id', irmao.id)
+        .eq('origem_tipo', 'Irmao');
+
+      const anosUnicos = [...new Set(
+        todosRegistros?.map(r => new Date(r.data_vencimento).getFullYear()) || []
+      )].sort((a, b) => b - a);
+      
+      setAnosComRegistros(anosUnicos);
+
+      // PRIMEIRO: Buscar lançamentos (com ou sem filtro de ano)
+      let queryTodos = supabase
         .from('lancamentos_loja')
         .select(`
           *,
           categorias_financeiras (nome, tipo)
         `)
         .eq('origem_irmao_id', irmao.id)
-        .eq('origem_tipo', 'Irmao')
-        .gte('data_vencimento', `${anoFiltro}-01-01`)
-        .lte('data_vencimento', `${anoFiltro}-12-31`)
-        .limit(300); // ⚡ PERFORMANCE: Limita a 300 registros por ano
+        .eq('origem_tipo', 'Irmao');
+
+      // Aplicar filtro de ano se não for "todos"
+      if (anoFiltro !== 'todos') {
+        queryTodos = queryTodos
+          .gte('data_vencimento', `${anoFiltro}-01-01`)
+          .lte('data_vencimento', `${anoFiltro}-12-31`);
+      }
+
+      const { data: todosLancamentos, error: erroTodos } = await queryTodos.limit(300);
 
       if (erroTodos) throw erroTodos;
 
@@ -93,9 +113,14 @@ export default function MinhasFinancas({ userEmail }) {
         `)
         .eq('origem_irmao_id', irmao.id)
         .eq('origem_tipo', 'Irmao')
-        .gte('data_vencimento', `${anoFiltro}-01-01`)
-        .lte('data_vencimento', `${anoFiltro}-12-31`)
         .order('data_vencimento', { ascending: false });
+
+      // Aplicar filtro de ano se não for "todos"
+      if (anoFiltro !== 'todos') {
+        query = query
+          .gte('data_vencimento', `${anoFiltro}-01-01`)
+          .lte('data_vencimento', `${anoFiltro}-12-31`);
+      }
 
       // Aplicar filtro de status
       if (filtro === 'pendentes') {
@@ -155,16 +180,6 @@ export default function MinhasFinancas({ userEmail }) {
         ⏳ Pendente
       </span>
     );
-  };
-
-  const anosDisponiveis = () => {
-    const anoAtual = new Date().getFullYear();
-    const anos = [];
-    const anoFinal = Math.max(anoAtual + 3, 2028);
-    for (let i = anoFinal; i >= 2025; i--) {
-      anos.push(i);
-    }
-    return anos;
   };
 
   if (loading) {
@@ -248,10 +263,11 @@ export default function MinhasFinancas({ userEmail }) {
         {/* Filtro de ano */}
         <select
           value={anoFiltro}
-          onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
+          onChange={(e) => setAnoFiltro(e.target.value === 'todos' ? 'todos' : parseInt(e.target.value))}
           className="px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
         >
-          {anosDisponiveis().map(ano => (
+          <option value="todos">Todos os anos</option>
+          {anosComRegistros.map(ano => (
             <option key={ano} value={ano}>{ano}</option>
           ))}
         </select>
