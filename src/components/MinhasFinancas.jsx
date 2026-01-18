@@ -273,7 +273,7 @@ export default function MinhasFinancas({ userEmail }) {
         </select>
       </div>
 
-      {/* Lista de lançamentos - LAYOUT INADIMPLENTES */}
+      {/* Lista de lançamentos - AGRUPADO POR MÊS */}
       {lancamentos.length === 0 ? (
         <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
           <div className="flex items-center">
@@ -285,79 +285,120 @@ export default function MinhasFinancas({ userEmail }) {
           </div>
         </div>
       ) : (
-        <div className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
-          {/* LISTA DE LANÇAMENTOS */}
-          <div className="divide-y divide-gray-200">
-            {lancamentos.map((lanc) => {
-              const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
-              
+        <div className="space-y-4">
+          {(() => {
+            // Agrupar por mês/ano
+            const porMes = {};
+            lancamentos.forEach(lanc => {
+              const data = new Date(lanc.data_vencimento);
+              const mesAno = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
+              if (!porMes[mesAno]) {
+                porMes[mesAno] = {
+                  lancamentos: [],
+                  total: 0,
+                  mes: data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+                };
+              }
+              porMes[mesAno].lancamentos.push(lanc);
+              porMes[mesAno].total += parseFloat(lanc.valor || 0);
+            });
+
+            // Ordenar meses (mais recente primeiro)
+            const mesesOrdenados = Object.keys(porMes).sort((a, b) => b.localeCompare(a));
+
+            return mesesOrdenados.map(mesAno => {
+              const grupo = porMes[mesAno];
               return (
-                <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      {/* Badges de Categoria */}
-                      <div className="flex gap-2 mb-2 flex-wrap">
-                        <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          ehReceita ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {ehReceita ? '📈 Você Deve' : '💰 Loja Deve'}
-                        </span>
-                        <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
-                          {lanc.categorias_financeiras?.nome}
-                        </span>
-                        {lanc.eh_parcelado && (
-                          <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
-                            📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
-                          </span>
-                        )}
-                        {lanc.eh_mensalidade && (
-                          <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
-                            📅 Mensalidade
-                          </span>
-                        )}
-                        {getStatusBadge(lanc)}
-                      </div>
-                      
-                      {/* Descrição */}
-                      <p className="font-medium text-gray-900 mb-2">{lanc.descricao}</p>
-                      
-                      {/* Informações - DATAS NA MESMA LINHA */}
-                      <div className="text-sm text-gray-600">
-                        <p>
-                          <span className="font-medium">Vencimento:</span> {formatarData(lanc.data_vencimento)}
-                          {lanc.data_pagamento && (
-                            <>
-                              <span className="mx-2">•</span>
-                              <span className="font-medium text-green-600">Pago em:</span> {formatarData(lanc.data_pagamento)}
-                            </>
-                          )}
-                          {lanc.tipo_pagamento && (
-                            <>
-                              <span className="mx-2">•</span>
-                              <span className="font-medium">Forma:</span> {lanc.tipo_pagamento}
-                            </>
-                          )}
-                        </p>
-                        {lanc.observacoes && (
-                          <p className="text-gray-500 italic mt-1">
-                            💬 {lanc.observacoes}
-                          </p>
-                        )}
+                <div key={mesAno} className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
+                  {/* Cabeçalho do Mês */}
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4">
+                    <div className="flex justify-between items-center">
+                      <h3 className="text-lg font-bold capitalize">
+                        📅 {grupo.mes}
+                      </h3>
+                      <div className="text-right">
+                        <p className="text-sm opacity-90">{grupo.lancamentos.length} lançamento(s)</p>
+                        <p className="text-xl font-bold">{formatarMoeda(grupo.total)}</p>
                       </div>
                     </div>
-                    
-                    <div className="text-right ml-4">
-                      <p className={`text-2xl font-bold ${
-                        ehReceita ? 'text-red-600' : 'text-blue-600'
-                      }`}>
-                        {formatarMoeda(lanc.valor)}
-                      </p>
-                    </div>
+                  </div>
+
+                  {/* Lista de lançamentos do mês */}
+                  <div className="divide-y divide-gray-200">
+                    {grupo.lancamentos.map((lanc) => {
+                      const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                      
+                      return (
+                        <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              {/* Badges de Categoria */}
+                              <div className="flex gap-2 mb-2 flex-wrap">
+                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                  ehReceita ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {ehReceita ? '📈 Você Deve' : '💰 Loja Deve'}
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
+                                  {lanc.categorias_financeiras?.nome}
+                                </span>
+                                {lanc.eh_parcelado && (
+                                  <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                                    📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
+                                  </span>
+                                )}
+                                {lanc.eh_mensalidade && (
+                                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
+                                    📅 Mensalidade
+                                  </span>
+                                )}
+                                {getStatusBadge(lanc)}
+                              </div>
+                              
+                              {/* Descrição */}
+                              <p className="font-medium text-gray-900 mb-2">{lanc.descricao}</p>
+                              
+                              {/* Informações - DATAS NA MESMA LINHA */}
+                              <div className="text-sm text-gray-600">
+                                <p>
+                                  <span className="font-medium">Vencimento:</span> {formatarData(lanc.data_vencimento)}
+                                  {lanc.data_pagamento && (
+                                    <>
+                                      <span className="mx-2">•</span>
+                                      <span className="font-medium text-green-600">Pago em:</span> {formatarData(lanc.data_pagamento)}
+                                    </>
+                                  )}
+                                  {lanc.tipo_pagamento && (
+                                    <>
+                                      <span className="mx-2">•</span>
+                                      <span className="font-medium">Forma:</span> {lanc.tipo_pagamento}
+                                    </>
+                                  )}
+                                </p>
+                                {lanc.observacoes && (
+                                  <p className="text-gray-500 italic mt-1">
+                                    💬 {lanc.observacoes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            
+                            <div className="text-right ml-4">
+                              <p className={`text-2xl font-bold ${
+                                ehReceita ? 'text-red-600' : 'text-blue-600'
+                              }`}>
+                                {formatarMoeda(lanc.valor)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               );
-            })}
-          </div>
+            });
+          })()}
         </div>
       )}
 
