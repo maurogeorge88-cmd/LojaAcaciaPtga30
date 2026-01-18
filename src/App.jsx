@@ -2500,7 +2500,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <Projetos
             showSuccess={showSuccess}
             showError={showError}
-            permissoes={permissoes}
+            permissoes={{
+              ...permissoes,
+              canEdit: permissoes?.pode_editar_projetos || false
+            }}
           />
         )}
 
