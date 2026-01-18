@@ -868,7 +868,7 @@ export default function DashboardPresenca() {
           <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
           {dados.stats && (
             <div className="mt-3 text-xs text-gray-600 space-y-1">
-              <div>✅ Ativos: {dados.stats.ativos} ({dados.stats.regulares} reg + {dados.stats.licenciados} lic)</div>
+              <div>✅ Ativos: {dados.stats.ativos}</div>
               {dados.stats.falecidos > 0 && <div>🕊️ Falecidos: {dados.stats.falecidos}</div>}
               {dados.stats.irregulares > 0 && <div>⚠️ Irregulares: {dados.stats.irregulares}</div>}
               {dados.stats.suspensos > 0 && <div>🚫 Suspensos: {dados.stats.suspensos}</div>}
