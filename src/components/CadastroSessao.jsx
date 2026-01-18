@@ -10,10 +10,13 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
   const [classificacoesSessao, setClassificacoesSessao] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
+  const [sessoes, setSessoes] = useState([]);
+  const [editando, setEditando] = useState(null);
 
   useEffect(() => {
     carregarGraus();
     carregarClassificacoesSessao();
+    carregarSessoes();
   }, []);
 
   const carregarGraus = async () => {
@@ -49,6 +52,57 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     }
   };
 
+  const carregarSessoes = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sessoes_presenca')
+        .select('*, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
+        .order('data_sessao', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setSessoes(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar sessões:', error);
+    }
+  };
+
+  const editarSessao = (sessao) => {
+    setDataSessao(sessao.data_sessao);
+    setGrauSessao(sessao.grau_sessao_id);
+    setClassificacaoSessaoId(sessao.classificacao_id || '');
+    setObservacoes(sessao.observacoes || '');
+    setEditando(sessao.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const excluirSessao = async (id) => {
+    if (!confirm('Tem certeza que deseja excluir esta sessão?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('sessoes_presenca')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setMensagem({ tipo: 'sucesso', texto: 'Sessão excluída com sucesso!' });
+      carregarSessoes();
+    } catch (error) {
+      console.error('Erro ao excluir sessão:', error);
+      setMensagem({ tipo: 'erro', texto: 'Erro ao excluir sessão' });
+    }
+  };
+
+  const cancelarEdicao = () => {
+    setDataSessao('');
+    setGrauSessao(graus[0]?.id || 1);
+    setClassificacaoSessaoId('');
+    setObservacoes('');
+    setEditando(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -61,29 +115,40 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     setMensagem({ tipo: '', texto: '' });
 
     try {
-      console.log('📝 Cadastrando sessão...', { dataSessao, grauSessao, classificacaoSessaoId, observacoes });
+      console.log('📝 Salvando sessão...', { dataSessao, grauSessao, classificacaoSessaoId, observacoes });
 
-      // IMPORTANTE: Remover .single() para evitar erro "Cannot coerce to single JSON object"
-      const { data, error } = await supabase
-        .from('sessoes_presenca')
-        .insert([{
-          data_sessao: dataSessao,
-          grau_sessao_id: grauSessao,
-          classificacao_id: classificacaoSessaoId || null,
-          observacoes: observacoes || null
-        }])
-        .select(); // SEM .single()
+      if (editando) {
+        // Atualizar sessão existente
+        const { error } = await supabase
+          .from('sessoes_presenca')
+          .update({
+            data_sessao: dataSessao,
+            grau_sessao_id: grauSessao,
+            classificacao_id: classificacaoSessaoId || null,
+            observacoes: observacoes || null
+          })
+          .eq('id', editando);
 
-      if (error) {
-        console.error('❌ Erro ao cadastrar sessão:', error);
-        throw error;
+        if (error) throw error;
+      } else {
+        // Inserir nova sessão
+        const { error } = await supabase
+          .from('sessoes_presenca')
+          .insert([{
+            data_sessao: dataSessao,
+            grau_sessao_id: grauSessao,
+            classificacao_id: classificacaoSessaoId || null,
+            observacoes: observacoes || null
+          }]);
+
+        if (error) throw error;
       }
 
-      console.log('✅ Sessão cadastrada:', data);
+      console.log('✅ Sessão salva');
 
       setMensagem({ 
         tipo: 'sucesso', 
-        texto: 'Sessão cadastrada com sucesso!' 
+        texto: editando ? 'Sessão atualizada com sucesso!' : 'Sessão cadastrada com sucesso!' 
       });
 
       // Limpar formulário
@@ -91,6 +156,10 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
       setGrauSessao(graus[0]?.id || 1);
       setClassificacaoSessaoId('');
       setObservacoes('');
+      setEditando(null);
+
+      // Recarregar lista
+      carregarSessoes();
 
       // Chamar callback de sucesso
       if (onSuccess) {
@@ -196,10 +265,20 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
             disabled={loading}
             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
           >
-            {loading ? 'Cadastrando...' : '✅ Cadastrar Sessão'}
+            {loading ? 'Salvando...' : editando ? '✏️ Atualizar Sessão' : '✅ Cadastrar Sessão'}
           </button>
 
-          {onClose && (
+          {editando && (
+            <button
+              type="button"
+              onClick={cancelarEdicao}
+              className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 font-medium"
+            >
+              🔙 Cancelar Edição
+            </button>
+          )}
+
+          {onClose && !editando && (
             <button
               type="button"
               onClick={onClose}
@@ -210,6 +289,64 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
           )}
         </div>
       </form>
+
+      {/* Lista de Sessões Cadastradas */}
+      {sessoes.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">📋 Últimas Sessões Cadastradas</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full bg-white rounded-lg shadow">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Grau</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Classificação</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {sessoes.map((sessao, idx) => (
+                  <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                    <td className="px-4 py-3 text-sm">
+                      {new Date(sessao.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                        {sessao.graus_sessao?.nome}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        sessao.classificacoes_sessao?.nome 
+                          ? 'bg-purple-100 text-purple-800' 
+                          : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {sessao.classificacoes_sessao?.nome || '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => editarSessao(sessao)}
+                          className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => excluirSessao(sessao.id)}
+                          className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                        >
+                          🗑️ Excluir
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 p-4 bg-blue-50 rounded-lg">
         <p className="text-sm text-blue-800">
