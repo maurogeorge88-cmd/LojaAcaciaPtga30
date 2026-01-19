@@ -71,6 +71,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [limiteRegistros, setLimiteRegistros] = useState(20); // Limite de registros exibidos
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
+  const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
   const [formSangria, setFormSangria] = useState({
     valor: '',
     data: new Date().toISOString().split('T')[0],
@@ -2401,7 +2402,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
           
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative">
+          <div 
+            className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative cursor-pointer hover:bg-orange-100 transition"
+            onDoubleClick={() => setModalDespesasPendentesAberto(true)}
+            title="Clique duplo para ver detalhes"
+          >
             <p className="text-xs text-orange-600 font-medium">⏰ A Pagar</p>
             <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
@@ -3494,6 +3499,172 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           showSuccess={showSuccess}
           showError={showError}
         />
+      )}
+
+      {/* Modal Despesas Pendentes */}
+      {modalDespesasPendentesAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold">⏰ Despesas Pendentes</h3>
+                  <p className="text-sm text-orange-100">Valores a pagar e a compensar</p>
+                </div>
+                <button
+                  onClick={() => setModalDespesasPendentesAberto(false)}
+                  className="text-white hover:opacity-80 text-4xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Corpo */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {/* Resumo */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+                  <p className="text-sm text-orange-600 font-medium mb-1">⏰ Total a Pagar</p>
+                  <p className="text-3xl font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
+                  <p className="text-xs text-gray-500 mt-1">Despesas pendentes do período</p>
+                </div>
+                
+                <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
+                  <p className="text-sm text-purple-600 font-medium mb-1">🔄 A Compensar</p>
+                  <p className="text-3xl font-bold text-purple-700">
+                    {formatarMoeda(
+                      lancamentos
+                        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && l.origem_tipo === 'Irmao')
+                        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0)
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">Débitos de irmãos pendentes</p>
+                </div>
+              </div>
+
+              {/* Tabela de Despesas */}
+              <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100 border-b-2 border-gray-300">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Data Venc.</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Descrição</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Categoria</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Origem</th>
+                        <th className="px-4 py-3 text-right text-sm font-bold text-gray-700">Valor</th>
+                        <th className="px-4 py-3 text-center text-sm font-bold text-gray-700">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {lancamentos
+                        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente')
+                        .sort((a, b) => new Date(a.data_vencimento) - new Date(b.data_vencimento))
+                        .map((lanc, index) => {
+                          const vencido = verificarVencido(lanc.data_vencimento);
+                          const diasAtraso = calcularDiasAtraso(lanc.data_vencimento);
+                          
+                          return (
+                            <tr key={lanc.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-4 py-3 text-sm">
+                                {formatarDataBR(lanc.data_vencimento)}
+                                {vencido && (
+                                  <span className="block text-xs text-red-600 font-medium">
+                                    {diasAtraso} dia{diasAtraso !== 1 ? 's' : ''} atraso
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <p className="font-medium">{lanc.descricao}</p>
+                                {lanc.observacoes && (
+                                  <p className="text-xs text-gray-500 mt-0.5">{lanc.observacoes}</p>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
+                                  {lanc.categorias_financeiras?.nome}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm">
+                                {lanc.origem_tipo === 'Irmao' ? (
+                                  <div>
+                                    <p className="font-medium text-purple-700">
+                                      {irmaos.find(i => i.id === lanc.origem_irmao_id)?.nome || 'Irmão'}
+                                    </p>
+                                    <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
+                                      A Compensar
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-medium">
+                                    Loja
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right">
+                                <p className="text-lg font-bold text-red-600">
+                                  {formatarMoeda(lanc.valor)}
+                                </p>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {vencido ? (
+                                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold">
+                                    ⚠️ VENCIDO
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">
+                                    ⏳ PENDENTE
+                                  </span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                    <tfoot className="bg-gray-200 border-t-2 border-gray-400">
+                      <tr>
+                        <td colSpan="4" className="px-4 py-3 text-right font-bold text-gray-800">
+                          TOTAL PENDENTE:
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-red-700 text-xl">
+                          {formatarMoeda(resumo.despesasPendentes)}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </div>
+
+              {/* Informações */}
+              <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+                <div className="flex">
+                  <span className="text-2xl mr-3">💡</span>
+                  <div>
+                    <p className="font-semibold text-blue-800 mb-1">Informações</p>
+                    <ul className="text-sm text-blue-700 space-y-1">
+                      <li>• <strong>Despesas da Loja:</strong> Valores que a loja deve pagar a fornecedores/terceiros</li>
+                      <li>• <strong>A Compensar:</strong> Débitos de irmãos que podem ser compensados com créditos</li>
+                      <li>• Para realizar compensação, acesse o módulo de Créditos e Débitos</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 bg-gray-50">
+              <button
+                onClick={() => setModalDespesasPendentesAberto(false)}
+                className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal Sangria */}
