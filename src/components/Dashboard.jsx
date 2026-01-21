@@ -12,6 +12,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [totalVisitantes, setTotalVisitantes] = useState(0);
   const [modalSituacao, setModalSituacao] = useState({ aberto: false, titulo: '', irmaos: [] });
   const [historicoCargos, setHistoricoCargos] = useState([]);
+  const [filtroComCargo, setFiltroComCargo] = useState(false);
 
   // Função para formatar nome (2 primeiros nomes + último se tiver "de/da")
   const formatarNome = (nomeCompleto) => {
@@ -892,22 +893,56 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               <div className="flex justify-between items-center">
                 <h3 className="text-xl font-bold">{modalSituacao.titulo}</h3>
                 <button
-                  onClick={() => setModalSituacao({ aberto: false, titulo: '', irmaos: [] })}
+                  onClick={() => {
+                    setModalSituacao({ aberto: false, titulo: '', irmaos: [] });
+                    setFiltroComCargo(false);
+                  }}
                   className="text-white hover:opacity-80 text-3xl leading-none"
                 >
                   ×
                 </button>
               </div>
               <p className="text-sm text-blue-100 mt-1">
-                Total: {modalSituacao.irmaos.length} {modalSituacao.irmaos.length === 1 ? 'irmão' : 'irmãos'}
+                Total: {modalSituacao.irmaos.filter(i => !filtroComCargo || obterCargoAtual(i.id)).length} {modalSituacao.irmaos.filter(i => !filtroComCargo || obterCargoAtual(i.id)).length === 1 ? 'irmão' : 'irmãos'}
               </p>
+              
+              {/* Filtro apenas para Regulares */}
+              {modalSituacao.titulo.includes('Regulares') && (
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => setFiltroComCargo(false)}
+                    className={`px-3 py-1 rounded text-xs font-semibold transition ${
+                      !filtroComCargo 
+                        ? 'bg-white text-blue-600' 
+                        : 'bg-blue-400 text-white hover:bg-blue-300'
+                    }`}
+                  >
+                    Todos
+                  </button>
+                  <button
+                    onClick={() => setFiltroComCargo(true)}
+                    className={`px-3 py-1 rounded text-xs font-semibold transition ${
+                      filtroComCargo 
+                        ? 'bg-white text-blue-600' 
+                        : 'bg-blue-400 text-white hover:bg-blue-300'
+                    }`}
+                  >
+                    Apenas com Cargo
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Corpo */}
             <div className="p-6 overflow-y-auto flex-1">
-              {modalSituacao.irmaos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {modalSituacao.irmaos.map((irmao) => (
+              {(() => {
+                const irmaosFiltrados = modalSituacao.irmaos.filter(i => 
+                  !filtroComCargo || obterCargoAtual(i.id)
+                );
+                
+                return irmaosFiltrados.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {irmaosFiltrados.map((irmao) => (
                     <div key={irmao.id} className="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
                       <div className="flex items-start gap-3">
                         {irmao.foto_url ? (
@@ -958,15 +993,19 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               ) : (
                 <div className="text-center py-12 text-gray-500">
                   <p className="text-4xl mb-3">📭</p>
-                  <p>Nenhum irmão nesta categoria</p>
+                  <p>{filtroComCargo ? 'Nenhum irmão com cargo nesta categoria' : 'Nenhum irmão nesta categoria'}</p>
                 </div>
-              )}
+              );
+              })()}
             </div>
 
             {/* Footer */}
             <div className="border-t px-6 py-4 bg-gray-50">
               <button
-                onClick={() => setModalSituacao({ aberto: false, titulo: '', irmaos: [] })}
+                onClick={() => {
+                  setModalSituacao({ aberto: false, titulo: '', irmaos: [] });
+                  setFiltroComCargo(false);
+                }}
                 className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold transition"
               >
                 Fechar
