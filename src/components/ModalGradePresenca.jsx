@@ -451,6 +451,9 @@ export default function ModalGradePresenca({ onFechar }) {
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-10">
                   Irmão
                 </th>
+                <th className="border border-gray-300 px-3 py-3 text-center font-semibold bg-gray-100">
+                  Grau
+                </th>
                 {sessoes.map(s => {
                   const grauTexto = s.grau_sessao_id === 1 ? 'A' : s.grau_sessao_id === 2 ? 'C' : 'M';
                   return (
@@ -593,6 +596,26 @@ export default function ModalGradePresenca({ onFechar }) {
                       })()}
                       {irmao.idade >= 70 && (
                         <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded">
+                          ≥70
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="border border-gray-300 px-3 py-3 text-center bg-white">
+                    <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                      irmao.data_exaltacao 
+                        ? (irmao.mestre_instalado ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')
+                        : irmao.data_elevacao 
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {irmao.data_exaltacao 
+                        ? (irmao.mestre_instalado ? 'M.Inst.' : 'Mestre')
+                        : irmao.data_elevacao 
+                        ? 'Comp.'
+                        : 'Aprend.'}
+                    </span>
+                  </td>
                           70+
                         </span>
                       )}
