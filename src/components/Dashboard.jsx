@@ -33,15 +33,17 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     const carregarPresenca100 = async () => {
       try {
         const anoAtual = new Date().getFullYear();
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0); // Zerar horas para comparação apenas de data
         const inicioAno = `${anoAtual}-01-01`;
-        const fimAno = `${anoAtual}-12-31`;
+        const dataHoje = hoje.toISOString().split('T')[0]; // Formato YYYY-MM-DD
 
-        // 1. Buscar todas as sessões do ano
+        // 1. Buscar todas as sessões do ano ATÉ HOJE
         const { data: sessoesAno } = await supabase
           .from('sessoes_presenca')
           .select('id, data_sessao, grau_sessao_id')
           .gte('data_sessao', inicioAno)
-          .lte('data_sessao', fimAno);
+          .lte('data_sessao', dataHoje);
 
         const sessaoIds = sessoesAno?.map(s => s.id) || [];
         if (sessaoIds.length === 0) {
@@ -174,7 +176,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
-    if (irmao.data_exaltacao) return 'Mestre';
+    if (irmao.data_exaltacao) {
+      return irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+    }
     if (irmao.data_elevacao) return 'Companheiro';
     if (irmao.data_iniciacao) return 'Aprendiz';
     return 'Não Iniciado';
@@ -207,6 +211,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const irmaosAprendiz = irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz').length;
   const irmaosCompanheiro = irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro').length;
   const irmaosMestre = irmaosAtivos.filter(i => obterGrau(i) === 'Mestre').length;
+  const irmaosMestreInstalado = irmaosAtivos.filter(i => obterGrau(i) === 'Mestre Instalado').length;
+  const totalMestres = irmaosMestre + irmaosMestreInstalado;
 
   // ========================================
   // ANIVERSARIANTES - INCLUINDO FAMILIARES
@@ -397,9 +403,21 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               <span>🔷 Companheiros:</span>
               <span className="font-bold">{irmaosCompanheiro}</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>🔺 Mestres:</span>
-              <span className="font-bold">{irmaosMestre}</span>
+            <div className="text-sm">
+              <div className="flex justify-between font-bold mb-1">
+                <span>🔺 Total de Mestres:</span>
+                <span>{totalMestres}</span>
+              </div>
+              <div className="pl-4 text-xs opacity-90">
+                <div className="flex justify-between">
+                  <span>• Mestres:</span>
+                  <span>{irmaosMestre}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>• Mestres Instalados:</span>
+                  <span>{irmaosMestreInstalado}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
