@@ -164,7 +164,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_falecimento, data_ingresso_loja')
+        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_falecimento, data_ingresso_loja')
         .eq('status', 'ativo');
 
       const { data: historicoSituacoes } = await supabase
@@ -191,7 +191,7 @@ export default function DashboardPresenca() {
 
         let grauTexto = 'Não iniciado';
         let grauIrmao = 0;
-        if (irmao.data_exaltacao) { grauTexto = 'Mestre'; grauIrmao = 3; }
+        if (irmao.data_exaltacao) { grauTexto = irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre'; grauIrmao = 3; }
         else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
         else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
 
@@ -266,7 +266,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
         .eq('status', 'ativo');
 
       const { data: historicoSituacoes } = await supabase
@@ -292,7 +292,7 @@ export default function DashboardPresenca() {
 
         let grauTexto = 'Não iniciado';
         let grauIrmao = 0;
-        if (irmao.data_exaltacao) { grauTexto = 'Mestre'; grauIrmao = 3; }
+        if (irmao.data_exaltacao) { grauTexto = irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre'; grauIrmao = 3; }
         else if (irmao.data_elevacao) { grauTexto = 'Companheiro'; grauIrmao = 2; }
         else if (irmao.data_iniciacao) { grauTexto = 'Aprendiz'; grauIrmao = 1; }
 
@@ -355,7 +355,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, data_nascimento, data_falecimento')
+        .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, data_nascimento, data_falecimento')
         .eq('status', 'ativo');
 
       const { data: historicoSituacoes } = await supabase
@@ -514,7 +514,7 @@ export default function DashboardPresenca() {
       // 3. Buscar irmãos com grau
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
         .eq('status', 'ativo');
 
       // 4. Buscar registros com paginação
@@ -670,7 +670,7 @@ export default function DashboardPresenca() {
       // 4. Buscar irmãos ativos para cálculos de presença
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, data_ingresso_loja, data_falecimento')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_nascimento, data_ingresso_loja, data_falecimento')
         .eq('status', 'ativo');
 
       // 5. Buscar registros com paginação
