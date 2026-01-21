@@ -292,13 +292,15 @@ function App() {
       if (data.nivel_acesso === 'irmao') {
         const { data: irmaoData } = await supabase
           .from('irmaos')
-          .select('data_iniciacao, data_elevacao, data_exaltacao')
+          .select('data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
           .eq('email', userEmail)
           .single();
         
         if (irmaoData) {
           let grau = 'Não Iniciado';
-          if (irmaoData.data_exaltacao) grau = 'Mestre';
+          if (irmaoData.data_exaltacao) {
+            grau = irmaoData.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+          }
           else if (irmaoData.data_elevacao) grau = 'Companheiro';
           else if (irmaoData.data_iniciacao) grau = 'Aprendiz';
           setGrauUsuarioLogado(grau);
@@ -1301,7 +1303,9 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
   // Função para determinar o grau do irmão
   const obterGrau = (irmao) => {
-    if (irmao.data_exaltacao) return 'Mestre';
+    if (irmao.data_exaltacao) {
+      return irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+    }
     if (irmao.data_elevacao) return 'Companheiro';
     if (irmao.data_iniciacao) return 'Aprendiz';
     return 'Não Iniciado';
