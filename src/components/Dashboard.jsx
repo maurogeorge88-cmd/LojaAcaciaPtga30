@@ -975,9 +975,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
                             {/* Badge de Cargo (do histórico do ano atual) */}
                             {obterCargoAtual(irmao.id) && (
-                              <span className="text-xs px-2 py-1 rounded font-semibold bg-amber-100 text-amber-800">
-                                {obterCargoAtual(irmao.id)}
-                              </span>
+                              <div className="flex flex-col gap-1">
+                                {obterCargoAtual(irmao.id).split(',').map((cargo, i) => (
+                                  <span key={i} className="text-xs px-2 py-1 rounded font-semibold bg-amber-100 text-amber-800">
+                                    {cargo.trim()}
+                                  </span>
+                                ))}
+                              </div>
                             )}
                           </div>
 
