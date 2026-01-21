@@ -81,7 +81,7 @@ export default function ModalGradePresenca({ onFechar }) {
       // 3. Buscar irmãos ATIVOS (incluir datas de grau e ingresso)
       const { data: irmaosData } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_falecimento, data_iniciacao, data_elevacao, data_exaltacao, data_ingresso_loja, situacao, status')
+        .select('id, nome, data_nascimento, data_falecimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, situacao, status')
         .eq('status', 'ativo')
         .order('nome');
 
