@@ -1315,6 +1315,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
   const irmaosAprendiz = irmaosRegulares.filter(i => obterGrau(i) === 'Aprendiz').length;
   const irmaosCompanheiro = irmaosRegulares.filter(i => obterGrau(i) === 'Companheiro').length;
   const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
+  const irmaosMestreInstalado = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre Instalado').length;
+  const totalMestres = irmaosMestre + irmaosMestreInstalado;
 
 
   return (
