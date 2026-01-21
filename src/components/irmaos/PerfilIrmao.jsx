@@ -268,7 +268,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">Grau:</span>
                     <span>
-                      {irmao.data_exaltacao ? 'Mestre' : irmao.data_elevacao ? 'Companheiro' : 'Aprendiz'}
+                      {irmao.data_exaltacao ? (irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre') : irmao.data_elevacao ? 'Companheiro' : 'Aprendiz'}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -896,6 +896,57 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* LINHA 2.5: Mestre Instalado */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">⭐ Mestre Instalado?</label>
+                  {modoEdicao ? (
+                    <div className="flex gap-4">
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="mestre_instalado"
+                          checked={irmaoForm.mestre_instalado === true}
+                          onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: true })}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Sim</span>
+                      </label>
+                      <label className="flex items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="mestre_instalado"
+                          checked={irmaoForm.mestre_instalado === false}
+                          onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: false, data_instalacao: '' })}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">Não</span>
+                      </label>
+                    </div>
+                  ) : (
+                    <p className="text-gray-900">{irmao.mestre_instalado ? 'Sim' : 'Não'}</p>
+                  )}
+                </div>
+
+                {(modoEdicao ? irmaoForm.mestre_instalado : irmao.mestre_instalado) && (
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">📅 Data de Instalação</label>
+                    {modoEdicao ? (
+                      <input
+                        type="date"
+                        value={irmaoForm.data_instalacao || ''}
+                        onChange={(e) => setIrmaoForm({ ...irmaoForm, data_instalacao: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      <p className="text-gray-900">
+                        {irmao.data_instalacao ? irmao.data_instalacao.split('-').reverse().join('/') : 'Não informado'}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* LINHA 3: Loja Origem, Oriente e Potência */}
