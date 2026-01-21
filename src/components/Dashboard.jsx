@@ -10,6 +10,22 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   const [irmaos100, setIrmaos100] = useState([]);
   const [totalVisitantes, setTotalVisitantes] = useState(0);
+  const [modalSituacao, setModalSituacao] = useState({ aberto: false, titulo: '', irmaos: [] });
+
+  // Função para formatar nome (2 primeiros nomes + último se tiver "de/da")
+  const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(' ');
+    if (partes.length <= 2) return nomeCompleto;
+    
+    const primeiros = partes.slice(0, 2).join(' ');
+    const temPreposicao = partes.some(p => ['de', 'da', 'do', 'das', 'dos'].includes(p.toLowerCase()));
+    
+    if (temPreposicao && partes.length > 2) {
+      return `${primeiros} ${partes[partes.length - 1]}`;
+    }
+    return primeiros;
+  };
 
   useEffect(() => {
     const carregar = async () => {
@@ -490,35 +506,67 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-green-50 border-2 border-green-200 p-4 rounded-lg">
+          <div 
+            className="bg-green-50 border-2 border-green-200 p-4 rounded-lg cursor-pointer hover:bg-green-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '✅ Irmãos Regulares', irmaos: irmaosRegulares })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
             <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
           </div>
-          <div className="bg-blue-50 border-2 border-primary-200 p-4 rounded-lg">
+          <div 
+            className="bg-blue-50 border-2 border-primary-200 p-4 rounded-lg cursor-pointer hover:bg-blue-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '🎫 Irmãos Licenciados', irmaos: irmaosLicenciados })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-primary-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
             <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
           </div>
-          <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg">
+          <div 
+            className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg cursor-pointer hover:bg-yellow-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '⚠️ Irmãos Irregulares', irmaos: irmaosIrregulares })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
             <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
           </div>
-          <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg">
+          <div 
+            className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg cursor-pointer hover:bg-orange-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '🚫 Irmãos Suspensos', irmaos: irmaosSuspensos })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
             <div className="text-3xl font-bold text-orange-700">{irmaosSuspensos.length}</div>
           </div>
-          <div className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg">
+          <div 
+            className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '↩️ Irmãos Desligados', irmaos: irmaosDesligados })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-gray-600 text-sm font-semibold mb-1">↩️ Desligados</div>
             <div className="text-3xl font-bold text-gray-700">{irmaosDesligados.length}</div>
           </div>
-          <div className="bg-red-50 border-2 border-red-200 p-4 rounded-lg">
+          <div 
+            className="bg-red-50 border-2 border-red-200 p-4 rounded-lg cursor-pointer hover:bg-red-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '❌ Irmãos Excluídos', irmaos: irmaosExcluidos })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-red-600 text-sm font-semibold mb-1">❌ Excluídos</div>
             <div className="text-3xl font-bold text-red-700">{irmaosExcluidos.length}</div>
           </div>
-          <div className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg">
+          <div 
+            className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg cursor-pointer hover:bg-purple-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '🕊️ Irmãos Falecidos', irmaos: irmaosFalecidos })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-purple-600 text-sm font-semibold mb-1">🕊️ Falecidos</div>
             <div className="text-3xl font-bold text-purple-700">{irmaosFalecidos.length}</div>
           </div>
-          <div className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg">
+          <div 
+            className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg cursor-pointer hover:bg-indigo-100 transition"
+            onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '👔 Irmãos Ex-Ofício', irmaos: irmaosExOficio })}
+            title="Clique duplo para ver detalhes"
+          >
             <div className="text-indigo-600 text-sm font-semibold mb-1">👔 Ex-Ofício</div>
             <div className="text-3xl font-bold text-indigo-700">{irmaosExOficio.length}</div>
           </div>
@@ -820,6 +868,96 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           Utilize o menu de navegação para acessar as diferentes funcionalidades do sistema.
         </p>
       </div>
+
+      {/* Modal de Situação dos Irmãos */}
+      {modalSituacao.aberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-bold">{modalSituacao.titulo}</h3>
+                <button
+                  onClick={() => setModalSituacao({ aberto: false, titulo: '', irmaos: [] })}
+                  className="text-white hover:opacity-80 text-3xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm text-blue-100 mt-1">
+                Total: {modalSituacao.irmaos.length} {modalSituacao.irmaos.length === 1 ? 'irmão' : 'irmãos'}
+              </p>
+            </div>
+
+            {/* Corpo */}
+            <div className="p-6 overflow-y-auto flex-1">
+              {modalSituacao.irmaos.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {modalSituacao.irmaos.map((irmao) => (
+                    <div key={irmao.id} className="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                      <div className="flex items-start gap-3">
+                        {irmao.foto_url ? (
+                          <img src={irmao.foto_url} alt={irmao.nome} className="w-16 h-16 rounded-full object-cover border-2 border-blue-500" />
+                        ) : (
+                          <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">
+                            {irmao.nome?.charAt(0)}
+                          </div>
+                        )}
+                        
+                        <div className="flex-1">
+                          <h4 className="font-bold text-gray-800">{formatarNome(irmao.nome)}</h4>
+                          
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {/* Badge de Grau */}
+                            <span className={`text-xs px-2 py-1 rounded font-semibold ${
+                              obterGrau(irmao) === 'Mestre Instalado' 
+                                ? 'bg-indigo-100 text-indigo-800'
+                                : obterGrau(irmao) === 'Mestre'
+                                ? 'bg-purple-100 text-purple-800'
+                                : obterGrau(irmao) === 'Companheiro'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {obterGrau(irmao)}
+                            </span>
+
+                            {/* Badge de Cargo (se tiver) */}
+                            {irmao.cargo && (
+                              <span className="text-xs px-2 py-1 rounded font-semibold bg-amber-100 text-amber-800">
+                                {irmao.cargo}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* CIM */}
+                          {irmao.cim && (
+                            <p className="text-xs text-gray-500 mt-2">CIM: {irmao.cim}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-4xl mb-3">📭</p>
+                  <p>Nenhum irmão nesta categoria</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 bg-gray-50">
+              <button
+                onClick={() => setModalSituacao({ aberto: false, titulo: '', irmaos: [] })}
+                className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
