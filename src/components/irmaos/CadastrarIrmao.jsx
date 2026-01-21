@@ -44,6 +44,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     data_iniciacao: '',
     data_elevacao: '',
     data_exaltacao: '',
+    mestre_instalado: false,
+    data_instalacao: '',
     data_ingresso_loja: '',           // NOVO: Data que veio transferido
     data_transferencia_saida: '',     // NOVO: Data que saiu transferido
     loja_origem: '',
@@ -633,6 +635,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       data_iniciacao: '',
       data_elevacao: '',
       data_exaltacao: '',
+      mestre_instalado: false,
+      data_instalacao: '',
       loja_origem: '',
       oriente: '',
       grande_oriente: '',
@@ -1157,6 +1161,51 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
+
+            {/* LINHA 4.5: Mestre Instalado */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mestre Instalado?
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="mestre_instalado"
+                      checked={irmaoForm.mestre_instalado === true}
+                      onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: true })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Sim</span>
+                  </label>
+                  <label className="flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      name="mestre_instalado"
+                      checked={irmaoForm.mestre_instalado === false}
+                      onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: false, data_instalacao: '' })}
+                      className="w-4 h-4 text-blue-600"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">Não</span>
+                  </label>
+                </div>
+              </div>
+
+              {irmaoForm.mestre_instalado && (
+                <div className="md:col-span-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Data de Instalação
+                  </label>
+                  <input
+                    type="date"
+                    value={irmaoForm.data_instalacao || ''}
+                    onChange={(e) => setIrmaoForm({ ...irmaoForm, data_instalacao: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              )}
             </div>
 
             {/* LINHA 5: Loja Origem, Oriente e Potência */}
