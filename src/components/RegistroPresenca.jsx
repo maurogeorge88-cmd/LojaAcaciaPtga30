@@ -73,7 +73,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       
       let query = supabase
         .from('irmaos')
-        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, data_licenca, data_desligamento, data_falecimento, data_ingresso_loja')
+        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_licenca, data_desligamento, data_falecimento, data_ingresso_loja')
         .eq('status', 'ativo');
 
       // Filtrar por grau
@@ -146,7 +146,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         membro_id: i.id,
         nome_completo: i.nome,
         cim: i.cim,
-        grau_atual: i.data_exaltacao ? 'Mestre' : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
+        grau_atual: i.data_exaltacao ? (i.mestre_instalado ? 'Mestre Instalado' : 'Mestre') : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
         foto_url: i.foto_url,
         situacao: i.situacao,
         data_nascimento: i.data_nascimento,
