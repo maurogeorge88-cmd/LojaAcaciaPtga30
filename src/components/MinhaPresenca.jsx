@@ -87,7 +87,7 @@ export default function MinhaPresenca({ userData }) {
       // Buscar dados do irmão logado usando email
       const { data: irmao, error: irmaoError } = await supabase
         .from('irmaos')
-        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, data_nascimento, situacao, email')
+        .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_nascimento, situacao, email')
         .eq('email', userData.email)
         .single();
 
@@ -103,7 +103,7 @@ export default function MinhaPresenca({ userData }) {
 
       // Calcular grau
       let grau = 'Sem Grau';
-      if (irmao.data_exaltacao) grau = 'Mestre';
+      if (irmao.data_exaltacao) grau = irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
       else if (irmao.data_elevacao) grau = 'Companheiro';
       else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
