@@ -63,7 +63,8 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             situacao,
             data_iniciacao,
             data_elevacao,
-            data_exaltacao
+            data_exaltacao,
+            mestre_instalado
           )
         `)
         .eq('sessao_id', sessaoId)
@@ -87,7 +88,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
         const irmao = reg.irmaos;
         let grau = 'Sem Grau';
         
-        if (irmao.data_exaltacao) grau = 'Mestre';
+        if (irmao.data_exaltacao) grau = irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
         else if (irmao.data_elevacao) grau = 'Companheiro';
         else if (irmao.data_iniciacao) grau = 'Aprendiz';
 
