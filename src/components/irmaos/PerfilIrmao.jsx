@@ -1034,12 +1034,14 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         />
                       </div>
                       <div className="md:col-span-7">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Cargo</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Cargo(s) <span className="text-xs text-gray-500">(separe por vírgula se houver mais de um)</span>
+                        </label>
                         <input
                           type="text"
                           id="cargo-nome"
                           className="w-full px-3 py-2 border rounded"
-                          placeholder="Ex: Tesoureiro"
+                          placeholder="Ex: Tesoureiro, Bibliotecário"
                         />
                       </div>
                       <div className="md:col-span-2 flex items-end">
@@ -1071,7 +1073,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ano</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo(s)</th>
+                          {modoEdicao && (
+                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Ações</th>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
@@ -1081,8 +1086,45 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               {cargo.ano}
                             </td>
                             <td className="px-4 py-3 text-sm font-bold text-gray-900">
-                              {cargo.cargo}
+                              {cargo.cargo.split(',').map((c, i) => (
+                                <div key={i} className="flex items-start gap-1">
+                                  <span className="text-blue-600">{i + 1}.</span>
+                                  <span>{c.trim()}</span>
+                                </div>
+                              ))}
                             </td>
+                            {modoEdicao && (
+                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                                <div className="flex gap-2 justify-center">
+                                  <button
+                                    onClick={() => {
+                                      const novoAno = prompt('Digite o novo ano:', cargo.ano);
+                                      const novoCargo = prompt('Digite o(s) novo(s) cargo(s) (separe por vírgula):', cargo.cargo);
+                                      if (novoAno && novoCargo) {
+                                        const novosHistorico = [...historicoCargos];
+                                        novosHistorico[index] = { ano: novoAno, cargo: novoCargo };
+                                        setHistoricoCargos(novosHistorico);
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                                    title="Editar"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      if (window.confirm('Deseja excluir este registro?')) {
+                                        setHistoricoCargos(historicoCargos.filter((_, i) => i !== index));
+                                      }
+                                    }}
+                                    className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                                    title="Excluir"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </td>
+                            )}
                           </tr>
                         ))}
                       </tbody>
