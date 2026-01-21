@@ -132,7 +132,6 @@ function App() {
   const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [usuariosOnline, setUsuariosOnline] = useState(1); // Contador de usuários online
 
   // Helper: Verificar se é Admin ou Venerável (acesso total)
   const isAdminOrVeneravel = (user = userData) => {
@@ -262,33 +261,6 @@ function App() {
       loadBalaustres();
     }
   }, [currentPage]);  // Removido grauSelecionado - não precisa recarregar ao mudar grau
-
-  // Sistema de Presença Online
-  useEffect(() => {
-    if (!userEmail) return;
-
-    const channel = supabase.channel('online-users');
-    
-    // Registrar presença
-    channel
-      .on('presence', { event: 'sync' }, () => {
-        const presenceState = channel.presenceState();
-        const count = Object.keys(presenceState).length;
-        setUsuariosOnline(count);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await channel.track({
-            user: userEmail,
-            online_at: new Date().toISOString()
-          });
-        }
-      });
-
-    return () => {
-      channel.unsubscribe();
-    };
-  }, [userEmail]);
 
   // ========================================
   // FUNÇÕES HELPER PARA COMPONENTES
@@ -1359,11 +1331,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 <img src={LOGO_URL} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white mb-2" />
                 <h1 className="text-sm font-bold text-center leading-tight">{NOME_LOJA}</h1>
                 <p className="text-xs text-blue-200 mt-1">Gestão e Controle</p>
-                <div className="mt-2 px-3 py-1 bg-teal-500 rounded-full">
-                  <p className="text-xs font-semibold text-white">
-                    🟢 Logados: {usuariosOnline}
-                  </p>
-                </div>
               </div>
             )}
             {!menuAberto && (
