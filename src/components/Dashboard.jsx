@@ -394,28 +394,39 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               </div>
             </div>
           </div>
-          <div className="border-t border-blue-400 pt-3 space-y-1">
-            <div className="flex justify-between text-sm">
-              <span>⬜ Aprendizes:</span>
-              <span className="font-bold">{irmaosAprendiz}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>🔷 Companheiros:</span>
-              <span className="font-bold">{irmaosCompanheiro}</span>
-            </div>
-            <div className="text-sm">
-              <div className="flex justify-between font-bold mb-1">
-                <span>🔺 Total de Mestres:</span>
-                <span>{totalMestres}</span>
-              </div>
-              <div className="pl-4 text-xs opacity-90">
-                <div className="flex justify-between">
-                  <span>• Mestres:</span>
-                  <span>{irmaosMestre}</span>
+          <div className="border-t border-blue-400 pt-3">
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              {/* Coluna 1: Aprendizes */}
+              <div>
+                <div className="flex justify-between font-semibold mb-1">
+                  <span>⬜ Aprendizes:</span>
+                  <span>{irmaosAprendiz}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>• Mestres Instalados:</span>
-                  <span>{irmaosMestreInstalado}</span>
+              </div>
+              
+              {/* Coluna 2: Companheiros */}
+              <div>
+                <div className="flex justify-between font-semibold mb-1">
+                  <span>🔷 Companheiros:</span>
+                  <span>{irmaosCompanheiro}</span>
+                </div>
+              </div>
+              
+              {/* Coluna 3: Mestres */}
+              <div>
+                <div className="flex justify-between font-bold mb-1">
+                  <span>🔺 Total Mestres:</span>
+                  <span>{totalMestres}</span>
+                </div>
+                <div className="text-xs opacity-90 space-y-0.5">
+                  <div className="flex justify-between pl-2">
+                    <span>Mestres:</span>
+                    <span>{irmaosMestre}</span>
+                  </div>
+                  <div className="flex justify-between pl-2">
+                    <span>M. Instalados:</span>
+                    <span>{irmaosMestreInstalado}</span>
+                  </div>
                 </div>
               </div>
             </div>
