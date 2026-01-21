@@ -23,7 +23,9 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
 
   // Função para determinar o grau baseado nas datas
   const obterGrau = (irmao) => {
-    if (irmao.data_exaltacao) return 'Mestre';
+    if (irmao.data_exaltacao) {
+      return irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+    }
     if (irmao.data_elevacao) return 'Companheiro';
     if (irmao.data_iniciacao) return 'Aprendiz';
     return 'Não iniciado';
@@ -64,6 +66,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
       'Aprendiz': 'bg-blue-500',
       'Companheiro': 'bg-green-500',
       'Mestre': 'bg-purple-500',
+      'Mestre Instalado': 'bg-indigo-600',
       'Não iniciado': 'bg-gray-400'
     };
     return cores[grau] || 'bg-gray-400';
