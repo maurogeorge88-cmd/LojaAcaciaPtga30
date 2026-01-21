@@ -11,6 +11,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [irmaos100, setIrmaos100] = useState([]);
   const [totalVisitantes, setTotalVisitantes] = useState(0);
   const [modalSituacao, setModalSituacao] = useState({ aberto: false, titulo: '', irmaos: [] });
+  const [historicoCargos, setHistoricoCargos] = useState([]);
 
   // Função para formatar nome (2 primeiros nomes + último se tiver "de/da")
   const formatarNome = (nomeCompleto) => {
@@ -27,6 +28,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     return primeiros;
   };
 
+  // Função para obter cargo atual do irmão (do ano atual)
+  const obterCargoAtual = (irmaoId) => {
+    const anoAtual = new Date().getFullYear();
+    const cargo = historicoCargos.find(c => c.irmao_id === irmaoId && c.ano === anoAtual);
+    return cargo?.cargo || null;
+  };
+
   useEffect(() => {
     const carregar = async () => {
       const { data } = await supabase
@@ -34,6 +42,12 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         .select('*')
         .eq('status', 'ativa');
       setHistoricoSituacoes(data || []);
+      
+      // Carregar histórico de cargos
+      const { data: cargosData } = await supabase
+        .from('historico_cargos')
+        .select('*');
+      setHistoricoCargos(cargosData || []);
       
       // Carregar visitantes do ano
       const { count } = await supabase
@@ -905,7 +919,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                         )}
                         
                         <div className="flex-1">
-                          <h4 className="font-bold text-gray-800">{formatarNome(irmao.nome)}</h4>
+                          <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                            {modalSituacao.titulo.includes('Falecidos') && <span className="text-lg">🕊️</span>}
+                            {formatarNome(irmao.nome)}
+                          </h4>
                           
                           <div className="flex flex-wrap gap-2 mt-2">
                             {/* Badge de Grau */}
@@ -921,10 +938,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                               {obterGrau(irmao)}
                             </span>
 
-                            {/* Badge de Cargo (se tiver) */}
-                            {irmao.cargo && (
+                            {/* Badge de Cargo (do histórico do ano atual) */}
+                            {obterCargoAtual(irmao.id) && (
                               <span className="text-xs px-2 py-1 rounded font-semibold bg-amber-100 text-amber-800">
-                                {irmao.cargo}
+                                {obterCargoAtual(irmao.id)}
                               </span>
                             )}
                           </div>
