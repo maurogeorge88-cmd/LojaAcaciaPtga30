@@ -70,7 +70,15 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
       const sessoesComPresenca = await Promise.all(data?.map(async (sessao) => {
         const { data: registros } = await supabase
           .from('registros_presenca')
-          .select('presente')
+          .select(`
+            presente,
+            irmaos (
+              data_iniciacao,
+              data_elevacao,
+              data_exaltacao,
+              mestre_instalado
+            )
+          `)
           .eq('sessao_id', sessao.id);
         
         // Buscar visitantes
@@ -83,6 +91,21 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
         const total_presentes = registros?.filter(r => r.presente).length || 0;
         const total_ausentes = total_registros - total_presentes;
         
+        // Contar por grau (apenas presentes)
+        const presentesComGrau = registros?.filter(r => r.presente && r.irmaos) || [];
+        const aprendizes = presentesComGrau.filter(r => 
+          r.irmaos.data_iniciacao && !r.irmaos.data_elevacao
+        ).length;
+        const companheiros = presentesComGrau.filter(r => 
+          r.irmaos.data_elevacao && !r.irmaos.data_exaltacao
+        ).length;
+        const mestres = presentesComGrau.filter(r => 
+          r.irmaos.data_exaltacao && !r.irmaos.mestre_instalado
+        ).length;
+        const mestresInstalados = presentesComGrau.filter(r => 
+          r.irmaos.data_exaltacao && r.irmaos.mestre_instalado
+        ).length;
+        
         return {
           ...sessao,
           grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz',
@@ -90,7 +113,13 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
           total_registros,
           total_presentes,
           total_ausentes,
-          total_visitantes: totalVisitantes || 0
+          total_visitantes: totalVisitantes || 0,
+          graus_presentes: {
+            aprendizes,
+            companheiros,
+            mestres,
+            mestres_instalados: mestresInstalados
+          }
         };
       }) || []);
       
@@ -428,6 +457,30 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
                           {totalRegistros > 0 && (
                             <div className="text-xs text-gray-500 mt-1">
                               {ausentes} ausente(s)
+                            </div>
+                          )}
+                          {sessao.graus_presentes && presentes > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2 text-xs">
+                              {sessao.graus_presentes.aprendizes > 0 && (
+                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded font-medium">
+                                  A: {sessao.graus_presentes.aprendizes}
+                                </span>
+                              )}
+                              {sessao.graus_presentes.companheiros > 0 && (
+                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded font-medium">
+                                  C: {sessao.graus_presentes.companheiros}
+                                </span>
+                              )}
+                              {sessao.graus_presentes.mestres > 0 && (
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-medium">
+                                  M: {sessao.graus_presentes.mestres}
+                                </span>
+                              )}
+                              {sessao.graus_presentes.mestres_instalados > 0 && (
+                                <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-medium">
+                                  M.I: {sessao.graus_presentes.mestres_instalados}
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
