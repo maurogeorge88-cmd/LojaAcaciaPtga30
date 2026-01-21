@@ -224,7 +224,8 @@ const Balaustres = ({
     const grauBalaustre = (b.grau_sessao || '').trim().toLowerCase();
     const grauUser = grauUsuario.toLowerCase();
     
-    if (grauUser === 'mestre') return true; // Mestre vê tudo
+    // Mestre e Mestre Instalado veem tudo
+    if (grauUser === 'mestre' || grauUser === 'mestre instalado') return true;
     
     if (grauUser === 'companheiro') {
       return grauBalaustre === 'companheiro' || grauBalaustre === 'aprendiz';
@@ -455,7 +456,7 @@ const Balaustres = ({
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
               <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
-              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre</strong> para acessar.</p>
+              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre ou Mestre Instalado</strong> para acessar.</p>
             </div>
           );
         }
@@ -467,7 +468,7 @@ const Balaustres = ({
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
               <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
-              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre</strong> para acessar.</p>
+              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre ou Mestre Instalado</strong> para acessar.</p>
             </div>
           );
         }
