@@ -89,13 +89,19 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       // Filtrar e adicionar grau calculado NA DATA DA SESSÃO
       const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
       
+      console.log('🔍 MODAL - Sessão:', sessaoData.data_sessao, 'Grau Mínimo:', grauMinimo);
+      console.log('📋 Total irmãos retornados da query:', todosIrmaos?.length);
+      
       const presencasComGrau = todosIrmaos
         .filter(irmao => {
           if (!irmao) return false;
           
+          const nome = irmao.nome;
+          
           // Filtro 1: Situações que não podem ter presença registrada
           const situacoesExcluidas = ['irregular', 'suspenso', 'ex-ofício', 'ex-oficio', 'desligado', 'excluído', 'excluido'];
           if (irmao.situacao && situacoesExcluidas.includes(irmao.situacao.toLowerCase())) {
+            console.log(`❌ ${nome} - situação excluída:`, irmao.situacao);
             return false;
           }
           
@@ -106,26 +112,46 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             ? new Date(irmao.data_iniciacao + 'T00:00:00')
             : null;
           
-          if (!dataIngresso) return false;
-          if (dataSessao < dataIngresso) return false;
+          if (!dataIngresso) {
+            console.log(`❌ ${nome} - sem data de ingresso`);
+            return false;
+          }
+          if (dataSessao < dataIngresso) {
+            console.log(`❌ ${nome} - ainda não tinha ingressado`);
+            return false;
+          }
           
           // Filtro 3: Falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            if (dataSessao > dataFalecimento) return false;
+            if (dataSessao > dataFalecimento) {
+              console.log(`❌ ${nome} - já tinha falecido`);
+              return false;
+            }
           }
           
           // Filtro 4: Grau mínimo NA DATA DA SESSÃO (igual RegistroPresenca)
           if (grauMinimo === 2) {
-            if (!irmao.data_elevacao) return false;
+            if (!irmao.data_elevacao) {
+              console.log(`❌ ${nome} - Sessão Comp, sem elevação`);
+              return false;
+            }
             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            return dataSessao >= dataElevacao;
+            const passou = dataSessao >= dataElevacao;
+            console.log(`${passou ? '✅' : '❌'} ${nome} - Sessão Comp, elevação:`, irmao.data_elevacao, 'passou:', passou);
+            return passou;
           } else if (grauMinimo === 3) {
-            if (!irmao.data_exaltacao) return false;
+            if (!irmao.data_exaltacao) {
+              console.log(`❌ ${nome} - Sessão Mestre, sem exaltação`);
+              return false;
+            }
             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            return dataSessao >= dataExaltacao;
+            const passou = dataSessao >= dataExaltacao;
+            console.log(`${passou ? '✅' : '❌'} ${nome} - Sessão Mestre, exaltação:`, irmao.data_exaltacao, 'passou:', passou);
+            return passou;
           }
           
+          console.log(`✅ ${nome} - Sessão Aprendiz (sem filtro de grau)`);
           return true;
         })
         .map(irmao => {
