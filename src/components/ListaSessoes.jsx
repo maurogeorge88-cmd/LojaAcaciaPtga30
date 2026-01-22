@@ -67,7 +67,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       console.log('📊 Sessões carregadas:', data?.length);
       
       // Buscar registros de presença para cada sessão
-      const sessoesComPresenca = await Promise.all(data?.map(async (sessao) => {
+      const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
         // Buscar TODOS os irmãos ativos
         const { data: todosIrmaos } = await supabase
           .from('irmaos')
@@ -90,9 +90,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
         
-        // Filtrar apenas irmãos que estavam na loja na data da sessão
-        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
-        const irmaosValidos = todosIrmaos?.filter(irmao => {
         // Filtrar apenas irmãos que estavam na loja na data da sessão
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
         const irmaosValidos = todosIrmaos?.filter(irmao => {
