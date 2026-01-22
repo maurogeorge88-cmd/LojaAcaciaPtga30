@@ -155,8 +155,16 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             if (i.data_exaltacao && dataSessao >= new Date(i.data_exaltacao + 'T00:00:00')) {
               grau_atual = 'Mestre';
               
-              if (i.mestre_instalado && i.data_instalacao && dataSessao >= new Date(i.data_instalacao + 'T00:00:00')) {
-                grau_atual = 'Mestre Instalado';
+              if (i.mestre_instalado) {
+                // Se tem data de instalação, verifica se já era instalado na data
+                if (i.data_instalacao) {
+                  if (dataSessao >= new Date(i.data_instalacao + 'T00:00:00')) {
+                    grau_atual = 'Mestre Instalado';
+                  }
+                } else {
+                  // Sem data de instalação, considera Mestre Instalado
+                  grau_atual = 'Mestre Instalado';
+                }
               }
             }
           }
