@@ -62,6 +62,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             data_nascimento,
             situacao,
             data_iniciacao,
+            data_ingresso_loja,
             data_elevacao,
             data_exaltacao,
             mestre_instalado,
@@ -90,10 +91,18 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       const presencasComGrau = registros
         .filter(reg => {
           const irmao = reg.irmaos;
-          // Filtrar apenas irmãos que já eram iniciados na data da sessão
-          if (!irmao.data_iniciacao) return false;
-          const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-          return dataSessao >= dataIniciacao;
+          if (!irmao) return false;
+          
+          // Prioridade: data_ingresso_loja > data_iniciacao
+          // Para transferidos/reingressos, usa data_ingresso_loja
+          const dataIngresso = irmao.data_ingresso_loja 
+            ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
+            : irmao.data_iniciacao 
+            ? new Date(irmao.data_iniciacao + 'T00:00:00')
+            : null;
+          
+          if (!dataIngresso) return false;
+          return dataSessao >= dataIngresso;
         })
         .map(reg => {
           const irmao = reg.irmaos;
