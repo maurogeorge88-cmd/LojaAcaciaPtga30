@@ -112,7 +112,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           // Filtro 3: Falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            return dataSessao <= dataFalecimento;
+            if (dataSessao > dataFalecimento) return false;
           }
           
           // Filtro 4: Grau mínimo NA DATA DA SESSÃO (igual RegistroPresenca)
