@@ -68,21 +68,21 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       
       // Buscar registros de presença para cada sessão
       const sessoesComPresenca = await Promise.all(data?.map(async (sessao) => {
-        const { data: registros } = await supabase
+        // Buscar TODOS os irmãos ativos
+        const { data: todosIrmaos } = await supabase
+          .from('irmaos')
+          .select('id, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento, situacao')
+          .eq('status', 'ativo');
+        
+        // Buscar registros de presença desta sessão
+        const { data: registrosPresenca } = await supabase
           .from('registros_presenca')
-          .select(`
-            presente,
-            irmaos (
-              data_iniciacao,
-              data_ingresso_loja,
-              data_elevacao,
-              data_exaltacao,
-              mestre_instalado,
-              data_instalacao,
-              data_falecimento
-            )
-          `)
+          .select('membro_id, presente')
           .eq('sessao_id', sessao.id);
+        
+        // Criar Map para acesso rápido
+        const presencaMap = new Map();
+        registrosPresenca?.forEach(r => presencaMap.set(r.membro_id, r.presente));
         
         // Buscar visitantes
         const { count: totalVisitantes } = await supabase
@@ -90,26 +90,21 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
         
-        // Debug: Ver se Dalvo está nos registros
-        const dalvoRegistro = registros?.find(r => r.irmaos?.nome?.includes('Dalvo'));
-        if (dalvoRegistro && !window._debugDalvoCheck) {
-          console.log('🔍 DEBUG: Dalvo ENCONTRADO nos registros!');
-          console.log('  Nome:', dalvoRegistro.irmaos.nome);
-          console.log('  Data Iniciação:', dalvoRegistro.irmaos.data_iniciacao);
-          console.log('  Data Ingresso Loja:', dalvoRegistro.irmaos.data_ingresso_loja);
-          console.log('  Data Falecimento:', dalvoRegistro.irmaos.data_falecimento);
-          console.log('  Sessão Data:', sessao.data_sessao);
-          window._debugDalvoCheck = true;
-        }
-        
-        // Filtrar apenas irmãos que já estavam na loja na data da sessão
+        // Filtrar apenas irmãos que estavam na loja na data da sessão
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
-        const registrosValidos = registros?.filter(r => {
-          const irmao = r.irmaos;
+        const irmaosValidos = todosIrmaos?.filter(irmao => {
+        // Filtrar apenas irmãos que estavam na loja na data da sessão
+        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
+        const irmaosValidos = todosIrmaos?.filter(irmao => {
           if (!irmao) return false;
           
-          // Prioridade: data_ingresso_loja > data_iniciacao
-          // Para transferidos, usa data_ingresso_loja
+          // Filtro 1: Situações excluídas
+          const situacoesExcluidas = ['irregular', 'suspenso', 'ex-ofício', 'ex-oficio', 'desligado', 'excluído', 'excluido'];
+          if (irmao.situacao && situacoesExcluidas.includes(irmao.situacao.toLowerCase())) {
+            return false;
+          }
+          
+          // Filtro 2: Data de ingresso
           const dataIngresso = irmao.data_ingresso_loja 
             ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
             : irmao.data_iniciacao 
@@ -119,89 +114,53 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           if (!dataIngresso) return false;
           if (dataSessao < dataIngresso) return false;
           
-          // Filtro de falecimento: só aparece se sessão foi ANTES OU NO DIA do falecimento
+          // Filtro 3: Falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            const deveAparecer = dataSessao <= dataFalecimento;
-            
-            // Debug temporário - só loga uma vez por sessão
-            if (!window._debugDalvoListaSessoes && sessao.id) {
-              console.log('DEBUG Dalvo na Lista de Sessões:');
-              console.log('  Sessão ID:', sessao.id, 'Data:', sessao.data_sessao);
-              console.log('  Data Sessão:', dataSessao);
-              console.log('  Data Falecimento:', dataFalecimento);
-              console.log('  dataSessao <= dataFalecimento:', deveAparecer);
-              console.log('  Total registros antes do filtro:', registros?.length);
-              window._debugDalvoListaSessoes = true;
-            }
-            
-            return deveAparecer;
+            return dataSessao <= dataFalecimento;
           }
           
           return true;
         }) || [];
         
-        // Debug: Ver se Dalvo passou pelo filtro
-        const dalvoValido = registrosValidos?.find(r => r.irmaos?.nome?.includes('Dalvo'));
-        if (!window._debugDalvoFiltrado && (dalvoRegistro || dalvoValido)) {
-          console.log('🔍 DEBUG: Dalvo DEPOIS do filtro:');
-          console.log('  Estava nos registros?', !!dalvoRegistro);
-          console.log('  Passou no filtro?', !!dalvoValido);
-          if (dalvoRegistro && !dalvoValido) {
-            console.log('  ❌ DALVO FOI EXCLUÍDO PELO FILTRO!');
-          }
-          window._debugDalvoFiltrado = true;
-        }
-        
-        const total_registros = registrosValidos.length;
-        const total_presentes = registrosValidos.filter(r => r.presente).length;
+        const total_registros = irmaosValidos.length;
+        const total_presentes = irmaosValidos.filter(i => presencaMap.get(i.id) === true).length;
         const total_ausentes = total_registros - total_presentes;
         
         // Contar por grau NA DATA DA SESSÃO (apenas presentes)
-        const presentesComGrau = registrosValidos.filter(r => r.presente && r.irmaos) || [];
+        const presentesComGrau = irmaosValidos.filter(i => presencaMap.get(i.id) === true) || [];
         
-        const aprendizes = presentesComGrau.filter(r => {
-          const irmao = r.irmaos;
-          // Tinha iniciação na data da sessão
+        const aprendizes = presentesComGrau.filter(irmao => {
           if (!irmao.data_iniciacao) return false;
           const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
           if (dataSessao < dataIniciacao) return false;
           
-          // NÃO tinha elevação ainda na data da sessão
           if (!irmao.data_elevacao) return true;
           const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
           return dataSessao < dataElevacao;
         }).length;
         
-        const companheiros = presentesComGrau.filter(r => {
-          const irmao = r.irmaos;
-          // Tinha elevação na data da sessão
+        const companheiros = presentesComGrau.filter(irmao => {
           if (!irmao.data_elevacao) return false;
           const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
           if (dataSessao < dataElevacao) return false;
           
-          // NÃO tinha exaltação ainda na data da sessão
           if (!irmao.data_exaltacao) return true;
           const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
           return dataSessao < dataExaltacao;
         }).length;
         
-        const mestres = presentesComGrau.filter(r => {
-          const irmao = r.irmaos;
-          // Tinha exaltação na data da sessão
+        const mestres = presentesComGrau.filter(irmao => {
           if (!irmao.data_exaltacao) return false;
           const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
           if (dataSessao < dataExaltacao) return false;
           
-          // Verifica se era Mestre Instalado na data da sessão
           if (!irmao.mestre_instalado || !irmao.data_instalacao) return true;
           const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
           return dataSessao < dataInstalacao;
         }).length;
         
-        const mestresInstalados = presentesComGrau.filter(r => {
-          const irmao = r.irmaos;
-          // Tinha instalação na data da sessão
+        const mestresInstalados = presentesComGrau.filter(irmao => {
           if (!irmao.mestre_instalado || !irmao.data_instalacao) return false;
           const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
           return dataSessao >= dataInstalacao;
