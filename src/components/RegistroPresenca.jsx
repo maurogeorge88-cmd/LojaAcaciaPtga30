@@ -131,13 +131,12 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         }
         
         // FILTRO: FALECIDO - só aparece se sessão for ANTES da data de falecimento
-        if (i.situacao === 'falecido' && i.data_falecimento) {
+        if (i.data_falecimento) {
           const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
           return dataSessao < dataFalecimento;
         }
         
         // Outros aparecem (incluindo licenças/desligamentos TEMPORÁRIOS com data_fim)
-        return true;
         return true;
       }) || [];
 
