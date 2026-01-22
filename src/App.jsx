@@ -40,6 +40,7 @@ import RegistroPresenca from './components/RegistroPresenca';
 import ListaSessoes from './components/ListaSessoes';
 import DashboardPresenca from './components/DashboardPresenca';
 import MinhaPresenca from './components/MinhaPresenca';
+import ModalVisualizarPresenca from './components/ModalVisualizarPresenca';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -2671,11 +2672,26 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* LISTA DE SESSÕES */}
         {currentPage === 'lista-sessoes' && (
           <ListaSessoes 
+            onVisualizarPresenca={(sessaoId) => {
+              setSessaoIdAtual(sessaoId);
+              setCurrentPage('visualizar-presenca');
+            }}
             onEditarPresenca={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
               setCurrentPage('registro-presenca');
             }}
             onNovaSessao={() => setCurrentPage('cadastro-sessao')}
+          />
+        )}
+
+        {/* VISUALIZAR PRESENÇA */}
+        {currentPage === 'visualizar-presenca' && (
+          <ModalVisualizarPresenca 
+            sessaoId={sessaoIdAtual}
+            onFechar={() => {
+              setCurrentPage('lista-sessoes');
+              setSessaoIdAtual(null);
+            }}
           />
         )}
 
