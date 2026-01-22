@@ -109,36 +109,21 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           if (!dataIngresso) return false;
           if (dataSessao < dataIngresso) return false;
           
-          // Filtro 3: Falecimento - só aparece se sessão foi ANTES OU NO DIA do falecimento
+          // Filtro 3: Falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            if (dataSessao > dataFalecimento) return false;
+            return dataSessao <= dataFalecimento;
           }
           
-          // Filtro 4: Grau NA DATA DA SESSÃO (não o grau atual)
+          // Filtro 4: Grau mínimo NA DATA DA SESSÃO (igual RegistroPresenca)
           if (grauMinimo === 2) {
-            // Sessão de Companheiro: precisa ter sido elevado antes/na data da sessão
-            if (!irmao.data_elevacao) {
-              console.log('❌ Excluído (Comp) - sem elevação:', irmao.nome);
-              return false;
-            }
+            if (!irmao.data_elevacao) return false;
             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            if (dataSessao < dataElevacao) {
-              console.log('❌ Excluído (Comp) - elevado depois:', irmao.nome, 'Elevação:', irmao.data_elevacao);
-              return false;
-            }
+            return dataSessao >= dataElevacao;
           } else if (grauMinimo === 3) {
-            // Sessão de Mestre: precisa ter sido exaltado antes/na data da sessão
-            if (!irmao.data_exaltacao) {
-              console.log('❌ Excluído (Mestre) - sem exaltação:', irmao.nome);
-              return false;
-            }
+            if (!irmao.data_exaltacao) return false;
             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            if (dataSessao < dataExaltacao) {
-              console.log('❌ Excluído (Mestre) - exaltado depois:', irmao.nome, 'Exaltação:', irmao.data_exaltacao);
-              return false;
-            }
-            console.log('✅ Passou (Mestre):', irmao.nome, 'Exaltação:', irmao.data_exaltacao);
+            return dataSessao >= dataExaltacao;
           }
           
           return true;
