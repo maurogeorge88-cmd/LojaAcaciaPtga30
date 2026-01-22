@@ -68,7 +68,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       
       // Buscar registros de presença para cada sessão
       const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
-        // Buscar TODOS os irmãos ativos com filtro de grau mínimo
+        // Buscar irmãos ativos COM filtro de grau mínimo (igual RegistroPresenca)
         const grauMinimo = sessao?.graus_sessao?.grau_minimo_requerido;
         
         let queryIrmaos = supabase
@@ -76,7 +76,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .select('id, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento, situacao')
           .eq('status', 'ativo');
         
-        // Aplicar filtro de grau (igual RegistroPresenca)
+        // Filtro na query (igual RegistroPresenca)
         if (grauMinimo === 2) {
           queryIrmaos = queryIrmaos.not('data_elevacao', 'is', null);
         } else if (grauMinimo === 3) {
