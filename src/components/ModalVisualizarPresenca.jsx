@@ -51,13 +51,10 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       setSessao(sessaoData);
 
       // Buscar TODOS os irmãos ativos (SEM filtro de grau na query)
-      const grauMinimo = sessaoData?.graus_sessao?.grau_minimo_requerido;
+      const grauMinimoRaw = sessaoData?.graus_sessao?.grau_minimo_requerido;
+      const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : null;
       
-      console.log('🎯 DEBUG grauMinimo:');
-      console.log('  sessaoData:', sessaoData);
-      console.log('  graus_sessao:', sessaoData?.graus_sessao);
-      console.log('  grau_minimo_requerido:', grauMinimo);
-      console.log('  tipo:', typeof grauMinimo);
+      console.log('🎯 Grau mínimo (convertido):', grauMinimo, 'tipo:', typeof grauMinimo);
       
       const { data: todosIrmaos, error: irmaosError } = await supabase
         .from('irmaos')
