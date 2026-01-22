@@ -50,22 +50,14 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar irmãos ativos COM filtro de grau mínimo (igual RegistroPresenca)
+      // Buscar TODOS os irmãos ativos (SEM filtro de grau na query)
       const grauMinimo = sessaoData?.graus_sessao?.grau_minimo_requerido;
       
-      let queryIrmaos = supabase
+      const { data: todosIrmaos, error: irmaosError } = await supabase
         .from('irmaos')
         .select('id, nome, foto_url, data_nascimento, situacao, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento')
-        .eq('status', 'ativo');
-      
-      // Filtro na query (igual RegistroPresenca linhas 81-86)
-      if (grauMinimo === 2) {
-        queryIrmaos = queryIrmaos.not('data_elevacao', 'is', null);
-      } else if (grauMinimo === 3) {
-        queryIrmaos = queryIrmaos.not('data_exaltacao', 'is', null);
-      }
-      
-      const { data: todosIrmaos, error: irmaosError } = await queryIrmaos.order('nome');
+        .eq('status', 'ativo')
+        .order('nome');
 
       if (irmaosError) throw irmaosError;
 
@@ -120,20 +112,33 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           // Filtro 3: Falecimento - só aparece se sessão foi ANTES OU NO DIA do falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            return dataSessao <= dataFalecimento;
+            if (dataSessao > dataFalecimento) return false;
           }
           
           // Filtro 4: Grau NA DATA DA SESSÃO (não o grau atual)
           if (grauMinimo === 2) {
             // Sessão de Companheiro: precisa ter sido elevado antes/na data da sessão
-            if (!irmao.data_elevacao) return false;
+            if (!irmao.data_elevacao) {
+              console.log('❌ Excluído (Comp) - sem elevação:', irmao.nome);
+              return false;
+            }
             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            return dataSessao >= dataElevacao;
+            if (dataSessao < dataElevacao) {
+              console.log('❌ Excluído (Comp) - elevado depois:', irmao.nome, 'Elevação:', irmao.data_elevacao);
+              return false;
+            }
           } else if (grauMinimo === 3) {
             // Sessão de Mestre: precisa ter sido exaltado antes/na data da sessão
-            if (!irmao.data_exaltacao) return false;
+            if (!irmao.data_exaltacao) {
+              console.log('❌ Excluído (Mestre) - sem exaltação:', irmao.nome);
+              return false;
+            }
             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            return dataSessao >= dataExaltacao;
+            if (dataSessao < dataExaltacao) {
+              console.log('❌ Excluído (Mestre) - exaltado depois:', irmao.nome, 'Exaltação:', irmao.data_exaltacao);
+              return false;
+            }
+            console.log('✅ Passou (Mestre):', irmao.nome, 'Exaltação:', irmao.data_exaltacao);
           }
           
           return true;
