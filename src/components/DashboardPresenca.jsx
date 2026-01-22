@@ -314,11 +314,16 @@ export default function DashboardPresenca() {
             if (dataInicio && dataSessao < dataInicio) return;
             if (grauSessao > grauIrmao) return;
 
-            const situacaoNaData = historicoSituacoes?.find(sit => 
-              sit.membro_id === irmao.id &&
-              dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-              (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-            );
+            // Para licenciados, só conta sessões ANTES da licença
+            const situacaoNaData = historicoSituacoes?.find(sit => {
+              const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              return sit.membro_id === irmao.id &&
+                tipoNormalizado === 'licenca' &&
+                dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+                (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
+            });
+            
+            // Se estava em licença na data da sessão, não conta
             if (situacaoNaData) return;
 
             totalRegistros++;
