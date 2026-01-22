@@ -50,30 +50,28 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar registros de presença com dados dos irmãos
-      const { data: registros, error: registrosError } = await supabase
+      // Buscar TODOS os irmãos ativos (igual RegistroPresenca faz)
+      const { data: todosIrmaos, error: irmaosError } = await supabase
+        .from('irmaos')
+        .select('id, nome, foto_url, data_nascimento, situacao, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento')
+        .eq('status', 'ativo')
+        .order('nome');
+
+      if (irmaosError) throw irmaosError;
+
+      // Buscar registros de presença existentes
+      const { data: registrosPresenca, error: registrosError } = await supabase
         .from('registros_presenca')
-        .select(`
-          *,
-          irmaos:membro_id (
-            id,
-            nome,
-            foto_url,
-            data_nascimento,
-            situacao,
-            data_iniciacao,
-            data_ingresso_loja,
-            data_elevacao,
-            data_exaltacao,
-            mestre_instalado,
-            data_instalacao,
-            data_falecimento
-          )
-        `)
-        .eq('sessao_id', sessaoId)
-        .order('irmaos(nome)');
+        .select('membro_id, presente, justificativa')
+        .eq('sessao_id', sessaoId);
 
       if (registrosError) throw registrosError;
+
+      // Criar um Map para acesso rápido aos registros
+      const registrosMap = new Map();
+      registrosPresenca?.forEach(reg => {
+        registrosMap.set(reg.membro_id, reg);
+      });
 
       // Buscar visitantes
       const { data: visitantesData, error: visitantesError } = await supabase
@@ -89,24 +87,17 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       // Filtrar e adicionar grau calculado NA DATA DA SESSÃO
       const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
       
-      // Debug: Ver se Dalvo está nos registros ANTES do filtro
-      const dalvoAntes = registros?.find(r => r.irmaos?.nome?.includes('Dalvo'));
-      if (dalvoAntes) {
-        console.log('🔍 MODAL DEBUG: Dalvo ANTES do filtro:');
-        console.log('  Nome:', dalvoAntes.irmaos.nome);
-        console.log('  Data Iniciação:', dalvoAntes.irmaos.data_iniciacao);
-        console.log('  Data Ingresso:', dalvoAntes.irmaos.data_ingresso_loja);
-        console.log('  Data Falecimento:', dalvoAntes.irmaos.data_falecimento);
-        console.log('  Data Sessão:', sessaoData.data_sessao);
-      }
-      
-      const presencasComGrau = registros
-        .filter(reg => {
-          const irmao = reg.irmaos;
+      const presencasComGrau = todosIrmaos
+        .filter(irmao => {
           if (!irmao) return false;
           
-          // Prioridade: data_ingresso_loja > data_iniciacao
-          // Para transferidos/reingressos, usa data_ingresso_loja
+          // Filtro 1: Situações que não podem ter presença registrada
+          const situacoesExcluidas = ['irregular', 'suspenso', 'ex-ofício', 'ex-oficio', 'desligado', 'excluído', 'excluido'];
+          if (irmao.situacao && situacoesExcluidas.includes(irmao.situacao.toLowerCase())) {
+            return false;
+          }
+          
+          // Filtro 2: Data de ingresso - só aparece se já estava na loja
           const dataIngresso = irmao.data_ingresso_loja 
             ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
             : irmao.data_iniciacao 
@@ -116,27 +107,15 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           if (!dataIngresso) return false;
           if (dataSessao < dataIngresso) return false;
           
-          // Filtro de falecimento: só aparece se sessão foi ANTES OU NO DIA do falecimento
+          // Filtro 3: Falecimento - só aparece se sessão foi ANTES OU NO DIA do falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            const deveAparecer = dataSessao <= dataFalecimento;
-            
-            // Debug temporário
-            if (irmao.nome?.includes('Dalvo')) {
-              console.log('DEBUG Dalvo no Modal:');
-              console.log('  Nome:', irmao.nome);
-              console.log('  Data Sessão:', dataSessao);
-              console.log('  Data Falecimento:', dataFalecimento);
-              console.log('  dataSessao <= dataFalecimento:', deveAparecer);
-            }
-            
-            return deveAparecer;
+            return dataSessao <= dataFalecimento;
           }
           
           return true;
         })
-        .map(reg => {
-          const irmao = reg.irmaos;
+        .map(irmao => {
           let grau = 'Sem Grau';
           
           // Calcular grau que o irmão tinha NA DATA DA SESSÃO
@@ -166,40 +145,19 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
           const tem_prerrogativa = idade >= 70;
 
+          // Buscar registro de presença (se existir)
+          const registro = registrosMap.get(irmao.id) || { presente: false, justificativa: null };
+
           return {
-            ...reg,
+            id: `presenca-${irmao.id}`,
+            membro_id: irmao.id,
+            irmaos: irmao,
+            presente: registro.presente,
+            justificativa: registro.justificativa,
             grau,
             tem_prerrogativa
           };
         });
-
-      // Debug: Ver se Dalvo passou pelo filtro
-      const dalvoDepois = presencasComGrau?.find(r => r.irmaos?.nome?.includes('Dalvo'));
-      if (dalvoAntes || dalvoDepois) {
-        console.log('🔍 MODAL DEBUG: Dalvo DEPOIS do filtro:');
-        console.log('  Estava nos registros?', !!dalvoAntes);
-        console.log('  Passou no filtro?', !!dalvoDepois);
-        if (dalvoAntes && !dalvoDepois) {
-          console.log('  ❌ DALVO FOI EXCLUÍDO PELO FILTRO NO MODAL!');
-          
-          // Testar manualmente o filtro
-          const dataIngresso = dalvoAntes.irmaos.data_ingresso_loja 
-            ? new Date(dalvoAntes.irmaos.data_ingresso_loja + 'T00:00:00')
-            : dalvoAntes.irmaos.data_iniciacao 
-            ? new Date(dalvoAntes.irmaos.data_iniciacao + 'T00:00:00')
-            : null;
-          
-          console.log('  Teste manual do filtro:');
-          console.log('    dataIngresso:', dataIngresso);
-          console.log('    dataSessao < dataIngresso:', dataSessao < dataIngresso);
-          
-          if (dalvoAntes.irmaos.data_falecimento) {
-            const dataFalecimento = new Date(dalvoAntes.irmaos.data_falecimento + 'T00:00:00');
-            console.log('    dataFalecimento:', dataFalecimento);
-            console.log('    dataSessao <= dataFalecimento:', dataSessao <= dataFalecimento);
-          }
-        }
-      }
 
       setPresencas(presencasComGrau);
 
