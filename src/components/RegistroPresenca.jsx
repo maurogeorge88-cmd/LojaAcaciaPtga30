@@ -73,7 +73,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       
       let query = supabase
         .from('irmaos')
-        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_licenca, data_desligamento, data_falecimento, data_ingresso_loja')
+        .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_licenca, data_desligamento, data_falecimento, data_ingresso_loja')
         .eq('status', 'ativo');
 
       // Filtrar por grau
@@ -141,17 +141,38 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         return true;
       }) || [];
 
-      // Mapear para formato esperado
-      const irmaos = irmaosFiltrados.map(i => ({
-        membro_id: i.id,
-        nome_completo: i.nome,
-        cim: i.cim,
-        grau_atual: i.data_exaltacao ? (i.mestre_instalado ? 'Mestre Instalado' : 'Mestre') : i.data_elevacao ? 'Companheiro' : i.data_iniciacao ? 'Aprendiz' : 'Não Iniciado',
-        foto_url: i.foto_url,
-        situacao: i.situacao,
-        data_nascimento: i.data_nascimento,
-        data_licenca: i.data_licenca
-      }));
+      // Mapear para formato esperado com grau calculado NA DATA DA SESSÃO
+      const irmaos = irmaosFiltrados.map(i => {
+        let grau_atual = 'Não Iniciado';
+        
+        // Calcular grau que o irmão tinha NA DATA DA SESSÃO
+        if (i.data_iniciacao && dataSessao >= new Date(i.data_iniciacao + 'T00:00:00')) {
+          grau_atual = 'Aprendiz';
+          
+          if (i.data_elevacao && dataSessao >= new Date(i.data_elevacao + 'T00:00:00')) {
+            grau_atual = 'Companheiro';
+            
+            if (i.data_exaltacao && dataSessao >= new Date(i.data_exaltacao + 'T00:00:00')) {
+              grau_atual = 'Mestre';
+              
+              if (i.mestre_instalado && i.data_instalacao && dataSessao >= new Date(i.data_instalacao + 'T00:00:00')) {
+                grau_atual = 'Mestre Instalado';
+              }
+            }
+          }
+        }
+        
+        return {
+          membro_id: i.id,
+          nome_completo: i.nome,
+          cim: i.cim,
+          grau_atual,
+          foto_url: i.foto_url,
+          situacao: i.situacao,
+          data_nascimento: i.data_nascimento,
+          data_licenca: i.data_licenca
+        };
+      });
 
       // Adicionar idade e verificar situação na data da sessão
       const irmaosComIdade = irmaos.map(irmao => {
