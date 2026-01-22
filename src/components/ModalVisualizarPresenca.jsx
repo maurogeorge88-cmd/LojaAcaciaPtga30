@@ -164,10 +164,16 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           if (irmao.data_exaltacao) {
             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
             if (dataSessao >= dataExaltacao) {
-              // Era Mestre na data da sessão, verificar se já era Instalado
-              if (irmao.mestre_instalado && irmao.data_instalacao) {
-                const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
-                grau = dataSessao >= dataInstalacao ? 'Mestre Instalado' : 'Mestre';
+              // Era Mestre na data da sessão
+              if (irmao.mestre_instalado) {
+                // Se tem data de instalação, verifica se já era instalado na data
+                if (irmao.data_instalacao) {
+                  const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
+                  grau = dataSessao >= dataInstalacao ? 'Mestre Instalado' : 'Mestre';
+                } else {
+                  // Sem data de instalação, considera Mestre Instalado
+                  grau = 'Mestre Instalado';
+                }
               } else {
                 grau = 'Mestre';
               }
