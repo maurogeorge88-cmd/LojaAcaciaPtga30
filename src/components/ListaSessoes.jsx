@@ -74,6 +74,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             presente,
             irmaos (
               data_iniciacao,
+              data_ingresso_loja,
               data_elevacao,
               data_exaltacao,
               mestre_instalado,
@@ -88,13 +89,22 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
         
-        // Filtrar apenas irmãos que já eram iniciados na data da sessão
+        // Filtrar apenas irmãos que já estavam na loja na data da sessão
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
         const registrosValidos = registros?.filter(r => {
           const irmao = r.irmaos;
-          if (!irmao || !irmao.data_iniciacao) return false;
-          const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-          return dataSessao >= dataIniciacao;
+          if (!irmao) return false;
+          
+          // Prioridade: data_ingresso_loja > data_iniciacao
+          // Para transferidos, usa data_ingresso_loja
+          const dataIngresso = irmao.data_ingresso_loja 
+            ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
+            : irmao.data_iniciacao 
+            ? new Date(irmao.data_iniciacao + 'T00:00:00')
+            : null;
+          
+          if (!dataIngresso) return false;
+          return dataSessao >= dataIngresso;
         }) || [];
         
         const total_registros = registrosValidos.length;
