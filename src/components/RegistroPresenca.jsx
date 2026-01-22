@@ -71,24 +71,12 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       console.log('  - grauMinimo (convertido):', grauMinimo, typeof grauMinimo);
       console.log('  - sessaoData:', sessaoData);
       
-      let query = supabase
+      // Buscar todos os irmãos ativos (SEM filtro de grau na query)
+      const { data: irmaosData, error: irmaosError } = await supabase
         .from('irmaos')
         .select('id, nome, cim, foto_url, situacao, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_licenca, data_desligamento, data_falecimento, data_ingresso_loja')
-        .eq('status', 'ativo');
-
-      // Filtrar por grau
-      console.log('🔍 Aplicando filtro de grau:', grauMinimo);
-      if (grauMinimo === 2) {
-        console.log('  ✅ Filtrando: Companheiros e Mestres (data_elevacao IS NOT NULL)');
-        query = query.not('data_elevacao', 'is', null);
-      } else if (grauMinimo === 3) {
-        console.log('  ✅ Filtrando: Apenas Mestres (data_exaltacao IS NOT NULL)');
-        query = query.not('data_exaltacao', 'is', null);
-      } else {
-        console.log('  ⚠️ SEM FILTRO - Todos os graus (grauMinimo =', grauMinimo, ')');
-      }
-
-      const { data: irmaosData, error: irmaosError } = await query.order('nome');
+        .eq('status', 'ativo')
+        .order('nome');
 
       console.log('DEBUG - Sessão:', sessaoData);
       console.log('DEBUG - Irmãos retornados:', irmaosData);
@@ -134,6 +122,19 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         if (i.data_falecimento) {
           const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
           return dataSessao <= dataFalecimento; // <= para incluir o dia do falecimento
+        }
+        
+        // FILTRO: Grau mínimo NA DATA DA SESSÃO
+        if (grauMinimo === 2) {
+          // Sessão de Companheiro: já era Companheiro na data?
+          if (!i.data_elevacao) return false;
+          const dataElevacao = new Date(i.data_elevacao + 'T00:00:00');
+          return dataSessao >= dataElevacao;
+        } else if (grauMinimo === 3) {
+          // Sessão de Mestre: já era Mestre na data?
+          if (!i.data_exaltacao) return false;
+          const dataExaltacao = new Date(i.data_exaltacao + 'T00:00:00');
+          return dataSessao >= dataExaltacao;
         }
         
         // Outros aparecem (incluindo licenças/desligamentos TEMPORÁRIOS com data_fim)
