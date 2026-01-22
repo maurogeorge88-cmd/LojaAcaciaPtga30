@@ -88,13 +88,21 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
         
-        const total_registros = registros?.length || 0;
-        const total_presentes = registros?.filter(r => r.presente).length || 0;
+        // Filtrar apenas irmãos que já eram iniciados na data da sessão
+        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
+        const registrosValidos = registros?.filter(r => {
+          const irmao = r.irmaos;
+          if (!irmao || !irmao.data_iniciacao) return false;
+          const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
+          return dataSessao >= dataIniciacao;
+        }) || [];
+        
+        const total_registros = registrosValidos.length;
+        const total_presentes = registrosValidos.filter(r => r.presente).length;
         const total_ausentes = total_registros - total_presentes;
         
         // Contar por grau NA DATA DA SESSÃO (apenas presentes)
-        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
-        const presentesComGrau = registros?.filter(r => r.presente && r.irmaos) || [];
+        const presentesComGrau = registrosValidos.filter(r => r.presente && r.irmaos) || [];
         
         const aprendizes = presentesComGrau.filter(r => {
           const irmao = r.irmaos;
