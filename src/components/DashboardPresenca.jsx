@@ -329,7 +329,21 @@ export default function DashboardPresenca() {
               return;
             }
 
-            // Para licenciados, conta TODAS as sessões (não filtra por período de licença)
+            // Para licenciados, só conta sessões quando NÃO estava em licença
+            const situacaoNaData = historicoSituacoes?.find(sit => {
+              const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+              return sit.membro_id === irmao.id &&
+                tipoNormalizado === 'licenca' &&
+                dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
+                (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'));
+            });
+            
+            // Se estava em licença na data da sessão, não conta
+            if (situacaoNaData) {
+              console.log('    ❌ Estava em licença nesta data');
+              return;
+            }
+
             console.log('    ✅ CONTADA - Presente:', reg.presente);
             totalRegistros++;
             if (reg.presente) presentes++;
