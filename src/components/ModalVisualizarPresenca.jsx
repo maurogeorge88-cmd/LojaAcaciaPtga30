@@ -64,7 +64,8 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             data_iniciacao,
             data_elevacao,
             data_exaltacao,
-            mestre_instalado
+            mestre_instalado,
+            data_instalacao
           )
         `)
         .eq('sessao_id', sessaoId)
@@ -83,24 +84,54 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
         setVisitantes(visitantesData || []);
       }
 
-      // Adicionar grau calculado e prerrogativa
-      const presencasComGrau = registros.map(reg => {
-        const irmao = reg.irmaos;
-        let grau = 'Sem Grau';
-        
-        if (irmao.data_exaltacao) grau = irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
-        else if (irmao.data_elevacao) grau = 'Companheiro';
-        else if (irmao.data_iniciacao) grau = 'Aprendiz';
+      // Filtrar e adicionar grau calculado NA DATA DA SESSÃO
+      const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
+      
+      const presencasComGrau = registros
+        .filter(reg => {
+          const irmao = reg.irmaos;
+          // Filtrar apenas irmãos que já eram iniciados na data da sessão
+          if (!irmao.data_iniciacao) return false;
+          const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
+          return dataSessao >= dataIniciacao;
+        })
+        .map(reg => {
+          const irmao = reg.irmaos;
+          let grau = 'Sem Grau';
+          
+          // Calcular grau que o irmão tinha NA DATA DA SESSÃO
+          if (irmao.data_exaltacao) {
+            const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
+            if (dataSessao >= dataExaltacao) {
+              // Era Mestre na data da sessão, verificar se já era Instalado
+              if (irmao.mestre_instalado && irmao.data_instalacao) {
+                const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
+                grau = dataSessao >= dataInstalacao ? 'Mestre Instalado' : 'Mestre';
+              } else {
+                grau = 'Mestre';
+              }
+            } else if (irmao.data_elevacao) {
+              const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
+              grau = dataSessao >= dataElevacao ? 'Companheiro' : 'Aprendiz';
+            } else {
+              grau = 'Aprendiz';
+            }
+          } else if (irmao.data_elevacao) {
+            const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
+            grau = dataSessao >= dataElevacao ? 'Companheiro' : 'Aprendiz';
+          } else if (irmao.data_iniciacao) {
+            grau = 'Aprendiz';
+          }
 
-        const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-        const tem_prerrogativa = idade >= 70;
+          const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
+          const tem_prerrogativa = idade >= 70;
 
-        return {
-          ...reg,
-          grau,
-          tem_prerrogativa
-        };
-      });
+          return {
+            ...reg,
+            grau,
+            tem_prerrogativa
+          };
+        });
 
       setPresencas(presencasComGrau);
 
