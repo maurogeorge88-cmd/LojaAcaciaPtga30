@@ -76,7 +76,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               data_iniciacao,
               data_elevacao,
               data_exaltacao,
-              mestre_instalado
+              mestre_instalado,
+              data_instalacao
             )
           `)
           .eq('sessao_id', sessao.id);
@@ -91,20 +92,56 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         const total_presentes = registros?.filter(r => r.presente).length || 0;
         const total_ausentes = total_registros - total_presentes;
         
-        // Contar por grau (apenas presentes)
+        // Contar por grau NA DATA DA SESSÃO (apenas presentes)
+        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
         const presentesComGrau = registros?.filter(r => r.presente && r.irmaos) || [];
-        const aprendizes = presentesComGrau.filter(r => 
-          r.irmaos.data_iniciacao && !r.irmaos.data_elevacao
-        ).length;
-        const companheiros = presentesComGrau.filter(r => 
-          r.irmaos.data_elevacao && !r.irmaos.data_exaltacao
-        ).length;
-        const mestres = presentesComGrau.filter(r => 
-          r.irmaos.data_exaltacao && !r.irmaos.mestre_instalado
-        ).length;
-        const mestresInstalados = presentesComGrau.filter(r => 
-          r.irmaos.data_exaltacao && r.irmaos.mestre_instalado
-        ).length;
+        
+        const aprendizes = presentesComGrau.filter(r => {
+          const irmao = r.irmaos;
+          // Tinha iniciação na data da sessão
+          if (!irmao.data_iniciacao) return false;
+          const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
+          if (dataSessao < dataIniciacao) return false;
+          
+          // NÃO tinha elevação ainda na data da sessão
+          if (!irmao.data_elevacao) return true;
+          const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
+          return dataSessao < dataElevacao;
+        }).length;
+        
+        const companheiros = presentesComGrau.filter(r => {
+          const irmao = r.irmaos;
+          // Tinha elevação na data da sessão
+          if (!irmao.data_elevacao) return false;
+          const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
+          if (dataSessao < dataElevacao) return false;
+          
+          // NÃO tinha exaltação ainda na data da sessão
+          if (!irmao.data_exaltacao) return true;
+          const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
+          return dataSessao < dataExaltacao;
+        }).length;
+        
+        const mestres = presentesComGrau.filter(r => {
+          const irmao = r.irmaos;
+          // Tinha exaltação na data da sessão
+          if (!irmao.data_exaltacao) return false;
+          const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
+          if (dataSessao < dataExaltacao) return false;
+          
+          // Verifica se era Mestre Instalado na data da sessão
+          if (!irmao.mestre_instalado || !irmao.data_instalacao) return true;
+          const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
+          return dataSessao < dataInstalacao;
+        }).length;
+        
+        const mestresInstalados = presentesComGrau.filter(r => {
+          const irmao = r.irmaos;
+          // Tinha instalação na data da sessão
+          if (!irmao.mestre_instalado || !irmao.data_instalacao) return false;
+          const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
+          return dataSessao >= dataInstalacao;
+        }).length;
         
         return {
           ...sessao,
