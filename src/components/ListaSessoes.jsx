@@ -107,10 +107,10 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           if (!dataIngresso) return false;
           if (dataSessao < dataIngresso) return false;
           
-          // Filtro de falecimento: só aparece se sessão foi ANTES do falecimento
+          // Filtro de falecimento: só aparece se sessão foi ANTES OU NO DIA do falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            return dataSessao < dataFalecimento;
+            return dataSessao <= dataFalecimento; // <= para incluir o dia do falecimento
           }
           
           return true;
