@@ -50,12 +50,22 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar TODOS os irmãos ativos (igual RegistroPresenca faz)
-      const { data: todosIrmaos, error: irmaosError } = await supabase
+      // Buscar TODOS os irmãos ativos com filtro de grau mínimo
+      const grauMinimo = sessaoData?.graus_sessao?.grau_minimo_requerido;
+      
+      let queryIrmaos = supabase
         .from('irmaos')
         .select('id, nome, foto_url, data_nascimento, situacao, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento')
-        .eq('status', 'ativo')
-        .order('nome');
+        .eq('status', 'ativo');
+      
+      // Aplicar filtro de grau (igual RegistroPresenca)
+      if (grauMinimo === 2) {
+        queryIrmaos = queryIrmaos.not('data_elevacao', 'is', null);
+      } else if (grauMinimo === 3) {
+        queryIrmaos = queryIrmaos.not('data_exaltacao', 'is', null);
+      }
+      
+      const { data: todosIrmaos, error: irmaosError } = await queryIrmaos.order('nome');
 
       if (irmaosError) throw irmaosError;
 
