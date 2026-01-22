@@ -69,7 +69,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       // Buscar registros de presença para cada sessão
       const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
         // Buscar TODOS os irmãos ativos (SEM filtro de grau na query)
-        const grauMinimo = sessao?.graus_sessao?.grau_minimo_requerido;
+        const grauMinimoRaw = sessao?.graus_sessao?.grau_minimo_requerido;
+        const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : null;
         
         const { data: todosIrmaos } = await supabase
           .from('irmaos')
