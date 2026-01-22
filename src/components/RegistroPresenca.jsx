@@ -130,10 +130,10 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           return false; // Licença/desligamento indefinido → não aparece
         }
         
-        // FILTRO: FALECIDO - só aparece se sessão for ANTES da data de falecimento
+        // FILTRO: FALECIDO - só aparece se sessão foi ANTES OU NO DIA do falecimento
         if (i.data_falecimento) {
           const dataFalecimento = new Date(i.data_falecimento + 'T00:00:00');
-          return dataSessao < dataFalecimento;
+          return dataSessao <= dataFalecimento; // <= para incluir o dia do falecimento
         }
         
         // Outros aparecem (incluindo licenças/desligamentos TEMPORÁRIOS com data_fim)
