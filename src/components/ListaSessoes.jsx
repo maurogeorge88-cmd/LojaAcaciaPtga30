@@ -128,6 +128,19 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             return dataSessao <= dataFalecimento;
           }
           
+          // Filtro 4: Grau NA DATA DA SESSÃO (não o grau atual)
+          if (grauMinimo === 2) {
+            // Sessão de Companheiro: precisa ter sido elevado antes/na data da sessão
+            if (!irmao.data_elevacao) return false;
+            const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
+            return dataSessao >= dataElevacao;
+          } else if (grauMinimo === 3) {
+            // Sessão de Mestre: precisa ter sido exaltado antes/na data da sessão
+            if (!irmao.data_exaltacao) return false;
+            const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
+            return dataSessao >= dataExaltacao;
+          }
+          
           return true;
         }) || [];
         
