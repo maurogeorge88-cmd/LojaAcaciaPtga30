@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
+export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, onNovaSessao }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [filtroMes, setFiltroMes] = useState('');
@@ -492,6 +492,13 @@ export default function ListaSessoes({ onEditarPresenca, onNovaSessao }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-center">
                         <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => onVisualizarPresenca(sessao.id)}
+                            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition"
+                            title="Visualizar presença"
+                          >
+                            👁️ Visualizar
+                          </button>
                           <button
                             onClick={() => onEditarPresenca(sessao.id)}
                             className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
