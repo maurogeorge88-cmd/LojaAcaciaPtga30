@@ -335,43 +335,12 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           )}
         </div>
 
-        {/* Seção de Visitantes - Altura limitada */}
+        {/* Seção de Visitantes - Altura limitada - SOMENTE VISUALIZAÇÃO */}
         <div className="px-6 py-4 border-t bg-gray-50">
           <h3 className="text-lg font-bold text-gray-800 mb-3">👥 Visitantes</h3>
-          
-          {/* Formulário */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-4">
-            <input
-              type="text"
-              placeholder="Nome do Visitante"
-              value={visitanteForm.nome_visitante}
-              onChange={(e) => setVisitanteForm({...visitanteForm, nome_visitante: e.target.value})}
-              className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Loja"
-              value={visitanteForm.nome_loja}
-              onChange={(e) => setVisitanteForm({...visitanteForm, nome_loja: e.target.value})}
-              className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              type="text"
-              placeholder="Cidade"
-              value={visitanteForm.cidade}
-              onChange={(e) => setVisitanteForm({...visitanteForm, cidade: e.target.value})}
-              className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-            />
-            <button
-              onClick={adicionarVisitante}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              ➕ Adicionar
-            </button>
-          </div>
 
           {/* Tabela com altura máxima de ~5cm (200px) e scroll vertical */}
-          {visitantes.length > 0 && (
+          {visitantes.length > 0 ? (
             <div className="max-h-[200px] overflow-y-auto border border-gray-300 rounded">
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-gray-200 z-10">
@@ -379,7 +348,6 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
                     <th className="px-3 py-2 text-left">Nome</th>
                     <th className="px-3 py-2 text-left">Loja</th>
                     <th className="px-3 py-2 text-left">Cidade</th>
-                    <th className="px-3 py-2 w-20">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white">
@@ -388,21 +356,12 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
                       <td className="px-3 py-2">{v.nome_visitante}</td>
                       <td className="px-3 py-2">{v.nome_loja}</td>
                       <td className="px-3 py-2">{v.cidade}</td>
-                      <td className="px-3 py-2">
-                        <button
-                          onClick={() => excluirVisitante(v.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          🗑️
-                        </button>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          )}
-          {visitantes.length === 0 && (
+          ) : (
             <p className="text-gray-500 text-sm text-center py-3">Nenhum visitante registrado</p>
           )}
         </div>
