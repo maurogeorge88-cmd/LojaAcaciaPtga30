@@ -451,7 +451,7 @@ export default function ModalGradePresenca({ onFechar }) {
                 <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-20">
                   Irmão
                 </th>
-                <th className="border border-gray-300 px-3 py-3 text-center font-semibold bg-gray-100 sticky left-[200px] z-20">
+                <th className="border border-gray-300 px-3 py-3 text-center font-semibold bg-gray-100 sticky left-[140px] z-20">
                   Grau
                 </th>
                 {sessoes.map(s => {
@@ -601,7 +601,7 @@ export default function ModalGradePresenca({ onFechar }) {
                       )}
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-3 py-3 text-center bg-white sticky left-[200px] z-10">
+                  <td className="border border-gray-300 px-3 py-3 text-center bg-white sticky left-[140px] z-10">
                     <span className={`text-xs px-2 py-1 rounded font-semibold ${
                       irmao.data_exaltacao 
                         ? (irmao.mestre_instalado ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')
