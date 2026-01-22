@@ -108,7 +108,18 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           // Filtro de falecimento: só aparece se sessão foi ANTES OU NO DIA do falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            return dataSessao <= dataFalecimento; // <= para incluir o dia do falecimento
+            const deveAparecer = dataSessao <= dataFalecimento;
+            
+            // Debug temporário
+            if (irmao.nome?.includes('Dalvo')) {
+              console.log('DEBUG Dalvo no Modal:');
+              console.log('  Nome:', irmao.nome);
+              console.log('  Data Sessão:', dataSessao);
+              console.log('  Data Falecimento:', dataFalecimento);
+              console.log('  dataSessao <= dataFalecimento:', deveAparecer);
+            }
+            
+            return deveAparecer;
           }
           
           return true;
