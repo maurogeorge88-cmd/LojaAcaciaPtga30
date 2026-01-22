@@ -90,6 +90,18 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
         
+        // Debug: Ver se Dalvo está nos registros
+        const dalvoRegistro = registros?.find(r => r.irmaos?.nome?.includes('Dalvo'));
+        if (dalvoRegistro && !window._debugDalvoCheck) {
+          console.log('🔍 DEBUG: Dalvo ENCONTRADO nos registros!');
+          console.log('  Nome:', dalvoRegistro.irmaos.nome);
+          console.log('  Data Iniciação:', dalvoRegistro.irmaos.data_iniciacao);
+          console.log('  Data Ingresso Loja:', dalvoRegistro.irmaos.data_ingresso_loja);
+          console.log('  Data Falecimento:', dalvoRegistro.irmaos.data_falecimento);
+          console.log('  Sessão Data:', sessao.data_sessao);
+          window._debugDalvoCheck = true;
+        }
+        
         // Filtrar apenas irmãos que já estavam na loja na data da sessão
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
         const registrosValidos = registros?.filter(r => {
@@ -128,6 +140,18 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           
           return true;
         }) || [];
+        
+        // Debug: Ver se Dalvo passou pelo filtro
+        const dalvoValido = registrosValidos?.find(r => r.irmaos?.nome?.includes('Dalvo'));
+        if (!window._debugDalvoFiltrado && (dalvoRegistro || dalvoValido)) {
+          console.log('🔍 DEBUG: Dalvo DEPOIS do filtro:');
+          console.log('  Estava nos registros?', !!dalvoRegistro);
+          console.log('  Passou no filtro?', !!dalvoValido);
+          if (dalvoRegistro && !dalvoValido) {
+            console.log('  ❌ DALVO FOI EXCLUÍDO PELO FILTRO!');
+          }
+          window._debugDalvoFiltrado = true;
+        }
         
         const total_registros = registrosValidos.length;
         const total_presentes = registrosValidos.filter(r => r.presente).length;
