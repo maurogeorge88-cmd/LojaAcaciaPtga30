@@ -172,9 +172,19 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         }).length;
         
         const mestresInstalados = presentesComGrau.filter(irmao => {
-          if (!irmao.mestre_instalado || !irmao.data_instalacao) return false;
-          const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
-          return dataSessao >= dataInstalacao;
+          if (!irmao.mestre_instalado) return false;
+          
+          // Se tem data de instalação, verifica se já era instalado na data
+          if (irmao.data_instalacao) {
+            const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
+            return dataSessao >= dataInstalacao;
+          }
+          
+          // Sem data de instalação, mas é Mestre Instalado
+          // Verifica se já era Mestre na data (para contar corretamente)
+          if (!irmao.data_exaltacao) return false;
+          const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
+          return dataSessao >= dataExaltacao;
         }).length;
         
         return {
