@@ -181,7 +181,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             mestres_instalados: mestresInstalados
           }
         };
-      }) || []);
+      }));
       
       setSessoes(sessoesComPresenca);
 
