@@ -110,7 +110,20 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           // Filtro de falecimento: só aparece se sessão foi ANTES OU NO DIA do falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            return dataSessao <= dataFalecimento; // <= para incluir o dia do falecimento
+            const deveAparecer = dataSessao <= dataFalecimento;
+            
+            // Debug temporário - só loga uma vez por sessão
+            if (!window._debugDalvoListaSessoes && sessao.id) {
+              console.log('DEBUG Dalvo na Lista de Sessões:');
+              console.log('  Sessão ID:', sessao.id, 'Data:', sessao.data_sessao);
+              console.log('  Data Sessão:', dataSessao);
+              console.log('  Data Falecimento:', dataFalecimento);
+              console.log('  dataSessao <= dataFalecimento:', deveAparecer);
+              console.log('  Total registros antes do filtro:', registros?.length);
+              window._debugDalvoListaSessoes = true;
+            }
+            
+            return deveAparecer;
           }
           
           return true;
