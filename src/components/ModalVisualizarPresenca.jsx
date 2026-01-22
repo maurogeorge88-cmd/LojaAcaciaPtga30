@@ -66,7 +66,8 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             data_elevacao,
             data_exaltacao,
             mestre_instalado,
-            data_instalacao
+            data_instalacao,
+            data_falecimento
           )
         `)
         .eq('sessao_id', sessaoId)
@@ -102,7 +103,15 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             : null;
           
           if (!dataIngresso) return false;
-          return dataSessao >= dataIngresso;
+          if (dataSessao < dataIngresso) return false;
+          
+          // Filtro de falecimento: só aparece se sessão foi ANTES do falecimento
+          if (irmao.data_falecimento) {
+            const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
+            return dataSessao < dataFalecimento;
+          }
+          
+          return true;
         })
         .map(reg => {
           const irmao = reg.irmaos;
