@@ -89,6 +89,17 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       // Filtrar e adicionar grau calculado NA DATA DA SESSÃO
       const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
       
+      // Debug: Ver se Dalvo está nos registros ANTES do filtro
+      const dalvoAntes = registros?.find(r => r.irmaos?.nome?.includes('Dalvo'));
+      if (dalvoAntes) {
+        console.log('🔍 MODAL DEBUG: Dalvo ANTES do filtro:');
+        console.log('  Nome:', dalvoAntes.irmaos.nome);
+        console.log('  Data Iniciação:', dalvoAntes.irmaos.data_iniciacao);
+        console.log('  Data Ingresso:', dalvoAntes.irmaos.data_ingresso_loja);
+        console.log('  Data Falecimento:', dalvoAntes.irmaos.data_falecimento);
+        console.log('  Data Sessão:', sessaoData.data_sessao);
+      }
+      
       const presencasComGrau = registros
         .filter(reg => {
           const irmao = reg.irmaos;
@@ -161,6 +172,34 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             tem_prerrogativa
           };
         });
+
+      // Debug: Ver se Dalvo passou pelo filtro
+      const dalvoDepois = presencasComGrau?.find(r => r.irmaos?.nome?.includes('Dalvo'));
+      if (dalvoAntes || dalvoDepois) {
+        console.log('🔍 MODAL DEBUG: Dalvo DEPOIS do filtro:');
+        console.log('  Estava nos registros?', !!dalvoAntes);
+        console.log('  Passou no filtro?', !!dalvoDepois);
+        if (dalvoAntes && !dalvoDepois) {
+          console.log('  ❌ DALVO FOI EXCLUÍDO PELO FILTRO NO MODAL!');
+          
+          // Testar manualmente o filtro
+          const dataIngresso = dalvoAntes.irmaos.data_ingresso_loja 
+            ? new Date(dalvoAntes.irmaos.data_ingresso_loja + 'T00:00:00')
+            : dalvoAntes.irmaos.data_iniciacao 
+            ? new Date(dalvoAntes.irmaos.data_iniciacao + 'T00:00:00')
+            : null;
+          
+          console.log('  Teste manual do filtro:');
+          console.log('    dataIngresso:', dataIngresso);
+          console.log('    dataSessao < dataIngresso:', dataSessao < dataIngresso);
+          
+          if (dalvoAntes.irmaos.data_falecimento) {
+            const dataFalecimento = new Date(dalvoAntes.irmaos.data_falecimento + 'T00:00:00');
+            console.log('    dataFalecimento:', dataFalecimento);
+            console.log('    dataSessao <= dataFalecimento:', dataSessao <= dataFalecimento);
+          }
+        }
+      }
 
       setPresencas(presencasComGrau);
 
