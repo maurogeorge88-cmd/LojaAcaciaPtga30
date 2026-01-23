@@ -66,7 +66,6 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       const grauMinimoRaw = sessaoData.graus_sessao?.grau_minimo_requerido;
       const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : 1;
       
-      console.log('🔍 DEBUG GRAU:');
       console.log('  - grau_minimo_requerido (raw):', grauMinimoRaw, typeof grauMinimoRaw);
       console.log('  - grauMinimo (convertido):', grauMinimo, typeof grauMinimo);
       console.log('  - sessaoData:', sessaoData);
