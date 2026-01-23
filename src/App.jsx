@@ -287,7 +287,6 @@ function App() {
       .single();
 
     if (data) {
-      console.log('👤 Dados do usuário carregados:', data);
       setUserData(data);
       
       // Buscar grau do irmão logado (se for irmão)
@@ -312,20 +311,9 @@ function App() {
         setGrauUsuarioLogado('Mestre');
       }
       
-      console.log('🔍 DEBUG PERMISSÕES:');
-      console.log('  - Email:', data.email);
-      console.log('  - Cargo:', data.cargo);
-      console.log('  - Nível Acesso:', data.nivel_acesso);
-      console.log('  - É Admin/Venerável?', 
-        data.nivel_acesso === 'admin' || 
-        data.cargo === 'veneravel' || 
-        data.cargo === 'Veneravel'
-      );
-      
       // Definir permissões - VERIFICAR CARGO PRIMEIRO!
       if (data.cargo === 'veneravel' || data.cargo === 'Veneravel' || data.nivel_acesso === 'admin') {
         // Venerável OU Admin: acesso total
-        console.log('✅ Aplicando permissões de ACESSO TOTAL');
         setPermissoes({
           canEdit: true,
           canEditMembers: true,
@@ -366,7 +354,6 @@ function App() {
         });
       } else if (data.nivel_acesso === 'cargo') {
         // Cargo: baseado nas permissões específicas
-        console.log('⚙️ Aplicando permissões de CARGO');
         setPermissoes({
           canEdit: data.pode_editar_cadastros || false,
           canEditMembers: data.pode_editar_cadastros || false,
@@ -1870,12 +1857,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
               {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
                 <>
-                  {console.log('🔍 DEBUG FINANCEIRO:', {
-                    canViewFinancial: permissoes?.canViewFinancial,
-                    canEditFinancial: permissoes?.canEditFinancial,
-                    nivel_acesso: userData?.nivel_acesso,
-                    permissoes_completas: permissoes
-                  })}
                   {/* SUBMENU: CONTROLE FINANCEIRO */}
                   <div className="border-t border-primary-700 mt-2 pt-2">
                     <button
