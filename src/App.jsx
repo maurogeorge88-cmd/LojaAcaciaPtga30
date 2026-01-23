@@ -1869,6 +1869,12 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
               {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
                 <>
+                  {console.log('🔍 DEBUG FINANCEIRO:', {
+                    canViewFinancial: permissoes?.canViewFinancial,
+                    canEditFinancial: permissoes?.canEditFinancial,
+                    nivel_acesso: userData?.nivel_acesso,
+                    permissoes_completas: permissoes
+                  })}
                   {/* SUBMENU: CONTROLE FINANCEIRO */}
                   <div className="border-t border-primary-700 mt-2 pt-2">
                     <button
