@@ -290,7 +290,6 @@ export default function DashboardPresenca() {
 
         if (!estaLicenciado) return;
 
-        console.log('🔍 LICENCIADO:', irmao.nome);
 
         let grauTexto = 'Não iniciado';
         let grauIrmao = 0;
@@ -305,7 +304,6 @@ export default function DashboardPresenca() {
         let totalRegistros = 0;
         let presentes = 0;
 
-        console.log('  Total de registros na base:', registros?.filter(r => r.membro_id === irmao.id).length);
 
         registros?.forEach(reg => {
           if (reg.membro_id === irmao.id) {
@@ -318,14 +316,11 @@ export default function DashboardPresenca() {
             const dataSessao = new Date(sessao.data_sessao);
             const grauSessao = sessao.grau_sessao_id || 1;
 
-            console.log('  📅 Sessão:', sessao.data_sessao, 'Grau:', grauSessao);
 
             if (dataInicio && dataSessao < dataInicio) {
-              console.log('    ❌ Antes do ingresso');
               return;
             }
             if (grauSessao > grauIrmao) {
-              console.log('    ❌ Grau da sessão maior que grau do irmão');
               return;
             }
 
@@ -340,17 +335,14 @@ export default function DashboardPresenca() {
             
             // Se estava em licença na data da sessão, não conta
             if (situacaoNaData) {
-              console.log('    ❌ Estava em licença nesta data');
               return;
             }
 
-            console.log('    ✅ CONTADA - Presente:', reg.presente);
             totalRegistros++;
             if (reg.presente) presentes++;
           }
         });
 
-        console.log('  📊 RESULTADO: Total:', totalRegistros, 'Presentes:', presentes);
 
         const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
 
