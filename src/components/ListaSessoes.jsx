@@ -64,7 +64,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         throw error;
       }
 
-      console.log('📊 Sessões carregadas:', data?.length);
       
       // Buscar registros de presença para cada sessão
       const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
