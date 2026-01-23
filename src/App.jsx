@@ -287,6 +287,7 @@ function App() {
       .single();
 
     if (data) {
+      console.log('👤 Dados do usuário carregados:', data);
       setUserData(data);
       
       // Buscar grau do irmão logado (se for irmão)
