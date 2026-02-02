@@ -777,14 +777,25 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           </span>
                         </div>
                         
-                        {/* Descrição em destaque */}
-                        {atividade.descricao && (
-                          <div className="bg-gray-50 p-3 rounded-lg mb-3 border-l-4 border-blue-400">
-                            <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap">{atividade.descricao}</p>
-                          </div>
-                        )}
+                        <div className="space-y-3">
+                          {/* Deliberações */}
+                          {atividade.deliberacoes && (
+                            <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                              <p className="text-xs font-bold text-blue-800 mb-1">💬 Deliberações:</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{atividade.deliberacoes}</p>
+                            </div>
+                          )}
+                          
+                          {/* Observações */}
+                          {atividade.observacoes && (
+                            <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500">
+                              <p className="text-xs font-bold text-purple-800 mb-1">📝 Observações:</p>
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap">{atividade.observacoes}</p>
+                            </div>
+                          )}
+                        </div>
                         
-                        <div className="flex gap-4 text-xs text-gray-500">
+                        <div className="flex gap-4 text-xs text-gray-500 mt-3">
                           <span>📅 {formatarData(atividade.data_atividade)}</span>
                           {atividade.data_conclusao && (
                             <span>✓ Concluída em {formatarData(atividade.data_conclusao)}</span>
