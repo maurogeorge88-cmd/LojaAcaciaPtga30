@@ -41,6 +41,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
   const [totalRegistros, setTotalRegistros] = useState(0);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [showValues, setShowValues] = useState(false); // Ocultar valores por padrão
   
   const [filtros, setFiltros] = useState({
     mes: new Date().getMonth() + 1, // Mês atual (1-12)
@@ -2312,6 +2313,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       </div>
 
       {/* RESUMO FINANCEIRO - LAYOUT COM TRONCO AO LADO */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={() => setShowValues(!showValues)}
+          className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-2"
+        >
+          {showValues ? '🙈 Ocultar' : '👁️ Mostrar'} Valores
+        </button>
+      </div>
+      
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
@@ -2320,7 +2330,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex flex-col justify-center">
               <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
               <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
-                {formatarMoeda(saldoAnterior)}
+                {showValues ? formatarMoeda(saldoAnterior) : '••••••'}
               </p>
               <p className="text-[10px] text-gray-500 mt-0.5">
                 {filtros.mes > 0 && filtros.ano > 0 
@@ -2333,14 +2343,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 relative flex flex-col justify-center">
               <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas</p>
-              <p className="text-lg font-bold text-green-700">{formatarMoeda(resumo.receitas)}</p>
+              <p className="text-lg font-bold text-green-700">{showValues ? formatarMoeda(resumo.receitas) : '••••••'}</p>
               <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
               <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
             </div>
             
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative flex flex-col justify-center">
               <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
-              <p className="text-lg font-bold text-red-700">{formatarMoeda(resumo.despesas)}</p>
+              <p className="text-lg font-bold text-red-700">{showValues ? formatarMoeda(resumo.despesas) : '••••••'}</p>
               <p className="text-[10px] text-gray-500 mt-0.5">Total pago</p>
               <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
             </div>
@@ -2348,7 +2358,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative flex flex-col justify-center">
               <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
               <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
-                {formatarMoeda(resumo.saldoPeriodo)}
+                {showValues ? formatarMoeda(resumo.saldoPeriodo) : '••••••'}
               </p>
               <p className="text-[10px] text-gray-500 mt-0.5">Receitas - Despesas</p>
               <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
@@ -2360,7 +2370,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="bg-sky-50 border-2 border-sky-300 rounded-lg p-3">
             <p className="text-xs text-sky-600 font-medium">🏦 Saldo Bancário</p>
             <p className={`text-lg font-bold ${resumo.saldoBancario >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
-              {formatarMoeda(resumo.saldoBancario)}
+              {showValues ? formatarMoeda(resumo.saldoBancario) : '••••••'}
             </p>
             <p className="text-[10px] text-gray-500 mt-0.5">
               PIX, Transf., Cartão
@@ -2370,7 +2380,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3">
             <p className="text-xs text-emerald-600 font-medium">💵 Caixa Físico</p>
             <p className="text-lg font-bold text-emerald-700">
-              {formatarMoeda(resumo.caixaFisico)}
+              {showValues ? formatarMoeda(resumo.caixaFisico) : '••••••'}
             </p>
             <p className="text-[10px] text-gray-500 mt-0.5 mb-2">
               Dinheiro não depositado
@@ -2388,7 +2398,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-3 col-span-2 md:col-span-1">
             <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
             <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-              {formatarMoeda(resumo.saldoTotal)}
+              {showValues ? formatarMoeda(resumo.saldoTotal) : "••••••"}
             </p>
             <p className="text-[10px] text-gray-500 mt-0.5">
               Bancário + Caixa
@@ -2397,7 +2407,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 relative">
             <p className="text-xs text-yellow-600 font-medium">⏳ A Receber</p>
-            <p className="text-lg font-bold text-yellow-700">{formatarMoeda(resumo.receitasPendentes)}</p>
+            <p className="text-lg font-bold text-yellow-700">{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
@@ -2408,7 +2418,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             title="Clique duplo para ver detalhes"
           >
             <p className="text-xs text-orange-600 font-medium">⏰ A Pagar</p>
-            <p className="text-lg font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
+            <p className="text-lg font-bold text-orange-700">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
           </div>
@@ -3527,7 +3537,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
                   <p className="text-sm text-orange-600 font-medium mb-1">⏰ Total a Pagar</p>
-                  <p className="text-3xl font-bold text-orange-700">{formatarMoeda(resumo.despesasPendentes)}</p>
+                  <p className="text-3xl font-bold text-orange-700">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
                   <p className="text-xs text-gray-500 mt-1">Despesas pendentes do período</p>
                 </div>
                 
@@ -3629,7 +3639,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           TOTAL PENDENTE:
                         </td>
                         <td className="px-4 py-3 text-right font-bold text-red-700 text-xl">
-                          {formatarMoeda(resumo.despesasPendentes)}
+                          {showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}
                         </td>
                         <td></td>
                       </tr>
