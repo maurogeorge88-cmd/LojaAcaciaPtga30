@@ -334,9 +334,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto -mx-3">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 px-3">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">🎯 Projetos da Loja</h2>
           <p className="text-gray-600 mt-1">Gerencie os projetos e seus custos</p>
@@ -353,7 +353,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <form onSubmit={salvarProjeto} className="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-indigo-200">
+        <form onSubmit={salvarProjeto} className="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-indigo-200 mx-3">
           <h3 className="text-xl font-bold text-gray-800 mb-4">
             {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
           </h3>
@@ -535,7 +535,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       )}
 
       {/* Lista de Projetos */}
-      <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-3">
         {projetos.length === 0 ? (
           <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
             <p className="text-gray-500 text-lg">📋 Nenhum projeto cadastrado</p>
