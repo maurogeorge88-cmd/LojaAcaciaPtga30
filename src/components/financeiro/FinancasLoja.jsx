@@ -2435,7 +2435,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <p className="text-sm font-bold text-amber-800 leading-tight">Tronco de Solidariedade</p>
               <p className="text-xs text-amber-600 mt-0.5">Saldo acumulado</p>
               <p className={`text-2xl font-bold mt-1 ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
-                {formatarMoeda(troncoTotalGlobal.total)}
+                {showValues ? formatarMoeda(troncoTotalGlobal.total) : '••••••'}
               </p>
             </div>
           </div>
@@ -2452,7 +2452,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   </div>
                 </div>
                 <p className={`text-xl font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                  {formatarMoeda(troncoTotalGlobal.banco)}
+                  {showValues ? formatarMoeda(troncoTotalGlobal.banco) : '••••••'}
                 </p>
               </div>
             </div>
@@ -2468,7 +2468,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   </div>
                 </div>
                 <p className={`text-xl font-bold ${troncoTotalGlobal.especie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
-                  {formatarMoeda(troncoTotalGlobal.especie)}
+                  {showValues ? formatarMoeda(troncoTotalGlobal.especie) : '••••••'}
                 </p>
               </div>
               {troncoTotalGlobal.especie > 0 && (
