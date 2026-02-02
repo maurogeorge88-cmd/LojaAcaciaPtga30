@@ -2305,6 +2305,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>Categorias</span>
         </button>
         
+        {/* Botão Ocultar/Mostrar Valores */}
+        <button
+          onClick={() => setShowValues(!showValues)}
+          className="w-28 h-[55px] px-3 text-sm bg-gray-700 text-white rounded-lg hover:bg-gray-800 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+        >
+          <span className="text-xl">{showValues ? '🙈' : '👁️'}</span>
+          <span className="text-xs">{showValues ? 'Ocultar' : 'Mostrar'}</span>
+        </button>
+        
         {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap">
           <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
@@ -2587,17 +2596,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
           )}
         </div>
-      </div>
-
-      {/* BOTÃO OCULTAR/MOSTRAR VALORES */}
-      <div className="flex justify-center my-6">
-        <button
-          onClick={() => setShowValues(!showValues)}
-          className="px-6 py-3 text-base font-semibold bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-3 border-2 border-gray-300"
-        >
-          <span className="text-2xl">{showValues ? '🙈' : '👁️'}</span>
-          <span>{showValues ? 'Ocultar' : 'Mostrar'} Valores</span>
-        </button>
       </div>
 
       {/* FORMULÁRIO DE NOVO LANÇAMENTO */}
