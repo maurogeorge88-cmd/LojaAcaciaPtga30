@@ -2313,15 +2313,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       </div>
 
       {/* RESUMO FINANCEIRO - LAYOUT COM TRONCO AO LADO */}
-      <div className="flex justify-end mb-2">
-        <button
-          onClick={() => setShowValues(!showValues)}
-          className="px-3 py-1.5 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center gap-2"
-        >
-          {showValues ? '🙈 Ocultar' : '👁️ Mostrar'} Valores
-        </button>
-      </div>
-      
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
@@ -2596,6 +2587,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
           )}
         </div>
+      </div>
+
+      {/* BOTÃO OCULTAR/MOSTRAR VALORES */}
+      <div className="flex justify-center my-6">
+        <button
+          onClick={() => setShowValues(!showValues)}
+          className="px-6 py-3 text-base font-semibold bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center gap-3 border-2 border-gray-300"
+        >
+          <span className="text-2xl">{showValues ? '🙈' : '👁️'}</span>
+          <span>{showValues ? 'Ocultar' : 'Mostrar'} Valores</span>
+        </button>
       </div>
 
       {/* FORMULÁRIO DE NOVO LANÇAMENTO */}
