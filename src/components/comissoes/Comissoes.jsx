@@ -762,10 +762,10 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 {atividadesVisualizar && atividadesVisualizar.length > 0 ? (
                   <div className="space-y-3">
                     {atividadesVisualizar.map((atividade, index) => (
-                      <div key={index} className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
-                        <div className="flex justify-between items-start mb-2">
-                          <h5 className="font-semibold text-gray-800">{atividade.titulo}</h5>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                      <div key={index} className="bg-white border-2 border-gray-200 p-4 rounded-lg hover:shadow-md transition">
+                        <div className="flex justify-between items-start mb-3">
+                          <h5 className="font-bold text-gray-800 text-base">{atividade.titulo}</h5>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             atividade.status === 'concluida' 
                               ? 'bg-green-100 text-green-800' 
                               : atividade.status === 'em_andamento'
@@ -776,9 +776,14 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                              atividade.status === 'em_andamento' ? '🔄 Em Andamento' : '📝 Pendente'}
                           </span>
                         </div>
+                        
+                        {/* Descrição em destaque */}
                         {atividade.descricao && (
-                          <p className="text-sm text-gray-600 mb-2">{atividade.descricao}</p>
+                          <div className="bg-gray-50 p-3 rounded-lg mb-3 border-l-4 border-blue-400">
+                            <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap">{atividade.descricao}</p>
+                          </div>
                         )}
+                        
                         <div className="flex gap-4 text-xs text-gray-500">
                           <span>📅 {formatarData(atividade.data_atividade)}</span>
                           {atividade.data_conclusao && (
