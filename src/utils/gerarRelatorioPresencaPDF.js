@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
-export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado) => {
+export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja) => {
   const doc = new jsPDF({
     orientation: 'landscape',
     unit: 'mm',
@@ -58,26 +58,44 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   // CABEÇALHO
   doc.setFillColor(41, 98, 255);
-  doc.rect(0, 0, pageWidth, 25, 'F');
+  doc.rect(0, 0, pageWidth, 30, 'F');
 
-  // Título
-  doc.setFontSize(18);
+  // Nome da Loja
+  const nomeLoja = dadosLoja?.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga';
+  const numeroLoja = dadosLoja?.numero_loja || '30';
+  const grandeLoja = dadosLoja?.grande_loja || 'Grande Oriente do Brasil';
+  const cidadeLoja = dadosLoja?.cidade || 'Paranatinga';
+  const estadoLoja = dadosLoja?.estado || 'MT';
+
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', pageWidth / 2, 11, { align: 'center' });
+  doc.text(`${nomeLoja} nº ${numeroLoja}`, pageWidth / 2, 10, { align: 'center' });
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`${grandeLoja} - ${cidadeLoja}/${estadoLoja}`, pageWidth / 2, 16, { align: 'center' });
   
   doc.setFontSize(14);
-  doc.setFont('helvetica', 'normal');
-  doc.text('GRADE DE PRESENÇA', pageWidth / 2, 18, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.text('GRADE DE PRESENÇA', pageWidth / 2, 24, { align: 'center' });
 
   // Período
   doc.setFontSize(10);
+  doc.setTextColor(100);
   const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-  const periodo = mesSelecionado === 0 
-    ? `Ano ${anoSelecionado}` 
-    : `${meses[mesSelecionado]}/${anoSelecionado}`;
-  doc.text(`Período: ${periodo}`, 10, 32);
+  let periodo;
+  if (mesSelecionado === 0) {
+    periodo = `Ano ${anoSelecionado}`;
+  } else if (mesSelecionado === -1) {
+    periodo = `1º Semestre/${anoSelecionado}`;
+  } else if (mesSelecionado === -2) {
+    periodo = `2º Semestre/${anoSelecionado}`;
+  } else {
+    periodo = `${meses[mesSelecionado]}/${anoSelecionado}`;
+  }
+  doc.text(`Período: ${periodo}`, 10, 36);
 
   // Data de geração
   const dataGeracao = new Date().toLocaleDateString('pt-BR', { 
@@ -87,7 +105,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     hour: '2-digit',
     minute: '2-digit'
   });
-  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - 10, 32, { align: 'right' });
+  doc.text(`Gerado em: ${dataGeracao}`, pageWidth - 10, 36, { align: 'right' });
 
   // PREPARAR DADOS DA TABELA
   const headers = [
@@ -212,7 +230,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   // GERAR TABELA
   doc.autoTable({
-    startY: 38,
+    startY: 42,
     head: [headers.map(h => h.title)],
     body: rows.map(row => headers.map(h => row[h.dataKey])),
     theme: 'grid',
@@ -289,9 +307,16 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   });
 
   // Salvar PDF
-  const nomeArquivo = mesSelecionado === 0
-    ? `Grade_Presenca_${anoSelecionado}.pdf`
-    : `Grade_Presenca_${meses[mesSelecionado]}_${anoSelecionado}.pdf`;
+  let nomeArquivo;
+  if (mesSelecionado === 0) {
+    nomeArquivo = `Grade_Presenca_${anoSelecionado}.pdf`;
+  } else if (mesSelecionado === -1) {
+    nomeArquivo = `Grade_Presenca_1Sem_${anoSelecionado}.pdf`;
+  } else if (mesSelecionado === -2) {
+    nomeArquivo = `Grade_Presenca_2Sem_${anoSelecionado}.pdf`;
+  } else {
+    nomeArquivo = `Grade_Presenca_${meses[mesSelecionado]}_${anoSelecionado}.pdf`;
+  }
   
   doc.save(nomeArquivo);
 };
