@@ -17,6 +17,21 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
+  // Função para formatar nome (2 primeiros + último se tiver preposição)
+  const formatarNome = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(' ');
+    if (partes.length <= 2) return nomeCompleto;
+    
+    const primeiros = partes.slice(0, 2).join(' ');
+    const temPreposicao = partes.some(p => ['de', 'da', 'do', 'das', 'dos'].includes(p.toLowerCase()));
+    
+    if (temPreposicao && partes.length > 2) {
+      return `${primeiros} ${partes[partes.length - 1]}`;
+    }
+    return primeiros;
+  };
+
   // Função para obter grau do irmão
   const obterGrauIrmao = (irmao) => {
     if (irmao.mestre_instalado) return 'M.I';
@@ -95,7 +110,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // Preparar dados dos irmãos
   const rows = irmaos.map(irmao => {
     const row = {
-      nome: irmao.nome,
+      nome: formatarNome(irmao.nome),
       grau: obterGrauIrmao(irmao)
     };
 
@@ -163,9 +178,11 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       // Verificar presença
       if (reg?.presente) {
         presencas++;
-        row[`sessao_${index}`] = '✓';
+        row[`sessao_${index}`] = 'P';
+      } else if (reg?.justificativa) {
+        row[`sessao_${index}`] = 'J';
       } else {
-        row[`sessao_${index}`] = '';
+        row[`sessao_${index}`] = 'F';
       }
     });
 
@@ -184,7 +201,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   };
 
   sessoes.forEach((sessao, index) => {
-    const totalPresencas = rows.filter(r => r[`sessao_${index}`] === '✓').length;
+    const totalPresencas = rows.filter(r => r[`sessao_${index}`] === 'P').length;
     totalRow[`sessao_${index}`] = totalPresencas.toString();
   });
 
@@ -216,8 +233,8 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       fontSize: 7
     },
     columnStyles: {
-      0: { halign: 'left', cellWidth: 45 },
-      1: { halign: 'center', cellWidth: 8 }
+      0: { halign: 'left', cellWidth: 35 },
+      1: { halign: 'center', cellWidth: 12 }
     },
     bodyStyles: {
       minCellHeight: 5
@@ -235,10 +252,20 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         data.cell.styles.fontStyle = 'bold';
       }
       
-      // Células com ✓ em verde
-      if (data.cell.raw === '✓') {
+      // Células com P em verde
+      if (data.cell.raw === 'P') {
         data.cell.styles.textColor = [0, 150, 0];
         data.cell.styles.fontStyle = 'bold';
+      }
+      
+      // Células com F em vermelho
+      if (data.cell.raw === 'F') {
+        data.cell.styles.textColor = [200, 0, 0];
+      }
+      
+      // Células com J em laranja
+      if (data.cell.raw === 'J') {
+        data.cell.styles.textColor = [200, 100, 0];
       }
     },
     didDrawPage: function(data) {
