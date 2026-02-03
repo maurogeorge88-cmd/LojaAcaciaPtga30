@@ -5,6 +5,7 @@
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import ParticipacaoComissoes from './ParticipacaoComissoes';
 
 export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
@@ -876,6 +877,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           })()}
         </div>
       </div>
+
+      {/* PARTICIPAÇÃO EM COMISSÕES */}
+      <ParticipacaoComissoes />
 
       <div className="bg-white rounded-xl shadow-md p-6">
         <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
