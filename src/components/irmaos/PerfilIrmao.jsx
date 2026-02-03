@@ -20,7 +20,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     nome: '',
     data_nascimento: '',
     sexo: '',
-    tipo_vinculo: ''
+    tipo_vinculo: '',
+    vivo: true,
+    data_obito: ''
   });
 
   useEffect(() => {
@@ -1417,6 +1419,38 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           <option value="bisneto">Bisneto</option>
                           <option value="bisneta">Bisneta</option>
                         </select>
+                      </div>
+                      
+                      {/* Linha 3: Vivo e Data Óbito */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="flex items-center">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={filhoForm.vivo}
+                              onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium text-gray-700">Vivo</span>
+                          </label>
+                        </div>
+
+                        {!filhoForm.vivo && (
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Data de Óbito
+                            </label>
+                            <input
+                              type="date"
+                              value={filhoForm.data_obito}
+                              onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-3">
                         <button
                           type="button"
                           onClick={() => {
@@ -1426,7 +1460,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               nome: filhoForm.nome,
                               data_nascimento: filhoForm.data_nascimento || null,
                               sexo: filhoForm.sexo || 'M',
-                              tipo_vinculo: filhoForm.tipo_vinculo || 'filho'
+                              tipo_vinculo: filhoForm.tipo_vinculo || 'filho',
+                              vivo: filhoForm.vivo !== undefined ? filhoForm.vivo : true,
+                              data_obito: filhoForm.data_obito || null
                             };
                             
                             if (filhoEditandoIndex !== null) {
@@ -1440,7 +1476,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                 filhos: [...familiares.filhos, filhoData]
                               });
                             }
-                            setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '' });
+                            setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '', vivo: true, data_obito: '' });
                           }}
                           className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
@@ -1451,7 +1487,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             type="button"
                             onClick={() => {
                               setFilhoEditandoIndex(null);
-                              setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '' });
+                              setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '', vivo: true, data_obito: '' });
                             }}
                             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
                           >
@@ -1469,7 +1505,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         <div key={index} className="bg-white rounded-lg p-4 border border-green-200">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
-                              <span className="text-3xl">{sexo === 'M' ? '👦' : '👧'}</span>
+                              <span className="text-3xl">
+                                {sexo === 'M' ? '👦' : '👧'}
+                                {!filho.vivo && <span className="ml-1" title="Falecido">🕊️</span>}
+                              </span>
                               <div>
                                 <h5 className="font-semibold text-gray-900">{filho.nome}</h5>
                                 <p className="text-xs text-gray-600">
@@ -1484,7 +1523,11 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               <div className="flex gap-2">
                                 <button
                                   onClick={() => {
-                                    setFilhoForm({...filho});
+                                    setFilhoForm({
+                                      ...filho,
+                                      vivo: filho.vivo !== undefined ? filho.vivo : true,
+                                      data_obito: filho.data_obito || ''
+                                    });
                                     setFilhoEditandoIndex(index);
                                   }}
                                   className="text-blue-600 hover:text-blue-800 text-sm"
