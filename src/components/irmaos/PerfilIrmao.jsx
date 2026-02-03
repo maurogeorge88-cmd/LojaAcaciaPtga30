@@ -134,13 +134,17 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
         if (paiExiste) {
           await supabase.from('pais').update({
             nome: familiares.pais.pai.nome,
-            data_nascimento: familiares.pais.pai.data_nascimento
+            data_nascimento: familiares.pais.pai.data_nascimento,
+            falecido: familiares.pais.pai.falecido || false,
+            data_obito: familiares.pais.pai.data_obito || null
           }).eq('id', paiExiste.id);
         } else {
           await supabase.from('pais').insert({
             irmao_id: irmaoId, tipo: 'pai',
             nome: familiares.pais.pai.nome,
-            data_nascimento: familiares.pais.pai.data_nascimento
+            data_nascimento: familiares.pais.pai.data_nascimento,
+            falecido: familiares.pais.pai.falecido || false,
+            data_obito: familiares.pais.pai.data_obito || null
           });
         }
       }
@@ -150,13 +154,17 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
         if (maeExiste) {
           await supabase.from('pais').update({
             nome: familiares.pais.mae.nome,
-            data_nascimento: familiares.pais.mae.data_nascimento
+            data_nascimento: familiares.pais.mae.data_nascimento,
+            falecido: familiares.pais.mae.falecido || false,
+            data_obito: familiares.pais.mae.data_obito || null
           }).eq('id', maeExiste.id);
         } else {
           await supabase.from('pais').insert({
             irmao_id: irmaoId, tipo: 'mae',
             nome: familiares.pais.mae.nome,
-            data_nascimento: familiares.pais.mae.data_nascimento
+            data_nascimento: familiares.pais.mae.data_nascimento,
+            falecido: familiares.pais.mae.falecido || false,
+            data_obito: familiares.pais.mae.data_obito || null
           });
         }
       }
@@ -181,7 +189,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             data_nascimento: f.data_nascimento || null,
             sexo: f.sexo || 'M',
             tipo_vinculo: f.tipo_vinculo || 'filho',
-            vivo: f.vivo !== false
+            vivo: f.vivo !== false,
+            data_obito: f.data_obito || null
           }))
         );
         if (insertError) throw insertError;
