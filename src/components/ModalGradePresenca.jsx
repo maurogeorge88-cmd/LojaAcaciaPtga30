@@ -13,8 +13,9 @@ export default function ModalGradePresenca({ onFechar }) {
   const anoAtual = new Date().getFullYear();
   const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
   const [mesSelecionado, setMesSelecionado] = useState(0);
+  const [dadosLoja, setDadosLoja] = useState(null);
 
-  // Buscar anos disponíveis
+  // Buscar anos disponíveis e dados da loja
   useEffect(() => {
     const buscarAnos = async () => {
       const { data } = await supabase
@@ -30,7 +31,20 @@ export default function ModalGradePresenca({ onFechar }) {
         setAnoSelecionado(anosSorted[0]);
       }
     };
+    
+    const buscarDadosLoja = async () => {
+      const { data } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
+      
+      if (data) {
+        setDadosLoja(data);
+      }
+    };
+    
     buscarAnos();
+    buscarDadosLoja();
   }, []);
 
   useEffect(() => {
@@ -48,6 +62,14 @@ export default function ModalGradePresenca({ onFechar }) {
       if (mesSelecionado === 0) {
         // Ano inteiro
         dataInicio = `${anoSelecionado}-01-01`;
+        dataFim = `${anoSelecionado}-12-31`;
+      } else if (mesSelecionado === -1) {
+        // 1º Semestre (Janeiro a Junho)
+        dataInicio = `${anoSelecionado}-01-01`;
+        dataFim = `${anoSelecionado}-06-30`;
+      } else if (mesSelecionado === -2) {
+        // 2º Semestre (Julho a Dezembro)
+        dataInicio = `${anoSelecionado}-07-01`;
         dataFim = `${anoSelecionado}-12-31`;
       } else {
         // Mês específico
@@ -419,6 +441,8 @@ export default function ModalGradePresenca({ onFechar }) {
               className="px-4 py-2 rounded text-gray-800 font-semibold"
             >
               <option value={0}>Ano todo</option>
+              <option value={-1}>1º Semestre</option>
+              <option value={-2}>2º Semestre</option>
               <option value={1}>Janeiro</option>
               <option value={2}>Fevereiro</option>
               <option value={3}>Março</option>
@@ -440,7 +464,7 @@ export default function ModalGradePresenca({ onFechar }) {
                   alert('Não há sessões para gerar o relatório');
                   return;
                 }
-                gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado);
+                gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja);
               }}
               className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold flex items-center gap-2 transition"
               title="Gerar relatório em PDF"
