@@ -138,7 +138,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
     sessoes.forEach((sessao, index) => {
       const reg = grade[irmao.id]?.[sessao.id];
-      const dataSessao = new Date(sessao.data_sessao);
+      const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
       
       // Verificar data de início (prioridade: data_ingresso_loja > data_inicio > data_iniciacao)
       const dataInicio = irmao.data_ingresso_loja
