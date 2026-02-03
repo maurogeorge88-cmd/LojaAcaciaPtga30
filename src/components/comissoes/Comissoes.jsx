@@ -79,6 +79,10 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   // Estados para atividades
   const [modalAtividades, setModalAtividades] = useState(false);
   const [comissaoAtividades, setComissaoAtividades] = useState(null);
+  
+  // Estados para filtros e navegação
+  const [abaAtiva, setAbaAtiva] = useState('interna'); // 'interna' ou 'externa'
+  const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
 
   // Limpar formulário
   const limparFormulario = () => {
@@ -539,99 +543,209 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
           <p className="text-sm text-blue-100">Total: {comissoes.length} comissão(ões)</p>
         </div>
 
-        <div className="divide-y divide-gray-200">
-          {comissoes.length > 0 ? (
-            comissoes.map((comissao) => (
-              <div key={comissao.id} className="p-4 hover:bg-gray-50">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h4 className="font-bold text-lg text-gray-900">{comissao.nome}</h4>
-                    <p className="text-sm text-gray-600 mt-1">{comissao.objetivo}</p>
-                    <div className="flex gap-4 mt-2 text-sm">
-                      <span className={`px-2 py-1 rounded ${
-                        comissao.status === 'em_andamento' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {comissao.status === 'em_andamento' ? 'Em Andamento' : 'Encerrada'}
-                      </span>
-                      <span className="text-gray-600">
-                        📅 {formatarData(comissao.data_inicio)} 
-                        {comissao.data_fim && ` - ${formatarData(comissao.data_fim)}`}
-                      </span>
-                      <span className={`px-2 py-1 rounded ${
-                        comissao.origem === 'interna' 
-                          ? 'bg-blue-100 text-blue-800' 
-                          : 'bg-purple-100 text-purple-800'
-                      }`}>
-                        {comissao.origem === 'interna' ? 'Interna' : 'Externa'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => handleVisualizar(comissao)}
-                      className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                      title="Visualizar detalhes"
-                    >
-                      👁️ Ver
-                    </button>
-                    <button
-                      onClick={async () => {
-                        setComissaoAtividades(comissao);
-                        
-                        // Buscar integrantes para verificar se usuário é membro
-                        try {
-                          const { data: integrantesData } = await supabase
-                            .from('comissoes_integrantes')
-                            .select('*')
-                            .eq('comissao_id', comissao.id);
-                          
-                          // Criar permissões expandidas
-                          const permissoesExpandidas = {
-                            ...permissoes,
-                            eh_membro: ehMembroComissao(comissao, integrantesData || []),
-                            integrantesComissao: integrantesData || []
-                          };
-                          
-                          setComissaoAtividades({ ...comissao, permissoesExpandidas });
-                        } catch (error) {
-                          console.error('Erro ao buscar integrantes:', error);
-                          setComissaoAtividades(comissao);
-                        }
-                        
-                        setModalAtividades(true);
-                      }}
-                      className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                      title="Gerenciar atividades"
-                    >
-                      📋 Atividades
-                    </button>
-                    {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
-                      <>
-                        <button
-                          onClick={() => handleEditar(comissao)}
-                          className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                        >
-                          ✏️ Editar
-                        </button>
-                        <button
-                          onClick={() => handleExcluir(comissao.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                        >
-                          🗑️ Excluir
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="p-8 text-center text-gray-500">
-              Nenhuma comissão cadastrada
+        {/* ABAS E FILTRO */}
+        <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+          <div className="flex items-center justify-between">
+            {/* Abas */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAbaAtiva('interna')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  abaAtiva === 'interna'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                🏛️ Internas (Loja)
+              </button>
+              <button
+                onClick={() => setAbaAtiva('externa')}
+                className={`px-4 py-2 rounded-lg font-medium transition ${
+                  abaAtiva === 'externa'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                }`}
+              >
+                🌐 Externas (Participação)
+              </button>
             </div>
-          )}
+
+            {/* Filtro de Ano */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Ano:</label>
+              <select
+                value={anoFiltro}
+                onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+              >
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+                <option value={0}>Todos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="divide-y divide-gray-200">
+          {(() => {
+            // Filtrar por aba e ano
+            const comissoesFiltradas = comissoes.filter(c => {
+              const anoInicio = new Date(c.data_inicio).getFullYear();
+              const origemMatch = c.origem === abaAtiva;
+              const anoMatch = anoFiltro === 0 || anoInicio === anoFiltro;
+              return origemMatch && anoMatch;
+            });
+
+            // Separar por status
+            const emAndamento = comissoesFiltradas.filter(c => c.status === 'em_andamento');
+            const encerradas = comissoesFiltradas.filter(c => c.status === 'encerrada');
+
+            if (comissoesFiltradas.length === 0) {
+              return (
+                <div className="p-8 text-center text-gray-500">
+                  <p className="text-lg">📋 Nenhuma comissão encontrada</p>
+                  <p className="text-sm mt-2">
+                    {abaAtiva === 'interna' ? 'Não há comissões internas' : 'Não há comissões externas'} 
+                    {anoFiltro !== 0 && ` no ano de ${anoFiltro}`}
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {/* COMISSÕES EM ANDAMENTO */}
+                {emAndamento.length > 0 && (
+                  <div>
+                    <div className="bg-green-50 px-4 py-2 border-b border-green-200">
+                      <h4 className="font-bold text-green-800">🔄 Em Andamento ({emAndamento.length})</h4>
+                    </div>
+                    {emAndamento.map((comissao) => (
+                      <div key={comissao.id} className="p-4 hover:bg-gray-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-900">{comissao.nome}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{comissao.objetivo}</p>
+                            <div className="flex gap-4 mt-2 text-sm">
+                              <span className="px-2 py-1 rounded bg-green-100 text-green-800">
+                                Em Andamento
+                              </span>
+                              <span className="text-gray-600">
+                                📅 {formatarData(comissao.data_inicio)} 
+                                {comissao.data_fim && ` - ${formatarData(comissao.data_fim)}`}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => handleVisualizar(comissao)}
+                              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                              title="Visualizar detalhes"
+                            >
+                              👁️ Ver
+                            </button>
+                            <button
+                              onClick={() => {
+                                setComissaoAtividades(comissao);
+                                setModalAtividades(true);
+                              }}
+                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                              title="Gerenciar atividades"
+                            >
+                              📋 Atividades
+                            </button>
+                            {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
+                              <>
+                                <button
+                                  onClick={() => handleEditar(comissao)}
+                                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                                  title="Editar"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => handleExcluir(comissao.id)}
+                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                  title="Excluir"
+                                >
+                                  🗑️ Excluir
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* COMISSÕES ENCERRADAS */}
+                {encerradas.length > 0 && (
+                  <div>
+                    <div className="bg-gray-100 px-4 py-2 border-b border-gray-300">
+                      <h4 className="font-bold text-gray-700">✓ Encerradas ({encerradas.length})</h4>
+                    </div>
+                    {encerradas.map((comissao) => (
+                      <div key={comissao.id} className="p-4 hover:bg-gray-50 opacity-75">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h4 className="font-bold text-lg text-gray-900">{comissao.nome}</h4>
+                            <p className="text-sm text-gray-600 mt-1">{comissao.objetivo}</p>
+                            <div className="flex gap-4 mt-2 text-sm">
+                              <span className="px-2 py-1 rounded bg-gray-200 text-gray-700">
+                                Encerrada
+                              </span>
+                              <span className="text-gray-600">
+                                📅 {formatarData(comissao.data_inicio)} - {formatarData(comissao.data_fim)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => handleVisualizar(comissao)}
+                              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                              title="Visualizar detalhes"
+                            >
+                              👁️ Ver
+                            </button>
+                            <button
+                              onClick={() => {
+                                setComissaoAtividades(comissao);
+                                setModalAtividades(true);
+                              }}
+                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                              title="Gerenciar atividades"
+                            >
+                              📋 Atividades
+                            </button>
+                            {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
+                              <>
+                                <button
+                                  onClick={() => handleEditar(comissao)}
+                                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                                  title="Editar"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => handleExcluir(comissao.id)}
+                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                  title="Excluir"
+                                >
+                                  🗑️ Excluir
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 
