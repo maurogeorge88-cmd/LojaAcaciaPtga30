@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 const ParticipacaoComissoes = () => {
-  const [aba, setAba] = useState('irmao'); // 'irmao' ou 'comissao'
+  const [aba, setAba] = useState('irmao');
   const [dados, setDados] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,30 +12,51 @@ const ParticipacaoComissoes = () => {
 
   const carregarDados = async () => {
     try {
-      // Buscar todas as relações comissão-integrante com JOIN
-      const { data, error } = await supabase
+      // Buscar integrantes
+      const { data: integrantes, error: errorIntegrantes } = await supabase
         .from('comissoes_integrantes')
-        .select(`
-          funcao,
-          comissoes!inner (
-            id,
-            nome,
-            status,
-            origem
-          ),
-          irmaos!inner (
-            id,
-            nome,
-            cim,
-            situacao
-          )
-        `)
-        .eq('comissoes.status', 'em_andamento')
-        .eq('irmaos.situacao', 'regular')
-        .order('irmaos.nome');
+        .select('funcao, comissao_id, irmao_id');
 
-      if (error) throw error;
-      setDados(data || []);
+      if (errorIntegrantes) throw errorIntegrantes;
+      if (!integrantes || integrantes.length === 0) {
+        setDados([]);
+        setLoading(false);
+        return;
+      }
+
+      // Buscar comissões em andamento
+      const { data: comissoes, error: errorComissoes } = await supabase
+        .from('comissoes')
+        .select('id, nome, status, origem')
+        .eq('status', 'em_andamento');
+
+      if (errorComissoes) throw errorComissoes;
+
+      // Buscar irmãos regulares
+      const { data: irmaos, error: errorIrmaos } = await supabase
+        .from('irmaos')
+        .select('id, nome, cim, situacao')
+        .eq('situacao', 'regular');
+
+      if (errorIrmaos) throw errorIrmaos;
+
+      // Fazer o join manual
+      const dadosCompletos = integrantes
+        .map(integrante => {
+          const comissao = comissoes?.find(c => c.id === integrante.comissao_id);
+          const irmao = irmaos?.find(i => i.id === integrante.irmao_id);
+          
+          if (!comissao || !irmao) return null;
+          
+          return {
+            funcao: integrante.funcao,
+            comissoes: comissao,
+            irmaos: irmao
+          };
+        })
+        .filter(item => item !== null);
+
+      setDados(dadosCompletos);
     } catch (error) {
       console.error('Erro ao carregar participações:', error);
     } finally {
@@ -43,7 +64,6 @@ const ParticipacaoComissoes = () => {
     }
   };
 
-  // Agrupar por irmão
   const agruparPorIrmao = () => {
     const grupos = {};
     
@@ -68,7 +88,6 @@ const ParticipacaoComissoes = () => {
     return Object.values(grupos).sort((a, b) => a.nome.localeCompare(b.nome));
   };
 
-  // Agrupar por comissão
   const agruparPorComissao = () => {
     const grupos = {};
     
@@ -91,7 +110,6 @@ const ParticipacaoComissoes = () => {
       });
     });
     
-    // Ordenar integrantes por função (Presidente > Secretário > Tesoureiro > Membro)
     Object.values(grupos).forEach(grupo => {
       const ordemFuncao = {
         'Presidente': 1,
@@ -111,7 +129,6 @@ const ParticipacaoComissoes = () => {
     return Object.values(grupos).sort((a, b) => a.nome.localeCompare(b.nome));
   };
 
-  // Badge de função
   const getBadgeFuncao = (funcao) => {
     const cores = {
       'Presidente': 'bg-blue-100 text-blue-800',
@@ -147,7 +164,6 @@ const ParticipacaoComissoes = () => {
   const porIrmao = agruparPorIrmao();
   const porComissao = agruparPorComissao();
 
-  // Se não há dados
   if (dados.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -159,7 +175,6 @@ const ParticipacaoComissoes = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-      {/* Header com abas */}
       <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-4">
         <h3 className="text-lg font-bold text-white mb-3">📋 Participação em Comissões</h3>
         
@@ -187,10 +202,8 @@ const ParticipacaoComissoes = () => {
         </div>
       </div>
 
-      {/* Conteúdo */}
       <div className="p-4">
         {aba === 'irmao' ? (
-          // VISUALIZAÇÃO POR IRMÃO
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {porIrmao.map((irmao, index) => (
               <div key={index} className="border-2 border-gray-200 rounded-lg p-4 hover:shadow-md transition">
@@ -223,7 +236,6 @@ const ParticipacaoComissoes = () => {
             ))}
           </div>
         ) : (
-          // VISUALIZAÇÃO POR COMISSÃO
           <div className="space-y-4">
             {porComissao.map((comissao, index) => (
               <div key={index} className="border-2 border-gray-200 rounded-lg overflow-hidden">
