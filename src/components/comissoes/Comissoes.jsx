@@ -82,7 +82,12 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   
   // Estados para filtros e navegação
   const [abaAtiva, setAbaAtiva] = useState('interna'); // 'interna' ou 'externa'
-  const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
+  const [anoFiltro, setAnoFiltro] = useState(0); // 0 = Todos
+  
+  // Obter anos com cadastros
+  const anosDisponiveis = [...new Set(
+    comissoes.map(c => new Date(c.data_inicio).getFullYear())
+  )].sort((a, b) => b - a);
 
   // Limpar formulário
   const limparFormulario = () => {
@@ -465,11 +470,13 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Selecione um irmão</option>
-              {irmaos.map(irmao => (
-                <option key={irmao.id} value={irmao.id}>
-                  {irmao.nome} - CIM {irmao.cim}
-                </option>
-              ))}
+              {irmaos
+                .filter(irmao => irmao.situacao?.toLowerCase() === 'regular')
+                .map(irmao => (
+                  <option key={irmao.id} value={irmao.id}>
+                    {irmao.nome} - CIM {irmao.cim}
+                  </option>
+                ))}
             </select>
 
             <select
@@ -578,10 +585,10 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 onChange={(e) => setAnoFiltro(parseInt(e.target.value))}
                 className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               >
-                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map(ano => (
+                <option value={0}>Todos</option>
+                {anosDisponiveis.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
                 ))}
-                <option value={0}>Todos</option>
               </select>
             </div>
           </div>
