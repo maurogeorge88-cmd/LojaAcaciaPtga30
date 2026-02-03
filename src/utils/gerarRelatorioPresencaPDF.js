@@ -17,19 +17,14 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  // Função para formatar nome (2 primeiros + último se tiver preposição)
+  // Função para formatar nome (sempre 2 nomes apenas)
   const formatarNome = (nomeCompleto) => {
     if (!nomeCompleto) return '';
-    const partes = nomeCompleto.trim().split(' ');
+    const partes = nomeCompleto.trim().split(' ').filter(p => p.length > 0);
     if (partes.length <= 2) return nomeCompleto;
     
-    const primeiros = partes.slice(0, 2).join(' ');
-    const temPreposicao = partes.some(p => ['de', 'da', 'do', 'das', 'dos'].includes(p.toLowerCase()));
-    
-    if (temPreposicao && partes.length > 2) {
-      return `${primeiros} ${partes[partes.length - 1]}`;
-    }
-    return primeiros;
+    // Sempre retorna apenas os 2 primeiros nomes
+    return partes.slice(0, 2).join(' ');
   };
 
   // Função para obter grau do irmão
@@ -248,10 +243,10 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       textColor: 255,
       fontStyle: 'bold',
       halign: 'center',
-      fontSize: 7
+      fontSize: 6
     },
     columnStyles: {
-      0: { halign: 'left', cellWidth: 35 },
+      0: { halign: 'left', cellWidth: 30 },
       1: { halign: 'center', cellWidth: 12 }
     },
     bodyStyles: {
