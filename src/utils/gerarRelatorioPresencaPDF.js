@@ -140,12 +140,14 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       const reg = grade[irmao.id]?.[sessao.id];
       const dataSessao = new Date(sessao.data_sessao);
       
-      // Verificar data de início
-      const dataInicio = irmao.data_inicio 
-        ? new Date(irmao.data_inicio + 'T00:00:00')
-        : irmao.data_iniciacao 
-          ? new Date(irmao.data_iniciacao + 'T00:00:00')
-          : null;
+      // Verificar data de início (prioridade: data_ingresso_loja > data_inicio > data_iniciacao)
+      const dataInicio = irmao.data_ingresso_loja
+        ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
+        : irmao.data_inicio 
+          ? new Date(irmao.data_inicio + 'T00:00:00')
+          : irmao.data_iniciacao 
+            ? new Date(irmao.data_iniciacao + 'T00:00:00')
+            : null;
       
       if (dataInicio && dataSessao < dataInicio) {
         row[`sessao_${index}`] = '-';
