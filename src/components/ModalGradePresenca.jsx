@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import { gerarRelatorioPresencaPDF } from '../utils/gerarRelatorioPresencaPDF';
 
 export default function ModalGradePresenca({ onFechar }) {
   const [loading, setLoading] = useState(true);
@@ -431,6 +432,24 @@ export default function ModalGradePresenca({ onFechar }) {
               <option value={11}>Novembro</option>
               <option value={12}>Dezembro</option>
             </select>
+            
+            {/* Botão Gerar PDF */}
+            <button
+              onClick={() => {
+                if (sessoes.length === 0) {
+                  alert('Não há sessões para gerar o relatório');
+                  return;
+                }
+                gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado);
+              }}
+              className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold flex items-center gap-2 transition"
+              title="Gerar relatório em PDF"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              Gerar PDF
+            </button>
           </div>
 
           {/* Campo de Busca */}
