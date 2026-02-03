@@ -17,13 +17,19 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
 
-  // Função para formatar nome (sempre 2 nomes apenas)
+  // Função para formatar nome (2 nomes, mas se 2º for preposição, pega o último)
   const formatarNome = (nomeCompleto) => {
     if (!nomeCompleto) return '';
     const partes = nomeCompleto.trim().split(' ').filter(p => p.length > 0);
     if (partes.length <= 2) return nomeCompleto;
     
-    // Sempre retorna apenas os 2 primeiros nomes
+    // Se o segundo nome for uma preposição, pega primeiro + último
+    const preposicoes = ['de', 'da', 'do', 'das', 'dos'];
+    if (preposicoes.includes(partes[1].toLowerCase())) {
+      return `${partes[0]} ${partes[partes.length - 1]}`;
+    }
+    
+    // Caso contrário, retorna os 2 primeiros
     return partes.slice(0, 2).join(' ');
   };
 
