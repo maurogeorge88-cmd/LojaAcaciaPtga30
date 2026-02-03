@@ -1263,6 +1263,43 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         })}
                         className="w-full px-3 py-2 border rounded"
                       />
+                      
+                      {/* Checkbox Vivo */}
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!familiares.pais.pai?.falecido}
+                          onChange={(e) => setFamiliares({
+                            ...familiares,
+                            pais: { 
+                              ...familiares.pais, 
+                              pai: { 
+                                ...familiares.pais.pai, 
+                                falecido: !e.target.checked,
+                                data_obito: e.target.checked ? null : familiares.pais.pai?.data_obito
+                              }
+                            }
+                          })}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="text-sm font-medium">Vivo</span>
+                      </label>
+                      
+                      {/* Data Óbito - aparece se falecido */}
+                      {familiares.pais.pai?.falecido && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Data de Óbito</label>
+                          <input
+                            type="date"
+                            value={familiares.pais.pai?.data_obito || ''}
+                            onChange={(e) => setFamiliares({
+                              ...familiares,
+                              pais: { ...familiares.pais, pai: { ...familiares.pais.pai, data_obito: e.target.value }}
+                            })}
+                            className="w-full px-3 py-2 border rounded"
+                          />
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-3">
                       <h5 className="font-semibold border-b pb-1">Mãe</h5>
@@ -1286,6 +1323,43 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         })}
                         className="w-full px-3 py-2 border rounded"
                       />
+                      
+                      {/* Checkbox Viva */}
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!familiares.pais.mae?.falecido}
+                          onChange={(e) => setFamiliares({
+                            ...familiares,
+                            pais: { 
+                              ...familiares.pais, 
+                              mae: { 
+                                ...familiares.pais.mae, 
+                                falecido: !e.target.checked,
+                                data_obito: e.target.checked ? null : familiares.pais.mae?.data_obito
+                              }
+                            }
+                          })}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <span className="text-sm font-medium">Viva</span>
+                      </label>
+                      
+                      {/* Data Óbito - aparece se falecida */}
+                      {familiares.pais.mae?.falecido && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Data de Óbito</label>
+                          <input
+                            type="date"
+                            value={familiares.pais.mae?.data_obito || ''}
+                            onChange={(e) => setFamiliares({
+                              ...familiares,
+                              pais: { ...familiares.pais, mae: { ...familiares.pais.mae, data_obito: e.target.value }}
+                            })}
+                            className="w-full px-3 py-2 border rounded"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ) : (
