@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../App';
+import { supabase } from '../../supabaseClient';
 
 export default function ControleAcesso({ userData, showSuccess, showError }) {
   const [logs, setLogs] = useState([]);
