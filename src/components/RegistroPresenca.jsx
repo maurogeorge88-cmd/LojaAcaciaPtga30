@@ -114,9 +114,15 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         }
         
         // FILTRO: Situações bloqueadoras na data da sessão
-        // Ex: licença, desligamento, irregular, suspenso
+        // APENAS: desligamento, irregular, suspenso, excluído (NÃO licença)
         const situacaoBloqueadora = historicoSituacoes?.find(sit => {
           if (sit.membro_id !== i.id) return false;
+          
+          // Verificar se é situação bloqueadora (licença NÃO bloqueia)
+          const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+          
+          if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
           
           const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
           
