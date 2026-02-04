@@ -261,9 +261,6 @@ function App() {
         loadLivros();
         loadEmprestimos();
         loadCronograma();
-        
-        // Registrar acesso ao sistema
-        registrarAcesso(session.user.id);
       }
       setLoading(false);
     });
@@ -308,6 +305,9 @@ function App() {
 
     if (data) {
       setUserData(data);
+      
+      // Registrar acesso ao sistema
+      registrarAcesso(data.id);
       
       // Buscar grau do irmão logado (se for irmão)
       if (data.nivel_acesso === 'irmao') {
