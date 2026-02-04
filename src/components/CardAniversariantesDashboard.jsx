@@ -109,47 +109,29 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
         });
       }
 
-      // Buscar PAIS
+      // Buscar PAIS e MÃES
       const { data: pais } = await supabase
-//         .from('pais')
-//         .select('*, irmaos(nome)')
-//         ;
-// 
-//       if (pais) {
-//         pais.forEach(pai => {
-//           if (!pai.data_nascimento) return;
-//           const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
-//           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
-//             aniversariantesLista.push({
-//               tipo: 'Pai',
-//               nome: pai.nome,
-//               idade: calcularIdade(dataNasc),
-//               irmao_responsavel: pai.irmaos?.nome
-//             });
-//           }
-//         });
-//       }
+        .from('pais')
+        .select('nome, data_nascimento, tipo_pai, irmaos(nome)');
 
-      // Buscar MÃES
-      const { data: maes } = await supabase
-//         .from('maes')
-//         .select('*, irmaos(nome)')
-//         ;
-// 
-//       if (maes) {
-//         maes.forEach(mae => {
-//           if (!mae.data_nascimento) return;
-//           const dataNasc = new Date(mae.data_nascimento + 'T00:00:00');
-//           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
-//             aniversariantesLista.push({
-//               tipo: 'Mãe',
-//               nome: mae.nome,
-//               idade: calcularIdade(dataNasc),
-//               irmao_responsavel: mae.irmaos?.nome
-//             });
-//           }
-//         });
-//       }
+      if (pais) {
+        pais.forEach(pai => {
+          if (!pai.data_nascimento) return;
+          const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
+          if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
+            const sexo = pai.tipo_pai === 'mae' ? 'F' : 'M';
+            const tipoExibicao = pai.tipo_pai === 'mae' ? 'Mãe' : 'Pai';
+            
+            aniversariantesLista.push({
+              tipo: tipoExibicao,
+              nome: pai.nome,
+              sexo: sexo,
+              idade: calcularIdade(dataNasc),
+              irmao_responsavel: pai.irmaos?.nome
+            });
+          }
+        });
+      }
 
       setAniversariantesHoje(aniversariantesLista);
       setLoading(false);
