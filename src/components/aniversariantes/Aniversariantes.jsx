@@ -662,7 +662,7 @@ export default function Aniversariantes() {
       // PAIS VIVOS de irmãos vivos (considera null como vivo)
       let { data: paisVivos } = await supabase
         .from('pais')
-        .select('nome, data_nascimento, irmao_id, falecido, tipo_pai, irmaos(nome, situacao)')
+        .select('nome, data_nascimento, irmao_id, falecido, tipo, irmaos(nome, situacao)')
         .in('irmao_id', irmaoVivosIds);
       
       // Filtrar apenas os vivos (falecido = false ou null)
@@ -698,8 +698,8 @@ export default function Aniversariantes() {
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
-            const sexo = pai.tipo_pai === 'mae' ? 'F' : 'M';
-            const tipoExibicao = pai.tipo_pai === 'mae' ? 'Mãe' : 'Pai';
+            const sexo = pai.tipo === 'mae' ? 'F' : 'M';
+            const tipoExibicao = pai.tipo === 'mae' ? 'Mãe' : 'Pai';
             
             aniversariantesFamiliares.push({
               tipo: tipoExibicao,
@@ -886,7 +886,7 @@ export default function Aniversariantes() {
       // PAIS FALECIDOS de irmãos VIVOS
       let { data: paisFalecidos, error: errorPaisFalecidos } = await supabase
         .from('pais')
-        .select('nome, data_nascimento, irmao_id, falecido, tipo_pai, irmaos(nome, situacao)')
+        .select('nome, data_nascimento, irmao_id, falecido, tipo, irmaos(nome, situacao)')
         .in('irmao_id', irmaoVivosIds);
 
       if (errorPaisFalecidos) {
@@ -923,8 +923,8 @@ export default function Aniversariantes() {
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
-            const sexo = pai.tipo_pai === 'mae' ? 'F' : 'M';
-            const tipoExibicao = pai.tipo_pai === 'mae' ? 'Mãe' : 'Pai';
+            const sexo = pai.tipo === 'mae' ? 'F' : 'M';
+            const tipoExibicao = pai.tipo === 'mae' ? 'Mãe' : 'Pai';
             
             aniversariantesInMemoriam.push({
               tipo: tipoExibicao,
