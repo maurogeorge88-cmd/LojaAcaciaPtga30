@@ -122,9 +122,33 @@ export default function ModalGradePresenca({ onFechar }) {
           }
         }
         
-        // 2. Para grade de presença (mês inteiro), NÃO FILTRAR por situações bloqueadoras
-        // Pois pode haver sessões do passado onde o irmão estava ativo
-        // O filtro de situação já é aplicado no RegistroPresenca para cada sessão específica
+        // 2. Verificar se tem situação bloqueadora ATIVA HOJE
+        // (irregular, desligado desde data anterior ao mês atual)
+        const temSituacaoBloqueadoraAtual = historicoSituacoes?.some(sit => {
+          if (sit.membro_id !== i.id) return false;
+          
+          const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+          
+          if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+          
+          const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+          const dataInicioMes = new Date(anoAtual, mesAtual, 1);
+          
+          // Se desligou/ficou irregular ANTES do início do mês atual, excluir da lista
+          if (dataInicio < dataInicioMes) {
+            // Se tem data_fim e já passou, não bloqueia
+            if (sit.data_fim) {
+              const dataFim = new Date(sit.data_fim + 'T00:00:00');
+              return dataFim >= dataInicioMes; // Ainda está bloqueado
+            }
+            return true; // Sem data_fim, está bloqueado
+          }
+          
+          return false;
+        });
+        
+        if (temSituacaoBloqueadoraAtual) return false;
         
         return true;
       });
