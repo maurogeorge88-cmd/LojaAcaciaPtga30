@@ -164,8 +164,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_falecimento, data_ingresso_loja')
-        .eq('status', 'ativo');
+        .select('id, nome, data_nascimento, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_falecimento, data_ingresso_loja');
 
       const { data: historicoSituacoes } = await supabase
         .from('historico_situacoes')
@@ -267,7 +266,7 @@ export default function DashboardPresenca() {
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
-        .eq('status', 'ativo');
+        ;
 
       const { data: historicoSituacoes } = await supabase
         .from('historico_situacoes')
@@ -373,8 +372,7 @@ export default function DashboardPresenca() {
 
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, data_nascimento, data_falecimento')
-        .eq('status', 'ativo');
+        .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja, data_nascimento, data_falecimento, data_desligamento');
 
       const { data: historicoSituacoes } = await supabase
         .from('historico_situacoes')
@@ -533,7 +531,7 @@ export default function DashboardPresenca() {
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_ingresso_loja')
-        .eq('status', 'ativo');
+        ;
 
       // 4. Buscar registros com paginação
       let registros = [];
@@ -689,7 +687,7 @@ export default function DashboardPresenca() {
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, data_nascimento, data_ingresso_loja, data_falecimento')
-        .eq('status', 'ativo');
+        ;
 
       // 5. Buscar registros com paginação
       let registros = [];
