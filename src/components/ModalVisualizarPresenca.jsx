@@ -98,13 +98,10 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           
           const nome = irmao.nome;
           
-          // Filtro 1: Situações que não podem ter presença registrada
-          const situacoesExcluidas = ['irregular', 'suspenso', 'ex-ofício', 'ex-oficio', 'desligado', 'excluído', 'excluido'];
-          if (irmao.situacao && situacoesExcluidas.includes(irmao.situacao.toLowerCase())) {
-            return false;
-          }
+          // REMOVIDO: Filtro de situações - para visualização de sessões passadas, 
+          // mostrar todos os irmãos que tinham registro naquela data
           
-          // Filtro 2: Data de ingresso - só aparece se já estava na loja
+          // Filtro 1: Data de ingresso - só aparece se já estava na loja
           const dataIngresso = irmao.data_ingresso_loja 
             ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
             : irmao.data_iniciacao 
@@ -118,7 +115,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             return false;
           }
           
-          // Filtro 3: Falecimento
+          // Filtro 2: Falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
             if (dataSessao > dataFalecimento) {
@@ -126,7 +123,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             }
           }
           
-          // Filtro 4: Grau mínimo NA DATA DA SESSÃO (igual RegistroPresenca)
+          // Filtro 3: Grau mínimo NA DATA DA SESSÃO (igual RegistroPresenca)
           if (grauMinimo === 2) {
             if (!irmao.data_elevacao) {
               return false;
