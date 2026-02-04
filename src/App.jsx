@@ -229,11 +229,11 @@ function App() {
   // ========================================
   const registrarAcesso = async (userId) => {
     try {
-      await supabase.from('logs_sistema').insert({
+      await supabase.from('logs_acesso').insert({
         usuario_id: userId,
         acao: 'acesso_sistema',
         detalhes: 'Usuário acessou o sistema',
-        timestamp: new Date().toISOString()
+        created_at: new Date().toISOString()
       });
       console.log('✅ Acesso registrado');
     } catch (error) {
