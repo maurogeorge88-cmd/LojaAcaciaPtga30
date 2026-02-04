@@ -225,6 +225,23 @@ function App() {
   ];
 
   // ========================================
+  // FUNÇÃO REGISTRAR ACESSO
+  // ========================================
+  const registrarAcesso = async (userId) => {
+    try {
+      await supabase.from('logs_sistema').insert({
+        usuario_id: userId,
+        acao: 'acesso_sistema',
+        detalhes: 'Usuário acessou o sistema',
+        timestamp: new Date().toISOString()
+      });
+      console.log('✅ Acesso registrado');
+    } catch (error) {
+      console.error('❌ Erro ao registrar acesso:', error);
+    }
+  };
+
+  // ========================================
   // EFEITOS E CARREGAMENTOS
   // ========================================
   useEffect(() => {
@@ -244,6 +261,9 @@ function App() {
         loadLivros();
         loadEmprestimos();
         loadCronograma();
+        
+        // Registrar acesso ao sistema
+        registrarAcesso(session.user.id);
       }
       setLoading(false);
     });
