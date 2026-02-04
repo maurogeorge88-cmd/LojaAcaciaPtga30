@@ -50,6 +50,12 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
+      // Buscar histórico de situações
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
+
       // Buscar TODOS os irmãos ativos (SEM filtro de grau na query)
       const grauMinimoRaw = sessaoData?.graus_sessao?.grau_minimo_requerido;
       const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : null;
@@ -98,8 +104,28 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           
           const nome = irmao.nome;
           
-          // REMOVIDO: Filtro de situações - para visualização de sessões passadas, 
-          // mostrar todos os irmãos que tinham registro naquela data
+          // Filtro 0: Histórico de situações - verificar se estava em situação bloqueadora na data
+          const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+            if (sit.membro_id !== irmao.id) return false;
+            
+            const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+            
+            // Sessão antes da situação começar - está OK
+            if (dataSessao < dataInicio) return false;
+            
+            // Se tem data_fim, verificar se sessão está dentro do período
+            if (sit.data_fim) {
+              const dataFim = new Date(sit.data_fim + 'T00:00:00');
+              return dataSessao >= dataInicio && dataSessao <= dataFim;
+            }
+            
+            // Sem data_fim (indefinida) - se já começou, bloqueia
+            return dataSessao >= dataInicio;
+          });
+          
+          if (situacaoBloqueadora) {
+            return false;
+          }
           
           // Filtro 1: Data de ingresso - só aparece se já estava na loja
           const dataIngresso = irmao.data_ingresso_loja 
