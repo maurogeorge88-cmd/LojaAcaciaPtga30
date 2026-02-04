@@ -122,25 +122,9 @@ export default function ModalGradePresenca({ onFechar }) {
           }
         }
         
-        // 2. Remover desligados, irregulares, suspensos, ex-ofício (situações bloqueadoras ativas)
-        const temSituacaoBloqueadoraAtiva = historicoSituacoes?.some(sit => {
-          if (sit.membro_id !== i.id) return false;
-          
-          const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-          const situacoesExcluidas = ['desligado', 'desligamento', 'irregular', 'suspenso', 'ex-oficio', 'excluido'];
-          
-          if (!situacoesExcluidas.includes(tipo)) return false;
-          
-          const dataInicio = new Date(sit.data_inicio);
-          if (dataInicio > hoje) return false;
-          
-          if (sit.data_fim === null || sit.data_fim === undefined) return true;
-          
-          const dataFim = new Date(sit.data_fim);
-          return dataFim >= hoje;
-        });
-        
-        if (temSituacaoBloqueadoraAtiva) return false;
+        // 2. Para grade de presença (mês inteiro), NÃO FILTRAR por situações bloqueadoras
+        // Pois pode haver sessões do passado onde o irmão estava ativo
+        // O filtro de situação já é aplicado no RegistroPresenca para cada sessão específica
         
         return true;
       });
