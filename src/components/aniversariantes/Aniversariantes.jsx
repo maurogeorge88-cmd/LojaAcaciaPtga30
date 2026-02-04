@@ -610,7 +610,8 @@ export default function Aniversariantes() {
       const { data: irmaos } = await supabase
         .from('irmaos')
         .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao')
-        .neq('situacao', 'falecido');
+        .neq('situacao', 'falecido')
+        .neq('situacao', 'irregular');
 
       console.log('✅ Irmãos vivos:', irmaos?.length);
       console.log('📋 IDs dos irmãos vivos:', irmaos?.map(i => `${i.nome} (${i.situacao})`).join(', '));
