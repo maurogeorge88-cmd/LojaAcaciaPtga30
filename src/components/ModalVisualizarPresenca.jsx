@@ -105,8 +105,15 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
           const nome = irmao.nome;
           
           // Filtro 0: Histórico de situações - verificar se estava em situação bloqueadora na data
+          // APENAS: desligamento, irregular, suspenso, excluído (NÃO licença)
           const situacaoBloqueadora = historicoSituacoes?.find(sit => {
             if (sit.membro_id !== irmao.id) return false;
+            
+            // Verificar se é situação bloqueadora
+            const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+            
+            if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
             
             const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
             
