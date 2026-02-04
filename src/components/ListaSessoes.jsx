@@ -73,8 +73,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         
         const { data: todosIrmaos } = await supabase
           .from('irmaos')
-          .select('id, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento, situacao')
-          .eq('status', 'ativo');
+          .select('id, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento, situacao');
         
         // Buscar registros de presença desta sessão
         const { data: registrosPresenca } = await supabase
@@ -97,13 +96,9 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         const irmaosValidos = todosIrmaos?.filter(irmao => {
           if (!irmao) return false;
           
-          // Filtro 1: Situações excluídas
-          const situacoesExcluidas = ['irregular', 'suspenso', 'ex-ofício', 'ex-oficio', 'desligado', 'excluído', 'excluido'];
-          if (irmao.situacao && situacoesExcluidas.includes(irmao.situacao.toLowerCase())) {
-            return false;
-          }
+          // REMOVIDO: Filtro de situações - para sessões realizadas, mostrar histórico
           
-          // Filtro 2: Data de ingresso
+          // Filtro 1: Data de ingresso
           const dataIngresso = irmao.data_ingresso_loja 
             ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
             : irmao.data_iniciacao 
@@ -113,13 +108,13 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           if (!dataIngresso) return false;
           if (dataSessao < dataIngresso) return false;
           
-          // Filtro 3: Falecimento
+          // Filtro 2: Falecimento
           if (irmao.data_falecimento) {
             const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
             if (dataSessao > dataFalecimento) return false;
           }
           
-          // Filtro 4: Grau NA DATA DA SESSÃO
+          // Filtro 3: Grau NA DATA DA SESSÃO
           if (grauMinimo === 2) {
             if (!irmao.data_elevacao) return false;
             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
