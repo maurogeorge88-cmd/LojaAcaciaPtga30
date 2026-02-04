@@ -51,9 +51,9 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
 
       // Construir query de logs (SEM JOIN para evitar erros)
       let query = supabase
-        .from('logs_sistema')
+        .from('logs_acesso')
         .select('*')
-        .order('timestamp', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1000);
 
       // Aplicar filtros
@@ -64,10 +64,10 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
         query = query.eq('acao', filtros.acao);
       }
       if (filtros.dataInicio) {
-        query = query.gte('timestamp', `${filtros.dataInicio}T00:00:00`);
+        query = query.gte('created_at', `${filtros.dataInicio}T00:00:00`);
       }
       if (filtros.dataFim) {
-        query = query.lte('timestamp', `${filtros.dataFim}T23:59:59`);
+        query = query.lte('created_at', `${filtros.dataFim}T23:59:59`);
       }
       if (filtros.busca) {
         query = query.or(`detalhes.ilike.%${filtros.busca}%,ip.ilike.%${filtros.busca}%`);
@@ -115,7 +115,7 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
     hoje.setHours(0, 0, 0, 0);
     
     const acoesHoje = logsData.filter(log => {
-      const dataLog = new Date(log.timestamp);
+      const dataLog = new Date(log.created_at);
       dataLog.setHours(0, 0, 0, 0);
       return dataLog.getTime() === hoje.getTime();
     }).length;
@@ -500,7 +500,7 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
                       />
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900">
-                      {formatarDataHora(log.timestamp)}
+                      {formatarDataHora(log.created_at)}
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">
                       <div className="text-xs font-medium text-gray-900">
