@@ -84,16 +84,35 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
         const usuarioIds = [...new Set(logsComNomes.map(log => log.usuario_id).filter(Boolean))];
         
         if (usuarioIds.length > 0) {
-          const { data: usuariosData } = await supabase
-            .from('usuarios')
-            .select('id, nome, email')
-            .in('id', usuarioIds);
-          
-          // Mapear nomes aos logs
-          logsComNomes = logsComNomes.map(log => ({
-            ...log,
-            usuario: usuariosData?.find(u => u.id === log.usuario_id) || null
-          }));
+          try {
+            const { data: usuariosData, error: usuariosError } = await supabase
+              .from('usuarios')
+              .select('id, nome, email')
+              .in('id', usuarioIds);
+            
+            if (usuariosError) {
+              console.error('Erro ao buscar usuários:', usuariosError);
+            }
+            
+            // Mapear nomes aos logs
+            logsComNomes = logsComNomes.map(log => ({
+              ...log,
+              usuario: usuariosData?.find(u => u.id === log.usuario_id) || { 
+                nome: 'Usuário não encontrado',
+                email: log.usuario_id 
+              }
+            }));
+          } catch (err) {
+            console.error('Erro ao mapear usuários:', err);
+            // Continua com logs sem nomes de usuários
+            logsComNomes = logsComNomes.map(log => ({
+              ...log,
+              usuario: { 
+                nome: 'Erro ao carregar',
+                email: log.usuario_id 
+              }
+            }));
+          }
         }
       }
 
