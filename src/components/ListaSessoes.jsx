@@ -64,6 +64,11 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         throw error;
       }
 
+      // Buscar histórico de situações UMA VEZ (fora do loop)
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
       
       // Buscar registros de presença para cada sessão
       const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
@@ -96,7 +101,22 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         const irmaosValidos = todosIrmaos?.filter(irmao => {
           if (!irmao) return false;
           
-          // REMOVIDO: Filtro de situações - para sessões realizadas, mostrar histórico
+          // Filtro 0: Histórico de situações - verificar se estava em situação bloqueadora
+          const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+            if (sit.membro_id !== irmao.id) return false;
+            
+            const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+            if (dataSessao < dataInicio) return false;
+            
+            if (sit.data_fim) {
+              const dataFim = new Date(sit.data_fim + 'T00:00:00');
+              return dataSessao >= dataInicio && dataSessao <= dataFim;
+            }
+            
+            return dataSessao >= dataInicio;
+          });
+          
+          if (situacaoBloqueadora) return false;
           
           // Filtro 1: Data de ingresso
           const dataIngresso = irmao.data_ingresso_loja 
