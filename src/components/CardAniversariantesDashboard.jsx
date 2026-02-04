@@ -33,7 +33,9 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
       // Buscar IRMÃOS
       const { data: irmaos, error: erroIrmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, cargo, foto_url');
+        .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao')
+        .neq('situacao', 'falecido')
+        .neq('situacao', 'irregular');
 
       console.log('🎂 DEBUG: Total irmãos:', irmaos?.length);
       console.log('🎂 DEBUG: Erro?', erroIrmaos);
