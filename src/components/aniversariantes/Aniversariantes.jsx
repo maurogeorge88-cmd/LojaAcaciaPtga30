@@ -3,6 +3,18 @@ import { supabase } from '../../App';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+// Função para retornar emoji adequado por idade e sexo
+const obterEmojiPessoa = (idade, sexo, tipo = null) => {
+  if (idade <= 2) return '👶';
+  if (idade <= 12) return sexo === 'F' ? '👧' : '👦';
+  if (idade <= 17) return sexo === 'F' ? '👧' : '👦';
+  if (idade <= 59) {
+    if (tipo === 'esposa') return '💑';
+    return sexo === 'F' ? '👩' : '👨';
+  }
+  return sexo === 'F' ? '👵' : '👴';
+};
+
 export default function Aniversariantes() {
   const [aniversariantes, setAniversariantes] = useState([]);
   const [filtro, setFiltro] = useState('hoje');
@@ -738,6 +750,7 @@ export default function Aniversariantes() {
             aniversariantesFamiliares.push({
               tipo: 'Esposa',
               nome: esposa.nome,
+              sexo: 'F',
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
               idade,
@@ -800,6 +813,7 @@ export default function Aniversariantes() {
             aniversariantesFamiliares.push({
               tipo: tipoExibicao,
               nome: filho.nome,
+              sexo: filho.sexo || 'M',
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
               idade,
@@ -1326,7 +1340,7 @@ export default function Aniversariantes() {
                           <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
                             ehHoje ? 'bg-yellow-200' : 'bg-green-200'
                           }`}>
-                            {aniv.tipo === 'Bodas' ? '💑' : aniv.tipo === 'Esposa' ? '💑' : aniv.tipo === 'Filho(a)' ? '👶' : '👴'}
+                            {aniv.tipo === 'Bodas' ? '💑' : obterEmojiPessoa(aniv.idade, aniv.sexo, aniv.tipo.toLowerCase())}
                           </div>
                           
                           <div className="flex-1">
