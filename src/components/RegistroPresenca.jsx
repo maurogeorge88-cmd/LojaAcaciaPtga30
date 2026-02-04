@@ -113,16 +113,28 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
           return false; // Sessão antes do ingresso na loja
         }
         
-        // FILTRO: Situações INDEFINIDAS (sem data_fim) na data da sessão
-        // Ex: licença sem prazo, desligamento definitivo
-        const situacaoIndefinida = historicoSituacoes?.find(sit => 
-          sit.membro_id === i.id &&
-          sit.data_fim === null && // SEM data de fim = indefinido
-          dataSessao >= new Date(sit.data_inicio + 'T00:00:00')
-        );
+        // FILTRO: Situações bloqueadoras na data da sessão
+        // Ex: licença, desligamento, irregular, suspenso
+        const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+          if (sit.membro_id !== i.id) return false;
+          
+          const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+          
+          // Sessão antes da situação começar - está OK
+          if (dataSessao < dataInicio) return false;
+          
+          // Se tem data_fim, verificar se sessão está dentro do período
+          if (sit.data_fim) {
+            const dataFim = new Date(sit.data_fim + 'T00:00:00');
+            return dataSessao >= dataInicio && dataSessao <= dataFim;
+          }
+          
+          // Sem data_fim (indefinida) - se já começou, bloqueia
+          return dataSessao >= dataInicio;
+        });
         
-        if (situacaoIndefinida) {
-          return false; // Licença/desligamento indefinido → não aparece
+        if (situacaoBloqueadora) {
+          return false; // Situação bloqueadora ativa na data da sessão
         }
         
         // FILTRO: FALECIDO - só aparece se sessão foi ANTES OU NO DIA do falecimento
