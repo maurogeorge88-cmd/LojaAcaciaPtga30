@@ -1,6 +1,18 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../App';
 
+// Função para retornar emoji adequado por idade e sexo
+const obterEmojiPessoa = (idade, sexo, tipo = null) => {
+  if (idade <= 2) return '👶';
+  if (idade <= 12) return sexo === 'F' ? '👧' : '👦';
+  if (idade <= 17) return sexo === 'F' ? '👧' : '👦';
+  if (idade <= 59) {
+    if (tipo === 'esposa') return '💑';
+    return sexo === 'F' ? '👩' : '👨';
+  }
+  return sexo === 'F' ? '👵' : '👴';
+};
+
 export function CardAniversariantesDashboard({ onVerTodos }) {
   const [aniversariantesHoje, setAniversariantesHoje] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +52,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
             aniversariantesLista.push({
               tipo: 'Irmão',
               nome: irmao.nome,
+              sexo: 'M',
               cim: irmao.cim,
               data_nascimento: irmao.data_nascimento,
               idade: calcularIdade(dataNasc),
@@ -66,6 +79,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
             aniversariantesLista.push({
               tipo: 'Esposa',
               nome: esposa.nome,
+              sexo: 'F',
               idade: calcularIdade(dataNasc),
               irmao_responsavel: esposa.irmaos?.nome
             });
@@ -87,6 +101,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
             aniversariantesLista.push({
               tipo: 'Filho(a)',
               nome: filho.nome,
+              sexo: filho.sexo || 'M',
               idade: calcularIdade(dataNasc),
               irmao_responsavel: filho.irmaos?.nome
             });
@@ -203,10 +218,7 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center text-2xl border-2 border-yellow-400">
-                    {aniv.tipo === 'Irmão' ? '👤' :
-                     aniv.tipo === 'Esposa' ? '💑' :
-                     aniv.tipo === 'Filho(a)' ? '👶' :
-                     aniv.tipo === 'Pai' ? '👨' : '👩'}
+                    {obterEmojiPessoa(aniv.idade, aniv.sexo, aniv.tipo.toLowerCase())}
                   </div>
                 )}
                 
