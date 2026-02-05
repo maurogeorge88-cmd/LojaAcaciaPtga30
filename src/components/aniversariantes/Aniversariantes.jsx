@@ -611,7 +611,11 @@ export default function Aniversariantes() {
         .from('irmaos')
         .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao')
         .neq('situacao', 'falecido')
-        .neq('situacao', 'irregular');
+        .neq('situacao', 'irregular')
+        .neq('situacao', 'desligado')
+        .neq('situacao', 'suspenso')
+        .neq('situacao', 'excluído')
+        .neq('situacao', 'ex-ofício');
 
       console.log('✅ Irmãos vivos:', irmaos?.length);
       console.log('📋 IDs dos irmãos vivos:', irmaos?.map(i => `${i.nome} (${i.situacao})`).join(', '));
