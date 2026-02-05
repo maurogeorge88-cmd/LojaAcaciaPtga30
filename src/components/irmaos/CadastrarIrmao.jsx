@@ -106,6 +106,159 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     cargo: ''
   });
 
+  // Estados para documentos
+  const [documentos, setDocumentos] = useState([]);
+
+  // Função para carregar documentos
+  const carregarDocumentos = async (irmaoId) => {
+    if (!irmaoId) return;
+    const { data } = await supabase
+      .from('documentos_irmaos')
+      .select('*')
+      .eq('irmao_id', irmaoId)
+      .order('created_at', { ascending: false });
+    
+    setDocumentos(data || []);
+  };
+
+  // Função para upload de foto
+  const handleUploadFoto = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showError('❌ Apenas imagens são permitidas');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showError('❌ Imagem muito grande. Máximo 5MB');
+      return;
+    }
+
+    try {
+      const irmaoId = irmaoEditando?.id;
+      if (!irmaoId) {
+        showError('❌ Salve o cadastro antes de enviar a foto');
+        return;
+      }
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${irmaoId}_${Date.now()}.${fileExt}`;
+      const filePath = `fotos_irmaos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('loja-acacia')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('loja-acacia')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase
+        .from('irmaos')
+        .update({ foto_url: publicUrl })
+        .eq('id', irmaoId);
+
+      if (updateError) throw updateError;
+
+      setIrmaoForm(prev => ({ ...prev, foto_url: publicUrl }));
+      showSuccess('✅ Foto atualizada com sucesso!');
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      showError('❌ Erro ao fazer upload: ' + error.message);
+    }
+  };
+
+  // Função para upload de PDF
+  const handleUploadPDF = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      showError('❌ Apenas arquivos PDF são permitidos');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showError('❌ Arquivo muito grande. Máximo 10MB');
+      return;
+    }
+
+    try {
+      const irmaoId = irmaoEditando?.id;
+      if (!irmaoId) {
+        showError('❌ Salve o cadastro antes de enviar documentos');
+        return;
+      }
+
+      const fileName = `${irmaoId}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `documentos_irmaos/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('loja-acacia')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('loja-acacia')
+        .getPublicUrl(filePath);
+
+      const { error: insertError } = await supabase
+        .from('documentos_irmaos')
+        .insert({
+          irmao_id: irmaoId,
+          nome_arquivo: file.name,
+          url_arquivo: publicUrl,
+          tipo: 'pdf'
+        });
+
+      if (insertError) throw insertError;
+
+      showSuccess('✅ Documento enviado com sucesso!');
+      carregarDocumentos(irmaoId);
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      showError('❌ Erro ao fazer upload: ' + error.message);
+    }
+  };
+
+  // Função para excluir documento
+  const handleExcluirDocumento = async (docId, urlArquivo) => {
+    if (!confirm('Deseja realmente excluir este documento?')) return;
+
+    try {
+      const filePath = urlArquivo.split('/').slice(-2).join('/');
+      
+      await supabase.storage
+        .from('loja-acacia')
+        .remove([filePath]);
+
+      const { error } = await supabase
+        .from('documentos_irmaos')
+        .delete()
+        .eq('id', docId);
+
+      if (error) throw error;
+
+      showSuccess('✅ Documento excluído com sucesso!');
+      carregarDocumentos(irmaoEditando?.id);
+    } catch (error) {
+      showError('❌ Erro ao excluir documento: ' + error.message);
+    }
+  };
+
+  // Carregar documentos quando mudar para aba documentos
+  useEffect(() => {
+    if (abaSelecionada === 'documentos' && irmaoEditando?.id) {
+      carregarDocumentos(irmaoEditando.id);
+    }
+  }, [abaSelecionada, irmaoEditando]);
+
   // Função para carregar dados do irmão para edição
   const carregarParaEdicao = useCallback(async (irmao) => {
     console.log('📝 Iniciando carregamento para edição:', irmao);
@@ -740,6 +893,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             📋 Situações
           </button>
         )}
+
+        {irmaoEditando?.id && (
+          <button
+            type="button"
+            onClick={() => setAbaSelecionada('documentos')}
+            className={`px-4 py-2 font-medium transition-colors ${
+              abaSelecionada === 'documentos'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            📄 Documentos
+          </button>
+        )}
       </div>
 
       {/* Formulário */}
@@ -961,16 +1128,40 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                URL da Foto <span className="text-xs text-gray-500">(opcional)</span>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Foto do Irmão
               </label>
-              <input
-                type="url"
-                value={irmaoForm.foto_url}
-                onChange={(e) => setIrmaoForm({ ...irmaoForm, foto_url: e.target.value })}
-                placeholder="https://exemplo.com/foto.jpg"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <div className="flex items-center gap-4">
+                {/* Preview da foto */}
+                {irmaoForm.foto_url ? (
+                  <img
+                    src={irmaoForm.foto_url}
+                    alt="Foto"
+                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                  />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-3xl">👤</span>
+                  </div>
+                )}
+                
+                {/* Botão upload */}
+                {modoEdicao && irmaoEditando?.id && (
+                  <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    📷 {irmaoForm.foto_url ? 'Alterar Foto' : 'Enviar Foto'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadFoto}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+                
+                {!modoEdicao && (
+                  <p className="text-sm text-gray-500">Salve o cadastro primeiro para enviar a foto</p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1846,6 +2037,79 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
                   Licenças, desligamentos e outras situações só podem ser cadastradas após criar o registro do irmão
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ABA: Documentos */}
+        {abaSelecionada === 'documentos' && (
+          <div className="bg-white p-6 rounded-lg shadow">
+            {irmaoEditando?.id ? (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-2xl font-bold text-gray-800">📄 Documentos</h3>
+                  
+                  <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    📤 Enviar PDF
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleUploadPDF}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {documentos.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <p className="text-lg">Nenhum documento cadastrado</p>
+                    <p className="text-sm mt-2">Use o botão acima para enviar arquivos PDF</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {documentos.map(doc => (
+                      <div key={doc.id} className="bg-white border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3">
+                          <span className="text-3xl">📄</span>
+                          <div>
+                            <p className="font-medium text-gray-800">{doc.nome_arquivo}</p>
+                            <p className="text-sm text-gray-500">
+                              Enviado em {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <a
+                            href={doc.url_arquivo}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                          >
+                            👁️ Ver
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleExcluirDocumento(doc.id, doc.url_arquivo)}
+                            className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                          >
+                            🗑️ Excluir
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-6xl mb-4">📄</div>
+                <p className="text-gray-600 text-lg font-medium">
+                  Salve o irmão primeiro para enviar documentos
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  Documentos só podem ser enviados após criar o registro do irmão
                 </p>
               </div>
             )}
