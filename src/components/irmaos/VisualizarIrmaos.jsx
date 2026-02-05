@@ -409,10 +409,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
                   <img
                     src={irmao.foto_url}
                     alt={irmao.nome}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-40 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-48 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                     <span className="text-6xl text-white">👤</span>
                   </div>
                 )}
