@@ -234,6 +234,152 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
     return `${anos} ano(s) e ${meses} mês(es)`;
   };
 
+  const handleUploadFoto = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (!file.type.startsWith('image/')) {
+      showError('❌ Apenas imagens são permitidas');
+      return;
+    }
+
+    // Validar tamanho (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      showError('❌ Imagem muito grande. Máximo 5MB');
+      return;
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${irmaoId}_${Date.now()}.${fileExt}`;
+      const filePath = `fotos_irmaos/${fileName}`;
+
+      // Upload para Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('loja-acacia')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('loja-acacia')
+        .getPublicUrl(filePath);
+
+      // Atualizar no banco
+      const { error: updateError } = await supabase
+        .from('irmaos')
+        .update({ foto_url: publicUrl })
+        .eq('id', irmaoId);
+
+      if (updateError) throw updateError;
+
+      showSuccess('✅ Foto atualizada com sucesso!');
+      carregarIrmao();
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      showError('❌ Erro ao fazer upload: ' + error.message);
+    }
+  };
+
+  const handleUploadPDF = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validar tipo
+    if (file.type !== 'application/pdf') {
+      showError('❌ Apenas arquivos PDF são permitidos');
+      return;
+    }
+
+    // Validar tamanho (máx 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      showError('❌ Arquivo muito grande. Máximo 10MB');
+      return;
+    }
+
+    try {
+      const fileName = `${irmaoId}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const filePath = `documentos_irmaos/${fileName}`;
+
+      // Upload para Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('loja-acacia')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      // Obter URL pública
+      const { data: { publicUrl } } = supabase.storage
+        .from('loja-acacia')
+        .getPublicUrl(filePath);
+
+      // Salvar na tabela documentos_irmaos
+      const { error: insertError } = await supabase
+        .from('documentos_irmaos')
+        .insert({
+          irmao_id: irmaoId,
+          nome_arquivo: file.name,
+          url_arquivo: publicUrl,
+          tipo: 'pdf'
+        });
+
+      if (insertError) throw insertError;
+
+      showSuccess('✅ Documento enviado com sucesso!');
+      carregarDocumentos();
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error);
+      showError('❌ Erro ao fazer upload: ' + error.message);
+    }
+  };
+
+  const [documentos, setDocumentos] = useState([]);
+
+  const carregarDocumentos = async () => {
+    const { data } = await supabase
+      .from('documentos_irmaos')
+      .select('*')
+      .eq('irmao_id', irmaoId)
+      .order('created_at', { ascending: false });
+    
+    setDocumentos(data || []);
+  };
+
+  const handleExcluirDocumento = async (docId, urlArquivo) => {
+    if (!confirm('Deseja realmente excluir este documento?')) return;
+
+    try {
+      // Extrair caminho do arquivo da URL
+      const filePath = urlArquivo.split('/').slice(-2).join('/');
+      
+      // Excluir do storage
+      await supabase.storage
+        .from('loja-acacia')
+        .remove([filePath]);
+
+      // Excluir do banco
+      const { error } = await supabase
+        .from('documentos_irmaos')
+        .delete()
+        .eq('id', docId);
+
+      if (error) throw error;
+
+      showSuccess('✅ Documento excluído com sucesso!');
+      carregarDocumentos();
+    } catch (error) {
+      showError('❌ Erro ao excluir documento: ' + error.message);
+    }
+  };
+
+  useEffect(() => {
+    if (irmaoId && abaSelecionada === 'documentos') {
+      carregarDocumentos();
+    }
+  }, [irmaoId, abaSelecionada]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -256,18 +402,33 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg shadow-lg overflow-hidden">
         <div className="p-6">
           <div className="flex items-start justify-between">
-            <div className="flex gap-6 items-center">
-              {irmao.foto_url ? (
-                <img
-                  src={irmao.foto_url}
-                  alt={irmao.nome}
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
-                  <span className="text-4xl text-blue-600">👤</span>
-                </div>
-              )}
+            <div className="flex gap-6 items-start">
+              <div className="flex flex-col items-center gap-2">
+                {irmao.foto_url ? (
+                  <img
+                    src={irmao.foto_url}
+                    alt={irmao.nome}
+                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                    <span className="text-4xl text-blue-600">👤</span>
+                  </div>
+                )}
+                
+                {/* Botão upload foto */}
+                {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
+                  <label className="cursor-pointer bg-white text-blue-600 px-3 py-1 rounded-md text-xs font-medium hover:bg-gray-100 transition-colors">
+                    📷 Alterar Foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleUploadFoto}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
               
               <div>
                 <h1 className="text-3xl font-bold mb-2">{irmao.nome}</h1>
@@ -389,6 +550,16 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             }`}
           >
             📋 Situações
+          </button>
+          <button
+            onClick={() => setAbaSelecionada('documentos')}
+            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
+              abaSelecionada === 'documentos'
+                ? 'border-b-2 border-blue-600 text-blue-600'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            📄 Documentos
           </button>
         </div>
 
@@ -1678,6 +1849,68 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {/* ABA: Situações (Licenças, Desligamentos, etc) */}
           {abaSelecionada === 'situacoes' && (
             <GestaoSituacoes irmaId={irmaoId} />
+          )}
+
+          {/* ABA: Documentos */}
+          {abaSelecionada === 'documentos' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800">📄 Documentos</h2>
+                
+                {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
+                  <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    📤 Enviar PDF
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleUploadPDF}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+
+              {documentos.length === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <p className="text-lg">Nenhum documento cadastrado</p>
+                  <p className="text-sm mt-2">Use o botão acima para enviar arquivos PDF</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {documentos.map(doc => (
+                    <div key={doc.id} className="bg-white border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl">📄</span>
+                        <div>
+                          <p className="font-medium text-gray-800">{doc.nome_arquivo}</p>
+                          <p className="text-sm text-gray-500">
+                            Enviado em {new Date(doc.created_at).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <a
+                          href={doc.url_arquivo}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          👁️ Ver
+                        </a>
+                        {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
+                          <button
+                            onClick={() => handleExcluirDocumento(doc.id, doc.url_arquivo)}
+                            className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                          >
+                            🗑️ Excluir
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
