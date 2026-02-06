@@ -634,6 +634,74 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                     </tbody>
                   </table>
                 </div>
+
+                {/* VISITAS DO MÊS */}
+                {(() => {
+                  const visitasDoMes = visitas.filter(v => {
+                    const dataVisita = new Date(v.data_visita + 'T00:00:00');
+                    return dataVisita.getMonth() === grupo.mes && dataVisita.getFullYear() === grupo.ano;
+                  });
+
+                  if (visitasDoMes.length === 0) return null;
+
+                  return (
+                    <div className="border-t-4 border-dashed border-purple-300 mt-4">
+                      <div className="bg-purple-50 px-6 py-3 flex justify-between items-center">
+                        <h4 className="text-sm font-bold text-purple-800">
+                          📍 Visitas dos Irmãos a Outras Lojas
+                        </h4>
+                        <button
+                          onClick={() => abrirModalVisita()}
+                          className="text-purple-600 hover:text-purple-700 text-xs font-medium"
+                        >
+                          ➕ Nova Visita
+                        </button>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        {visitasDoMes.map(visita => (
+                          <div key={visita.id} className="flex items-center justify-between bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 flex-1">
+                              <span className="text-sm font-medium text-gray-900 min-w-[90px]">
+                                {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              </span>
+                              <span className="text-sm font-semibold text-purple-900">
+                                {visita.irmaos?.nome}
+                              </span>
+                              <span className="text-sm text-gray-600">→</span>
+                              <span className="text-sm text-gray-700">
+                                {visita.nome_loja}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                ({visita.oriente})
+                              </span>
+                              {visita.potencias_masonicas?.sigla && (
+                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                  {visita.potencias_masonicas.sigla}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => abrirModalVisita(visita)}
+                                className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => excluirVisita(visita.id)}
+                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
+                                title="Excluir"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ));
           })()}
@@ -650,99 +718,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           </p>
         </div>
       )}
-
-      {/* SEÇÃO DE VISITAS */}
-      <div className="mt-8 border-t-4 border-purple-300 pt-8">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold">📍 Visitas a Outras Lojas</h2>
-                <p className="text-purple-100 text-sm mt-1">
-                  Registro de visitas dos irmãos a outras lojas maçônicas
-                </p>
-              </div>
-              <button
-                onClick={() => abrirModalVisita()}
-                className="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors font-medium"
-              >
-                ➕ Nova Visita
-              </button>
-            </div>
-          </div>
-
-          <div className="p-6">
-            {visitas.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p className="text-lg">Nenhuma visita registrada neste período</p>
-                <p className="text-sm mt-2">Clique em "Nova Visita" para cadastrar</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead className="bg-gray-100 border-b">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Irmão</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Loja Visitada</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Oriente</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Potência</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Observações</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {visitas.map((visita) => (
-                      <tr key={visita.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm">
-                          {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-medium">{visita.irmaos?.nome}</td>
-                        <td className="px-4 py-3 text-sm">{visita.nome_loja}</td>
-                        <td className="px-4 py-3 text-sm">{visita.oriente}</td>
-                        <td className="px-4 py-3 text-sm">
-                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
-                            {visita.potencias_masonicas?.sigla || 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-600">
-                          {visita.observacoes || '-'}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-center">
-                          <div className="flex justify-center gap-2">
-                            <button
-                              onClick={() => abrirModalVisita(visita)}
-                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                            >
-                              ✏️ Editar
-                            </button>
-                            <button
-                              onClick={() => excluirVisita(visita.id)}
-                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
-                            >
-                              🗑️ Excluir
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {visitas.length > 0 && (
-              <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
-                <p className="text-sm text-purple-800">
-                  <strong>Total:</strong> {visitas.length} visita(s) registrada(s)
-                  {filtroMes && ` em ${meses.find(m => m.valor === filtroMes)?.nome}`}
-                  {filtroAno && ` de ${filtroAno}`}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* MODAL */}
       {modalVisita && (
