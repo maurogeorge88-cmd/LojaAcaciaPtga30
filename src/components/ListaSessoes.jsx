@@ -23,6 +23,9 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
     potencia_id: '',
     observacoes: ''
   });
+  const [editandoPotencia, setEditandoPotencia] = useState(null);
+  const [novaPotencia, setNovaPotencia] = useState({ sigla: '', nome_completo: '' });
+  const [mostrarFormPotencia, setMostrarFormPotencia] = useState(false);
 
   const meses = [
     { valor: '', nome: 'Todos os meses' },
@@ -319,6 +322,48 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       .eq('ativa', true)
       .order('sigla');
     setPotencias(data || []);
+  };
+
+  const salvarNovaPotencia = async () => {
+    if (!novaPotencia.sigla || !novaPotencia.nome_completo) {
+      setMensagem({ tipo: 'erro', texto: 'Preencha sigla e nome completo da potência' });
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('potencias_masonicas')
+        .insert([{ ...novaPotencia, ativa: true }])
+        .select();
+
+      if (error) throw error;
+
+      setMensagem({ tipo: 'sucesso', texto: '✅ Potência cadastrada com sucesso!' });
+      setNovaPotencia({ sigla: '', nome_completo: '' });
+      setMostrarFormPotencia(false);
+      carregarPotencias();
+    } catch (error) {
+      console.error('Erro ao salvar potência:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao salvar potência' });
+    }
+  };
+
+  const atualizarPotencia = async (id, dados) => {
+    try {
+      const { error } = await supabase
+        .from('potencias_masonicas')
+        .update(dados)
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setMensagem({ tipo: 'sucesso', texto: '✅ Potência atualizada com sucesso!' });
+      setEditandoPotencia(null);
+      carregarPotencias();
+    } catch (error) {
+      console.error('Erro ao atualizar potência:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao atualizar potência' });
+    }
   };
 
   const abrirModalVisita = (visita = null) => {
@@ -828,20 +873,100 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 </div>
               </div>
 
+              {/* Potência com gerenciador */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Potência Maçônica</label>
-                <select
-                  value={visitaForm.potencia_id}
-                  onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">Selecione...</option>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Potência Maçônica</label>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarFormPotencia(!mostrarFormPotencia)}
+                    className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    {mostrarFormPotencia ? '✖ Cancelar' : '➕ Nova Potência'}
+                  </button>
+                </div>
+
+                {/* Formulário para nova potência */}
+                {mostrarFormPotencia && (
+                  <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Sigla (ex: GLESP)"
+                        value={novaPotencia.sigla}
+                        onChange={(e) => setNovaPotencia({ ...novaPotencia, sigla: e.target.value.toUpperCase() })}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nome completo"
+                        value={novaPotencia.nome_completo}
+                        onChange={(e) => setNovaPotencia({ ...novaPotencia, nome_completo: e.target.value })}
+                        className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={salvarNovaPotencia}
+                      className="w-full px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+                    >
+                      💾 Salvar Potência
+                    </button>
+                  </div>
+                )}
+
+                {/* Lista de potências existentes */}
+                <div className="space-y-2">
                   {potencias.map(pot => (
-                    <option key={pot.id} value={pot.id}>
-                      {pot.sigla} - {pot.nome_completo}
-                    </option>
+                    <div key={pot.id} className="flex items-center gap-2">
+                      {editandoPotencia === pot.id ? (
+                        <>
+                          <input
+                            type="text"
+                            defaultValue={pot.sigla}
+                            onBlur={(e) => atualizarPotencia(pot.id, { sigla: e.target.value })}
+                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-2 focus:ring-purple-500"
+                          />
+                          <input
+                            type="text"
+                            defaultValue={pot.nome_completo}
+                            onBlur={(e) => atualizarPotencia(pot.id, { nome_completo: e.target.value })}
+                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-2 focus:ring-purple-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setEditandoPotencia(null)}
+                            className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                          >
+                            ✓
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="radio"
+                            name="potencia"
+                            value={pot.id}
+                            checked={visitaForm.potencia_id === pot.id.toString()}
+                            onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
+                            className="w-4 h-4 text-purple-600"
+                          />
+                          <span className="flex-1 text-sm">
+                            <span className="font-medium">{pot.sigla}</span> - {pot.nome_completo}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEditandoPotencia(pot.id)}
+                            className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                            title="Editar potência"
+                          >
+                            ✏️
+                          </button>
+                        </>
+                      )}
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
 
               <div>
