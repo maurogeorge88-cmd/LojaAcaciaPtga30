@@ -9,6 +9,21 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
 
+  // Estados para visitas
+  const [visitas, setVisitas] = useState([]);
+  const [irmaos, setIrmaos] = useState([]);
+  const [potencias, setPotencias] = useState([]);
+  const [modalVisita, setModalVisita] = useState(false);
+  const [visitaEditando, setVisitaEditando] = useState(null);
+  const [visitaForm, setVisitaForm] = useState({
+    irmao_id: '',
+    data_visita: '',
+    nome_loja: '',
+    oriente: '',
+    potencia_id: '',
+    observacoes: ''
+  });
+
   // Buscar anos disponíveis
   useEffect(() => {
     const buscarAnos = async () => {
@@ -243,6 +258,144 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ============================================
+  // FUNÇÕES DE VISITAS A OUTRAS LOJAS
+  // ============================================
+
+  const carregarVisitas = async () => {
+    try {
+      let query = supabase
+        .from('visitas_outras_lojas')
+        .select(`
+          *,
+          irmaos(nome),
+          potencias_masonicas(sigla, nome_completo)
+        `)
+        .order('data_visita', { ascending: false });
+
+      // Aplicar mesmos filtros de mês/ano
+      if (filtroAno) {
+        const anoInicio = `${filtroAno}-01-01`;
+        const anoFim = `${filtroAno}-12-31`;
+        query = query.gte('data_visita', anoInicio).lte('data_visita', anoFim);
+      }
+
+      if (filtroMes && filtroAno) {
+        const mesInicio = `${filtroAno}-${filtroMes.padStart(2, '0')}-01`;
+        const ultimoDia = new Date(parseInt(filtroAno), parseInt(filtroMes), 0).getDate();
+        const mesFim = `${filtroAno}-${filtroMes.padStart(2, '0')}-${ultimoDia}`;
+        query = query.gte('data_visita', mesInicio).lte('data_visita', mesFim);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setVisitas(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar visitas:', error);
+    }
+  };
+
+  const carregarIrmaos = async () => {
+    const { data } = await supabase
+      .from('irmaos')
+      .select('id, nome')
+      .eq('status', 'ativo')
+      .order('nome');
+    setIrmaos(data || []);
+  };
+
+  const carregarPotencias = async () => {
+    const { data } = await supabase
+      .from('potencias_masonicas')
+      .select('*')
+      .eq('ativa', true)
+      .order('sigla');
+    setPotencias(data || []);
+  };
+
+  useEffect(() => {
+    carregarVisitas();
+    carregarIrmaos();
+    carregarPotencias();
+  }, [filtroMes, filtroAno]);
+
+  const abrirModalVisita = (visita = null) => {
+    if (visita) {
+      setVisitaEditando(visita);
+      setVisitaForm({
+        irmao_id: visita.irmao_id,
+        data_visita: visita.data_visita,
+        nome_loja: visita.nome_loja,
+        oriente: visita.oriente,
+        potencia_id: visita.potencia_id,
+        observacoes: visita.observacoes || ''
+      });
+    } else {
+      setVisitaEditando(null);
+      setVisitaForm({
+        irmao_id: '',
+        data_visita: '',
+        nome_loja: '',
+        oriente: '',
+        potencia_id: '',
+        observacoes: ''
+      });
+    }
+    setModalVisita(true);
+  };
+
+  const salvarVisita = async (e) => {
+    e.preventDefault();
+
+    if (!visitaForm.irmao_id || !visitaForm.data_visita || !visitaForm.nome_loja || !visitaForm.oriente) {
+      setMensagem({ tipo: 'erro', texto: 'Preencha todos os campos obrigatórios' });
+      return;
+    }
+
+    try {
+      if (visitaEditando) {
+        const { error } = await supabase
+          .from('visitas_outras_lojas')
+          .update(visitaForm)
+          .eq('id', visitaEditando.id);
+        
+        if (error) throw error;
+        setMensagem({ tipo: 'sucesso', texto: '✅ Visita atualizada com sucesso!' });
+      } else {
+        const { error } = await supabase
+          .from('visitas_outras_lojas')
+          .insert([visitaForm]);
+        
+        if (error) throw error;
+        setMensagem({ tipo: 'sucesso', texto: '✅ Visita cadastrada com sucesso!' });
+      }
+
+      setModalVisita(false);
+      carregarVisitas();
+    } catch (error) {
+      console.error('Erro ao salvar visita:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao salvar visita' });
+    }
+  };
+
+  const excluirVisita = async (id) => {
+    if (!confirm('Deseja realmente excluir esta visita?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('visitas_outras_lojas')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      setMensagem({ tipo: 'sucesso', texto: '✅ Visita excluída com sucesso!' });
+      carregarVisitas();
+    } catch (error) {
+      console.error('Erro ao excluir visita:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao excluir visita' });
     }
   };
 
@@ -645,6 +798,241 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             {filtroMes && ` em ${meses.find(m => m.valor === filtroMes)?.nome}`}
             {filtroAno && ` de ${filtroAno}`}
           </p>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* SEÇÃO: VISITAS A OUTRAS LOJAS */}
+      {/* ============================================ */}
+      
+      <div className="mt-8 border-t-4 border-blue-300 pt-8">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center gap-2">
+                  📍 Visitas a Outras Lojas
+                </h2>
+                <p className="text-purple-100 text-sm mt-1">
+                  Registro de visitas dos irmãos a outras lojas maçônicas
+                </p>
+              </div>
+              <button
+                onClick={() => abrirModalVisita()}
+                className="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors font-medium flex items-center gap-2"
+              >
+                ➕ Nova Visita
+              </button>
+            </div>
+          </div>
+
+          {/* Lista de Visitas */}
+          <div className="p-6">
+            {visitas.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p className="text-lg">Nenhuma visita registrada neste período</p>
+                <p className="text-sm mt-2">Clique em "Nova Visita" para cadastrar</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Irmão</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Loja Visitada</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Oriente</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Potência</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Observações</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {visitas.map((visita) => (
+                      <tr key={visita.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium">{visita.irmaos?.nome}</td>
+                        <td className="px-4 py-3 text-sm">{visita.nome_loja}</td>
+                        <td className="px-4 py-3 text-sm">{visita.oriente}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                            {visita.potencias_masonicas?.sigla || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {visita.observacoes ? (
+                            <span className="truncate max-w-xs block" title={visita.observacoes}>
+                              {visita.observacoes}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => abrirModalVisita(visita)}
+                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
+                              onClick={() => excluirVisita(visita.id)}
+                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
+                            >
+                              🗑️ Excluir
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {visitas.length > 0 && (
+              <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <p className="text-sm text-purple-800">
+                  <strong>Total:</strong> {visitas.length} visita(s) registrada(s)
+                  {filtroMes && ` em ${meses.find(m => m.valor === filtroMes)?.nome}`}
+                  {filtroAno && ` de ${filtroAno}`}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Cadastro/Edição de Visita */}
+      {modalVisita && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-purple-600 text-white p-6">
+              <h3 className="text-2xl font-bold">
+                {visitaEditando ? '✏️ Editar Visita' : '➕ Nova Visita'}
+              </h3>
+            </div>
+
+            <form onSubmit={salvarVisita} className="p-6 space-y-4">
+              {/* Irmão */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Irmão Visitante *
+                </label>
+                <select
+                  value={visitaForm.irmao_id}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, irmao_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {irmaos.map(irmao => (
+                    <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Data */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Data da Visita *
+                </label>
+                <input
+                  type="date"
+                  value={visitaForm.data_visita}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, data_visita: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Loja */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome da Loja *
+                  </label>
+                  <input
+                    type="text"
+                    value={visitaForm.nome_loja}
+                    onChange={(e) => setVisitaForm({ ...visitaForm, nome_loja: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Acácia do Cerrado"
+                    required
+                  />
+                </div>
+
+                {/* Oriente */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Oriente (Município) *
+                  </label>
+                  <input
+                    type="text"
+                    value={visitaForm.oriente}
+                    onChange={(e) => setVisitaForm({ ...visitaForm, oriente: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    placeholder="Ex: Cuiabá"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Potência */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Potência Maçônica
+                </label>
+                <select
+                  value={visitaForm.potencia_id}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Selecione...</option>
+                  {potencias.map(pot => (
+                    <option key={pot.id} value={pot.id}>
+                      {pot.sigla} - {pot.nome_completo}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Observações */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observações
+                </label>
+                <textarea
+                  value={visitaForm.observacoes}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, observacoes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  rows="3"
+                  placeholder="Informações adicionais sobre a visita..."
+                />
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setModalVisita(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                >
+                  ❌ Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  💾 Salvar
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
