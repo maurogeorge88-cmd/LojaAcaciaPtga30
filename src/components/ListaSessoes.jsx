@@ -410,18 +410,20 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               Visualize e gerencie as sessões cadastradas
             </p>
           </div>
-          <button
-            onClick={onNovaSessao}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
-          >
-            ➕ Nova Sessão
-          </button>
-          <button
-            onClick={() => abrirModalVisita()}
-            className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition font-medium"
-          >
-            📍 Nova Visita
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => abrirModalVisita()}
+              className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition font-medium"
+            >
+              📍 Nova Visita
+            </button>
+            <button
+              onClick={onNovaSessao}
+              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
+            >
+              ➕ Nova Sessão
+            </button>
+          </div>
         </div>
 
         {/* Filtros */}
