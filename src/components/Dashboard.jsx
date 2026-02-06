@@ -1184,7 +1184,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                     
                     {/* Linha 2: Loja - Oriente */}
                     <div className="text-xs text-gray-600">
-                      {visitante.loja_origem || visitante.loja || 'N/A'} - {visitante.oriente || visitante.cidade || 'N/A'}
+                      {visitante.nome_loja || visitante.loja_origem || visitante.loja || visitante.loja_visitante || 'Loja não informada'} - {visitante.oriente || visitante.cidade || visitante.oriente_visitante || 'Oriente não informado'}
                     </div>
                   </div>
                 ))}
