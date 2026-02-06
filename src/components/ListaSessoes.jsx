@@ -24,6 +24,38 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
     observacoes: ''
   });
 
+  const meses = [
+    { valor: '', nome: 'Todos os meses' },
+    { valor: '1', nome: 'Janeiro' },
+    { valor: '2', nome: 'Fevereiro' },
+    { valor: '3', nome: 'Março' },
+    { valor: '4', nome: 'Abril' },
+    { valor: '5', nome: 'Maio' },
+    { valor: '6', nome: 'Junho' },
+    { valor: '7', nome: 'Julho' },
+    { valor: '8', nome: 'Agosto' },
+    { valor: '9', nome: 'Setembro' },
+    { valor: '10', nome: 'Outubro' },
+    { valor: '11', nome: 'Novembro' },
+    { valor: '12', nome: 'Dezembro' }
+  ];
+
+  const anoAtual = new Date().getFullYear();
+
+  const formatarData = (data) => {
+    if (!data) return '';
+    const date = new Date(data + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const obterCorPorcentagem = (total, presentes) => {
+    if (total === 0) return 'bg-gray-200 text-gray-700';
+    const percentual = (presentes / total) * 100;
+    if (percentual >= 75) return 'bg-green-100 text-green-800';
+    if (percentual >= 50) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
   // Buscar anos disponíveis
   useEffect(() => {
     const buscarAnos = async () => {
@@ -34,10 +66,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       
       if (data && data.length > 0) {
         const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
-        const anosSorted = anos.sort((a, b) => b - a); // Mais recente primeiro
+        const anosSorted = anos.sort((a, b) => b - a);
         setAnosDisponiveis(anosSorted);
-        
-        // Definir ano mais recente como padrão
         setFiltroAno(anosSorted[0].toString());
       }
     };
@@ -46,19 +76,23 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
   useEffect(() => {
     carregarSessoes();
+    carregarVisitas();
   }, [filtroMes, filtroAno]);
+
+  useEffect(() => {
+    carregarIrmaos();
+    carregarPotencias();
+  }, []);
 
   const carregarSessoes = async () => {
     try {
       setLoading(true);
 
-      // Buscar direto da tabela sessoes_presenca
       let query = supabase
         .from('sessoes_presenca')
         .select('*, graus_sessao:grau_sessao_id(nome, grau_minimo_requerido), classificacoes_sessao:classificacao_id(nome)')
         .order('data_sessao', { ascending: false });
 
-      // Aplicar filtros se houver
       if (filtroAno) {
         const anoInicio = `${filtroAno}-01-01`;
         const anoFim = `${filtroAno}-12-31`;
@@ -74,20 +108,15 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
       const { data, error } = await query;
 
-      if (error) {
-        console.error('❌ Erro na query:', error);
-        throw error;
-      }
+      if (error) throw error;
 
-      // Buscar histórico de situações UMA VEZ (fora do loop)
+      // Buscar histórico de situações
       const { data: historicoSituacoes } = await supabase
         .from('historico_situacoes')
         .select('*')
         .eq('status', 'ativa');
-      
-      // Buscar registros de presença para cada sessão
+
       const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
-        // Buscar TODOS os irmãos ativos (SEM filtro de grau na query)
         const grauMinimoRaw = sessao?.graus_sessao?.grau_minimo_requerido;
         const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : null;
         
@@ -95,29 +124,23 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           .from('irmaos')
           .select('id, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento, situacao');
         
-        // Buscar registros de presença desta sessão
         const { data: registrosPresenca } = await supabase
           .from('registros_presenca')
           .select('membro_id, presente')
           .eq('sessao_id', sessao.id);
         
-        // Criar Map para acesso rápido
         const presencaMap = new Map();
         registrosPresenca?.forEach(r => presencaMap.set(r.membro_id, r.presente));
         
-        // Buscar visitantes
         const { count: totalVisitantes } = await supabase
           .from('visitantes_sessao')
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
         
-        // Filtrar apenas irmãos que estavam na loja na data da sessão
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
         const irmaosValidos = todosIrmaos?.filter(irmao => {
           if (!irmao) return false;
           
-          // Filtro 0: Histórico de situações - verificar se estava em situação bloqueadora
-          // APENAS: desligamento, irregular, suspenso, excluído (NÃO licença)
           const situacaoBloqueadora = historicoSituacoes?.find(sit => {
             if (sit.membro_id !== irmao.id) return false;
             
@@ -139,98 +162,56 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           
           if (situacaoBloqueadora) return false;
           
-          // Filtro 1: Data de ingresso
           const dataIngresso = irmao.data_ingresso_loja 
             ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
             : irmao.data_iniciacao 
             ? new Date(irmao.data_iniciacao + 'T00:00:00')
             : null;
           
-          if (!dataIngresso) return false;
-          if (dataSessao < dataIngresso) return false;
+          if (!dataIngresso || dataSessao < dataIngresso) return false;
           
-          // Filtro 2: Falecimento
           if (irmao.data_falecimento) {
-            const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            if (dataSessao > dataFalecimento) return false;
+            const dataFalec = new Date(irmao.data_falecimento + 'T00:00:00');
+            if (dataSessao > dataFalec) return false;
           }
           
-          // Filtro 3: Grau NA DATA DA SESSÃO
           if (grauMinimo === 2) {
             if (!irmao.data_elevacao) return false;
             const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            return dataSessao >= dataElevacao;
+            if (dataSessao < dataElevacao) return false;
           } else if (grauMinimo === 3) {
             if (!irmao.data_exaltacao) return false;
             const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            return dataSessao >= dataExaltacao;
+            if (dataSessao < dataExaltacao) return false;
           }
           
           return true;
-        }) || [];
-        
-        const total_registros = irmaosValidos.length;
-        const total_presentes = irmaosValidos.filter(i => presencaMap.get(i.id) === true).length;
+        });
+
+        const total_registros = irmaosValidos?.length || 0;
+        const total_presentes = irmaosValidos?.filter(i => presencaMap.get(i.id) === true).length || 0;
         const total_ausentes = total_registros - total_presentes;
-        
-        // Contar por grau NA DATA DA SESSÃO (apenas presentes)
-        const presentesComGrau = irmaosValidos.filter(i => presencaMap.get(i.id) === true) || [];
-        
-        const aprendizes = presentesComGrau.filter(irmao => {
-          if (!irmao.data_iniciacao) return false;
-          const dataIniciacao = new Date(irmao.data_iniciacao + 'T00:00:00');
-          if (dataSessao < dataIniciacao) return false;
-          
-          if (!irmao.data_elevacao) return true;
-          const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-          return dataSessao < dataElevacao;
-        }).length;
-        
-        const companheiros = presentesComGrau.filter(irmao => {
-          if (!irmao.data_elevacao) return false;
-          const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-          if (dataSessao < dataElevacao) return false;
-          
-          if (!irmao.data_exaltacao) return true;
-          const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-          return dataSessao < dataExaltacao;
-        }).length;
-        
-        const mestres = presentesComGrau.filter(irmao => {
-          if (!irmao.data_exaltacao) return false;
-          const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-          if (dataSessao < dataExaltacao) return false;
-          
-          // Se é Mestre Instalado, NÃO conta como Mestre
-          if (irmao.mestre_instalado) {
-            // Se tem data de instalação, só conta como Mestre se ainda não era instalado
-            if (irmao.data_instalacao) {
-              const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
-              return dataSessao < dataInstalacao;
-            }
-            // Sem data de instalação, é Mestre Instalado, não conta como Mestre
-            return false;
-          }
-          
-          return true;
-        }).length;
-        
-        const mestresInstalados = presentesComGrau.filter(irmao => {
-          if (!irmao.mestre_instalado) return false;
-          
-          // Se tem data de instalação, verifica se já era instalado na data
-          if (irmao.data_instalacao) {
-            const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
-            return dataSessao >= dataInstalacao;
-          }
-          
-          // Sem data de instalação, mas é Mestre Instalado
-          // Verifica se já era Mestre na data (para contar corretamente)
-          if (!irmao.data_exaltacao) return false;
-          const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-          return dataSessao >= dataExaltacao;
-        }).length;
-        
+
+        const aprendizes = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return !i.data_elevacao;
+        }).length || 0;
+
+        const companheiros = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return i.data_elevacao && !i.data_exaltacao;
+        }).length || 0;
+
+        const mestres = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return i.data_exaltacao && !i.mestre_instalado;
+        }).length || 0;
+
+        const mestresInstalados = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return i.mestre_instalado && i.data_instalacao;
+        }).length || 0;
+
         return {
           ...sessao,
           grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz',
@@ -261,10 +242,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
     }
   };
 
-  // ============================================
-  // FUNÇÕES DE VISITAS A OUTRAS LOJAS
-  // ============================================
-
   const carregarVisitas = async () => {
     try {
       let query = supabase
@@ -276,7 +253,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         `)
         .order('data_visita', { ascending: false });
 
-      // Aplicar mesmos filtros de mês/ano
       if (filtroAno) {
         const anoInicio = `${filtroAno}-01-01`;
         const anoFim = `${filtroAno}-12-31`;
@@ -315,12 +291,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       .order('sigla');
     setPotencias(data || []);
   };
-
-  useEffect(() => {
-    carregarVisitas();
-    carregarIrmaos();
-    carregarPotencias();
-  }, [filtroMes, filtroAno]);
 
   const abrirModalVisita = (visita = null) => {
     if (visita) {
@@ -400,131 +370,32 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
   };
 
   const handleExcluir = async (sessaoId) => {
-    if (!confirm('Tem certeza que deseja excluir esta sessão? Todos os registros de presença também serão excluídos.')) {
+    if (!confirm('Tem certeza que deseja excluir esta sessão?')) {
       return;
     }
 
     try {
-      console.log('🗑️ Iniciando exclusão da sessão ID:', sessaoId);
-
-      // 1. Verificar em qual tabela a sessão está
-      console.log('🔍 Verificando tabela sessoes_presenca...');
-      const { data: sessaoPresenca } = await supabase
+      const { error } = await supabase
         .from('sessoes_presenca')
-        .select('id, data_sessao')
-        .eq('id', sessaoId)
-        .maybeSingle();
-
-      console.log('🔍 Verificando tabela sessoes...');
-      const { data: sessao } = await supabase
-        .from('sessoes')
-        .select('id, data_sessao')
-        .eq('id', sessaoId)
-        .maybeSingle();
-
-      if (!sessaoPresenca && !sessao) {
-        throw new Error('Sessão não encontrada em nenhuma tabela');
-      }
-
-      console.log('✅ Sessão encontrada em:', {
-        sessoes_presenca: !!sessaoPresenca,
-        sessoes: !!sessao
-      });
-
-      // 2. PRIMEIRO: Excluir registros de presença
-      console.log('🔄 Excluindo registros de presença...');
-      const { error: errorPresenca } = await supabase
-        .from('registros_presenca')
         .delete()
-        .eq('sessao_id', sessaoId);
+        .eq('id', sessaoId);
 
-      if (errorPresenca) {
-        console.error('❌ Erro ao excluir registros:', errorPresenca);
-        throw errorPresenca;
-      }
-      console.log('✅ Registros de presença excluídos');
-
-      // 3. Excluir da tabela correta
-      let tabelaCorreta = sessaoPresenca ? 'sessoes_presenca' : 'sessoes';
-      console.log(`🔄 Excluindo sessão da tabela: ${tabelaCorreta}...`);
-      
-      const { data: deletedData, error: errorSessao, status, statusText } = await supabase
-        .from(tabelaCorreta)
-        .delete()
-        .eq('id', sessaoId)
-        .select(); // IMPORTANTE: adicionar .select() para ver o que foi deletado
-
-      console.log('📋 Resposta do DELETE:', {
-        data: deletedData,
-        error: errorSessao,
-        status,
-        statusText,
-        qtdDeletados: deletedData?.length || 0
-      });
-
-      if (errorSessao) {
-        console.error('❌ Erro ao excluir sessão:', errorSessao);
-        throw errorSessao;
-      }
-
-      if (!deletedData || deletedData.length === 0) {
-        console.error('⚠️ NENHUM REGISTRO FOI EXCLUÍDO! Pode ser problema de permissão (RLS)');
-        throw new Error('Nenhum registro foi excluído. Verifique as permissões no banco de dados.');
-      }
-
-      console.log('✅ Sessão excluída com sucesso!');
-
-      // IMPORTANTE: Remover do estado IMEDIATAMENTE para atualização visual instantânea
-      setSessoes(prevSessoes => prevSessoes.filter(s => s.id !== sessaoId));
+      if (error) throw error;
 
       setMensagem({
         tipo: 'sucesso',
-        texto: 'Sessão excluída com sucesso!'
+        texto: '✅ Sessão excluída com sucesso!'
       });
 
-      // Recarregar em background para sincronizar
-      setTimeout(() => carregarSessoes(), 500);
-
+      carregarSessoes();
     } catch (error) {
-      console.error('💥 Erro ao excluir sessão:', error);
+      console.error('Erro ao excluir:', error);
       setMensagem({
         tipo: 'erro',
-        texto: error.message || 'Erro ao excluir sessão. Verifique as permissões.'
+        texto: '❌ Erro ao excluir sessão'
       });
     }
   };
-
-  const formatarData = (data) => {
-    if (!data) return '-';
-    return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
-  };
-
-  const obterCorPorcentagem = (total, presentes) => {
-    if (total === 0) return 'bg-gray-100 text-gray-800';
-    const percentual = (presentes / total) * 100;
-    if (percentual >= 80) return 'bg-green-100 text-green-800';
-    if (percentual >= 50) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
-  };
-
-  // Gerar opções de anos dinâmicas
-  const anoAtual = new Date().getFullYear();
-
-  const meses = [
-    { valor: '', nome: 'Todos os meses' },
-    { valor: '1', nome: 'Janeiro' },
-    { valor: '2', nome: 'Fevereiro' },
-    { valor: '3', nome: 'Março' },
-    { valor: '4', nome: 'Abril' },
-    { valor: '5', nome: 'Maio' },
-    { valor: '6', nome: 'Junho' },
-    { valor: '7', nome: 'Julho' },
-    { valor: '8', nome: 'Agosto' },
-    { valor: '9', nome: 'Setembro' },
-    { valor: '10', nome: 'Outubro' },
-    { valor: '11', nome: 'Novembro' },
-    { valor: '12', nome: 'Dezembro' }
-  ];
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -543,12 +414,12 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             onClick={onNovaSessao}
             className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
           >
-            + Nova Sessão
+            ➕ Nova Sessão
           </button>
         </div>
 
         {/* Filtros */}
-        <div className="flex gap-4 mt-6">
+        <div className="grid grid-cols-2 gap-4 mt-6">
           <div className="flex-1">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Mês
@@ -634,17 +505,19 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       ) : (
         <div className="space-y-6">
           {(() => {
-            // Agrupar sessões por mês/ano
             const sessoesPorMes = {};
             
-            sessoes.forEach(sessao => {
+            sessoes.forEach((sessao) => {
               const data = new Date(sessao.data_sessao + 'T00:00:00');
-              const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
-              const mesNome = data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+              const mes = data.getMonth();
+              const ano = data.getFullYear();
+              const mesAno = `${ano}-${String(mes + 1).padStart(2, '0')}`;
               
               if (!sessoesPorMes[mesAno]) {
                 sessoesPorMes[mesAno] = {
-                  mesNome: mesNome.charAt(0).toUpperCase() + mesNome.slice(1),
+                  mesNome: `${meses[mes + 1].nome} de ${ano}`,
+                  mes,
+                  ano,
                   sessoes: []
                 };
               }
@@ -654,216 +527,118 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
             return Object.entries(sessoesPorMes).map(([mesAno, grupo]) => (
               <div key={mesAno} className="bg-white rounded-lg shadow-md overflow-hidden">
-                {/* Faixa do Mês/Ano */}
-                <div className="bg-gradient-to-r from-blue-600 to-blue-400 px-6 py-3 flex justify-between items-center">
+                <div className="bg-gradient-to-r from-blue-600 to-blue-400 px-6 py-3">
                   <h3 className="text-lg font-bold text-white">
                     📅 {grupo.mesNome}
                   </h3>
-                  <button
-                    onClick={() => abrirModalVisita()}
-                    className="bg-white text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors font-medium text-sm flex items-center gap-1"
-                  >
-                    ➕ Nova Visita
-                  </button>
                 </div>
 
-                {/* Tabela do Mês */}
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Data
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Tipo de Sessão
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Classificação
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Presença
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Visitantes
-                        </th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Ações
-                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo de Sessão</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classificação</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Presença</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Visitantes</th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {grupo.sessoes.map((sessao) => {
-                  const totalRegistros = sessao.total_registros || 0;
-                  const presentes = sessao.total_presentes || 0;
-                  const ausentes = sessao.total_ausentes || 0;
-                  const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+                        const totalRegistros = sessao.total_registros || 0;
+                        const presentes = sessao.total_presentes || 0;
+                        const ausentes = sessao.total_ausentes || 0;
+                        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
 
-                  return (
-                    <tr key={sessao.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
-                          {formatarData(sessao.data_sessao)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{sessao.grau_sessao}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          sessao.classificacao 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {sessao.classificacao || '-'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col items-center">
-                          <div className={`px-3 py-1 rounded-full text-sm font-semibold ${obterCorPorcentagem(totalRegistros, presentes)}`}>
-                            {percentual}% ({presentes}/{totalRegistros})
-                          </div>
-                          {totalRegistros > 0 && (
-                            <div className="text-xs text-gray-500 mt-1">
-                              {ausentes} ausente(s)
-                            </div>
-                          )}
-                          {sessao.graus_presentes && presentes > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2 text-xs">
-                              {sessao.graus_presentes.aprendizes > 0 && (
-                                <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded font-medium">
-                                  A: {sessao.graus_presentes.aprendizes}
-                                </span>
-                              )}
-                              {sessao.graus_presentes.companheiros > 0 && (
-                                <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded font-medium">
-                                  C: {sessao.graus_presentes.companheiros}
-                                </span>
-                              )}
-                              {sessao.graus_presentes.mestres > 0 && (
-                                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-medium">
-                                  M: {sessao.graus_presentes.mestres}
-                                </span>
-                              )}
-                              {sessao.graus_presentes.mestres_instalados > 0 && (
-                                <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-medium">
-                                  M.I: {sessao.graus_presentes.mestres_instalados}
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="px-3 py-1 rounded-full text-sm font-semibold bg-indigo-100 text-indigo-800">
-                          {sessao.total_visitantes || 0}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => onVisualizarPresenca(sessao.id)}
-                            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition"
-                            title="Visualizar presença"
-                          >
-                            👁️ Visualizar
-                          </button>
-                          <button
-                            onClick={() => onEditarPresenca(sessao.id)}
-                            className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-                            title="Editar presença"
-                          >
-                            ✏️ Editar
-                          </button>
-                          <button
-                            onClick={() => handleExcluir(sessao.id)}
-                            className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition"
-                            title="Excluir sessão"
-                          >
-                            🗑️ Excluir
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* VISITAS DO MÊS */}
-          {(() => {
-            // Filtrar visitas do mesmo mês
-            const visitasDoMes = visitas.filter(v => {
-              const dataVisita = new Date(v.data_visita + 'T00:00:00');
-              const mesVisita = dataVisita.getMonth();
-              const anoVisita = dataVisita.getFullYear();
-              return mesVisita === grupo.mes && anoVisita === grupo.ano;
-            });
-
-            if (visitasDoMes.length === 0) return null;
-
-            return (
-              <div className="border-t-4 border-dashed border-purple-300 mt-4">
-                <div className="bg-purple-50 px-6 py-3">
-                  <h4 className="text-sm font-bold text-purple-800 flex items-center gap-2">
-                    📍 Visitas dos Irmãos a Outras Lojas
-                  </h4>
-                </div>
-                <div className="p-4 space-y-2">
-                  {visitasDoMes.map(visita => (
-                    <div key={visita.id} className="flex items-center justify-between bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-4 flex-1">
-                        <span className="text-sm font-medium text-gray-900 min-w-[90px]">
-                          {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
-                        </span>
-                        <span className="text-sm font-semibold text-purple-900">
-                          {visita.irmaos?.nome}
-                        </span>
-                        <span className="text-sm text-gray-600">→</span>
-                        <span className="text-sm text-gray-700">
-                          {visita.nome_loja}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          ({visita.oriente})
-                        </span>
-                        {visita.potencias_masonicas?.sigla && (
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                            {visita.potencias_masonicas.sigla}
-                          </span>
-                        )}
-                        {visita.observacoes && (
-                          <span className="text-xs text-gray-500 italic" title={visita.observacoes}>
-                            💬 {visita.observacoes.substring(0, 30)}{visita.observacoes.length > 30 ? '...' : ''}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => abrirModalVisita(visita)}
-                          className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                          title="Editar visita"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => excluirVisita(visita.id)}
-                          className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
-                          title="Excluir visita"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                        return (
+                          <tr key={sessao.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatarData(sessao.data_sessao)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">{sessao.grau_sessao}</td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                                sessao.classificacao ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {sessao.classificacao || '-'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex flex-col items-center">
+                                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${obterCorPorcentagem(totalRegistros, presentes)}`}>
+                                  {percentual}% ({presentes}/{totalRegistros})
+                                </div>
+                                {totalRegistros > 0 && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {ausentes} ausente(s)
+                                  </div>
+                                )}
+                                {sessao.graus_presentes && presentes > 0 && (
+                                  <div className="flex flex-wrap gap-1 mt-2 text-xs">
+                                    {sessao.graus_presentes.aprendizes > 0 && (
+                                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded font-medium">
+                                        A: {sessao.graus_presentes.aprendizes}
+                                      </span>
+                                    )}
+                                    {sessao.graus_presentes.companheiros > 0 && (
+                                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-medium">
+                                        C: {sessao.graus_presentes.companheiros}
+                                      </span>
+                                    )}
+                                    {sessao.graus_presentes.mestres > 0 && (
+                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded font-medium">
+                                        M: {sessao.graus_presentes.mestres}
+                                      </span>
+                                    )}
+                                    {sessao.graus_presentes.mestres_instalados > 0 && (
+                                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-medium">
+                                        M.I: {sessao.graus_presentes.mestres_instalados}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                                {sessao.total_visitantes}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                              <div className="flex justify-center gap-2">
+                                <button
+                                  onClick={() => onVisualizarPresenca(sessao.id)}
+                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
+                                >
+                                  👁️ Visualizar
+                                </button>
+                                <button
+                                  onClick={() => onEditarPresenca(sessao.id)}
+                                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => handleExcluir(sessao.id)}
+                                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
+                                >
+                                  🗑️ Excluir
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            );
+            ));
           })()}
         </div>
-      ));
-    })()}
-      </div>
+      )}
 
       {/* Resumo */}
       {sessoes.length > 0 && (
@@ -876,7 +651,100 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         </div>
       )}
 
-      {/* Modal de Cadastro/Edição de Visita */}
+      {/* SEÇÃO DE VISITAS */}
+      <div className="mt-8 border-t-4 border-purple-300 pt-8">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-bold">📍 Visitas a Outras Lojas</h2>
+                <p className="text-purple-100 text-sm mt-1">
+                  Registro de visitas dos irmãos a outras lojas maçônicas
+                </p>
+              </div>
+              <button
+                onClick={() => abrirModalVisita()}
+                className="bg-white text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors font-medium"
+              >
+                ➕ Nova Visita
+              </button>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {visitas.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <p className="text-lg">Nenhuma visita registrada neste período</p>
+                <p className="text-sm mt-2">Clique em "Nova Visita" para cadastrar</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Irmão</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Loja Visitada</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Oriente</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Potência</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Observações</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {visitas.map((visita) => (
+                      <tr key={visita.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-sm">
+                          {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium">{visita.irmaos?.nome}</td>
+                        <td className="px-4 py-3 text-sm">{visita.nome_loja}</td>
+                        <td className="px-4 py-3 text-sm">{visita.oriente}</td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium">
+                            {visita.potencias_masonicas?.sigla || 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {visita.observacoes || '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-center">
+                          <div className="flex justify-center gap-2">
+                            <button
+                              onClick={() => abrirModalVisita(visita)}
+                              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                            >
+                              ✏️ Editar
+                            </button>
+                            <button
+                              onClick={() => excluirVisita(visita.id)}
+                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
+                            >
+                              🗑️ Excluir
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {visitas.length > 0 && (
+              <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <p className="text-sm text-purple-800">
+                  <strong>Total:</strong> {visitas.length} visita(s) registrada(s)
+                  {filtroMes && ` em ${meses.find(m => m.valor === filtroMes)?.nome}`}
+                  {filtroAno && ` de ${filtroAno}`}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* MODAL */}
       {modalVisita && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -887,11 +755,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             </div>
 
             <form onSubmit={salvarVisita} className="p-6 space-y-4">
-              {/* Irmão */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Irmão Visitante *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Irmão Visitante *</label>
                 <select
                   value={visitaForm.irmao_id}
                   onChange={(e) => setVisitaForm({ ...visitaForm, irmao_id: e.target.value })}
@@ -905,11 +770,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 </select>
               </div>
 
-              {/* Data */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Data da Visita *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Data da Visita *</label>
                 <input
                   type="date"
                   value={visitaForm.data_visita}
@@ -920,11 +782,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Loja */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nome da Loja *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Loja *</label>
                   <input
                     type="text"
                     value={visitaForm.nome_loja}
@@ -935,11 +794,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                   />
                 </div>
 
-                {/* Oriente */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Oriente (Município) *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Oriente (Município) *</label>
                   <input
                     type="text"
                     value={visitaForm.oriente}
@@ -951,11 +807,8 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 </div>
               </div>
 
-              {/* Potência */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Potência Maçônica
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Potência Maçônica</label>
                 <select
                   value={visitaForm.potencia_id}
                   onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
@@ -970,21 +823,17 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 </select>
               </div>
 
-              {/* Observações */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Observações
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
                 <textarea
                   value={visitaForm.observacoes}
                   onChange={(e) => setVisitaForm({ ...visitaForm, observacoes: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                   rows="3"
-                  placeholder="Informações adicionais sobre a visita..."
+                  placeholder="Informações adicionais..."
                 />
               </div>
 
-              {/* Botões */}
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
