@@ -278,11 +278,11 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
     // Buscar irmãos ativos
     const { data: todosIrmaos } = await supabase
       .from('irmaos')
-      .select('id, nome')
+      .select('id, nome, situacao')
       .eq('status', 'ativo')
       .order('nome');
 
-    // Buscar situações ativas
+    // Buscar situações ativas mais recentes (sem data_fim)
     const { data: situacoes } = await supabase
       .from('historico_situacoes')
       .select('*')
@@ -291,11 +291,22 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
     // Filtrar apenas Regular e Licenciado
     const irmaosValidos = todosIrmaos?.filter(irmao => {
-      const situacaoAtual = situacoes?.find(s => s.membro_id === irmao.id);
-      if (!situacaoAtual) return false;
+      // Primeiro tenta pelo histórico
+      const situacaoHistorico = situacoes?.find(s => s.membro_id === irmao.id);
       
-      const tipoSituacao = situacaoAtual.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return tipoSituacao === 'regular' || tipoSituacao === 'licenciado';
+      if (situacaoHistorico) {
+        const tipoSituacao = situacaoHistorico.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return tipoSituacao === 'regular' || tipoSituacao === 'licenciado';
+      }
+      
+      // Fallback: se não tem histórico, verifica o campo situacao da tabela irmaos
+      if (irmao.situacao) {
+        const situacaoIrmao = irmao.situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return situacaoIrmao === 'regular' || situacaoIrmao === 'licenciado';
+      }
+      
+      // Se não tem nenhuma informação de situação, inclui (assume regular)
+      return true;
     }) || [];
 
     setIrmaos(irmaosValidos);
