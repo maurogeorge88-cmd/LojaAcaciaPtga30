@@ -416,6 +416,12 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           >
             ➕ Nova Sessão
           </button>
+          <button
+            onClick={() => abrirModalVisita()}
+            className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition font-medium"
+          >
+            📍 Nova Visita
+          </button>
         </div>
 
         {/* Filtros */}
@@ -646,16 +652,10 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
                   return (
                     <div className="border-t-4 border-dashed border-purple-300 mt-4">
-                      <div className="bg-purple-50 px-6 py-3 flex justify-between items-center">
+                      <div className="bg-purple-50 px-6 py-3">
                         <h4 className="text-sm font-bold text-purple-800">
                           📍 Visitas dos Irmãos a Outras Lojas
                         </h4>
-                        <button
-                          onClick={() => abrirModalVisita()}
-                          className="text-purple-600 hover:text-purple-700 text-xs font-medium"
-                        >
-                          ➕ Nova Visita
-                        </button>
                       </div>
                       <div className="p-4 space-y-2">
                         {visitasDoMes.map(visita => (
