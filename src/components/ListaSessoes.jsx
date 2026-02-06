@@ -275,12 +275,30 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
   };
 
   const carregarIrmaos = async () => {
-    const { data } = await supabase
+    // Buscar irmãos ativos
+    const { data: todosIrmaos } = await supabase
       .from('irmaos')
       .select('id, nome')
       .eq('status', 'ativo')
       .order('nome');
-    setIrmaos(data || []);
+
+    // Buscar situações ativas
+    const { data: situacoes } = await supabase
+      .from('historico_situacoes')
+      .select('*')
+      .eq('status', 'ativa')
+      .is('data_fim', null);
+
+    // Filtrar apenas Regular e Licenciado
+    const irmaosValidos = todosIrmaos?.filter(irmao => {
+      const situacaoAtual = situacoes?.find(s => s.membro_id === irmao.id);
+      if (!situacaoAtual) return false;
+      
+      const tipoSituacao = situacaoAtual.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return tipoSituacao === 'regular' || tipoSituacao === 'licenciado';
+    }) || [];
+
+    setIrmaos(irmaosValidos);
   };
 
   const carregarPotencias = async () => {
@@ -395,6 +413,26 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         texto: '❌ Erro ao excluir sessão'
       });
     }
+  };
+
+  const formatarNomeCurto = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    
+    const partes = nomeCompleto.trim().split(' ');
+    
+    // Se tem 2 nomes ou menos, retorna tudo
+    if (partes.length <= 2) return nomeCompleto;
+    
+    // Se tem "de" ou "da", pega primeiro nome + último
+    const conectores = ['de', 'da', 'do', 'dos', 'das'];
+    const temConector = partes.some(p => conectores.includes(p.toLowerCase()));
+    
+    if (temConector) {
+      return `${partes[0]} ${partes[partes.length - 1]}`;
+    }
+    
+    // Caso contrário, retorna os dois primeiros nomes
+    return `${partes[0]} ${partes[1]}`;
   };
 
   return (
@@ -659,47 +697,57 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                           📍 Visitas dos Irmãos a Outras Lojas
                         </h4>
                       </div>
-                      <div className="p-4 space-y-2">
-                        {visitasDoMes.map(visita => (
-                          <div key={visita.id} className="flex items-center justify-between bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-3 flex-1">
-                              <span className="text-sm font-medium text-gray-900 min-w-[90px]">
-                                {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
-                              </span>
-                              <span className="text-sm font-semibold text-purple-900">
-                                {visita.irmaos?.nome}
-                              </span>
-                              <span className="text-sm text-gray-600">→</span>
-                              <span className="text-sm text-gray-700">
-                                {visita.nome_loja}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                ({visita.oriente})
-                              </span>
+                      <div className="p-4">
+                        <div className="grid grid-cols-3 gap-3">
+                          {visitasDoMes.map(visita => (
+                            <div key={visita.id} className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                              {/* Linha 1: Data e Nome */}
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <div className="text-xs text-gray-500">
+                                    {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
+                                  </div>
+                                  <div className="text-sm font-semibold text-purple-900">
+                                    {formatarNomeCurto(visita.irmaos?.nome)}
+                                  </div>
+                                </div>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => abrirModalVisita(visita)}
+                                    className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                                    title="Editar"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => excluirVisita(visita.id)}
+                                    className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
+                                    title="Excluir"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {/* Linha 2: Loja e Oriente */}
+                              <div className="text-xs text-gray-700 mb-1">
+                                <span className="font-medium">{visita.nome_loja}</span>
+                              </div>
+                              <div className="text-xs text-gray-500 mb-2">
+                                {visita.oriente}
+                              </div>
+                              
+                              {/* Linha 3: Potência */}
                               {visita.potencias_masonicas?.sigla && (
-                                <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                                  {visita.potencias_masonicas.sigla}
-                                </span>
+                                <div>
+                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
+                                    {visita.potencias_masonicas.sigla}
+                                  </span>
+                                </div>
                               )}
                             </div>
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => abrirModalVisita(visita)}
-                                className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
-                                title="Editar"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                onClick={() => excluirVisita(visita.id)}
-                                className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
-                                title="Excluir"
-                              >
-                                🗑️
-                              </button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
                     </div>
                   );
