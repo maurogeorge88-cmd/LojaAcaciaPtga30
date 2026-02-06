@@ -1171,16 +1171,20 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                         <span className="text-gray-600">
                           {visitante.sessoes_presenca?.data_sessao 
                             ? new Date(visitante.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
-                            : 'N/A'}
+                            : visitante.data_visita
+                            ? new Date(visitante.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')
+                            : new Date(visitante.created_at).toLocaleDateString('pt-BR')}
                         </span>
                         <span className="text-gray-600"> - </span>
-                        <span className="font-semibold text-indigo-900">{visitante.nome}</span>
+                        <span className="font-semibold text-indigo-900">
+                          {visitante.nome || visitante.nome_visitante || 'N/A'}
+                        </span>
                       </div>
                     </div>
                     
                     {/* Linha 2: Loja - Oriente */}
                     <div className="text-xs text-gray-600">
-                      {visitante.loja_origem || 'N/A'} - {visitante.oriente || 'N/A'}
+                      {visitante.loja_origem || visitante.loja || 'N/A'} - {visitante.oriente || visitante.cidade || 'N/A'}
                     </div>
                   </div>
                 ))}
