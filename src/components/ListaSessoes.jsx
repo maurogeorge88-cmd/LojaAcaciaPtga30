@@ -863,6 +863,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         </div>
       ));
     })()}
+      </div>
 
       {/* Resumo */}
       {sessoes.length > 0 && (
