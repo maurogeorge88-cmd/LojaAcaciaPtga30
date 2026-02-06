@@ -14,6 +14,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const [modalSituacao, setModalSituacao] = useState({ aberto: false, titulo: '', irmaos: [] });
   const [historicoCargos, setHistoricoCargos] = useState([]);
   const [filtroComCargo, setFiltroComCargo] = useState(false);
+  
+  // Estados para visitas
+  const [visitasIrmaos, setVisitasIrmaos] = useState([]);
+  const [totalVisitasIrmaos, setTotalVisitasIrmaos] = useState(0);
+  const [modalVisitasIrmaos, setModalVisitasIrmaos] = useState(false);
+  const [modalVisitantesRecebidos, setModalVisitantesRecebidos] = useState(false);
+  const [visitantesRecebidos, setVisitantesRecebidos] = useState([]);
 
   // Função para formatar nome (2 primeiros nomes + último se tiver "de/da")
   const formatarNome = (nomeCompleto) => {
@@ -28,6 +35,21 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       return `${primeiros} ${partes[partes.length - 1]}`;
     }
     return primeiros;
+  };
+
+  // Função para nome curto (para cards de visitas)
+  const formatarNomeCurto = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    const partes = nomeCompleto.trim().split(' ');
+    if (partes.length <= 2) return nomeCompleto;
+    
+    const conectores = ['de', 'da', 'do', 'dos', 'das'];
+    const temConector = partes.some(p => conectores.includes(p.toLowerCase()));
+    
+    if (temConector) {
+      return `${partes[0]} ${partes[partes.length - 1]}`;
+    }
+    return `${partes[0]} ${partes[1]}`;
   };
 
   // Função para obter cargo atual do irmão (do ano atual)
@@ -57,6 +79,30 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         .select('*', { count: 'exact', head: true })
         .gte('created_at', `${new Date().getFullYear()}-01-01`);
       setTotalVisitantes(count || 0);
+
+      // Carregar visitas dos irmãos a outras lojas (ano atual)
+      const { data: visitas, count: countVisitas } = await supabase
+        .from('visitas_outras_lojas')
+        .select(`
+          *,
+          irmaos(nome),
+          potencias_masonicas(sigla, nome_completo)
+        `, { count: 'exact' })
+        .gte('data_visita', `${new Date().getFullYear()}-01-01`)
+        .order('data_visita', { ascending: false });
+      setVisitasIrmaos(visitas || []);
+      setTotalVisitasIrmaos(countVisitas || 0);
+
+      // Carregar visitantes recebidos detalhados
+      const { data: visitantesData } = await supabase
+        .from('visitantes_sessao')
+        .select(`
+          *,
+          sessoes_presenca(data_sessao)
+        `)
+        .gte('created_at', `${new Date().getFullYear()}-01-01`)
+        .order('created_at', { ascending: false });
+      setVisitantesRecebidos(visitantesData || []);
     };
     carregar();
   }, []);
@@ -630,8 +676,43 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         </div>
       )}
 
-      {/* Card de Visitantes - Só aparece se houver visitantes */}
-      {totalVisitantes > 0 && (
+      {/* CARDS DE VISITAS - GRID COM 2 COLUNAS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Card 1: Visitas dos Irmãos a Outras Lojas */}
+        {totalVisitasIrmaos > 0 && (
+          <div
+            onDoubleClick={() => setModalVisitasIrmaos(true)}
+            className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+            title="Clique 2x para ver detalhes"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">📍 Visitas a Outras Lojas</h3>
+              <span className="text-4xl">🚶</span>
+            </div>
+            <p className="text-5xl font-bold mb-1">{totalVisitasIrmaos}</p>
+            <p className="text-sm opacity-90">Realizadas em {new Date().getFullYear()}</p>
+          </div>
+        )}
+
+        {/* Card 2: Visitantes Recebidos */}
+        {totalVisitantes > 0 && (
+          <div
+            onDoubleClick={() => setModalVisitantesRecebidos(true)}
+            className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+            title="Clique 2x para ver detalhes"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-semibold">👥 Visitantes Recebidos</h3>
+              <span className="text-4xl">🏛️</span>
+            </div>
+            <p className="text-5xl font-bold mb-1">{totalVisitantes}</p>
+            <p className="text-sm opacity-90">Registrados em {new Date().getFullYear()}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Card de Visitantes ANTIGO - REMOVER */}
+      {false && totalVisitantes > 0 && (
         <div className="mb-6">
           <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
             <div className="flex items-center justify-between mb-2">
@@ -1015,6 +1096,102 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                   setFiltroComCargo(false);
                 }}
                 className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Visitas dos Irmãos a Outras Lojas */}
+      {modalVisitasIrmaos && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6">
+              <h3 className="text-2xl font-bold">📍 Visitas dos Irmãos a Outras Lojas - {new Date().getFullYear()}</h3>
+              <p className="text-purple-100 text-sm mt-1">Total: {totalVisitasIrmaos} visita(s)</p>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="p-6">
+              <div className="grid grid-cols-3 gap-3">
+                {visitasIrmaos.map(visita => (
+                  <div key={visita.id} className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                    {/* Linha 1: Data e Nome */}
+                    <div className="mb-1">
+                      <div className="text-sm">
+                        <span className="text-gray-600">{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        <span className="text-gray-600"> - </span>
+                        <span className="font-semibold text-purple-900">{formatarNomeCurto(visita.irmaos?.nome)}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Linha 2: Loja - Potência - Oriente */}
+                    <div className="text-xs text-gray-600">
+                      {visita.nome_loja} - {visita.potencias_masonicas?.sigla || 'N/A'} - {visita.oriente}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 bg-gray-50">
+              <button
+                onClick={() => setModalVisitasIrmaos(false)}
+                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold transition"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: Visitantes Recebidos */}
+      {modalVisitantesRecebidos && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white p-6">
+              <h3 className="text-2xl font-bold">👥 Visitantes Recebidos - {new Date().getFullYear()}</h3>
+              <p className="text-indigo-100 text-sm mt-1">Total: {totalVisitantes} visitante(s)</p>
+            </div>
+
+            {/* Conteúdo */}
+            <div className="p-6">
+              <div className="grid grid-cols-3 gap-3">
+                {visitantesRecebidos.map(visitante => (
+                  <div key={visitante.id} className="bg-white border border-indigo-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                    {/* Linha 1: Data e Nome */}
+                    <div className="mb-1">
+                      <div className="text-sm">
+                        <span className="text-gray-600">
+                          {visitante.sessoes_presenca?.data_sessao 
+                            ? new Date(visitante.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
+                            : 'N/A'}
+                        </span>
+                        <span className="text-gray-600"> - </span>
+                        <span className="font-semibold text-indigo-900">{visitante.nome}</span>
+                      </div>
+                    </div>
+                    
+                    {/* Linha 2: Loja - Oriente */}
+                    <div className="text-xs text-gray-600">
+                      {visitante.loja_origem || 'N/A'} - {visitante.oriente || 'N/A'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t px-6 py-4 bg-gray-50">
+              <button
+                onClick={() => setModalVisitantesRecebidos(false)}
+                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold transition"
               >
                 Fechar
               </button>
