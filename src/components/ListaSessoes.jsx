@@ -701,15 +701,12 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                         <div className="grid grid-cols-3 gap-3">
                           {visitasDoMes.map(visita => (
                             <div key={visita.id} className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
-                              {/* Linha 1: Data e Nome */}
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <div className="text-xs text-gray-500">
-                                    {new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}
-                                  </div>
-                                  <div className="text-sm font-semibold text-purple-900">
-                                    {formatarNomeCurto(visita.irmaos?.nome)}
-                                  </div>
+                              {/* Linha 1: Data, Nome e Botões */}
+                              <div className="flex justify-between items-center mb-1">
+                                <div className="text-sm">
+                                  <span className="text-gray-600">{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                  <span className="text-gray-600"> - </span>
+                                  <span className="font-semibold text-purple-900">{formatarNomeCurto(visita.irmaos?.nome)}</span>
                                 </div>
                                 <div className="flex gap-1">
                                   <button
@@ -729,22 +726,10 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                                 </div>
                               </div>
                               
-                              {/* Linha 2: Loja e Oriente */}
-                              <div className="text-xs text-gray-700 mb-1">
-                                <span className="font-medium">{visita.nome_loja}</span>
+                              {/* Linha 2: Loja - Potência - Oriente */}
+                              <div className="text-xs text-gray-600">
+                                {visita.nome_loja} - {visita.potencias_masonicas?.sigla || 'N/A'} - {visita.oriente}
                               </div>
-                              <div className="text-xs text-gray-500 mb-2">
-                                {visita.oriente}
-                              </div>
-                              
-                              {/* Linha 3: Potência */}
-                              {visita.potencias_masonicas?.sigla && (
-                                <div>
-                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">
-                                    {visita.potencias_masonicas.sigla}
-                                  </span>
-                                </div>
-                              )}
                             </div>
                           ))}
                         </div>
