@@ -9,7 +9,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const [modalLote, setModalLote] = useState(false);
   const [modalTipo, setModalTipo] = useState(false);
   const [editando, setEditando] = useState(null);
-  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroStatus, setFiltroStatus] = useState('Disponível');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busca, setBusca] = useState('');
 
@@ -303,7 +303,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const getStatusBadge = (status) => {
     const badges = {
       disponivel: 'bg-green-100 text-green-800',
-      emprestado: 'bg-blue-100 text-blue-800',
+      emprestado: 'bg-blue-100 text-red-600',
       manutencao: 'bg-yellow-100 text-yellow-800',
       descartado: 'bg-gray-100 text-gray-800'
     };
