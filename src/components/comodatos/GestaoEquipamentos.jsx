@@ -416,97 +416,97 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         </div>
       </div>
 
-      {/* LISTA DE EQUIPAMENTOS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {equipamentosFiltrados.map(equipamento => (
-          <div
-            key={equipamento.id}
-            className="bg-white rounded-lg shadow-md p-4 hover:shadow-xl transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-xl font-bold text-gray-800">
-                    {equipamento.numero_patrimonio}
-                  </h3>
-                  {getStatusBadge(equipamento.status)}
-                </div>
-                <p className="text-emerald-600 font-semibold">
-                  {equipamento.tipos_equipamentos?.nome}
-                </p>
-              </div>
-              {getEstadoBadge(equipamento.estado_conservacao)}
-            </div>
-
-            {equipamento.descricao && (
-              <p className="text-gray-600 text-sm mb-3">
-                {equipamento.descricao}
-              </p>
-            )}
-
-            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
-              {equipamento.data_aquisicao && (
-                <div>
-                  <span className="text-gray-500">Aquisição:</span>
-                  <p className="font-semibold">
-                    {new Date(equipamento.data_aquisicao + 'T00:00:00').toLocaleDateString('pt-BR')}
-                  </p>
-                </div>
-              )}
-              {equipamento.valor_aquisicao && (
-                <div>
-                  <span className="text-gray-500">Valor:</span>
-                  <p className="font-semibold">
-                    R$ {parseFloat(equipamento.valor_aquisicao).toFixed(2)}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {equipamento.status === 'descartado' && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-3 mb-3">
-                <p className="text-sm text-red-800">
-                  <strong>Descartado em:</strong>{' '}
-                  {new Date(equipamento.data_descarte + 'T00:00:00').toLocaleDateString('pt-BR')}
-                </p>
-                {equipamento.motivo_descarte && (
-                  <p className="text-sm text-red-700 mt-1">
-                    {equipamento.motivo_descarte}
-                  </p>
+      {/* TABELA DE EQUIPAMENTOS */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Patrimônio
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status Uso
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Conservação
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Dt Aquisição
+                </th>
+                {permissoes?.pode_editar_comodatos && (
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
                 )}
-              </div>
-            )}
-
-            {permissoes?.pode_editar_comodatos && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => abrirModal(equipamento)}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                  disabled={equipamento.status === 'descartado'}
-                >
-                  ✏️ Editar
-                </button>
-                {equipamento.status !== 'descartado' && equipamento.status !== 'emprestado' && (
-                  <>
-                    <button
-                      onClick={() => descartar(equipamento.id)}
-                      className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
-                    >
-                      🗑️ Descartar
-                    </button>
-                    <button
-                      onClick={() => excluirEquipamento(equipamento.id)}
-                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                      title="Excluir permanentemente"
-                    >
-                      ❌ Excluir
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        ))}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {equipamentosFiltrados.map(equipamento => (
+                <tr key={equipamento.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {equipamento.numero_patrimonio}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-700">
+                      {equipamento.tipos_equipamentos?.nome}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {getStatusBadge(equipamento.status)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {getEstadoBadge(equipamento.estado_conservacao)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-700">
+                      {equipamento.data_aquisicao 
+                        ? new Date(equipamento.data_aquisicao + 'T00:00:00').toLocaleDateString('pt-BR')
+                        : '-'}
+                    </div>
+                  </td>
+                  {permissoes?.pode_editar_comodatos && (
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => abrirModal(equipamento)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-medium"
+                          disabled={equipamento.status === 'descartado'}
+                          title="Editar"
+                        >
+                          ✏️ Editar
+                        </button>
+                        {equipamento.status !== 'descartado' && equipamento.status !== 'emprestado' && (
+                          <>
+                            <button
+                              onClick={() => descartar(equipamento.id)}
+                              className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-xs font-medium"
+                              title="Descartar"
+                            >
+                              🗑️ Descartar
+                            </button>
+                            <button
+                              onClick={() => excluirEquipamento(equipamento.id)}
+                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs font-medium"
+                              title="Excluir permanentemente"
+                            >
+                              ❌ Excluir
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {equipamentosFiltrados.length === 0 && (
