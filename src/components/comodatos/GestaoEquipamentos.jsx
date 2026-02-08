@@ -9,7 +9,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const [modalLote, setModalLote] = useState(false);
   const [modalTipo, setModalTipo] = useState(false);
   const [editando, setEditando] = useState(null);
-  const [filtroStatus, setFiltroStatus] = useState('Disponível');
+  const [filtroStatus, setFiltroStatus] = useState('disponivel');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busca, setBusca] = useState('');
 
@@ -293,7 +293,9 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   };
 
   const equipamentosFiltrados = equipamentos.filter(eq => {
-    const matchStatus = filtroStatus === 'todos' || eq.status === filtroStatus;
+    const statusEq = (eq.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const filtroStatusNorm = filtroStatus.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const matchStatus = filtroStatus === 'todos' || statusEq === filtroStatusNorm;
     const matchTipo = filtroTipo === 'todos' || eq.tipo_id === parseInt(filtroTipo);
     const matchBusca = eq.numero_patrimonio.toLowerCase().includes(busca.toLowerCase()) ||
                        eq.tipos_equipamentos?.nome.toLowerCase().includes(busca.toLowerCase());
