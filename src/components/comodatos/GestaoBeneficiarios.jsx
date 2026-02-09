@@ -234,6 +234,27 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
     }
   };
 
+  const excluirResponsavel = async (responsavelId) => {
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este responsável?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('responsaveis')
+        .delete()
+        .eq('id', responsavelId);
+
+      if (error) throw error;
+      
+      showSuccess('Responsável excluído com sucesso!');
+      carregarBeneficiarios();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError(error.message || 'Erro ao excluir responsável');
+    }
+  };
+
   const excluir = async (id) => {
     if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este beneficiário?')) {
       return;
@@ -349,13 +370,22 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                       <p className="text-xs text-blue-600">{resp.parentesco} • {resp.telefone || resp.celular}</p>
                     </div>
                     {permissoes?.pode_editar_comodatos && (
-                      <button
-                        onClick={() => abrirModalResponsavel(beneficiario, resp)}
-                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                        title="Editar responsável"
-                      >
-                        ✏️
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => abrirModalResponsavel(beneficiario, resp)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                          title="Editar responsável"
+                        >
+                          ✏️
+                        </button>
+                        <button
+                          onClick={() => excluirResponsavel(resp.id)}
+                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                          title="Excluir responsável"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     )}
                   </div>
                 ))}
