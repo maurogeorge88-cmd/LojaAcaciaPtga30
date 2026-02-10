@@ -96,7 +96,7 @@ export default function ModalGradePresenca({ onFechar }) {
       console.log('Sessões:', sessoesData?.length);
 
       // 2. Buscar histórico de situações
-      const { data: historicoSituacoes } = await supabase
+      const { data: historicoSituacoesData } = await supabase
         .from('historico_situacoes')
         .select('*')
         .eq('status', 'ativa');
@@ -124,7 +124,7 @@ export default function ModalGradePresenca({ onFechar }) {
         
         // 2. Verificar se tem situação bloqueadora ATIVA HOJE
         // (irregular, desligado desde data anterior ao mês atual)
-        const temSituacaoBloqueadoraAtual = historicoSituacoes?.some(sit => {
+        const temSituacaoBloqueadoraAtual = historicoSituacoesData?.some(sit => {
           if (sit.membro_id !== i.id) return false;
           
           const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -226,7 +226,7 @@ export default function ModalGradePresenca({ onFechar }) {
 
       setSessoes(sessoesData || []);
       setIrmaos(irmaosComFlags || []);
-      setHistoricoSituacoes(historicoSituacoes || []);
+      setHistoricoSituacoes(historicoSituacoesData || []);
       setGrade(gradeCompleta);
 
     } catch (error) {
