@@ -205,14 +205,16 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           return i.data_elevacao && !i.data_exaltacao;
         }).length || 0;
 
+        // Mestre: exaltado E não instalado (mestre_instalado é false/null)
         const mestres = irmaosValidos?.filter(i => {
           if (!presencaMap.get(i.id)) return false;
           return i.data_exaltacao && !i.mestre_instalado;
         }).length || 0;
 
+        // Mestre Instalado: mestre_instalado = true (independente de ter data_instalacao)
         const mestresInstalados = irmaosValidos?.filter(i => {
           if (!presencaMap.get(i.id)) return false;
-          return i.mestre_instalado && i.data_instalacao;
+          return i.mestre_instalado === true;
         }).length || 0;
 
         return {
