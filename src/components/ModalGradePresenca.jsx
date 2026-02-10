@@ -95,11 +95,10 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Sessões:', sessoesData?.length);
 
-      // 2. Buscar histórico de situações
+      // 2. Buscar histórico de situações - SEM filtro de status para pegar todos
       const { data: historicoSituacoesData } = await supabase
         .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+        .select('*');
 
       // 3. Buscar irmãos ATIVOS (incluir datas de grau e ingresso)
       const { data: irmaosData } = await supabase
@@ -321,18 +320,36 @@ export default function ModalGradePresenca({ onFechar }) {
       if (dataSessao >= dataPrer) computa = false;
     }
     
-    // Verificar se tem situação ativa na data da sessão (licença, desligamento, etc)
-    const situacaoNaData = historicoSituacoes?.find(sit => 
-      sit.membro_id === irmao.id &&
-      dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-      (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-    );
+    // Verificar situação bloqueadora na data da sessão
+    // Mesma lógica do RegistroPresenca.jsx
+    const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+      
+      const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+      
+      if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+      
+      const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+      
+      // Sessão antes da situação começar - não bloqueia
+      if (dataSessao < dataInicio) return false;
+      
+      // Se tem data_fim, verificar se sessão está dentro do período
+      if (sit.data_fim) {
+        const dataFim = new Date(sit.data_fim + 'T00:00:00');
+        return dataSessao >= dataInicio && dataSessao <= dataFim;
+      }
+      
+      // Sem data_fim - bloqueia a partir da data de início
+      return dataSessao >= dataInicio;
+    });
     
-    if (situacaoNaData) computa = false;
+    if (situacaoBloqueadora) computa = false;
     
     if (irmao.data_falecimento) {
-      const dataFalec = new Date(irmao.data_falecimento);
-      if (dataSessao >= dataFalec) computa = false;
+      const dataFalec = new Date(irmao.data_falecimento + 'T00:00:00');
+      if (dataSessao > dataFalec) computa = false;
     }
 
     // Se NÃO TEM registro
@@ -587,12 +604,20 @@ export default function ModalGradePresenca({ onFechar }) {
                       }
                     }
                     
-                    const situacaoNaData = historicoSituacoes?.find(sit => 
-                      sit.membro_id === irmao.id &&
-                      dataSessao >= new Date(sit.data_inicio + 'T00:00:00') &&
-                      (sit.data_fim === null || dataSessao <= new Date(sit.data_fim + 'T00:00:00'))
-                    );
-                    if (situacaoNaData) computa = false;
+                    const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+                      if (sit.membro_id !== irmao.id) return false;
+                      const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                      const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+                      if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+                      const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+                      if (dataSessao < dataInicio) return false;
+                      if (sit.data_fim) {
+                        const dataFim = new Date(sit.data_fim + 'T00:00:00');
+                        return dataSessao >= dataInicio && dataSessao <= dataFim;
+                      }
+                      return dataSessao >= dataInicio;
+                    });
+                    if (situacaoBloqueadora) computa = false;
                     
                     if (irmao.data_falecimento) {
                       const dataFalec = new Date(irmao.data_falecimento);
