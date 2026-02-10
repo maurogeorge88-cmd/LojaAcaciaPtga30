@@ -95,10 +95,14 @@ export default function ModalGradePresenca({ onFechar }) {
 
       console.log('Sessões:', sessoesData?.length);
 
-      // 2. Buscar histórico de situações - SEM filtro de status para pegar todos
+      // 2. Buscar histórico de situações - todos os registros com status ativa
       const { data: historicoSituacoesData } = await supabase
         .from('historico_situacoes')
-        .select('*');
+        .select('*')
+        .eq('status', 'ativa');
+
+      console.log('🔍 historicoSituacoes carregados:', historicoSituacoesData?.length);
+      console.log('🔍 tipos de situacao únicos:', [...new Set(historicoSituacoesData?.map(s => s.tipo_situacao))]);
 
       // 3. Buscar irmãos ATIVOS (incluir datas de grau e ingresso)
       const { data: irmaosData } = await supabase
@@ -321,27 +325,27 @@ export default function ModalGradePresenca({ onFechar }) {
     }
     
     // Verificar situação bloqueadora na data da sessão
-    // Mesma lógica do RegistroPresenca.jsx
     const situacaoBloqueadora = historicoSituacoes?.find(sit => {
       if (sit.membro_id !== irmao.id) return false;
       
-      const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
       const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
       
-      if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+      // Checa exato OU se contém alguma das palavras bloqueadoras
+      const ehBloqueadora = situacoesQueExcluem.includes(tipoSituacao) ||
+        situacoesQueExcluem.some(s => tipoSituacao.includes(s));
+      
+      if (!ehBloqueadora) return false;
       
       const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
       
-      // Sessão antes da situação começar - não bloqueia
       if (dataSessao < dataInicio) return false;
       
-      // Se tem data_fim, verificar se sessão está dentro do período
       if (sit.data_fim) {
         const dataFim = new Date(sit.data_fim + 'T00:00:00');
         return dataSessao >= dataInicio && dataSessao <= dataFim;
       }
       
-      // Sem data_fim - bloqueia a partir da data de início
       return dataSessao >= dataInicio;
     });
     
@@ -606,9 +610,11 @@ export default function ModalGradePresenca({ onFechar }) {
                     
                     const situacaoBloqueadora = historicoSituacoes?.find(sit => {
                       if (sit.membro_id !== irmao.id) return false;
-                      const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                      const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
                       const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
-                      if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+                      const ehBloqueadora = situacoesQueExcluem.includes(tipoSituacao) ||
+                        situacoesQueExcluem.some(s => tipoSituacao.includes(s));
+                      if (!ehBloqueadora) return false;
                       const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
                       if (dataSessao < dataInicio) return false;
                       if (sit.data_fim) {
