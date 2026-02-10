@@ -259,7 +259,7 @@ export default function ModalGradePresenca({ onFechar }) {
       );
     }
 
-    const dataSessao = new Date(sessao.data_sessao);
+    const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
     
     // 1. Verificar data de início na LOJA
     // PRIORIDADE: data_ingresso_loja (se existir) > data_iniciacao
@@ -331,13 +331,14 @@ export default function ModalGradePresenca({ onFechar }) {
       const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
       const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
       
-      // Checa exato OU se contém alguma das palavras bloqueadoras
       const ehBloqueadora = situacoesQueExcluem.includes(tipoSituacao) ||
         situacoesQueExcluem.some(s => tipoSituacao.includes(s));
       
       if (!ehBloqueadora) return false;
       
       const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+      
+      console.log(`🔎 ${irmao.nome} | sessão: ${dataSessao.toLocaleDateString('pt-BR')} | desligamento: ${dataInicio.toLocaleDateString('pt-BR')} | bloqueia: ${dataSessao >= dataInicio}`);
       
       if (dataSessao < dataInicio) return false;
       
@@ -557,7 +558,7 @@ export default function ModalGradePresenca({ onFechar }) {
                   
                   sessoes.forEach(sessao => {
                     const reg = grade[irmao.id]?.[sessao.id];
-                    const dataSessao = new Date(sessao.data_sessao);
+                    const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
                     
                     // 1. Verificar data de início
                     const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
