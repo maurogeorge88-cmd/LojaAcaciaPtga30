@@ -429,14 +429,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
     setFechandoMes(true);
     try {
-      const { error } = await supabase.from('meses_fechados').upsert({
+      // Primeiro tenta deletar se já existir, depois insere
+      await supabase.from('meses_fechados').delete().eq('ano', filtros.ano).eq('mes', filtros.mes);
+      
+      const { error } = await supabase.from('meses_fechados').insert({
         ano: filtros.ano,
         mes: filtros.mes,
         fechado_em: new Date().toISOString(),
-        fechado_por: userData?.email || userEmail || 'sistema',
-        reaberto_em: null,
-        reaberto_por: null
-      }, { onConflict: 'ano,mes' });
+        fechado_por: userData?.email || userEmail || 'sistema'
+      });
 
       if (error) throw error;
       await carregarMesesFechados();
@@ -746,6 +747,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const editarLancamento = (lancamento) => {
+    const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
+    if (dataRef && verificarMesBloqueado(dataRef)) {
+      const data = new Date(dataRef + 'T00:00:00');
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
+      return;
+    }
     setTipoLancamento(lancamento.tipo); // Define o tipo para o modal
     setFormLancamento({
       tipo: lancamento.tipo,
@@ -773,6 +780,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const excluirLancamento = async (id) => {
+    const lancamento = lancamentos.find(l => l.id === id);
+    const dataRef = lancamento?.data_pagamento || lancamento?.data_lancamento || lancamento?.data_vencimento;
+    if (dataRef && verificarMesBloqueado(dataRef)) {
+      const data = new Date(dataRef + 'T00:00:00');
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para excluir.`);
+      return;
+    }
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
@@ -3585,15 +3599,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         
                         <button
                           onClick={() => editarLancamento(lanc)}
-                          className="text-blue-600 hover:text-blue-900 text-lg"
-                          title="Editar"
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
+                          className={`text-lg ${verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:text-blue-900'}`}
+                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Editar'}
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
-                          className="text-red-600 hover:text-red-900 text-lg"
-                          title="Excluir"
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
+                          className={`text-lg ${verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
+                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Excluir'}
                         >
                           🗑️
                         </button>
