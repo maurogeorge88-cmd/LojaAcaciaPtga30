@@ -2654,6 +2654,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <option key={idx} value={idx + 1}>{mes}</option>
               ))}
             </select>
+            {/* Navegação mês */}
+            {filtros.mes > 0 && (
+              <div className="flex gap-1 mt-1">
+                <button
+                  onClick={() => {
+                    if (filtros.mes === 1) {
+                      setFiltros({ ...filtros, mes: 12, ano: filtros.ano > 0 ? filtros.ano - 1 : filtros.ano });
+                    } else {
+                      setFiltros({ ...filtros, mes: filtros.mes - 1 });
+                    }
+                  }}
+                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  title="Mês anterior"
+                >‹</button>
+                <button
+                  onClick={() => {
+                    if (filtros.mes === 12) {
+                      setFiltros({ ...filtros, mes: 1, ano: filtros.ano > 0 ? filtros.ano + 1 : filtros.ano });
+                    } else {
+                      setFiltros({ ...filtros, mes: filtros.mes + 1 });
+                    }
+                  }}
+                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  title="Próximo mês"
+                >›</button>
+              </div>
+            )}
           </div>
 
           {/* Filtro Ano */}
@@ -2669,6 +2696,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <option key={ano} value={ano}>{ano}</option>
               ))}
             </select>
+            {/* Navegação ano */}
+            {filtros.ano > 0 && (
+              <div className="flex gap-1 mt-1">
+                <button
+                  onClick={() => setFiltros({ ...filtros, ano: filtros.ano - 1 })}
+                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  title="Ano anterior"
+                >‹</button>
+                <button
+                  onClick={() => setFiltros({ ...filtros, ano: filtros.ano + 1 })}
+                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  title="Próximo ano"
+                >›</button>
+              </div>
+            )}
           </div>
 
           {/* Filtro Tipo */}
