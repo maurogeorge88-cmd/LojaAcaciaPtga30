@@ -73,6 +73,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
+
+  // Controle de fechamento de mês
+  const [mesesFechados, setMesesFechados] = useState([]);
+  const [fechandoMes, setFechandoMes] = useState(false);
   const [formSangria, setFormSangria] = useState({
     valor: '',
     data: new Date().toISOString().split('T')[0],
@@ -150,6 +154,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     calcularCaixaFisicoTotal();
     calcularTroncoTotal();
     buscarTotalRegistros();
+    carregarMesesFechados();
   }, [filtros.mes, filtros.ano]);
 
   // Recarregar lançamentos quando mudar filtros
@@ -401,12 +406,95 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
+  // ============================================================
+  // CONTROLE DE FECHAMENTO DE MÊS
+  // ============================================================
+  const carregarMesesFechados = async () => {
+    const { data } = await supabase.from('meses_fechados').select('*');
+    setMesesFechados(data || []);
+  };
+
+  const mesFechadoAtual = () => {
+    if (!filtros.mes || !filtros.ano) return false;
+    return mesesFechados.some(m => m.mes === filtros.mes && m.ano === filtros.ano);
+  };
+
+  const fecharMes = async () => {
+    if (!filtros.mes || !filtros.ano) {
+      showError('Selecione um mês e ano para fechar.');
+      return;
+    }
+    const nomeMes = meses[filtros.mes - 1];
+    if (!window.confirm(`Fechar ${nomeMes}/${filtros.ano}? Novos lançamentos neste mês serão bloqueados.`)) return;
+
+    setFechandoMes(true);
+    try {
+      const { error } = await supabase.from('meses_fechados').upsert({
+        ano: filtros.ano,
+        mes: filtros.mes,
+        fechado_em: new Date().toISOString(),
+        fechado_por: userData?.email || userEmail || 'sistema',
+        reaberto_em: null,
+        reaberto_por: null
+      }, { onConflict: 'ano,mes' });
+
+      if (error) throw error;
+      await carregarMesesFechados();
+      showSuccess(`✅ ${nomeMes}/${filtros.ano} fechado com sucesso!`);
+    } catch (error) {
+      showError('Erro ao fechar mês: ' + error.message);
+    } finally {
+      setFechandoMes(false);
+    }
+  };
+
+  const reabrirMes = async () => {
+    if (!filtros.mes || !filtros.ano) return;
+    const nomeMes = meses[filtros.mes - 1];
+    if (!window.confirm(`Reabrir ${nomeMes}/${filtros.ano}? Lançamentos voltarão a ser permitidos.`)) return;
+
+    setFechandoMes(true);
+    try {
+      const { error } = await supabase.from('meses_fechados')
+        .delete()
+        .eq('ano', filtros.ano)
+        .eq('mes', filtros.mes);
+
+      if (error) throw error;
+      await carregarMesesFechados();
+      showSuccess(`🔓 ${nomeMes}/${filtros.ano} reaberto com sucesso!`);
+    } catch (error) {
+      showError('Erro ao reabrir mês: ' + error.message);
+    } finally {
+      setFechandoMes(false);
+    }
+  };
+
+  // Verifica se a data de um lançamento pertence a um mês fechado
+  const verificarMesBloqueado = (dataLancamento) => {
+    if (!dataLancamento) return false;
+    const data = new Date(dataLancamento + 'T00:00:00');
+    const mes = data.getMonth() + 1;
+    const ano = data.getFullYear();
+    return mesesFechados.some(m => m.mes === mes && m.ano === ano);
+  };
+
   const handleSubmit = async (dados) => {
     // Se receber um evento, prevenir default (mantém compatibilidade)
     if (dados && dados.preventDefault) {
       dados.preventDefault();
       // Neste caso, usar formLancamento ao invés de dados
       dados = formLancamento;
+    }
+
+    // Verificar se o mês está fechado
+    const dataRef = dados.data_pagamento || dados.data_lancamento || dados.data_vencimento;
+    if (dataRef && verificarMesBloqueado(dataRef)) {
+      const data = new Date(dataRef + 'T00:00:00');
+      const nomeMes = meses[data.getMonth()];
+      const ano = data.getFullYear();
+      showError(`🔒 ${nomeMes}/${ano} está fechado. Reabra o mês para lançar.`);
+      return;
     }
 
     try {
@@ -2245,6 +2333,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* Espaçador menor */}
         <div className="w-8"></div>
         
+        {/* Botão Fechar/Reabrir Mês - só aparece se mês e ano estiver selecionado */}
+        {filtros.mes > 0 && filtros.ano > 0 && (
+          mesFechadoAtual() ? (
+            <button
+              onClick={reabrirMes}
+              disabled={fechandoMes}
+              className="w-28 h-[55px] px-3 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+              title={`Reabrir ${meses[filtros.mes - 1]}/${filtros.ano}`}
+            >
+              <span>🔓 Reabrir</span>
+              <span>Mês</span>
+            </button>
+          ) : (
+            <button
+              onClick={fecharMes}
+              disabled={fechandoMes}
+              className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+              title={`Fechar ${meses[filtros.mes - 1]}/${filtros.ano}`}
+            >
+              <span>🔒 Fechar</span>
+              <span>Mês</span>
+            </button>
+          )
+        )}
+
         {/* Botões de ação - todos com mesmo tamanho */}
         <button
           onClick={() => abrirModalLancamento('receita')}
@@ -2484,6 +2597,32 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </div>
       </div>
     </div>
+
+      {/* BANNER MÊS FECHADO */}
+      {mesFechadoAtual() && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🔒</span>
+            <div>
+              <p className="font-semibold text-yellow-800">
+                {meses[filtros.mes - 1]}/{filtros.ano} está fechado
+              </p>
+              <p className="text-sm text-yellow-700">
+                Novos lançamentos neste mês estão bloqueados.
+                {mesesFechados.find(m => m.mes === filtros.mes && m.ano === filtros.ano)?.fechado_por && (
+                  <span> Fechado por: {mesesFechados.find(m => m.mes === filtros.mes && m.ano === filtros.ano).fechado_por}</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={reabrirMes}
+            className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm font-medium"
+          >
+            🔓 Reabrir Mês
+          </button>
+        </div>
+      )}
 
       {/* FILTROS */}
       <div className="bg-white rounded-lg shadow p-4">
