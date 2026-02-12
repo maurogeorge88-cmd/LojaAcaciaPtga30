@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
-import { formatarMoeda, corrigirTimezone } from './utils/formatadores';
+import { formatarMoeda } from './utils/formatadores';
 
 export default function FinancasLojaTV({ filtros, onClose }) {
   const [resumo, setResumo] = useState({
@@ -24,45 +24,148 @@ export default function FinancasLojaTV({ filtros, onClose }) {
 
   useEffect(() => {
     carregarDados();
-  }, [filtros]);
+  }, []);
 
   const carregarDados = async () => {
     try {
       setLoading(true);
       
-      // Carregar saldo anterior
-      const saldoAnt = await calcularSaldoAnterior();
+      const { mes, ano } = filtros;
       
-      // Carregar lançamentos do período
-      const lancamentos = await buscarLancamentos();
+      // Buscar TODOS os lançamentos
+      const { data: todosLancamentos, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*')
+        .order('data_pagamento', { ascending: false });
+
+      if (error) throw error;
+
+      // Filtrar lançamentos do período
+      const lancamentosPeriodo = todosLancamentos.filter(lanc => {
+        if (mes > 0 && ano > 0) {
+          const data = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
+          if (!data) return false;
+          const d = new Date(data + 'T12:00:00');
+          return d.getMonth() === mes - 1 && d.getFullYear() === ano;
+        } else if (ano > 0) {
+          const data = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
+          if (!data) return false;
+          const d = new Date(data + 'T12:00:00');
+          return d.getFullYear() === ano;
+        }
+        return true;
+      });
+
+      // Calcular saldo anterior
+      const lancamentosAnteriores = todosLancamentos.filter(lanc => {
+        if (lanc.status !== 'pago' || !lanc.data_pagamento) return false;
+        const d = new Date(lanc.data_pagamento + 'T12:00:00');
+        if (mes > 0 && ano > 0) {
+          const limite = new Date(ano, mes - 1, 1);
+          return d < limite;
+        } else if (ano > 0) {
+          const limite = new Date(ano, 0, 1);
+          return d < limite;
+        }
+        return false;
+      });
+
+      const receitasAnteriores = lancamentosAnteriores
+        .filter(l => l.tipo === 'receita')
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       
-      // Calcular resumo
-      const receitasPagas = lancamentos
+      const despesasAnteriores = lancamentosAnteriores
+        .filter(l => l.tipo === 'despesa')
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const saldoAnt = receitasAnteriores - despesasAnteriores;
+
+      // Calcular resumo do período
+      const receitasPagas = lancamentosPeriodo
         .filter(l => l.tipo === 'receita' && l.status === 'pago')
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
-      const despesasPagas = lancamentos
+      const despesasPagas = lancamentosPeriodo
         .filter(l => l.tipo === 'despesa' && l.status === 'pago')
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
-      const aReceber = lancamentos
+      const aReceber = lancamentosPeriodo
         .filter(l => l.tipo === 'receita' && l.status === 'pendente')
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
-      const aPagar = lancamentos
+      const aPagar = lancamentosPeriodo
         .filter(l => l.tipo === 'despesa' && l.status === 'pendente')
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      // Calcular saldo bancário (todos os lançamentos pagos)
+      const todosPagos = todosLancamentos.filter(l => l.status === 'pago');
       
-      // Calcular saldo bancário e caixa físico
-      const saldoBancario = await calcularSaldoBancario();
-      const caixaFisico = await calcularCaixaFisico();
+      const receitasBanco = todosPagos
+        .filter(l => l.tipo === 'receita' && ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       
+      const despesasBanco = todosPagos
+        .filter(l => l.tipo === 'despesa' && ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const saldoBancario = receitasBanco - despesasBanco;
+
+      // Calcular caixa físico
+      const receitasDinheiro = todosPagos
+        .filter(l => l.tipo === 'receita' && l.tipo_pagamento === 'dinheiro')
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      
+      const despesasDinheiro = todosPagos
+        .filter(l => l.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro')
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const caixaFisico = receitasDinheiro - despesasDinheiro;
+
       // Calcular tronco
-      const tronco = await calcularTroncoTotal();
-      
+      const troncoLancamentos = todosPagos.filter(l => 
+        l.tipo === 'receita' && 
+        l.descricao && 
+        l.descricao.toLowerCase().includes('tronco')
+      );
+
+      let troncoBanco = 0, troncoEspecie = 0;
+
+      troncoLancamentos.forEach(lanc => {
+        const valor = parseFloat(lanc.valor || 0);
+        if (['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(lanc.tipo_pagamento)) {
+          troncoBanco += valor;
+        } else if (lanc.tipo_pagamento === 'dinheiro') {
+          troncoEspecie += valor;
+        }
+      });
+
       // Calcular agrupamento
-      const agrup = calcularAgrupamento(lancamentos);
-      
+      const agrup = {};
+      lancamentosPeriodo.forEach(lanc => {
+        const data = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
+        if (!data) return;
+        
+        if (!agrup[data]) {
+          agrup[data] = { receitas: 0, despesas: 0 };
+        }
+        
+        const valor = parseFloat(lanc.valor || 0);
+        if (lanc.tipo === 'receita') {
+          agrup[data].receitas += valor;
+        } else {
+          agrup[data].despesas += valor;
+        }
+      });
+
+      const agrupArray = Object.entries(agrup)
+        .map(([data, valores]) => ({
+          data,
+          receitas: valores.receitas,
+          despesas: valores.despesas,
+          resultado: valores.receitas - valores.despesas
+        }))
+        .sort((a, b) => b.data.localeCompare(a.data));
+
       setResumo({
         saldoAnterior: saldoAnt,
         receitasPagas,
@@ -73,12 +176,12 @@ export default function FinancasLojaTV({ filtros, onClose }) {
         saldoTotal: saldoBancario + caixaFisico,
         aReceber,
         aPagar,
-        troncoSolidariedade: tronco.total,
-        banco: tronco.banco,
-        especie: tronco.especie
+        troncoSolidariedade: troncoBanco + troncoEspecie,
+        banco: troncoBanco,
+        especie: troncoEspecie
       });
       
-      setAgrupamento(agrup);
+      setAgrupamento(agrupArray);
       
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -87,204 +190,38 @@ export default function FinancasLojaTV({ filtros, onClose }) {
     }
   };
 
-  const calcularSaldoAnterior = async () => {
-    try {
-      const { mes, ano } = filtros;
-      
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('tipo, valor, data_pagamento')
-        .eq('status', 'pago');
-
-      if (error) throw error;
-
-      // Filtrar no lado do cliente
-      let lancamentosFiltrados = data || [];
-
-      if (mes > 0 && ano > 0) {
-        // Antes do mês atual
-        lancamentosFiltrados = lancamentosFiltrados.filter(l => {
-          if (!l.data_pagamento) return false;
-          const dataPag = new Date(l.data_pagamento + 'T00:00:00');
-          const dataLimite = new Date(ano, mes - 1, 1);
-          return dataPag < dataLimite;
-        });
-      } else if (ano > 0) {
-        // Antes do ano atual
-        lancamentosFiltrados = lancamentosFiltrados.filter(l => {
-          if (!l.data_pagamento) return false;
-          const dataPag = new Date(l.data_pagamento + 'T00:00:00');
-          const dataLimite = new Date(ano, 0, 1);
-          return dataPag < dataLimite;
-        });
-      }
-
-      const receitas = lancamentosFiltrados.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-      const despesas = lancamentosFiltrados.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      return receitas - despesas;
-    } catch (error) {
-      console.error('Erro ao calcular saldo anterior:', error);
-      return 0;
-    }
-  };
-
-  const buscarLancamentos = async () => {
-    try {
-      const { mes, ano } = filtros;
-      
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('*')
-        .order('data_pagamento', { ascending: false });
-
-      if (error) throw error;
-
-      // Filtrar no lado do cliente
-      let lancamentosFiltrados = data || [];
-
-      if (mes > 0 && ano > 0) {
-        lancamentosFiltrados = lancamentosFiltrados.filter(lanc => {
-          if (lanc.status === 'pago' && lanc.data_pagamento) {
-            const dataPag = new Date(lanc.data_pagamento + 'T00:00:00');
-            return dataPag.getMonth() === mes - 1 && dataPag.getFullYear() === ano;
-          } else if (lanc.status === 'pendente' && lanc.data_vencimento) {
-            const dataVenc = new Date(lanc.data_vencimento + 'T00:00:00');
-            return dataVenc.getMonth() === mes - 1 && dataVenc.getFullYear() === ano;
-          }
-          return false;
-        });
-      } else if (ano > 0) {
-        lancamentosFiltrados = lancamentosFiltrados.filter(lanc => {
-          if (lanc.status === 'pago' && lanc.data_pagamento) {
-            const dataPag = new Date(lanc.data_pagamento + 'T00:00:00');
-            return dataPag.getFullYear() === ano;
-          } else if (lanc.status === 'pendente' && lanc.data_vencimento) {
-            const dataVenc = new Date(lanc.data_vencimento + 'T00:00:00');
-            return dataVenc.getFullYear() === ano;
-          }
-          return false;
-        });
-      }
-
-      return lancamentosFiltrados;
-    } catch (error) {
-      console.error('Erro ao buscar lançamentos:', error);
-      return [];
-    }
-  };
-
-  const calcularSaldoBancario = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('tipo, valor')
-        .eq('status', 'pago')
-        .in('tipo_pagamento', ['pix', 'transferencia', 'debito', 'credito', 'cheque']);
-
-      if (error) throw error;
-
-      const receitas = data.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-      const despesas = data.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      return receitas - despesas;
-    } catch (error) {
-      console.error('Erro ao calcular saldo bancário:', error);
-      return 0;
-    }
-  };
-
-  const calcularCaixaFisico = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('tipo, valor')
-        .eq('status', 'pago')
-        .eq('tipo_pagamento', 'dinheiro');
-
-      if (error) throw error;
-
-      const receitas = data.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-      const despesas = data.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-      return receitas - despesas;
-    } catch (error) {
-      console.error('Erro ao calcular caixa físico:', error);
-      return 0;
-    }
-  };
-
-  const calcularTroncoTotal = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('*')
-        .eq('status', 'pago')
-        .ilike('descricao', '%tronco%');
-
-      if (error) throw error;
-
-      let banco = 0, especie = 0;
-
-      data.forEach(lanc => {
-        const valor = parseFloat(lanc.valor);
-        if (lanc.tipo === 'receita') {
-          if (['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(lanc.tipo_pagamento)) {
-            banco += valor;
-          } else if (lanc.tipo_pagamento === 'dinheiro') {
-            especie += valor;
-          }
-        }
-      });
-
-      return { banco, especie, total: banco + especie };
-    } catch (error) {
-      console.error('Erro ao calcular tronco:', error);
-      return { banco: 0, especie: 0, total: 0 };
-    }
-  };
-
-  const calcularAgrupamento = (lancamentos) => {
-    const agrup = {};
-    
-    lancamentos.forEach(lanc => {
-      const data = lanc.status === 'pago' 
-        ? corrigirTimezone(lanc.data_pagamento).toISOString().split('T')[0]
-        : corrigirTimezone(lanc.data_vencimento).toISOString().split('T')[0];
-      
-      if (!agrup[data]) {
-        agrup[data] = { receitas: 0, despesas: 0 };
-      }
-      
-      if (lanc.tipo === 'receita') {
-        agrup[data].receitas += parseFloat(lanc.valor);
-      } else {
-        agrup[data].despesas += parseFloat(lanc.valor);
-      }
-    });
-    
-    return Object.entries(agrup)
-      .map(([data, valores]) => ({
-        data,
-        receitas: valores.receitas,
-        despesas: valores.despesas,
-        resultado: valores.receitas - valores.despesas
-      }))
-      .sort((a, b) => new Date(b.data) - new Date(a.data));
-  };
-
   const abrirDetalhesReceitas = async () => {
     try {
-      const lancamentos = await buscarLancamentos();
-      const receitasPagas = lancamentos.filter(l => l.tipo === 'receita' && l.status === 'pago');
+      const { mes, ano } = filtros;
       
-      const conta = receitasPagas
-        .filter(l => ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const { data: todosLancamentos, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*');
+
+      if (error) throw error;
+
+      const lancamentosPeriodo = todosLancamentos.filter(lanc => {
+        if (lanc.tipo !== 'receita' || lanc.status !== 'pago') return false;
         
-      const dinheiro = receitasPagas
+        const data = lanc.data_pagamento;
+        if (!data) return false;
+        
+        const d = new Date(data + 'T12:00:00');
+        if (mes > 0 && ano > 0) {
+          return d.getMonth() === mes - 1 && d.getFullYear() === ano;
+        } else if (ano > 0) {
+          return d.getFullYear() === ano;
+        }
+        return true;
+      });
+      
+      const conta = lancamentosPeriodo
+        .filter(l => ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+        
+      const dinheiro = lancamentosPeriodo
         .filter(l => l.tipo_pagamento === 'dinheiro')
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       
       setDetalhesReceitas({ conta, dinheiro });
       setModalReceitasAberto(true);
@@ -301,6 +238,8 @@ export default function FinancasLojaTV({ filtros, onClose }) {
     );
   }
 
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-8">
       {/* Botão Fechar */}
@@ -316,7 +255,7 @@ export default function FinancasLojaTV({ filtros, onClose }) {
         <h1 className="text-6xl font-bold text-white mb-2">💰 Finanças da Loja</h1>
         <p className="text-3xl text-blue-200">
           {filtros.mes > 0 && filtros.ano > 0 
-            ? `${['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'][filtros.mes - 1]} / ${filtros.ano}`
+            ? `${meses[filtros.mes - 1]} / ${filtros.ano}`
             : filtros.ano > 0 ? `${filtros.ano}` : 'Período Total'}
         </p>
       </div>
@@ -328,7 +267,7 @@ export default function FinancasLojaTV({ filtros, onClose }) {
           <div className="text-white">
             <p className="text-2xl mb-2">💰 Saldo Anterior</p>
             <p className="text-4xl font-bold">{formatarMoeda(resumo.saldoAnterior)}</p>
-            <p className="text-lg mt-2">Antes de {filtros.mes > 0 ? ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'][filtros.mes - 1] : 'Jan'}/{filtros.ano}</p>
+            <p className="text-lg mt-2">Antes de {filtros.mes > 0 ? meses[filtros.mes - 1].substring(0, 3) : 'Jan'}/{filtros.ano}</p>
           </div>
         </div>
 
