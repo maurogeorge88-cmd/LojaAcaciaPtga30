@@ -205,13 +205,14 @@ export default function FinancasLojaTV({ filtros: filtrosIniciais, onClose }) {
       const troncoBanco = receitasBancoTronco - despesasBancoTronco;
       const troncoEspecie = receitasEspecieTronco - despesasEspecieTronco;
 
-      // Calcular agrupamento (EXCLUINDO COMPENSAÇÕES)
+      // Calcular agrupamento (APENAS PAGOS, EXCLUINDO COMPENSAÇÕES)
       const agrup = {};
       lancamentosPeriodo.forEach(lanc => {
-        // Excluir compensações
+        // APENAS PAGOS e excluir compensações
+        if (lanc.status !== 'pago') return;
         if (lanc.tipo_pagamento === 'compensacao') return;
         
-        const data = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
+        const data = lanc.data_pagamento;
         if (!data) return;
         
         if (!agrup[data]) {
