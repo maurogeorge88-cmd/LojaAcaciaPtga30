@@ -32,15 +32,53 @@ export default function FinancasLojaTV({ filtros, onClose }) {
       
       const { mes, ano } = filtros;
       
-      // Buscar TODOS os lançamentos
+      // Buscar TODOS os lançamentos COM categorias
       const { data: todosLancamentos, error } = await supabase
         .from('lancamentos_loja')
-        .select('*')
+        .select('*, categorias_financeiras(tipo, nome)')
         .order('data_pagamento', { ascending: false });
 
       if (error) throw error;
 
-      // Filtrar lançamentos do período
+      // Calcular saldo anterior (antes do período)
+      const lancamentosAnteriores = todosLancamentos.filter(lanc => {
+        if (lanc.status !== 'pago' || !lanc.data_pagamento) return false;
+        const d = new Date(lanc.data_pagamento + 'T12:00:00');
+        if (mes > 0 && ano > 0) {
+          const limite = new Date(ano, mes - 1, 1);
+          return d < limite;
+        } else if (ano > 0) {
+          const limite = new Date(ano, 0, 1);
+          return d < limite;
+        }
+        return false;
+      });
+
+      const receitasBancariasAnt = lancamentosAnteriores
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento !== 'compensacao' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const depositosAnt = lancamentosAnteriores
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.eh_transferencia_interna === true
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const despesasAnteriores = lancamentosAnteriores
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento !== 'compensacao' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const saldoAnt = receitasBancariasAnt + depositosAnt - despesasAnteriores;
       const lancamentosPeriodo = todosLancamentos.filter(lanc => {
         if (mes > 0 && ano > 0) {
           const data = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
@@ -55,30 +93,6 @@ export default function FinancasLojaTV({ filtros, onClose }) {
         }
         return true;
       });
-
-      // Calcular saldo anterior
-      const lancamentosAnteriores = todosLancamentos.filter(lanc => {
-        if (lanc.status !== 'pago' || !lanc.data_pagamento) return false;
-        const d = new Date(lanc.data_pagamento + 'T12:00:00');
-        if (mes > 0 && ano > 0) {
-          const limite = new Date(ano, mes - 1, 1);
-          return d < limite;
-        } else if (ano > 0) {
-          const limite = new Date(ano, 0, 1);
-          return d < limite;
-        }
-        return false;
-      });
-
-      const receitasAnteriores = lancamentosAnteriores
-        .filter(l => l.tipo === 'receita')
-        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      
-      const despesasAnteriores = lancamentosAnteriores
-        .filter(l => l.tipo === 'despesa')
-        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-
-      const saldoAnt = receitasAnteriores - despesasAnteriores;
 
       // Calcular resumo do período
       const receitasPagas = lancamentosPeriodo
@@ -110,34 +124,63 @@ export default function FinancasLojaTV({ filtros, onClose }) {
 
       const saldoBancario = receitasBanco - despesasBanco;
 
-      // Calcular caixa físico
-      const receitasDinheiro = todosPagos
-        .filter(l => l.tipo === 'receita' && l.tipo_pagamento === 'dinheiro')
+      // Calcular caixa físico (EXCLUINDO TRONCO e transferências internas)
+      const dinheiroRecebido = todosPagos
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna &&
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco')
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       
-      const despesasDinheiro = todosPagos
-        .filter(l => l.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro')
+      const sangriasFeitas = todosPagos
+        .filter(l => 
+          l.eh_transferencia_interna === true && 
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco')
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
 
-      const caixaFisico = receitasDinheiro - despesasDinheiro;
+      const caixaFisico = dinheiroRecebido - sangriasFeitas;
 
-      // Calcular tronco
-      const troncoLancamentos = todosPagos.filter(l => 
-        l.tipo === 'receita' && 
-        l.descricao && 
-        l.descricao.toLowerCase().includes('tronco')
-      );
+      // Calcular tronco usando categorias
+      const receitasBancoTronco = todosPagos
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento !== 'dinheiro'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
 
-      let troncoBanco = 0, troncoEspecie = 0;
+      const receitasEspecieTronco = todosPagos
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
 
-      troncoLancamentos.forEach(lanc => {
-        const valor = parseFloat(lanc.valor || 0);
-        if (['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(lanc.tipo_pagamento)) {
-          troncoBanco += valor;
-        } else if (lanc.tipo_pagamento === 'dinheiro') {
-          troncoEspecie += valor;
-        }
-      });
+      const despesasBancoTronco = todosPagos
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const despesasEspecieTronco = todosPagos
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento === 'dinheiro'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const troncoBanco = receitasBancoTronco - despesasBancoTronco;
+      const troncoEspecie = receitasEspecieTronco - despesasEspecieTronco;
 
       // Calcular agrupamento
       const agrup = {};
