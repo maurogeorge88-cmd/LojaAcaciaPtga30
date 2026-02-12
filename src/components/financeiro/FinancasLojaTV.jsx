@@ -130,11 +130,19 @@ export default function FinancasLojaTV({ filtros: filtrosIniciais, onClose }) {
       const todosPagos = todosLancamentos.filter(l => l.status === 'pago');
       
       const receitasBanco = todosPagos
-        .filter(l => l.tipo === 'receita' && ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' && 
+          ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento) &&
+          l.tipo_pagamento !== 'compensacao'
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       
       const despesasBanco = todosPagos
-        .filter(l => l.tipo === 'despesa' && ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'despesa' && 
+          ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento) &&
+          l.tipo_pagamento !== 'compensacao'
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
 
       const saldoBancario = receitasBanco - despesasBanco;
@@ -257,12 +265,14 @@ export default function FinancasLojaTV({ filtros: filtrosIniciais, onClose }) {
       
       const { data: todosLancamentos, error } = await supabase
         .from('lancamentos_loja')
-        .select('*');
+        .select('*, categorias_financeiras(tipo, nome)');
 
       if (error) throw error;
 
       const lancamentosPeriodo = todosLancamentos.filter(lanc => {
-        if (lanc.tipo !== 'receita' || lanc.status !== 'pago') return false;
+        if (lanc.categorias_financeiras?.tipo !== 'receita' || 
+            lanc.status !== 'pago' ||
+            lanc.tipo_pagamento === 'compensacao') return false;
         
         const data = lanc.data_pagamento;
         if (!data) return false;
