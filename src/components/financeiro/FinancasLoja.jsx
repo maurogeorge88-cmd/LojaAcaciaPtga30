@@ -12,6 +12,7 @@ import {
 } from './utils/helpers';
 import ModalLancamento from './components/ModalLancamento';
 import ModalResumoIrmaos from './components/ModalResumoIrmaos';
+import FinancasLojaTV from './FinancasLojaTV';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -73,6 +74,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
+  const [telaTV, setTelaTV] = useState(false);
 
   // Controle de fechamento de mês
   const [mesesFechados, setMesesFechados] = useState([]);
@@ -2430,6 +2432,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         >
           <span>📊 Análise</span>
           <span>Categorias</span>
+        </button>
+        
+        {/* Botão Apresentação TV */}
+        <button
+          onClick={() => setTelaTV(true)}
+          className="w-28 h-[55px] px-3 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+        >
+          <span>📺 Tela</span>
+          <span>para TV</span>
         </button>
         
         {/* Botão Ocultar/Mostrar Valores */}
@@ -5099,5 +5110,15 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
         </form>
       </div>
     </div>
+  );
+}
+
+// Renderizar Tela TV em tela cheia
+if (telaTV) {
+  return (
+    <FinancasLojaTV 
+      filtros={filtros}
+      onClose={() => setTelaTV(false)}
+    />
   );
 }
