@@ -2320,6 +2320,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     );
   }
 
+  // Renderizar Tela TV em tela cheia
+  if (telaTV) {
+    return (
+      <FinancasLojaTV 
+        filtros={filtros}
+        onClose={() => setTelaTV(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 px-3 py-3">
       {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
@@ -5110,15 +5120,5 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
         </form>
       </div>
     </div>
-  );
-}
-
-// Renderizar Tela TV em tela cheia
-if (telaTV) {
-  return (
-    <FinancasLojaTV 
-      filtros={filtros}
-      onClose={() => setTelaTV(false)}
-    />
   );
 }
