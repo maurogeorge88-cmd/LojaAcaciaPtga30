@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../App';
 import { formatarMoeda } from './utils/formatadores';
 
-export default function FinancasLojaTV({ filtros, onClose }) {
+export default function FinancasLojaTV({ filtros: filtrosIniciais, onClose }) {
+  const [filtros, setFiltros] = useState(filtrosIniciais);
   const [resumo, setResumo] = useState({
     saldoAnterior: 0,
     receitasPagas: 0,
@@ -24,7 +25,7 @@ export default function FinancasLojaTV({ filtros, onClose }) {
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [filtros.mes, filtros.ano]);
 
   const carregarDados = async () => {
     try {
@@ -94,21 +95,35 @@ export default function FinancasLojaTV({ filtros, onClose }) {
         return true;
       });
 
-      // Calcular resumo do período
+      // Calcular resumo do período (EXCLUINDO COMPENSAÇÕES)
       const receitasPagas = lancamentosPeriodo
-        .filter(l => l.tipo === 'receita' && l.status === 'pago')
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' && 
+          l.status === 'pago' &&
+          l.tipo_pagamento !== 'compensacao'
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
       const despesasPagas = lancamentosPeriodo
-        .filter(l => l.tipo === 'despesa' && l.status === 'pago')
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'despesa' && 
+          l.status === 'pago' &&
+          l.tipo_pagamento !== 'compensacao'
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
       const aReceber = lancamentosPeriodo
-        .filter(l => l.tipo === 'receita' && l.status === 'pendente')
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'receita' && 
+          l.status === 'pendente'
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
       const aPagar = lancamentosPeriodo
-        .filter(l => l.tipo === 'despesa' && l.status === 'pendente')
+        .filter(l => 
+          l.categorias_financeiras?.tipo === 'despesa' && 
+          l.status === 'pendente'
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
 
       // Calcular saldo bancário (todos os lançamentos pagos)
@@ -182,9 +197,12 @@ export default function FinancasLojaTV({ filtros, onClose }) {
       const troncoBanco = receitasBancoTronco - despesasBancoTronco;
       const troncoEspecie = receitasEspecieTronco - despesasEspecieTronco;
 
-      // Calcular agrupamento
+      // Calcular agrupamento (EXCLUINDO COMPENSAÇÕES)
       const agrup = {};
       lancamentosPeriodo.forEach(lanc => {
+        // Excluir compensações
+        if (lanc.tipo_pagamento === 'compensacao') return;
+        
         const data = lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento;
         if (!data) return;
         
@@ -193,9 +211,9 @@ export default function FinancasLojaTV({ filtros, onClose }) {
         }
         
         const valor = parseFloat(lanc.valor || 0);
-        if (lanc.tipo === 'receita') {
+        if (lanc.categorias_financeiras?.tipo === 'receita') {
           agrup[data].receitas += valor;
-        } else {
+        } else if (lanc.categorias_financeiras?.tipo === 'despesa') {
           agrup[data].despesas += valor;
         }
       });
@@ -273,6 +291,32 @@ export default function FinancasLojaTV({ filtros, onClose }) {
     }
   };
 
+  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  const voltarMes = () => {
+    const { mes, ano } = filtros;
+    if (mes > 1) {
+      setFiltros({ ...filtros, mes: mes - 1 });
+    } else if (ano > 2020) {
+      setFiltros({ ...filtros, mes: 12, ano: ano - 1 });
+    }
+  };
+
+  const avancarMes = () => {
+    const { mes, ano } = filtros;
+    const hoje = new Date();
+    const anoAtual = hoje.getFullYear();
+    const mesAtual = hoje.getMonth() + 1;
+    
+    if (ano < anoAtual || (ano === anoAtual && mes < mesAtual)) {
+      if (mes < 12) {
+        setFiltros({ ...filtros, mes: mes + 1 });
+      } else {
+        setFiltros({ ...filtros, mes: 1, ano: ano + 1 });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
@@ -280,8 +324,6 @@ export default function FinancasLojaTV({ filtros, onClose }) {
       </div>
     );
   }
-
-  const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-8">
@@ -295,12 +337,32 @@ export default function FinancasLojaTV({ filtros, onClose }) {
 
       {/* Título */}
       <div className="text-center mb-8">
-        <h1 className="text-6xl font-bold text-white mb-2">💰 Finanças da Loja</h1>
-        <p className="text-3xl text-blue-200">
-          {filtros.mes > 0 && filtros.ano > 0 
-            ? `${meses[filtros.mes - 1]} / ${filtros.ano}`
-            : filtros.ano > 0 ? `${filtros.ano}` : 'Período Total'}
-        </p>
+        <h1 className="text-6xl font-bold text-white mb-4">💰 Finanças da Loja</h1>
+        
+        {/* Controles de Navegação Mês/Ano */}
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <button
+            onClick={voltarMes}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg text-2xl font-bold transition"
+          >
+            ◀ Anterior
+          </button>
+          
+          <div className="bg-white bg-opacity-20 px-8 py-3 rounded-lg">
+            <p className="text-3xl font-bold text-white">
+              {filtros.mes > 0 && filtros.ano > 0 
+                ? `${meses[filtros.mes - 1]} / ${filtros.ano}`
+                : filtros.ano > 0 ? `${filtros.ano}` : 'Período Total'}
+            </p>
+          </div>
+          
+          <button
+            onClick={avancarMes}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg text-2xl font-bold transition"
+          >
+            Próximo ▶
+          </button>
+        </div>
       </div>
 
       {/* Quadros Principais */}
