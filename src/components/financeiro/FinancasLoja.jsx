@@ -75,6 +75,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
   const [telaTV, setTelaTV] = useState(false);
+  const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
+  const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
 
   // Controle de fechamento de mês
   const [mesesFechados, setMesesFechados] = useState([]);
@@ -188,6 +190,50 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       setAnosDisponiveis(anosOrdenados);
     } catch (error) {
       console.error('Erro ao buscar anos:', error);
+    }
+  };
+
+  const abrirDetalhesReceitasPagas = async () => {
+    try {
+      const { mes, ano } = filtros;
+      
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(tipo, nome)');
+
+      if (error) throw error;
+
+      // Filtrar receitas pagas do período
+      const receitasPagas = data.filter(lanc => {
+        if (lanc.categorias_financeiras?.tipo !== 'receita' || 
+            lanc.status !== 'pago' ||
+            lanc.tipo_pagamento === 'compensacao') return false;
+        
+        const dataPag = lanc.data_pagamento;
+        if (!dataPag) return false;
+        
+        const d = new Date(dataPag + 'T12:00:00');
+        if (mes > 0 && ano > 0) {
+          return d.getMonth() === mes - 1 && d.getFullYear() === ano;
+        } else if (ano > 0) {
+          return d.getFullYear() === ano;
+        }
+        return true;
+      });
+      
+      const conta = receitasPagas
+        .filter(l => ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+        
+      const dinheiro = receitasPagas
+        .filter(l => l.tipo_pagamento === 'dinheiro')
+        .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      
+      setDetalhesReceitasPagas({ conta, dinheiro });
+      setModalReceitasPagasAberto(true);
+    } catch (error) {
+      console.error('Erro ao buscar detalhes de receitas:', error);
+      showError('Erro ao buscar detalhes de receitas');
     }
   };
 
@@ -2489,8 +2535,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </p>
             </div>
             
-            <div className="bg-green-50 border border-green-200 rounded-lg p-3 relative flex flex-col justify-center">
-              <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas</p>
+            <div 
+              className="bg-green-50 border border-green-200 rounded-lg p-3 relative flex flex-col justify-center cursor-pointer hover:bg-green-100 transition"
+              onDoubleClick={abrirDetalhesReceitasPagas}
+              title="Clique duplo para ver detalhes"
+            >
+              <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas 🖱️</p>
               <p className="text-lg font-bold text-green-700">{showValues ? formatarMoeda(resumo.receitas) : '••••••'}</p>
               <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
               <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
@@ -2565,7 +2615,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             onDoubleClick={() => setModalDespesasPendentesAberto(true)}
             title="Clique duplo para ver detalhes"
           >
-            <p className="text-xs text-orange-600 font-medium">⏰ A Pagar</p>
+            <p className="text-xs text-orange-600 font-medium">⏰ A Pagar 🖱️</p>
             <p className="text-lg font-bold text-orange-700">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
             <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
@@ -3730,6 +3780,60 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       )}
 
       {/* Modal Despesas Pendentes */}
+      {/* MODAL DETALHES RECEITAS PAGAS */}
+      {modalReceitasPagasAberto && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-2xl font-bold">💵 Receitas Pagas - Detalhamento</h3>
+                  <p className="text-sm text-green-100">Distribuição por forma de pagamento</p>
+                </div>
+                <button
+                  onClick={() => setModalReceitasPagasAberto(false)}
+                  className="text-white hover:opacity-80 text-4xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Corpo */}
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
+                <p className="text-xl text-gray-700 mb-2">🏦 Recebido em Conta</p>
+                <p className="text-4xl font-bold text-blue-600">{formatarMoeda(detalhesReceitasPagas.conta)}</p>
+                <p className="text-sm text-gray-500 mt-1">PIX, Transferência, Cartão</p>
+              </div>
+              
+              <div className="bg-green-50 p-6 rounded-xl border-2 border-green-200">
+                <p className="text-xl text-gray-700 mb-2">💵 Recebido em Dinheiro</p>
+                <p className="text-4xl font-bold text-green-600">{formatarMoeda(detalhesReceitasPagas.dinheiro)}</p>
+                <p className="text-sm text-gray-500 mt-1">Dinheiro físico</p>
+              </div>
+              
+              <div className="bg-purple-50 p-6 rounded-xl border-2 border-purple-200">
+                <p className="text-xl text-gray-700 mb-2">💰 Total Recebido</p>
+                <p className="text-4xl font-bold text-purple-600">
+                  {formatarMoeda(detalhesReceitasPagas.conta + detalhesReceitasPagas.dinheiro)}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">Soma de todas as receitas pagas</p>
+              </div>
+
+              <button
+                onClick={() => setModalReceitasPagasAberto(false)}
+                className="w-full bg-gray-600 text-white py-3 rounded-lg text-lg font-bold hover:bg-gray-700"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DESPESAS PENDENTES */}
       {modalDespesasPendentesAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col">
