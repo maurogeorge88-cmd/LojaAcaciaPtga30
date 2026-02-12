@@ -91,26 +91,36 @@ export default function FinancasLojaTV({ filtros, onClose }) {
     try {
       const { mes, ano } = filtros;
       
-      let query = supabase
+      const { data, error } = await supabase
         .from('lancamentos_loja')
         .select('tipo, valor, data_pagamento')
         .eq('status', 'pago');
 
-      if (mes > 0 && ano > 0) {
-        const dataInicio = new Date(1900, 0, 1).toISOString().split('T')[0];
-        const dataFim = new Date(ano, mes - 1, 0).toISOString().split('T')[0];
-        query = query.gte('data_pagamento', dataInicio).lte('data_pagamento', dataFim);
-      } else if (ano > 0) {
-        const dataInicio = new Date(1900, 0, 1).toISOString().split('T')[0];
-        const dataFim = new Date(ano - 1, 11, 31).toISOString().split('T')[0];
-        query = query.gte('data_pagamento', dataInicio).lte('data_pagamento', dataFim);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
 
-      const receitas = data.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + parseFloat(l.valor), 0);
-      const despesas = data.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      // Filtrar no lado do cliente
+      let lancamentosFiltrados = data || [];
+
+      if (mes > 0 && ano > 0) {
+        // Antes do mês atual
+        lancamentosFiltrados = lancamentosFiltrados.filter(l => {
+          if (!l.data_pagamento) return false;
+          const dataPag = new Date(l.data_pagamento + 'T00:00:00');
+          const dataLimite = new Date(ano, mes - 1, 1);
+          return dataPag < dataLimite;
+        });
+      } else if (ano > 0) {
+        // Antes do ano atual
+        lancamentosFiltrados = lancamentosFiltrados.filter(l => {
+          if (!l.data_pagamento) return false;
+          const dataPag = new Date(l.data_pagamento + 'T00:00:00');
+          const dataLimite = new Date(ano, 0, 1);
+          return dataPag < dataLimite;
+        });
+      }
+
+      const receitas = lancamentosFiltrados.filter(l => l.tipo === 'receita').reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const despesas = lancamentosFiltrados.filter(l => l.tipo === 'despesa').reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
       return receitas - despesas;
     } catch (error) {
@@ -123,22 +133,41 @@ export default function FinancasLojaTV({ filtros, onClose }) {
     try {
       const { mes, ano } = filtros;
       
-      let query = supabase.from('lancamentos_loja').select('*');
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*')
+        .order('data_pagamento', { ascending: false });
 
-      if (mes > 0 && ano > 0) {
-        const dataInicio = new Date(ano, mes - 1, 1).toISOString().split('T')[0];
-        const dataFim = new Date(ano, mes, 0).toISOString().split('T')[0];
-        query = query.or(`and(status.eq.pago,data_pagamento.gte.${dataInicio},data_pagamento.lte.${dataFim}),and(status.eq.pendente,data_vencimento.gte.${dataInicio},data_vencimento.lte.${dataFim})`);
-      } else if (ano > 0) {
-        const dataInicio = new Date(ano, 0, 1).toISOString().split('T')[0];
-        const dataFim = new Date(ano, 11, 31).toISOString().split('T')[0];
-        query = query.or(`and(status.eq.pago,data_pagamento.gte.${dataInicio},data_pagamento.lte.${dataFim}),and(status.eq.pendente,data_vencimento.gte.${dataInicio},data_vencimento.lte.${dataFim})`);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
 
-      return data || [];
+      // Filtrar no lado do cliente
+      let lancamentosFiltrados = data || [];
+
+      if (mes > 0 && ano > 0) {
+        lancamentosFiltrados = lancamentosFiltrados.filter(lanc => {
+          if (lanc.status === 'pago' && lanc.data_pagamento) {
+            const dataPag = new Date(lanc.data_pagamento + 'T00:00:00');
+            return dataPag.getMonth() === mes - 1 && dataPag.getFullYear() === ano;
+          } else if (lanc.status === 'pendente' && lanc.data_vencimento) {
+            const dataVenc = new Date(lanc.data_vencimento + 'T00:00:00');
+            return dataVenc.getMonth() === mes - 1 && dataVenc.getFullYear() === ano;
+          }
+          return false;
+        });
+      } else if (ano > 0) {
+        lancamentosFiltrados = lancamentosFiltrados.filter(lanc => {
+          if (lanc.status === 'pago' && lanc.data_pagamento) {
+            const dataPag = new Date(lanc.data_pagamento + 'T00:00:00');
+            return dataPag.getFullYear() === ano;
+          } else if (lanc.status === 'pendente' && lanc.data_vencimento) {
+            const dataVenc = new Date(lanc.data_vencimento + 'T00:00:00');
+            return dataVenc.getFullYear() === ano;
+          }
+          return false;
+        });
+      }
+
+      return lancamentosFiltrados;
     } catch (error) {
       console.error('Erro ao buscar lançamentos:', error);
       return [];
