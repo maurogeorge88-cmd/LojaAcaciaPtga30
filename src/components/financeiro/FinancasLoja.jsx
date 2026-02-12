@@ -77,6 +77,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [telaTV, setTelaTV] = useState(false);
   const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
+  const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
+  const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
 
   // Controle de fechamento de mês
   const [mesesFechados, setMesesFechados] = useState([]);
@@ -160,6 +162,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     buscarTotalRegistros();
     carregarMesesFechados();
   }, [filtros.mes, filtros.ano]);
+
+  // Fechar menus dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (!e.target.closest('.relative')) {
+        setMenuLancamentosAberto(false);
+        setMenuRelatoriosAberto(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   // Recarregar lançamentos quando mudar filtros
   useEffect(() => {
@@ -2430,51 +2445,95 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           )
         )}
 
-        {/* Botões de ação - todos com mesmo tamanho */}
-        <button
-          onClick={() => abrirModalLancamento('receita')}
-          className="w-28 h-[55px] px-3 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>Nova</span>
-          <span>Receita</span>
-        </button>
-        <button
-          onClick={() => abrirModalLancamento('despesa')}
-          className="w-28 h-[55px] px-3 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>Nova</span>
-          <span>Despesa</span>
-        </button>
-        <button
-          onClick={() => {
-            setLancamentoParcelar(null);
-            setModalParcelamentoAberto(true);
-          }}
-          className="w-28 h-[55px] px-3 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>🔀 Parcelar</span>
-        </button>
-        <button
-          onClick={() => setMostrarModalIrmaos(true)}
-          className="w-28 h-[55px] px-3 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>Lançamento</span>
-          <span>em Lote</span>
-        </button>
-        <button
-          onClick={gerarPDF}
-          className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>Relatório</span>
-          <span>Detalhado</span>
-        </button>
-        <button
-          onClick={gerarPDFResumido}
-          className="w-28 h-[55px] px-3 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>Fechamento</span>
-          <span>Mensal</span>
-        </button>
+        {/* Botões de ação - com dropdowns */}
+        
+        {/* Menu Lançamentos */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuLancamentosAberto(!menuLancamentosAberto)}
+            className="w-28 h-[55px] px-3 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          >
+            <span>📝 Lançam.</span>
+            <span className="text-xs">▼</span>
+          </button>
+          
+          {menuLancamentosAberto && (
+            <div className="absolute top-full left-0 mt-1 bg-white border-2 border-purple-600 rounded-lg shadow-xl z-50 min-w-[150px]">
+              <button
+                onClick={() => {
+                  abrirModalLancamento('receita');
+                  setMenuLancamentosAberto(false);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-green-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+              >
+                💵 Nova Receita
+              </button>
+              <button
+                onClick={() => {
+                  abrirModalLancamento('despesa');
+                  setMenuLancamentosAberto(false);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-red-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+              >
+                💳 Nova Despesa
+              </button>
+              <button
+                onClick={() => {
+                  setLancamentoParcelar(null);
+                  setModalParcelamentoAberto(true);
+                  setMenuLancamentosAberto(false);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-indigo-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+              >
+                🔀 Parcelar
+              </button>
+              <button
+                onClick={() => {
+                  setMostrarModalIrmaos(true);
+                  setMenuLancamentosAberto(false);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-purple-50 text-sm font-medium text-gray-700"
+              >
+                👥 Lanç. em Lote
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Menu Relatórios */}
+        <div className="relative">
+          <button
+            onClick={() => setMenuRelatoriosAberto(!menuRelatoriosAberto)}
+            className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          >
+            <span>📄 Relatórios</span>
+            <span className="text-xs">▼</span>
+          </button>
+          
+          {menuRelatoriosAberto && (
+            <div className="absolute top-full left-0 mt-1 bg-white border-2 border-gray-600 rounded-lg shadow-xl z-50 min-w-[180px]">
+              <button
+                onClick={() => {
+                  gerarPDF();
+                  setMenuRelatoriosAberto(false);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+              >
+                📊 Relatório Detalhado
+              </button>
+              <button
+                onClick={() => {
+                  gerarPDFResumido();
+                  setMenuRelatoriosAberto(false);
+                }}
+                className="w-full px-4 py-3 text-left hover:bg-blue-50 text-sm font-medium text-gray-700"
+              >
+                📋 Fechamento Mensal
+              </button>
+            </div>
+          )}
+        </div>
+
         <button
           onClick={calcularResumoIrmaos}
           className="w-28 h-[55px] px-3 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
