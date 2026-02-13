@@ -395,6 +395,7 @@ export default function DashboardPresenca() {
           .eq('sessao_id', sessao.id);
 
         let grauSessao = sessao.grau_sessao_id || 1;
+        const grauOriginal = sessao.grau_sessao_id || 1; // Salvar original para exibição
         
         // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
         if (grauSessao === 4) grauSessao = 1;
@@ -447,7 +448,7 @@ export default function DashboardPresenca() {
         return {
           id: sessao.id,
           data_sessao: sessao.data_sessao,
-          grau: grauSessao,
+          grau: grauOriginal, // Usar grau original para exibição
           elegiveis: totalElegiveis,
           presencas,
           ausencias,
@@ -982,9 +983,13 @@ export default function DashboardPresenca() {
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                           sessao.grau === 1 ? 'bg-blue-100 text-blue-800' :
                           sessao.grau === 2 ? 'bg-green-100 text-green-800' :
+                          sessao.grau === 4 ? 'bg-orange-100 text-orange-800' :
                           'bg-purple-100 text-purple-800'
                         }`}>
-                          {sessao.grau === 1 ? 'Aprendiz' : sessao.grau === 2 ? 'Companheiro' : 'Mestre'}
+                          {sessao.grau === 1 ? 'Aprendiz' : 
+                           sessao.grau === 2 ? 'Companheiro' : 
+                           sessao.grau === 4 ? 'Administrativa' :
+                           'Mestre'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-center text-sm font-semibold">{sessao.elegiveis}</td>
