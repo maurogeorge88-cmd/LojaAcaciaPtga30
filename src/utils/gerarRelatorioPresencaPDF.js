@@ -47,8 +47,16 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       if (sit.membro_id !== irmaoId) return false;
       
       const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
-      const dataFim = sit.data_fim ? new Date(sit.data_fim + 'T00:00:00') : null;
+      
+      // Normalizar datas para comparação apenas de dia (sem hora)
+      const dataInicioSit = new Date(sit.data_inicio + 'T00:00:00');
+      dataInicioSit.setHours(0, 0, 0, 0);
+      
+      const dataFimSit = sit.data_fim ? new Date(sit.data_fim + 'T00:00:00') : null;
+      if (dataFimSit) dataFimSit.setHours(0, 0, 0, 0);
+      
+      const dataSessaoNorm = new Date(dataSessao);
+      dataSessaoNorm.setHours(0, 0, 0, 0);
       
       // Lista de situações que bloqueiam/afetam a presença
       const situacoesBloqueadoras = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
@@ -58,13 +66,14 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       if (!ehBloqueadora) return false;
       
       // Verifica se a sessão está no período da situação
-      if (dataSessao < dataInicio) return false;
+      if (dataSessaoNorm.getTime() < dataInicioSit.getTime()) return false;
       
-      if (dataFim) {
-        return dataSessao >= dataInicio && dataSessao <= dataFim;
+      if (dataFimSit) {
+        return dataSessaoNorm.getTime() >= dataInicioSit.getTime() && 
+               dataSessaoNorm.getTime() <= dataFimSit.getTime();
       }
       
-      return dataSessao >= dataInicio;
+      return dataSessaoNorm.getTime() >= dataInicioSit.getTime();
     });
     
     return situacao;
