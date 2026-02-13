@@ -116,7 +116,9 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
 
   // Adicionar colunas de datas
   sessoes.forEach((sessao, index) => {
-    const grauTexto = sessao.grau_sessao_id === 1 ? 'A' : sessao.grau_sessao_id === 2 ? 'C' : 'M';
+    const grauTexto = sessao.grau_sessao_id === 1 ? 'A' : 
+                     sessao.grau_sessao_id === 2 ? 'C' : 
+                     sessao.grau_sessao_id === 4 ? 'ADM' : 'M';
     headers.push({
       title: `${formatarData(sessao.data_sessao)}\n${grauTexto}`,
       dataKey: `sessao_${index}`
@@ -185,7 +187,11 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       }
 
       // Verificar se pode participar baseado no grau da sessão
-      const grauMinimoSessao = sessao.grau_sessao_id;
+      let grauMinimoSessao = sessao.grau_sessao_id;
+      
+      // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+      if (grauMinimoSessao === 4) grauMinimoSessao = 1;
+      
       const grauNumerico = grauNaSessao === 'A' ? 1 : grauNaSessao === 'C' ? 2 : 3;
 
       if (grauNumerico < grauMinimoSessao) {
