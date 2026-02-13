@@ -313,7 +313,10 @@ export default function DashboardPresenca() {
             }
 
             const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
+            let grauSessao = sessao.grau_sessao_id || 1;
+            
+            // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+            if (grauSessao === 4) grauSessao = 1;
 
 
             if (dataInicio && dataSessao < dataInicio) {
@@ -391,7 +394,11 @@ export default function DashboardPresenca() {
           .select('*', { count: 'exact', head: true })
           .eq('sessao_id', sessao.id);
 
-        const grauSessao = sessao.grau_sessao_id || 1;
+        let grauSessao = sessao.grau_sessao_id || 1;
+        
+        // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+        if (grauSessao === 4) grauSessao = 1;
+        
         const dataSessao = new Date(sessao.data_sessao + 'T00:00:00'); // Adicionar hora para evitar problema de timezone
 
         const elegiveis = irmaos.filter(i => {
@@ -592,7 +599,10 @@ export default function DashboardPresenca() {
             if (!sessao) return;
 
             const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
+            let grauSessao = sessao.grau_sessao_id || 1;
+            
+            // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+            if (grauSessao === 4) grauSessao = 1;
 
             // Ignorar se sessão é ANTES do ingresso na loja
             if (dataInicio && dataSessao < dataInicio) return;
@@ -766,7 +776,10 @@ export default function DashboardPresenca() {
             if (!sessao) return;
 
             const dataSessao = new Date(sessao.data_sessao);
-            const grauSessao = sessao.grau_sessao_id || 1;
+            let grauSessao = sessao.grau_sessao_id || 1;
+            
+            // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+            if (grauSessao === 4) grauSessao = 1;
 
             // Ignorar sessão ANTES do ingresso na loja
             if (dataInicio && dataSessao < dataInicio) return;
