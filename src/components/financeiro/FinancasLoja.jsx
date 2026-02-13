@@ -2024,21 +2024,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         const tableData = [];
         
         ultimasSessoes.forEach(sessao => {
-          // Data completa
-          const dataSessao = new Date(sessao.data_sessao);
+          // Data completa - corrigir timezone
+          const dataSessao = new Date(sessao.data_sessao + 'T12:00:00');
           const dataFormatada = dataSessao.toLocaleDateString('pt-BR');
           
-          // Determinar grau da sessão - nome completo
-          const grauSessao = sessao.grau_sessao_id || 1;
-          const grauNome = grauSessao === 3 ? 'Mestre' : grauSessao === 2 ? 'Companheiro' : 'Aprendiz';
+          // Determinar grau da sessão - incluindo administrativa
+          let grauSessao = sessao.grau_sessao_id || 1;
+          const grauOriginal = sessao.grau_sessao_id || 1;
+          
+          // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+          if (grauSessao === 4) grauSessao = 1;
+          
+          const grauNome = grauOriginal === 4 ? 'Administrativa' :
+                          grauSessao === 3 ? 'Mestre' : 
+                          grauSessao === 2 ? 'Companheiro' : 'Aprendiz';
           
           // Calcular grau do irmão na data
           let grauIrmao = 0;
-          if (irmaoData.data_exaltacao && dataSessao >= new Date(irmaoData.data_exaltacao)) {
+          if (irmaoData.data_exaltacao && dataSessao >= new Date(irmaoData.data_exaltacao + 'T12:00:00')) {
             grauIrmao = 3;
-          } else if (irmaoData.data_elevacao && dataSessao >= new Date(irmaoData.data_elevacao)) {
+          } else if (irmaoData.data_elevacao && dataSessao >= new Date(irmaoData.data_elevacao + 'T12:00:00')) {
             grauIrmao = 2;
-          } else if (irmaoData.data_iniciacao && dataSessao >= new Date(irmaoData.data_iniciacao)) {
+          } else if (irmaoData.data_iniciacao && dataSessao >= new Date(irmaoData.data_iniciacao + 'T12:00:00')) {
             grauIrmao = 1;
           }
           
@@ -2105,11 +2112,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         
         // Determinar grau do irmão em cada sessão (baseado nas datas)
         const obterGrauNaData = (dataSessao) => {
-          const data = new Date(dataSessao);
+          const data = new Date(dataSessao + 'T12:00:00');
           let grau = 0;
-          if (irmaoData.data_exaltacao && data >= new Date(irmaoData.data_exaltacao)) grau = 3;
-          else if (irmaoData.data_elevacao && data >= new Date(irmaoData.data_elevacao)) grau = 2;
-          else if (irmaoData.data_iniciacao && data >= new Date(irmaoData.data_iniciacao)) grau = 1;
+          if (irmaoData.data_exaltacao && data >= new Date(irmaoData.data_exaltacao + 'T12:00:00')) grau = 3;
+          else if (irmaoData.data_elevacao && data >= new Date(irmaoData.data_elevacao + 'T12:00:00')) grau = 2;
+          else if (irmaoData.data_iniciacao && data >= new Date(irmaoData.data_iniciacao + 'T12:00:00')) grau = 1;
           
           return grau;
         };
@@ -2121,7 +2128,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         let justificadas5 = 0;
 
         ultimasSessoes.forEach(sessao => {
-          const grauSessao = sessao.grau_sessao_id || 1;
+          let grauSessao = sessao.grau_sessao_id || 1;
+          
+          // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+          if (grauSessao === 4) grauSessao = 1;
+          
           const grauIrmao = obterGrauNaData(sessao.data_sessao);
           
           // Só contar se irmão tinha grau suficiente
@@ -2200,7 +2211,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         });
 
         sessoesAno?.forEach(sessao => {
-          const grauSessao = sessao.grau_sessao_id || 1;
+          let grauSessao = sessao.grau_sessao_id || 1;
+          
+          // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+          if (grauSessao === 4) grauSessao = 1;
+          
           const grauIrmao = obterGrauNaData(sessao.data_sessao);
           
           const elegivel = grauIrmao >= grauSessao;
@@ -2251,33 +2266,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.text('Estatísticas de Presença:', 15, yPos);
         yPos += 7;
 
-        // Tabela de estatísticas
+        // Tabela de estatísticas - formato mais claro
         const estatisticas = [
-          ['Período', 'Total', 'Elegíveis', 'Presenças', 'Ausências', 'Justif.', 'Taxa %'],
-          [
-            'Últimas 5 Sessões',
-            '5',
-            totalSessoes5.toString(),
-            presencas5.toString(),
-            ausencias5.toString(),
-            justificadas5.toString(),
-            taxa5 + '%'
-          ],
-          [
-            `Ano ${anoAtual}`,
-            totalSessoesAnoGeral.toString(),
-            totalSessoesElegiveis.toString(),
-            presencasContadasAno.toString(),
-            ausenciasAno.toString(),
-            justificadasAno.toString(),
-            taxaAno + '%'
-          ]
+          ['Período', 'Últimas 5 Sessões', `Ano ${anoAtual}`],
+          ['Total de Sessões', '5', totalSessoesAnoGeral.toString()],
+          ['Sessões Elegíveis', totalSessoes5.toString(), totalSessoesElegiveis.toString()],
+          ['Presenças', presencas5.toString(), presencasContadasAno.toString()],
+          ['Ausências', ausencias5.toString(), ausenciasAno.toString()],
+          ['Justificadas', justificadas5.toString(), justificadasAno.toString()],
+          ['Taxa de Presença', taxa5 + '%', taxaAno + '%']
         ];
 
         doc.autoTable({
           startY: yPos,
           head: [estatisticas[0]],
-          body: [estatisticas[1], estatisticas[2]],
+          body: estatisticas.slice(1),
           headStyles: {
             fillColor: [33, 150, 243],
             textColor: [255, 255, 255],
