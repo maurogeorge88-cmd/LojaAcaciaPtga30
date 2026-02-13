@@ -305,7 +305,10 @@ export default function ModalGradePresenca({ onFechar }) {
     }
 
     // 3. Verificar grau da sessão
-    const grauSessao = sessao.grau_sessao_id || 1;
+    let grauSessao = sessao.grau_sessao_id || 1;
+    
+    // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+    if (grauSessao === 4) grauSessao = 1;
 
     // 4. Se sessão é de grau superior ao do irmão NA DATA DA SESSÃO → não pode participar
     if (grauSessao > grauIrmao) {
@@ -528,7 +531,10 @@ export default function ModalGradePresenca({ onFechar }) {
                   Grau
                 </th>
                 {sessoes.map(s => {
-                  const grauTexto = s.grau_sessao_id === 1 ? 'A' : s.grau_sessao_id === 2 ? 'C' : 'M';
+                  const grauTexto = s.grau_sessao_id === 1 ? 'A' : 
+                                   s.grau_sessao_id === 2 ? 'C' : 
+                                   s.grau_sessao_id === 3 ? 'M' :
+                                   s.grau_sessao_id === 4 ? 'ADM' : 'A';
                   return (
                     <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
                       <div>{formatarData(s.data_sessao)}</div>
@@ -594,7 +600,11 @@ export default function ModalGradePresenca({ onFechar }) {
                     }
                     
                     // 3. Verificar grau da sessão
-                    const grauSessao = sessao.grau_sessao_id || 1;
+                    let grauSessao = sessao.grau_sessao_id || 1;
+                    
+                    // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+                    if (grauSessao === 4) grauSessao = 1;
+                    
                     if (grauSessao > grauIrmao) return;
                     
                     // 4. Verificar se computa
