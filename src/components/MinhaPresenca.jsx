@@ -128,7 +128,10 @@ export default function MinhaPresenca({ userData }) {
       // Filtrar apenas sessões que o irmão podia participar NA DATA
       const sessoesElegiveis = sessoesData.filter(sessao => {
         const dataSessao = new Date(sessao.data_sessao);
-        const grauSessao = sessao.grau_sessao_id || 1;
+        let grauSessao = sessao.grau_sessao_id || 1;
+        
+        // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+        if (grauSessao === 4) grauSessao = 1;
         
         // Calcular grau do irmão NA DATA da sessão
         let grauIrmao = 0;
