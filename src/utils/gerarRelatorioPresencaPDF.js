@@ -44,14 +44,27 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   // Função para verificar situação na data
   const verificarSituacaoNaData = (irmaoId, dataSessao) => {
     const situacao = historicoSituacoes?.find(sit => {
+      if (sit.membro_id !== irmaoId) return false;
+      
       const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
       const dataFim = sit.data_fim ? new Date(sit.data_fim + 'T00:00:00') : null;
       
-      return sit.membro_id === irmaoId &&
-        ['irregular', 'suspenso', 'licenca'].includes(tipoNormalizado) &&
-        dataSessao >= dataInicio &&
-        (dataFim === null || dataSessao <= dataFim);
+      // Lista de situações que bloqueiam/afetam a presença
+      const situacoesBloqueadoras = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
+      const ehBloqueadora = situacoesBloqueadoras.includes(tipoNormalizado) ||
+        situacoesBloqueadoras.some(s => tipoNormalizado.includes(s));
+      
+      if (!ehBloqueadora) return false;
+      
+      // Verifica se a sessão está no período da situação
+      if (dataSessao < dataInicio) return false;
+      
+      if (dataFim) {
+        return dataSessao >= dataInicio && dataSessao <= dataFim;
+      }
+      
+      return dataSessao >= dataInicio;
     });
     
     return situacao;
@@ -128,8 +141,42 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   headers.push({ title: 'Total', dataKey: 'total' });
   headers.push({ title: '%', dataKey: 'percentual' });
 
-  // Preparar dados dos irmãos
-  const rows = irmaos.map(irmao => {
+  // Função para verificar se irmão deve aparecer no relatório
+  const deveAparecerNoRelatorio = (irmao) => {
+    // Verifica se tem situação bloqueadora SEM data_fim (desligamento permanente)
+    const temDesligamentoPermanente = historicoSituacoes?.some(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+      
+      const tipoNormalizado = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const situacoesExclusivas = ['desligado', 'desligamento', 'excluido', 'ex-oficio'];
+      const ehExclusiva = situacoesExclusivas.includes(tipoNormalizado) ||
+        situacoesExclusivas.some(s => tipoNormalizado.includes(s));
+      
+      if (!ehExclusiva) return false;
+      
+      // Se tem data_fim no futuro ou passado, significa que pode voltar/voltou - DEVE aparecer
+      if (sit.data_fim) return false;
+      
+      // Desligamento permanente (sem data_fim)
+      const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+      
+      // Verifica se o desligamento aconteceu ANTES de todas as sessões do período
+      const todasSessoesAposDesligamento = sessoes.every(s => {
+        const dataSessao = new Date(s.data_sessao + 'T00:00:00');
+        return dataSessao >= dataInicio;
+      });
+      
+      // Se todas as sessões são após o desligamento, NÃO deve aparecer
+      return todasSessoesAposDesligamento;
+    });
+    
+    return !temDesligamentoPermanente;
+  };
+
+  // Preparar dados dos irmãos (filtrados)
+  const rows = irmaos
+    .filter(irmao => deveAparecerNoRelatorio(irmao))
+    .map(irmao => {
     const row = {
       nome: formatarNome(irmao.nome),
       grau: obterGrauIrmao(irmao)
