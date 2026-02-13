@@ -198,7 +198,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               if (!sessao) return;
 
               const dataSessao = new Date(sessao.data_sessao);
-              const grauSessao = sessao.grau_sessao_id || 1;
+              let grauSessao = sessao.grau_sessao_id || 1;
+              
+              // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
+              if (grauSessao === 4) grauSessao = 1;
 
               // Ignorar se sessão é ANTES do ingresso na loja
               if (dataInicio && dataSessao < dataInicio) return;
