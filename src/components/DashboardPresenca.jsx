@@ -587,7 +587,7 @@ export default function DashboardPresenca() {
         // Contar APENAS registros VÁLIDOS (após iniciação e do grau permitido)
         let totalRegistros = 0;
         let presentes = 0;
-        let aprendiz = 0, companheiro = 0, mestre = 0;
+        let aprendiz = 0, companheiro = 0, mestre = 0, administrativa = 0;
 
         // Prioridade: data_ingresso_loja > data_iniciacao
         const dataIngresso = irmao.data_ingresso_loja ? new Date(irmao.data_ingresso_loja) : null;
@@ -601,6 +601,7 @@ export default function DashboardPresenca() {
 
             const dataSessao = new Date(sessao.data_sessao);
             let grauSessao = sessao.grau_sessao_id || 1;
+            const grauOriginalSessao = sessao.grau_sessao_id || 1; // Guardar original
             
             // Sessão Administrativa (grau 4) deve ser tratada como Aprendiz (grau 1)
             if (grauSessao === 4) grauSessao = 1;
@@ -627,7 +628,9 @@ export default function DashboardPresenca() {
             if (reg.presente) {
               presentes++;
               
-              if (grauSessao === 1) aprendiz++;
+              // Contar por grau ORIGINAL da sessão
+              if (grauOriginalSessao === 4) administrativa++;
+              else if (grauSessao === 1) aprendiz++;
               else if (grauSessao === 2) companheiro++;
               else if (grauSessao === 3) mestre++;
             }
@@ -642,7 +645,8 @@ export default function DashboardPresenca() {
             total_sessoes: totalRegistros,
             aprendiz,
             companheiro,
-            mestre
+            mestre,
+            administrativa
           });
         }
       });
@@ -1069,6 +1073,11 @@ export default function DashboardPresenca() {
                       {irmao.mestre > 0 && (
                         <span className="bg-purple-100 px-2 py-1 rounded">
                           Mest: {irmao.mestre}
+                        </span>
+                      )}
+                      {irmao.administrativa > 0 && (
+                        <span className="bg-orange-100 px-2 py-1 rounded">
+                          Adm: {irmao.administrativa}
                         </span>
                       )}
                     </div>
