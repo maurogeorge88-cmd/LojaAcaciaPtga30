@@ -1689,12 +1689,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // BUSCAR ÚLTIMAS 5 SESSÕES COM PRESENÇA DO IRMÃO
-      const { data: ultimasSessoes } = await supabase
+      const { data: ultimasSessoesTemp } = await supabase
         .from('sessoes_presenca')
         .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome)')
         .lte('data_sessao', new Date().toISOString().split('T')[0]) // Não incluir sessões futuras
         .order('data_sessao', { ascending: false })
         .limit(5);
+      
+      // Inverter para ordem crescente (da mais antiga para a mais recente)
+      const ultimasSessoes = ultimasSessoesTemp?.reverse() || [];
 
       const { data: presencas } = await supabase
         .from('registros_presenca')
