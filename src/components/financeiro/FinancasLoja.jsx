@@ -2254,8 +2254,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         const taxaAno = totalSessoesElegiveis > 0 ? ((presencasContadasAno / totalSessoesElegiveis) * 100).toFixed(1) : '0.0';
 
-        // Desenhar quadro de estatísticas
-        if (yPos > 230) {
+        // Desenhar quadro de estatísticas no formato de grade
+        if (yPos > 200) {
           doc.addPage();
           yPos = 20;
         }
@@ -2263,38 +2263,109 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(0, 0, 0);
-        doc.text('Estatísticas de Presença:', 15, yPos);
+        doc.text('Grade de Presença - Últimas 5 Sessões:', 15, yPos);
         yPos += 7;
 
-        // Tabela de estatísticas - formato mais claro
-        const estatisticas = [
-          ['Período', 'Últimas 5 Sessões', `Ano ${anoAtual}`],
-          ['Total de Sessões', '5', totalSessoesAnoGeral.toString()],
-          ['Sessões Elegíveis', totalSessoes5.toString(), totalSessoesElegiveis.toString()],
-          ['Presenças', presencas5.toString(), presencasContadasAno.toString()],
-          ['Ausências', ausencias5.toString(), ausenciasAno.toString()],
-          ['Justificadas', justificadas5.toString(), justificadasAno.toString()],
-          ['Taxa de Presença', taxa5 + '%', taxaAno + '%']
-        ];
+        // Montar cabeçalho da grade com datas e graus
+        const headers = [{ title: 'Grau', dataKey: 'grau' }];
+        
+        ultimasSessoes.forEach((sessao, index) => {
+          const dataSessao = new Date(sessao.data_sessao + 'T12:00:00');
+          const dataFormatada = dataSessao.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+          let grauOriginal = sessao.grau_sessao_id || 1;
+          const grauTexto = grauOriginal === 4 ? 'ADM' :
+                           grauOriginal === 1 ? 'A' : 
+                           grauOriginal === 2 ? 'C' : 'M';
+          headers.push({
+            title: `${dataFormatada}\n${grauTexto}`,
+            dataKey: `sessao_${index}`
+          });
+        });
+        
+        headers.push({ title: 'Total', dataKey: 'total' });
+        headers.push({ title: '%', dataKey: 'percentual' });
+
+        // Montar linha do irmão
+        const row = {
+          grau: irmaoData.data_exaltacao ? (irmaoData.mestre_instalado ? 'M.I' : 'M') :
+                irmaoData.data_elevacao ? 'C' : 'A'
+        };
+
+        let presencasGrade = 0;
+        let sessoesElegiveisGrade = 0;
+
+        ultimasSessoes.forEach((sessao, index) => {
+          let grauSessao = sessao.grau_sessao_id || 1;
+          if (grauSessao === 4) grauSessao = 1;
+          
+          const grauIrmao = obterGrauNaData(sessao.data_sessao);
+          
+          if (grauIrmao >= grauSessao) {
+            sessoesElegiveisGrade++;
+            const registro = presencas?.find(p => p.sessao_id === sessao.id);
+            if (registro) {
+              if (registro.presente) {
+                presencasGrade++;
+                row[`sessao_${index}`] = 'P';
+              } else if (registro.justificativa) {
+                row[`sessao_${index}`] = 'J';
+              } else {
+                row[`sessao_${index}`] = 'F';
+              }
+            } else {
+              row[`sessao_${index}`] = 'F';
+            }
+          } else {
+            row[`sessao_${index}`] = '-';
+          }
+        });
+
+        row.total = `${presencasGrade}/${sessoesElegiveisGrade}`;
+        row.percentual = sessoesElegiveisGrade > 0 
+          ? `${Math.round((presencasGrade / sessoesElegiveisGrade) * 100)}%` 
+          : '0%';
 
         doc.autoTable({
           startY: yPos,
-          head: [estatisticas[0]],
-          body: estatisticas.slice(1),
+          head: [headers],
+          body: [[row.grau, row.sessao_0, row.sessao_1, row.sessao_2, row.sessao_3, row.sessao_4, row.total, row.percentual]],
           headStyles: {
             fillColor: [33, 150, 243],
             textColor: [255, 255, 255],
-            fontSize: 9,
+            fontSize: 8,
             fontStyle: 'bold',
-            halign: 'center'
+            halign: 'center',
+            cellPadding: 2
           },
           bodyStyles: {
             fontSize: 10,
-            halign: 'center'
+            halign: 'center',
+            cellPadding: 3
           },
           columnStyles: {
-            0: { halign: 'left', fontStyle: 'bold', cellWidth: 45 },
-            5: { fontStyle: 'bold', textColor: [0, 100, 0] }
+            0: { cellWidth: 15, fontStyle: 'bold' },
+            1: { cellWidth: 20 },
+            2: { cellWidth: 20 },
+            3: { cellWidth: 20 },
+            4: { cellWidth: 20 },
+            5: { cellWidth: 20 },
+            6: { cellWidth: 25, fontStyle: 'bold' },
+            7: { cellWidth: 20, fontStyle: 'bold' }
+          },
+          didParseCell: function(data) {
+            if (data.section === 'body' && data.column.index > 0 && data.column.index < 6) {
+              const cellValue = data.cell.text[0];
+              if (cellValue === 'P') {
+                data.cell.styles.textColor = [0, 128, 0];
+                data.cell.styles.fontStyle = 'bold';
+              } else if (cellValue === 'F') {
+                data.cell.styles.textColor = [255, 0, 0];
+                data.cell.styles.fontStyle = 'bold';
+              } else if (cellValue === 'J') {
+                data.cell.styles.textColor = [255, 165, 0];
+                data.cell.styles.fontStyle = 'bold';
+              }
+            }
           },
           margin: { left: 15, right: 15 }
         });
