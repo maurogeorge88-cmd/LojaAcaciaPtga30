@@ -147,35 +147,35 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     }
   };
 
-  const carregarGrausFilosoficos = async () => {
-    try {
-      const { data: graus } = await supabase.from('graus_maconicos').select('*').eq('irmao_id', irmaoId).order('data_recebimento', { ascending: false });
-      setGrausFilosoficos(graus || []);
-    } catch (error) {
-      console.error('Erro ao carregar graus filosóficos:', error);
-      setGrausFilosoficos([]);
-    }
-  };
+  const carregarGrausFilosoficos = async () => { setGrausFilosoficos([]); };
 
   const carregarComissoes = async () => {
     try {
       const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
       if (!comissoes) { setComissoesAtivas([]); setComissoesInativas([]); return; }
       
-      const hoje = new Date();
-      hoje.setHours(0, 0, 0, 0);
-      const ativas = [], inativas = [];
+      const hoje = new Date('2026-03-02');
+      const ativas = [];
+      const inativas = [];
       
       comissoes.forEach(c => {
+        console.log('Comissão:', c.comissoes?.nome, 'data_saida:', c.data_saida);
         if (c.data_saida) {
-          const dataSaida = new Date(c.data_saida + 'T00:00:00');
-          dataSaida.setHours(0, 0, 0, 0);
-          if (dataSaida < hoje) inativas.push(c);
-          else ativas.push(c);
+          const partesData = c.data_saida.split('-');
+          const dataSaida = new Date(parseInt(partesData[0]), parseInt(partesData[1]) - 1, parseInt(partesData[2]));
+          console.log('dataSaida parseada:', dataSaida, 'hoje:', hoje, 'é menor?', dataSaida < hoje);
+          if (dataSaida < hoje) {
+            inativas.push(c);
+          } else {
+            ativas.push(c);
+          }
         } else {
           ativas.push(c);
         }
       });
+      
+      console.log('ATIVAS FINAL:', ativas.map(a => a.comissoes?.nome));
+      console.log('INATIVAS FINAL:', inativas.map(i => i.comissoes?.nome));
       
       setComissoesAtivas(ativas);
       setComissoesInativas(inativas);
@@ -283,19 +283,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">🎓 Graus Filosóficos</h3>
-            {grausFilosoficos.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                {grausFilosoficos.map((g, i) => (
-                  <div key={g.id} className={`flex justify-between items-center p-4 ${i !== grausFilosoficos.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
-                    <div>
-                      <p className="font-semibold text-gray-800">Grau {g.grau}° - {g.nome_grau}</p>
-                      {g.observacoes && <p className="text-sm text-gray-600 mt-1">{g.observacoes}</p>}
-                    </div>
-                    <span className="text-sm text-gray-500">{formatarData(g.data_recebimento)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>}
+            <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>
           </section>
 
           <section className="mb-8">
