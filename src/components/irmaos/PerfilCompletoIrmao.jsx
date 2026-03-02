@@ -147,7 +147,19 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     }
   };
 
-  const carregarGrausFilosoficos = async () => { setGrausFilosoficos([]); };
+  const carregarGrausFilosoficos = async () => {
+    try {
+      const { data: vidaMaconica } = await supabase
+        .from('vida_maconica')
+        .select('*, graus_maconicos(numero_grau, nome_grau)')
+        .eq('irmao_id', irmaoId)
+        .order('data_conquista', { ascending: false });
+      setGrausFilosoficos(vidaMaconica || []);
+    } catch (error) {
+      console.error('Erro ao carregar graus filosóficos:', error);
+      setGrausFilosoficos([]);
+    }
+  };
 
   const carregarComissoes = async () => {
     try {
@@ -260,8 +272,19 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🎓 Graus Filosóficos</h3>
-            <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">🎓 Graus Filosóficos ({grausFilosoficos.length})</h3>
+            {grausFilosoficos.length > 0 ? (
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                {grausFilosoficos.map((g, i) => (
+                  <div key={g.id} className={`flex justify-between items-center p-4 ${i !== grausFilosoficos.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
+                    <div>
+                      <p className="font-semibold text-gray-800">Grau {g.graus_maconicos?.numero_grau}° - {g.graus_maconicos?.nome_grau}</p>
+                    </div>
+                    <span className="text-sm text-gray-500">{formatarData(g.data_conquista)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>}
           </section>
 
           <section className="mb-8">
