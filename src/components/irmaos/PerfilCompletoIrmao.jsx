@@ -126,111 +126,46 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarFinanceiro = async () => {
     try {
-      let query = supabase
-        .from('lancamentos_loja')
-        .select('*, categorias_financeiras!categoria_id(nome, tipo)')
-        .eq('origem_irmao_id', irmaoId)
-        .eq('origem_tipo', 'Irmao');
-
+      let query = supabase.from('lancamentos_loja').select('*, categorias_financeiras(nome, tipo)').eq('origem_irmao_id', irmaoId).eq('origem_tipo', 'Irmao');
       if (anoFinanceiroSelecionado !== 'todos') {
-        query = query
-          .gte('data_vencimento', `${anoFinanceiroSelecionado}-01-01`)
-          .lte('data_vencimento', `${anoFinanceiroSelecionado}-12-31`);
-        
+        query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-01-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-12-31`);
         if (mesFinanceiroSelecionado !== 'todos') {
           const mes = mesFinanceiroSelecionado.padStart(2, '0');
           const ultimoDiaMes = new Date(anoFinanceiroSelecionado, mesFinanceiroSelecionado, 0).getDate();
-          query = query
-            .gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`)
-            .lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
+          query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
         }
       }
-
       const { data: lancamentos, error } = await query.limit(300);
-      
-      if (error) {
-        console.error('Erro na query financeira:', error);
-        setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, receitasPagas: 0, despesasPagas: 0, saldo: 0, situacao: 'Em dia' });
-        return;
-      }
-
+      if (error) { console.error('Erro financeiro:', error); setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, receitasPagas: 0, despesasPagas: 0, saldo: 0, situacao: 'Em dia' }); return; }
       const receitasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente');
       const despesasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente');
-      const receitasPagas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago');
-      const despesasPagas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago');
-
       const totalReceitasPendentes = receitasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       const totalDespesasPendentes = despesasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalReceitasPagas = receitasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalDespesasPagas = despesasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-
       const saldo = totalReceitasPendentes - totalDespesasPendentes;
-      const situacao = saldo <= 0 ? 'Em dia' : 'Pendente';
-
-      setDadosFinanceiro({
-        receitasPendentes: totalReceitasPendentes,
-        despesasPendentes: totalDespesasPendentes,
-        receitasPagas: totalReceitasPagas,
-        despesasPagas: totalDespesasPagas,
-        saldo,
-        situacao
-      });
+      setDadosFinanceiro({ receitasPendentes: totalReceitasPendentes, despesasPendentes: totalDespesasPendentes, saldo, situacao: saldo <= 0 ? 'Em dia' : 'Pendente' });
     } catch (error) {
       console.error('Erro ao carregar financeiro:', error);
-      setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, receitasPagas: 0, despesasPagas: 0, saldo: 0, situacao: 'Em dia' });
     }
   };
 
-  const carregarGrausFilosoficos = async () => {
-    try {
-      setGrausFilosoficos([]);
-    } catch (error) {
-      console.error('Erro ao carregar graus filosóficos:', error);
-      setGrausFilosoficos([]);
-    }
-  };
+  const carregarGrausFilosoficos = async () => { setGrausFilosoficos([]); };
 
   const carregarComissoes = async () => {
     try {
-      const { data: comissoes, error } = await supabase
-        .from('comissoes_integrantes')
-        .select('id, irmao_id, comissao_id, funcao, data_entrada, data_saida, ativo, comissoes(nome)')
-        .eq('irmao_id', irmaoId);
-      
-      if (error) {
-        console.error('Erro na query comissões:', error);
-        setComissoesAtivas([]);
-        setComissoesInativas([]);
-        return;
-      }
-      
+      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
       setComissoesAtivas(comissoes?.filter(c => c.ativo === true || (!c.data_saida)) || []);
-      setComissoesInativas(comissoes?.filter(c => c.ativo === false && c.data_saida) || []);
+      setComissoesInativas(comissoes?.filter(c => c.ativo === false || c.data_saida) || []);
     } catch (error) {
-      console.error('Erro ao carregar comissões:', error);
-      setComissoesAtivas([]);
-      setComissoesInativas([]);
+      console.error('Erro comissões:', error);
     }
   };
 
   const carregarEventos = async () => {
     try {
-      const { data: eventos, error } = await supabase
-        .from('eventos_participantes')
-        .select('id, irmao_id, evento_id, eventos_loja(nome_evento, descricao, data_aviso)')
-        .eq('irmao_id', irmaoId)
-        .limit(20);
-      
-      if (error) {
-        console.error('Erro na query eventos:', error);
-        setEventosParticipados([]);
-        return;
-      }
-      
+      const { data: eventos } = await supabase.from('eventos_participantes').select('*, eventos_loja(nome_evento, descricao, data_aviso)').eq('irmao_id', irmaoId).limit(20);
       setEventosParticipados(eventos || []);
     } catch (error) {
-      console.error('Erro ao carregar eventos:', error);
-      setEventosParticipados([]);
+      console.error('Erro eventos:', error);
     }
   };
 
@@ -245,19 +180,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     return '-';
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-8">
-          <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="text-lg">Carregando perfil...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  if (loading) return (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white rounded-lg p-8"><div className="flex items-center gap-3"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p className="text-lg">Carregando perfil...</p></div></div></div>);
   if (!irmao) return null;
 
   const anoAtual = new Date().getFullYear();
@@ -292,33 +215,18 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             {dadosPresenca && (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-600 font-medium mb-1">Total Sessões</p>
-                    <p className="text-2xl font-bold text-blue-800">{dadosPresenca.totalSessoes}</p>
-                  </div>
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                    <p className="text-sm text-green-600 font-medium mb-1">Presenças</p>
-                    <p className="text-2xl font-bold text-green-800">{dadosPresenca.presencas}</p>
-                  </div>
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                    <p className="text-sm text-yellow-600 font-medium mb-1">Justificadas</p>
-                    <p className="text-2xl font-bold text-yellow-800">{dadosPresenca.ausenciasJustificadas}</p>
-                  </div>
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                    <p className="text-sm text-red-600 font-medium mb-1">Ausências</p>
-                    <p className="text-2xl font-bold text-red-800">{dadosPresenca.ausenciasInjustificadas}</p>
-                  </div>
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                    <p className="text-sm text-purple-600 font-medium mb-1">Taxa</p>
-                    <p className="text-2xl font-bold text-purple-800">{dadosPresenca.taxa}%</p>
-                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200"><p className="text-sm text-blue-600 font-medium mb-1">Total Sessões</p><p className="text-2xl font-bold text-blue-800">{dadosPresenca.totalSessoes}</p></div>
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200"><p className="text-sm text-green-600 font-medium mb-1">Presenças</p><p className="text-2xl font-bold text-green-800">{dadosPresenca.presencas}</p></div>
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200"><p className="text-sm text-yellow-600 font-medium mb-1">Justificadas</p><p className="text-2xl font-bold text-yellow-800">{dadosPresenca.ausenciasJustificadas}</p></div>
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-200"><p className="text-sm text-red-600 font-medium mb-1">Ausências</p><p className="text-2xl font-bold text-red-800">{dadosPresenca.ausenciasInjustificadas}</p></div>
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200"><p className="text-sm text-purple-600 font-medium mb-1">Taxa</p><p className="text-2xl font-bold text-purple-800">{dadosPresenca.taxa}%</p></div>
                 </div>
                 {dadosPresenca.ultimasSessoes.length > 0 && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm font-medium text-gray-700 mb-2">Últimas {dadosPresenca.ultimasSessoes.length} sessões:</p>
                     <div className="flex gap-2 flex-wrap">
-                      {dadosPresenca.ultimasSessoes.map((sessao, idx) => (
-                        <div key={idx} className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white text-lg ${sessao.status === 'P' ? 'bg-green-500' : sessao.status === 'J' ? 'bg-yellow-500' : 'bg-red-500'}`} title={`${formatarData(sessao.data)} - ${sessao.status === 'P' ? 'Presente' : sessao.status === 'J' ? 'Justificado' : 'Ausente'}`}>{sessao.status}</div>
+                      {dadosPresenca.ultimasSessoes.map((s, i) => (
+                        <div key={i} className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white text-lg ${s.status === 'P' ? 'bg-green-500' : s.status === 'J' ? 'bg-yellow-500' : 'bg-red-500'}`}>{s.status}</div>
                       ))}
                     </div>
                   </div>
@@ -338,59 +246,24 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                 {anoFinanceiroSelecionado !== 'todos' && (
                   <select value={mesFinanceiroSelecionado} onChange={(e) => setMesFinanceiroSelecionado(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
                     <option value="todos">Todos os meses</option>
-                    <option value="1">Janeiro</option>
-                    <option value="2">Fevereiro</option>
-                    <option value="3">Março</option>
-                    <option value="4">Abril</option>
-                    <option value="5">Maio</option>
-                    <option value="6">Junho</option>
-                    <option value="7">Julho</option>
-                    <option value="8">Agosto</option>
-                    <option value="9">Setembro</option>
-                    <option value="10">Outubro</option>
-                    <option value="11">Novembro</option>
-                    <option value="12">Dezembro</option>
+                    {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                   </select>
                 )}
               </div>
             </div>
             {dadosFinanceiro && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                  <p className="text-sm text-orange-600 font-medium mb-1">Você Deve</p>
-                  <p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-600 font-medium mb-1">Loja Deve</p>
-                  <p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p>
-                </div>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-600 font-medium mb-1">Saldo</p>
-                  <p className={`text-xl font-bold ${dadosFinanceiro.saldo <= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p>
-                </div>
-                <div className={`p-4 rounded-lg border ${dadosFinanceiro.situacao === 'Em dia' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                  <p className={`text-sm font-medium mb-1 ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-600' : 'text-red-600'}`}>Situação</p>
-                  <p className={`text-xl font-bold ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-800' : 'text-red-800'}`}>{dadosFinanceiro.situacao === 'Em dia' ? '✅ Em dia' : '⚠️ Pendente'}</p>
-                </div>
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200"><p className="text-sm text-orange-600 font-medium mb-1">Você Deve</p><p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p></div>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200"><p className="text-sm text-green-600 font-medium mb-1">Loja Deve</p><p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p></div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200"><p className="text-sm text-blue-600 font-medium mb-1">Saldo</p><p className={`text-xl font-bold ${dadosFinanceiro.saldo <= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p></div>
+                <div className={`p-4 rounded-lg border ${dadosFinanceiro.situacao === 'Em dia' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}><p className={`text-sm font-medium mb-1 ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-600' : 'text-red-600'}`}>Situação</p><p className={`text-xl font-bold ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-800' : 'text-red-800'}`}>{dadosFinanceiro.situacao === 'Em dia' ? '✅ Em dia' : '⚠️ Pendente'}</p></div>
               </div>
             )}
           </section>
 
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">🎓 Graus Filosóficos</h3>
-            {grausFilosoficos.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                {grausFilosoficos.map((grau, idx) => (
-                  <div key={grau.id} className={`flex justify-between items-center p-4 ${idx !== grausFilosoficos.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
-                    <div>
-                      <p className="font-semibold text-gray-800">Grau {grau.grau}° - {grau.nome_grau}</p>
-                      {grau.observacoes && <p className="text-sm text-gray-600 mt-1">{grau.observacoes}</p>}
-                    </div>
-                    <span className="text-sm text-gray-500">{formatarData(grau.data_recebimento)}</span>
-                  </div>
-                ))}
-              </div>
-            ) : <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>}
+            <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>
           </section>
 
           <section className="mb-8">
@@ -399,8 +272,8 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
               <h4 className="font-semibold text-green-700 mb-2">✓ Ativas ({comissoesAtivas.length})</h4>
               {comissoesAtivas.length > 0 ? (
                 <div className="bg-white border border-green-200 rounded-lg overflow-hidden">
-                  {comissoesAtivas.map((c, idx) => (
-                    <div key={c.id} className={`flex justify-between items-center p-3 ${idx !== comissoesAtivas.length - 1 ? 'border-b border-green-100' : ''} hover:bg-green-50`}>
+                  {comissoesAtivas.map((c, i) => (
+                    <div key={c.id} className={`flex justify-between items-center p-3 ${i !== comissoesAtivas.length - 1 ? 'border-b border-green-100' : ''} hover:bg-green-50`}>
                       <span className="font-medium text-gray-800">{c.comissoes?.nome || 'Sem nome'}</span>
                       <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">{c.funcao || 'Membro'}</span>
                     </div>
@@ -412,8 +285,8 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
               <h4 className="font-semibold text-gray-600 mb-2">✗ Inativas ({comissoesInativas.length})</h4>
               {comissoesInativas.length > 0 ? (
                 <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  {comissoesInativas.map((c, idx) => (
-                    <div key={c.id} className={`flex justify-between items-center p-3 ${idx !== comissoesInativas.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50`}>
+                  {comissoesInativas.map((c, i) => (
+                    <div key={c.id} className={`flex justify-between items-center p-3 ${i !== comissoesInativas.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50`}>
                       <span className="text-gray-600">{c.comissoes?.nome || 'Sem nome'}</span>
                       <span className="text-xs text-gray-500">Até {formatarData(c.data_saida)}</span>
                     </div>
@@ -427,8 +300,8 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             <h3 className="text-xl font-bold text-gray-800 mb-4">🎉 Eventos Participados ({eventosParticipados.length})</h3>
             {eventosParticipados.length > 0 ? (
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
-                {eventosParticipados.map((e, idx) => (
-                  <div key={e.id} className={`p-4 ${idx !== eventosParticipados.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
+                {eventosParticipados.map((e, i) => (
+                  <div key={e.id} className={`p-4 ${i !== eventosParticipados.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <p className="font-semibold text-gray-800">{e.eventos_loja?.nome_evento || 'Sem nome'}</p>
