@@ -151,32 +151,10 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarComissoes = async () => {
     try {
-      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
+      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome, status)').eq('irmao_id', irmaoId);
       if (!comissoes) { setComissoesAtivas([]); setComissoesInativas([]); return; }
-      
-      const hoje = new Date('2026-03-02');
-      const ativas = [];
-      const inativas = [];
-      
-      comissoes.forEach(c => {
-        console.log('Comissão:', c.comissoes?.nome, 'data_saida:', c.data_saida);
-        if (c.data_saida) {
-          const partesData = c.data_saida.split('-');
-          const dataSaida = new Date(parseInt(partesData[0]), parseInt(partesData[1]) - 1, parseInt(partesData[2]));
-          console.log('dataSaida parseada:', dataSaida, 'hoje:', hoje, 'é menor?', dataSaida < hoje);
-          if (dataSaida < hoje) {
-            inativas.push(c);
-          } else {
-            ativas.push(c);
-          }
-        } else {
-          ativas.push(c);
-        }
-      });
-      
-      console.log('ATIVAS FINAL:', ativas.map(a => a.comissoes?.nome));
-      console.log('INATIVAS FINAL:', inativas.map(i => i.comissoes?.nome));
-      
+      const ativas = comissoes.filter(c => c.comissoes?.status !== 'encerrada');
+      const inativas = comissoes.filter(c => c.comissoes?.status === 'encerrada');
       setComissoesAtivas(ativas);
       setComissoesInativas(inativas);
     } catch (error) {
