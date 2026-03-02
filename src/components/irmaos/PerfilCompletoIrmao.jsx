@@ -15,12 +15,15 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
   const [loading, setLoading] = useState(true);
 
   // Controle de acesso
-  const podeVerOutrosIrmaos = ['administrator', 'veneravel', 'tesoureiro', 'chanceler']
-    .includes(userData?.role);
+  const podeVerOutrosIrmaos = 
+    userData?.nivel_acesso === 'admin' || 
+    userData?.cargo?.toLowerCase() === 'veneravel' ||
+    userData?.cargo?.toLowerCase() === 'tesoureiro' ||
+    userData?.cargo?.toLowerCase() === 'chanceler';
 
   useEffect(() => {
     if (!podeVerOutrosIrmaos && irmaoId !== userData?.membro_id) {
-      alert('Acesso negado. Você só pode visualizar seu próprio perfil.');
+      alert('Acesso negado. Você só pode visualizar seu próprio perfil completo.');
       onClose();
       return;
     }
