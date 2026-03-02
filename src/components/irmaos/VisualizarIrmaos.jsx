@@ -8,7 +8,7 @@ import {
 } from '../../utils/formatters';
 import { STATUS_IRMAOS } from '../../utils/constants';
 
-const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess, showError, permissoes, userData }) => {
+const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto, onUpdate, showSuccess, showError, permissoes, userData }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [situacaoFilter, setSituacaoFilter] = useState('regular,licenciado');
   const [grauFilter, setGrauFilter] = useState('todos');
@@ -485,11 +485,20 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onUpdate, showSuccess
                   <button
                     onClick={() => onViewProfile(irmao.id)}
                     className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
-                    title="Ver Perfil Completo"
+                    title="Ver Perfil"
                   >
                     👁️ Ver Perfil
                   </button>
                   
+                  <button
+                    onClick={() => onViewPerfilCompleto && onViewPerfilCompleto(irmao.id)}
+                    className="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+                    title="Perfil Completo"
+                  >
+                    📋
+                  </button>
+                  
+                       
                   {permissoes?.canEdit && (
                     <button
                       onClick={() => onEdit(irmao)}
