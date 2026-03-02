@@ -126,7 +126,15 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarFinanceiro = async () => {
     try {
-      let query = supabase.from('lancamentos_loja').select('*, categorias_financeiras(nome, tipo)').eq('origem_irmao_id', irmaoId).eq('origem_tipo', 'Irmao');
+      console.log('=== INICIANDO CARREGAMENTO FINANCEIRO ===');
+      console.log('irmaoId:', irmaoId);
+      
+      let query = supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('origem_tipo', 'Irmao');
+
       if (anoFinanceiroSelecionado !== 'todos') {
         query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-01-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-12-31`);
         if (mesFinanceiroSelecionado !== 'todos') {
@@ -135,16 +143,39 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
           query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
         }
       }
+
       const { data: lancamentos, error } = await query.limit(300);
-      if (error) { console.error('Erro financeiro:', error); setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, receitasPagas: 0, despesasPagas: 0, saldo: 0, situacao: 'Em dia' }); return; }
+      
+      console.log('Lançamentos retornados:', lancamentos);
+      console.log('Erro (se houver):', error);
+      
+      if (error) {
+        console.error('Erro na query financeira:', error);
+        setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, saldo: 0, situacao: 'Em dia' });
+        return;
+      }
+
       const receitasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente');
       const despesasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente');
+      
+      console.log('Receitas pendentes:', receitasPendentes);
+      console.log('Despesas pendentes:', despesasPendentes);
+      
       const totalReceitasPendentes = receitasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       const totalDespesasPendentes = despesasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       const saldo = totalReceitasPendentes - totalDespesasPendentes;
-      setDadosFinanceiro({ receitasPendentes: totalReceitasPendentes, despesasPendentes: totalDespesasPendentes, saldo, situacao: saldo <= 0 ? 'Em dia' : 'Pendente' });
+      
+      console.log('TOTAIS:', { totalReceitasPendentes, totalDespesasPendentes, saldo });
+      
+      setDadosFinanceiro({
+        receitasPendentes: totalReceitasPendentes,
+        despesasPendentes: totalDespesasPendentes,
+        saldo,
+        situacao: saldo <= 0 ? 'Em dia' : 'Pendente'
+      });
     } catch (error) {
       console.error('Erro ao carregar financeiro:', error);
+      setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, saldo: 0, situacao: 'Em dia' });
     }
   };
 
@@ -152,11 +183,35 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarComissoes = async () => {
     try {
-      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
-      setComissoesAtivas(comissoes?.filter(c => c.ativo === true || (!c.data_saida)) || []);
-      setComissoesInativas(comissoes?.filter(c => c.ativo === false || c.data_saida) || []);
+      console.log('=== CARREGANDO COMISSÕES PARA IRMÃO ID:', irmaoId, '===');
+      
+      const { data: comissoes, error } = await supabase
+        .from('comissoes_integrantes')
+        .select('*, comissoes(nome)')
+        .eq('irmao_id', irmaoId);
+      
+      console.log('Comissões retornadas:', comissoes);
+      console.log('Erro (se houver):', error);
+      
+      if (error) {
+        console.error('Erro na query comissões:', error);
+        setComissoesAtivas([]);
+        setComissoesInativas([]);
+        return;
+      }
+      
+      const ativas = comissoes?.filter(c => c.ativo === true) || [];
+      const inativas = comissoes?.filter(c => c.ativo === false || (c.data_saida && c.ativo !== true)) || [];
+      
+      console.log('Comissões ATIVAS filtradas:', ativas);
+      console.log('Comissões INATIVAS filtradas:', inativas);
+      
+      setComissoesAtivas(ativas);
+      setComissoesInativas(inativas);
     } catch (error) {
-      console.error('Erro comissões:', error);
+      console.error('Erro ao carregar comissões:', error);
+      setComissoesAtivas([]);
+      setComissoesInativas([]);
     }
   };
 
