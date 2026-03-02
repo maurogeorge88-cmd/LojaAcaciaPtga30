@@ -149,20 +149,22 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarGrausFilosoficos = async () => {
     try {
-      const { data: graus } = await supabase.from('altos_graus').select('*').eq('membro_id', irmaoId).order('data_recebimento', { ascending: false });
-      setGrausFilosoficos(graus || []);
+      setGrausFilosoficos([]);
     } catch (error) {
       console.error('Erro ao carregar graus filosóficos:', error);
+      setGrausFilosoficos([]);
     }
   };
 
   const carregarComissoes = async () => {
     try {
-      const { data: comissoes } = await supabase.from('membros_comissoes').select('*, comissoes(nome)').eq('membro_id', irmaoId);
-      setComissoesAtivas(comissoes?.filter(c => !c.data_saida) || []);
-      setComissoesInativas(comissoes?.filter(c => c.data_saida) || []);
+      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
+      setComissoesAtivas(comissoes?.filter(c => c.ativo === true || (!c.data_saida)) || []);
+      setComissoesInativas(comissoes?.filter(c => c.ativo === false || c.data_saida) || []);
     } catch (error) {
       console.error('Erro ao carregar comissões:', error);
+      setComissoesAtivas([]);
+      setComissoesInativas([]);
     }
   };
 
@@ -172,6 +174,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
       setEventosParticipados(eventos || []);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
+      setEventosParticipados([]);
     }
   };
 
@@ -343,7 +346,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                   {comissoesAtivas.map((c, idx) => (
                     <div key={c.id} className={`flex justify-between items-center p-3 ${idx !== comissoesAtivas.length - 1 ? 'border-b border-green-100' : ''} hover:bg-green-50`}>
                       <span className="font-medium text-gray-800">{c.comissoes?.nome || 'Sem nome'}</span>
-                      <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">{c.cargo || 'Membro'}</span>
+                      <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">{c.funcao || 'Membro'}</span>
                     </div>
                   ))}
                 </div>
