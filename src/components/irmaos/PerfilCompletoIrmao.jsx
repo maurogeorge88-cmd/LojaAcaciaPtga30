@@ -126,12 +126,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarFinanceiro = async () => {
     try {
-      let query = supabase
-        .from('lancamentos_loja')
-        .select('*, categorias_financeiras(nome, tipo)')
-        .eq('origem_irmao_id', irmaoId)
-        .eq('origem_tipo', 'Irmao');
-
+      let query = supabase.from('lancamentos_loja').select('*, categorias_financeiras(nome, tipo)').eq('origem_irmao_id', irmaoId).eq('origem_tipo', 'Irmao');
       if (anoFinanceiroSelecionado !== 'todos') {
         query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-01-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-12-31`);
         if (mesFinanceiroSelecionado !== 'todos') {
@@ -140,37 +135,47 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
           query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
         }
       }
-
-      const { data: lancamentos, error } = await query.limit(300);
-      if (error) { setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, saldo: 0, situacao: 'Em dia' }); return; }
-
+      const { data: lancamentos } = await query.limit(300);
       const receitas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
       const despesas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
       const totalReceitas = receitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       const totalDespesas = despesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       const saldo = totalReceitas - totalDespesas;
-      
-      setDadosFinanceiro({
-        receitasPendentes: totalReceitas,
-        despesasPendentes: totalDespesas,
-        saldo,
-        situacao: saldo >= 0 ? 'Pago' : 'Devendo'
-      });
+      setDadosFinanceiro({ receitasPendentes: totalReceitas, despesasPendentes: totalDespesas, saldo, situacao: saldo >= 0 ? 'Pago' : 'Devendo' });
     } catch (error) {
       console.error('Erro ao carregar financeiro:', error);
     }
   };
 
-  const carregarGrausFilosoficos = async () => { setGrausFilosoficos([]); };
+  const carregarGrausFilosoficos = async () => {
+    try {
+      const { data: graus } = await supabase.from('graus_maconicos').select('*').eq('irmao_id', irmaoId).order('data_recebimento', { ascending: false });
+      setGrausFilosoficos(graus || []);
+    } catch (error) {
+      console.error('Erro ao carregar graus filosóficos:', error);
+      setGrausFilosoficos([]);
+    }
+  };
 
   const carregarComissoes = async () => {
     try {
       const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
       if (!comissoes) { setComissoesAtivas([]); setComissoesInativas([]); return; }
       
-      const dataHoje = new Date();
-      const ativas = comissoes.filter(c => !c.data_saida || new Date(c.data_saida) >= dataHoje);
-      const inativas = comissoes.filter(c => c.data_saida && new Date(c.data_saida) < dataHoje);
+      const hoje = new Date();
+      hoje.setHours(0, 0, 0, 0);
+      const ativas = [], inativas = [];
+      
+      comissoes.forEach(c => {
+        if (c.data_saida) {
+          const dataSaida = new Date(c.data_saida + 'T00:00:00');
+          dataSaida.setHours(0, 0, 0, 0);
+          if (dataSaida < hoje) inativas.push(c);
+          else ativas.push(c);
+        } else {
+          ativas.push(c);
+        }
+      });
       
       setComissoesAtivas(ativas);
       setComissoesInativas(inativas);
@@ -243,11 +248,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                 {dadosPresenca.ultimasSessoes.length > 0 && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <p className="text-sm font-medium text-gray-700 mb-2">Últimas {dadosPresenca.ultimasSessoes.length} sessões:</p>
-                    <div className="flex gap-2 flex-wrap">
-                      {dadosPresenca.ultimasSessoes.map((s, i) => (
-                        <div key={i} className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white text-lg ${s.status === 'P' ? 'bg-green-500' : s.status === 'J' ? 'bg-yellow-500' : 'bg-red-500'}`}>{s.status}</div>
-                      ))}
-                    </div>
+                    <div className="flex gap-2 flex-wrap">{dadosPresenca.ultimasSessoes.map((s, i) => (<div key={i} className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white text-lg ${s.status === 'P' ? 'bg-green-500' : s.status === 'J' ? 'bg-yellow-500' : 'bg-red-500'}`}>{s.status}</div>))}</div>
                   </div>
                 )}
               </>
@@ -282,7 +283,19 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
           <section className="mb-8">
             <h3 className="text-xl font-bold text-gray-800 mb-4">🎓 Graus Filosóficos</h3>
-            <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>
+            {grausFilosoficos.length > 0 ? (
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                {grausFilosoficos.map((g, i) => (
+                  <div key={g.id} className={`flex justify-between items-center p-4 ${i !== grausFilosoficos.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
+                    <div>
+                      <p className="font-semibold text-gray-800">Grau {g.grau}° - {g.nome_grau}</p>
+                      {g.observacoes && <p className="text-sm text-gray-600 mt-1">{g.observacoes}</p>}
+                    </div>
+                    <span className="text-sm text-gray-500">{formatarData(g.data_recebimento)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>}
           </section>
 
           <section className="mb-8">
