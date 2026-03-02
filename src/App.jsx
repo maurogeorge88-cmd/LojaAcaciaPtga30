@@ -15,6 +15,7 @@ import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
 import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
 import PerfilIrmao from './components/irmaos/PerfilIrmao';
+import PerfilCompletoIrmao from './components/irmaos/PerfilCompletoIrmao';
 import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
@@ -130,6 +131,8 @@ function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
   const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
+  const [modalPerfilCompletoAberto, setModalPerfilCompletoAberto] = useState(false);
+  const [irmaoIdPerfilCompleto, setIrmaoIdPerfilCompleto] = useState(null);
   const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -1396,6 +1399,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               </button>
 
               <button
+                onClick={() => {
+                  setIrmaoIdPerfilCompleto(userData.membro_id);
+                  setModalPerfilCompletoAberto(true);
+                }}
+                className="w-full px-4 py-2 flex items-center gap-2 transition text-sm hover:bg-primary-800"
+                title="Meu Perfil Completo"
+              >
+                <span className="text-base">📋</span>
+                {menuAberto && <span className="font-semibold">Meu Perfil Completo</span>}
+              </button>
+
+              <button
                 onClick={() => setCurrentPage('visualizar')}
                 className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                   currentPage === 'visualizar'
@@ -2390,8 +2405,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               setCurrentPage('cadastro');
             }}
             onViewProfile={(irmaoId) => {
-              setIrmaoParaPerfil(irmaoId);
-              setCurrentPage('perfil-irmao');
+              setIrmaoIdPerfilCompleto(irmaoId);
+              setModalPerfilCompletoAberto(true);
             }}
             onUpdate={loadIrmaos}
             showSuccess={showSuccess}
@@ -2720,6 +2735,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
+
+      {/* MODAL PERFIL COMPLETO DO IRMÃO */}
+      {modalPerfilCompletoAberto && irmaoIdPerfilCompleto && (
+        <PerfilCompletoIrmao
+          irmaoId={irmaoIdPerfilCompleto}
+          userData={userData}
+          onClose={() => {
+            setModalPerfilCompletoAberto(false);
+            setIrmaoIdPerfilCompleto(null);
+          }}
+        />
+      )}
     </div>
   );
 }
