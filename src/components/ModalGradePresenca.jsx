@@ -332,7 +332,7 @@ export default function ModalGradePresenca({ onFechar }) {
       if (sit.membro_id !== irmao.id) return false;
       
       const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '') || '';
-      const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+      const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio', 'licenca'];
       
       const ehBloqueadora = situacoesQueExcluem.includes(tipoSituacao) ||
         situacoesQueExcluem.some(s => tipoSituacao.includes(s));
@@ -341,7 +341,7 @@ export default function ModalGradePresenca({ onFechar }) {
       
       const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
       
-      console.log(`🔎 ${irmao.nome} | sessão: ${dataSessao.toLocaleDateString('pt-BR')} | desligamento: ${dataInicio.toLocaleDateString('pt-BR')} | bloqueia: ${dataSessao >= dataInicio}`);
+      console.log(`🔎 ${irmao.nome} | sessão: ${dataSessao.toLocaleDateString('pt-BR')} | situação: ${tipoSituacao} | início: ${dataInicio.toLocaleDateString('pt-BR')} | bloqueia: ${dataSessao >= dataInicio}`);
       
       if (dataSessao < dataInicio) return false;
       
