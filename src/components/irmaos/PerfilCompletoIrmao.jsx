@@ -128,43 +128,56 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     try {
       let query = supabase
         .from('lancamentos_loja')
-        .select('valor, status, data_vencimento, categorias_financeiras(tipo)')
-        .eq('origem_tipo', 'Irmao')
-        .eq('origem_id', irmaoId)
-        .eq('status', 'pago');
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('origem_tipo', 'Irmao');
 
       if (anoFinanceiroSelecionado !== 'todos') {
-        const dataInicio = `${anoFinanceiroSelecionado}-01-01`;
-        const dataFim = `${anoFinanceiroSelecionado}-12-31`;
-        query = query.gte('data_vencimento', dataInicio).lte('data_vencimento', dataFim);
+        query = query
+          .gte('data_vencimento', `${anoFinanceiroSelecionado}-01-01`)
+          .lte('data_vencimento', `${anoFinanceiroSelecionado}-12-31`);
         
         if (mesFinanceiroSelecionado !== 'todos') {
           const mes = mesFinanceiroSelecionado.padStart(2, '0');
           const ultimoDiaMes = new Date(anoFinanceiroSelecionado, mesFinanceiroSelecionado, 0).getDate();
-          query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
+          query = query
+            .gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`)
+            .lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
         }
       }
 
-      const { data: lancamentos, error } = await query;
+      const { data: lancamentos, error } = await query.limit(300);
       
       if (error) {
         console.error('Erro na query financeira:', error);
-        setDadosFinanceiro({ receitas: 0, despesas: 0, saldo: 0, situacao: 'Em dia' });
+        setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, receitasPagas: 0, despesasPagas: 0, saldo: 0, situacao: 'Em dia' });
         return;
       }
 
-      let receitas = 0, despesas = 0;
-      lancamentos?.forEach(lanc => {
-        const valor = parseFloat(lanc.valor || 0);
-        if (lanc.categorias_financeiras?.tipo === 'receita') receitas += valor;
-        else if (lanc.categorias_financeiras?.tipo === 'despesa') despesas += valor;
+      const receitasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente');
+      const despesasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente');
+      const receitasPagas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago');
+      const despesasPagas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago');
+
+      const totalReceitasPendentes = receitasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesasPendentes = despesasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalReceitasPagas = receitasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesasPagas = despesasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+
+      const saldo = totalReceitasPendentes - totalDespesasPendentes;
+      const situacao = saldo <= 0 ? 'Em dia' : 'Pendente';
+
+      setDadosFinanceiro({
+        receitasPendentes: totalReceitasPendentes,
+        despesasPendentes: totalDespesasPendentes,
+        receitasPagas: totalReceitasPagas,
+        despesasPagas: totalDespesasPagas,
+        saldo,
+        situacao
       });
-      
-      const saldo = receitas - despesas;
-      setDadosFinanceiro({ receitas, despesas, saldo, situacao: saldo >= 0 ? 'Em dia' : 'Pendente' });
     } catch (error) {
       console.error('Erro ao carregar financeiro:', error);
-      setDadosFinanceiro({ receitas: 0, despesas: 0, saldo: 0, situacao: 'Em dia' });
+      setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, receitasPagas: 0, despesasPagas: 0, saldo: 0, situacao: 'Em dia' });
     }
   };
 
@@ -343,17 +356,17 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             </div>
             {dadosFinanceiro && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-600 font-medium mb-1">Receitas</p>
-                  <p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.receitas)}</p>
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                  <p className="text-sm text-orange-600 font-medium mb-1">Você Deve</p>
+                  <p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p>
                 </div>
-                <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                  <p className="text-sm text-red-600 font-medium mb-1">Despesas</p>
-                  <p className="text-xl font-bold text-red-800">{formatarMoeda(dadosFinanceiro.despesas)}</p>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                  <p className="text-sm text-green-600 font-medium mb-1">Loja Deve</p>
+                  <p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p>
                 </div>
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                   <p className="text-sm text-blue-600 font-medium mb-1">Saldo</p>
-                  <p className={`text-xl font-bold ${dadosFinanceiro.saldo >= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p>
+                  <p className={`text-xl font-bold ${dadosFinanceiro.saldo <= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p>
                 </div>
                 <div className={`p-4 rounded-lg border ${dadosFinanceiro.situacao === 'Em dia' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                   <p className={`text-sm font-medium mb-1 ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-600' : 'text-red-600'}`}>Situação</p>
