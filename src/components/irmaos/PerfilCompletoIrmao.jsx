@@ -128,7 +128,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     try {
       let query = supabase
         .from('lancamentos_loja')
-        .select('*, categorias_financeiras(nome, tipo)')
+        .select('*, categorias_financeiras!categoria_id(nome, tipo)')
         .eq('origem_irmao_id', irmaoId)
         .eq('origem_tipo', 'Irmao');
 
@@ -217,7 +217,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     try {
       const { data: eventos, error } = await supabase
         .from('eventos_participantes')
-        .select('id, irmao_id, evento_id, eventos_loja(nome, descricao, data_evento)')
+        .select('id, irmao_id, evento_id, eventos_loja(nome_evento, descricao, data_aviso)')
         .eq('irmao_id', irmaoId)
         .limit(20);
       
@@ -431,10 +431,10 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                   <div key={e.id} className={`p-4 ${idx !== eventosParticipados.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-800">{e.eventos_loja?.nome || 'Sem nome'}</p>
+                        <p className="font-semibold text-gray-800">{e.eventos_loja?.nome_evento || 'Sem nome'}</p>
                         {e.eventos_loja?.descricao && <p className="text-sm text-gray-600 mt-1">{e.eventos_loja.descricao}</p>}
                       </div>
-                      <span className="text-sm text-gray-500 ml-4 whitespace-nowrap">{formatarData(e.eventos_loja?.data_evento)}</span>
+                      <span className="text-sm text-gray-500 ml-4 whitespace-nowrap">{formatarData(e.eventos_loja?.data_aviso)}</span>
                     </div>
                   </div>
                 ))}
