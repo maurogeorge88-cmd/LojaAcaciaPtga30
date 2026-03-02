@@ -126,9 +126,6 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarFinanceiro = async () => {
     try {
-      console.log('=== INICIANDO CARREGAMENTO FINANCEIRO ===');
-      console.log('irmaoId:', irmaoId);
-      
       let query = supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(nome, tipo)')
@@ -145,37 +142,22 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
       }
 
       const { data: lancamentos, error } = await query.limit(300);
-      
-      console.log('Lançamentos retornados:', lancamentos);
-      console.log('Erro (se houver):', error);
-      
-      if (error) {
-        console.error('Erro na query financeira:', error);
-        setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, saldo: 0, situacao: 'Em dia' });
-        return;
-      }
+      if (error) { setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, saldo: 0, situacao: 'Em dia' }); return; }
 
-      const receitasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente');
-      const despesasPendentes = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente');
-      
-      console.log('Receitas pendentes:', receitasPendentes);
-      console.log('Despesas pendentes:', despesasPendentes);
-      
-      const totalReceitasPendentes = receitasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalDespesasPendentes = despesasPendentes.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const saldo = totalReceitasPendentes - totalDespesasPendentes;
-      
-      console.log('TOTAIS:', { totalReceitasPendentes, totalDespesasPendentes, saldo });
+      const receitas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const despesas = (lancamentos || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      const totalReceitas = receitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const totalDespesas = despesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
+      const saldo = totalReceitas - totalDespesas;
       
       setDadosFinanceiro({
-        receitasPendentes: totalReceitasPendentes,
-        despesasPendentes: totalDespesasPendentes,
+        receitasPendentes: totalReceitas,
+        despesasPendentes: totalDespesas,
         saldo,
-        situacao: saldo <= 0 ? 'Em dia' : 'Pendente'
+        situacao: saldo >= 0 ? 'Pago' : 'Devendo'
       });
     } catch (error) {
       console.error('Erro ao carregar financeiro:', error);
-      setDadosFinanceiro({ receitasPendentes: 0, despesasPendentes: 0, saldo: 0, situacao: 'Em dia' });
     }
   };
 
@@ -183,35 +165,17 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarComissoes = async () => {
     try {
-      console.log('=== CARREGANDO COMISSÕES PARA IRMÃO ID:', irmaoId, '===');
+      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
+      if (!comissoes) { setComissoesAtivas([]); setComissoesInativas([]); return; }
       
-      const { data: comissoes, error } = await supabase
-        .from('comissoes_integrantes')
-        .select('*, comissoes(nome)')
-        .eq('irmao_id', irmaoId);
-      
-      console.log('Comissões retornadas:', comissoes);
-      console.log('Erro (se houver):', error);
-      
-      if (error) {
-        console.error('Erro na query comissões:', error);
-        setComissoesAtivas([]);
-        setComissoesInativas([]);
-        return;
-      }
-      
-      const ativas = comissoes?.filter(c => c.ativo === true) || [];
-      const inativas = comissoes?.filter(c => c.ativo === false || (c.data_saida && c.ativo !== true)) || [];
-      
-      console.log('Comissões ATIVAS filtradas:', ativas);
-      console.log('Comissões INATIVAS filtradas:', inativas);
+      const dataHoje = new Date();
+      const ativas = comissoes.filter(c => !c.data_saida || new Date(c.data_saida) >= dataHoje);
+      const inativas = comissoes.filter(c => c.data_saida && new Date(c.data_saida) < dataHoje);
       
       setComissoesAtivas(ativas);
       setComissoesInativas(inativas);
     } catch (error) {
       console.error('Erro ao carregar comissões:', error);
-      setComissoesAtivas([]);
-      setComissoesInativas([]);
     }
   };
 
@@ -308,10 +272,10 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             </div>
             {dadosFinanceiro && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200"><p className="text-sm text-orange-600 font-medium mb-1">Você Deve</p><p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p></div>
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200"><p className="text-sm text-green-600 font-medium mb-1">Loja Deve</p><p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p></div>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200"><p className="text-sm text-blue-600 font-medium mb-1">Saldo</p><p className={`text-xl font-bold ${dadosFinanceiro.saldo <= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p></div>
-                <div className={`p-4 rounded-lg border ${dadosFinanceiro.situacao === 'Em dia' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}><p className={`text-sm font-medium mb-1 ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-600' : 'text-red-600'}`}>Situação</p><p className={`text-xl font-bold ${dadosFinanceiro.situacao === 'Em dia' ? 'text-green-800' : 'text-red-800'}`}>{dadosFinanceiro.situacao === 'Em dia' ? '✅ Em dia' : '⚠️ Pendente'}</p></div>
+                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200"><p className="text-sm text-orange-600 font-medium mb-1">Receitas</p><p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p></div>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200"><p className="text-sm text-green-600 font-medium mb-1">Despesas</p><p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p></div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200"><p className="text-sm text-blue-600 font-medium mb-1">Saldo</p><p className={`text-xl font-bold ${dadosFinanceiro.saldo >= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p></div>
+                <div className={`p-4 rounded-lg border ${dadosFinanceiro.saldo >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}><p className={`text-sm font-medium mb-1 ${dadosFinanceiro.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>Situação</p><p className={`text-xl font-bold ${dadosFinanceiro.saldo >= 0 ? 'text-green-800' : 'text-red-800'}`}>{dadosFinanceiro.saldo >= 0 ? '✅ Pago' : '⚠️ Devendo'}</p></div>
               </div>
             )}
           </section>
