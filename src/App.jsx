@@ -2405,6 +2405,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               setCurrentPage('cadastro');
             }}
             onViewProfile={(irmaoId) => {
+              setIrmaoParaPerfil(irmaoId);
+              setCurrentPage('perfil-irmao');
+            }}
+            onViewPerfilCompleto={(irmaoId) => {
               setIrmaoIdPerfilCompleto(irmaoId);
               setModalPerfilCompletoAberto(true);
             }}
