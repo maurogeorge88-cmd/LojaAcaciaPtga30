@@ -126,24 +126,45 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarFinanceiro = async () => {
     try {
-      let query = supabase.from('lancamentos_loja').select('valor, status, data_vencimento, categorias_financeiras(tipo)').eq('origem_tipo', 'Irmao').eq('origem_id', irmaoId).eq('status', 'pago');
+      let query = supabase
+        .from('lancamentos_loja')
+        .select('valor, status, data_vencimento, categorias_financeiras(tipo)')
+        .eq('origem_tipo', 'Irmao')
+        .eq('origem_id', irmaoId)
+        .eq('status', 'pago');
+
       if (anoFinanceiroSelecionado !== 'todos') {
-        query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-01-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-12-31`);
+        const dataInicio = `${anoFinanceiroSelecionado}-01-01`;
+        const dataFim = `${anoFinanceiroSelecionado}-12-31`;
+        query = query.gte('data_vencimento', dataInicio).lte('data_vencimento', dataFim);
+        
         if (mesFinanceiroSelecionado !== 'todos') {
           const mes = mesFinanceiroSelecionado.padStart(2, '0');
-          query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-31`);
+          const ultimoDiaMes = new Date(anoFinanceiroSelecionado, mesFinanceiroSelecionado, 0).getDate();
+          query = query.gte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-01`).lte('data_vencimento', `${anoFinanceiroSelecionado}-${mes}-${ultimoDiaMes}`);
         }
       }
-      const { data: lancamentos } = await query;
+
+      const { data: lancamentos, error } = await query;
+      
+      if (error) {
+        console.error('Erro na query financeira:', error);
+        setDadosFinanceiro({ receitas: 0, despesas: 0, saldo: 0, situacao: 'Em dia' });
+        return;
+      }
+
       let receitas = 0, despesas = 0;
       lancamentos?.forEach(lanc => {
-        if (lanc.categorias_financeiras?.tipo === 'receita') receitas += parseFloat(lanc.valor || 0);
-        else if (lanc.categorias_financeiras?.tipo === 'despesa') despesas += parseFloat(lanc.valor || 0);
+        const valor = parseFloat(lanc.valor || 0);
+        if (lanc.categorias_financeiras?.tipo === 'receita') receitas += valor;
+        else if (lanc.categorias_financeiras?.tipo === 'despesa') despesas += valor;
       });
+      
       const saldo = receitas - despesas;
       setDadosFinanceiro({ receitas, despesas, saldo, situacao: saldo >= 0 ? 'Em dia' : 'Pendente' });
     } catch (error) {
       console.error('Erro ao carregar financeiro:', error);
+      setDadosFinanceiro({ receitas: 0, despesas: 0, saldo: 0, situacao: 'Em dia' });
     }
   };
 
@@ -158,9 +179,20 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarComissoes = async () => {
     try {
-      const { data: comissoes } = await supabase.from('comissoes_integrantes').select('*, comissoes(nome)').eq('irmao_id', irmaoId);
+      const { data: comissoes, error } = await supabase
+        .from('comissoes_integrantes')
+        .select('id, irmao_id, comissao_id, funcao, data_entrada, data_saida, ativo, comissoes(nome)')
+        .eq('irmao_id', irmaoId);
+      
+      if (error) {
+        console.error('Erro na query comissões:', error);
+        setComissoesAtivas([]);
+        setComissoesInativas([]);
+        return;
+      }
+      
       setComissoesAtivas(comissoes?.filter(c => c.ativo === true || (!c.data_saida)) || []);
-      setComissoesInativas(comissoes?.filter(c => c.ativo === false || c.data_saida) || []);
+      setComissoesInativas(comissoes?.filter(c => c.ativo === false && c.data_saida) || []);
     } catch (error) {
       console.error('Erro ao carregar comissões:', error);
       setComissoesAtivas([]);
@@ -170,7 +202,18 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   const carregarEventos = async () => {
     try {
-      const { data: eventos } = await supabase.from('eventos_participantes').select('*, eventos_loja(nome, descricao, data_evento)').eq('irmao_id', irmaoId).limit(20);
+      const { data: eventos, error } = await supabase
+        .from('eventos_participantes')
+        .select('id, irmao_id, evento_id, eventos_loja(nome, descricao, data_evento)')
+        .eq('irmao_id', irmaoId)
+        .limit(20);
+      
+      if (error) {
+        console.error('Erro na query eventos:', error);
+        setEventosParticipados([]);
+        return;
+      }
+      
       setEventosParticipados(eventos || []);
     } catch (error) {
       console.error('Erro ao carregar eventos:', error);
