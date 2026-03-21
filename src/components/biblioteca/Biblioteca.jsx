@@ -598,51 +598,64 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   {grau === 'Aprendiz' && '🟢'} {grau === 'Companheiro' && '🔵'} {grau === 'Mestre' && '🟣'} {grau} ({livrosDoGrau.length})
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-                  {livrosDoGrau.map(livro => {
-                    const disponivel = obterQuantidadeDisponivel(livro.id);
-                    
-                    return (
-                      <div key={livro.id} className="border rounded-lg p-4 hover:shadow-lg transition">
-                        <h4 className="font-bold text-lg text-blue-900 mb-2">{livro.titulo}</h4>
-                        {livro.autor && <p className="text-sm text-gray-600 mb-2">✍️ {livro.autor}</p>}
-                        
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                            {livro.categoria}
-                          </span>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            disponivel > 0
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}>
-                            {disponivel}/{livro.quantidade_total}
-                          </span>
-                        </div>
-
-                        {livro.localizacao && (
-                          <p className="text-xs text-gray-500 mb-3">📍 {livro.localizacao}</p>
-                        )}
-
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-sm font-semibold">TÍTULO</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold">AUTOR</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold">CATEGORIA</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold">LOCALIZAÇÃO</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold">DISPONIBILIDADE</th>
                         {permissoes?.pode_editar_biblioteca && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => editarLivro(livro)}
-                              className="flex-1 px-3 py-2 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              onClick={() => excluirLivro(livro.id)}
-                              className="flex-1 px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                            >
-                              Excluir
-                            </button>
-                          </div>
+                          <th className="px-4 py-3 text-center text-sm font-semibold">AÇÕES</th>
                         )}
-                      </div>
-                    );
-                  })}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {livrosDoGrau.map(livro => {
+                        const disponivel = obterQuantidadeDisponivel(livro.id);
+                        
+                        return (
+                          <tr key={livro.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-blue-900">{livro.titulo}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">{livro.autor || '-'}</td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                {livro.categoria}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">{livro.localizacao || '-'}</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`px-3 py-1 rounded text-sm font-semibold ${
+                                disponivel > 0
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {disponivel}/{livro.quantidade_total}
+                              </span>
+                            </td>
+                            {permissoes?.pode_editar_biblioteca && (
+                              <td className="px-4 py-3 text-center space-x-2">
+                                <button
+                                  onClick={() => editarLivro(livro)}
+                                  className="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600"
+                                >
+                                  ✏️ Editar
+                                </button>
+                                <button
+                                  onClick={() => excluirLivro(livro.id)}
+                                  className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                                >
+                                  🗑️ Excluir
+                                </button>
+                              </td>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             );
