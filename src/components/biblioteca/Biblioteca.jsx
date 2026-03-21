@@ -8,6 +8,10 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
   const [abaAtiva, setAbaAtiva] = useState('livros');
   const [loading, setLoading] = useState(false);
 
+  // NOVOS ESTADOS DE FILTRO
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroGrau, setFiltroGrau] = useState('todos');
+
   // Estados de livros
   const [livroForm, setLivroForm] = useState({
     titulo: '',
@@ -212,8 +216,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     setLoading(true);
 
     try {
-      // Atualizar empréstimo
-      const { error: emprestimoError } = await supabase
+      const { error } = await supabase
         .from('biblioteca_emprestimos')
         .update({
           status: 'devolvido',
@@ -221,7 +224,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         })
         .eq('id', emprestimoId);
 
-      if (emprestimoError) throw emprestimoError;
+      if (error) throw error;
 
       // Atualizar quantidade disponível
       const livro = livros.find(l => l.id === livroId);
@@ -229,69 +232,34 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         await supabase
           .from('biblioteca_livros')
           .update({ quantidade_disponivel: livro.quantidade_disponivel + 1 })
-          .eq('id', livro.id);
+          .eq('id', livroId);
       }
 
-      showSuccess('Devolução registrada com sucesso!');
+      showSuccess('✅ Devolução registrada com sucesso!');
       onUpdate();
 
     } catch (error) {
-      showError('Erro ao registrar devolução: ' + error.message);
+      showError('Erro ao devolver livro: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Excluir empréstimo
-  const excluirEmprestimo = async (emprestimoId, livroId, status) => {
-    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este registro de empréstimo?')) return;
-
-    setLoading(true);
-    try {
-      // Se o empréstimo estava ativo, devolver a quantidade ao livro
-      if (status === 'emprestado') {
-        const livro = livros.find(l => l.id === livroId);
-        if (livro) {
-          await supabase
-            .from('biblioteca_livros')
-            .update({ quantidade_disponivel: livro.quantidade_disponivel + 1 })
-            .eq('id', livro.id);
-        }
-      }
-
-      // Excluir o empréstimo
-      const { error } = await supabase
-        .from('biblioteca_emprestimos')
-        .delete()
-        .eq('id', emprestimoId);
-
-      if (error) throw error;
-
-      showSuccess('Empréstimo excluído com sucesso!');
-      onUpdate();
-
-    } catch (error) {
-      showError('Erro ao excluir empréstimo: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Abrir modal de editar prazo
+  // Editar prazo de devolução
   const abrirModalEditarPrazo = (emprestimo) => {
     setEmprestimoEditando(emprestimo);
     setNovoPrazo(emprestimo.data_devolucao_prevista);
     setModalEditarPrazo(true);
   };
 
-  // Salvar novo prazo
   const salvarNovoPrazo = async () => {
     if (!novoPrazo) {
-      showError('Selecione uma nova data de devolução');
+      showError('Informe a nova data de devolução');
       return;
     }
 
     setLoading(true);
+
     try {
       const { error } = await supabase
         .from('biblioteca_emprestimos')
@@ -300,7 +268,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
       if (error) throw error;
 
-      showSuccess('✅ Prazo de devolução atualizado!');
+      showSuccess('Prazo atualizado com sucesso!');
       setModalEditarPrazo(false);
       setEmprestimoEditando(null);
       setNovoPrazo('');
@@ -313,83 +281,160 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     }
   };
 
-  // Obter nome do irmão
+  // Excluir empréstimo
+  const excluirEmprestimo = async (emprestimoId, livroId, status) => {
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este empréstimo?')) return;
+
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('biblioteca_emprestimos')
+        .delete()
+        .eq('id', emprestimoId);
+
+      if (error) throw error;
+
+      // Se o empréstimo estava ativo, devolver o livro ao estoque
+      if (status === 'emprestado') {
+        const livro = livros.find(l => l.id === livroId);
+        if (livro) {
+          await supabase
+            .from('biblioteca_livros')
+            .update({ quantidade_disponivel: livro.quantidade_disponivel + 1 })
+            .eq('id', livroId);
+        }
+      }
+
+      showSuccess('Empréstimo excluído com sucesso!');
+      onUpdate();
+
+    } catch (error) {
+      showError('Erro ao excluir empréstimo: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Funções auxiliares
   const obterNomeIrmao = (irmaoId) => {
     const irmao = irmaos.find(i => i.id === irmaoId);
     return irmao ? irmao.nome : 'Desconhecido';
   };
 
-  // Obter título do livro
   const obterTituloLivro = (livroId) => {
     const livro = livros.find(l => l.id === livroId);
     return livro ? livro.titulo : 'Desconhecido';
   };
 
-  // Verificar se está atrasado
   const estaAtrasado = (dataPrevista) => {
+    if (!dataPrevista) return false;
     const hoje = new Date();
-    const prevista = new Date(dataPrevista + 'T00:00:00');
-    return hoje > prevista;
+    const prevista = new Date(dataPrevista);
+    return prevista < hoje;
   };
 
-  // Filtrar empréstimos ativos e devolvidos
+  // ============ FUNÇÃO CORRIGIDA DE DISPONIBILIDADE ============
+  const obterQuantidadeDisponivel = (livroId) => {
+    const qtdEmprestada = emprestimos.filter(e => e.livro_id === livroId && e.status === 'emprestado').length;
+    const livro = livros.find(l => l.id === livroId);
+    return livro ? livro.quantidade_total - qtdEmprestada : 0;
+  };
+
+  // ============ FILTROS ============
+  const aplicarFiltros = (livro) => {
+    // Filtro por nome
+    if (filtroNome && !livro.titulo.toLowerCase().includes(filtroNome.toLowerCase())) {
+      return false;
+    }
+    // Filtro por grau
+    if (filtroGrau !== 'todos' && livro.grau !== filtroGrau) {
+      return false;
+    }
+    return true;
+  };
+
+  // ============ AGRUPAR LIVROS POR GRAU ============
+  const livrosFiltrados = livros.filter(aplicarFiltros);
+  
+  const livrosPorGrau = {
+    'Aprendiz': livrosFiltrados.filter(l => l.grau === 'Aprendiz'),
+    'Companheiro': livrosFiltrados.filter(l => l.grau === 'Companheiro'),
+    'Mestre': livrosFiltrados.filter(l => l.grau === 'Mestre')
+  };
+
+  // Empréstimos ativos e devolvidos
   const emprestimosAtivos = emprestimos.filter(e => e.status === 'emprestado');
   const emprestimosDevolvidos = emprestimos.filter(e => e.status === 'devolvido');
 
-  // Filtrar livros disponíveis
-  const livrosDisponiveis = livros.filter(l => l.quantidade_disponivel > 0);
+  // Empréstimos por irmão
+  const emprestimosPorIrmao = irmaos
+    .map(irmao => {
+      const emprestimosDoIrmao = emprestimos.filter(e => e.irmao_id === irmao.id);
+      const ativos = emprestimosDoIrmao.filter(e => e.status === 'emprestado').length;
+      return {
+        irmao,
+        emprestimos: emprestimosDoIrmao,
+        ativos,
+        total: emprestimosDoIrmao.length
+      };
+    })
+    .filter(item => item.total > 0)
+    .sort((a, b) => b.ativos - a.ativos);
 
-  // Obter empréstimos por irmão
-  const emprestimosPorIrmao = irmaos.map(irmao => {
-    const emprestimosDoIrmao = emprestimos.filter(e => e.irmao_id === irmao.id);
-    return {
-      irmao,
-      emprestimos: emprestimosDoIrmao,
-      ativos: emprestimosDoIrmao.filter(e => e.status === 'emprestado').length,
-      total: emprestimosDoIrmao.length
-    };
-  }).filter(item => item.total > 0);
+  // Livros disponíveis para empréstimo
+  const livrosDisponiveis = livros.filter(l => obterQuantidadeDisponivel(l.id) > 0);
 
   return (
-    <div>
+    <div className="space-y-6">
       {/* ABAS */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div className="bg-white rounded-xl shadow-md p-2 flex gap-2">
         <button
           onClick={() => setAbaAtiva('livros')}
-          className={`px-6 py-2 rounded-lg font-semibold transition ${
-            abaAtiva === 'livros' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
+            abaAtiva === 'livros'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           📚 Livros ({livros.length})
         </button>
         <button
           onClick={() => setAbaAtiva('emprestimos')}
-          className={`px-6 py-2 rounded-lg font-semibold transition ${
-            abaAtiva === 'emprestimos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
+            abaAtiva === 'emprestimos'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           📖 Empréstimos Ativos ({emprestimosAtivos.length})
         </button>
         <button
-          onClick={() => setAbaAtiva('devolucoes')}
-          className={`px-6 py-2 rounded-lg font-semibold transition ${
-            abaAtiva === 'devolucoes' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          onClick={() => setAbaAtiva('devolvidos')}
+          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
+            abaAtiva === 'devolvidos'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          ✅ Devoluções ({emprestimosDevolvidos.length})
+          ✅ Devolvidos ({emprestimosDevolvidos.length})
         </button>
         <button
           onClick={() => setAbaAtiva('por-irmao')}
-          className={`px-6 py-2 rounded-lg font-semibold transition ${
-            abaAtiva === 'por-irmao' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
+            abaAtiva === 'por-irmao'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
-          👤 Por Irmão ({emprestimosPorIrmao.length})
+          👤 Por Irmão
         </button>
         <button
           onClick={() => setAbaAtiva('fila')}
-          className={`px-6 py-2 rounded-lg font-semibold transition ${
-            abaAtiva === 'fila' ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
+            abaAtiva === 'fila'
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           ⏳ Fila de Espera
@@ -398,332 +443,351 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
       {/* ABA LIVROS */}
       {abaAtiva === 'livros' && (
-        <div>
-          {/* FORMULÁRIO LIVROS - SÓ PARA ADMIN/BIBLIOTECÁRIO */}
+        <div className="space-y-6">
+          {/* FORMULÁRIO CADASTRO/EDIÇÃO */}
           {permissoes?.pode_editar_biblioteca && (
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">
-                {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
-              </h3>
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
+                <h3 className="text-xl font-bold">
+                  {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
+                </h3>
+              </div>
 
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+                    <input
+                      type="text"
+                      value={livroForm.titulo}
+                      onChange={(e) => setLivroForm({ ...livroForm, titulo: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ex: Ritual do Aprendiz Maçom"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Autor</label>
+                    <input
+                      type="text"
+                      value={livroForm.autor}
+                      onChange={(e) => setLivroForm({ ...livroForm, autor: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ex: Rizzardo da Camino"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                    <select
+                      value={livroForm.categoria}
+                      onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Ritualística">Ritualística</option>
+                      <option value="Filosofia">Filosofia</option>
+                      <option value="História">História</option>
+                      <option value="Simbolismo">Simbolismo</option>
+                      <option value="Outros">Outros</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Grau</label>
+                    <select
+                      value={livroForm.grau}
+                      onChange={(e) => setLivroForm({ ...livroForm, grau: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="Aprendiz">Aprendiz</option>
+                      <option value="Companheiro">Companheiro</option>
+                      <option value="Mestre">Mestre</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
+                    <input
+                      type="text"
+                      value={livroForm.localizacao}
+                      onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ex: Estante 2 - Prateleira B"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade Total</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={livroForm.quantidade_total}
+                      onChange={(e) => setLivroForm({ 
+                        ...livroForm, 
+                        quantidade_total: parseInt(e.target.value) || 1,
+                        quantidade_disponivel: parseInt(e.target.value) || 1
+                      })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={salvarLivro}
+                    disabled={loading}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+                  >
+                    {loading ? 'Salvando...' : (modoEdicaoLivro ? '💾 Salvar Alterações' : '➕ Cadastrar Livro')}
+                  </button>
+
+                  {modoEdicaoLivro && (
+                    <button
+                      onClick={limparFormularioLivro}
+                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                    >
+                      ❌ Cancelar
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* FILTROS */}
+          <div className="bg-white rounded-xl shadow-md p-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">🔍 Pesquisar por nome</label>
                 <input
                   type="text"
-                  value={livroForm.titulo}
-                  onChange={(e) => setLivroForm({ ...livroForm, titulo: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
+                  value={filtroNome}
+                  onChange={(e) => setFiltroNome(e.target.value)}
+                  placeholder="Digite o nome do livro..."
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Autor</label>
-                <input
-                  type="text"
-                  value={livroForm.autor}
-                  onChange={(e) => setLivroForm({ ...livroForm, autor: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Categoria *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">📊 Filtrar por grau</label>
                 <select
-                  value={livroForm.categoria}
-                  onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  value={filtroGrau}
+                  onChange={(e) => setFiltroGrau(e.target.value)}
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
-                  <option>Ritualística</option>
-                  <option>Filosofia</option>
-                  <option>História</option>
-                  <option>Simbologia</option>
-                  <option>Outros</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Grau Maçônico * 
-                  <span className="text-xs text-gray-500 ml-2">(Grau mínimo para emprestar)</span>
-                </label>
-                <select
-                  value={livroForm.grau}
-                  onChange={(e) => setLivroForm({ ...livroForm, grau: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  required
-                >
+                  <option value="todos">Todos os graus</option>
                   <option value="Aprendiz">Aprendiz</option>
                   <option value="Companheiro">Companheiro</option>
                   <option value="Mestre">Mestre</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Irmãos de graus superiores podem emprestar livros de graus inferiores
-                </p>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
-                <input
-                  type="text"
-                  value={livroForm.localizacao}
-                  onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  placeholder="Ex: Estante A, Prateleira 2"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade Total *</label>
-                <input
-                  type="number"
-                  value={livroForm.quantidade_total}
-                  onChange={(e) => setLivroForm({
-                    ...livroForm,
-                    quantidade_total: parseInt(e.target.value) || 1,
-                    quantidade_disponivel: modoEdicaoLivro ? livroForm.quantidade_disponivel : parseInt(e.target.value) || 1
-                  })}
-                  min="1"
-                  className="w-full px-3 py-2 border rounded-lg"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2 mt-4">
-              <button
-                type="button"
-                onClick={salvarLivro}
-                disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-              >
-                {loading ? 'Salvando...' : (modoEdicaoLivro ? 'Atualizar Livro' : 'Cadastrar Livro')}
-              </button>
-              
-              {modoEdicaoLivro && (
-                <button
-                  type="button"
-                  onClick={limparFormularioLivro}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                >
-                  Cancelar
-                </button>
-              )}
             </div>
           </div>
-          )}
 
-          {/* LISTAGEM DE LIVROS */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-              <h3 className="text-xl font-bold">Acervo da Biblioteca</h3>
-              <p className="text-sm text-blue-100">Total: {livros.length} livro(s)</p>
-            </div>
+          {/* LISTA DE LIVROS POR GRAU */}
+          {['Aprendiz', 'Companheiro', 'Mestre'].map(grau => {
+            const livrosDoGrau = livrosPorGrau[grau];
+            if (livrosDoGrau.length === 0) return null;
 
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[800px]">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="px-4 py-3 text-left">Título</th>
-                    <th className="px-4 py-3 text-left">Autor</th>
-                    <th className="px-4 py-3 text-left">Categoria</th>
-                    <th className="px-4 py-3 text-center">Grau</th>
-                    <th className="px-4 py-3 text-center">Disponível</th>
-                    <th className="px-4 py-3 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {livros.length > 0 ? (
-                    livros.map((livro) => (
-                      <tr key={livro.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-semibold">{livro.titulo}</td>
-                        <td className="px-4 py-3">{livro.autor || '-'}</td>
-                        <td className="px-4 py-3">{livro.categoria}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            livro.grau === 'Aprendiz' 
-                              ? 'bg-blue-100 text-blue-800' 
-                              : livro.grau === 'Companheiro'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-purple-100 text-purple-800'
-                          }`}>
-                            {livro.grau || 'Aprendiz'}
+            return (
+              <div key={grau} className="bg-white rounded-xl shadow-md overflow-hidden">
+                <div className={`p-4 text-white font-bold text-lg ${
+                  grau === 'Aprendiz' ? 'bg-gradient-to-r from-green-600 to-green-700' :
+                  grau === 'Companheiro' ? 'bg-gradient-to-r from-blue-600 to-blue-700' :
+                  'bg-gradient-to-r from-purple-600 to-purple-700'
+                }`}>
+                  {grau === 'Aprendiz' && '🟢'} {grau === 'Companheiro' && '🔵'} {grau === 'Mestre' && '🟣'} {grau} ({livrosDoGrau.length})
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                  {livrosDoGrau.map(livro => {
+                    const disponivel = obterQuantidadeDisponivel(livro.id);
+                    
+                    return (
+                      <div key={livro.id} className="border rounded-lg p-4 hover:shadow-lg transition">
+                        <h4 className="font-bold text-lg text-blue-900 mb-2">{livro.titulo}</h4>
+                        {livro.autor && <p className="text-sm text-gray-600 mb-2">✍️ {livro.autor}</p>}
+                        
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                            {livro.categoria}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded ${
-                            livro.quantidade_disponivel > 0 
-                              ? 'bg-green-100 text-green-800' 
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                            disponivel > 0
+                              ? 'bg-green-100 text-green-800'
                               : 'bg-red-100 text-red-800'
                           }`}>
-                            {livro.quantidade_disponivel}/{livro.quantidade_total}
+                            {disponivel}/{livro.quantidade_total}
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          {permissoes?.pode_editar_biblioteca && (
-                            <div className="flex gap-2 justify-center">
-                              <button
-                                onClick={() => editarLivro(livro)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                onClick={() => excluirLivro(livro.id)}
-                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                              >
-                                Excluir
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                        Nenhum livro cadastrado
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </div>
+
+                        {livro.localizacao && (
+                          <p className="text-xs text-gray-500 mb-3">📍 {livro.localizacao}</p>
+                        )}
+
+                        {permissoes?.pode_editar_biblioteca && (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => editarLivro(livro)}
+                              className="flex-1 px-3 py-2 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => excluirLivro(livro.id)}
+                              className="flex-1 px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+
+          {livrosFiltrados.length === 0 && (
+            <div className="bg-white rounded-xl shadow-md p-12 text-center text-gray-500">
+              Nenhum livro encontrado com os filtros aplicados
             </div>
-          </div>
+          )}
         </div>
       )}
 
       {/* ABA EMPRÉSTIMOS ATIVOS */}
       {abaAtiva === 'emprestimos' && (
-        <div>
-          {/* FORMULÁRIO EMPRÉSTIMO - SÓ PARA ADMIN/BIBLIOTECÁRIO */}
+        <div className="space-y-6">
+          {/* FORMULÁRIO EMPRÉSTIMO */}
           {permissoes?.pode_editar_biblioteca && (
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-              <h3 className="text-xl font-bold text-blue-900 mb-4">➕ Novo Empréstimo</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
-                <select
-                  value={emprestimoForm.livro_id}
-                  onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">Selecione...</option>
-                  {livrosDisponiveis.map(livro => (
-                    <option key={livro.id} value={livro.id}>
-                      {livro.titulo} ({livro.quantidade_disponivel} disp.)
-                    </option>
-                  ))}
-                </select>
+            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white">
+                <h3 className="text-xl font-bold">📖 Registrar Novo Empréstimo</h3>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
-                <select
-                  value={emprestimoForm.irmao_id}
-                  onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  <option value="">Selecione...</option>
-                  {irmaos.map(irmao => (
-                    <option key={irmao.id} value={irmao.id}>
-                      {irmao.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
+                    <select
+                      value={emprestimoForm.livro_id}
+                      onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Selecione um livro</option>
+                      {livrosDisponiveis.map(livro => (
+                        <option key={livro.id} value={livro.id}>
+                          {livro.titulo} ({obterQuantidadeDisponivel(livro.id)} disponível)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data Empréstimo *</label>
-                <input
-                  type="date"
-                  value={emprestimoForm.data_emprestimo}
-                  onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_emprestimo: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                    <select
+                      value={emprestimoForm.irmao_id}
+                      onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    >
+                      <option value="">Selecione um irmão</option>
+                      {irmaos.map(irmao => (
+                        <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Data Empréstimo</label>
+                    <input
+                      type="date"
+                      value={emprestimoForm.data_emprestimo}
+                      onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_emprestimo: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={registrarEmprestimo}
+                  disabled={loading}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold disabled:opacity-50"
+                >
+                  {loading ? 'Registrando...' : '📖 Registrar Empréstimo'}
+                </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              onClick={registrarEmprestimo}
-              disabled={loading}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {loading ? 'Registrando...' : 'Registrar Empréstimo'}
-            </button>
-          </div>
           )}
 
-          {/* LISTAGEM DE EMPRÉSTIMOS ATIVOS */}
+          {/* LISTA EMPRÉSTIMOS ATIVOS */}
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-              <h3 className="text-xl font-bold">Empréstimos Ativos</h3>
-              <p className="text-sm text-blue-100">Total: {emprestimosAtivos.length} empréstimo(s)</p>
+              <h3 className="text-xl font-bold">📖 Empréstimos Ativos</h3>
+              <p className="text-sm text-blue-100">{emprestimosAtivos.length} empréstimo(s) ativo(s)</p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-left">Livro</th>
-                    <th className="px-4 py-3 text-left">Irmão</th>
-                    <th className="px-4 py-3 text-left">Empréstimo</th>
-                    <th className="px-4 py-3 text-left">Devolução Prevista</th>
-                    <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Ações</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Livro</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Irmão</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Empréstimo</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Devolução Prevista</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold">Status</th>
+                    {permissoes?.pode_editar_biblioteca && (
+                      <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {emprestimosAtivos.length > 0 ? (
-                    emprestimosAtivos.map((emprestimo) => (
+                    emprestimosAtivos.map(emprestimo => (
                       <tr key={emprestimo.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-semibold">{obterTituloLivro(emprestimo.livro_id)}</td>
+                        <td className="px-4 py-3">{obterTituloLivro(emprestimo.livro_id)}</td>
                         <td className="px-4 py-3">{obterNomeIrmao(emprestimo.irmao_id)}</td>
-                        <td className="px-4 py-3">{formatarData(emprestimo.data_emprestimo)}</td>
-                        <td className="px-4 py-3">{formatarData(emprestimo.data_devolucao_prevista)}</td>
+                        <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {formatarData(emprestimo.data_devolucao_prevista)}
+                        </td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded text-sm ${
+                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
                             estaAtrasado(emprestimo.data_devolucao_prevista)
                               ? 'bg-red-100 text-red-800'
                               : 'bg-green-100 text-green-800'
                           }`}>
-                            {estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'No prazo'}
+                            {estaAtrasado(emprestimo.data_devolucao_prevista) ? '⚠️ Atrasado' : '✅ No prazo'}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          {permissoes?.pode_editar_biblioteca && (
-                            <div className="flex gap-2 justify-center">
-                              <button
-                                onClick={() => abrirModalEditarPrazo(emprestimo)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                                title="Editar prazo"
-                              >
-                                📅 Prazo
-                              </button>
-                              <button
-                                onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-                              >
-                                Devolver
-                              </button>
-                              <button
-                                onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                              >
-                                Excluir
-                              </button>
-                            </div>
-                          )}
-                        </td>
+                        {permissoes?.pode_editar_biblioteca && (
+                          <td className="px-4 py-3 text-center space-x-2">
+                            <button
+                              onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
+                            >
+                              Devolver
+                            </button>
+                            <button
+                              onClick={() => abrirModalEditarPrazo(emprestimo)}
+                              className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm"
+                            >
+                              Editar Prazo
+                            </button>
+                            <button
+                              onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                            >
+                              Excluir
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                        Nenhum empréstimo ativo
+                      <td colSpan={permissoes?.pode_editar_biblioteca ? "6" : "5"} className="px-4 py-8 text-center text-gray-500">
+                        Nenhum empréstimo ativo no momento
                       </td>
                     </tr>
                   )}
@@ -734,45 +798,46 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         </div>
       )}
 
-      {/* ABA DEVOLUÇÕES */}
-      {abaAtiva === 'devolucoes' && (
+      {/* ABA DEVOLVIDOS */}
+      {abaAtiva === 'devolvidos' && (
         <div>
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
-              <h3 className="text-xl font-bold">Histórico de Devoluções</h3>
-              <p className="text-sm text-green-100">Total: {emprestimosDevolvidos.length} devolução(ões)</p>
+              <h3 className="text-xl font-bold">✅ Devoluções Realizadas</h3>
+              <p className="text-sm text-green-100">{emprestimosDevolvidos.length} devolução(ões) registrada(s)</p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-100">
                   <tr>
-                    <th className="px-4 py-3 text-left">Livro</th>
-                    <th className="px-4 py-3 text-left">Irmão</th>
-                    <th className="px-4 py-3 text-left">Empréstimo</th>
-                    <th className="px-4 py-3 text-left">Devolução Prevista</th>
-                    <th className="px-4 py-3 text-left">Devolução Real</th>
-                    <th className="px-4 py-3 text-center">Status</th>
-                    <th className="px-4 py-3 text-center">Ações</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Livro</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Irmão</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Empréstimo</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Devolução Prevista</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold">Devolução Real</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold">Situação</th>
+                    {permissoes?.pode_editar_biblioteca && (
+                      <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {emprestimosDevolvidos.length > 0 ? (
                     emprestimosDevolvidos
                       .sort((a, b) => new Date(b.data_devolucao_real) - new Date(a.data_devolucao_real))
-                      .map((emprestimo) => {
-                        const foiDevolvido = emprestimo.data_devolucao_real;
-                        const devolveuAtrasado = foiDevolvido && new Date(emprestimo.data_devolucao_real) > new Date(emprestimo.data_devolucao_prevista);
+                      .map(emprestimo => {
+                        const devolveuAtrasado = new Date(emprestimo.data_devolucao_real) > new Date(emprestimo.data_devolucao_prevista);
                         
                         return (
                           <tr key={emprestimo.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-semibold">{obterTituloLivro(emprestimo.livro_id)}</td>
+                            <td className="px-4 py-3">{obterTituloLivro(emprestimo.livro_id)}</td>
                             <td className="px-4 py-3">{obterNomeIrmao(emprestimo.irmao_id)}</td>
-                            <td className="px-4 py-3">{formatarData(emprestimo.data_emprestimo)}</td>
-                            <td className="px-4 py-3">{formatarData(emprestimo.data_devolucao_prevista)}</td>
-                            <td className="px-4 py-3">{formatarData(emprestimo.data_devolucao_real)}</td>
+                            <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
+                            <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_devolucao_prevista)}</td>
+                            <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_devolucao_real)}</td>
                             <td className="px-4 py-3 text-center">
-                              <span className={`px-2 py-1 rounded text-sm ${
+                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                 devolveuAtrasado
                                   ? 'bg-orange-100 text-orange-800'
                                   : 'bg-green-100 text-green-800'
@@ -780,20 +845,22 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                                 {devolveuAtrasado ? 'Atrasado' : 'No prazo'}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-center">
-                              <button
-                                onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                              >
-                                Excluir
-                              </button>
-                            </td>
+                            {permissoes?.pode_editar_biblioteca && (
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                >
+                                  Excluir
+                                </button>
+                              </td>
+                            )}
                           </tr>
                         );
                       })
                   ) : (
                     <tr>
-                      <td colSpan="7" className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={permissoes?.pode_editar_biblioteca ? "7" : "6"} className="px-4 py-8 text-center text-gray-500">
                         Nenhuma devolução registrada
                       </td>
                     </tr>
