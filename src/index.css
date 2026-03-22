@@ -1,12 +1,13 @@
-/* Importar globals.css PRIMEIRO (antes do Tailwind) */
-@import './styles/globals.css';
-
 /* Importar sistema de temas */
 @import './styles/themes.css';
 
+/* Tailwind PRIMEIRO (necessário para @layer components funcionar) */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Importar globals.css DEPOIS do Tailwind */
+@import './styles/globals.css';
 
 * {
   margin: 0;
