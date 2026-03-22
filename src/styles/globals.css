@@ -208,119 +208,119 @@ body {
 
 /* Botão Base */
 .btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.25rem;
-  border-radius: var(--radius-lg);
-  border: none;
-  cursor: pointer;
-  transition: all var(--transition-base);
-  font-family: var(--font-sans);
-  white-space: nowrap;
-  box-shadow: var(--shadow-sm);
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  padding: 0.75rem 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  line-height: 1.25rem !important;
+  border-radius: var(--radius-lg) !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: all var(--transition-base) !important;
+  font-family: var(--font-sans) !important;
+  white-space: nowrap !important;
+  box-shadow: var(--shadow-sm) !important;
 }
 
 .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px) !important;
+  box-shadow: var(--shadow-md) !important;
 }
 
 .btn:active {
-  transform: translateY(0);
+  transform: translateY(0) !important;
 }
 
 .btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
   transform: none !important;
 }
 
 /* Botão Primário (Acento) */
 .btn-primary {
-  background: var(--color-accent);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  background: var(--color-accent) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  background: var(--color-accent-hover) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* Botão Secundário */
 .btn-secondary {
-  background: var(--color-surface-2);
-  color: var(--color-text);
-  border: 2px solid var(--color-border);
+  background: var(--color-surface-2) !important;
+  color: var(--color-text) !important;
+  border: 2px solid var(--color-border) !important;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: var(--color-surface-3);
-  border-color: var(--color-border-light);
+  background: var(--color-surface-3) !important;
+  border-color: var(--color-border-light) !important;
 }
 
 /* Botão Sucesso */
 .btn-success {
-  background: var(--color-success);
-  color: white;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  background: var(--color-success) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
 }
 
 .btn-success:hover:not(:disabled) {
-  background: var(--color-success-hover);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  background: var(--color-success-hover) !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
 }
 
 /* Botão Perigo */
 .btn-danger {
-  background: var(--color-danger);
-  color: white;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  background: var(--color-danger) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3) !important;
 }
 
 .btn-danger:hover:not(:disabled) {
-  background: var(--color-danger-hover);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  background: var(--color-danger-hover) !important;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4) !important;
 }
 
 /* Botão Warning */
 .btn-warning {
-  background: var(--color-warning);
-  color: white;
-  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  background: var(--color-warning) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3) !important;
 }
 
 .btn-warning:hover:not(:disabled) {
-  background: var(--color-warning-hover);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+  background: var(--color-warning-hover) !important;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4) !important;
 }
 
 /* Botão Ghost (transparente) */
 .btn-ghost {
-  background: transparent;
-  color: var(--color-text-muted);
-  box-shadow: none;
+  background: transparent !important;
+  color: var(--color-text-muted) !important;
+  box-shadow: none !important;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--color-surface-2);
-  color: var(--color-text);
+  background: var(--color-surface-2) !important;
+  color: var(--color-text) !important;
 }
 
 /* Tamanhos de botão */
 .btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
+  padding: 0.5rem 1rem !important;
+  font-size: 0.75rem !important;
 }
 
 .btn-lg {
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  padding: 1rem 2rem !important;
+  font-size: 1rem !important;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -328,37 +328,37 @@ body {
    ────────────────────────────────────────────────────────── */
 
 .card {
-  background: var(--color-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  padding: 1.75rem;
-  transition: all var(--transition-base);
-  border: 1px solid var(--color-border);
+  background: var(--color-surface) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  padding: 1.75rem !important;
+  transition: all var(--transition-base) !important;
+  border: 1px solid var(--color-border) !important;
 }
 
 .card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+  transform: translateY(-2px) !important;
 }
 
 .card-header {
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid var(--color-border);
+  margin-bottom: 1.5rem !important;
+  padding-bottom: 1rem !important;
+  border-bottom: 2px solid var(--color-border) !important;
 }
 
 .card-title {
-  font-size: 1.375rem;
-  font-weight: 700;
-  color: var(--color-text);
-  letter-spacing: -0.01em;
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  color: var(--color-text) !important;
+  letter-spacing: -0.01em !important;
 }
 
 .card-subtitle {
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  margin-top: 0.375rem;
-  font-weight: 400;
+  font-size: 0.875rem !important;
+  color: var(--color-text-muted) !important;
+  margin-top: 0.375rem !important;
+  font-weight: 400 !important;
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -461,41 +461,41 @@ body {
    ────────────────────────────────────────────────────────── */
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.375rem;
-  padding: 0.375rem 0.875rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: var(--radius-md);
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.375rem !important;
+  padding: 0.375rem 0.875rem !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-md) !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 .badge-primary {
-  background: var(--color-accent);
-  color: white;
+  background: var(--color-accent) !important;
+  color: white !important;
 }
 
 .badge-success {
-  background: var(--color-success);
-  color: white;
+  background: var(--color-success) !important;
+  color: white !important;
 }
 
 .badge-warning {
-  background: var(--color-warning);
-  color: white;
+  background: var(--color-warning) !important;
+  color: white !important;
 }
 
 .badge-danger {
-  background: var(--color-danger);
-  color: white;
+  background: var(--color-danger) !important;
+  color: white !important;
 }
 
 .badge-info {
-  background: var(--color-info);
-  color: white;
+  background: var(--color-info) !important;
+  color: white !important;
 }
 
 /* ──────────────────────────────────────────────────────────
