@@ -248,7 +248,11 @@ const SeletorTema = () => {
         </h4>
         <div className="space-y-3">
           {/* Cabeçalho exemplo */}
-          <div className="p-4 rounded-lg shadow-lg text-white" style={{ background: 'var(--color-accent)' }}>
+          <div className="p-4 text-white" style={{ 
+            background: 'var(--color-accent)',
+            borderRadius: 'var(--radius-xl)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+          }}>
             <h5 className="font-bold text-lg">Exemplo de Cabeçalho</h5>
             <p className="text-sm opacity-90">Assim ficará o cabeçalho do sistema</p>
           </div>
@@ -271,10 +275,7 @@ const SeletorTema = () => {
           </div>
 
           {/* Card exemplo */}
-          <div className="p-4 rounded-lg" style={{ 
-            backgroundColor: 'var(--color-surface-2)', 
-            border: '2px solid var(--color-border)' 
-          }}>
+          <div className="card">
             <h6 className="font-bold mb-2" style={{ color: 'var(--color-accent)' }}>
               Card de Exemplo
             </h6>
