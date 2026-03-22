@@ -439,7 +439,11 @@ IMPORTANTE: Copie estas informações agora!
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ 
+      background: 'var(--color-bg)',
+      minHeight: '100vh',
+      padding: '2rem'
+    }}>
       {/* FORMULÁRIO */}
       <div className="card">
         <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
@@ -598,13 +602,21 @@ IMPORTANTE: Copie estas informações agora!
           </div>
 
           {/* PERMISSÕES CUSTOMIZÁVEIS */}
-          <div className="border-t pt-4">
-            <h4 className="text-sm font-semibold text-gray-900 mb-3">
+          <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
+            <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--color-text)' }}>
               🔐 Permissões (customize conforme necessário)
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+              >
                 <input
                   type="checkbox"
                   checked={usuarioForm.pode_editar_cadastros}
@@ -612,12 +624,20 @@ IMPORTANTE: Copie estas informações agora!
                   className="w-4 h-4"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">✏️ Editar Cadastros</span>
-                  <p className="text-xs text-gray-600">Cadastrar e editar irmãos</p>
+                  <span className="font-medium" style={{ color: 'var(--color-text)' }}>✏️ Editar Cadastros</span>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Cadastrar e editar irmãos</p>
                 </div>
               </label>
 
-              <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+              >
                 <input
                   type="checkbox"
                   checked={usuarioForm.pode_visualizar_financeiro}
@@ -625,12 +645,20 @@ IMPORTANTE: Copie estas informações agora!
                   className="w-4 h-4"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">👁️ Ver Finanças</span>
-                  <p className="text-xs text-gray-600">Visualizar lançamentos</p>
+                  <span className="font-medium" style={{ color: 'var(--color-text)' }}>👁️ Ver Finanças</span>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Visualizar lançamentos</p>
                 </div>
               </label>
 
-              <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+              >
                 <input
                   type="checkbox"
                   checked={usuarioForm.pode_editar_financeiro}
@@ -638,12 +666,20 @@ IMPORTANTE: Copie estas informações agora!
                   className="w-4 h-4"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">💰 Editar Finanças</span>
-                  <p className="text-xs text-gray-600">Criar/editar lançamentos</p>
+                  <span className="font-medium" style={{ color: 'var(--color-text)' }}>💰 Editar Finanças</span>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Criar/editar lançamentos</p>
                 </div>
               </label>
 
-              <label className="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                background: 'var(--color-surface-2)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+              >
                 <input
                   type="checkbox"
                   checked={usuarioForm.pode_gerenciar_usuarios}
@@ -651,24 +687,35 @@ IMPORTANTE: Copie estas informações agora!
                   className="w-4 h-4"
                 />
                 <div>
-                  <span className="font-medium text-gray-900">👥 Gerenciar Usuários</span>
-                  <p className="text-xs text-gray-600">Criar/editar usuários</p>
+                  <span className="font-medium" style={{ color: 'var(--color-text)' }}>👥 Gerenciar Usuários</span>
+                  <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Criar/editar usuários</p>
                 </div>
               </label>
             </div>
 
             {/* PERMISSÕES POR MÓDULO */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+            <div className="mt-6 p-4" style={{
+              background: 'var(--color-accent-bg)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--color-accent)'
+            }}>
+              <h4 className="font-bold mb-3 flex items-center gap-2" style={{ color: 'var(--color-accent)' }}>
                 <span>📋</span>
                 Permissões por Módulo
               </h4>
-              <p className="text-xs text-blue-700 mb-4">
+              <p className="text-xs mb-4" style={{ color: 'var(--color-text-muted)' }}>
                 Defina quais módulos específicos este usuário pode editar
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_biblioteca}
@@ -676,12 +723,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">📚 Biblioteca</span>
-                    <p className="text-xs text-gray-600">Gerenciar livros e empréstimos</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>📚 Biblioteca</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar livros e empréstimos</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_comodatos}
@@ -689,12 +743,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">♿ Comodatos</span>
-                    <p className="text-xs text-gray-600">Gerenciar equipamentos</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>♿ Comodatos</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar equipamentos</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_caridade}
@@ -702,12 +763,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">❤️ Caridade</span>
-                    <p className="text-xs text-gray-600">Gerenciar famílias e ajudas</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>❤️ Caridade</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar famílias e ajudas</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_balaustres}
@@ -715,12 +783,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">📜 Balaustres</span>
-                    <p className="text-xs text-gray-600">Criar/editar balaustres</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>📜 Balaustres</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Criar/editar balaustres</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_pranchas}
@@ -728,12 +803,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">📄 Pranchas</span>
-                    <p className="text-xs text-gray-600">Criar/editar pranchas</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>📄 Pranchas</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Criar/editar pranchas</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_comissoes}
@@ -741,12 +823,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">📋 Comissões</span>
-                    <p className="text-xs text-gray-600">Gerenciar comissões</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>📋 Comissões</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar comissões</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_corpo_admin}
@@ -754,12 +843,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">👔 Corpo Administrativo</span>
-                    <p className="text-xs text-gray-600">Gerenciar cargos admin</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>👔 Corpo Administrativo</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar cargos admin</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_presenca}
@@ -767,12 +863,19 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">✅ Presença</span>
-                    <p className="text-xs text-gray-600">Gerenciar presença nas sessões</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>✅ Presença</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar presença nas sessões</p>
                   </div>
                 </label>
 
-                <label className="flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer hover:bg-gray-50">
+                <label className="flex items-center gap-2 p-3 cursor-pointer" style={{
+                  background: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-surface)'}>
                   <input
                     type="checkbox"
                     checked={usuarioForm.pode_editar_projetos}
@@ -780,8 +883,8 @@ IMPORTANTE: Copie estas informações agora!
                     className="w-4 h-4"
                   />
                   <div>
-                    <span className="font-medium text-gray-900">📊 Projetos</span>
-                    <p className="text-xs text-gray-600">Gerenciar projetos da loja</p>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>📊 Projetos</span>
+                    <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>Gerenciar projetos da loja</p>
                   </div>
                 </label>
               </div>
