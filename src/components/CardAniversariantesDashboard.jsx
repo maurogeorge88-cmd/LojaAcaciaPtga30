@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../App';
+import { supabase } from '../supabaseClient';
 
 // Função para retornar emoji adequado por idade e sexo
 const obterEmojiPessoa = (idade, sexo, tipo = null) => {
