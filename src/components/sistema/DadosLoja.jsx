@@ -168,7 +168,12 @@ export default function DadosLoja({ showSuccess, showError }) {
   };
 
   if (loading) {
-    return <div className="text-center py-8">Carregando...</div>;
+    return (
+      <div className="text-center py-8" style={{ color: 'var(--color-text)' }}>
+        <div className="spinner" style={{ margin: '0 auto' }}></div>
+        <p style={{ marginTop: '1rem', color: 'var(--color-text-muted)' }}>Carregando...</p>
+      </div>
+    );
   }
 
   return (
