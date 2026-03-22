@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../App';
+import { supabase } from '../../supabaseClient';
 
 const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   const [lancamentosCompletos, setLancamentosCompletos] = useState([]);
