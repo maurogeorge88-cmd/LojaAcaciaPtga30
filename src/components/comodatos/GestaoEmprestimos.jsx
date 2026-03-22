@@ -1,24 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../App';
-// import { gerarTermoComodato } from './utils/termoComodatoPDF';
+import { supabase } from '../../supabaseClient';
 
-export default function GestaoEmprestimos({ showSuccess, showError, permissoes }) {
-  const [emprestimos, setEmprestimos] = useState([]);
+export default function GestaoEquipamentos({ showSuccess, showError, permissoes }) {
   const [equipamentos, setEquipamentos] = useState([]);
-  const [beneficiarios, setBeneficiarios] = useState([]);
+  const [tipos, setTipos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState('ativo');
+  const [modalLote, setModalLote] = useState(false);
+  const [modalTipo, setModalTipo] = useState(false);
   const [editando, setEditando] = useState(null);
-  
-  // Múltiplos equipamentos
-  const [equipamentosSelecionados, setEquipamentosSelecionados] = useState([]);
+  const [filtroStatus, setFiltroStatus] = useState('disponivel');
+  const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [busca, setBusca] = useState('');
 
   const [form, setForm] = useState({
-    beneficiario_id: '',
-    data_emprestimo: new Date().toISOString().split('T')[0],
-    data_devolucao_prevista: '',
-    observacoes_entrega: ''
+    tipo_id: '',
+    numero_patrimonio: '',
+    descricao: '',
+    estado_conservacao: 'Novo',
+    data_aquisicao: '',
+    valor_aquisicao: '',
+    status: 'disponivel',
+    observacoes: ''
+  });
+
+  // Form para cadastro em lote
+  const [formLote, setFormLote] = useState({
+    tipo_id: '',
+    prefixo_patrimonio: '',
+    quantidade: 1,
+    numero_inicial: 1,
+    descricao: '',
+    estado_conservacao: 'Novo',
+    data_aquisicao: '',
+    valor_aquisicao: '',
+    observacoes: ''
+  });
+
+  const [formTipo, setFormTipo] = useState({
+    nome: '',
+    descricao: '',
+    ativo: true
   });
 
   useEffect(() => {
@@ -29,849 +51,838 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
     try {
       setLoading(true);
 
-      // Empréstimos com itens
-      const { data: empData, error: empError } = await supabase
-        .from('comodatos')
+      // Carregar tipos
+      const { data: tiposData, error: tiposError } = await supabase
+        .from('tipos_equipamentos')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome');
+
+      if (tiposError) throw tiposError;
+      setTipos(tiposData || []);
+
+      // Carregar equipamentos
+      const { data: equipData, error: equipError } = await supabase
+        .from('equipamentos')
         .select(`
           *,
-          beneficiarios (id, nome, cpf),
-          itens:comodato_itens (
+          tipos_equipamentos (
             id,
-            equipamento_id,
-            status,
-            data_devolucao_real,
-            equipamentos (
-              id,
-              numero_patrimonio,
-              tipos_equipamentos (nome)
-            )
+            nome
           )
         `)
         .order('created_at', { ascending: false });
 
-      if (empError) throw empError;
-      setEmprestimos(empData || []);
-
-      // Equipamentos disponíveis
-      const { data: eqData, error: eqError } = await supabase
-        .from('equipamentos')
-        .select(`
-          id,
-          numero_patrimonio,
-          status,
-          tipos_equipamentos (nome)
-        `)
-        .eq('status', 'disponivel')
-        .order('numero_patrimonio');
-
-      if (eqError) throw eqError;
-      setEquipamentos(eqData || []);
-
-      // Beneficiários
-      const { data: benData, error: benError } = await supabase
-        .from('beneficiarios')
-        .select('id, nome, cpf')
-        .order('nome');
-
-      if (benError) throw benError;
-      setBeneficiarios(benData || []);
+      if (equipError) throw equipError;
+      setEquipamentos(equipData || []);
 
       setLoading(false);
     } catch (error) {
-      console.error('Erro:', error);
+      console.error('Erro ao carregar dados:', error);
       showError('Erro ao carregar dados');
       setLoading(false);
     }
   };
 
-  const salvarEmprestimo = async (e) => {
-    e.preventDefault();
-
-    if (!form.beneficiario_id) {
-      showError('Selecione um beneficiário!');
-      return;
+  const abrirModal = (equipamento = null) => {
+    if (equipamento) {
+      setEditando(equipamento);
+      setForm({
+        tipo_id: equipamento.tipo_id,
+        numero_patrimonio: equipamento.numero_patrimonio,
+        descricao: equipamento.descricao || '',
+        estado_conservacao: equipamento.estado_conservacao,
+        data_aquisicao: equipamento.data_aquisicao || '',
+        valor_aquisicao: equipamento.valor_aquisicao || '',
+        status: equipamento.status,
+        observacoes: equipamento.observacoes || ''
+      });
+    } else {
+      setEditando(null);
+      setForm({
+        tipo_id: '',
+        numero_patrimonio: '',
+        descricao: '',
+        estado_conservacao: 'Novo',
+        data_aquisicao: '',
+        valor_aquisicao: '',
+        status: 'disponivel',
+        observacoes: ''
+      });
     }
-
-    if (equipamentosSelecionados.length === 0) {
-      showError('Selecione pelo menos um equipamento!');
-      return;
-    }
-
-    try {
-      if (editando) {
-        // MODO EDIÇÃO
-        // 1. Atualizar comodato
-        const { error: comodatoError } = await supabase
-          .from('comodatos')
-          .update({
-            beneficiario_id: form.beneficiario_id,
-            data_emprestimo: form.data_emprestimo,
-            data_devolucao_prevista: form.data_devolucao_prevista || null,
-            observacoes_entrega: form.observacoes_entrega || null
-          })
-          .eq('id', editando.id);
-
-        if (comodatoError) throw comodatoError;
-
-        // 2. Buscar itens atuais
-        const { data: itensAtuais } = await supabase
-          .from('comodato_itens')
-          .select('equipamento_id')
-          .eq('comodato_id', editando.id)
-          .eq('status', 'emprestado');
-
-        const idsAtuais = itensAtuais?.map(i => i.equipamento_id) || [];
-        
-        // 3. Equipamentos removidos - liberar
-        const removidos = idsAtuais.filter(id => !equipamentosSelecionados.includes(id));
-        for (const eqId of removidos) {
-          await supabase
-            .from('comodato_itens')
-            .delete()
-            .eq('comodato_id', editando.id)
-            .eq('equipamento_id', eqId);
-          
-          await supabase
-            .from('equipamentos')
-            .update({ status: 'disponivel' })
-            .eq('id', eqId);
-        }
-
-        // 4. Equipamentos novos - adicionar
-        const novos = equipamentosSelecionados.filter(id => !idsAtuais.includes(id));
-        if (novos.length > 0) {
-          const itensNovos = novos.map(eq_id => ({
-            comodato_id: editando.id,
-            equipamento_id: eq_id,
-            status: 'emprestado'
-          }));
-
-          await supabase.from('comodato_itens').insert(itensNovos);
-
-          for (const eq_id of novos) {
-            await supabase
-              .from('equipamentos')
-              .update({ status: 'emprestado' })
-              .eq('id', eq_id);
-          }
-        }
-
-        showSuccess('Empréstimo atualizado!');
-      } else {
-        // MODO CRIAÇÃO
-        // 1. Criar comodato
-        const { data: comodato, error: comodatoError } = await supabase
-          .from('comodatos')
-          .insert([{
-            beneficiario_id: form.beneficiario_id,
-            data_emprestimo: form.data_emprestimo,
-            data_devolucao_prevista: form.data_devolucao_prevista || null,
-            observacoes_entrega: form.observacoes_entrega || null,
-            status: 'ativo'
-          }])
-          .select()
-          .single();
-
-        if (comodatoError) throw comodatoError;
-
-        // 2. Criar itens
-        const itens = equipamentosSelecionados.map(eq_id => ({
-          comodato_id: comodato.id,
-          equipamento_id: eq_id,
-          status: 'emprestado'
-        }));
-
-        const { error: itensError } = await supabase
-          .from('comodato_itens')
-          .insert(itens);
-
-        if (itensError) throw itensError;
-
-        // 3. Atualizar status dos equipamentos
-        for (const eq_id of equipamentosSelecionados) {
-          await supabase
-            .from('equipamentos')
-            .update({ status: 'emprestado' })
-            .eq('id', eq_id);
-        }
-
-        showSuccess(`Empréstimo criado com ${equipamentosSelecionados.length} equipamento(s)!`);
-      }
-
-      fecharModal();
-      carregarDados();
-    } catch (error) {
-      console.error('Erro:', error);
-      showError(error.message || 'Erro ao criar empréstimo');
-    }
-  };
-
-  const abrirEdicao = async (emprestimo) => {
-    setEditando(emprestimo);
-    setForm({
-      beneficiario_id: emprestimo.beneficiario_id,
-      data_emprestimo: emprestimo.data_emprestimo,
-      data_devolucao_prevista: emprestimo.data_devolucao_prevista || '',
-      observacoes_entrega: emprestimo.observacoes_entrega || ''
-    });
-
-    // Carregar equipamentos emprestados (não devolvidos)
-    const equipamentosEmprestados = emprestimo.itens
-      ?.filter(item => item.status === 'emprestado')
-      .map(item => item.equipamento_id) || [];
-    
-    setEquipamentosSelecionados(equipamentosEmprestados);
-
-    // Carregar equipamentos disponíveis + os que já estão neste empréstimo
-    const { data: eqDisponiveis } = await supabase
-      .from('equipamentos')
-      .select(`id, numero_patrimonio, status, tipos_equipamentos (nome)`)
-      .eq('status', 'disponivel')
-      .order('numero_patrimonio');
-
-    const { data: eqDoEmprestimo } = await supabase
-      .from('equipamentos')
-      .select(`id, numero_patrimonio, status, tipos_equipamentos (nome)`)
-      .in('id', equipamentosEmprestados)
-      .order('numero_patrimonio');
-
-    // Combinar e remover duplicatas
-    const todosEquipamentos = [...(eqDisponiveis || []), ...(eqDoEmprestimo || [])];
-    const unicos = todosEquipamentos.filter((eq, index, self) => 
-      index === self.findIndex(e => e.id === eq.id)
-    );
-    
-    setEquipamentos(unicos);
     setModalAberto(true);
   };
 
-  const gerarTermo = async (emprestimo) => {
+  const salvarEquipamento = async (e) => {
+    e.preventDefault();
+
+    if (!form.tipo_id || !form.numero_patrimonio) {
+      showError('Preencha os campos obrigatórios!');
+      return;
+    }
+
     try {
-      showSuccess('Gerando Termo de Comodato...');
+      const dados = {
+        tipo_id: parseInt(form.tipo_id),
+        numero_patrimonio: form.numero_patrimonio,
+        descricao: form.descricao,
+        estado_conservacao: form.estado_conservacao,
+        data_aquisicao: form.data_aquisicao || null,
+        valor_aquisicao: form.valor_aquisicao ? parseFloat(form.valor_aquisicao) : null,
+        status: form.status,
+        observacoes: form.observacoes
+      };
 
-      // Importar jsPDF
-      const jsPDFModule = await import('jspdf');
-      const jsPDF = jsPDFModule.default;
+      if (editando) {
+        const { error } = await supabase
+          .from('equipamentos')
+          .update(dados)
+          .eq('id', editando.id);
 
-      // Buscar dados da loja
-      const { data: dadosLoja } = await supabase
-        .from('dados_loja')
-        .select('*')
-        .single();
-
-      // Buscar dados completos
-      const { data: emprestimoCompleto, error: erroEmp } = await supabase
-        .from('comodatos')
-        .select(`
-          *,
-          beneficiarios (*),
-          itens:comodato_itens (
-            *,
-            equipamentos (*, tipos_equipamentos (*))
-          )
-        `)
-        .eq('id', emprestimo.id)
-        .single();
-
-      if (erroEmp) throw erroEmp;
-
-      // Buscar responsáveis
-      const { data: responsaveis } = await supabase
-        .from('responsaveis')
-        .select('*')
-        .eq('beneficiario_id', emprestimoCompleto.beneficiario_id);
-
-      emprestimoCompleto.beneficiarios.responsaveis = responsaveis || [];
-
-      // Gerar PDF
-      const doc = new jsPDF();
-      let yPos = 10; // Menos espaço do topo
-
-      // ========================================
-      // CABEÇALHO CENTRALIZADO
-      // ========================================
-      
-      // Logo (se houver) - mais próximo do topo
-      if (dadosLoja?.logo_url) {
-        try {
-          doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 37;
-        } catch (e) {
-          console.log('Logo não disponível');
-        }
-      }
-
-      // Nome da Loja
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      const nomeLoja = `${dadosLoja?.nome_loja || 'Loja Maçônica'} nº ${dadosLoja?.numero_loja || '30'}`;
-      doc.text(nomeLoja, 105, yPos, { align: 'center' });
-      yPos += 6;
-
-      // Endereço
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      if (dadosLoja?.endereco) {
-        doc.text(dadosLoja.endereco, 105, yPos, { align: 'center' });
-        yPos += 4;
-      }
-      if (dadosLoja?.cidade) {
-        doc.text(`${dadosLoja.cidade}/${dadosLoja.estado || ''} - CEP: ${dadosLoja.cep || ''}`, 105, yPos, { align: 'center' });
-        yPos += 4;
-      }
-      if (dadosLoja?.telefone) {
-        doc.text(`Telefone: ${dadosLoja.telefone}`, 105, yPos, { align: 'center' });
-        yPos += 4;
-      }
-
-      yPos += 3; // Espaço reduzido
-
-      // Linha separadora
-      doc.setDrawColor(0);
-      doc.setLineWidth(0.5);
-      doc.line(15, yPos, 195, yPos);
-      yPos += 8; // Espaço reduzido
-
-      // ========================================
-      // TÍTULO
-      // ========================================
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TERMO DE COMODATO', 105, yPos, { align: 'center' });
-      yPos += 10; // Espaço reduzido
-
-      // ========================================
-      // COMODANTE - NOME EM NEGRITO NA MESMA LINHA
-      // ========================================
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Comodante: ', 15, yPos);
-      doc.text(nomeLoja, 42, yPos); // Nome em negrito
-      yPos += 8; // Espaço reduzido entre comodante e comodatário
-
-      // ========================================
-      // COMODATÁRIO - NOME EM NEGRITO NA MESMA LINHA, QUALIFICAÇÃO ABAIXO
-      // ========================================
-      const beneficiario = emprestimoCompleto.beneficiarios;
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('Comodatário: ', 15, yPos);
-      doc.text(beneficiario?.nome || '', 42, yPos); // Nome em negrito
-      yPos += 5; // Próxima linha para qualificação
-      
-      // Qualificação na linha de baixo com data de nascimento
-      doc.setFont('helvetica', 'normal');
-      
-      let textoQualificacao = 'brasileiro(a)';
-      
-      // Adicionar data de nascimento se existir
-      if (beneficiario?.data_nascimento) {
-        const dataNasc = new Date(beneficiario.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR');
-        textoQualificacao += `, nascido(a) aos ${dataNasc}`;
-      }
-      
-      textoQualificacao += `, inscrito(a) no CPF sob nº ${beneficiario?.cpf || ''}`;
-      
-      if (beneficiario?.rg) {
-        textoQualificacao += `, portador(a) do RG sob nº ${beneficiario.rg}`;
-      }
-      
-      textoQualificacao += `, com endereço na ${beneficiario?.endereco || ''}, no Município de ${beneficiario?.cidade || ''}/${beneficiario?.estado || ''}.`;
-      
-      const linhasQualificacao = doc.splitTextToSize(textoQualificacao, 180);
-      linhasQualificacao.forEach(linha => {
-        doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
-        yPos += 5;
-      });
-      yPos += 3; // Espaço reduzido
-
-      // ========================================
-      // RESPONSÁVEL (se houver) - MESMO PADRÃO DO BENEFICIÁRIO
-      // ========================================
-      if (responsaveis && responsaveis.length > 0) {
-        const resp = responsaveis[0];
-        
-        doc.setFont('helvetica', 'bold');
-        doc.text('Comodatário - Responsável: ', 15, yPos);
-        doc.text(resp.nome || '', 75, yPos); // Nome em negrito ao lado
-        yPos += 5; // Próxima linha para qualificação
-        
-        // Qualificação na linha de baixo
-        doc.setFont('helvetica', 'normal');
-        
-        let textoQualificacaoResp = 'brasileiro(a)';
-        
-        textoQualificacaoResp += `, inscrito(a) no CPF sob nº ${resp.cpf || 'não informado'}`;
-        
-        if (resp.rg) {
-          textoQualificacaoResp += `, portador(a) do RG sob nº ${resp.rg}`;
-        }
-        
-        textoQualificacaoResp += `, com endereço na ${resp.endereco || 'não informado'}, no Município de ${resp.cidade || 'não informado'}/${resp.estado || 'MT'}.`;
-        
-        const linhasQualificacaoResp = doc.splitTextToSize(textoQualificacaoResp, 180);
-        linhasQualificacaoResp.forEach(linha => {
-          doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
-          yPos += 5;
-        });
-        yPos += 3; // Espaço reduzido
-      }
-
-      // ========================================
-      // EQUIPAMENTOS
-      // ========================================
-      doc.setFont('helvetica', 'bold');
-      doc.text('Equipamento(s):', 15, yPos);
-      yPos += 5;
-      doc.setFont('helvetica', 'normal');
-      
-      emprestimoCompleto.itens?.forEach((item) => {
-        const nomeEquip = item.equipamentos?.tipos_equipamentos?.nome || 'Equipamento';
-        const patrimonio = item.equipamentos?.numero_patrimonio || 'S/N';
-        doc.text(`${nomeEquip} - Patrimônio: ${patrimonio}`, 15, yPos);
-        yPos += 5;
-      });
-      yPos += 3; // Espaço reduzido
-
-      // ========================================
-      // PRAZO DE UTILIZAÇÃO
-      // ========================================
-      doc.setFont('helvetica', 'bold');
-      doc.text('Prazo de utilização: ', 15, yPos);
-      doc.setFont('helvetica', 'normal');
-      
-      if (emprestimoCompleto.data_devolucao_prevista) {
-        const dataDevolucao = new Date(emprestimoCompleto.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR');
-        doc.text(`Por tempo determinado até ${dataDevolucao}`, 56, yPos);
+        if (error) throw error;
+        showSuccess('Equipamento atualizado com sucesso!');
       } else {
-        doc.text('Por prazo indeterminado', 56, yPos);
-      }
-      yPos += 8; // Espaço antes do texto do comodato
+        const { error } = await supabase
+          .from('equipamentos')
+          .insert([dados]);
 
-      // ========================================
-      // TEXTO DO COMODATO (da imagem)
-      // ========================================
-      doc.setFont('helvetica', 'normal');
-      
-      const textoComodato = `Este  Termo  de  Comodato  estabelece as condições do empréstimo gratuito do(s) bem(s) descrito(s)   acima,  o(s) qual(is)   é(são)    disponibilizado(s)    pela    Loja    Maçônica   -   ARLS   Acácia   de   Paranatinga   nº    30,   para  que    seja(m)    utilizado(s)    pelo    beneficiário   acima   identificado,  sendo  vedada  a  transferência  à  terceiros sem  a autorização do cedente.
-
-O beneficiário deve cuidar do(s) bem(s) disponibilizado(s) e devolvê-lo(s) em boas condições para uso  posterior,  e será  responsabilizado  por quaisquer danos ou perda.
-
-Se  o(s)  bem(s)   disponibilizado(s)  não  seja(m)  mais  necessário(s) ao beneficiário identificado, que seja(m) o(s) mesmo(s) devidamente devolvido(s).
-
-Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos que as novas informações sejam nos enviados de imediato, para que seja possível o acesso e contato quando necessário.`;
-
-      const linhasTexto = doc.splitTextToSize(textoComodato, 180);
-      linhasTexto.forEach(linha => {
-        if (yPos > 270) {
-          doc.addPage();
-          yPos = 20;
-        }
-        doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
-        yPos += 5;
-      });
-      yPos += 10;
-
-      // ========================================
-      // LOCAL E DATA
-      // ========================================
-      if (yPos > 230) {
-        doc.addPage();
-        yPos = 40;
+        if (error) throw error;
+        showSuccess('Equipamento cadastrado com sucesso!');
       }
 
-      const hoje = new Date();
-      const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-      const dataExtenso = `${dadosLoja?.cidade || 'Paranatinga-MT'}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
-      
-      doc.text(dataExtenso, 105, yPos, { align: 'center' });
-      yPos += 15;
-
-      // ========================================
-      // LINHA DE ASSINATURA (conforme imagem)
-      // ========================================
-      
-      // Linha única longa
-      doc.line(60, yPos, 150, yPos);
-      yPos += 5;
-
-      // Texto centralizado
-      doc.setFontSize(9);
-      doc.text(`${nomeLoja}`, 105, yPos, { align: 'center' });
-      yPos += 4;
-      doc.text('Comodante', 105, yPos, { align: 'center' });
-      yPos += 15;
-
-      // ========================================
-      // DUAS LINHAS DE ASSINATURA (conforme imagem)
-      // ========================================
-      
-      // Linha esquerda
-      doc.line(15, yPos, 95, yPos);
-      // Linha direita
-      doc.line(115, yPos, 195, yPos);
-      yPos += 5;
-
-      // Textos
-      doc.text('Comodatário - Beneficiário', 55, yPos, { align: 'center' });
-      doc.text('Comodatário - Responsável', 155, yPos, { align: 'center' });
-
-      // SALVAR
-      const nomeArquivo = `Termo_Comodato_${String(emprestimo.id).padStart(4, '0')}_${beneficiario?.nome?.replace(/\s+/g,'_') || 'Beneficiario'}.pdf`;
-      doc.save(nomeArquivo);
-      
-      showSuccess('Termo gerado com sucesso!');
+      setModalAberto(false);
+      carregarDados();
     } catch (error) {
-      console.error('Erro:', error);
-      showError('Erro ao gerar termo: ' + error.message);
+      console.error('Erro ao salvar:', error);
+      showError(error.message || 'Erro ao salvar equipamento');
     }
   };
 
-  const excluirEmprestimo = async (emprestimo) => {
-    if (!window.confirm('Excluir este empréstimo? Os equipamentos serão liberados.')) return;
+  // NOVO: Cadastro em lote
+  const salvarLote = async (e) => {
+    e.preventDefault();
+
+    if (!formLote.tipo_id || !formLote.prefixo_patrimonio || formLote.quantidade < 1) {
+      showError('Preencha os campos obrigatórios!');
+      return;
+    }
 
     try {
-      // 1. Buscar todos os itens do empréstimo
-      const { data: itens } = await supabase
-        .from('comodato_itens')
-        .select('equipamento_id')
-        .eq('comodato_id', emprestimo.id);
-
-      // 2. Liberar equipamentos
-      for (const item of itens || []) {
-        await supabase
-          .from('equipamentos')
-          .update({ status: 'disponivel' })
-          .eq('id', item.equipamento_id);
+      const equipamentosLote = [];
+      
+      for (let i = 0; i < formLote.quantidade; i++) {
+        const numeroPatrimonio = `${formLote.prefixo_patrimonio}-${String(formLote.numero_inicial + i).padStart(3, '0')}`;
+        
+        equipamentosLote.push({
+          tipo_id: parseInt(formLote.tipo_id),
+          numero_patrimonio: numeroPatrimonio,
+          descricao: formLote.descricao,
+          estado_conservacao: formLote.estado_conservacao,
+          data_aquisicao: formLote.data_aquisicao || null,
+          valor_aquisicao: formLote.valor_aquisicao ? parseFloat(formLote.valor_aquisicao) : null,
+          status: 'disponivel',
+          observacoes: formLote.observacoes
+        });
       }
 
-      // 3. Excluir itens (cascade vai excluir automaticamente, mas por segurança)
-      await supabase
-        .from('comodato_itens')
-        .delete()
-        .eq('comodato_id', emprestimo.id);
-
-      // 4. Excluir empréstimo
       const { error } = await supabase
-        .from('comodatos')
-        .delete()
-        .eq('id', emprestimo.id);
+        .from('equipamentos')
+        .insert(equipamentosLote);
 
       if (error) throw error;
 
-      showSuccess('Empréstimo excluído!');
+      showSuccess(`✅ ${formLote.quantidade} equipamento(s) cadastrado(s) com sucesso!`);
+      setModalLote(false);
+      setFormLote({
+        tipo_id: '',
+        prefixo_patrimonio: '',
+        quantidade: 1,
+        numero_inicial: 1,
+        descricao: '',
+        estado_conservacao: 'Novo',
+        data_aquisicao: '',
+        valor_aquisicao: '',
+        observacoes: ''
+      });
       carregarDados();
     } catch (error) {
-      console.error('Erro:', error);
-      showError('Erro ao excluir empréstimo');
+      console.error('Erro ao salvar lote:', error);
+      showError(error.message || 'Erro ao cadastrar equipamentos em lote');
     }
   };
 
-  const devolverItem = async (comodatoId, itemId, equipamentoId) => {
-    if (!window.confirm('Confirmar devolução deste equipamento?')) return;
+  // NOVO: Exclusão permanente
+  const excluirEquipamento = async (id) => {
+    if (typeof window !== 'undefined' && !window.confirm('⚠️ ATENÇÃO! Esta ação NÃO pode ser desfeita.\n\nTem certeza que deseja EXCLUIR permanentemente este equipamento?')) {
+      return;
+    }
 
     try {
-      // 1. Marcar item como devolvido
-      const { error: itemError } = await supabase
-        .from('comodato_itens')
-        .update({
-          status: 'devolvido',
-          data_devolucao_real: new Date().toISOString()
-        })
-        .eq('id', itemId);
-
-      if (itemError) throw itemError;
-
-      // 2. Liberar equipamento
-      await supabase
+      const { error } = await supabase
         .from('equipamentos')
-        .update({ status: 'disponivel' })
-        .eq('id', equipamentoId);
+        .delete()
+        .eq('id', id);
 
-      // 3. Verificar se todos itens foram devolvidos
-      const { data: itensRestantes } = await supabase
-        .from('comodato_itens')
-        .select('*')
-        .eq('comodato_id', comodatoId)
-        .eq('status', 'emprestado');
-
-      // Se não tiver mais itens emprestados, marcar comodato como devolvido
-      if (itensRestantes.length === 0) {
-        await supabase
-          .from('comodatos')
-          .update({
-            status: 'devolvido',
-            data_devolucao_real: new Date().toISOString()
-          })
-          .eq('id', comodatoId);
-      }
-
-      showSuccess('Equipamento devolvido!');
+      if (error) throw error;
+      showSuccess('Equipamento excluído permanentemente!');
       carregarDados();
     } catch (error) {
       console.error('Erro:', error);
-      showError('Erro ao devolver equipamento');
+      showError('Erro ao excluir equipamento: ' + error.message);
     }
   };
 
-  const toggleEquipamento = (eqId) => {
-    setEquipamentosSelecionados(prev =>
-      prev.includes(eqId)
-        ? prev.filter(id => id !== eqId)
-        : [...prev, eqId]
+  const descartar = async (id) => {
+    const motivo = prompt('Motivo do descarte:');
+    if (!motivo) return;
+
+    try {
+      const { error } = await supabase
+        .from('equipamentos')
+        .update({
+          status: 'descartado',
+          motivo_descarte: motivo,
+          data_descarte: new Date().toISOString().split('T')[0]
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      showSuccess('Equipamento descartado!');
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError('Erro ao descartar equipamento');
+    }
+  };
+
+  const salvarTipo = async (e) => {
+    e.preventDefault();
+
+    if (!formTipo.nome) {
+      showError('Nome do tipo é obrigatório!');
+      return;
+    }
+
+    try {
+      // Verificar se já existe
+      const { data: tipoExistente } = await supabase
+        .from('tipos_equipamentos')
+        .select('id')
+        .ilike('nome', formTipo.nome)
+        .single();
+
+      if (tipoExistente) {
+        showError('Já existe um tipo com este nome!');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('tipos_equipamentos')
+        .insert([formTipo]);
+
+      if (error) throw error;
+
+      showSuccess('Tipo cadastrado com sucesso!');
+      setModalTipo(false);
+      setFormTipo({ nome: '', descricao: '', ativo: true });
+      carregarDados();
+    } catch (error) {
+      console.error('Erro:', error);
+      showError(error.message || 'Erro ao salvar tipo');
+    }
+  };
+
+  const equipamentosFiltrados = equipamentos.filter(eq => {
+    const statusEq = (eq.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const filtroStatusNorm = filtroStatus.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const matchStatus = filtroStatus === 'todos' || statusEq === filtroStatusNorm;
+    const matchTipo = filtroTipo === 'todos' || eq.tipo_id === parseInt(filtroTipo);
+    const matchBusca = eq.numero_patrimonio.toLowerCase().includes(busca.toLowerCase()) ||
+                       eq.tipos_equipamentos?.nome.toLowerCase().includes(busca.toLowerCase());
+    return matchStatus && matchTipo && matchBusca;
+  });
+
+  const getStatusBadge = (status) => {
+    const badges = {
+      disponivel: 'bg-green-100 text-green-800',
+      emprestado: 'bg-blue-100 text-red-600',
+      manutencao: 'bg-yellow-100 text-yellow-800',
+      descartado: 'bg-gray-100 text-gray-800'
+    };
+    const labels = {
+      disponivel: '✅ Disponível',
+      emprestado: '🔄 Emprestado',
+      manutencao: '🔧 Manutenção',
+      descartado: '🗑️ Descartado'
+    };
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[status]}`}>
+        {labels[status]}
+      </span>
     );
   };
 
-  const fecharModal = () => {
-    setModalAberto(false);
-    setEditando(null);
-    setEquipamentosSelecionados([]);
-    setForm({
-      beneficiario_id: '',
-      data_emprestimo: new Date().toISOString().split('T')[0],
-      data_devolucao_prevista: '',
-      observacoes_entrega: ''
-    });
+  const getEstadoBadge = (estado) => {
+    const badges = {
+      'Novo': 'bg-emerald-100 text-emerald-800',
+      'Bom': 'bg-green-100 text-green-800',
+      'Regular': 'bg-yellow-100 text-yellow-800',
+      'Ruim': 'bg-red-100 text-red-800'
+    };
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-medium ${badges[estado]}`}>
+        {estado}
+      </span>
+    );
   };
 
-  const emprestimosFiltrados = emprestimos.filter(emp => {
-    if (filtroStatus === 'todos') return true;
-    return emp.status === filtroStatus;
-  });
-
   if (loading) {
-    return <div className="text-center py-8">Carregando...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">📦 Empréstimos</h2>
-        {permissoes?.pode_editar_comodatos && (
-          <button
-            onClick={() => setModalAberto(true)}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-          >
-            ➕ Novo Empréstimo
-          </button>
-        )}
-      </div>
-
-      {/* FILTROS */}
-      <div className="flex gap-2">
-        {['ativo', 'devolvido', 'todos'].map(status => (
-          <button
-            key={status}
-            onClick={() => setFiltroStatus(status)}
-            className={`px-4 py-2 rounded-lg ${
-              filtroStatus === status
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
-          >
-            {status.toUpperCase()}
-          </button>
-        ))}
-      </div>
-
-      {/* LISTA DE EMPRÉSTIMOS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {emprestimosFiltrados.map(emp => (
-          <div key={emp.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500">
-            <div className="flex flex-col gap-2 mb-3">
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold text-base">{emp.beneficiarios?.nome}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                  emp.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {emp.status?.toUpperCase()}
-                </span>
-              </div>
-              <p className="text-xs text-gray-600">CPF: {emp.beneficiarios?.cpf}</p>
-              <p className="text-xs text-gray-500">
-                Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
-              </p>
-              {permissoes?.pode_editar_comodatos && (
-                <div className="flex gap-1 mt-2">
-                  <button
-                    onClick={() => gerarTermo(emp)}
-                    className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
-                    title="Gerar Termo de Comodato"
-                  >
-                    📄 Termo
-                  </button>
-                  <button
-                    onClick={() => abrirEdicao(emp)}
-                    className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                    title="Editar empréstimo"
-                  >
-                    ✏️ Editar
-                  </button>
-                  <button
-                    onClick={() => excluirEmprestimo(emp)}
-                    className="flex-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                    title="Excluir empréstimo"
-                  >
-                    🗑️ Excluir
-                  </button>
-                </div>
-              )}
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">
+            🛠️ Gestão de Equipamentos
+          </h2>
+          {permissoes?.pode_editar_comodatos && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setModalTipo(true)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                ➕ Novo Tipo
+              </button>
+              <button
+                onClick={() => setModalLote(true)}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                📦 Cadastro em Lote
+              </button>
+              <button
+                onClick={() => abrirModal()}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                ➕ Novo Equipamento
+              </button>
             </div>
+          )}
+        </div>
 
-            {/* ITENS DO EMPRÉSTIMO */}
-            <div className="space-y-1">
-              <p className="font-semibold text-xs text-gray-700 mb-1">Equipamentos:</p>
-              {emp.itens?.map(item => (
-                <div
-                  key={item.id}
-                  className={`p-2 rounded ${
-                    item.status === 'devolvido' ? 'bg-gray-100' : 'bg-emerald-50'
-                  }`}
-                >
-                  <div className="flex justify-between items-start gap-2 mb-1">
-                    <p className="text-xs font-medium flex-1">
-                      {item.equipamentos?.numero_patrimonio} - {item.equipamentos?.tipos_equipamentos?.nome}
-                    </p>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${
-                      item.status === 'emprestado'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
-                      {item.status === 'emprestado' ? '🔄' : '✅'}
-                    </span>
-                  </div>
-                  {item.status === 'devolvido' && item.data_devolucao_real && (
-                    <p className="text-xs text-gray-500">
-                      Devolvido: {new Date(item.data_devolucao_real).toLocaleDateString()}
-                    </p>
+        {/* FILTROS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <input
+            type="text"
+            placeholder="🔍 Buscar..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="border rounded-lg px-4 py-2"
+          />
+          
+          <select
+            value={filtroTipo}
+            onChange={(e) => setFiltroTipo(e.target.value)}
+            className="border rounded-lg px-4 py-2"
+          >
+            <option value="todos">Todos os Tipos</option>
+            {tipos.map(tipo => (
+              <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+            ))}
+          </select>
+
+          <select
+            value={filtroStatus}
+            onChange={(e) => setFiltroStatus(e.target.value)}
+            className="border rounded-lg px-4 py-2"
+          >
+            <option value="todos">Todos os Status</option>
+            <option value="disponivel">✅ Disponível</option>
+            <option value="emprestado">🔄 Emprestado</option>
+            <option value="manutencao">🔧 Manutenção</option>
+            <option value="descartado">🗑️ Descartado</option>
+          </select>
+
+          <div className="text-gray-600 flex items-center">
+            <strong>{equipamentosFiltrados.length}</strong>
+            <span className="ml-2">equipamento(s)</span>
+          </div>
+        </div>
+      </div>
+
+      {/* TABELA DE EQUIPAMENTOS */}
+      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Patrimônio
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Status Uso
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Conservação
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Dt Aquisição
+                </th>
+                {permissoes?.pode_editar_comodatos && (
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {equipamentosFiltrados.map(equipamento => (
+                <tr key={equipamento.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-gray-900">
+                      {equipamento.numero_patrimonio}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-700">
+                      {equipamento.tipos_equipamentos?.nome}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {getStatusBadge(equipamento.status)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    {getEstadoBadge(equipamento.estado_conservacao)}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <div className="text-sm text-gray-700">
+                      {equipamento.data_aquisicao 
+                        ? new Date(equipamento.data_aquisicao + 'T00:00:00').toLocaleDateString('pt-BR')
+                        : '-'}
+                    </div>
+                  </td>
+                  {permissoes?.pode_editar_comodatos && (
+                    <td className="px-4 py-3 whitespace-nowrap text-center">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => abrirModal(equipamento)}
+                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs font-medium"
+                          disabled={equipamento.status === 'descartado'}
+                          title="Editar"
+                        >
+                          ✏️ Editar
+                        </button>
+                        {equipamento.status !== 'descartado' && equipamento.status !== 'emprestado' && (
+                          <>
+                            <button
+                              onClick={() => descartar(equipamento.id)}
+                              className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-xs font-medium"
+                              title="Descartar"
+                            >
+                              🗑️ Descartar
+                            </button>
+                            <button
+                              onClick={() => excluirEquipamento(equipamento.id)}
+                              className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs font-medium"
+                              title="Excluir permanentemente"
+                            >
+                              ❌ Excluir
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   )}
-                  {item.status === 'emprestado' && permissoes?.pode_editar_comodatos && (
-                    <button
-                      onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
-                      className="w-full mt-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                    >
-                      Devolver
-                    </button>
-                  )}
-                </div>
+                </tr>
               ))}
-            </div>
-          </div>
-        ))}
-
-        {emprestimosFiltrados.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            Nenhum empréstimo encontrado
-          </div>
-        )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* MODAL NOVO EMPRÉSTIMO */}
+      {equipamentosFiltrados.length === 0 && (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-xl">Nenhum equipamento encontrado</p>
+        </div>
+      )}
+
+      {/* MODAL EQUIPAMENTO */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4">
-                {editando ? '✏️ Editar Empréstimo' : '📦 Novo Empréstimo'}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-emerald-600 text-white p-6 rounded-t-xl">
+              <h3 className="text-2xl font-bold">
+                {editando ? '✏️ Editar Equipamento' : '➕ Novo Equipamento'}
               </h3>
-              <form onSubmit={salvarEmprestimo} className="space-y-4">
-                {/* Beneficiário */}
+            </div>
+
+            <form onSubmit={salvarEquipamento} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Beneficiário *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tipo de Equipamento *
+                  </label>
                   <select
-                    value={form.beneficiario_id}
-                    onChange={(e) => setForm({...form, beneficiario_id: e.target.value})}
-                    className="w-full border rounded p-2"
+                    value={form.tipo_id}
+                    onChange={(e) => setForm({ ...form, tipo_id: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
                     required
                   >
                     <option value="">Selecione...</option>
-                    {beneficiarios.map(ben => (
-                      <option key={ben.id} value={ben.id}>
-                        {ben.nome} - {ben.cpf}
-                      </option>
+                    {tipos.map(tipo => (
+                      <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
                     ))}
                   </select>
                 </div>
 
-                {/* Data Empréstimo */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Data Empréstimo *</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Número do Patrimônio *
+                  </label>
                   <input
-                    type="date"
-                    value={form.data_emprestimo}
-                    onChange={(e) => setForm({...form, data_emprestimo: e.target.value})}
-                    className="w-full border rounded p-2"
+                    type="text"
+                    value={form.numero_patrimonio}
+                    onChange={(e) => setForm({ ...form, numero_patrimonio: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
                     required
                   />
                 </div>
 
-                {/* Data Devolução Prevista */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Devolução Prevista</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Estado de Conservação
+                  </label>
+                  <select
+                    value={form.estado_conservacao}
+                    onChange={(e) => setForm({ ...form, estado_conservacao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
+                    <option value="Novo">Novo</option>
+                    <option value="Bom">Bom</option>
+                    <option value="Regular">Regular</option>
+                    <option value="Ruim">Ruim</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
+                    <option value="disponivel">Disponível</option>
+                    <option value="manutencao">Manutenção</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Data de Aquisição
+                  </label>
                   <input
                     type="date"
-                    value={form.data_devolucao_prevista}
-                    onChange={(e) => setForm({...form, data_devolucao_prevista: e.target.value})}
-                    className="w-full border rounded p-2"
+                    value={form.data_aquisicao}
+                    onChange={(e) => setForm({ ...form, data_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
                   />
                 </div>
 
-                {/* EQUIPAMENTOS - MÚLTIPLA SELEÇÃO */}
-                <div className="border rounded p-3 bg-gray-50">
-                  <label className="block text-sm font-medium mb-2">
-                    Equipamentos * ({equipamentosSelecionados.length} selecionados)
-                  </label>
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {equipamentos.length === 0 ? (
-                      <p className="text-sm text-gray-500">Nenhum equipamento disponível</p>
-                    ) : (
-                      equipamentos.map(eq => (
-                        <label key={eq.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={equipamentosSelecionados.includes(eq.id)}
-                            onChange={() => toggleEquipamento(eq.id)}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-sm">
-                            {eq.numero_patrimonio} - {eq.tipos_equipamentos?.nome}
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Observações */}
                 <div>
-                  <label className="block text-sm font-medium mb-1">Observações</label>
-                  <textarea
-                    value={form.observacoes_entrega}
-                    onChange={(e) => setForm({...form, observacoes_entrega: e.target.value})}
-                    className="w-full border rounded p-2"
-                    rows="3"
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Valor de Aquisição (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.valor_aquisicao}
+                    onChange={(e) => setForm({ ...form, valor_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descrição
+                </label>
+                <textarea
+                  value={form.descricao}
+                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="3"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Observações
+                </label>
+                <textarea
+                  value={form.observacoes}
+                  onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-semibold"
+                >
+                  💾 Salvar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalAberto(false)}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CADASTRO EM LOTE */}
+      {modalLote && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-purple-600 text-white p-6 rounded-t-xl">
+              <h3 className="text-2xl font-bold">📦 Cadastro em Lote</h3>
+              <p className="text-purple-100 text-sm mt-1">
+                Cadastre vários equipamentos de uma vez
+              </p>
+            </div>
+
+            <form onSubmit={salvarLote} className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Tipo de Equipamento *
+                  </label>
+                  <select
+                    value={formLote.tipo_id}
+                    onChange={(e) => setFormLote({ ...formLote, tipo_id: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  >
+                    <option value="">Selecione...</option>
+                    {tipos.map(tipo => (
+                      <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Quantidade *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={formLote.quantidade}
+                    onChange={(e) => setFormLote({ ...formLote, quantidade: parseInt(e.target.value) })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
                   />
                 </div>
 
-                {/* Botões */}
-                <div className="flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={fecharModal}
-                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700"
-                  >
-                    Salvar
-                  </button>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Prefixo do Patrimônio *
+                  </label>
+                  <input
+                    type="text"
+                    value={formLote.prefixo_patrimonio}
+                    onChange={(e) => setFormLote({ ...formLote, prefixo_patrimonio: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    placeholder="Ex: CR (para Cadeira de Rodas)"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Exemplo: CR-001, CR-002, CR-003...
+                  </p>
                 </div>
-              </form>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Número Inicial *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formLote.numero_inicial}
+                    onChange={(e) => setFormLote({ ...formLote, numero_inicial: parseInt(e.target.value) })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Estado de Conservação
+                  </label>
+                  <select
+                    value={formLote.estado_conservacao}
+                    onChange={(e) => setFormLote({ ...formLote, estado_conservacao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
+                    <option value="Novo">Novo</option>
+                    <option value="Bom">Bom</option>
+                    <option value="Regular">Regular</option>
+                    <option value="Ruim">Ruim</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Data de Aquisição
+                  </label>
+                  <input
+                    type="date"
+                    value={formLote.data_aquisicao}
+                    onChange={(e) => setFormLote({ ...formLote, data_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Valor Unitário (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formLote.valor_aquisicao}
+                    onChange={(e) => setFormLote({ ...formLote, valor_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descrição (aplicada a todos)
+                </label>
+                <textarea
+                  value={formLote.descricao}
+                  onChange={(e) => setFormLote({ ...formLote, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Observações (aplicadas a todos)
+                </label>
+                <textarea
+                  value={formLote.observacoes}
+                  onChange={(e) => setFormLote({ ...formLote, observacoes: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              {/* PREVIEW */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-blue-900 mb-2">
+                  📋 Pré-visualização:
+                </p>
+                <p className="text-sm text-blue-800">
+                  Serão criados <strong>{formLote.quantidade}</strong> equipamento(s) numerados de{' '}
+                  <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial).padStart(3, '0')}</strong> até{' '}
+                  <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial + formLote.quantidade - 1).padStart(3, '0')}</strong>
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                >
+                  💾 Cadastrar {formLote.quantidade} Equipamento(s)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalLote(false)}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL NOVO TIPO */}
+      {modalTipo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="bg-gray-600 text-white p-6 rounded-t-xl">
+              <h3 className="text-2xl font-bold">➕ Novo Tipo de Equipamento</h3>
             </div>
+
+            <form onSubmit={salvarTipo} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Nome do Tipo *
+                </label>
+                <input
+                  type="text"
+                  value={formTipo.nome}
+                  onChange={(e) => setFormTipo({ ...formTipo, nome: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  placeholder="Ex: Cadeira de Rodas Motorizada"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Descrição
+                </label>
+                <textarea
+                  value={formTipo.descricao}
+                  onChange={(e) => setFormTipo({ ...formTipo, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="3"
+                  placeholder="Descrição do tipo de equipamento..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors font-semibold"
+                >
+                  💾 Salvar Tipo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTipo(false)}
+                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                >
+                  ❌ Cancelar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
