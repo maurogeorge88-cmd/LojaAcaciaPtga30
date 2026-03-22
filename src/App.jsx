@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { useTema } from './hooks/useTema';
+import { useCarregarTema } from './hooks/useCarregarTema';
 
 // ========================================
 // IMPORTAR COMPONENTES REFATORADOS
@@ -123,6 +124,9 @@ function App() {
     return <PrimeiroAcesso />;
   }
 
+  // ========================================
+  // ESTADOS
+  // ========================================
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
@@ -136,6 +140,11 @@ function App() {
   const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // ========================================
+  // CARREGAR TEMA DO USUÁRIO AUTOMATICAMENTE
+  // ========================================
+  useCarregarTema(userData);
 
   // Helper: Verificar se é Admin ou Venerável (acesso total)
   const isAdminOrVeneravel = (user = userData) => {
