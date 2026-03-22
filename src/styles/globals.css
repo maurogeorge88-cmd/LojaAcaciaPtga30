@@ -1,6 +1,7 @@
 /* ============================================================
-   Sistema Loja Maçônica Acácia - Global Styles
+   Sistema Loja Maçônica Acácia - Global Styles COMPLETO
    Tema: Elegante e profissional com identidade maçônica
+   Inclui: Variáveis CSS + Classes Utilitárias
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
@@ -10,36 +11,42 @@
    ────────────────────────────────────────────────────────── */
 :root {
   /* Cores de fundo e superfícies */
-  --color-bg:           #0f172a;  /* Azul escuro profundo */
-  --color-surface:      #1e293b;  /* Superfície principal */
-  --color-surface-2:    #334155;  /* Superfície elevada */
-  --color-surface-3:    #475569;  /* Superfície mais elevada */
+  --color-bg:           #0f172a;
+  --color-surface:      #1e293b;
+  --color-surface-2:    #334155;
+  --color-surface-3:    #475569;
   
   /* Bordas */
   --color-border:       #334155;
   --color-border-light: #475569;
   
   /* Texto */
-  --color-text:         #f1f5f9;  /* Texto principal */
-  --color-text-muted:   #94a3b8;  /* Texto secundário */
-  --color-text-faint:   #64748b;  /* Texto desbotado */
+  --color-text:         #f1f5f9;
+  --color-text-muted:   #94a3b8;
+  --color-text-faint:   #64748b;
   
   /* Cor de acento (Azul Maçônico por padrão) */
-  --color-accent:       #3b82f6;  /* Azul primário */
-  --color-accent-hover: #2563eb;  /* Azul hover */
-  --color-accent-light: #60a5fa;  /* Azul claro */
-  --color-accent-dim:   #1e40af;  /* Azul escuro */
+  --color-accent:       #3b82f6;
+  --color-accent-hover: #2563eb;
+  --color-accent-light: #60a5fa;
+  --color-accent-dim:   #1e40af;
+  --color-accent-bg:    rgba(59, 130, 246, 0.1);
   
   /* Status (cores semânticas) */
-  --color-success:      #10b981;  /* Verde */
-  --color-warning:      #f59e0b;  /* Âmbar */
-  --color-danger:       #ef4444;  /* Vermelho */
-  --color-info:         #3b82f6;  /* Azul */
-  
-  /* Status backgrounds (fundos suaves) */
+  --color-success:      #10b981;
+  --color-success-hover:#059669;
   --color-success-bg:   rgba(16, 185, 129, 0.1);
+  
+  --color-warning:      #f59e0b;
+  --color-warning-hover:#d97706;
   --color-warning-bg:   rgba(245, 158, 11, 0.1);
+  
+  --color-danger:       #ef4444;
+  --color-danger-hover: #dc2626;
   --color-danger-bg:    rgba(239, 68, 68, 0.1);
+  
+  --color-info:         #3b82f6;
+  --color-info-hover:   #2563eb;
   --color-info-bg:      rgba(59, 130, 246, 0.1);
   
   /* Sombras */
@@ -49,19 +56,15 @@
   --shadow-xl:   0 16px 40px rgba(0, 0, 0, 0.6);
   
   /* Border radius */
-  --radius-sm:   0.25rem;  /* 4px */
-  --radius-md:   0.5rem;   /* 8px */
-  --radius-lg:   0.75rem;  /* 12px */
-  --radius-xl:   1rem;     /* 16px */
-  --radius-2xl:  1.5rem;   /* 24px */
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.5rem;
   
   /* Tipografia */
   --font-sans:  'Inter', system-ui, -apple-system, sans-serif;
   --font-mono:  'JetBrains Mono', 'Fira Code', monospace;
-  
-  /* Layout */
-  --sidebar-width:  260px;
-  --header-height:  64px;
   
   /* Transições */
   --transition-fast:   0.15s ease;
@@ -106,6 +109,7 @@
   --color-accent-hover: #2563eb;
   --color-accent-light: #60a5fa;
   --color-accent-dim:   #1e40af;
+  --color-accent-bg:    rgba(59, 130, 246, 0.1);
 }
 
 /* PALETA VERDE ESPERANÇA */
@@ -118,6 +122,7 @@
   --color-accent-hover: #059669;
   --color-accent-light: #34d399;
   --color-accent-dim:   #047857;
+  --color-accent-bg:    rgba(16, 185, 129, 0.1);
 }
 
 /* PALETA ROXA MÍSTICA */
@@ -130,6 +135,7 @@
   --color-accent-hover: #7c3aed;
   --color-accent-light: #a78bfa;
   --color-accent-dim:   #6d28d9;
+  --color-accent-bg:    rgba(139, 92, 246, 0.1);
 }
 
 /* PALETA DOURADA SABEDORIA */
@@ -142,6 +148,7 @@
   --color-accent-hover: #d97706;
   --color-accent-light: #fbbf24;
   --color-accent-dim:   #b45309;
+  --color-accent-bg:    rgba(245, 158, 11, 0.1);
 }
 
 /* PALETA MARROM TERRA */
@@ -154,6 +161,7 @@
   --color-accent-hover: #b45309;
   --color-accent-light: #f59e0b;
   --color-accent-dim:   #92400e;
+  --color-accent-bg:    rgba(217, 119, 6, 0.1);
 }
 
 /* PALETA CINZA NEUTRO */
@@ -166,6 +174,7 @@
   --color-accent-hover: #71717a;
   --color-accent-light: #d4d4d8;
   --color-accent-dim:   #52525b;
+  --color-accent-bg:    rgba(161, 161, 170, 0.1);
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -191,6 +200,274 @@ body {
   line-height: 1.6;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+/* ──────────────────────────────────────────────────────────
+   BOTÕES
+   ────────────────────────────────────────────────────────── */
+
+/* Botão Base */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  border-radius: var(--radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botão Primário (Acento) */
+.btn-primary {
+  background: var(--color-accent);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Botão Secundário */
+.btn-secondary {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--color-surface-3);
+  border-color: var(--color-border-light);
+}
+
+/* Botão Sucesso */
+.btn-success {
+  background: var(--color-success);
+  color: white;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--color-success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Botão Perigo */
+.btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Botão Warning */
+.btn-warning {
+  background: var(--color-warning);
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: var(--color-warning-hover);
+}
+
+/* Botão Ghost (transparente) */
+.btn-ghost {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+/* Tamanhos de botão */
+.btn-sm {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-lg {
+  padding: 0.875rem 1.75rem;
+  font-size: 1rem;
+}
+
+/* ──────────────────────────────────────────────────────────
+   CARDS
+   ────────────────────────────────────────────────────────── */
+
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  padding: 1.5rem;
+  transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.card-subtitle {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}
+
+/* ──────────────────────────────────────────────────────────
+   FORMULÁRIOS
+   ────────────────────────────────────────────────────────── */
+
+/* Label */
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+/* Input */
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-bg);
+}
+
+.form-input:disabled,
+.form-select:disabled,
+.form-textarea:disabled {
+  background: var(--color-surface-3);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Hint / Helper text */
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+  margin-top: 0.25rem;
+}
+
+/* File Input */
+.file-input {
+  display: block;
+  width: 100%;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.file-input::file-selector-button {
+  margin-right: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-base);
+}
+
+.file-input::file-selector-button:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ──────────────────────────────────────────────────────────
+   BADGES
+   ────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+}
+
+.badge-primary {
+  background: var(--color-accent-bg);
+  color: var(--color-accent);
+}
+
+.badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.badge-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.badge-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
 }
 
 /* ──────────────────────────────────────────────────────────
@@ -309,4 +586,95 @@ body {
 
 .bg-surface-3 {
   background-color: var(--color-surface-3);
+}
+
+/* ──────────────────────────────────────────────────────────
+   TABELAS
+   ────────────────────────────────────────────────────────── */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table tbody tr:hover {
+  background: var(--color-surface-2);
+}
+
+/* ──────────────────────────────────────────────────────────
+   LOADING
+   ────────────────────────────────────────────────────────── */
+.spinner {
+  border: 3px solid var(--color-surface-3);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  width: 2rem;
+  height: 2rem;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ──────────────────────────────────────────────────────────
+   MODAL/OVERLAY
+   ────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 1rem;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xl);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.modal-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-body {
+  padding: 1.5rem;
+}
+
+.modal-footer {
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
 }
