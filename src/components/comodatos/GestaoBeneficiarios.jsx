@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../App';
+import { supabase } from '../../supabaseClient';
 
 export default function GestaoBeneficiarios({ showSuccess, showError, permissoes }) {
   const [beneficiarios, setBeneficiarios] = useState([]);
