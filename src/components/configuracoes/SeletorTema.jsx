@@ -2,53 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 const SeletorTema = () => {
-  const [corAtual, setCorAtual] = useState('azul');
-  const [temaAtual, setTemaAtual] = useState('dark');
+  const [temaBase, setTemaBase] = useState('dark');
+  const [paletaCor, setPaletaCor] = useState('azul-escuro');
+  const [corAcento, setCorAcento] = useState('#fbbf24');
   const [salvando, setSalvando] = useState(false);
 
-  const paletas = [
-    {
-      id: 'azul',
-      nome: 'Azul Maçônico',
-      descricao: 'Confiança e profissionalismo',
-      cor: '#3b82f6',
-      emoji: '💼'
-    },
-    {
-      id: 'verde',
-      nome: 'Verde Esperança',
-      descricao: 'Crescimento e harmonia',
-      cor: '#10b981',
-      emoji: '🌱'
-    },
-    {
-      id: 'roxo',
-      nome: 'Roxo Místico',
-      descricao: 'Nobreza e sabedoria',
-      cor: '#8b5cf6',
-      emoji: '👑'
-    },
-    {
-      id: 'dourado',
-      nome: 'Dourado Sabedoria',
-      descricao: 'Conhecimento e luz',
-      cor: '#f59e0b',
-      emoji: '☀️'
-    },
-    {
-      id: 'marrom',
-      nome: 'Marrom Terra',
-      descricao: 'Estabilidade e força',
-      cor: '#d97706',
-      emoji: '🏔️'
-    },
-    {
-      id: 'cinza',
-      nome: 'Cinza Neutro',
-      descricao: 'Elegância e neutralidade',
-      cor: '#a1a1aa',
-      emoji: '⚫'
-    }
+  // Paletas de cor base (para fundo e superfícies)
+  const paletasCores = [
+    { id: 'cinza-escuro', nome: 'Cinza Escuro', cor: '#18181b', emoji: '⬛' },
+    { id: 'cinza-medio', nome: 'Cinza Médio', cor: '#3f3f46', emoji: '▪️' },
+    { id: 'azul-escuro', nome: 'Azul Escuro', cor: '#1e40af', emoji: '🔵' },
+    { id: 'azul-medio', nome: 'Azul Médio', cor: '#3b82f6', emoji: '🩵' },
+    { id: 'verde-escuro', nome: 'Verde Escuro', cor: '#047857', emoji: '🟢' },
+    { id: 'verde-medio', nome: 'Verde Médio', cor: '#10b981', emoji: '🍃' },
+    { id: 'roxo', nome: 'Roxo Escuro', cor: '#7c3aed', emoji: '🟣' },
+    { id: 'marrom', nome: 'Marrom Escuro', cor: '#92400e', emoji: '🟫' },
+  ];
+
+  // Cores de acento (para botões e bordas)
+  const coresAcento = [
+    { nome: 'Cinza Claro (Padrão)', cor: '#e0e0e6' },
+    { nome: 'Cinza Suave', cor: '#c8c8d4' },
+    { nome: 'Cinza Médio', cor: '#8a8a96' },
+    { nome: 'Branco Puro', cor: '#ffffff' },
+    { nome: 'Azul Celeste', cor: '#93c5fd' },
+    { nome: 'Azul Médio', cor: '#60a5fa' },
+    { nome: 'Azul Royal', cor: '#3b82f6' },
+    { nome: 'Verde Menta', cor: '#6ee7b7' },
+    { nome: 'Verde Claro', cor: '#86efac' },
+    { nome: 'Verde', cor: '#4ade80' },
+    { nome: 'Âmbar', cor: '#fbbf24' },
+    { nome: 'Laranja', cor: '#fb923c' },
+    { nome: 'Rosa', cor: '#f472b6' },
+    { nome: 'Lilás', cor: '#c084fc' },
   ];
 
   useEffect(() => {
@@ -62,45 +48,58 @@ const SeletorTema = () => {
 
       const { data, error } = await supabase
         .from('usuarios')
-        .select('pref_tema_base, pref_cor_paleta')
+        .select('pref_tema_base, pref_cor_paleta, pref_cor_acento')
         .eq('email', user.email)
         .single();
 
       if (!error && data) {
-        const tema = data.pref_tema_base || 'dark';
-        const cor = data.pref_cor_paleta || 'azul';
+        setTemaBase(data.pref_tema_base || 'dark');
+        setPaletaCor(data.pref_cor_paleta || 'azul-escuro');
+        setCorAcento(data.pref_cor_acento || '#fbbf24');
         
-        setTemaAtual(tema);
-        setCorAtual(cor);
-        
-        aplicarTema(tema, cor);
+        aplicarTema(
+          data.pref_tema_base || 'dark',
+          data.pref_cor_paleta || 'azul-escuro',
+          data.pref_cor_acento || '#fbbf24'
+        );
       }
     } catch (error) {
       console.error('Erro ao carregar preferências:', error);
     }
   };
 
-  const aplicarTema = (tema, cor) => {
-    console.log('🎨 Aplicando tema:', tema, '| cor:', cor);
-    
-    // Aplicar tema (dark/light)
+  const aplicarTema = (tema, paleta, acento) => {
+    // Tema claro/escuro
     if (tema === 'light') {
       document.documentElement.setAttribute('data-theme', 'light');
     } else {
       document.documentElement.removeAttribute('data-theme');
     }
     
-    // Aplicar paleta de cor
-    if (cor === 'azul') {
-      document.documentElement.removeAttribute('data-color');
-    } else {
-      document.documentElement.setAttribute('data-color', cor);
-    }
+    // Paleta de cor (não aplicado ainda, apenas salvando preferência)
+    // Pode ser usado no futuro para mudar cores de fundo
     
-    console.log('✅ Tema aplicado!');
+    // Cor de acento (botões e bordas)
+    document.documentElement.style.setProperty('--color-accent', acento);
+    
+    // Calcular cor hover (10% mais escura)
+    const hoverColor = adjustColor(acento, -10);
+    document.documentElement.style.setProperty('--color-accent-hover', hoverColor);
   };
 
-  const salvarPaleta = async (novaCor) => {
+  const adjustColor = (hex, percent) => {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const G = (num >> 8 & 0x00FF) + amt;
+    const B = (num & 0x0000FF) + amt;
+    return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+      (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+      (B < 255 ? B < 1 ? 0 : B : 255))
+      .toString(16).slice(1);
+  };
+
+  const salvarPreferencias = async (novoTema, novaPaleta, novoAcento) => {
     setSalvando(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -108,180 +107,376 @@ const SeletorTema = () => {
 
       const { error } = await supabase
         .from('usuarios')
-        .update({ pref_cor_paleta: novaCor })
+        .update({
+          pref_tema_base: novoTema,
+          pref_cor_paleta: novaPaleta,
+          pref_cor_acento: novoAcento
+        })
         .eq('email', user.email);
 
       if (error) throw error;
 
-      setCorAtual(novaCor);
-      aplicarTema(temaAtual, novaCor);
+      setTemaBase(novoTema);
+      setPaletaCor(novaPaleta);
+      setCorAcento(novoAcento);
+      aplicarTema(novoTema, novaPaleta, novoAcento);
       
     } catch (error) {
-      console.error('Erro ao salvar paleta:', error);
-      alert('❌ Erro ao salvar paleta: ' + error.message);
+      console.error('Erro ao salvar preferências:', error);
+      alert('❌ Erro ao salvar: ' + error.message);
     } finally {
       setSalvando(false);
     }
   };
 
-  const alternarTema = async () => {
-    const novoTema = temaAtual === 'dark' ? 'light' : 'dark';
-    setSalvando(true);
-    
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
-
-      const { error } = await supabase
-        .from('usuarios')
-        .update({ pref_tema_base: novoTema })
-        .eq('email', user.email);
-
-      if (error) throw error;
-
-      setTemaAtual(novoTema);
-      aplicarTema(novoTema, corAtual);
-      
-    } catch (error) {
-      console.error('Erro ao alternar tema:', error);
-      alert('❌ Erro ao alternar tema: ' + error.message);
-    } finally {
-      setSalvando(false);
-    }
+  const alternarTema = () => {
+    const novoTema = temaBase === 'dark' ? 'light' : 'dark';
+    salvarPreferencias(novoTema, paletaCor, corAcento);
   };
+
+  const selecionarPaleta = (idPaleta) => {
+    salvarPreferencias(temaBase, idPaleta, corAcento);
+  };
+
+  const selecionarCorAcento = (cor) => {
+    salvarPreferencias(temaBase, paletaCor, cor);
+  };
+
+  const estiloBotao = (cor, ativo = false) => ({
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0.75rem 1.5rem',
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: 'white',
+    background: cor,
+    border: ativo ? '3px solid #fbbf24' : 'none',
+    borderRadius: '0.875rem',
+    cursor: salvando ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s ease',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+    opacity: salvando ? 0.5 : 1,
+  });
 
   return (
-    <div className="card">
-      <div className="mb-6">
-        <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>
-          🎨 Tema de Cores
-        </h3>
-        <p style={{ color: 'var(--color-text-muted)' }}>
-          Escolha a cor principal do sistema. Essa cor será aplicada em cabeçalhos, botões e destaques.
+    <div style={{
+      background: 'var(--color-surface)',
+      borderRadius: 'var(--radius-xl)',
+      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+      padding: '1.75rem',
+      border: '1px solid var(--color-border)'
+    }}>
+      
+      {/* HEADER */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h2 style={{ 
+          fontSize: '1.875rem', 
+          fontWeight: '700', 
+          color: 'var(--color-text)',
+          marginBottom: '0.5rem'
+        }}>
+          🎨 Aparência do Sistema
+        </h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+          Personalize as cores e o tema do sistema
         </p>
       </div>
 
-      {/* Toggle Dark/Light */}
-      <div className="mb-6 p-4 rounded-lg" style={{ backgroundColor: 'var(--color-surface-2)' }}>
-        <div className="flex items-center justify-between">
-          <div>
-            <h4 className="font-bold mb-1" style={{ color: 'var(--color-text)' }}>
-              {temaAtual === 'dark' ? '🌙 Tema Escuro' : '☀️ Tema Claro'}
-            </h4>
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              Alterar entre tema escuro e claro
-            </p>
-          </div>
+      {/* TEMA BASE */}
+      <div style={{ 
+        marginBottom: '2rem',
+        padding: '1.5rem',
+        background: 'var(--color-surface-2)',
+        borderRadius: 'var(--radius-lg)'
+      }}>
+        <h3 style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: '700', 
+          color: 'var(--color-text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '1rem'
+        }}>
+          TEMA BASE
+        </h3>
+        <div style={{ display: 'flex', gap: '1rem' }}>
           <button
             onClick={alternarTema}
             disabled={salvando}
-            className="btn-primary"
+            style={estiloBotao(temaBase === 'dark' ? '#1e293b' : '#ffffff', temaBase === 'dark')}
           >
-            {temaAtual === 'dark' ? '☀️ Modo Claro' : '🌙 Modo Escuro'}
+            {temaBase === 'dark' ? '🌙 Escuro' : '☀️ Claro'}
+          </button>
+          <button
+            onClick={alternarTema}
+            disabled={salvando}
+            style={estiloBotao(temaBase === 'light' ? '#1e293b' : '#ffffff', temaBase === 'light')}
+          >
+            {temaBase === 'light' ? '☀️ Claro' : '🌙 Escuro'}
           </button>
         </div>
       </div>
 
-      {/* Paletas de Cores */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {paletas.map((paleta) => (
-          <div
-            key={paleta.id}
-            onClick={() => !salvando && salvarPaleta(paleta.id)}
-            className="relative cursor-pointer rounded-lg transition-all"
-            style={{
-              border: corAtual === paleta.id ? `3px solid ${paleta.cor}` : '3px solid var(--color-border)',
-              opacity: salvando ? 0.5 : 1,
-              transform: corAtual === paleta.id ? 'scale(1.02)' : 'scale(1)',
-              backgroundColor: 'var(--color-surface-2)'
-            }}
-          >
-            {/* Preview da cor */}
-            <div 
-              className="h-24 rounded-t-md flex items-center justify-center"
-              style={{ backgroundColor: paleta.cor }}
+      {/* PALETA DE CORES */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: '700', 
+          color: 'var(--color-text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '1rem'
+        }}>
+          PALETA DE CORES
+        </h3>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+          gap: '0.75rem'
+        }}>
+          {paletasCores.map((p) => (
+            <div
+              key={p.id}
+              onClick={() => !salvando && selecionarPaleta(p.id)}
+              style={{
+                padding: '1rem',
+                background: 'var(--color-surface-2)',
+                border: paletaCor === p.id ? '3px solid var(--color-accent)' : '2px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: salvando ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: salvando ? 0.5 : 1,
+                textAlign: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (!salvando) e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
             >
-              <span className="text-5xl">{paleta.emoji}</span>
-            </div>
-
-            {/* Informações */}
-            <div className="p-4">
-              <h4 className="font-bold mb-1 flex items-center justify-between" style={{ color: 'var(--color-text)' }}>
-                {paleta.nome}
-                {corAtual === paleta.id && (
-                  <span className="text-sm" style={{ color: paleta.cor }}>✓ Ativo</span>
-                )}
-              </h4>
-              <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-                {paleta.descricao}
-              </p>
-            </div>
-
-            {/* Indicador de seleção */}
-            {corAtual === paleta.id && (
-              <div 
-                className="absolute -top-2 -right-2 rounded-full w-8 h-8 flex items-center justify-center font-bold shadow-lg text-white"
-                style={{ backgroundColor: paleta.cor }}
-              >
-                ✓
+              <div style={{ 
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '0.5rem'
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '0.5rem',
+                  background: p.cor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.25rem'
+                }}>
+                  {p.emoji}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+              <p style={{ 
+                fontSize: '0.75rem', 
+                fontWeight: '600',
+                color: 'var(--color-text)',
+                marginBottom: '0.25rem'
+              }}>
+                {p.nome}
+              </p>
+              {paletaCor === p.id && (
+                <span style={{ 
+                  fontSize: '0.65rem',
+                  color: 'var(--color-accent)',
+                  fontWeight: '600'
+                }}>
+                  ✓ Ativo
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Aviso */}
-      <div className="mt-6 p-4 rounded border-l-4" style={{ 
-        backgroundColor: 'var(--color-info-bg)', 
-        borderColor: 'var(--color-info)' 
+      {/* COR DE ACENTO */}
+      <div style={{ marginBottom: '2rem' }}>
+        <h3 style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: '700', 
+          color: 'var(--color-text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '1rem'
+        }}>
+          COR DE ACENTO
+        </h3>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))',
+          gap: '0.75rem'
+        }}>
+          {coresAcento.map((c, i) => (
+            <div
+              key={i}
+              onClick={() => !salvando && selecionarCorAcento(c.cor)}
+              style={{
+                position: 'relative',
+                padding: '0.75rem',
+                background: 'var(--color-surface-2)',
+                border: corAcento === c.cor ? '3px solid var(--color-accent)' : '2px solid var(--color-border)',
+                borderRadius: 'var(--radius-md)',
+                cursor: salvando ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                opacity: salvando ? 0.5 : 1,
+                textAlign: 'center'
+              }}
+              onMouseEnter={(e) => {
+                if (!salvando) e.currentTarget.style.transform = 'scale(1.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'scale(1)';
+              }}
+            >
+              <div style={{
+                width: '100%',
+                height: '32px',
+                borderRadius: '0.375rem',
+                background: c.cor,
+                marginBottom: '0.5rem',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+              }}></div>
+              <p style={{ 
+                fontSize: '0.65rem', 
+                fontWeight: '600',
+                color: 'var(--color-text)',
+                lineHeight: '1.2'
+              }}>
+                {c.nome}
+              </p>
+              {corAcento === c.cor && (
+                <div style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '50%',
+                  background: 'var(--color-success)',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+                }}>
+                  ✓
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* COR PERSONALIZADA (HEX) */}
+      <div style={{ 
+        marginBottom: '2rem',
+        padding: '1.5rem',
+        background: 'var(--color-surface-2)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--color-border)'
       }}>
-        <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-          <strong>💡 Dica:</strong> O tema escolhido será aplicado imediatamente em todo o sistema. 
-          As preferências são salvas automaticamente.
-        </p>
+        <h3 style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: '700', 
+          color: 'var(--color-text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '0.75rem'
+        }}>
+          COR PERSONALIZADA (HEX)
+        </h3>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div style={{ 
+            width: '64px',
+            height: '64px',
+            borderRadius: 'var(--radius-md)',
+            background: corAcento,
+            border: '2px solid var(--color-border)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+          }}></div>
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              value={corAcento}
+              onChange={(e) => setCorAcento(e.target.value)}
+              disabled={salvando}
+              placeholder="#fbbf24"
+              style={{
+                width: '180px',
+                padding: '0.75rem 1rem',
+                fontSize: '0.875rem',
+                fontFamily: 'monospace',
+                color: 'var(--color-text)',
+                background: 'var(--color-surface)',
+                border: '2px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)',
+                marginBottom: '0.5rem'
+              }}
+            />
+            <button
+              onClick={() => salvarPreferencias(temaBase, paletaCor, corAcento)}
+              disabled={salvando}
+              style={{
+                ...estiloBotao('var(--color-accent)'),
+                marginLeft: '0.5rem'
+              }}
+              onMouseEnter={(e) => {
+                if (!salvando) {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+              }}
+            >
+              🔄 Padrão
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Preview ao vivo */}
-      <div className="mt-6">
-        <h4 className="font-bold mb-3" style={{ color: 'var(--color-text)' }}>
-          📱 Preview do Tema Atual:
-        </h4>
-        <div className="space-y-3">
-          {/* Cabeçalho exemplo */}
-          <div className="p-4 text-white" style={{ 
-            background: 'var(--color-accent)',
-            borderRadius: 'var(--radius-xl)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-          }}>
-            <h5 className="font-bold text-lg">Exemplo de Cabeçalho</h5>
-            <p className="text-sm opacity-90">Assim ficará o cabeçalho do sistema</p>
-          </div>
-
-          {/* Botões exemplo */}
-          <div className="flex gap-3 flex-wrap">
-            <button className="btn-primary">Botão Principal</button>
-            <button className="btn-secondary">Botão Secundário</button>
-            <button className="btn-success">Botão Sucesso</button>
-            <button className="btn-danger">Botão Perigo</button>
-          </div>
-
-          {/* Badges exemplo */}
-          <div className="flex gap-2 flex-wrap">
-            <span className="badge-primary">Primary</span>
-            <span className="badge-success">Sucesso</span>
-            <span className="badge-warning">Aviso</span>
-            <span className="badge-danger">Perigo</span>
-            <span className="badge-info">Info</span>
-          </div>
-
-          {/* Card exemplo */}
-          <div className="card">
-            <h6 className="font-bold mb-2" style={{ color: 'var(--color-accent)' }}>
-              Card de Exemplo
-            </h6>
-            <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
-              Este é um exemplo de como os cards e destaques ficarão com o tema selecionado.
-            </p>
+      {/* PRÉ-VISUALIZAÇÃO */}
+      <div>
+        <h3 style={{ 
+          fontSize: '0.875rem', 
+          fontWeight: '700', 
+          color: 'var(--color-text-muted)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '1rem'
+        }}>
+          PRÉ-VISUALIZAÇÃO
+        </h3>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {/* Botões */}
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            <button style={estiloBotao('var(--color-accent)')}>Botão Principal</button>
+            <button style={estiloBotao('var(--color-surface-2)')}>Secundário</button>
+            <button style={estiloBotao('var(--color-success)')}>Concluído</button>
+            <button style={estiloBotao('var(--color-warning)')}>Pendente</button>
+            <button style={estiloBotao('var(--color-danger)')}>Vencido</button>
+            <span style={{
+              padding: '0.375rem 0.875rem',
+              fontSize: '0.75rem',
+              fontWeight: '600',
+              background: corAcento,
+              color: 'white',
+              borderRadius: '0.5rem',
+              display: 'inline-flex',
+              alignItems: 'center'
+            }}>456825</span>
           </div>
         </div>
       </div>
