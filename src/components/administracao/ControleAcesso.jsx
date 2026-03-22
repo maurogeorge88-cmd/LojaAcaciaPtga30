@@ -285,7 +285,7 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20" style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
+      <div className="flex items-center justify-center py-20">
         <div className="text-center">
           <div className="spinner" style={{ margin: '0 auto', marginBottom: '1rem' }}></div>
           <p style={{ color: 'var(--color-text-muted)' }}>Carregando logs...</p>
@@ -295,7 +295,7 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto" style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
+    <div className="max-w-7xl mx-auto" style={{ background: 'transparent' }}>
       {/* Cabeçalho */}
       <div className="mb-6">
         <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>🔐 Controle de Acesso</h2>
