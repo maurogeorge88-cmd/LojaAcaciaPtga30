@@ -172,14 +172,14 @@ export default function DadosLoja({ showSuccess, showError }) {
   }
 
   return (
-    <div className="space-y-6 px-8 py-6 min-h-screen" style={{ backgroundColor: '#f3f4f6' }}>
+    <div className="space-y-6 px-8 py-6 min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Header */}
       <div className="flex justify-between items-center">
-        <p className="text-gray-600">Cadastrar Dados da Loja</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>Cadastrar Dados da Loja</p>
         {!editando ? (
           <button
             onClick={() => setEditando(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="btn-primary"
           >
             ✏️ Editar
           </button>
@@ -190,13 +190,13 @@ export default function DadosLoja({ showSuccess, showError }) {
                 setEditando(false);
                 carregarDados();
               }}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+              className="btn-secondary"
             >
               Cancelar
             </button>
             <button
               onClick={salvar}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              className="btn-success"
             >
               💾 Salvar
             </button>
@@ -205,17 +205,17 @@ export default function DadosLoja({ showSuccess, showError }) {
       </div>
 
       {/* Conteúdo */}
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {/* Logo */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               🖼️ Logo da Loja
             </label>
             <div className="flex items-center gap-4">
               {logoPreview && (
-                <div className="w-32 h-32 border-2 border-gray-300 rounded-lg overflow-hidden flex items-center justify-center bg-gray-50">
+                <div className="w-32 h-32 border-2 rounded-lg overflow-hidden flex items-center justify-center" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-2)' }}>
                   <img 
                     src={logoPreview} 
                     alt="Logo" 
@@ -229,9 +229,9 @@ export default function DadosLoja({ showSuccess, showError }) {
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    className="file-input"
                   />
-                  <p className="text-xs text-gray-500 mt-1">PNG, JPG ou GIF (máx. 2MB)</p>
+                  <p className="form-hint">PNG, JPG ou GIF (máx. 2MB)</p>
                 </div>
               )}
             </div>
@@ -239,12 +239,12 @@ export default function DadosLoja({ showSuccess, showError }) {
 
           {/* Símbolo Maçônico */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               ⚜️ Símbolo Maçônico (Esquadro e Compasso)
             </label>
             <div className="flex items-center gap-4">
               {simboloPreview && (
-                <div className="w-32 h-32 border-2 border-yellow-600 rounded-lg overflow-hidden flex items-center justify-center bg-yellow-50">
+                <div className="w-32 h-32 border-2 rounded-lg overflow-hidden flex items-center justify-center" style={{ borderColor: 'var(--color-accent)', backgroundColor: 'var(--color-accent-bg)' }}>
                   <img 
                     src={simboloPreview} 
                     alt="Símbolo Maçônico" 
@@ -258,9 +258,9 @@ export default function DadosLoja({ showSuccess, showError }) {
                     type="file"
                     accept="image/*"
                     onChange={handleSimboloUpload}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                    className="file-input"
                   />
-                  <p className="text-xs text-gray-500 mt-1">PNG com fundo transparente (máx. 2MB)</p>
+                  <p className="form-hint">PNG com fundo transparente (máx. 2MB)</p>
                 </div>
               )}
             </div>
@@ -268,7 +268,7 @@ export default function DadosLoja({ showSuccess, showError }) {
 
           {/* Nome da Loja */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Nome da Loja *
             </label>
             <input
@@ -277,14 +277,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.nome_loja}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: Acácia de Paranatinga"
             />
           </div>
 
           {/* Número */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Número *
             </label>
             <input
@@ -293,14 +293,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.numero_loja}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: 30"
             />
           </div>
 
           {/* Data de Fundação */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Data de Fundação
             </label>
             <input
@@ -309,13 +309,13 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.data_fundacao}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
             />
           </div>
 
           {/* Potência */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Potência Maçônica
             </label>
             <input
@@ -324,14 +324,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.potencia}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: Grande Oriente do Brasil"
             />
           </div>
 
           {/* Grande Loja */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Grande Loja
             </label>
             <input
@@ -340,14 +340,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.grande_loja}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: Grande Loja Maçônica de Mato Grosso"
             />
           </div>
 
           {/* Oriente */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Oriente
             </label>
             <input
@@ -356,14 +356,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.oriente}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: Paranatinga"
             />
           </div>
 
           {/* Vale */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Vale
             </label>
             <input
@@ -372,14 +372,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.vale}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: Cuiabá"
             />
           </div>
 
           {/* Endereço */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Endereço
             </label>
             <input
@@ -388,14 +388,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.endereco}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Rua, número"
             />
           </div>
 
           {/* Cidade */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Cidade
             </label>
             <input
@@ -404,14 +404,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.cidade}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: Paranatinga"
             />
           </div>
 
           {/* Estado */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Estado
             </label>
             <input
@@ -420,7 +420,7 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.estado}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="Ex: MT"
               maxLength={2}
             />
@@ -428,7 +428,7 @@ export default function DadosLoja({ showSuccess, showError }) {
 
           {/* CEP */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               CEP
             </label>
             <input
@@ -437,14 +437,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.cep}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="00000-000"
             />
           </div>
 
           {/* Telefone */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               Telefone
             </label>
             <input
@@ -453,14 +453,14 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.telefone}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="(00) 00000-0000"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="form-label">
               E-mail
             </label>
             <input
@@ -469,7 +469,7 @@ export default function DadosLoja({ showSuccess, showError }) {
               value={dadosLoja.email}
               onChange={handleChange}
               disabled={!editando}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="form-input"
               placeholder="contato@loja.com.br"
             />
           </div>
