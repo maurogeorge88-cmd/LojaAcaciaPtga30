@@ -441,8 +441,8 @@ IMPORTANTE: Copie estas informações agora!
   return (
     <div className="space-y-6">
       {/* FORMULÁRIO */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">
+      <div className="card">
+        <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
           {modoEdicao ? '✏️ Editar Usuário' : '➕ Novo Usuário'}
         </h3>
 
@@ -450,7 +450,7 @@ IMPORTANTE: Copie estas informações agora!
           {/* Nome e Email */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Nome Completo *
               </label>
               <input
@@ -458,13 +458,13 @@ IMPORTANTE: Copie estas informações agora!
                 required
                 value={usuarioForm.nome}
                 onChange={(e) => setUsuarioForm({ ...usuarioForm, nome: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="form-input"
                 placeholder="João da Silva"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Email *
               </label>
               <input
@@ -473,7 +473,7 @@ IMPORTANTE: Copie estas informações agora!
                 disabled={modoEdicao}
                 value={usuarioForm.email}
                 onChange={(e) => setUsuarioForm({ ...usuarioForm, email: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                className="form-input"
                 placeholder="joao@email.com"
               />
             </div>
@@ -482,7 +482,7 @@ IMPORTANTE: Copie estas informações agora!
           {/* Senha (apenas criação) */}
           {!modoEdicao && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Senha * (mínimo 6 caracteres)
               </label>
               <div className="flex gap-2">
@@ -491,25 +491,57 @@ IMPORTANTE: Copie estas informações agora!
                   required
                   value={usuarioForm.senha}
                   onChange={(e) => setUsuarioForm({ ...usuarioForm, senha: e.target.value })}
-                  className="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="form-input"
+                  style={{ flex: 1 }}
                   placeholder="Digite uma senha"
                 />
                 <button
                   type="button"
                   onClick={() => setMostrarSenha(!mostrarSenha)}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-surface-2)',
+                    color: 'var(--color-text)',
+                    border: '2px solid var(--color-border)',
+                    borderRadius: 'var(--radius-lg)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontSize: '1.25rem'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'var(--color-surface-3)'}
+                  onMouseLeave={(e) => e.target.style.background = 'var(--color-surface-2)'}
                 >
                   {mostrarSenha ? '🙈' : '👁️'}
                 </button>
                 <button
                   type="button"
                   onClick={gerarSenhaAleatoria}
-                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: 'var(--radius-lg)',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    fontWeight: '600',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = 'var(--color-accent-hover)';
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'var(--color-accent)';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                  }}
                 >
                   🎲 Gerar
                 </button>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="form-hint">
                 💡 Copie a senha antes de criar o usuário!
               </p>
             </div>
@@ -518,7 +550,7 @@ IMPORTANTE: Copie estas informações agora!
           {/* Cargo e Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Cargo *
               </label>
               <select
@@ -529,7 +561,8 @@ IMPORTANTE: Copie estas informações agora!
                     aplicarSugestaoPermissoes(e.target.value);
                   }
                 }}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="form-input"
+                style={{ cursor: 'pointer' }}
               >
                 <option value="irmao">Irmão</option>
                 <option value="secretario">Secretário</option>
@@ -542,20 +575,21 @@ IMPORTANTE: Copie estas informações agora!
                 <option value="administrador">Administrador</option>
               </select>
               {!modoEdicao && (
-                <p className="text-xs text-blue-600 mt-1">
+                <p className="form-hint" style={{ color: 'var(--color-accent)' }}>
                   💡 Permissões são aplicadas automaticamente
                 </p>
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="form-label">
                 Status
               </label>
               <select
                 value={usuarioForm.ativo}
                 onChange={(e) => setUsuarioForm({ ...usuarioForm, ativo: e.target.value === 'true' })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="form-input"
+                style={{ cursor: 'pointer' }}
               >
                 <option value="true">✅ Ativo</option>
                 <option value="false">🚫 Inativo</option>
@@ -760,7 +794,18 @@ IMPORTANTE: Copie estas informações agora!
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition"
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--color-surface-2)',
+                  color: 'var(--color-text)',
+                  border: '2px solid var(--color-border)',
+                  borderRadius: 'var(--radius-lg)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  fontWeight: '600',
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'var(--color-surface-3)'}
+                onMouseLeave={(e) => e.target.style.background = 'var(--color-surface-2)'}
               >
                 Cancelar
               </button>
@@ -768,7 +813,32 @@ IMPORTANTE: Copie estas informações agora!
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50"
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease',
+                fontWeight: '600',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                opacity: loading ? 0.5 : 1
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.background = 'var(--color-accent-hover)';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.target.style.background = 'var(--color-accent)';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+                }
+              }}
             >
               {loading ? 'Salvando...' : (modoEdicao ? '💾 Atualizar' : '➕ Criar Usuário')}
             </button>
@@ -777,57 +847,99 @@ IMPORTANTE: Copie estas informações agora!
       </div>
 
       {/* LISTA DE USUÁRIOS */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-bold text-gray-900 mb-4">
+      <div className="card">
+        <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
           👥 Usuários Cadastrados ({usuarios?.length || 0})
         </h3>
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50">
+            <thead style={{ background: 'var(--color-surface-2)' }}>
               <tr>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Nome</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Email</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Cargo</th>
-                <th className="px-4 py-2 text-center text-sm font-semibold">Permissões</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">Senha Temp</th>
-                <th className="px-4 py-2 text-center text-sm font-semibold">Status</th>
-                <th className="px-4 py-2 text-center text-sm font-semibold">Ações</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Nome</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Email</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Cargo</th>
+                <th className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Permissões</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Senha Temp</th>
+                <th className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Status</th>
+                <th className="px-4 py-2 text-center text-sm font-semibold" style={{ color: 'var(--color-text)' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {usuarios?.map((usuario) => (
-                <tr key={usuario.id} className="border-t hover:bg-gray-50">
+                <tr key={usuario.id} style={{ borderTop: '1px solid var(--color-border)' }}>
                   <td className="px-4 py-3">
-                    <span className="font-medium text-gray-900">{usuario.nome}</span>
+                    <span className="font-medium" style={{ color: 'var(--color-text)' }}>{usuario.nome}</span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--color-text-muted)' }}>
                     {usuario.email}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                    <span style={{
+                      padding: '0.25rem 0.75rem',
+                      background: 'var(--color-accent-bg)',
+                      color: 'var(--color-accent)',
+                      fontSize: '0.75rem',
+                      borderRadius: 'var(--radius-md)',
+                      fontWeight: '600'
+                    }}>
                       {formatarCargo(usuario.cargo)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1 justify-center flex-wrap">
                       {usuario.pode_editar_cadastros && (
-                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">✏️</span>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          background: 'var(--color-success-bg)',
+                          color: 'var(--color-success)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontWeight: '600'
+                        }}>✏️</span>
                       )}
                       {usuario.pode_visualizar_financeiro && (
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">👁️</span>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          background: 'var(--color-warning-bg)',
+                          color: 'var(--color-warning)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontWeight: '600'
+                        }}>👁️</span>
                       )}
                       {usuario.pode_editar_financeiro && (
-                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">💰</span>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          background: 'var(--color-accent-bg)',
+                          color: 'var(--color-accent)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontWeight: '600'
+                        }}>💰</span>
                       )}
                       {usuario.pode_gerenciar_usuarios && (
-                        <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">👥</span>
+                        <span style={{
+                          fontSize: '0.75rem',
+                          background: 'var(--color-danger-bg)',
+                          color: 'var(--color-danger)',
+                          padding: '0.25rem 0.5rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontWeight: '600'
+                        }}>👥</span>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {usuario.senha_temporaria ? (
-                      <span className="font-mono text-xs bg-yellow-50 px-2 py-1 rounded border border-yellow-200">
+                      <span style={{
+                        fontFamily: 'monospace',
+                        fontSize: '0.75rem',
+                        background: 'var(--color-warning-bg)',
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--color-border)'
+                      }}>
                         🔑 {usuario.senha_temporaria}
                       </span>
                     ) : (
@@ -845,23 +957,60 @@ IMPORTANTE: Copie estas informações agora!
                     <div className="flex gap-2 justify-center">
                       <button
                         onClick={() => handleEditarUsuario(usuario)}
-                        className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-800 text-sm rounded transition"
                         title="Editar"
+                        style={{
+                          padding: '0.25rem 0.75rem',
+                          background: 'var(--color-accent-bg)',
+                          color: 'var(--color-accent)',
+                          fontSize: '0.875rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          fontWeight: '600'
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => handleResetarSenha(usuario)}
                         disabled={resetandoSenha === usuario.id}
-                        className="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-sm rounded transition disabled:opacity-50"
                         title="Resetar Senha"
+                        style={{
+                          padding: '0.25rem 0.75rem',
+                          background: 'var(--color-warning-bg)',
+                          color: 'var(--color-warning)',
+                          fontSize: '0.875rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: 'none',
+                          cursor: resetandoSenha === usuario.id ? 'not-allowed' : 'pointer',
+                          transition: 'all 0.2s ease',
+                          fontWeight: '600',
+                          opacity: resetandoSenha === usuario.id ? 0.5 : 1
+                        }}
+                        onMouseEnter={(e) => { if (resetandoSenha !== usuario.id) e.target.style.opacity = '0.8'; }}
+                        onMouseLeave={(e) => { if (resetandoSenha !== usuario.id) e.target.style.opacity = '1'; }}
                       >
                         🔑
                       </button>
                       <button
                         onClick={() => handleExcluirUsuario(usuario)}
-                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-800 text-sm rounded transition"
                         title="Excluir"
+                        style={{
+                          padding: '0.25rem 0.75rem',
+                          background: 'var(--color-danger-bg)',
+                          color: 'var(--color-danger)',
+                          fontSize: '0.875rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          fontWeight: '600'
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
                       >
                         🗑️
                       </button>
@@ -874,16 +1023,21 @@ IMPORTANTE: Copie estas informações agora!
         </div>
 
         {usuarios?.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8" style={{ color: 'var(--color-text-muted)' }}>
             Nenhum usuário cadastrado ainda.
           </div>
         )}
       </div>
 
       {/* LEGENDA */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2">💡 Sobre Permissões</h4>
-        <ul className="text-sm text-blue-800 space-y-1">
+      <div style={{
+        background: 'var(--color-accent-bg)',
+        border: '1px solid var(--color-accent)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '1rem'
+      }}>
+        <h4 className="font-semibold mb-2" style={{ color: 'var(--color-accent)' }}>💡 Sobre Permissões</h4>
+        <ul className="text-sm space-y-1" style={{ color: 'var(--color-text)' }}>
           <li>• <strong>Sugestões automáticas:</strong> Ao selecionar um cargo, permissões são sugeridas</li>
           <li>• <strong>Totalmente customizável:</strong> Você pode marcar/desmarcar qualquer permissão</li>
           <li>• <strong>Flexível:</strong> Um Irmão pode ter permissão de editar finanças se necessário</li>
