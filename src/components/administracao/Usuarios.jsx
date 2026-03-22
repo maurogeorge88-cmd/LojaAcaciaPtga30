@@ -440,9 +440,7 @@ IMPORTANTE: Copie estas informações agora!
 
   return (
     <div className="space-y-6" style={{ 
-      background: 'var(--color-bg)',
-      minHeight: '100vh',
-      padding: '2rem'
+      background: 'transparent'
     }}>
       {/* FORMULÁRIO */}
       <div className="card">
