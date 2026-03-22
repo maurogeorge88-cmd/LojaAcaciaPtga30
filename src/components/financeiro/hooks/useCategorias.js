@@ -5,7 +5,7 @@
 // Extraído de FinancasLoja.jsx para melhor organização
 
 import { useState, useCallback, useMemo } from 'react';
-import { supabase } from '../../../App';
+import { supabase } from '../../../supabaseClient';
 
 /**
  * Hook para gerenciar categorias financeiras
