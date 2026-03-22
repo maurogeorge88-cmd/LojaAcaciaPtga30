@@ -63,7 +63,7 @@ const SeletorTema = () => {
       const { data, error } = await supabase
         .from('usuarios')
         .select('pref_tema_base, pref_cor_paleta')
-        .eq('id', user.id)
+        .eq('email', user.email)
         .single();
 
       if (!error && data) {
@@ -109,7 +109,7 @@ const SeletorTema = () => {
       const { error } = await supabase
         .from('usuarios')
         .update({ pref_cor_paleta: novaCor })
-        .eq('id', user.id);
+        .eq('email', user.email);
 
       if (error) throw error;
 
@@ -135,7 +135,7 @@ const SeletorTema = () => {
       const { error } = await supabase
         .from('usuarios')
         .update({ pref_tema_base: novoTema })
-        .eq('id', user.id);
+        .eq('email', user.email);
 
       if (error) throw error;
 
