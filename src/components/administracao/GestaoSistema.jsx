@@ -15,23 +15,47 @@ export default function GestaoSistema({ usuarios, userData, onUpdate, showSucces
   const [abaSelecionada, setAbaSelecionada] = useState(abaInicial);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto" style={{ 
+      background: 'var(--color-bg)',
+      minHeight: '100vh'
+    }}>
       {/* Cabeçalho */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">⚙️ Gestão do Sistema</h1>
-        <p className="text-gray-600">Gerencie usuários e monitore o acesso ao sistema</p>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>⚙️ Gestão do Sistema</h1>
+        <p style={{ color: 'var(--color-text-muted)' }}>Gerencie usuários e monitore o acesso ao sistema</p>
       </div>
 
       {/* Abas de navegação */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex border-b">
+      <div className="card mb-6" style={{ padding: 0 }}>
+        <div className="flex" style={{ borderBottom: '1px solid var(--color-border)' }}>
           <button
             onClick={() => setAbaSelecionada('usuarios')}
-            className={`flex-1 px-6 py-4 font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-              abaSelecionada === 'usuarios'
-                ? 'bg-blue-600 text-white border-b-4 border-blue-700'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
+            style={{
+              flex: 1,
+              padding: '1rem 1.5rem',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              background: abaSelecionada === 'usuarios' ? 'var(--color-accent)' : 'transparent',
+              color: abaSelecionada === 'usuarios' ? 'white' : 'var(--color-text)',
+              borderBottom: abaSelecionada === 'usuarios' ? '4px solid var(--color-accent-hover)' : 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderTopLeftRadius: 'var(--radius-xl)'
+            }}
+            onMouseEnter={(e) => {
+              if (abaSelecionada !== 'usuarios') {
+                e.target.style.background = 'var(--color-surface-2)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (abaSelecionada !== 'usuarios') {
+                e.target.style.background = 'transparent';
+              }
+            }}
           >
             <span className="text-xl">👤</span>
             <span>Gerenciar Usuários</span>
@@ -39,11 +63,32 @@ export default function GestaoSistema({ usuarios, userData, onUpdate, showSucces
           
           <button
             onClick={() => setAbaSelecionada('logs')}
-            className={`flex-1 px-6 py-4 font-semibold transition-all duration-200 flex items-center justify-center gap-2 ${
-              abaSelecionada === 'logs'
-                ? 'bg-blue-600 text-white border-b-4 border-blue-700'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
+            style={{
+              flex: 1,
+              padding: '1rem 1.5rem',
+              fontWeight: '600',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              background: abaSelecionada === 'logs' ? 'var(--color-accent)' : 'transparent',
+              color: abaSelecionada === 'logs' ? 'white' : 'var(--color-text)',
+              borderBottom: abaSelecionada === 'logs' ? '4px solid var(--color-accent-hover)' : 'none',
+              border: 'none',
+              cursor: 'pointer',
+              borderTopRightRadius: 'var(--radius-xl)'
+            }}
+            onMouseEnter={(e) => {
+              if (abaSelecionada !== 'logs') {
+                e.target.style.background = 'var(--color-surface-2)';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (abaSelecionada !== 'logs') {
+                e.target.style.background = 'transparent';
+              }
+            }}
           >
             <span className="text-xl">🔐</span>
             <span>Controle de Acesso</span>
@@ -60,6 +105,7 @@ export default function GestaoSistema({ usuarios, userData, onUpdate, showSucces
             onUpdate={onUpdate}
             showSuccess={showSuccess}
             showError={showError}
+            embedded={true}
           />
         )}
 
@@ -68,6 +114,7 @@ export default function GestaoSistema({ usuarios, userData, onUpdate, showSucces
             userData={userData}
             showSuccess={showSuccess}
             showError={showError}
+            embedded={true}
           />
         )}
       </div>
