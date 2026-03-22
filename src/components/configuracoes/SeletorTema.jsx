@@ -76,8 +76,12 @@ const SeletorTema = () => {
       document.documentElement.removeAttribute('data-theme');
     }
     
-    // Paleta de cor (não aplicado ainda, apenas salvando preferência)
-    // Pode ser usado no futuro para mudar cores de fundo
+    // Paleta de cor (aplicar data-color)
+    if (paleta && paleta !== 'azul-escuro') {
+      document.documentElement.setAttribute('data-color', paleta);
+    } else {
+      document.documentElement.removeAttribute('data-color');
+    }
     
     // Cor de acento (botões e bordas)
     document.documentElement.style.setProperty('--color-accent', acento);
@@ -85,6 +89,8 @@ const SeletorTema = () => {
     // Calcular cor hover (10% mais escura)
     const hoverColor = adjustColor(acento, -10);
     document.documentElement.style.setProperty('--color-accent-hover', hoverColor);
+    
+    console.log('🎨 Tema aplicado:', { tema, paleta, acento });
   };
 
   const adjustColor = (hex, percent) => {
