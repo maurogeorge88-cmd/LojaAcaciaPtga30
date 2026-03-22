@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../App';
+import { supabase } from '../../supabaseClient';
 import GestaoEquipamentos from './GestaoEquipamentos';
 import GestaoBeneficiarios from './GestaoBeneficiarios';
 import GestaoEmprestimos from './GestaoEmprestimos';
