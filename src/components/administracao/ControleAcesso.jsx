@@ -285,66 +285,85 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex items-center justify-center py-20" style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Carregando logs...</p>
+          <div className="spinner" style={{ margin: '0 auto', marginBottom: '1rem' }}></div>
+          <p style={{ color: 'var(--color-text-muted)' }}>Carregando logs...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto" style={{ background: 'var(--color-bg)', minHeight: '100vh' }}>
       {/* Cabeçalho */}
       <div className="mb-6">
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">🔐 Controle de Acesso</h2>
-        <p className="text-gray-600">Visualize e gerencie o histórico de acesso ao sistema</p>
+        <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>🔐 Controle de Acesso</h2>
+        <p style={{ color: 'var(--color-text-muted)' }}>Visualize e gerencie o histórico de acesso ao sistema</p>
       </div>
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white shadow-lg">
+        <div style={{
+          background: 'linear-gradient(135deg, var(--color-accent), var(--color-accent-hover))',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1rem',
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Total de Acessos</p>
+              <p className="text-sm" style={{ opacity: 0.9 }}>Total de Acessos</p>
               <p className="text-3xl font-bold">{estatisticas.totalAcessos}</p>
             </div>
-            <div className="text-4xl opacity-80">📊</div>
+            <div className="text-4xl" style={{ opacity: 0.8 }}>📊</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white shadow-lg">
+        <div style={{
+          background: 'linear-gradient(135deg, var(--color-success), var(--color-success-hover))',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1rem',
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm">Usuários Ativos</p>
+              <p className="text-sm" style={{ opacity: 0.9 }}>Usuários Ativos</p>
               <p className="text-3xl font-bold">{estatisticas.usuariosAtivos}</p>
             </div>
-            <div className="text-4xl opacity-80">👥</div>
+            <div className="text-4xl" style={{ opacity: 0.8 }}>👥</div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white shadow-lg">
+        <div style={{
+          background: 'linear-gradient(135deg, var(--color-warning), var(--color-warning-hover))',
+          borderRadius: 'var(--radius-lg)',
+          padding: '1rem',
+          color: 'white',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+        }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm">Ações Hoje</p>
+              <p className="text-sm" style={{ opacity: 0.9 }}>Ações Hoje</p>
               <p className="text-3xl font-bold">{estatisticas.acoesHoje}</p>
             </div>
-            <div className="text-4xl opacity-80">⚡</div>
+            <div className="text-4xl" style={{ opacity: 0.8 }}>⚡</div>
           </div>
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <h3 className="text-lg font-semibold mb-4 text-gray-700">🔍 Filtros</h3>
+      <div className="card mb-6">
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--color-text)' }}>🔍 Filtros</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+            <label className="form-label">Usuário</label>
             <select
               value={filtros.usuario}
               onChange={(e) => setFiltros({ ...filtros, usuario: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="form-input"
+              style={{ cursor: 'pointer' }}
             >
               <option value="">Todos os usuários</option>
               {usuarios.map(user => (
@@ -354,11 +373,12 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ação</label>
+            <label className="form-label">Ação</label>
             <select
               value={filtros.acao}
               onChange={(e) => setFiltros({ ...filtros, acao: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="form-input"
+              style={{ cursor: 'pointer' }}
             >
               <option value="">Todas as ações</option>
               <option value="login">Login</option>
@@ -372,33 +392,33 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data Início</label>
+            <label className="form-label">Data Início</label>
             <input
               type="date"
               value={filtros.dataInicio}
               onChange={(e) => setFiltros({ ...filtros, dataInicio: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="form-input"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data Fim</label>
+            <label className="form-label">Data Fim</label>
             <input
               type="date"
               value={filtros.dataFim}
               onChange={(e) => setFiltros({ ...filtros, dataFim: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="form-input"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+            <label className="form-label">Buscar</label>
             <input
               type="text"
               value={filtros.busca}
               onChange={(e) => setFiltros({ ...filtros, busca: e.target.value })}
               placeholder="IP, detalhes..."
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="form-input"
             />
           </div>
         </div>
@@ -440,7 +460,7 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
       )}
 
       {/* Tabela de Logs */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="card overflow-hidden">
         <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
           <div className="flex items-center gap-3">
             <input
