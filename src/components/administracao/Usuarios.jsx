@@ -11,7 +11,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, showError }) {
+export default function Usuarios({ usuarios, userData, onUpdate, showSuccess, showError, embedded = false }) {
   const [usuarioForm, setUsuarioForm] = useState({
     nome: '',
     email: '',
@@ -439,11 +439,22 @@ IMPORTANTE: Copie estas informações agora!
   };
 
   return (
-    <div style={{ 
-      background: 'var(--color-bg)',
-      minHeight: '100vh',
-      padding: '2rem'
-    }}>
+    <>
+      {!embedded && (
+        <div style={{ 
+          background: 'var(--color-bg)',
+          minHeight: '100vh',
+          padding: '2rem'
+        }}>
+          <ConteudoUsuarios />
+        </div>
+      )}
+      {embedded && <ConteudoUsuarios />}
+    </>
+  );
+
+  function ConteudoUsuarios() {
+    return (
       <div className="space-y-6">
       {/* FORMULÁRIO */}
       <div className="card">
@@ -1149,6 +1160,6 @@ IMPORTANTE: Copie estas informações agora!
         </ul>
       </div>
       </div>
-    </div>
-  );
+    );
+  }
 }
