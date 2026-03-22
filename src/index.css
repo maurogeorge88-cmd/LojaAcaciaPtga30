@@ -1,3 +1,6 @@
+/* Importar globals.css PRIMEIRO (antes do Tailwind) */
+@import './styles/globals.css';
+
 /* Importar sistema de temas */
 @import './styles/themes.css';
 
@@ -12,14 +15,13 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #fee2e2 !important; /* red-100 - TESTE VISÍVEL */
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 #root {
-  background-color: #fef3c7 !important; /* yellow-100 - TESTE */
+  background-color: var(--color-bg);
 }
