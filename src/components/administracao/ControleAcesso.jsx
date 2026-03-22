@@ -12,7 +12,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
-export default function ControleAcesso({ userData, showSuccess, showError }) {
+export default function ControleAcesso({ userData, showSuccess, showError, embedded = false }) {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filtros, setFiltros] = useState({
@@ -296,11 +296,13 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
 
   return (
     <div className="max-w-7xl mx-auto" style={{ background: 'transparent' }}>
-      {/* Cabeçalho */}
-      <div className="mb-6">
-        <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>🔐 Controle de Acesso</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>Visualize e gerencie o histórico de acesso ao sistema</p>
-      </div>
+      {/* Cabeçalho - só mostra se não estiver embedded */}
+      {!embedded && (
+        <div className="mb-6">
+          <h2 className="text-3xl font-bold mb-2" style={{ color: 'var(--color-text)' }}>🔐 Controle de Acesso</h2>
+          <p style={{ color: 'var(--color-text-muted)' }}>Visualize e gerencie o histórico de acesso ao sistema</p>
+        </div>
+      )}
 
       {/* Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -586,9 +588,13 @@ export default function ControleAcesso({ userData, showSuccess, showError }) {
       </div>
 
       {/* Informações adicionais */}
-      <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-800 mb-2">ℹ️ Informações</h4>
-        <ul className="text-sm text-blue-700 space-y-1">
+      <div className="mt-6 p-4" style={{
+        background: 'var(--color-accent-bg)',
+        border: '1px solid var(--color-accent)',
+        borderRadius: 'var(--radius-lg)'
+      }}>
+        <h4 className="font-semibold mb-2" style={{ color: 'var(--color-accent)' }}>ℹ️ Informações</h4>
+        <ul className="text-sm space-y-1" style={{ color: 'var(--color-text)' }}>
           <li>• Os logs são registrados automaticamente para todas as ações no sistema</li>
           <li>• Use os filtros para encontrar logs específicos</li>
           <li>• Selecione múltiplos logs para excluí-los em massa</li>
