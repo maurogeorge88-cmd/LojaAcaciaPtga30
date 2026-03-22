@@ -439,9 +439,12 @@ IMPORTANTE: Copie estas informações agora!
   };
 
   return (
-    <div className="space-y-6" style={{ 
-      background: 'transparent'
+    <div style={{ 
+      background: 'var(--color-bg)',
+      minHeight: '100vh',
+      padding: '2rem'
     }}>
+      <div className="space-y-6">
       {/* FORMULÁRIO */}
       <div className="card">
         <h3 className="text-xl font-bold mb-4" style={{ color: 'var(--color-text)' }}>
@@ -1144,6 +1147,7 @@ IMPORTANTE: Copie estas informações agora!
           <li>• <strong>Flexível:</strong> Um Irmão pode ter permissão de editar finanças se necessário</li>
           <li>• <strong>Senha:</strong> Definida pelo admin na criação, pode ser resetada depois</li>
         </ul>
+      </div>
       </div>
     </div>
   );
