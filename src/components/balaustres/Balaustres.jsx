@@ -317,7 +317,8 @@ const Balaustres = ({
               <input
                 type="text"
                 value={balaustreForm.dia_semana}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 outline-none"
+                className="form-input"
+                style={{ background: 'var(--color-surface-2)', cursor: 'not-allowed' }}
                 readOnly
               />
             </div>
