@@ -43,6 +43,7 @@ import ListaSessoes from './components/ListaSessoes';
 import DashboardPresenca from './components/DashboardPresenca';
 import MinhaPresenca from './components/MinhaPresenca';
 import ModalVisualizarPresenca from './components/ModalVisualizarPresenca';
+import Login from './components/Login';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -752,15 +753,14 @@ function App() {
   // ========================================
   // FUNÇÕES DE AUTENTICAÇÃO
   // ========================================
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (emailParam, passwordParam) => {
     setLoading(true);
     setError('');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: emailParam,
+        password: passwordParam,
       });
 
       if (error) throw error;
@@ -768,7 +768,7 @@ function App() {
       const { data: userData } = await supabase
         .from('usuarios')
         .select('*')
-        .eq('email', email)
+        .eq('email', emailParam)
         .single();
 
       if (!userData?.ativo) {
@@ -777,14 +777,14 @@ function App() {
       }
 
       setSession(data.session);
-      loadUserData(email);
+      loadUserData(emailParam);
       
       // Registrar log de login
       try {
         const { data: user } = await supabase
           .from('usuarios')
           .select('id, nome')
-          .eq('email', email)
+          .eq('email', emailParam)
           .single();
         
         if (user) {
@@ -1257,55 +1257,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
   }
 
   if (!session) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-          <div className="text-center mb-8">
-            <img src={LOGO_URL} alt="Logo" className="w-32 h-32 mx-auto mb-4 rounded-full border-4 border-primary-600" />
-            <h1 className="text-3xl font-bold text-blue-900 mb-2">{NOME_LOJA}</h1>
-            <p className="text-gray-600">Gestão Maçônica</p>
-          </div>
-
-          {error && (
-            <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-lg transition disabled:bg-gray-400"
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+    return <Login onLogin={handleLogin} />;
   }
 
   // Contagens por situação
