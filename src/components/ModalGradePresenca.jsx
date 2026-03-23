@@ -545,10 +545,10 @@ export default function ModalGradePresenca({ onFechar }) {
                     </th>
                   );
                 })}
-                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs whitespace-nowrap">
+                <th style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>
                   Total
                 </th>
-                <th className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs">
+                <th style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', color: 'var(--color-text)' }}>
                   %
                 </th>
               </tr>
@@ -731,7 +731,7 @@ export default function ModalGradePresenca({ onFechar }) {
                     </span>
                   </td>
                   {sessoes.map(sessao => renderizarCelula(irmao.id, sessao.id))}
-                  <td className="border border-gray-300 px-2 py-2 text-center font-semibold bg-blue-50 text-xs">
+                  <td style={{ border: '1px solid var(--color-border)', padding: '0.5rem', textAlign: 'center', fontWeight: '600', background: 'var(--color-surface-2)', fontSize: '0.75rem', color: 'var(--color-text)' }}>
                     {presencasIrmao}/{sessoesElegiveis}
                     {temPrerrogativa && (
                       <div className="text-purple-600 text-[10px] mt-0.5">
