@@ -475,9 +475,9 @@ const Balaustres = ({
           return (
             <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
               <div className="text-6xl mb-4">🔒</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
-              <p className="text-gray-600 mb-1">Balaustres de <strong>Companheiro</strong> são restritos.</p>
-              <p className="text-gray-500 text-sm">Você precisa ser <strong>Companheiro</strong> ou superior para acessar.</p>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '0.5rem' }}>Acesso Restrito</h3>
+              <p style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Balaustres de <strong>Companheiro</strong> são restritos.</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Você precisa ser <strong>Companheiro</strong> ou superior para acessar.</p>
             </div>
           );
         }
@@ -487,9 +487,9 @@ const Balaustres = ({
           return (
             <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
               <div className="text-6xl mb-4">🔒</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
-              <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
-              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre ou Mestre Instalado</strong> para acessar.</p>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '0.5rem' }}>Acesso Restrito</h3>
+              <p style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Balaustres de <strong>Mestre</strong> são restritos.</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Você precisa ser <strong>Mestre ou Mestre Instalado</strong> para acessar.</p>
             </div>
           );
         }
@@ -499,29 +499,29 @@ const Balaustres = ({
           return (
             <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
               <div className="text-6xl mb-4">🔒</div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
-              <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
-              <p className="text-gray-500 text-sm">Você precisa ser <strong>Mestre ou Mestre Instalado</strong> para acessar.</p>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '0.5rem' }}>Acesso Restrito</h3>
+              <p style={{ color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Balaustres de <strong>Mestre</strong> são restritos.</p>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Você precisa ser <strong>Mestre ou Mestre Instalado</strong> para acessar.</p>
             </div>
           );
         }
         
         // Se passou nas verificações, mostrar a listagem normal
         return (
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="card" style={{ overflow: "hidden", padding: 0 }}>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px]">
-                <thead className="bg-blue-900 text-white">
+                <thead style={{ background: 'var(--color-accent)', color: 'white' }}>
                   <tr>
-                    <th className="px-4 py-3 text-left w-20">Nº</th>
-                    <th className="px-4 py-3 text-left w-32">Data</th>
-                    <th className="px-4 py-3 text-left w-32">Dia</th>
-                    <th className="px-4 py-3 text-left w-40">Tipo</th>
-                    <th className="px-4 py-3 text-left">Ordem do Dia</th>
-                    <th className="px-4 py-3 text-center w-80">Ações</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '5rem' }}>Nº</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '8rem' }}>Data</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '8rem' }}>Dia</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '10rem' }}>Tipo</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Ordem do Dia</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '20rem' }}>Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
                   {balaustresFiltradosPorAcesso.length > 0 ? (
                     balaustresFiltradosPorAcesso
                       .sort((a, b) => {
@@ -532,14 +532,19 @@ const Balaustres = ({
                     return b.numero_balaustre - a.numero_balaustre;
                   })
                   .map((balaustre) => (
-                    <tr key={balaustre.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-semibold">
+                    <tr 
+                      key={balaustre.id} 
+                      style={{ borderBottom: '1px solid var(--color-border)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: 'var(--color-text)' }}>
                         {balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">{formatarData(balaustre.data_sessao)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">{balaustre.dia_semana}</td>
-                      <td className="px-4 py-3">{obterNomeTipoSessao(balaustre.tipo_sessao_id)}</td>
-                      <td className="px-4 py-3">
+                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>{formatarData(balaustre.data_sessao)}</td>
+                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>{balaustre.dia_semana}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>{obterNomeTipoSessao(balaustre.tipo_sessao_id)}</td>
+                      <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>
                         <div className="max-w-xs truncate" title={balaustre.ordem_dia}>
                           {balaustre.ordem_dia || '-'}
                         </div>
