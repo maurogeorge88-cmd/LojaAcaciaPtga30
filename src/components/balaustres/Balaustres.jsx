@@ -255,7 +255,7 @@ const Balaustres = ({
               <select
                 value={balaustreForm.grau_sessao}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, grau_sessao: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="form-input"
                 required
               >
                 <option value="Aprendiz">Aprendiz</option>
@@ -268,31 +268,33 @@ const Balaustres = ({
             <div>
               <label className="form-label">
                 Número do Balaustre *
-                <span className="text-xs text-gray-500 ml-2">(Formato: N/ANO)</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '0.5rem' }}>(Formato: N/ANO)</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   value={balaustreForm.numero_balaustre}
                   onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: parseInt(e.target.value) || '' })}
-                  className="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="form-input"
+                  style={{ width: '6rem' }}
                   required
                   min="1"
                   placeholder="Nº"
                 />
-                <span className="flex items-center text-gray-500 text-lg font-bold">/</span>
+                <span style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', fontSize: '1.125rem', fontWeight: 'bold' }}>/</span>
                 <input
                   type="number"
                   value={balaustreForm.ano_balaustre}
                   onChange={(e) => setBalaustreForm({ ...balaustreForm, ano_balaustre: parseInt(e.target.value) || new Date().getFullYear() })}
-                  className="w-28 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="form-input"
+                  style={{ width: '7rem' }}
                   required
                   min="2020"
                   max="2099"
                   placeholder="Ano"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                 Ex: {balaustreForm.numero_balaustre || '1'}/{balaustreForm.ano_balaustre || new Date().getFullYear()}
               </p>
             </div>
@@ -304,7 +306,7 @@ const Balaustres = ({
                 type="date"
                 value={balaustreForm.data_sessao}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, data_sessao: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="form-input"
                 required
               />
             </div>
@@ -326,7 +328,7 @@ const Balaustres = ({
               <select
                 value={balaustreForm.tipo_sessao_id}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, tipo_sessao_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="form-input"
                 required
               >
                 <option value="">Selecione...</option>
@@ -344,7 +346,7 @@ const Balaustres = ({
               <textarea
                 value={balaustreForm.ordem_dia}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="form-input"
                 rows="4"
                 placeholder="Descreva a ordem do dia da sessão..."
               />
@@ -355,7 +357,7 @@ const Balaustres = ({
               <textarea
                 value={balaustreForm.observacoes}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, observacoes: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="form-input"
                 rows="4"
                 placeholder="Observações adicionais..."
               />
