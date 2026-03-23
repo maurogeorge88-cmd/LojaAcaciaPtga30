@@ -845,11 +845,15 @@ export default function DashboardPresenca() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div style={{ 
+      padding: '2rem', 
+      background: 'var(--color-bg)', 
+      minHeight: '100vh' 
+    }}>
       
       {/* Cabeçalho com Título e Filtros */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Dashboard de Presença</h1>
+      <div className="card">
+        <h1 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '1.5rem' }}>Dashboard de Presença</h1>
         
         {/* Seletor de Período */}
         <div className="flex items-center gap-4">
@@ -897,13 +901,25 @@ export default function DashboardPresenca() {
       </div>
       {/* Cards Totais */}
       <div className="grid grid-cols-5 gap-6 mb-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-          <p className="text-blue-600 font-semibold mb-2">Sessões</p>
-          <p className="text-4xl font-bold text-blue-800">{dados.sessoes}</p>
+        <div style={{ 
+          background: 'var(--color-accent-bg)', 
+          border: '1px solid var(--color-border)', 
+          borderRadius: 'var(--radius-lg)', 
+          padding: '1.5rem', 
+          textAlign: 'center' 
+        }}>
+          <p style={{ color: 'var(--color-accent)', fontWeight: '600', marginBottom: '0.5rem' }}>Sessões</p>
+          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.sessoes}</p>
         </div>
-        <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
-          <p className="text-green-600 font-semibold mb-2">Total de Irmãos</p>
-          <p className="text-4xl font-bold text-green-800">{dados.irmaos}</p>
+        <div style={{ 
+          background: 'var(--color-success-bg)', 
+          border: '1px solid var(--color-border)', 
+          borderRadius: 'var(--radius-lg)', 
+          padding: '1.5rem', 
+          textAlign: 'center' 
+        }}>
+          <p style={{ color: 'var(--color-success)', fontWeight: '600', marginBottom: '0.5rem' }}>Total de Irmãos</p>
+          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.irmaos}</p>
           {dados.stats && (
             <div className="mt-3 text-xs text-gray-600 space-y-1">
               <div>✅ Ativos: {dados.stats.ativos}</div>
@@ -914,9 +930,15 @@ export default function DashboardPresenca() {
             </div>
           )}
         </div>
-        <div className="bg-teal-50 border border-teal-200 rounded-lg p-6 text-center">
-          <p className="text-teal-600 font-semibold mb-2">Irmãos Ativos</p>
-          <p className="text-4xl font-bold text-teal-800">{dados.irmaosAtivos || 0}</p>
+        <div style={{ 
+          background: 'var(--color-info-bg)', 
+          border: '1px solid var(--color-border)', 
+          borderRadius: 'var(--radius-lg)', 
+          padding: '1.5rem', 
+          textAlign: 'center' 
+        }}>
+          <p style={{ color: 'var(--color-info)', fontWeight: '600', marginBottom: '0.5rem' }}>Irmãos Ativos</p>
+          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.irmaosAtivos || 0}</p>
           {dados.stats && (
             <div className="mt-3 text-xs text-gray-600 space-y-1">
               <div>✅ Regulares: {dados.stats.regulares}</div>
@@ -924,11 +946,17 @@ export default function DashboardPresenca() {
             </div>
           )}
         </div>
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 text-center">
-          <p className="text-purple-600 font-semibold mb-2">Média Presença</p>
-          <p className="text-4xl font-bold text-purple-800">{dados.mediaPresenca || 0}%</p>
+        <div style={{ 
+          background: 'var(--color-warning-bg)', 
+          border: '1px solid var(--color-border)', 
+          borderRadius: 'var(--radius-lg)', 
+          padding: '1.5rem', 
+          textAlign: 'center' 
+        }}>
+          <p style={{ color: 'var(--color-warning)', fontWeight: '600', marginBottom: '0.5rem' }}>Média Presença</p>
+          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.mediaPresenca || 0}%</p>
         </div>
-        <div className="bg-white border border-gray-300 rounded-lg p-6 text-center">
+        <div className="card" style={{ textAlign: "center" }}>
           <button
             onClick={() => setMostrarGrade(true)}
             className="w-full h-full flex flex-col items-center justify-center hover:bg-gray-50 transition-colors"
@@ -940,7 +968,7 @@ export default function DashboardPresenca() {
       </div>
 
       {/* Quadro: Sessões Recentes - largura total */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+      <div className="card" style={{ overflow: "hidden", marginBottom: "1.5rem" }}>
         <div className="bg-indigo-600 text-white p-4 flex items-center justify-between">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <span>📅</span>
@@ -1026,16 +1054,24 @@ export default function DashboardPresenca() {
       <div className="grid grid-cols-2 gap-6">
         
         {/* Quadro: Presença 100% */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-green-600 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+        <div className="card" style={{ overflow: "hidden", padding: 0 }}>
+          <div style={{ background: 'var(--color-success)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>🏆</span>
               Presença 100% - {resumoAno.length} {resumoAno.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
             <select
               value={anoPresenca100}
               onChange={(e) => setAnoPresenca100(Number(e.target.value))}
-              className="bg-green-700 text-white px-3 py-1 rounded font-semibold"
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
@@ -1089,7 +1125,7 @@ export default function DashboardPresenca() {
         </div>
 
         {/* Quadro: Irmãos com Prerrogativa (70+) */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="card" style={{ overflow: "hidden" }}>
           <div className="bg-purple-600 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>👴</span>
@@ -1152,7 +1188,7 @@ export default function DashboardPresenca() {
         </div>
 
         {/* Quadro: Irmãos Licenciados */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="card" style={{ overflow: "hidden" }}>
           <div className="bg-orange-500 text-white p-4 flex items-center justify-between">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <span>📋</span>
@@ -1215,7 +1251,7 @@ export default function DashboardPresenca() {
         </div>
 
         {/* Quadro: Ausências acima do percentual configurado */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="card" style={{ overflow: "hidden" }}>
           <div className="bg-orange-600 text-white p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
