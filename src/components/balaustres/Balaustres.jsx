@@ -239,11 +239,11 @@ const Balaustres = ({
   });
 
   return (
-    <div>
+    <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
       {permissoes?.pode_editar_balaustres && (
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h3 className="text-xl font-bold text-blue-900 mb-4">
+        <div className="card">
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '1rem' }}>
             {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
           </h3>
 
@@ -251,7 +251,7 @@ const Balaustres = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Grau da Sessão */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Grau da Sessão *</label>
+              <label className="form-label">Grau da Sessão *</label>
               <select
                 value={balaustreForm.grau_sessao}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, grau_sessao: e.target.value })}
@@ -266,7 +266,7 @@ const Balaustres = ({
 
             {/* Número do Balaustre com Ano */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="form-label">
                 Número do Balaustre *
                 <span className="text-xs text-gray-500 ml-2">(Formato: N/ANO)</span>
               </label>
@@ -299,7 +299,7 @@ const Balaustres = ({
 
             {/* Data da Sessão */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Data da Sessão *</label>
+              <label className="form-label">Data da Sessão *</label>
               <input
                 type="date"
                 value={balaustreForm.data_sessao}
@@ -311,7 +311,7 @@ const Balaustres = ({
 
             {/* Dia da Semana */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Dia da Semana</label>
+              <label className="form-label">Dia da Semana</label>
               <input
                 type="text"
                 value={balaustreForm.dia_semana}
@@ -322,7 +322,7 @@ const Balaustres = ({
 
             {/* Tipo de Sessão */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Sessão *</label>
+              <label className="form-label">Tipo de Sessão *</label>
               <select
                 value={balaustreForm.tipo_sessao_id}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, tipo_sessao_id: e.target.value })}
@@ -340,7 +340,7 @@ const Balaustres = ({
           {/* Ordem do Dia e Observações */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Ordem do Dia</label>
+              <label className="form-label">Ordem do Dia</label>
               <textarea
                 value={balaustreForm.ordem_dia}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
@@ -351,7 +351,7 @@ const Balaustres = ({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+              <label className="form-label">Observações</label>
               <textarea
                 value={balaustreForm.observacoes}
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, observacoes: e.target.value })}
@@ -367,7 +367,18 @@ const Balaustres = ({
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+              style={{
+                padding: '0.5rem 1.5rem',
+                background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => { if (!loading) e.target.style.background = 'var(--color-accent-hover)'; }}
+              onMouseLeave={(e) => { if (!loading) e.target.style.background = 'var(--color-accent)'; }}
             >
               {loading ? 'Salvando...' : (modoEdicao ? 'Atualizar Balaustre' : 'Cadastrar Balaustre')}
             </button>
@@ -376,7 +387,18 @@ const Balaustres = ({
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                style={{
+                  padding: '0.5rem 1.5rem',
+                  background: 'var(--color-surface-3)',
+                  color: 'var(--color-text)',
+                  border: 'none',
+                  borderRadius: 'var(--radius-lg)',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'var(--color-surface-2)'}
+                onMouseLeave={(e) => e.target.style.background = 'var(--color-surface-3)'}
               >
                 Cancelar Edição
               </button>
@@ -387,15 +409,26 @@ const Balaustres = ({
       )}
 
       {/* FILTRO POR GRAU */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+      <div className="card" style={{ padding: "1rem", marginBottom: "1.5rem" }}>
         <div className="flex gap-2">
           <button
             onClick={() => setGrauSelecionado('Aprendiz')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              grauSelecionado === 'Aprendiz'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
+            style={{
+              padding: '0.5rem 1rem',
+              background: grauSelecionado === 'Aprendiz' ? 'var(--color-accent)' : 'var(--color-surface-2)',
+              color: grauSelecionado === 'Aprendiz' ? 'white' : 'var(--color-text)',
+              border: 'none',
+              borderRadius: 'var(--radius-lg)',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              if (grauSelecionado !== 'Aprendiz') e.target.style.background = 'var(--color-surface-3)';
+            }}
+            onMouseLeave={(e) => {
+              if (grauSelecionado !== 'Aprendiz') e.target.style.background = 'var(--color-surface-2)';
+            }}
           >
             Aprendiz ({balaustres.filter(b => {
               const grau = (b.grau_sessao || '').trim().toLowerCase();
@@ -440,7 +473,7 @@ const Balaustres = ({
         // Aprendiz tentando ver Companheiro
         if (grauUser === 'aprendiz' && grauAba === 'companheiro') {
           return (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
               <p className="text-gray-600 mb-1">Balaustres de <strong>Companheiro</strong> são restritos.</p>
@@ -452,7 +485,7 @@ const Balaustres = ({
         // Aprendiz tentando ver Mestre
         if (grauUser === 'aprendiz' && grauAba === 'mestre') {
           return (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
               <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
@@ -464,7 +497,7 @@ const Balaustres = ({
         // Companheiro tentando ver Mestre
         if (grauUser === 'companheiro' && grauAba === 'mestre') {
           return (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center">
+            <div className="card" style={{ padding: "3rem", textAlign: "center" }}>
               <div className="text-6xl mb-4">🔒</div>
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Acesso Restrito</h3>
               <p className="text-gray-600 mb-1">Balaustres de <strong>Mestre</strong> são restritos.</p>
