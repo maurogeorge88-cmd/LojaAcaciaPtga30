@@ -443,7 +443,7 @@ export default function ModalGradePresenca({ onFechar }) {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-2xl font-bold">Grade de Presença</h2>
-              <p className="text-sm style={{ color: "rgba(255,255,255,0.9)" }} mt-1">
+              <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.9)" }}>
                 {sessoes.length} sessões • {irmaos.length} irmãos
               </p>
             </div>
