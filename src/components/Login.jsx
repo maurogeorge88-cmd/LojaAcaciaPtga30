@@ -294,41 +294,6 @@ export const Login = ({ onLogin }) => {
               >
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setMostrarRecuperacao(true)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#d4af37',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: '0.5rem'
-                  }}
-                >
-                  🔑 Esqueci minha senha
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setMostrarTrocarSenha(true)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: '#10b981',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    padding: '0.5rem'
-                  }}
-                >
-                  🆕 Primeiro Acesso? Trocar Senha Temporária
-                </button>
-              </div>
             </form>
           ) : (
             // FORMULÁRIO DE RECUPERAÇÃO
