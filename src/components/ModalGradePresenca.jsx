@@ -436,20 +436,20 @@ export default function ModalGradePresenca({ onFechar }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full h-[90vh] max-w-[95vw] flex flex-col">
+      <div className="card" style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" w-full h-[90vh] max-w-[95vw] flex flex-col">
         
         {/* Cabeçalho */}
-        <div className="bg-blue-600 text-white p-6">
+        <div style={{ background: "var(--color-accent)", color: "white", padding: "1.5rem" }}>
           <div className="flex justify-between items-center mb-4">
             <div>
               <h2 className="text-2xl font-bold">Grade de Presença</h2>
-              <p className="text-sm text-blue-100 mt-1">
+              <p className="text-sm style={{ color: "rgba(255,255,255,0.9)" }} mt-1">
                 {sessoes.length} sessões • {irmaos.length} irmãos
               </p>
             </div>
             <button
               onClick={onFechar}
-              className="hover:bg-blue-700 rounded-full p-2 transition-colors"
+              style={{ background: "rgba(0,0,0,0.2)", cursor: "pointer" }} onMouseEnter={(e) => e.target.style.background = "rgba(0,0,0,0.3)"} onMouseLeave={(e) => e.target.style.background = "rgba(0,0,0,0.2)" rounded-full p-2 transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -661,7 +661,16 @@ export default function ModalGradePresenca({ onFechar }) {
                   
                   return (
                 <tr key={irmao.id} className="hover:bg-gray-50">
-                  <td className="border border-gray-300 px-4 py-3 font-medium bg-white sticky left-0 z-10">
+                  <td style={{ 
+                    border: '1px solid var(--color-border)', 
+                    padding: '0.75rem 1rem', 
+                    fontWeight: '500',
+                    background: 'var(--color-surface)',
+                    position: 'sticky',
+                    left: 0,
+                    zIndex: 10,
+                    color: 'var(--color-text)'
+                  }}>
                     <div>{irmao.nome.split(' ').slice(0, 2).join(' ')}</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {(() => {
@@ -694,7 +703,16 @@ export default function ModalGradePresenca({ onFechar }) {
                       )}
                     </div>
                   </td>
-                  <td className="border border-gray-300 px-3 py-3 text-center bg-white sticky left-[105px] z-10">
+                  <td style={{
+                    border: '1px solid var(--color-border)',
+                    padding: '0.75rem',
+                    textAlign: 'center',
+                    background: 'var(--color-surface)',
+                    position: 'sticky',
+                    left: '105px',
+                    zIndex: 10,
+                    color: 'var(--color-text)'
+                  }}>
                     <span className={`text-xs px-2 py-1 rounded font-semibold ${
                       irmao.data_exaltacao 
                         ? (irmao.mestre_instalado ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800')
