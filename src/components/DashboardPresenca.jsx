@@ -1125,16 +1125,24 @@ export default function DashboardPresenca() {
         </div>
 
         {/* Quadro: Irmãos com Prerrogativa (70+) */}
-        <div className="card" style={{ overflow: "hidden" }}>
-          <div className="bg-purple-600 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+        <div className="card" style={{ overflow: "hidden", padding: 0 }}>
+          <div style={{ background: 'var(--color-warning)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>👴</span>
               Irmãos com Prerrogativa (70+) - {resumoPrerrogativa.length} {resumoPrerrogativa.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
             <select
               value={anoPrerrogativa}
               onChange={(e) => setAnoPrerrogativa(Number(e.target.value))}
-              className="bg-purple-700 text-white px-3 py-1 rounded font-semibold"
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
@@ -1143,33 +1151,38 @@ export default function DashboardPresenca() {
           </div>
           <div className="p-4">
             {resumoPrerrogativa.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com prerrogativa no período</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão com prerrogativa no período</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead style={{ background: 'var(--color-surface-2)' }}>
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Nome</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Presenças</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>%</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
                     {resumoPrerrogativa
                       .sort((a, b) => b.percentual - a.percentual)
                       .map(irmao => (
-                      <tr key={irmao.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-800">
+                      <tr 
+                        key={irmao.id} 
+                        style={{ borderBottom: '1px solid var(--color-border)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--color-text)' }}>
                           {formatarNome(irmao.nome)}
                         </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                           {irmao.grau}
                         </td>
-                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-800">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
                           {irmao.presencas}/{irmao.total}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                           <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
                             irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
                             irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
@@ -1188,16 +1201,24 @@ export default function DashboardPresenca() {
         </div>
 
         {/* Quadro: Irmãos Licenciados */}
-        <div className="card" style={{ overflow: "hidden" }}>
-          <div className="bg-orange-500 text-white p-4 flex items-center justify-between">
-            <h3 className="text-lg font-bold flex items-center gap-2">
+        <div className="card" style={{ overflow: "hidden", padding: 0 }}>
+          <div style={{ background: 'var(--color-warning)', color: 'white', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>📋</span>
               Irmãos Licenciados - {resumoLicenciados.length} {resumoLicenciados.length === 1 ? 'Irmão' : 'Irmãos'}
             </h3>
             <select
               value={anoLicenciados}
               onChange={(e) => setAnoLicenciados(Number(e.target.value))}
-              className="bg-orange-600 text-white px-3 py-1 rounded font-semibold"
+              style={{
+                background: 'rgba(0,0,0,0.2)',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '600',
+                border: 'none',
+                cursor: 'pointer'
+              }}
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
@@ -1206,30 +1227,35 @@ export default function DashboardPresenca() {
           </div>
           <div className="p-4">
             {resumoLicenciados.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão licenciado no período</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão licenciado no período</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50">
+                  <thead style={{ background: 'var(--color-surface-2)' }}>
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Nome</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Grau</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Presenças</th>
-                      <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">%</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Nome</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Presenças</th>
+                      <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>%</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
                     {resumoLicenciados
                       .sort((a, b) => b.percentual - a.percentual)
                       .map(irmao => (
-                      <tr key={irmao.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-800">
+                      <tr 
+                        key={irmao.id} 
+                        style={{ borderBottom: '1px solid var(--color-border)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--color-text)' }}>
                           {formatarNome(irmao.nome)}
                         </td>
-                        <td className="px-4 py-3 text-center text-sm text-gray-600">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                           {irmao.grau}
                         </td>
-                        <td className="px-4 py-3 text-center text-sm font-medium text-gray-800">
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
                           {irmao.presencas}/{irmao.total}
                         </td>
                         <td className="px-4 py-3 text-center">
@@ -1251,11 +1277,11 @@ export default function DashboardPresenca() {
         </div>
 
         {/* Quadro: Ausências acima do percentual configurado */}
-        <div className="card" style={{ overflow: "hidden" }}>
-          <div className="bg-orange-600 text-white p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3">
-                <h3 className="text-lg font-bold flex items-center gap-2">
+        <div className="card" style={{ overflow: "hidden", padding: 0 }}>
+          <div style={{ background: 'var(--color-warning)', color: 'white', padding: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span>⚠️</span>
                   Ausências
                 </h3>
@@ -1276,28 +1302,45 @@ export default function DashboardPresenca() {
                       setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
                     }
                   }}
-                  className="bg-orange-700 text-white px-3 py-1 rounded font-semibold"
+                  style={{
+                    background: 'rgba(0,0,0,0.2)',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: '600',
+                    border: 'none',
+                    cursor: 'pointer'
+                  }}
                 >
                   {anosDisponiveis.map(ano => (
                     <option key={ano} value={ano}>{ano}</option>
                   ))}
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">≥</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.875rem' }}>≥</span>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={percentualAlerta}
                   onChange={(e) => setPercentualAlerta(Number(e.target.value))}
-                  className="w-16 px-2 py-1 bg-orange-700 text-white rounded font-semibold text-center"
+                  style={{
+                    width: '4rem',
+                    padding: '0.25rem 0.5rem',
+                    background: 'rgba(0,0,0,0.2)',
+                    color: 'white',
+                    borderRadius: 'var(--radius-md)',
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    border: 'none'
+                  }}
                 />
-                <span className="text-sm">%</span>
+                <span style={{ fontSize: '0.875rem' }}>%</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium">Mês:</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: '500' }}>Mês:</label>
               <select
                 value={mesAusencias}
                 onChange={(e) => {
