@@ -266,8 +266,9 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
   const estatisticas = {
     total: presencas.length,
     presentes: presencas.filter(p => p.presente).length,
-    ausentesJustificados: presencas.filter(p => !p.presente && p.justificativa).length,
-    ausentesInjustificados: presencas.filter(p => !p.presente && !p.justificativa).length
+    licenciados: presencas.filter(p => !p.presente && p.irmaos?.situacao?.toLowerCase() === 'licenciado').length,
+    ausentesJustificados: presencas.filter(p => !p.presente && p.justificativa && p.irmaos?.situacao?.toLowerCase() !== 'licenciado').length,
+    ausentesInjustificados: presencas.filter(p => !p.presente && !p.justificativa && p.irmaos?.situacao?.toLowerCase() !== 'licenciado').length
   };
 
   const percentualPresenca = estatisticas.total > 0 
@@ -307,7 +308,7 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
 
         {/* Estatísticas */}
         {!loading && (
-          <div className="grid grid-cols-4 gap-4 p-6 bg-gray-50 border-b">
+          <div className="grid grid-cols-5 gap-4 p-6 bg-gray-50 border-b">
             <div className="text-center">
               <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-gray-800">{estatisticas.total}</p>
@@ -315,6 +316,10 @@ export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }
             <div className="text-center">
               <p className="text-sm text-green-600">Presentes</p>
               <p className="text-2xl font-bold text-green-700">{estatisticas.presentes}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-sm text-orange-600">Licenciados</p>
+              <p className="text-2xl font-bold text-orange-700">{estatisticas.licenciados}</p>
             </div>
             <div className="text-center">
               <p className="text-sm text-yellow-600">Justificados</p>
