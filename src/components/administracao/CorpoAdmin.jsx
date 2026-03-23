@@ -111,7 +111,11 @@ export const CorpoAdmin = ({
   };
 
   return (
-    <div>
+    <div style={{ 
+      padding: '2rem', 
+      background: 'var(--color-bg)', 
+      minHeight: '100vh' 
+    }}>
       {/* FORMULÁRIO DE CADASTRO - SÓ PARA ADMIN */}
       {permissoes?.pode_editar_corpo_admin && (
         <div className="card">
@@ -419,17 +423,23 @@ export const CorpoAdmin = ({
                                 <button
                                   onClick={() => handleEditarCorpoAdmin(item)}
                                   style={{
-                                    background: 'var(--color-accent-bg)',
+                                    background: 'transparent',
                                     color: 'var(--color-accent)',
                                     border: 'none',
-                                    padding: '0.5rem',
+                                    padding: '0.25rem',
                                     borderRadius: 'var(--radius-md)',
                                     cursor: 'pointer',
-                                    fontSize: '1.25rem',
+                                    fontSize: '1rem',
                                     transition: 'all 0.2s ease'
                                   }}
-                                  onMouseEnter={(e) => e.target.style.background = 'var(--color-accent)'}
-                                  onMouseLeave={(e) => e.target.style.background = 'var(--color-accent-bg)'}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.background = 'var(--color-accent-bg)';
+                                    e.target.style.transform = 'scale(1.1)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.background = 'transparent';
+                                    e.target.style.transform = 'scale(1)';
+                                  }}
                                   title="Editar"
                                 >
                                   ✏️
@@ -437,17 +447,23 @@ export const CorpoAdmin = ({
                                 <button
                                   onClick={() => handleExcluirCorpoAdmin(item.id)}
                                   style={{
-                                    background: 'var(--color-danger-bg)',
+                                    background: 'transparent',
                                     color: 'var(--color-danger)',
                                     border: 'none',
-                                    padding: '0.5rem',
+                                    padding: '0.25rem',
                                     borderRadius: 'var(--radius-md)',
                                     cursor: 'pointer',
-                                    fontSize: '1.25rem',
+                                    fontSize: '1rem',
                                     transition: 'all 0.2s ease'
                                   }}
-                                  onMouseEnter={(e) => e.target.style.background = 'var(--color-danger)'}
-                                  onMouseLeave={(e) => e.target.style.background = 'var(--color-danger-bg)'}
+                                  onMouseEnter={(e) => {
+                                    e.target.style.background = 'var(--color-danger-bg)';
+                                    e.target.style.transform = 'scale(1.1)';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.target.style.background = 'transparent';
+                                    e.target.style.transform = 'scale(1)';
+                                  }}
                                   title="Remover"
                                 >
                                   🗑️
