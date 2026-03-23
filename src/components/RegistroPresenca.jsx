@@ -545,26 +545,20 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-center">
-                    {irmao.esta_licenciado_efetivo ? (
-                      <span className="text-sm font-medium text-gray-500">
-                        - (Não computa)
+                    <label className="inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={presencas[irmao.membro_id] || false}
+                        onChange={(e) => handlePresencaChange(irmao.membro_id, e.target.checked)}
+                        className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      />
+                      <span className="ml-2 text-sm font-medium text-gray-700">
+                        {presencas[irmao.membro_id] ? 'Presente' : 'Ausente'}
                       </span>
-                    ) : (
-                      <label className="inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={presencas[irmao.membro_id] || false}
-                          onChange={(e) => handlePresencaChange(irmao.membro_id, e.target.checked)}
-                          className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                        />
-                        <span className="ml-2 text-sm font-medium text-gray-700">
-                          {presencas[irmao.membro_id] ? 'Presente' : 'Ausente'}
-                        </span>
-                      </label>
-                    )}
+                    </label>
                   </td>
                   <td className="px-6 py-4">
-                    {!irmao.esta_licenciado_efetivo && !presencas[irmao.membro_id] && (
+                    {!presencas[irmao.membro_id] && (
                       <input
                         type="text"
                         placeholder="Motivo da ausência..."
