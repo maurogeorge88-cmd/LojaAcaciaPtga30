@@ -114,7 +114,7 @@ export const CorpoAdmin = ({
     <div>
       {/* FORMULÁRIO DE CADASTRO - SÓ PARA ADMIN */}
       {permissoes?.pode_editar_corpo_admin && (
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div className="card">
           <h3 className="text-xl font-bold text-blue-900 mb-4">
             {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
           </h3>
@@ -122,11 +122,11 @@ export const CorpoAdmin = ({
           <form onSubmit={modoEdicaoCorpoAdmin ? handleAtualizarCorpoAdmin : handleSubmitCorpoAdmin}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                <label className="form-label">Irmão *</label>
                 <select
                   value={corpoAdminForm.irmao_id}
                   onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, irmao_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="form-input"
                   required
                 >
                   <option value="">Selecione um irmão</option>
@@ -141,11 +141,11 @@ export const CorpoAdmin = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cargo *</label>
+                <label className="form-label">Cargo *</label>
                 <select
                   value={corpoAdminForm.cargo}
                   onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, cargo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="form-input"
                   required
                 >
                   <option value="">Selecione um cargo</option>
@@ -158,12 +158,12 @@ export const CorpoAdmin = ({
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Ano de Exercício *</label>
+                <label className="form-label">Ano de Exercício *</label>
                 <input
                   type="text"
                   value={corpoAdminForm.ano_exercicio}
                   onChange={(e) => setCorpoAdminForm({ ...corpoAdminForm, ano_exercicio: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="form-input"
                   placeholder="Ex: 2024"
                   required
                   pattern="[0-9]{4}"
@@ -177,7 +177,7 @@ export const CorpoAdmin = ({
                 <button
                   type="button"
                   onClick={limparFormularioCorpoAdmin}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                  style={{ padding: "0.5rem 1.5rem", border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", color: "var(--color-text)", fontWeight: "600", background: "transparent", cursor: "pointer", transition: "all 0.2s ease" }} onMouseEnter={(e) => e.target.style.background = "var(--color-surface-2)"} onMouseLeave={(e) => e.target.style.background = "transparent"}
                 >
                   Cancelar
                 </button>
@@ -195,7 +195,7 @@ export const CorpoAdmin = ({
       )}
 
       {/* FILTRO POR ANO */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+      <div className="card" style={{ padding: "1rem", marginBottom: "1.5rem" }}>
         <div className="flex gap-4 items-center">
           <label className="font-medium text-gray-700">Filtrar por Ano:</label>
           <input
