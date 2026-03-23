@@ -525,12 +525,32 @@ export default function ModalGradePresenca({ onFechar }) {
         {/* Tabela */}
         <div className="flex-1 overflow-auto">
           <table className="w-full border-collapse text-xs">
-            <thead className="bg-gray-100 sticky top-0">
+            <thead style={{ background: 'var(--color-surface-2)', position: 'sticky', top: 0 }}>
               <tr>
-                <th className="border border-gray-300 px-4 py-3 text-left font-semibold bg-gray-100 sticky left-0 z-20">
+                <th style={{ 
+                  border: '1px solid var(--color-border)', 
+                  padding: '0.75rem 1rem', 
+                  textAlign: 'left', 
+                  fontWeight: '600', 
+                  background: 'var(--color-surface-2)', 
+                  position: 'sticky', 
+                  left: 0, 
+                  zIndex: 20,
+                  color: 'var(--color-text)'
+                }}>
                   Irmão
                 </th>
-                <th className="border border-gray-300 px-3 py-3 text-center font-semibold bg-gray-100 sticky left-[105px] z-20">
+                <th style={{ 
+                  border: '1px solid var(--color-border)', 
+                  padding: '0.75rem', 
+                  textAlign: 'center', 
+                  fontWeight: '600', 
+                  background: 'var(--color-surface-2)', 
+                  position: 'sticky', 
+                  left: '105px', 
+                  zIndex: 20,
+                  color: 'var(--color-text)'
+                }}>
                   Grau
                 </th>
                 {sessoes.map(s => {
@@ -739,8 +759,15 @@ export default function ModalGradePresenca({ onFechar }) {
                       </div>
                     )}
                   </td>
-                  <td className="border border-gray-300 px-2 py-2 text-center font-semibold text-xs" 
-                      style={{ backgroundColor: percentual >= 75 ? '#dcfce7' : percentual >= 50 ? '#fef9c3' : '#fee2e2' }}>
+                  <td style={{ 
+                    border: '1px solid var(--color-border)', 
+                    padding: '0.5rem', 
+                    textAlign: 'center', 
+                    fontWeight: '600', 
+                    fontSize: '0.75rem',
+                    backgroundColor: percentual >= 75 ? '#dcfce7' : percentual >= 50 ? '#fef9c3' : '#fee2e2',
+                    color: '#000'
+                  }}>
                     {percentual}%
                     {temPrerrogativa && (
                       <div className="text-purple-600 text-[10px] mt-0.5">
