@@ -1080,22 +1080,30 @@ export default function DashboardPresenca() {
           </div>
           <div className="p-4 max-h-96 overflow-y-auto">
             {resumoAno.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">Nenhum irmão com 100% em {anoPresenca100}</p>
+              <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem 0' }}>Nenhum irmão com 100% em {anoPresenca100}</p>
             ) : (
               <div className="space-y-2">
                 {resumoAno
                   .sort((a, b) => b.total_sessoes - a.total_sessoes)
                   .map(irmao => (
-                  <div key={irmao.id} className="p-3 bg-green-50 rounded hover:bg-green-100 transition-colors">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium text-gray-800">
+                  <div key={irmao.id} style={{ 
+                    padding: '0.75rem', 
+                    background: 'var(--color-success-bg)', 
+                    borderRadius: 'var(--radius-md)',
+                    transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-accent-bg)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--color-success-bg)'}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ fontWeight: '500', color: 'var(--color-text)' }}>
                         {formatarNome(irmao.nome)}
                       </span>
-                      <span className="bg-green-600 text-white px-3 py-1 rounded text-sm font-semibold">
+                      <span style={{ background: 'var(--color-success)', color: 'white', padding: '0.25rem 0.75rem', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: '600' }}>
                         {irmao.total_sessoes}
                       </span>
                     </div>
-                    <div className="flex gap-3 text-xs text-gray-600">
+                    <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                       {irmao.aprendiz > 0 && (
                         <span className="bg-blue-100 px-2 py-1 rounded">
                           Apr: {irmao.aprendiz}
