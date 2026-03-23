@@ -115,7 +115,12 @@ export const CorpoAdmin = ({
       {/* FORMULÁRIO DE CADASTRO - SÓ PARA ADMIN */}
       {permissoes?.pode_editar_corpo_admin && (
         <div className="card">
-          <h3 className="text-xl font-bold text-blue-900 mb-4">
+          <h3 style={{ 
+            fontSize: '1.25rem', 
+            fontWeight: 'bold', 
+            color: 'var(--color-text)', 
+            marginBottom: '1rem' 
+          }}>
             {modoEdicaoCorpoAdmin ? '✏️ Editar Cargo Administrativo' : '➕ Registrar Cargo Administrativo'}
           </h3>
 
@@ -185,7 +190,23 @@ export const CorpoAdmin = ({
               <button
                 type="submit"
                 disabled={loading}
-                className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
+                style={{
+                  padding: '0.5rem 2rem',
+                  background: 'var(--color-accent)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: 'var(--radius-lg)',
+                  fontWeight: 'bold',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  opacity: loading ? 0.6 : 1
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading) e.target.style.background = 'var(--color-accent-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) e.target.style.background = 'var(--color-accent)';
+                }}
               >
                 {loading ? 'Salvando...' : modoEdicaoCorpoAdmin ? '💾 Atualizar Cargo' : '💾 Registrar Cargo'}
               </button>
@@ -197,19 +218,31 @@ export const CorpoAdmin = ({
       {/* FILTRO POR ANO */}
       <div className="card" style={{ padding: "1rem", marginBottom: "1.5rem" }}>
         <div className="flex gap-4 items-center">
-          <label className="font-medium text-gray-700">Filtrar por Ano:</label>
+          <label style={{ fontWeight: '600', color: 'var(--color-text)' }}>Filtrar por Ano:</label>
           <input
             type="text"
             placeholder="Digite o ano (ex: 2024)"
             value={anoFiltroAdmin}
             onChange={(e) => setAnoFiltroAdmin(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="form-input"
+            style={{ flex: 1 }}
             pattern="[0-9]*"
           />
           {anoFiltroAdmin && (
             <button
               onClick={() => setAnoFiltroAdmin('')}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-semibold transition"
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'var(--color-surface-2)',
+                border: 'none',
+                borderRadius: 'var(--radius-lg)',
+                fontWeight: '600',
+                color: 'var(--color-text)',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--color-surface-2)'}
             >
               Limpar
             </button>
@@ -224,25 +257,60 @@ export const CorpoAdmin = ({
           .map(ca => ca.ano_exercicio))]
           .sort((a, b) => b - a)
           .map(ano => (
-            <div key={ano} className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-                <h3 className="text-xl font-bold">Administração {ano}</h3>
-                <p className="text-sm text-blue-100">
+            <div key={ano} className="card" style={{ overflow: 'hidden', padding: 0 }}>
+              <div style={{ 
+                padding: '1rem', 
+                background: 'var(--color-accent)', 
+                color: 'white' 
+              }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Administração {ano}</h3>
+                <p style={{ fontSize: '0.875rem', opacity: 0.9 }}>
                   {corpoAdmin.filter(ca => ca.ano_exercicio === ano).length} cargos
                 </p>
               </div>
 
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b-2 border-gray-200">
+                  <thead style={{ 
+                    background: 'var(--color-surface-2)', 
+                    borderBottom: '2px solid var(--color-border)' 
+                  }}>
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Irmão</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CIM</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                      <th style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        textAlign: 'left', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '600', 
+                        color: 'var(--color-text-muted)', 
+                        textTransform: 'uppercase' 
+                      }}>Cargo</th>
+                      <th style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        textAlign: 'left', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '600', 
+                        color: 'var(--color-text-muted)', 
+                        textTransform: 'uppercase' 
+                      }}>Irmão</th>
+                      <th style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        textAlign: 'left', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '600', 
+                        color: 'var(--color-text-muted)', 
+                        textTransform: 'uppercase' 
+                      }}>CIM</th>
+                      <th style={{ 
+                        padding: '0.75rem 1.5rem', 
+                        textAlign: 'center', 
+                        fontSize: '0.75rem', 
+                        fontWeight: '600', 
+                        color: 'var(--color-text-muted)', 
+                        textTransform: 'uppercase' 
+                      }}>Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
                     {corpoAdmin
                       .filter(ca => ca.ano_exercicio === ano)
                       .sort((a, b) => {
@@ -312,29 +380,74 @@ export const CorpoAdmin = ({
                         return indexA - indexB;
                       })
                       .map((item) => (
-                        <tr key={item.id} className="hover:bg-gray-50 transition">
-                          <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
+                        <tr 
+                          key={item.id} 
+                          style={{ 
+                            borderBottom: '1px solid var(--color-border)', 
+                            transition: 'background 0.2s ease' 
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <td style={{ 
+                            padding: '1rem 1.5rem', 
+                            whiteSpace: 'nowrap', 
+                            fontWeight: '600', 
+                            color: 'var(--color-text)' 
+                          }}>
                             {item.cargo || 'Cargo não informado'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          <td style={{ 
+                            padding: '1rem 1.5rem', 
+                            whiteSpace: 'nowrap', 
+                            fontSize: '0.875rem', 
+                            color: 'var(--color-text-muted)' 
+                          }}>
                             {item.irmao?.nome || 'Irmão não encontrado'}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          <td style={{ 
+                            padding: '1rem 1.5rem', 
+                            whiteSpace: 'nowrap', 
+                            fontSize: '0.875rem', 
+                            color: 'var(--color-text-muted)' 
+                          }}>
                             {item.irmao?.cim || '-'}
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
                             {permissoes?.canEdit && (
                               <div className="flex justify-center gap-2">
                                 <button
                                   onClick={() => handleEditarCorpoAdmin(item)}
-                                  className="text-blue-600 hover:text-blue-800 font-semibold"
+                                  style={{
+                                    background: 'var(--color-accent-bg)',
+                                    color: 'var(--color-accent)',
+                                    border: 'none',
+                                    padding: '0.5rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer',
+                                    fontSize: '1.25rem',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.target.style.background = 'var(--color-accent)'}
+                                  onMouseLeave={(e) => e.target.style.background = 'var(--color-accent-bg)'}
                                   title="Editar"
                                 >
                                   ✏️
                                 </button>
                                 <button
                                   onClick={() => handleExcluirCorpoAdmin(item.id)}
-                                  className="text-red-600 hover:text-red-800 font-semibold"
+                                  style={{
+                                    background: 'var(--color-danger-bg)',
+                                    color: 'var(--color-danger)',
+                                    border: 'none',
+                                    padding: '0.5rem',
+                                    borderRadius: 'var(--radius-md)',
+                                    cursor: 'pointer',
+                                    fontSize: '1.25rem',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.target.style.background = 'var(--color-danger)'}
+                                  onMouseLeave={(e) => e.target.style.background = 'var(--color-danger-bg)'}
                                   title="Remover"
                                 >
                                   🗑️
