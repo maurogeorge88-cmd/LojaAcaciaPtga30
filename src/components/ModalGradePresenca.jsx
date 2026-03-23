@@ -436,7 +436,7 @@ export default function ModalGradePresenca({ onFechar }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="card" style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" w-full h-[90vh] max-w-[95vw] flex flex-col">
+      <div className="card w-full max-w-[95vw] flex flex-col" style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", height: "90vh" }}>
         
         {/* Cabeçalho */}
         <div style={{ background: "var(--color-accent)", color: "white", padding: "1.5rem" }}>
