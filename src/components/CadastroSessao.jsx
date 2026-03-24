@@ -404,6 +404,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
           <strong>💡 Dica:</strong> Após cadastrar a sessão, você poderá lançar as presenças dos irmãos na tela "Sessões Realizadas".
         </p>
       </div>
+      </div>
     </div>
   );
 };
