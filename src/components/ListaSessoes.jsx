@@ -52,11 +52,11 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
   };
 
   const obterCorPorcentagem = (total, presentes) => {
-    if (total === 0) return 'bg-gray-200 text-gray-700';
+    if (total === 0) return { background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' };
     const percentual = (presentes / total) * 100;
-    if (percentual >= 75) return 'bg-green-100 text-green-800';
-    if (percentual >= 50) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-red-100 text-red-800';
+    if (percentual >= 75) return { background: '#dcfce7', color: '#166534' }; // verde
+    if (percentual >= 50) return { background: '#fef9c3', color: '#854d0e' }; // amarelo
+    return { background: '#fee2e2', color: '#991b1b' }; // vermelho
   };
 
   // Buscar anos disponíveis
@@ -584,15 +584,18 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
       {/* Mensagens */}
       {mensagem.texto && (
-        <div className={`mb-4 p-4 rounded-lg ${
-          mensagem.tipo === 'sucesso'
-            ? 'bg-green-100 text-green-800 border border-green-300'
-            : 'bg-red-100 text-red-800 border border-red-300'
-        }`}>
+        <div style={{
+          marginBottom: '1rem',
+          padding: '1rem',
+          borderRadius: 'var(--radius-lg)',
+          background: mensagem.tipo === 'sucesso' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+          color: mensagem.tipo === 'sucesso' ? 'var(--color-success)' : 'var(--color-danger)',
+          border: `1px solid ${mensagem.tipo === 'sucesso' ? 'var(--color-success)' : 'var(--color-danger)'}`
+        }}>
           {mensagem.texto}
           <button
             onClick={() => setMensagem({ tipo: '', texto: '' })}
-            className="ml-4 text-sm underline"
+            style={{ marginLeft: '1rem', fontSize: '0.875rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
           >
             Fechar
           </button>
@@ -601,19 +604,19 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
       {/* Lista de Sessões */}
       {loading ? (
-        <div className="flex items-center justify-center h-64 bg-white rounded-lg shadow-md">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando sessões...</p>
+        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '16rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: 'var(--color-accent)' }}></div>
+            <p style={{ marginTop: '1rem', color: 'var(--color-text-muted)' }}>Carregando sessões...</p>
           </div>
         </div>
       ) : sessoes.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
-          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+          <svg className="mx-auto h-12 w-12" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          <h3 className="mt-2 text-lg font-medium text-gray-900">Nenhuma sessão encontrada</h3>
-          <p className="mt-1 text-gray-500">
+          <h3 style={{ marginTop: '0.5rem', fontSize: '1.125rem', fontWeight: '500', color: 'var(--color-text)' }}>Nenhuma sessão encontrada</h3>
+          <p style={{ marginTop: '0.25rem', color: 'var(--color-text-muted)' }}>
             {filtroMes || filtroAno !== anoAtual.toString() 
               ? 'Tente ajustar os filtros ou cadastre uma nova sessão.'
               : 'Comece cadastrando sua primeira sessão.'
@@ -622,7 +625,18 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           <div className="mt-6">
             <button
               onClick={onNovaSessao}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
             >
               Cadastrar Primeira Sessão
             </button>
@@ -652,26 +666,26 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
             });
 
             return Object.entries(sessoesPorMes).map(([mesAno, grupo]) => (
-              <div key={mesAno} className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="bg-gradient-to-r from-blue-600 to-blue-400 px-6 py-3">
-                  <h3 className="text-lg font-bold text-white">
+              <div key={mesAno} className="card" style={{ overflow: 'hidden', padding: 0 }}>
+                <div style={{ background: 'var(--color-accent)', padding: '0.75rem 1.5rem' }}>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'white' }}>
                     📅 {grupo.mesNome}
                   </h3>
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full" style={{ borderTop: '1px solid var(--color-border)' }}>
+                    <thead style={{ background: 'var(--color-surface-2)' }}>
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Data</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo de Sessão</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Classificação</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Presença</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Visitantes</th>
-                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Ações</th>
+                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Data</th>
+                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Tipo de Sessão</th>
+                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Classificação</th>
+                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Presença</th>
+                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Visitantes</th>
+                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
                       {grupo.sessoes.map((sessao) => {
                         const totalRegistros = sessao.total_registros || 0;
                         const presentes = sessao.total_presentes || 0;
@@ -679,47 +693,63 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                         const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
 
                         return (
-                          <tr key={sessao.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          <tr 
+                            key={sessao.id} 
+                            style={{ borderBottom: '1px solid var(--color-border)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
                               {formatarData(sessao.data_sessao)}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm">{sessao.grau_sessao}</td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                sessao.classificacao ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
-                              }`}>
+                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', fontSize: '0.875rem', color: 'var(--color-text)' }}>{sessao.grau_sessao}</td>
+                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap' }}>
+                              <span style={{
+                                padding: '0.25rem 0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '600',
+                                borderRadius: '9999px',
+                                background: sessao.classificacao ? 'var(--color-warning-bg)' : 'var(--color-surface-2)',
+                                color: sessao.classificacao ? 'var(--color-warning)' : 'var(--color-text-muted)'
+                              }}>
                                 {sessao.classificacao || '-'}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap' }}>
                               <div className="flex flex-col items-center">
-                                <div className={`px-3 py-1 rounded-full text-sm font-semibold ${obterCorPorcentagem(totalRegistros, presentes)}`}>
+                                <div style={{
+                                  padding: '0.25rem 0.75rem',
+                                  borderRadius: '9999px',
+                                  fontSize: '0.875rem',
+                                  fontWeight: '600',
+                                  ...obterCorPorcentagem(totalRegistros, presentes)
+                                }}>
                                   {percentual}% ({presentes}/{totalRegistros})
                                 </div>
                                 {totalRegistros > 0 && (
-                                  <div className="text-xs text-gray-500 mt-1">
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
                                     {ausentes} ausente(s)
                                   </div>
                                 )}
                                 {sessao.graus_presentes && presentes > 0 && (
                                   <div className="flex flex-wrap gap-1 mt-2 text-xs">
                                     {sessao.graus_presentes.aprendizes > 0 && (
-                                      <span className="px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded font-medium">
+                                      <span style={{ padding: '0.125rem 0.5rem', background: '#fef9c3', color: '#854d0e', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
                                         A: {sessao.graus_presentes.aprendizes}
                                       </span>
                                     )}
                                     {sessao.graus_presentes.companheiros > 0 && (
-                                      <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-medium">
+                                      <span style={{ padding: '0.125rem 0.5rem', background: '#dbeafe', color: '#1e40af', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
                                         C: {sessao.graus_presentes.companheiros}
                                       </span>
                                     )}
                                     {sessao.graus_presentes.mestres > 0 && (
-                                      <span className="px-2 py-0.5 bg-green-100 text-green-800 rounded font-medium">
+                                      <span style={{ padding: '0.125rem 0.5rem', background: '#dcfce7', color: '#166534', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
                                         M: {sessao.graus_presentes.mestres}
                                       </span>
                                     )}
                                     {sessao.graus_presentes.mestres_instalados > 0 && (
-                                      <span className="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-medium">
+                                      <span style={{ padding: '0.125rem 0.5rem', background: '#f3e8ff', color: '#6b21a8', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
                                         M.I: {sessao.graus_presentes.mestres_instalados}
                                       </span>
                                     )}
@@ -727,12 +757,19 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                                 )}
                               </div>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                              <span className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm font-medium">
+                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', textAlign: 'center' }}>
+                              <span style={{
+                                padding: '0.25rem 0.5rem',
+                                background: 'var(--color-info-bg)',
+                                color: 'var(--color-info)',
+                                borderRadius: '9999px',
+                                fontSize: '0.875rem',
+                                fontWeight: '500'
+                              }}>
                                 {sessao.total_visitantes}
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', textAlign: 'center' }}>
                               <div className="flex justify-center gap-2">
                                 <button
                                   onClick={() => onVisualizarPresenca(sessao.id)}
