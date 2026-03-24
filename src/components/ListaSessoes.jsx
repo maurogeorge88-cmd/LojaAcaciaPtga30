@@ -494,28 +494,50 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
       {/* Cabeçalho */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="card">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-text)' }}>
               Sessões Realizadas
             </h2>
-            <p className="text-gray-600 mt-1">
+            <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
               Visualize e gerencie as sessões cadastradas
             </p>
           </div>
           <div className="flex gap-3">
             <button
               onClick={() => abrirModalVisita()}
-              className="px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition font-medium"
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'var(--color-warning)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.target.style.opacity = '1'}
             >
               📍 Nova Visita
             </button>
             <button
               onClick={onNovaSessao}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium"
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
             >
               ➕ Nova Sessão
             </button>
@@ -525,13 +547,13 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
         {/* Filtros */}
         <div className="grid grid-cols-2 gap-4 mt-6">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="form-label">
               Mês
             </label>
             <select
               value={filtroMes}
               onChange={(e) => setFiltroMes(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="form-input"
             >
               {meses.map(mes => (
                 <option key={mes.valor} value={mes.valor}>
@@ -542,13 +564,13 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           </div>
 
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="form-label">
               Ano
             </label>
             <select
               value={filtroAno}
               onChange={(e) => setFiltroAno(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="form-input"
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>
@@ -824,7 +846,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
             <form onSubmit={salvarVisita} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Irmão Visitante *</label>
+                <label className="form-label">Irmão Visitante *</label>
                 <select
                   value={visitaForm.irmao_id}
                   onChange={(e) => setVisitaForm({ ...visitaForm, irmao_id: e.target.value })}
@@ -839,7 +861,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data da Visita *</label>
+                <label className="form-label">Data da Visita *</label>
                 <input
                   type="date"
                   value={visitaForm.data_visita}
@@ -851,7 +873,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome da Loja *</label>
+                  <label className="form-label">Nome da Loja *</label>
                   <input
                     type="text"
                     value={visitaForm.nome_loja}
@@ -863,7 +885,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Oriente (Município) *</label>
+                  <label className="form-label">Oriente (Município) *</label>
                   <input
                     type="text"
                     value={visitaForm.oriente}
@@ -972,7 +994,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <label className="form-label">Observações</label>
                 <textarea
                   value={visitaForm.observacoes}
                   onChange={(e) => setVisitaForm({ ...visitaForm, observacoes: e.target.value })}
