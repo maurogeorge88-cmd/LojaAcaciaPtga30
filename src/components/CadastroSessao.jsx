@@ -401,7 +401,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
 
       <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--color-info-bg)', borderRadius: 'var(--radius-lg)' }}>
         <p style={{ fontSize: '0.875rem', color: 'var(--color-info)' }}>
-          <strong>💡 Dica:</strong> Após cadastrar a sessão, você poderá lançar as presenças dos irmãos na tela "Sessões Realizadas".
+          <strong>💡 Dica:</strong> Após cadastrar a sessão, você poderá lançar as presenças dos irmãos na tela de Sessões Realizadas.
         </p>
       </div>
       </div>
