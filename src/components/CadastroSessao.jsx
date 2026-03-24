@@ -334,7 +334,15 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
                       {new Date(sessao.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
                     </td>
                     <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
-                      <span style={{ padding: '0.25rem 0.5rem', background: '#dbeafe', color: '#1e40af', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem' }}>
+                      <span style={{ 
+                        display: 'inline-block',
+                        padding: '0.25rem 0.5rem', 
+                        background: '#dbeafe', 
+                        color: '#1e40af', 
+                        borderRadius: 'var(--radius-sm)', 
+                        fontSize: '0.75rem',
+                        whiteSpace: 'nowrap'
+                      }}>
                         {sessao.graus_sessao?.nome}
                       </span>
                     </td>
