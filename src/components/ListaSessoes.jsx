@@ -808,22 +808,32 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                   if (visitasDoMes.length === 0) return null;
 
                   return (
-                    <div className="border-t-4 border-dashed border-purple-300 mt-4">
-                      <div className="bg-purple-50 px-6 py-3">
-                        <h4 className="text-sm font-bold text-purple-800">
+                    <div style={{ borderTop: '4px dashed var(--color-warning)', marginTop: '1rem' }}>
+                      <div style={{ background: 'var(--color-warning-bg)', padding: '0.75rem 1.5rem' }}>
+                        <h4 style={{ fontSize: '0.875rem', fontWeight: 'bold', color: 'var(--color-warning)' }}>
                           📍 Visitas dos Irmãos a Outras Lojas
                         </h4>
                       </div>
                       <div className="p-4">
                         <div className="grid grid-cols-3 gap-3">
                           {visitasDoMes.map(visita => (
-                            <div key={visita.id} className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                            <div 
+                              key={visita.id} 
+                              className="card" 
+                              style={{ 
+                                padding: '0.75rem',
+                                border: '1px solid var(--color-warning)',
+                                transition: 'box-shadow 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}
+                              onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                            >
                               {/* Linha 1: Data, Nome e Botões */}
                               <div className="flex justify-between items-center mb-1">
                                 <div className="text-sm">
-                                  <span className="text-gray-600">{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                                  <span className="text-gray-600"> - </span>
-                                  <span className="font-semibold text-purple-900">{formatarNomeCurto(visita.irmaos?.nome)}</span>
+                                  <span style={{ color: 'var(--color-text-muted)' }}>{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                  <span style={{ color: 'var(--color-text-muted)' }}> - </span>
+                                  <span style={{ fontWeight: '600', color: 'var(--color-text)' }}>{formatarNomeCurto(visita.irmaos?.nome)}</span>
                                 </div>
                                 <div className="flex gap-1">
                                   <button
@@ -844,7 +854,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                               </div>
                               
                               {/* Linha 2: Loja - Potência - Oriente */}
-                              <div className="text-xs text-gray-600">
+                              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                                 {visita.nome_loja} - {visita.potencias_masonicas?.sigla || 'N/A'} - {visita.oriente}
                               </div>
                             </div>
