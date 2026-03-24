@@ -172,41 +172,46 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">📋 Cadastrar Nova Sessão</h2>
+    <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
+      <div className="card" style={{ maxWidth: '42rem', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1.5rem', color: 'var(--color-text)' }}>
+          📋 Cadastrar Nova Sessão
+        </h2>
 
       {mensagem.texto && (
-        <div className={`mb-4 p-4 rounded ${
-          mensagem.tipo === 'sucesso' 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
+        <div style={{
+          marginBottom: '1rem',
+          padding: '1rem',
+          borderRadius: 'var(--radius-lg)',
+          background: mensagem.tipo === 'sucesso' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+          color: mensagem.tipo === 'sucesso' ? 'var(--color-success)' : 'var(--color-danger)'
+        }}>
           {mensagem.texto}
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="form-label">
             Data da Sessão *
           </label>
           <input
             type="date"
             value={dataSessao}
             onChange={(e) => setDataSessao(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="form-input"
             required
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="form-label">
             Grau da Sessão *
           </label>
           <select
             value={grauSessao}
             onChange={(e) => setGrauSessao(parseInt(e.target.value))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="form-input"
             required
           >
             {graus.map(grau => (
@@ -218,13 +223,13 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="form-label">
             Classificação da Sessão
           </label>
           <select
             value={classificacaoSessaoId}
             onChange={(e) => setClassificacaoSessaoId(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="form-input"
           >
             <option value="">Selecione a classificação</option>
             {classificacoesSessao.map(classificacao => (
@@ -236,7 +241,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="form-label">
             Observações
           </label>
           <textarea
@@ -244,7 +249,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
             onChange={(e) => setObservacoes(e.target.value)}
             rows={3}
             placeholder="Digite observações sobre a sessão (opcional)"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="form-input"
           />
         </div>
 
@@ -252,7 +257,16 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+            style={{
+              flex: 1,
+              background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)',
+              color: 'white',
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-lg)',
+              border: 'none',
+              fontWeight: '500',
+              cursor: loading ? 'not-allowed' : 'pointer'
+            }}
           >
             {loading ? 'Salvando...' : editando ? '✏️ Atualizar Sessão' : '✅ Cadastrar Sessão'}
           </button>
@@ -261,7 +275,16 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
             <button
               type="button"
               onClick={cancelarEdicao}
-              className="flex-1 bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 font-medium"
+              style={{
+                flex: 1,
+                background: 'var(--color-warning)',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-lg)',
+                border: 'none',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
             >
               🔙 Cancelar Edição
             </button>
@@ -271,7 +294,16 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 font-medium"
+              style={{
+                flex: 1,
+                background: 'var(--color-surface-3)',
+                color: 'var(--color-text)',
+                padding: '0.5rem 1rem',
+                borderRadius: 'var(--radius-lg)',
+                border: 'none',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
             >
               ❌ Cancelar
             </button>
@@ -281,38 +313,43 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
 
       {sessoes.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-lg font-bold text-gray-800 mb-4">📋 Últimas Sessões Cadastradas</h3>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '1rem' }}>
+            📋 Últimas Sessões Cadastradas
+          </h3>
           <div className="overflow-x-auto">
-            <table className="w-full bg-white rounded-lg shadow">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Data</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Grau</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Classificação</th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {sessoes.map((sessao, idx) => (
-                  <tr key={sessao.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                    <td className="px-4 py-3 text-sm">
+            <div className="card" style={{ overflow: 'hidden', padding: 0 }}>
+              <table className="w-full">
+                <thead style={{ background: 'var(--color-surface-2)' }}>
+                  <tr>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Data</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Grau</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Classificação</th>
+                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '600', color: 'var(--color-text-muted)' }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
+                {sessoes.map((sessao) => (
+                  <tr key={sessao.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--color-text)' }}>
                       {new Date(sessao.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
+                      <span style={{ padding: '0.25rem 0.5rem', background: '#dbeafe', color: '#1e40af', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem' }}>
                         {sessao.graus_sessao?.nome}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        sessao.classificacoes_sessao?.nome 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-gray-100 text-gray-600'
-                      }`}>
+                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
+                      <span style={{
+                        padding: '0.25rem 0.5rem',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.75rem',
+                        background: sessao.classificacoes_sessao?.nome ? '#f3e8ff' : 'var(--color-surface-2)',
+                        color: sessao.classificacoes_sessao?.nome ? '#6b21a8' : 'var(--color-text-muted)'
+                      }}>
                         {sessao.classificacoes_sessao?.nome || '-'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => editarSessao(sessao)}
@@ -332,14 +369,16 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <p className="text-sm text-blue-800">
-          <strong>💡 Dica:</strong> Após cadastrar a sessão, você poderá lançar as presenças dos irmãos.
+      <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'var(--color-info-bg)', borderRadius: 'var(--radius-lg)' }}>
+        <p style={{ fontSize: '0.875rem', color: 'var(--color-info)' }}>
+          <strong>Dica:</strong> Após cadastrar a sessão, você poderá lançar as presenças dos irmãos.
         </p>
+      </div>
       </div>
     </div>
   );
