@@ -28,29 +28,38 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // Passar o portal escolhido como terceiro parâmetro
-      await onLogin(email, password, portalSelecionado);
-      
-      // DEPOIS: Validar permissões (apenas para portal cunhadas)
+      // VALIDAÇÃO APENAS PARA PORTAL CUNHADAS
       if (portalSelecionado === 'cunhadas') {
+        // Buscar dados do usuário (SEM fazer login ainda)
         const { data: usuario } = await supabase
           .from('usuarios')
-          .select('tipo_acesso, cargo')
+          .select('cargo, email, ativo')
           .eq('email', email)
           .single();
 
+        if (!usuario) {
+          throw new Error('Email não cadastrado no sistema');
+        }
+
+        if (!usuario.ativo) {
+          throw new Error('Usuário inativo. Entre em contato com o administrador.');
+        }
+
+        // Buscar permissões
         const { data: perms } = await supabase
           .from('permissoes')
           .select('pode_acessar_portal_cunhadas')
-          .eq('cargo', usuario?.cargo)
+          .eq('cargo', usuario.cargo)
           .single();
 
-        // Bloquear apenas se não tiver permissão
+        // Bloquear ANTES de fazer login
         if (!perms?.pode_acessar_portal_cunhadas) {
-          await supabase.auth.signOut();
-          throw new Error('❌ Você não tem permissão para acessar o Portal das Cunhadas');
+          throw new Error('❌ Você não tem permissão para acessar o Portal das Cunhadas.\n\nEste portal é exclusivo para Presidente e Tesoureira.');
         }
       }
+
+      // SE PASSOU NA VALIDAÇÃO: Fazer login
+      await onLogin(email, password, portalSelecionado);
       
     } catch (err) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
