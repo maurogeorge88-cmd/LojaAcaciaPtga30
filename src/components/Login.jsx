@@ -34,11 +34,15 @@ export const Login = ({ onLogin }) => {
       
       // VALIDAÇÃO APENAS PARA PORTAL CUNHADAS (depois do login)
       if (portalSelecionado === 'cunhadas') {
+        console.log('🔍 Validando acesso ao portal cunhadas...');
+        
         const { data: usuario } = await supabase
           .from('usuarios')
           .select('cargo')
           .eq('email', email)
           .single();
+
+        console.log('👤 Usuário:', usuario);
 
         const { data: perms } = await supabase
           .from('permissoes')
@@ -46,12 +50,18 @@ export const Login = ({ onLogin }) => {
           .eq('cargo', usuario?.cargo)
           .single();
 
+        console.log('🔐 Permissões:', perms);
+        console.log('✅ Pode acessar?', perms?.pode_acessar_portal_cunhadas);
+
         // Se não tiver permissão, mostrar modal ANTES de fazer logout
         if (!perms?.pode_acessar_portal_cunhadas) {
+          console.log('❌ SEM PERMISSÃO - Mostrando modal');
           setLoading(false);
           setModalErroPermissao(true); // Mostra o modal
           return; // Não continua
         }
+        
+        console.log('✅ TEM PERMISSÃO - Acesso liberado');
       }
       
       setLoading(false);
