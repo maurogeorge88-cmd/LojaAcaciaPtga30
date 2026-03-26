@@ -44,6 +44,22 @@ const maskTel = (v) => {
   return d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
 };
 
+// ─── Campo helper (FORA do componente para evitar remount a cada render) ──────
+const Campo = ({ label, children, style }) => (
+  <div style={style}>
+    <label style={{
+      display: 'block',
+      fontSize: '0.8rem',
+      fontWeight: '600',
+      color: 'var(--color-text-muted)',
+      marginBottom: '0.4rem',
+      textTransform: 'uppercase',
+      letterSpacing: '0.04em',
+    }}>{label}</label>
+    {children}
+  </div>
+);
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export const CadastroCunhadas = ({ userData }) => {
   const [cunhadas, setCunhadas] = useState([]);
@@ -484,14 +500,6 @@ export const CadastroCunhadas = ({ userData }) => {
       color: 'var(--color-text-faint)',
     },
   };
-
-  // ─── Campo helper ──────────────────────────────────────────────────────────
-  const Campo = ({ label, children, style }) => (
-    <div style={style}>
-      <label style={s.label}>{label}</label>
-      {children}
-    </div>
-  );
 
   // ─── render ────────────────────────────────────────────────────────────────
   return (
