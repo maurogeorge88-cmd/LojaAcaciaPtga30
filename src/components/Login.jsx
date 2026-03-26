@@ -29,63 +29,20 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // VALIDAÇÃO ESPECIAL PARA PORTAL CUNHADAS (ANTES do login completo)
-      if (portalSelecionado === 'cunhadas') {
-        console.log('🔍 Validando acesso ao portal cunhadas...');
-        
-        // Fazer login temporário SÓ para buscar dados
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email: email,
-          password: password,
-        });
-
-        if (authError) throw authError;
-
-        // Buscar dados do usuário
-        const { data: usuario } = await supabase
-          .from('usuarios')
-          .select('cargo, ativo')
-          .eq('email', email)
-          .single();
-
-        console.log('👤 Usuário:', usuario);
-
-        if (!usuario?.ativo) {
-          await supabase.auth.signOut();
-          throw new Error('Usuário inativo. Entre em contato com o administrador.');
-        }
-
-        // Buscar permissões
-        const { data: perms } = await supabase
-          .from('permissoes')
-          .select('pode_acessar_portal_cunhadas')
-          .eq('cargo', usuario?.cargo)
-          .single();
-
-        console.log('🔐 Permissões:', perms);
-        console.log('✅ Pode acessar?', perms?.pode_acessar_portal_cunhadas);
-
-        // Se NÃO tiver permissão, fazer logout e mostrar modal
-        if (!perms?.pode_acessar_portal_cunhadas) {
-          console.log('❌ SEM PERMISSÃO - Mostrando modal');
-          await supabase.auth.signOut(); // Logout ANTES de mostrar modal
-          setLoading(false);
-          setModalErroPermissao(true); // Mostra o modal
-          return; // NÃO chama onLogin
-        }
-        
-        console.log('✅ TEM PERMISSÃO - Processando login...');
-        // Se chegou aqui, TEM permissão - fazer logout e refazer login via onLogin
-        await supabase.auth.signOut();
-      }
-
-      // Fazer login normalmente via App.jsx (que muda a página)
+      // Chamar onLogin do App.jsx (que faz TODA a validação)
       await onLogin(email, password, portalSelecionado);
       setLoading(false);
       
     } catch (err) {
-      setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
-      setLoading(false);
+      // Se for erro de acesso negado às cunhadas, mostrar modal
+      if (err.message === 'ACESSO_NEGADO_CUNHADAS') {
+        setLoading(false);
+        setModalErroPermissao(true);
+      } else {
+        // Outros erros: mostrar normalmente
+        setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+        setLoading(false);
+      }
     }
   };
 
