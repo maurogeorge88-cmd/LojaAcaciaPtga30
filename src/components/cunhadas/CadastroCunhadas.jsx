@@ -262,58 +262,6 @@ export const CadastroCunhadas = ({ userData }) => {
       transition: 'all var(--transition-fast)',
     }),
 
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse',
-      background: 'var(--color-surface)',
-      borderRadius: 'var(--radius-xl)',
-      overflow: 'hidden',
-      boxShadow: 'var(--shadow-sm)',
-    },
-    th: {
-      padding: '0.85rem 1rem',
-      textAlign: 'left',
-      fontSize: '0.75rem',
-      fontWeight: '700',
-      color: 'var(--color-text-muted)',
-      textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      background: 'var(--color-surface-2)',
-      borderBottom: '1px solid var(--color-border)',
-    },
-    td: {
-      padding: '0.85rem 1rem',
-      fontSize: '0.875rem',
-      color: 'var(--color-text)',
-      borderBottom: '1px solid var(--color-border)',
-      verticalAlign: 'middle',
-    },
-    trHover: { transition: 'background var(--transition-fast)' },
-
-    badge: (ativa) => ({
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '0.3rem',
-      padding: '0.25rem 0.65rem',
-      borderRadius: '999px',
-      fontSize: '0.75rem',
-      fontWeight: '600',
-      background: ativa ? 'rgba(16,185,129,0.12)' : 'rgba(100,116,139,0.12)',
-      color: ativa ? '#10b981' : '#94a3b8',
-      border: `1px solid ${ativa ? 'rgba(16,185,129,0.25)' : 'rgba(100,116,139,0.2)'}`,
-    }),
-
-    btnAcao: (cor) => ({
-      padding: '0.35rem 0.75rem',
-      borderRadius: 'var(--radius-md)',
-      border: 'none',
-      fontSize: '0.78rem',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all var(--transition-fast)',
-      background: `${cor}18`,
-      color: cor,
-    }),
 
     // Modal
     overlay: {
@@ -550,72 +498,171 @@ export const CadastroCunhadas = ({ userData }) => {
           )}
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table style={s.table}>
-            <thead>
-              <tr>
-                <th style={s.th}>Nome</th>
-                <th style={s.th}>CPF</th>
-                <th style={s.th}>Telefone</th>
-                <th style={s.th}>E-mail</th>
-                <th style={s.th}>Status</th>
-                <th style={{ ...s.th, textAlign: 'center' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((c, i) => (
-                <tr
-                  key={c.id}
-                  style={{
-                    ...s.trHover,
-                    background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(168,85,247,0.04)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)')}
-                >
-                  <td style={s.td}>
-                    <div style={{ fontWeight: '600', color: 'var(--color-text)' }}>{c.nome}</div>
-                    {c.email && (
-                      <div style={{ fontSize: '0.78rem', color: 'var(--color-text-faint)' }}>{c.email}</div>
-                    )}
-                  </td>
-                  <td style={s.td}>{c.cpf || '—'}</td>
-                  <td style={s.td}>{c.telefone || '—'}</td>
-                  <td style={s.td}>{c.email || '—'}</td>
-                  <td style={s.td}>
-                    <span style={s.badge(c.ativa)}>
-                      {c.ativa ? '● Ativa' : '○ Inativa'}
-                    </span>
-                  </td>
-                  <td style={{ ...s.td, textAlign: 'center' }}>
-                    <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
-                      <button
-                        style={s.btnAcao('#a855f7')}
-                        onClick={() => abrirEditar(c)}
-                        title="Editar"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        style={s.btnAcao(c.ativa ? '#f59e0b' : '#10b981')}
-                        onClick={() => toggleAtiva(c)}
-                        title={c.ativa ? 'Inativar' : 'Ativar'}
-                      >
-                        {c.ativa ? '⏸ Inativar' : '▶ Ativar'}
-                      </button>
-                      <button
-                        style={s.btnAcao('#ef4444')}
-                        onClick={() => setModalExcluir(c)}
-                        title="Excluir"
-                      >
-                        🗑
-                      </button>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '1.25rem',
+        }}>
+          {lista.map((c) => (
+            <div
+              key={c.id}
+              style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-xl)',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-sm)',
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all var(--transition-base)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-3px)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(168,85,247,0.15)';
+                e.currentTarget.style.borderColor = '#a855f7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                e.currentTarget.style.borderColor = 'var(--color-border)';
+              }}
+            >
+              {/* Topo colorido com avatar e status */}
+              <div style={{
+                background: c.ativa
+                  ? 'linear-gradient(135deg, #6d28d9, #a855f7)'
+                  : 'linear-gradient(135deg, #334155, #475569)',
+                padding: '1.25rem 1.25rem 0.75rem',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+              }}>
+                {/* Avatar com inicial */}
+                <div style={{
+                  width: '2.75rem',
+                  height: '2.75rem',
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.2)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '1.1rem',
+                  fontWeight: '700',
+                  color: '#fff',
+                  flexShrink: 0,
+                }}>
+                  {c.nome?.charAt(0).toUpperCase() || '?'}
+                </div>
+                {/* Badge status */}
+                <span style={{
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '999px',
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  background: c.ativa ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.1)',
+                  color: '#fff',
+                  letterSpacing: '0.03em',
+                }}>
+                  {c.ativa ? '● Ativa' : '○ Inativa'}
+                </span>
+              </div>
+
+              {/* Corpo do card */}
+              <div style={{ padding: '1rem 1.25rem', flex: 1 }}>
+                {/* Nome */}
+                <p style={{
+                  fontWeight: '700',
+                  fontSize: '0.975rem',
+                  color: 'var(--color-text)',
+                  margin: '0 0 0.75rem',
+                  lineHeight: 1.3,
+                }}>
+                  {c.nome}
+                </p>
+
+                {/* Infos */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {[
+                    { icon: '📋', label: c.cpf || '—' },
+                    { icon: '📱', label: c.telefone || '—' },
+                    { icon: '✉️', label: c.email || '—' },
+                    { icon: '🎂', label: c.data_nascimento ? fmtDate(c.data_nascimento) : '—' },
+                  ].map(({ icon, label }) => (
+                    <div key={icon} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      fontSize: '0.8rem',
+                      color: 'var(--color-text-muted)',
+                    }}>
+                      <span style={{ fontSize: '0.85rem', flexShrink: 0 }}>{icon}</span>
+                      <span style={{
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>{label}</span>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ações */}
+              <div style={{
+                padding: '0.75rem 1.25rem',
+                borderTop: '1px solid var(--color-border)',
+                display: 'flex',
+                gap: '0.5rem',
+              }}>
+                <button
+                  onClick={() => abrirEditar(c)}
+                  style={{
+                    flex: 1,
+                    padding: '0.4rem 0',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: 'rgba(168,85,247,0.12)',
+                    color: '#a855f7',
+                    fontWeight: '600',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  ✏️ Editar
+                </button>
+                <button
+                  onClick={() => toggleAtiva(c)}
+                  style={{
+                    flex: 1,
+                    padding: '0.4rem 0',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: c.ativa ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                    color: c.ativa ? '#f59e0b' : '#10b981',
+                    fontWeight: '600',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {c.ativa ? '⏸' : '▶'}
+                </button>
+                <button
+                  onClick={() => setModalExcluir(c)}
+                  style={{
+                    padding: '0.4rem 0.65rem',
+                    borderRadius: 'var(--radius-md)',
+                    border: 'none',
+                    background: 'rgba(239,68,68,0.12)',
+                    color: '#ef4444',
+                    fontWeight: '600',
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  🗑
+                </button>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
