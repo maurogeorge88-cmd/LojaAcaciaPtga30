@@ -853,7 +853,10 @@ function App() {
       loadCargosLoja();
       loadBalaustres();
     } catch (error) {
+      console.error('❌ Erro no handleLogin:', error.message);
       setError(error.message);
+      setLoading(false);
+      throw error; // RE-LANÇAR o erro para o Login.jsx capturar!
     } finally {
       setLoading(false);
     }
