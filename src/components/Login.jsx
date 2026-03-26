@@ -34,14 +34,17 @@ export const Login = ({ onLogin }) => {
       setLoading(false);
       
     } catch (err) {
+      setLoading(false);
+      
       // Se for erro de acesso negado às cunhadas, mostrar modal
       if (err.message === 'ACESSO_NEGADO_CUNHADAS') {
-        setLoading(false);
-        setModalErroPermissao(true);
+        // Pequeno delay para garantir que está na tela de login
+        setTimeout(() => {
+          setModalErroPermissao(true);
+        }, 100);
       } else {
         // Outros erros: mostrar normalmente
         setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
-        setLoading(false);
       }
     }
   };
