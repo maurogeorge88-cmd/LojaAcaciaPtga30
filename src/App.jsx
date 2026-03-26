@@ -261,24 +261,29 @@ function App() {
   // ========================================
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      // Se havia sessão ativa mas o último portal usado era 'cunhadas',
-      // forçar novo login (sessionStorage é limpo ao fechar o navegador).
-      // Se sessionStorage ainda tem 'cunhadas', significa que a aba ainda
-      // está aberta — nesse caso deixa entrar normalmente.
       const portalSalvo = sessionStorage.getItem('portalAtivo');
+      const tipoPerfilSalvo = sessionStorage.getItem('tipoPerfil'); // 'cunhada' ou null
 
-      if (session && portalSalvo === 'cunhadas') {
-        // Sessão restaurada pelo Supabase após fechar/reabrir o navegador,
-        // mas o portal era cunhadas → força logout e exige novo login.
+      // Portal cunhadas: força novo login ao reabrir o navegador
+      if (session && portalSalvo === 'cunhadas' && !tipoPerfilSalvo) {
         supabase.auth.signOut();
         sessionStorage.removeItem('portalAtivo');
         setLoading(false);
         return;
       }
 
+      // Cunhada com aba ainda aberta (sessionStorage intacto): restaura normalmente
+      if (session && tipoPerfilSalvo === 'cunhada') {
+        setSession(session);
+        setPortalAtivo('cunhadas');
+        setCurrentPage('dashboard-cunhadas');
+        setLoading(false);
+        return;
+      }
+
+      // Irmão — fluxo normal
       setSession(session);
       if (session) {
-        if (portalSalvo === 'cunhadas') setPortalAtivo('cunhadas');
         loadUserData(session.user.email);
         loadIrmaos();
         loadTiposSessao();
@@ -789,44 +794,90 @@ function App() {
       if (error) throw error;
       console.log('✅ Autenticação OK');
 
-      // PASSO 2: Buscar dados do usuário (incluindo cargo)
+      // PASSO 2A: Verificar se é uma CUNHADA com login próprio
+      const { data: dadosCunhada } = await supabase
+        .from('cunhadas')
+        .select('id, nome, ativa, cargo')
+        .eq('email', emailParam)
+        .single();
+
+      const ehCunhada = !!dadosCunhada;
+
+      if (ehCunhada) {
+        // ── Fluxo CUNHADA ──────────────────────────────────────────
+        console.log('👩 Usuário identificado como cunhada, cargo:', dadosCunhada.cargo);
+
+        if (!dadosCunhada.ativa) {
+          await supabase.auth.signOut();
+          throw new Error('Cadastro inativo. Entre em contato com a administração.');
+        }
+
+        // Cunhadas só acessam o portal cunhadas
+        if (portalEscolhido !== 'cunhadas') {
+          await supabase.auth.signOut();
+          setLoading(false);
+          setModalAcessoNegado(true);
+          return;
+        }
+
+        // Apenas presidente e tesoureira têm acesso (por enquanto)
+        const cargosPermitidosCunhadas = ['presidente', 'tesoureira'];
+        if (!cargosPermitidosCunhadas.includes(dadosCunhada.cargo)) {
+          await supabase.auth.signOut();
+          setLoading(false);
+          setModalAcessoNegado(true);
+          return;
+        }
+
+        console.log('✅ Cunhada autorizada — cargo:', dadosCunhada.cargo);
+        sessionStorage.setItem('portalAtivo', 'cunhadas');
+        sessionStorage.setItem('tipoPerfil', 'cunhada');
+        setSession(data.session);
+        setPortalAtivo('cunhadas');
+        setCurrentPage('dashboard-cunhadas');
+        setLoading(false);
+        return; // Cunhada não carrega dados dos irmãos
+      }
+
+      // ── Fluxo IRMÃO ────────────────────────────────────────────
+      // PASSO 2B: Buscar dados do irmão (incluindo cargo)
       const { data: userData } = await supabase
         .from('usuarios')
         .select('*, cargo')
         .eq('email', emailParam)
         .single();
 
-      console.log('👤 Usuário carregado:', { cargo: userData?.cargo, ativo: userData?.ativo });
+      console.log('👤 Irmão carregado:', { cargo: userData?.cargo, ativo: userData?.ativo });
 
       if (!userData?.ativo) {
         await supabase.auth.signOut();
         throw new Error('Usuário inativo. Entre em contato com o administrador.');
       }
 
-      // PASSO 3: VALIDAR PERMISSÃO ANTES DE TUDO (se for portal cunhadas)
+      // PASSO 3: VALIDAR PERMISSÃO (portal cunhadas: só admin e venerável)
       if (portalEscolhido === 'cunhadas') {
-        console.log('🔍 Validando permissão para portal cunhadas...');
-        
-        const { data: perms } = await supabase
-          .from('permissoes')
-          .select('pode_acessar_portal_cunhadas')
-          .eq('cargo', userData.cargo)
-          .single();
+        console.log('🔍 Validando permissão de irmão para portal cunhadas...');
 
-        console.log('🔐 Permissões:', perms);
-        console.log('✅ Pode acessar?', perms?.pode_acessar_portal_cunhadas);
+        const cargosComAcesso = ['administrador', 'veneravel', 'Veneravel'];
+        const temPermissaodireta = cargosComAcesso.includes(userData?.cargo) ||
+                                   userData?.nivel_acesso === 'admin';
 
-        // SE NÃO TEM PERMISSÃO: Logout e mostrar modal (via estado do App, não do Login)
-        if (!perms?.pode_acessar_portal_cunhadas) {
-          console.log('❌ ACESSO NEGADO! Fazendo logout...');
-          await supabase.auth.signOut();
-          setLoading(false);
-          console.log('❌ Exibindo modal de acesso negado (via App.jsx)');
-          setModalAcessoNegado(true); // Estado no App sobrevive ao re-render do Login
-          return; // Não lança erro, não prossegue
+        if (!temPermissaodireta) {
+          const { data: perms } = await supabase
+            .from('permissoes')
+            .select('pode_acessar_portal_cunhadas')
+            .eq('cargo', userData.cargo)
+            .single();
+
+          if (!perms?.pode_acessar_portal_cunhadas) {
+            await supabase.auth.signOut();
+            setLoading(false);
+            setModalAcessoNegado(true);
+            return;
+          }
         }
-        
-        console.log('✅ Permissão OK - continuando...');
+
+        console.log('✅ Irmão autorizado para portal cunhadas');
       }
 
       // PASSO 4: SÓ AGORA (após validação OK) - Atualizar estados
@@ -885,6 +936,7 @@ function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     sessionStorage.removeItem('portalAtivo');
+    sessionStorage.removeItem('tipoPerfil');
     setSession(null);
     setUserData(null);
     setPermissoes(null);
