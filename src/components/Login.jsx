@@ -28,8 +28,8 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // PRIMEIRO: Fazer login normalmente
-      await onLogin(email, password);
+      // Passar o portal escolhido como terceiro parâmetro
+      await onLogin(email, password, portalSelecionado);
       
       // DEPOIS: Validar permissões (apenas para portal cunhadas)
       if (portalSelecionado === 'cunhadas') {
@@ -51,9 +51,6 @@ export const Login = ({ onLogin }) => {
           throw new Error('❌ Você não tem permissão para acessar o Portal das Cunhadas');
         }
       }
-      
-      // Salvar portal escolhido
-      localStorage.setItem('portal_ativo', portalSelecionado);
       
     } catch (err) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
