@@ -760,6 +760,7 @@ function App() {
     setError('');
 
     try {
+      // PASSO 1: Autenticar
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailParam,
         password: passwordParam,
@@ -767,6 +768,7 @@ function App() {
 
       if (error) throw error;
 
+      // PASSO 2: Buscar dados do usuário (incluindo cargo)
       const { data: userData } = await supabase
         .from('usuarios')
         .select('*, cargo')
@@ -778,7 +780,7 @@ function App() {
         throw new Error('Usuário inativo. Entre em contato com o administrador.');
       }
 
-      // VALIDAÇÃO DE PERMISSÃO PARA PORTAL CUNHADAS
+      // PASSO 3: VALIDAR PERMISSÃO ANTES DE TUDO (se for portal cunhadas)
       if (portalEscolhido === 'cunhadas') {
         const { data: perms } = await supabase
           .from('permissoes')
@@ -786,21 +788,20 @@ function App() {
           .eq('cargo', userData.cargo)
           .single();
 
+        // SE NÃO TEM PERMISSÃO: Logout e retornar erro IMEDIATAMENTE
         if (!perms?.pode_acessar_portal_cunhadas) {
-          // NÃO TEM PERMISSÃO - Fazer logout e retornar erro
           await supabase.auth.signOut();
-          throw new Error('ACESSO_NEGADO_CUNHADAS'); // Código especial
+          setLoading(false);
+          throw new Error('ACESSO_NEGADO_CUNHADAS');
         }
       }
 
-      // SE PASSOU NAS VALIDAÇÕES: Continuar login
+      // PASSO 4: SÓ AGORA (após validação OK) - Atualizar estados
       setSession(data.session);
       loadUserData(emailParam);
-      
-      // Definir portal ativo
       setPortalAtivo(portalEscolhido);
       
-      // Redirecionar baseado no portal escolhido
+      // PASSO 5: Redirecionar para página correta
       if (portalEscolhido === 'cunhadas') {
         setCurrentPage('dashboard-cunhadas');
       } else {
