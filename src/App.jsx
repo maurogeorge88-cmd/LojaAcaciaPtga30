@@ -47,6 +47,7 @@ import Login from './components/Login';
 import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
+import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -2329,6 +2330,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           <span>🏛️</span>
                           <span>Dados da Loja</span>
                         </button>
+
+                        {/* ACESSO CUNHADAS */}
+                        <button
+                          onClick={() => setCurrentPage('acesso-cunhadas')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'acesso-cunhadas'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
+                          }`}
+                        >
+                          <span>💜</span>
+                          <span>Acesso das Cunhadas</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2553,6 +2567,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <FinanceiroCunhadas
             userData={userData}
           />
+        )}
+
+        {/* ACESSO CUNHADAS */}
+        {currentPage === 'acesso-cunhadas' && permissoes?.canManageUsers && (
+          <AcessoCunhadas />
         )}
 
         {/* CADASTRO DE IRMÃOS */}
