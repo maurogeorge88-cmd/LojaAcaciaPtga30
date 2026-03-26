@@ -442,15 +442,34 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
       {/* MODAL BENEFICIÁRIO */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-teal-600 text-white p-6 rounded-t-xl">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
+          <div style={{
+            background: 'var(--card-bg)',
+            borderRadius: 'var(--border-radius-lg)',
+            boxShadow: 'var(--shadow-2xl)',
+            maxWidth: '64rem',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
+              color: 'white',
+              padding: '1.5rem',
+              borderRadius: 'var(--border-radius-lg) var(--border-radius-lg) 0 0'
+            }}>
               <h3 className="text-2xl font-bold">
                 {editando ? '✏️ Editar Beneficiário' : '➕ Novo Beneficiário'}
               </h3>
             </div>
 
-            <form onSubmit={salvarBeneficiario} className="p-6 space-y-4">
+            <form onSubmit={salvarBeneficiario} style={{
+              padding: '1.5rem',
+              flex: 1,
+              overflowY: 'auto'
+            }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
@@ -594,114 +613,181 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     CEP
                   </label>
                   <input
                     type="text"
                     value={form.cep}
                     onChange={(e) => setForm({ ...form, cep: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Endereço
                   </label>
                   <input
                     type="text"
                     value={form.endereco}
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Número
                   </label>
                   <input
                     type="text"
                     value={form.numero}
                     onChange={(e) => setForm({ ...form, numero: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Complemento
                   </label>
                   <input
                     type="text"
                     value={form.complemento}
                     onChange={(e) => setForm({ ...form, complemento: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Bairro
                   </label>
                   <input
                     type="text"
                     value={form.bairro}
                     onChange={(e) => setForm({ ...form, bairro: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Cidade
                   </label>
                   <input
                     type="text"
                     value={form.cidade}
                     onChange={(e) => setForm({ ...form, cidade: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Estado
                   </label>
                   <input
                     type="text"
                     value={form.estado}
                     onChange={(e) => setForm({ ...form, estado: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
                     maxLength="2"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem'
+                    }}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     Observações
                   </label>
                   <textarea
                     value={form.observacoes}
                     onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
                     rows="3"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem 1rem',
+                      border: '2px solid var(--border-color)',
+                      borderRadius: 'var(--border-radius)',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
                   />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-4" style={{ borderTop: '1px solid var(--border-color)', marginTop: '1.5rem', paddingTop: '1.5rem' }}>
                 <button
                   type="submit"
-                  className="flex-1 bg-teal-600 text-white px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors font-semibold"
+                  className="btn-primary"
+                  style={{ flex: 1 }}
                 >
                   💾 Salvar
                 </button>
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="px-6 py-3 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors font-semibold"
+                  className="btn-secondary"
                 >
                   ❌ Cancelar
                 </button>
@@ -713,7 +799,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
       {/* MODAL RESPONSÁVEL */}
       {modalResponsavel && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
             <div className="bg-green-600 text-white p-6 rounded-t-xl">
               <h3 className="text-2xl font-bold">
