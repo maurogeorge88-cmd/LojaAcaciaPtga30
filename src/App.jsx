@@ -45,6 +45,7 @@ import MinhaPresenca from './components/MinhaPresenca';
 import ModalVisualizarPresenca from './components/ModalVisualizarPresenca';
 import Login from './components/Login';
 import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
+import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -2466,6 +2467,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <DashboardCunhadas 
             userData={userData}
             onNavigate={(page) => setCurrentPage(page)}
+          />
+        )}
+
+        {/* CADASTRO CUNHADAS */}
+        {currentPage === 'cadastro-cunhadas' && (
+          <CadastroCunhadas
+            userData={userData}
           />
         )}
 
