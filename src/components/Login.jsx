@@ -20,6 +20,7 @@ export const Login = ({ onLogin }) => {
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
   const [mostrarTrocarSenha, setMostrarTrocarSenha] = useState(false);
   const [portalSelecionado, setPortalSelecionado] = useState(null); // null, 'irmaos', 'cunhadas'
+  const [modalErroPermissao, setModalErroPermissao] = useState(false); // Modal de erro de permissão
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,15 +46,11 @@ export const Login = ({ onLogin }) => {
           .eq('cargo', usuario?.cargo)
           .single();
 
-        // Se não tiver permissão, fazer logout e mostrar erro
+        // Se não tiver permissão, mostrar modal ANTES de fazer logout
         if (!perms?.pode_acessar_portal_cunhadas) {
-          // IMPORTANTE: Fazer logout ANTES de lançar o erro
-          await supabase.auth.signOut();
-          
-          // Agora sim, mostrar o erro (depois do logout)
           setLoading(false);
-          setError('❌ Você não tem permissão para acessar o Portal das Cunhadas.\n\nEste portal é exclusivo para Presidente e Tesoureira das Cunhadas.');
-          return; // Parar execução aqui
+          setModalErroPermissao(true); // Mostra o modal
+          return; // Não continua
         }
       }
       
@@ -63,6 +60,16 @@ export const Login = ({ onLogin }) => {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
       setLoading(false);
     }
+  };
+
+  // Função chamada quando usuário clica OK no modal
+  const handleFecharModalErro = async () => {
+    setModalErroPermissao(false);
+    await supabase.auth.signOut();
+    // Resetar campos
+    setEmail('');
+    setPassword('');
+    setPortalSelecionado(null);
   };
 
   const handleRecuperarSenha = async (e) => {
@@ -108,6 +115,95 @@ export const Login = ({ onLogin }) => {
       justifyContent: 'center',
       overflow: 'hidden'
     }}>
+      {/* MODAL DE ERRO DE PERMISSÃO */}
+      {modalErroPermissao && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(8px)'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b, #334155)',
+            padding: '2.5rem',
+            borderRadius: '20px',
+            maxWidth: '500px',
+            width: '90%',
+            border: '2px solid rgba(239, 68, 68, 0.5)',
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+            animation: 'slideIn 0.3s ease-out'
+          }}>
+            {/* Ícone de erro */}
+            <div style={{
+              fontSize: '4rem',
+              textAlign: 'center',
+              marginBottom: '1rem'
+            }}>
+              🚫
+            </div>
+
+            {/* Título */}
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              color: '#ef4444',
+              textAlign: 'center',
+              marginBottom: '1rem'
+            }}>
+              Acesso Negado
+            </h2>
+
+            {/* Mensagem */}
+            <p style={{
+              fontSize: '1.05rem',
+              color: '#e2e8f0',
+              textAlign: 'center',
+              lineHeight: '1.6',
+              marginBottom: '2rem'
+            }}>
+              Você não tem permissão para acessar o <strong style={{ color: '#a855f7' }}>Portal das Cunhadas</strong>.
+              <br /><br />
+              Este portal é exclusivo para <strong>Presidente e Tesoureira das Cunhadas</strong>.
+              <br /><br />
+              Entre em contato com o administrador se acredita que isso é um erro.
+            </p>
+
+            {/* Botão OK */}
+            <button
+              onClick={handleFecharModalErro}
+              style={{
+                width: '100%',
+                padding: '1rem',
+                background: 'linear-gradient(135deg, #d4af37, #b8941f)',
+                border: 'none',
+                borderRadius: '12px',
+                color: '#0f172a',
+                fontSize: '1rem',
+                fontWeight: '700',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: '0 4px 15px rgba(212, 175, 55, 0.3)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 6px 25px rgba(212, 175, 55, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)';
+                e.target.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
+              }}
+            >
+              OK, Entendi
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Resto do conteúdo do login */}
       {/* Padrão geométrico */}
       <div style={{
         position: 'absolute',
