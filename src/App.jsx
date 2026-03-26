@@ -769,7 +769,7 @@ function App() {
 
       const { data: userData } = await supabase
         .from('usuarios')
-        .select('*')
+        .select('*, cargo')
         .eq('email', emailParam)
         .single();
 
@@ -778,6 +778,22 @@ function App() {
         throw new Error('Usuário inativo. Entre em contato com o administrador.');
       }
 
+      // VALIDAÇÃO DE PERMISSÃO PARA PORTAL CUNHADAS
+      if (portalEscolhido === 'cunhadas') {
+        const { data: perms } = await supabase
+          .from('permissoes')
+          .select('pode_acessar_portal_cunhadas')
+          .eq('cargo', userData.cargo)
+          .single();
+
+        if (!perms?.pode_acessar_portal_cunhadas) {
+          // NÃO TEM PERMISSÃO - Fazer logout e retornar erro
+          await supabase.auth.signOut();
+          throw new Error('ACESSO_NEGADO_CUNHADAS'); // Código especial
+        }
+      }
+
+      // SE PASSOU NAS VALIDAÇÕES: Continuar login
       setSession(data.session);
       loadUserData(emailParam);
       
