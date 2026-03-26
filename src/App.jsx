@@ -801,7 +801,7 @@ function App() {
         .from('cunhadas')
         .select('id, nome, ativa, cargo')
         .eq('email', emailParam)
-        .single();
+        .maybeSingle();
 
       const ehCunhada = !!dadosCunhada;
 
