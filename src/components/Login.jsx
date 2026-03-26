@@ -292,12 +292,12 @@ export const Login = ({ onLogin }) => {
               </div>
             </div>
           ) : (
-
-          {!mostrarRecuperacao ? (
-            // FORMULÁRIO DE LOGIN
             <>
-              {/* Indicador de portal selecionado */}
-              <div style={{
+              {!mostrarRecuperacao ? (
+                // FORMULÁRIO DE LOGIN
+                <>
+                  {/* Indicador de portal selecionado */}
+                  <div style={{
                 padding: '1rem',
                 background: portalSelecionado === 'irmaos' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(168, 85, 247, 0.1)',
                 border: `2px solid ${portalSelecionado === 'irmaos' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(168, 85, 247, 0.3)'}`,
@@ -438,8 +438,8 @@ export const Login = ({ onLogin }) => {
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
-            </>
-          ) : (
+                </>
+              ) : (
             // FORMULÁRIO DE RECUPERAÇÃO
             <form onSubmit={handleRecuperarSenha} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div>
@@ -516,7 +516,8 @@ export const Login = ({ onLogin }) => {
                 ← Voltar para Login
               </button>
             </form>
-          )}
+              )}
+            </>
           )}
 
           <div style={{
