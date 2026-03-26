@@ -307,19 +307,10 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         </div>
 
         <input
-          type="text"
+          type="text" className="form-input"
           placeholder="🔍 Buscar por nome ou CPF..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '0.75rem 1rem',
-            border: '2px solid var(--border-color)',
-            borderRadius: '8px',
-            background: 'var(--input-bg)',
-            color: 'var(--text-primary)',
-            fontSize: '1rem'
-          }}
         />
       </div>
 
@@ -328,13 +319,6 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         {beneficiariosFiltrados.map(beneficiario => (
           <div
             key={beneficiario.id}
-            style={{
-              background: 'var(--card-bg)',
-              borderRadius: '8px',
-              padding: '1.5rem',
-              boxShadow: 'var(--shadow-md)',
-              transition: 'all 0.3s ease'
-            }}
             onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-xl)'}
             onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
           >
@@ -442,359 +426,186 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
       {/* MODAL BENEFICIÁRIO */}
       {modalAberto && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'var(--card-bg)',
-            borderRadius: '16px',
-            boxShadow: 'var(--shadow-2xl)',
-            maxWidth: '64rem',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            border: '1px solid var(--border-color)'
-          }}>
-            {/* Header com gradiente do tema */}
-            <div style={{
-              background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)',
-              padding: '1.5rem 2rem',
-              borderBottom: '1px solid var(--border-color)'
-            }}>
-              <h3 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                color: '#ffffff',
-                margin: 0
-              }}>
+            {/* Header */}
+            <div className="card-header">
+              <h3 className="text-2xl font-bold">
                 {editando ? '✏️ Editar Beneficiário' : '➕ Novo Beneficiário'}
               </h3>
             </div>
 
             {/* Formulário com scroll */}
-            <form onSubmit={salvarBeneficiario} style={{
-              padding: '2rem',
-              flex: 1,
-              overflowY: 'auto',
-              background: 'var(--card-bg)'
-            }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label style={{ 
-                    display: 'block', 
-                    fontSize: '0.875rem', 
-                    fontWeight: '600', 
-                    color: 'var(--text-secondary)',
-                    marginBottom: '0.5rem' 
-                  }}>
+                  <label className="form-label">
                     Nome Completo *
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
+                    className="form-input"
                     value={form.nome}
                     onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                     required
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     CPF
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
+                    className="form-input"
                     value={form.cpf}
                     onChange={(e) => setForm({ ...form, cpf: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     RG
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
+                    className="form-input"
                     value={form.rg}
                     onChange={(e) => setForm({ ...form, rg: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Data de Nascimento
                   </label>
                   <input
-                    type="date"
+                    type="date" className="form-input"
+                    className="form-input"
                     value={form.data_nascimento}
                     onChange={(e) => setForm({ ...form, data_nascimento: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Telefone
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
+                    className="form-input"
                     value={form.telefone}
                     onChange={(e) => setForm({ ...form, telefone: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Celular
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
+                    className="form-input"
                     value={form.celular}
                     onChange={(e) => setForm({ ...form, celular: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Email
                   </label>
                   <input
-                    type="email"
+                    type="email" className="form-input"
+                    className="form-input"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     CEP
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.cep}
                     onChange={(e) => setForm({ ...form, cep: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Endereço
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.endereco}
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Número
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.numero}
                     onChange={(e) => setForm({ ...form, numero: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Complemento
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.complemento}
                     onChange={(e) => setForm({ ...form, complemento: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Bairro
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.bairro}
                     onChange={(e) => setForm({ ...form, bairro: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Cidade
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.cidade}
                     onChange={(e) => setForm({ ...form, cidade: e.target.value })}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Estado
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={form.estado}
                     onChange={(e) => setForm({ ...form, estado: e.target.value })}
                     maxLength="2"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem'
-                    }}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                  <label className="form-label">
                     Observações
                   </label>
                   <textarea
                     value={form.observacoes}
                     onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                     rows="3"
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem 1rem',
-                      border: '2px solid var(--border-color)',
-                      borderRadius: '8px',
-                      background: 'var(--input-bg)',
-                      color: 'var(--text-primary)',
-                      fontSize: '1rem',
-                      fontFamily: 'inherit',
-                      resize: 'vertical'
-                    }}
                   />
                 </div>
               </div>
@@ -846,7 +657,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Nome Completo *
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.nome}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, nome: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -859,7 +670,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     CPF
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.cpf}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cpf: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -871,7 +682,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Parentesco
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.parentesco}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, parentesco: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -884,7 +695,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Telefone
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.telefone}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, telefone: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -896,7 +707,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Celular
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.celular}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, celular: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -908,7 +719,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     RG
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.rg}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, rg: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -920,7 +731,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Endereço
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.endereco}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, endereco: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -933,7 +744,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Cidade
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.cidade}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cidade: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -945,7 +756,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Estado
                   </label>
                   <input
-                    type="text"
+                    type="text" className="form-input"
                     value={formResponsavel.estado}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, estado: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -958,7 +769,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Email
                   </label>
                   <input
-                    type="email"
+                    type="email" className="form-input"
                     value={formResponsavel.email}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, email: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
