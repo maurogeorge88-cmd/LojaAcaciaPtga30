@@ -360,49 +360,76 @@ export default function Eventos({ userPermissions, userData }) {
           const numParticipantes = todosParticipantes.filter(p => p.evento_id === evento.id).length;
 
           return (
-            <div key={evento.id} className="bg-white rounded-lg shadow-lg overflow-hidden border-l-4" 
-                 style={{borderLeftColor: evento.tipo_evento === 'externo' ? '#9333ea' : '#10b981'}}>
+            <div key={evento.id} className="card-hover overflow-hidden border-l-4" 
+                 style={{
+                   background: 'var(--card-bg)',
+                   borderRadius: 'var(--border-radius)',
+                   borderLeftColor: evento.tipo_evento === 'externo' ? 'var(--accent-color)' : 'var(--success-color)',
+                   boxShadow: 'var(--shadow-md)'
+                 }}>
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                        evento.tipo_evento === 'externo' 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
+                      <span style={{
+                        background: evento.tipo_evento === 'externo' ? 'var(--accent-bg)' : 'var(--success-bg)',
+                        color: evento.tipo_evento === 'externo' ? 'var(--accent-color)' : 'var(--success-color)',
+                        padding: '0.375rem 1rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.875rem',
+                        fontWeight: '600'
+                      }}>
                         {evento.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}
                       </span>
-                      <span className={`px-4 py-1.5 rounded-full text-sm font-semibold ${
-                        evento.status === 'planejamento' ? 'bg-yellow-100 text-yellow-800' :
-                        evento.status === 'em_andamento' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span style={{
+                        background: evento.status === 'planejamento' ? 'var(--warning-bg)' :
+                                  evento.status === 'em_andamento' ? 'var(--info-bg)' : 'var(--muted-bg)',
+                        color: evento.status === 'planejamento' ? 'var(--warning-color)' :
+                               evento.status === 'em_andamento' ? 'var(--info-color)' : 'var(--text-secondary)',
+                        padding: '0.375rem 1rem',
+                        borderRadius: '9999px',
+                        fontSize: '0.875rem',
+                        fontWeight: '600'
+                      }}>
                         {evento.status === 'planejamento' ? '📋 Planejamento' :
                          evento.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">{evento.nome_evento}</h3>
-                    <div className="grid grid-cols-2 gap-3 text-sm text-gray-600">
+                    <h3 style={{ 
+                      fontSize: '1.25rem', 
+                      fontWeight: '700', 
+                      color: 'var(--text-primary)', 
+                      marginBottom: '0.5rem' 
+                    }}>
+                      {evento.nome_evento}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">👤 Idealizador:</span>
+                        <span style={{ fontWeight: '600' }}>👤 Idealizador:</span>
                         <span>{evento.idealizador || 'Não informado'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">📍 Local:</span>
+                        <span style={{ fontWeight: '600' }}>📍 Local:</span>
                         <span>{evento.local_evento || 'Não informado'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">📅 Aviso:</span>
+                        <span style={{ fontWeight: '600' }}>📅 Aviso:</span>
                         <span>{evento.data_aviso ? new Date(evento.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">🎯 Evento:</span>
+                        <span style={{ fontWeight: '600' }}>🎯 Evento:</span>
                         <span>{new Date(evento.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
                     {evento.descricao && (
-                      <p className="mt-3 text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                      <p style={{ 
+                        marginTop: '0.75rem', 
+                        fontSize: '0.875rem', 
+                        color: 'var(--text-secondary)', 
+                        background: 'var(--muted-bg)', 
+                        padding: '0.75rem', 
+                        borderRadius: 'var(--border-radius)' 
+                      }}>
                         {evento.descricao}
                       </p>
                     )}
@@ -411,14 +438,14 @@ export default function Eventos({ userPermissions, userData }) {
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => abrirModal(evento)}
-                        className="p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                        className="btn-icon-secondary"
                         title="Editar"
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => excluirEvento(evento.id)}
-                        className="p-3 text-red-600 hover:bg-red-50 rounded-lg transition"
+                        className="btn-icon-danger"
                         title="Excluir"
                       >
                         🗑️
@@ -429,22 +456,27 @@ export default function Eventos({ userPermissions, userData }) {
 
                 {/* Informações adicionais em cards */}
                 <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <div className="text-sm font-semibold text-blue-800 mb-1">💰 Custo Total</div>
-                    <div className="text-2xl font-bold text-blue-900">
+                  <div style={{ background: 'var(--info-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--info-color)', marginBottom: '0.25rem' }}>
+                      💰 Custo Total
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--info-color)' }}>
                       R$ {custoTotal.toFixed(2)}
                     </div>
                   </div>
-                  <div className="bg-green-50 p-4 rounded-lg">
-                    <div className="text-sm font-semibold text-green-800 mb-1">👥 Participantes</div>
-                    <div className="text-2xl font-bold text-green-900">
+                  <div style={{ background: 'var(--success-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--success-color)', marginBottom: '0.25rem' }}>
+                      👥 Participantes
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--success-color)' }}>
                       {numParticipantes} irmãos
                     </div>
                   </div>
-                  <div className="bg-purple-50 p-4 rounded-lg flex items-center justify-center">
+                  <div style={{ background: 'var(--accent-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }} className="flex items-center justify-center">
                     <button
                       onClick={() => abrirVisualizacao(evento)}
-                      className="text-purple-700 hover:text-purple-900 font-semibold text-sm flex items-center gap-2"
+                      className="btn-link"
+                      style={{ color: 'var(--accent-color)' }}
                     >
                       👁️ Ver Detalhes
                     </button>
