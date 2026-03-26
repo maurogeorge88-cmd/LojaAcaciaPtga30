@@ -134,6 +134,7 @@ function App() {
   const [permissoes, setPermissoes] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [portalAtivo, setPortalAtivo] = useState('irmaos'); // 'irmaos' ou 'cunhadas'
+  const [modalAcessoNegado, setModalAcessoNegado] = useState(false); // Modal de acesso negado (sobrevive ao re-render do Login)
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
   const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
   const [modalPerfilCompletoAberto, setModalPerfilCompletoAberto] = useState(false);
@@ -798,13 +799,14 @@ function App() {
         console.log('🔐 Permissões:', perms);
         console.log('✅ Pode acessar?', perms?.pode_acessar_portal_cunhadas);
 
-        // SE NÃO TEM PERMISSÃO: Logout e retornar erro IMEDIATAMENTE
+        // SE NÃO TEM PERMISSÃO: Logout e mostrar modal (via estado do App, não do Login)
         if (!perms?.pode_acessar_portal_cunhadas) {
           console.log('❌ ACESSO NEGADO! Fazendo logout...');
           await supabase.auth.signOut();
           setLoading(false);
-          console.log('❌ Lançando erro ACESSO_NEGADO_CUNHADAS');
-          throw new Error('ACESSO_NEGADO_CUNHADAS');
+          console.log('❌ Exibindo modal de acesso negado (via App.jsx)');
+          setModalAcessoNegado(true); // Estado no App sobrevive ao re-render do Login
+          return; // Não lança erro, não prossegue
         }
         
         console.log('✅ Permissão OK - continuando...');
@@ -1307,7 +1309,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
   }
 
   if (!session) {
-    return <Login onLogin={handleLogin} />;
+    return <Login 
+      onLogin={handleLogin} 
+      modalAcessoNegado={modalAcessoNegado}
+      onFecharModalAcessoNegado={() => setModalAcessoNegado(false)}
+    />;
   }
 
   // Contagens por situação
