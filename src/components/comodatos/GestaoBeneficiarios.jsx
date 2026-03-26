@@ -453,7 +453,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           padding: '1rem'
         }}>
           <div style={{
-            background: 'var(--modal-bg)',
+            background: 'var(--card-bg)',
             borderRadius: '16px',
             boxShadow: 'var(--shadow-2xl)',
             maxWidth: '64rem',
@@ -485,7 +485,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               padding: '2rem',
               flex: 1,
               overflowY: 'auto',
-              background: 'var(--modal-bg)'
+              background: 'var(--card-bg)'
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
