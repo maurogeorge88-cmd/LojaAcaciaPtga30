@@ -550,6 +550,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.cep}
                     onChange={(e) => setForm({ ...form, cep: e.target.value })}
                   />
@@ -561,6 +562,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.endereco}
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })}
                   />
@@ -572,6 +574,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.numero}
                     onChange={(e) => setForm({ ...form, numero: e.target.value })}
                   />
@@ -583,6 +586,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.complemento}
                     onChange={(e) => setForm({ ...form, complemento: e.target.value })}
                   />
@@ -594,6 +598,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.bairro}
                     onChange={(e) => setForm({ ...form, bairro: e.target.value })}
                   />
@@ -605,6 +610,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.cidade}
                     onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                   />
@@ -616,6 +622,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                   </label>
                   <input
                     type="text"
+                    className="form-input"
                     value={form.estado}
                     onChange={(e) => setForm({ ...form, estado: e.target.value })}
                     maxLength="2"
@@ -627,6 +634,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Observações
                   </label>
                   <textarea
+                    className="form-input"
                     value={form.observacoes}
                     onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                     rows="3"
@@ -634,17 +642,10 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                 </div>
               </div>
 
-              <div style={{ 
-                borderTop: '1px solid var(--border-color)', 
-                marginTop: '1.5rem', 
-                paddingTop: '1.5rem',
-                display: 'flex',
-                gap: '0.75rem'
-              }}>
+              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
                 <button
                   type="submit"
-                  className="btn-primary"
-                  style={{ flex: 1 }}
+                  className="btn-primary flex-1"
                 >
                   💾 Salvar
                 </button>
