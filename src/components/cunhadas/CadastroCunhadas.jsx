@@ -7,9 +7,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
-const fmt = (v) =>
-  Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
 const fmtDate = (d) => {
   if (!d) return '—';
   const [y, m, dia] = d.split('-');
@@ -23,9 +20,6 @@ const VAZIO = {
   email: '',
   data_nascimento: '',
   endereco: '',
-  periodicidade_pagamento: 'mensal',
-  valor_mensalidade: '',
-  dia_vencimento: '10',
   ativa: true,
   observacoes: '',
 };
@@ -119,9 +113,6 @@ export const CadastroCunhadas = ({ userData }) => {
       email: c.email || '',
       data_nascimento: c.data_nascimento || '',
       endereco: c.endereco || '',
-      periodicidade_pagamento: c.periodicidade_pagamento || 'mensal',
-      valor_mensalidade: c.valor_mensalidade || '',
-      dia_vencimento: c.dia_vencimento?.toString() || '10',
       ativa: c.ativa ?? true,
       observacoes: c.observacoes || '',
     });
@@ -145,10 +136,6 @@ export const CadastroCunhadas = ({ userData }) => {
     try {
       const payload = {
         ...form,
-        valor_mensalidade: form.valor_mensalidade
-          ? parseFloat(form.valor_mensalidade.toString().replace(',', '.'))
-          : null,
-        dia_vencimento: form.dia_vencimento ? parseInt(form.dia_vencimento) : null,
       };
 
       if (editandoId) {
@@ -570,9 +557,7 @@ export const CadastroCunhadas = ({ userData }) => {
                 <th style={s.th}>Nome</th>
                 <th style={s.th}>CPF</th>
                 <th style={s.th}>Telefone</th>
-                <th style={s.th}>Mensalidade</th>
-                <th style={s.th}>Periodicidade</th>
-                <th style={s.th}>Vencimento</th>
+                <th style={s.th}>E-mail</th>
                 <th style={s.th}>Status</th>
                 <th style={{ ...s.th, textAlign: 'center' }}>Ações</th>
               </tr>
@@ -596,15 +581,7 @@ export const CadastroCunhadas = ({ userData }) => {
                   </td>
                   <td style={s.td}>{c.cpf || '—'}</td>
                   <td style={s.td}>{c.telefone || '—'}</td>
-                  <td style={s.td}>{c.valor_mensalidade ? fmt(c.valor_mensalidade) : '—'}</td>
-                  <td style={s.td}>
-                    <span style={{ textTransform: 'capitalize' }}>
-                      {c.periodicidade_pagamento || '—'}
-                    </span>
-                  </td>
-                  <td style={s.td}>
-                    {c.dia_vencimento ? `Dia ${c.dia_vencimento}` : '—'}
-                  </td>
+                  <td style={s.td}>{c.email || '—'}</td>
                   <td style={s.td}>
                     <span style={s.badge(c.ativa)}>
                       {c.ativa ? '● Ativa' : '○ Inativa'}
@@ -711,44 +688,6 @@ export const CadastroCunhadas = ({ userData }) => {
                     value={form.endereco}
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })}
                     placeholder="Rua, número, bairro, cidade"
-                  />
-                </Campo>
-              </div>
-
-              {/* Mensalidade */}
-              <div style={s.sectionTitle}>Mensalidade</div>
-              <div style={{ ...s.grid3, marginBottom: '1rem' }}>
-                <Campo label="Valor (R$)">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    style={s.input}
-                    value={form.valor_mensalidade}
-                    onChange={(e) => setForm({ ...form, valor_mensalidade: e.target.value })}
-                    placeholder="0,00"
-                  />
-                </Campo>
-                <Campo label="Periodicidade">
-                  <select
-                    style={s.select}
-                    value={form.periodicidade_pagamento}
-                    onChange={(e) => setForm({ ...form, periodicidade_pagamento: e.target.value })}
-                  >
-                    <option value="mensal">Mensal</option>
-                    <option value="semestral">Semestral</option>
-                    <option value="anual">Anual</option>
-                  </select>
-                </Campo>
-                <Campo label="Dia de vencimento">
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    style={s.input}
-                    value={form.dia_vencimento}
-                    onChange={(e) => setForm({ ...form, dia_vencimento: e.target.value })}
-                    placeholder="10"
                   />
                 </Campo>
               </div>
