@@ -46,6 +46,7 @@ import ModalVisualizarPresenca from './components/ModalVisualizarPresenca';
 import Login from './components/Login';
 import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
+import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -2543,6 +2544,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CADASTRO CUNHADAS */}
         {currentPage === 'cadastro-cunhadas' && (
           <CadastroCunhadas
+            userData={userData}
+          />
+        )}
+
+        {/* FINANCEIRO CUNHADAS */}
+        {currentPage === 'financeiro-cunhadas' && (
+          <FinanceiroCunhadas
             userData={userData}
           />
         )}
