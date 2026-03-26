@@ -28,40 +28,31 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // PRIMEIRO: Buscar dados do usuário ANTES de fazer login
-      const { data: usuario, error: userError } = await supabase
-        .from('usuarios')
-        .select('tipo_acesso, cargo, ativo')
-        .eq('email', email)
-        .single();
-
-      if (userError) throw new Error('Usuário não encontrado');
-      if (!usuario?.ativo) throw new Error('Usuário inativo. Entre em contato com o administrador.');
-
-      // Buscar permissões
-      const { data: perms } = await supabase
-        .from('permissoes')
-        .select('pode_acessar_portal_cunhadas')
-        .eq('cargo', usuario?.cargo)
-        .single();
-
-      // VALIDAR ACESSO AO PORTAL ESCOLHIDO
+      // PRIMEIRO: Fazer login normalmente
+      await onLogin(email, password);
+      
+      // DEPOIS: Validar permissões (apenas para portal cunhadas)
       if (portalSelecionado === 'cunhadas') {
+        const { data: usuario } = await supabase
+          .from('usuarios')
+          .select('tipo_acesso, cargo')
+          .eq('email', email)
+          .single();
+
+        const { data: perms } = await supabase
+          .from('permissoes')
+          .select('pode_acessar_portal_cunhadas')
+          .eq('cargo', usuario?.cargo)
+          .single();
+
+        // Bloquear apenas se não tiver permissão
         if (!perms?.pode_acessar_portal_cunhadas) {
+          await supabase.auth.signOut();
           throw new Error('❌ Você não tem permissão para acessar o Portal das Cunhadas');
         }
       }
-
-      if (portalSelecionado === 'irmaos') {
-        if (usuario?.tipo_acesso === 'cunhadas') {
-          throw new Error('❌ Você não tem permissão para acessar o Portal dos Irmãos');
-        }
-      }
-
-      // SE PASSOU NAS VALIDAÇÕES: Fazer login
-      await onLogin(email, password);
       
-      // Salvar portal escolhido no localStorage
+      // Salvar portal escolhido
       localStorage.setItem('portal_ativo', portalSelecionado);
       
     } catch (err) {
