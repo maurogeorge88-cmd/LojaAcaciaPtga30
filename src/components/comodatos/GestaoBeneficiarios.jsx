@@ -293,7 +293,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       {/* HEADER */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold" style={{ color: '#f1f5f9' }}>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
             👥 Beneficiários
           </h2>
           {permissoes?.pode_editar_comodatos && (
@@ -314,10 +314,10 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           style={{
             width: '100%',
             padding: '0.75rem 1rem',
-            border: '2px solid rgba(148, 163, 184, 0.2)',
+            border: '2px solid var(--border-color)',
             borderRadius: '8px',
-            background: 'rgba(30, 41, 59, 0.5)',
-            color: '#f1f5f9',
+            background: 'var(--input-bg)',
+            color: 'var(--text-primary)',
             fontSize: '1rem'
           }}
         />
@@ -453,22 +453,22 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           padding: '1rem'
         }}>
           <div style={{
-            background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+            background: 'var(--modal-bg)',
             borderRadius: '16px',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            boxShadow: 'var(--shadow-2xl)',
             maxWidth: '64rem',
             width: '100%',
             maxHeight: '90vh',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
-            border: '1px solid rgba(148, 163, 184, 0.2)'
+            border: '1px solid var(--border-color)'
           }}>
-            {/* Header com gradiente */}
+            {/* Header com gradiente do tema */}
             <div style={{
-              background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
+              background: 'linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%)',
               padding: '1.5rem 2rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.1)'
+              borderBottom: '1px solid var(--border-color)'
             }}>
               <h3 style={{
                 fontSize: '1.5rem',
@@ -485,7 +485,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               padding: '2rem',
               flex: 1,
               overflowY: 'auto',
-              background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)'
+              background: 'var(--modal-bg)'
             }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
@@ -493,7 +493,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     display: 'block', 
                     fontSize: '0.875rem', 
                     fontWeight: '600', 
-                    color: '#e2e8f0',
+                    color: 'var(--text-secondary)',
                     marginBottom: '0.5rem' 
                   }}>
                     Nome Completo *
@@ -505,10 +505,10 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                     required
@@ -516,7 +516,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     CPF
                   </label>
                   <input
@@ -526,17 +526,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     RG
                   </label>
                   <input
@@ -546,17 +546,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Data de Nascimento
                   </label>
                   <input
@@ -566,17 +566,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Telefone
                   </label>
                   <input
@@ -586,17 +586,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Celular
                   </label>
                   <input
@@ -606,17 +606,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Email
                   </label>
                   <input
@@ -626,17 +626,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     CEP
                   </label>
                   <input
@@ -646,17 +646,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Endereço
                   </label>
                   <input
@@ -666,17 +666,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Número
                   </label>
                   <input
@@ -686,17 +686,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Complemento
                   </label>
                   <input
@@ -706,17 +706,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Bairro
                   </label>
                   <input
@@ -726,17 +726,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Cidade
                   </label>
                   <input
@@ -746,17 +746,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Estado
                   </label>
                   <input
@@ -767,17 +767,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem'
                     }}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#e2e8f0', marginBottom: '0.5rem' }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     Observações
                   </label>
                   <textarea
@@ -787,10 +787,10 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     style={{
                       width: '100%',
                       padding: '0.75rem 1rem',
-                      border: '2px solid rgba(148, 163, 184, 0.2)',
+                      border: '2px solid var(--border-color)',
                       borderRadius: '8px',
-                      background: 'rgba(30, 41, 59, 0.5)',
-                      color: '#f1f5f9',
+                      background: 'var(--input-bg)',
+                      color: 'var(--text-primary)',
                       fontSize: '1rem',
                       fontFamily: 'inherit',
                       resize: 'vertical'
@@ -800,7 +800,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               </div>
 
               <div style={{ 
-                borderTop: '1px solid rgba(148, 163, 184, 0.2)', 
+                borderTop: '1px solid var(--border-color)', 
                 marginTop: '1.5rem', 
                 paddingTop: '1.5rem',
                 display: 'flex',
@@ -808,40 +808,15 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               }}>
                 <button
                   type="submit"
-                  style={{
-                    flex: 1,
-                    padding: '0.875rem 1.5rem',
-                    background: 'linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
-                  onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                  className="btn-primary"
+                  style={{ flex: 1 }}
                 >
                   💾 Salvar
                 </button>
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  style={{
-                    padding: '0.875rem 1.5rem',
-                    background: 'rgba(148, 163, 184, 0.1)',
-                    color: '#e2e8f0',
-                    border: '2px solid rgba(148, 163, 184, 0.2)',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.background = 'rgba(148, 163, 184, 0.2)'}
-                  onMouseLeave={(e) => e.target.style.background = 'rgba(148, 163, 184, 0.1)'}
+                  className="btn-secondary"
                 >
                   ❌ Cancelar
                 </button>
