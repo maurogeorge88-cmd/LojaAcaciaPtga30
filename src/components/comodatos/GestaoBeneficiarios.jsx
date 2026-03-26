@@ -645,14 +645,35 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
                 <button
                   type="submit"
-                  className="btn-primary flex-1"
+                  className="flex-1"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
                 >
                   💾 Salvar
                 </button>
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="btn-secondary"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-surface-3)',
+                    color: 'var(--color-text)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
                 >
                   ❌ Cancelar
                 </button>
