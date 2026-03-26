@@ -760,6 +760,8 @@ function App() {
     setError('');
 
     try {
+      console.log('🔐 Iniciando login...', { email: emailParam, portal: portalEscolhido });
+      
       // PASSO 1: Autenticar
       const { data, error } = await supabase.auth.signInWithPassword({
         email: emailParam,
@@ -767,6 +769,7 @@ function App() {
       });
 
       if (error) throw error;
+      console.log('✅ Autenticação OK');
 
       // PASSO 2: Buscar dados do usuário (incluindo cargo)
       const { data: userData } = await supabase
@@ -775,6 +778,8 @@ function App() {
         .eq('email', emailParam)
         .single();
 
+      console.log('👤 Usuário carregado:', { cargo: userData?.cargo, ativo: userData?.ativo });
+
       if (!userData?.ativo) {
         await supabase.auth.signOut();
         throw new Error('Usuário inativo. Entre em contato com o administrador.');
@@ -782,29 +787,41 @@ function App() {
 
       // PASSO 3: VALIDAR PERMISSÃO ANTES DE TUDO (se for portal cunhadas)
       if (portalEscolhido === 'cunhadas') {
+        console.log('🔍 Validando permissão para portal cunhadas...');
+        
         const { data: perms } = await supabase
           .from('permissoes')
           .select('pode_acessar_portal_cunhadas')
           .eq('cargo', userData.cargo)
           .single();
 
+        console.log('🔐 Permissões:', perms);
+        console.log('✅ Pode acessar?', perms?.pode_acessar_portal_cunhadas);
+
         // SE NÃO TEM PERMISSÃO: Logout e retornar erro IMEDIATAMENTE
         if (!perms?.pode_acessar_portal_cunhadas) {
+          console.log('❌ ACESSO NEGADO! Fazendo logout...');
           await supabase.auth.signOut();
           setLoading(false);
+          console.log('❌ Lançando erro ACESSO_NEGADO_CUNHADAS');
           throw new Error('ACESSO_NEGADO_CUNHADAS');
         }
+        
+        console.log('✅ Permissão OK - continuando...');
       }
 
       // PASSO 4: SÓ AGORA (após validação OK) - Atualizar estados
+      console.log('✅ Atualizando estados...');
       setSession(data.session);
       loadUserData(emailParam);
       setPortalAtivo(portalEscolhido);
       
       // PASSO 5: Redirecionar para página correta
       if (portalEscolhido === 'cunhadas') {
+        console.log('📍 Redirecionando para dashboard-cunhadas');
         setCurrentPage('dashboard-cunhadas');
       } else {
+        console.log('📍 Redirecionando para dashboard');
         setCurrentPage('dashboard');
       }
       
