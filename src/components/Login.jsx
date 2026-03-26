@@ -11,7 +11,7 @@ import TrocarSenha from './TrocarSenha';
 const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
 const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
 
-export const Login = ({ onLogin }) => {
+export const Login = ({ onLogin, modalAcessoNegado = false, onFecharModalAcessoNegado }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,6 @@ export const Login = ({ onLogin }) => {
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
   const [mostrarTrocarSenha, setMostrarTrocarSenha] = useState(false);
   const [portalSelecionado, setPortalSelecionado] = useState(null); // null, 'irmaos', 'cunhadas'
-  const [modalErroPermissao, setModalErroPermissao] = useState(false); // Modal de erro de permissão
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,37 +29,19 @@ export const Login = ({ onLogin }) => {
 
     try {
       console.log('📤 Login.jsx: Chamando onLogin...');
-      
-      // Chamar onLogin do App.jsx (que faz TODA a validação)
       await onLogin(email, password, portalSelecionado);
-      
       console.log('✅ Login.jsx: onLogin completou com sucesso');
       setLoading(false);
-      
     } catch (err) {
       console.log('❌ Login.jsx: Erro capturado:', err.message);
       setLoading(false);
-      
-      // Se for erro de acesso negado às cunhadas, mostrar modal
-      if (err.message === 'ACESSO_NEGADO_CUNHADAS') {
-        console.log('🚫 Login.jsx: Detectado ACESSO_NEGADO_CUNHADAS - Mostrando modal');
-        // Pequeno delay para garantir que está na tela de login
-        setTimeout(() => {
-          console.log('🚫 Login.jsx: Setando modalErroPermissao = true');
-          setModalErroPermissao(true);
-        }, 100);
-      } else {
-        // Outros erros: mostrar normalmente
-        console.log('⚠️ Login.jsx: Outro erro - Mostrando na tela');
-        setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
-      }
+      setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
     }
   };
 
   // Função chamada quando usuário clica OK no modal
-  const handleFecharModalErro = async () => {
-    setModalErroPermissao(false);
-    await supabase.auth.signOut();
+  const handleFecharModalErro = () => {
+    if (onFecharModalAcessoNegado) onFecharModalAcessoNegado();
     // Resetar campos
     setEmail('');
     setPassword('');
@@ -111,7 +92,7 @@ export const Login = ({ onLogin }) => {
       overflow: 'hidden'
     }}>
       {/* MODAL DE ERRO DE PERMISSÃO */}
-      {modalErroPermissao && (
+      {modalAcessoNegado && (
         <div style={{
           position: 'fixed',
           inset: 0,
