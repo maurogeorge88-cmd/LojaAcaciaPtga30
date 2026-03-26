@@ -29,21 +29,29 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
+      console.log('📤 Login.jsx: Chamando onLogin...');
+      
       // Chamar onLogin do App.jsx (que faz TODA a validação)
       await onLogin(email, password, portalSelecionado);
+      
+      console.log('✅ Login.jsx: onLogin completou com sucesso');
       setLoading(false);
       
     } catch (err) {
+      console.log('❌ Login.jsx: Erro capturado:', err.message);
       setLoading(false);
       
       // Se for erro de acesso negado às cunhadas, mostrar modal
       if (err.message === 'ACESSO_NEGADO_CUNHADAS') {
+        console.log('🚫 Login.jsx: Detectado ACESSO_NEGADO_CUNHADAS - Mostrando modal');
         // Pequeno delay para garantir que está na tela de login
         setTimeout(() => {
+          console.log('🚫 Login.jsx: Setando modalErroPermissao = true');
           setModalErroPermissao(true);
         }, 100);
       } else {
         // Outros erros: mostrar normalmente
+        console.log('⚠️ Login.jsx: Outro erro - Mostrando na tela');
         setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
       }
     }
