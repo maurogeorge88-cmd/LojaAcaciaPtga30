@@ -19,6 +19,7 @@ export const Login = ({ onLogin }) => {
   const [success, setSuccess] = useState('');
   const [mostrarRecuperacao, setMostrarRecuperacao] = useState(false);
   const [mostrarTrocarSenha, setMostrarTrocarSenha] = useState(false);
+  const [portalSelecionado, setPortalSelecionado] = useState(null); // null, 'irmaos', 'cunhadas'
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -27,7 +28,39 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      await onLogin(email, password);
+      // Fazer login
+      const result = await onLogin(email, password);
+      
+      // Validar se o usuário tem permissão para o portal selecionado
+      if (result && portalSelecionado) {
+        // Buscar dados do usuário
+        const { data: usuario } = await supabase
+          .from('usuarios')
+          .select('tipo_acesso, cargo')
+          .eq('email', email)
+          .single();
+
+        // Buscar permissões
+        const { data: perms } = await supabase
+          .from('permissoes')
+          .select('pode_acessar_portal_cunhadas')
+          .eq('cargo', usuario?.cargo)
+          .single();
+
+        // Validar acesso
+        if (portalSelecionado === 'cunhadas' && !perms?.pode_acessar_portal_cunhadas) {
+          await supabase.auth.signOut();
+          throw new Error('Você não tem permissão para acessar o Portal das Cunhadas');
+        }
+
+        if (portalSelecionado === 'irmaos' && usuario?.tipo_acesso === 'cunhadas') {
+          await supabase.auth.signOut();
+          throw new Error('Você não tem permissão para acessar o Portal dos Irmãos');
+        }
+
+        // Salvar portal escolhido no localStorage
+        localStorage.setItem('portal_ativo', portalSelecionado);
+      }
     } catch (err) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
@@ -185,9 +218,119 @@ export const Login = ({ onLogin }) => {
             </div>
           )}
 
+          {/* ESCOLHA DE PORTAL */}
+          {!portalSelecionado ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', marginTop: '2rem' }}>
+              <p style={{ textAlign: 'center', color: '#cbd5e1', fontSize: '15px', fontWeight: '500' }}>
+                Escolha o portal de acesso:
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Botão Portal dos Irmãos */}
+                <button
+                  type="button"
+                  onClick={() => setPortalSelecionado('irmaos')}
+                  style={{
+                    padding: '1.5rem',
+                    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                    border: '2px solid rgba(212, 175, 55, 0.3)',
+                    borderRadius: '16px',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 8px 20px rgba(59, 130, 246, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <span style={{ fontSize: '24px' }}>🔷</span>
+                  Portal dos Irmãos
+                </button>
+
+                {/* Botão Portal das Cunhadas */}
+                <button
+                  type="button"
+                  onClick={() => setPortalSelecionado('cunhadas')}
+                  style={{
+                    padding: '1.5rem',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #9333ea 100%)',
+                    border: '2px solid rgba(212, 175, 55, 0.3)',
+                    borderRadius: '16px',
+                    color: 'white',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.75rem'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 8px 20px rgba(168, 85, 247, 0.4)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <span style={{ fontSize: '24px' }}>💜</span>
+                  Portal das Cunhadas
+                </button>
+              </div>
+            </div>
+          ) : (
+
           {!mostrarRecuperacao ? (
             // FORMULÁRIO DE LOGIN
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <>
+              {/* Indicador de portal selecionado */}
+              <div style={{
+                padding: '1rem',
+                background: portalSelecionado === 'irmaos' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(168, 85, 247, 0.1)',
+                border: `2px solid ${portalSelecionado === 'irmaos' ? 'rgba(59, 130, 246, 0.3)' : 'rgba(168, 85, 247, 0.3)'}`,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '20px' }}>{portalSelecionado === 'irmaos' ? '🔷' : '💜'}</span>
+                  <span style={{ color: '#cbd5e1', fontSize: '14px', fontWeight: '500' }}>
+                    {portalSelecionado === 'irmaos' ? 'Portal dos Irmãos' : 'Portal das Cunhadas'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPortalSelecionado(null)}
+                  style={{
+                    padding: '0.25rem 0.75rem',
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '8px',
+                    color: '#cbd5e1',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Trocar
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{
                   display: 'block',
@@ -295,6 +438,7 @@ export const Login = ({ onLogin }) => {
                 {loading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
+            </>
           ) : (
             // FORMULÁRIO DE RECUPERAÇÃO
             <form onSubmit={handleRecuperarSenha} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -372,6 +516,7 @@ export const Login = ({ onLogin }) => {
                 ← Voltar para Login
               </button>
             </form>
+          )}
           )}
 
           <div style={{
