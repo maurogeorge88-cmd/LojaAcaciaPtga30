@@ -307,7 +307,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         </div>
 
         <input
-          type="text" className="form-input"
+          type="text"
           placeholder="🔍 Buscar por nome ou CPF..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
@@ -426,6 +426,25 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
       {/* MODAL BENEFICIÁRIO */}
       {modalAberto && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1rem'
+        }}>
+          <div className="card" style={{
+            maxWidth: '64rem',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 0
+          }}>
             {/* Header */}
             <div className="card-header">
               <h3 className="text-2xl font-bold">
@@ -434,13 +453,18 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
             </div>
 
             {/* Formulário com scroll */}
+            <form onSubmit={salvarBeneficiario} style={{
+              padding: '2rem',
+              flex: 1,
+              overflowY: 'auto'
+            }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="form-label">
                     Nome Completo *
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     className="form-input"
                     value={form.nome}
                     onChange={(e) => setForm({ ...form, nome: e.target.value })}
@@ -453,7 +477,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     CPF
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     className="form-input"
                     value={form.cpf}
                     onChange={(e) => setForm({ ...form, cpf: e.target.value })}
@@ -465,7 +489,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     RG
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     className="form-input"
                     value={form.rg}
                     onChange={(e) => setForm({ ...form, rg: e.target.value })}
@@ -477,7 +501,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Data de Nascimento
                   </label>
                   <input
-                    type="date" className="form-input"
+                    type="date"
                     className="form-input"
                     value={form.data_nascimento}
                     onChange={(e) => setForm({ ...form, data_nascimento: e.target.value })}
@@ -489,7 +513,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Telefone
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     className="form-input"
                     value={form.telefone}
                     onChange={(e) => setForm({ ...form, telefone: e.target.value })}
@@ -501,7 +525,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Celular
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     className="form-input"
                     value={form.celular}
                     onChange={(e) => setForm({ ...form, celular: e.target.value })}
@@ -513,7 +537,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Email
                   </label>
                   <input
-                    type="email" className="form-input"
+                    type="email"
                     className="form-input"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -525,7 +549,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     CEP
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.cep}
                     onChange={(e) => setForm({ ...form, cep: e.target.value })}
                   />
@@ -536,7 +560,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Endereço
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.endereco}
                     onChange={(e) => setForm({ ...form, endereco: e.target.value })}
                   />
@@ -547,7 +571,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Número
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.numero}
                     onChange={(e) => setForm({ ...form, numero: e.target.value })}
                   />
@@ -558,7 +582,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Complemento
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.complemento}
                     onChange={(e) => setForm({ ...form, complemento: e.target.value })}
                   />
@@ -569,7 +593,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Bairro
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.bairro}
                     onChange={(e) => setForm({ ...form, bairro: e.target.value })}
                   />
@@ -580,7 +604,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Cidade
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.cidade}
                     onChange={(e) => setForm({ ...form, cidade: e.target.value })}
                   />
@@ -591,7 +615,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Estado
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={form.estado}
                     onChange={(e) => setForm({ ...form, estado: e.target.value })}
                     maxLength="2"
@@ -657,7 +681,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Nome Completo *
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.nome}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, nome: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -670,7 +694,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     CPF
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.cpf}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cpf: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -682,7 +706,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Parentesco
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.parentesco}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, parentesco: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -695,7 +719,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Telefone
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.telefone}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, telefone: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -707,7 +731,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Celular
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.celular}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, celular: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -719,7 +743,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     RG
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.rg}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, rg: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -731,7 +755,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Endereço
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.endereco}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, endereco: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -744,7 +768,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Cidade
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.cidade}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cidade: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -756,7 +780,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Estado
                   </label>
                   <input
-                    type="text" className="form-input"
+                    type="text"
                     value={formResponsavel.estado}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, estado: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
@@ -769,7 +793,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     Email
                   </label>
                   <input
-                    type="email" className="form-input"
+                    type="email"
                     value={formResponsavel.email}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, email: e.target.value })}
                     className="w-full border rounded-lg px-4 py-2"
