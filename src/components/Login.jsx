@@ -28,39 +28,42 @@ export const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      // Fazer login
-      const result = await onLogin(email, password);
-      
-      // Validar se o usuário tem permissão para o portal selecionado
-      if (result && portalSelecionado) {
-        // Buscar dados do usuário
-        const { data: usuario } = await supabase
-          .from('usuarios')
-          .select('tipo_acesso, cargo')
-          .eq('email', email)
-          .single();
+      // PRIMEIRO: Buscar dados do usuário ANTES de fazer login
+      const { data: usuario, error: userError } = await supabase
+        .from('usuarios')
+        .select('tipo_acesso, cargo, ativo')
+        .eq('email', email)
+        .single();
 
-        // Buscar permissões
-        const { data: perms } = await supabase
-          .from('permissoes')
-          .select('pode_acessar_portal_cunhadas')
-          .eq('cargo', usuario?.cargo)
-          .single();
+      if (userError) throw new Error('Usuário não encontrado');
+      if (!usuario?.ativo) throw new Error('Usuário inativo. Entre em contato com o administrador.');
 
-        // Validar acesso
-        if (portalSelecionado === 'cunhadas' && !perms?.pode_acessar_portal_cunhadas) {
-          await supabase.auth.signOut();
-          throw new Error('Você não tem permissão para acessar o Portal das Cunhadas');
+      // Buscar permissões
+      const { data: perms } = await supabase
+        .from('permissoes')
+        .select('pode_acessar_portal_cunhadas')
+        .eq('cargo', usuario?.cargo)
+        .single();
+
+      // VALIDAR ACESSO AO PORTAL ESCOLHIDO
+      if (portalSelecionado === 'cunhadas') {
+        if (!perms?.pode_acessar_portal_cunhadas) {
+          throw new Error('❌ Você não tem permissão para acessar o Portal das Cunhadas');
         }
-
-        if (portalSelecionado === 'irmaos' && usuario?.tipo_acesso === 'cunhadas') {
-          await supabase.auth.signOut();
-          throw new Error('Você não tem permissão para acessar o Portal dos Irmãos');
-        }
-
-        // Salvar portal escolhido no localStorage
-        localStorage.setItem('portal_ativo', portalSelecionado);
       }
+
+      if (portalSelecionado === 'irmaos') {
+        if (usuario?.tipo_acesso === 'cunhadas') {
+          throw new Error('❌ Você não tem permissão para acessar o Portal dos Irmãos');
+        }
+      }
+
+      // SE PASSOU NAS VALIDAÇÕES: Fazer login
+      await onLogin(email, password);
+      
+      // Salvar portal escolhido no localStorage
+      localStorage.setItem('portal_ativo', portalSelecionado);
+      
     } catch (err) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
     } finally {
