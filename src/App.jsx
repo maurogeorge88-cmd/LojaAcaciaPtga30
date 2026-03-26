@@ -134,7 +134,7 @@ function App() {
   const [grauUsuarioLogado, setGrauUsuarioLogado] = useState(null);
   const [permissoes, setPermissoes] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
-  const [portalAtivo, setPortalAtivo] = useState('irmaos'); // 'irmaos' ou 'cunhadas'
+  const [portalAtivo, setPortalAtivo] = useState('irmaos'); // 'irmaos' ou 'cunhadas' — definido após validação da sessão
   const [modalAcessoNegado, setModalAcessoNegado] = useState(false); // Modal de acesso negado (sobrevive ao re-render do Login)
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
   const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
@@ -261,8 +261,24 @@ function App() {
   // ========================================
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
+      // Se havia sessão ativa mas o último portal usado era 'cunhadas',
+      // forçar novo login (sessionStorage é limpo ao fechar o navegador).
+      // Se sessionStorage ainda tem 'cunhadas', significa que a aba ainda
+      // está aberta — nesse caso deixa entrar normalmente.
+      const portalSalvo = sessionStorage.getItem('portalAtivo');
+
+      if (session && portalSalvo === 'cunhadas') {
+        // Sessão restaurada pelo Supabase após fechar/reabrir o navegador,
+        // mas o portal era cunhadas → força logout e exige novo login.
+        supabase.auth.signOut();
+        sessionStorage.removeItem('portalAtivo');
+        setLoading(false);
+        return;
+      }
+
       setSession(session);
       if (session) {
+        if (portalSalvo === 'cunhadas') setPortalAtivo('cunhadas');
         loadUserData(session.user.email);
         loadIrmaos();
         loadTiposSessao();
@@ -815,6 +831,7 @@ function App() {
 
       // PASSO 4: SÓ AGORA (após validação OK) - Atualizar estados
       console.log('✅ Atualizando estados...');
+      sessionStorage.setItem('portalAtivo', portalEscolhido); // persiste enquanto a aba estiver aberta
       setSession(data.session);
       loadUserData(emailParam);
       setPortalAtivo(portalEscolhido);
@@ -867,6 +884,7 @@ function App() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
+    sessionStorage.removeItem('portalAtivo');
     setSession(null);
     setUserData(null);
     setPermissoes(null);
