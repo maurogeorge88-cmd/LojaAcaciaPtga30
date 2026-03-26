@@ -47,14 +47,20 @@ export const Login = ({ onLogin }) => {
 
         // Se não tiver permissão, fazer logout e mostrar erro
         if (!perms?.pode_acessar_portal_cunhadas) {
+          // IMPORTANTE: Fazer logout ANTES de lançar o erro
           await supabase.auth.signOut();
-          throw new Error('❌ Você não tem permissão para acessar o Portal das Cunhadas.\n\nEste portal é exclusivo para Presidente e Tesoureira.');
+          
+          // Agora sim, mostrar o erro (depois do logout)
+          setLoading(false);
+          setError('❌ Você não tem permissão para acessar o Portal das Cunhadas.\n\nEste portal é exclusivo para Presidente e Tesoureira das Cunhadas.');
+          return; // Parar execução aqui
         }
       }
       
+      setLoading(false);
+      
     } catch (err) {
       setError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
-    } finally {
       setLoading(false);
     }
   };
