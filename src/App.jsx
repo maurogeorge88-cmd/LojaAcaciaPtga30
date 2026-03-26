@@ -754,7 +754,7 @@ function App() {
   // ========================================
   // FUNÇÕES DE AUTENTICAÇÃO
   // ========================================
-  const handleLogin = async (emailParam, passwordParam) => {
+  const handleLogin = async (emailParam, passwordParam, portalEscolhido = 'irmaos') => {
     setLoading(true);
     setError('');
 
@@ -780,14 +780,10 @@ function App() {
       setSession(data.session);
       loadUserData(emailParam);
       
-      // Verificar qual portal foi escolhido
-      const portalEscolhido = localStorage.getItem('portal_ativo');
-      
+      // Redirecionar baseado no portal escolhido
       if (portalEscolhido === 'cunhadas') {
-        // Redirecionar para dashboard cunhadas
         setCurrentPage('dashboard-cunhadas');
       } else {
-        // Redirecionar para dashboard irmãos (padrão)
         setCurrentPage('dashboard');
       }
       
