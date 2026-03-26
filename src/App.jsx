@@ -44,6 +44,7 @@ import DashboardPresenca from './components/DashboardPresenca';
 import MinhaPresenca from './components/MinhaPresenca';
 import ModalVisualizarPresenca from './components/ModalVisualizarPresenca';
 import Login from './components/Login';
+import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -778,6 +779,17 @@ function App() {
 
       setSession(data.session);
       loadUserData(emailParam);
+      
+      // Verificar qual portal foi escolhido
+      const portalEscolhido = localStorage.getItem('portal_ativo');
+      
+      if (portalEscolhido === 'cunhadas') {
+        // Redirecionar para dashboard cunhadas
+        setCurrentPage('dashboard-cunhadas');
+      } else {
+        // Redirecionar para dashboard irmãos (padrão)
+        setCurrentPage('dashboard');
+      }
       
       // Registrar log de login
       try {
@@ -2263,6 +2275,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               <div>
                 <h2 className="text-2xl font-bold text-white">
                   {currentPage === 'dashboard' && '📊 Dashboard'}
+                  {currentPage === 'dashboard-cunhadas' && '💜 Dashboard Cunhadas'}
                   {currentPage === 'meu-cadastro' && '👤 Meu Cadastro'}
                   {currentPage === 'minhas-financas' && '💰 Minhas Finanças'}
                   {currentPage === 'minhas-presencas' && '📊 Minhas Presenças'}
@@ -2339,6 +2352,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             balaustres={balaustres}
             cronograma={cronograma}
+          />
+        )}
+
+        {/* DASHBOARD CUNHADAS */}
+        {currentPage === 'dashboard-cunhadas' && (
+          <DashboardCunhadas 
+            userData={userData}
+            onNavigate={(page) => setCurrentPage(page)}
           />
         )}
 
