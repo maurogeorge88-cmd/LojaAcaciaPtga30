@@ -360,13 +360,17 @@ export default function Eventos({ userPermissions, userData }) {
           const numParticipantes = todosParticipantes.filter(p => p.evento_id === evento.id).length;
 
           return (
-            <div key={evento.id} className="card-hover overflow-hidden border-l-4" 
+            <div key={evento.id} className="overflow-hidden border-l-4" 
                  style={{
                    background: 'var(--card-bg)',
                    borderRadius: 'var(--border-radius)',
                    borderLeftColor: evento.tipo_evento === 'externo' ? 'var(--accent-color)' : 'var(--success-color)',
-                   boxShadow: 'var(--shadow-md)'
-                 }}>
+                   boxShadow: 'var(--shadow-md)',
+                   transition: 'all 0.3s ease'
+                 }}
+                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
