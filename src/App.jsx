@@ -133,6 +133,7 @@ function App() {
   const [grauUsuarioLogado, setGrauUsuarioLogado] = useState(null);
   const [permissoes, setPermissoes] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [portalAtivo, setPortalAtivo] = useState('irmaos'); // 'irmaos' ou 'cunhadas'
   const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
   const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
   const [modalPerfilCompletoAberto, setModalPerfilCompletoAberto] = useState(false);
@@ -780,6 +781,9 @@ function App() {
       setSession(data.session);
       loadUserData(emailParam);
       
+      // Definir portal ativo
+      setPortalAtivo(portalEscolhido);
+      
       // Redirecionar baseado no portal escolhido
       if (portalEscolhido === 'cunhadas') {
         setCurrentPage('dashboard-cunhadas');
@@ -827,6 +831,7 @@ function App() {
     setUserData(null);
     setPermissoes(null);
     setCurrentPage('dashboard');
+    setPortalAtivo('irmaos'); // Resetar para portal irmãos
   };
 
   // ========================================
@@ -1334,22 +1339,25 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* Menu de Navegação */}
         <nav className="py-2 flex-1 overflow-y-auto">
-          {/* DASHBOARD - Todos */}
-          <button
-            onClick={() => setCurrentPage('dashboard')}
-            className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-              currentPage === 'dashboard'
-                ? 'bg-primary-700 border-l-4 border-white'
-                : 'hover:bg-primary-800'
-            }`}
-            title="Dashboard"
-          >
-            <span className="text-base">📊</span>
-            {menuAberto && <span className="font-semibold">Dashboard</span>}
-          </button>
+          {/* MOSTRAR MENU APENAS SE ESTIVER NO PORTAL DOS IRMÃOS */}
+          {portalAtivo === 'irmaos' && (
+            <>
+              {/* DASHBOARD - Todos */}
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'dashboard'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
+                }`}
+                title="Dashboard"
+              >
+                <span className="text-base">📊</span>
+                {menuAberto && <span className="font-semibold">Dashboard</span>}
+              </button>
 
-          {/* ===== MENU PARA IRMÃO COMUM ===== */}
-          {userData?.nivel_acesso === 'irmao' && (
+              {/* ===== MENU PARA IRMÃO COMUM ===== */}
+              {userData?.nivel_acesso === 'irmao' && (
             <>
               {/* MEU CADASTRO E VISUALIZAR */}
               <button
@@ -2237,6 +2245,65 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Sobre</span>}
                 </button>
               </div>
+            </>
+          )}
+          </>
+          )}
+
+          {/* MENU PORTAL CUNHADAS */}
+          {portalAtivo === 'cunhadas' && (
+            <>
+              <button
+                onClick={() => setCurrentPage('dashboard-cunhadas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'dashboard-cunhadas'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
+                }`}
+                title="Dashboard Cunhadas"
+              >
+                <span className="text-base">💜</span>
+                {menuAberto && <span className="font-semibold">Dashboard</span>}
+              </button>
+
+              <button
+                onClick={() => setCurrentPage('cadastro-cunhadas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'cadastro-cunhadas'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
+                }`}
+                title="Cadastro Cunhadas"
+              >
+                <span className="text-base">👥</span>
+                {menuAberto && <span className="font-semibold">Cadastro</span>}
+              </button>
+
+              <button
+                onClick={() => setCurrentPage('financeiro-cunhadas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'financeiro-cunhadas'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
+                }`}
+                title="Financeiro Cunhadas"
+              >
+                <span className="text-base">💰</span>
+                {menuAberto && <span className="font-semibold">Financeiro</span>}
+              </button>
+
+              <button
+                onClick={() => setCurrentPage('relatorios-cunhadas')}
+                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                  currentPage === 'relatorios-cunhadas'
+                    ? 'bg-primary-700 border-l-4 border-white'
+                    : 'hover:bg-primary-800'
+                }`}
+                title="Relatórios Cunhadas"
+              >
+                <span className="text-base">📊</span>
+                {menuAberto && <span className="font-semibold">Relatórios</span>}
+              </button>
             </>
           )}
         </nav>
