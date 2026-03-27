@@ -1420,7 +1420,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: '#e5e7eb' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* SIDEBAR LATERAL COLAPSÁVEL */}
       <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
         {/* Logo e Título */}
@@ -2452,7 +2452,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       {/* CONTEÚDO PRINCIPAL */}
       <main 
         className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300 min-h-screen`}
-        style={{ backgroundColor: '#f3f4f6' }}
+        style={{ backgroundColor: 'var(--color-bg)' }}
       >
         {/* HEADER SUPERIOR */}
         <header 
