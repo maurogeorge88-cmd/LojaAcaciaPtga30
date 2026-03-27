@@ -7,60 +7,38 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 export default function Caridade({ permissoes, showSuccess, showError }) {
-  // Estados
   const [familias, setFamilias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
   const [modoEdicao, setModoEdicao] = useState(false);
   const [familiaEditando, setFamiliaEditando] = useState(null);
-  
-  // Modal de visualização
+
   const [modalFamilia, setModalFamilia] = useState(null);
   const [ajudasFamilia, setAjudasFamilia] = useState([]);
-  
-  // Modal de nova ajuda
+
   const [modalNovaAjuda, setModalNovaAjuda] = useState(false);
   const [familiaParaAjuda, setFamiliaParaAjuda] = useState(null);
   const [modoEdicaoAjuda, setModoEdicaoAjuda] = useState(false);
   const [ajudaEditando, setAjudaEditando] = useState(null);
 
-  // Formulário família
   const [familiaForm, setFamiliaForm] = useState({
-    nome_marido: '',
-    nome_esposa: '',
-    tem_filhos: false,
-    quantidade_filhos: 0,
-    endereco: '',
-    cidade: '',
-    estado: 'MT',
-    cep: '',
-    telefone: '',
-    marido_empregado: false,
-    esposa_empregada: false,
-    profissao_marido: '',
-    profissao_esposa: '',
-    descricao_situacao: '',
-    observacoes: '',
-    ativa: true
+    nome_marido: '', nome_esposa: '', tem_filhos: false, quantidade_filhos: 0,
+    endereco: '', cidade: '', estado: 'MT', cep: '', telefone: '',
+    marido_empregado: false, esposa_empregada: false,
+    profissao_marido: '', profissao_esposa: '',
+    descricao_situacao: '', observacoes: '', ativa: true
   });
 
-  // Formulário ajuda
   const [ajudaForm, setAjudaForm] = useState({
     data_ajuda: new Date().toISOString().split('T')[0],
-    tipo_ajuda: 'Cesta Básica',
-    descricao: '',
-    valor_estimado: '',
-    quantidade: '',
-    responsavel_nome: ''
+    tipo_ajuda: 'Cesta Básica', descricao: '',
+    valor_estimado: '', quantidade: '', responsavel_nome: ''
   });
 
-  // Busca
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroStatus, setFiltroStatus] = useState('ativas');
 
-  useEffect(() => {
-    carregarFamilias();
-  }, []);
+  useEffect(() => { carregarFamilias(); }, []);
 
   const carregarFamilias = async () => {
     try {
@@ -69,11 +47,9 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
         .from('familias_carentes')
         .select('*')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setFamilias(data || []);
     } catch (error) {
-      console.error('Erro ao carregar famílias:', error);
       showError('Erro ao carregar famílias');
     } finally {
       setLoading(false);
@@ -81,84 +57,49 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
   };
 
   const carregarAjudas = async (familiaId) => {
-    try {
-      const { data, error } = await supabase
-        .from('ajudas_caridade')
-        .select('*')
-        .eq('familia_id', familiaId)
-        .order('data_ajuda', { ascending: false });
-
-      if (error) throw error;
-      setAjudasFamilia(data || []);
-    } catch (error) {
-      console.error('Erro ao carregar ajudas:', error);
-    }
+    const { data, error } = await supabase
+      .from('ajudas_caridade')
+      .select('*')
+      .eq('familia_id', familiaId)
+      .order('data_ajuda', { ascending: false });
+    if (!error) setAjudasFamilia(data || []);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
       if (modoEdicao) {
-        const { error } = await supabase
-          .from('familias_carentes')
-          .update(familiaForm)
-          .eq('id', familiaEditando.id);
-
+        const { error } = await supabase.from('familias_carentes').update(familiaForm).eq('id', familiaEditando.id);
         if (error) throw error;
         showSuccess('Família atualizada com sucesso!');
       } else {
-        const { error } = await supabase
-          .from('familias_carentes')
-          .insert([familiaForm]);
-
+        const { error } = await supabase.from('familias_carentes').insert([familiaForm]);
         if (error) throw error;
         showSuccess('Família cadastrada com sucesso!');
       }
-
       limparFormulario();
       carregarFamilias();
     } catch (error) {
-      console.error('Erro ao salvar:', error);
       showError('Erro ao salvar família');
     }
   };
 
   const handleSubmitAjuda = async (e) => {
     e.preventDefault();
-    
     try {
       if (modoEdicaoAjuda) {
-        // EDITAR ajuda existente
-        const { error } = await supabase
-          .from('ajudas_caridade')
-          .update(ajudaForm)
-          .eq('id', ajudaEditando.id);
-
+        const { error } = await supabase.from('ajudas_caridade').update(ajudaForm).eq('id', ajudaEditando.id);
         if (error) throw error;
         showSuccess('Ajuda atualizada com sucesso!');
       } else {
-        // CRIAR nova ajuda
-        const { error } = await supabase
-          .from('ajudas_caridade')
-          .insert([{
-            ...ajudaForm,
-            familia_id: familiaParaAjuda.id
-          }]);
-
+        const { error } = await supabase.from('ajudas_caridade').insert([{ ...ajudaForm, familia_id: familiaParaAjuda.id }]);
         if (error) throw error;
         showSuccess('Ajuda registrada com sucesso!');
       }
-      
       setModalNovaAjuda(false);
       limparFormularioAjuda();
-      
-      // Recarregar ajudas se modal estiver aberto
-      if (modalFamilia) {
-        carregarAjudas(familiaParaAjuda.id);
-      }
+      if (modalFamilia) carregarAjudas(familiaParaAjuda.id);
     } catch (error) {
-      console.error('Erro ao salvar ajuda:', error);
       showError('Erro ao salvar ajuda');
     }
   };
@@ -172,50 +113,33 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
 
   const handleExcluir = async (id) => {
     if (!confirm('Tem certeza que deseja excluir esta família?')) return;
-
     try {
-      const { error } = await supabase
-        .from('familias_carentes')
-        .delete()
-        .eq('id', id);
-
+      const { error } = await supabase.from('familias_carentes').delete().eq('id', id);
       if (error) throw error;
-      
       showSuccess('Família excluída com sucesso!');
       carregarFamilias();
     } catch (error) {
-      console.error('Erro ao excluir:', error);
       showError('Erro ao excluir família');
     }
   };
 
   const handleExcluirAjuda = async (ajudaId) => {
     if (!confirm('Tem certeza que deseja excluir esta ajuda?')) return;
-
     try {
-      const { error } = await supabase
-        .from('ajudas_caridade')
-        .delete()
-        .eq('id', ajudaId);
-
+      const { error } = await supabase.from('ajudas_caridade').delete().eq('id', ajudaId);
       if (error) throw error;
-      
       showSuccess('Ajuda excluída com sucesso!');
       carregarAjudas(modalFamilia.id);
     } catch (error) {
-      console.error('Erro ao excluir ajuda:', error);
       showError('Erro ao excluir ajuda');
     }
   };
 
   const handleEditarAjuda = (ajuda) => {
     setAjudaForm({
-      data_ajuda: ajuda.data_ajuda,
-      tipo_ajuda: ajuda.tipo_ajuda,
-      descricao: ajuda.descricao || '',
-      valor_estimado: ajuda.valor_estimado || '',
-      quantidade: ajuda.quantidade || '',
-      responsavel_nome: ajuda.responsavel_nome || ''
+      data_ajuda: ajuda.data_ajuda, tipo_ajuda: ajuda.tipo_ajuda,
+      descricao: ajuda.descricao || '', valor_estimado: ajuda.valor_estimado || '',
+      quantidade: ajuda.quantidade || '', responsavel_nome: ajuda.responsavel_nome || ''
     });
     setAjudaEditando(ajuda);
     setModoEdicaoAjuda(true);
@@ -230,22 +154,11 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
 
   const limparFormulario = () => {
     setFamiliaForm({
-      nome_marido: '',
-      nome_esposa: '',
-      tem_filhos: false,
-      quantidade_filhos: 0,
-      endereco: '',
-      cidade: '',
-      estado: 'MT',
-      cep: '',
-      telefone: '',
-      marido_empregado: false,
-      esposa_empregada: false,
-      profissao_marido: '',
-      profissao_esposa: '',
-      descricao_situacao: '',
-      observacoes: '',
-      ativa: true
+      nome_marido: '', nome_esposa: '', tem_filhos: false, quantidade_filhos: 0,
+      endereco: '', cidade: '', estado: 'MT', cep: '', telefone: '',
+      marido_empregado: false, esposa_empregada: false,
+      profissao_marido: '', profissao_esposa: '',
+      descricao_situacao: '', observacoes: '', ativa: true
     });
     setModoEdicao(false);
     setFamiliaEditando(null);
@@ -255,11 +168,8 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
   const limparFormularioAjuda = () => {
     setAjudaForm({
       data_ajuda: new Date().toISOString().split('T')[0],
-      tipo_ajuda: 'Cesta Básica',
-      descricao: '',
-      valor_estimado: '',
-      quantidade: '',
-      responsavel_nome: ''
+      tipo_ajuda: 'Cesta Básica', descricao: '',
+      valor_estimado: '', quantidade: '', responsavel_nome: ''
     });
     setModoEdicaoAjuda(false);
     setAjudaEditando(null);
@@ -271,22 +181,17 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
     setModalNovaAjuda(true);
   };
 
-  // Filtrar famílias
   const familiasFiltradas = familias.filter(f => {
-    const matchSearch = 
+    const matchSearch =
       f.nome_marido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.nome_esposa?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       f.endereco?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchStatus = 
+    const matchStatus =
       filtroStatus === 'todas' ? true :
-      filtroStatus === 'ativas' ? f.ativa :
-      !f.ativa;
-
+      filtroStatus === 'ativas' ? f.ativa : !f.ativa;
     return matchSearch && matchStatus;
   });
 
-  // Calcular totais
   const totalFamilias = familias.length;
   const familiasAtivas = familias.filter(f => f.ativa).length;
   const totalPessoas = familias.reduce((acc, f) => {
@@ -300,27 +205,40 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Carregando...</div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--color-accent)' }}></div>
       </div>
     );
   }
 
+  const btnStyle = (bg) => ({
+    background: bg, color: 'white', border: 'none',
+    borderRadius: '0.375rem', padding: '0.375rem 0.75rem',
+    fontSize: '0.875rem', fontWeight: '500', cursor: 'pointer'
+  });
+
+  const overlayStyle = {
+    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 9999, padding: '1rem'
+  };
+
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-6 shadow-lg">
+      <div className="card-header rounded-lg p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2">❤️ Caridade</h2>
-            <p className="text-purple-100">Controle de Famílias Carentes</p>
+            <h2 className="text-3xl font-bold mb-1">❤️ Caridade</h2>
+            <p style={{ opacity: 0.85 }}>Controle de Famílias Carentes</p>
           </div>
           {permissoes?.pode_editar_caridade && (
             <button
-              onClick={() => {
-                limparFormulario();
-                setMostrarForm(!mostrarForm);
+              onClick={() => { limparFormulario(); setMostrarForm(!mostrarForm); }}
+              style={{
+                background: 'rgba(255,255,255,0.15)', color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)', borderRadius: '0.5rem',
+                padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
               }}
-              className="px-6 py-3 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-semibold"
             >
               {mostrarForm ? '✖️ Fechar' : '➕ Nova Família'}
             </button>
@@ -330,257 +248,136 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
 
       {/* CARDS DE RESUMO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total de Famílias</p>
-              <p className="text-3xl font-bold text-purple-600">{totalFamilias}</p>
+        {[
+          { emoji: '👨‍👩‍👧‍👦', label: 'Total de Famílias', value: totalFamilias },
+          { emoji: '✅',         label: 'Famílias Ativas',  value: familiasAtivas },
+          { emoji: '👥',         label: 'Total de Pessoas', value: totalPessoas   },
+        ].map(card => (
+          <div key={card.label} className="card p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{card.label}</p>
+                <p className="text-3xl font-bold" style={{ color: 'var(--color-accent)' }}>{card.value}</p>
+              </div>
+              <div className="text-4xl">{card.emoji}</div>
             </div>
-            <div className="text-4xl">👨‍👩‍👧‍👦</div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Famílias Ativas</p>
-              <p className="text-3xl font-bold text-green-600">{familiasAtivas}</p>
-            </div>
-            <div className="text-4xl">✅</div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total de Pessoas</p>
-              <p className="text-3xl font-bold text-blue-600">{totalPessoas}</p>
-            </div>
-            <div className="text-4xl">👥</div>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* FORMULÁRIO */}
+      {/* FORMULÁRIO CADASTRO */}
       {(mostrarForm && permissoes?.pode_editar_caridade) && (
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
-            {modoEdicao ? '✏️ Editar Família' : '➕ Cadastrar Nova Família'}
-          </h3>
+        <div className="card rounded-xl shadow-lg">
+          <div className="card-header p-6 rounded-t-xl">
+            <h3 className="text-xl font-bold">
+              {modoEdicao ? '✏️ Editar Família' : '➕ Cadastrar Nova Família'}
+            </h3>
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Dados do Casal */}
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3">👫 Dados do Casal</h4>
+              <h4 className="text-base font-semibold mb-3" style={{ color: 'var(--color-text)' }}>👫 Dados do Casal</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Marido</label>
-                  <input
-                    type="text"
-                    value={familiaForm.nome_marido}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, nome_marido: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className="form-label">Nome do Marido</label>
+                  <input type="text" className="form-input" value={familiaForm.nome_marido} onChange={(e) => setFamiliaForm({ ...familiaForm, nome_marido: e.target.value })} />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Esposa</label>
-                  <input
-                    type="text"
-                    value={familiaForm.nome_esposa}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, nome_esposa: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className="form-label">Nome da Esposa</label>
+                  <input type="text" className="form-input" value={familiaForm.nome_esposa} onChange={(e) => setFamiliaForm({ ...familiaForm, nome_esposa: e.target.value })} />
                 </div>
               </div>
             </div>
 
-            {/* Filhos */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3">👶 Filhos</h4>
+              <h4 className="text-base font-semibold mb-3" style={{ color: 'var(--color-text)' }}>👶 Filhos</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={familiaForm.tem_filhos}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, tem_filhos: e.target.checked })}
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                  />
-                  <label className="text-sm font-medium text-gray-700">Tem filhos?</label>
+                  <input type="checkbox" checked={familiaForm.tem_filhos} onChange={(e) => setFamiliaForm({ ...familiaForm, tem_filhos: e.target.checked })} className="w-5 h-5 rounded" style={{ accentColor: 'var(--color-accent)' }} />
+                  <label className="form-label" style={{ marginBottom: 0 }}>Tem filhos?</label>
                 </div>
-
                 {familiaForm.tem_filhos && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade de Filhos</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={familiaForm.quantidade_filhos}
-                      onChange={(e) => setFamiliaForm({ ...familiaForm, quantidade_filhos: parseInt(e.target.value) || 0 })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    />
+                    <label className="form-label">Quantidade de Filhos</label>
+                    <input type="number" min="0" className="form-input" value={familiaForm.quantidade_filhos} onChange={(e) => setFamiliaForm({ ...familiaForm, quantidade_filhos: parseInt(e.target.value) || 0 })} />
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Endereço */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3">📍 Endereço</h4>
+              <h4 className="text-base font-semibold mb-3" style={{ color: 'var(--color-text)' }}>📍 Endereço</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Endereço Completo *</label>
-                  <input
-                    type="text"
-                    value={familiaForm.endereco}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, endereco: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    required
-                  />
+                  <label className="form-label">Endereço Completo *</label>
+                  <input type="text" className="form-input" value={familiaForm.endereco} onChange={(e) => setFamiliaForm({ ...familiaForm, endereco: e.target.value })} required />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
-                  <input
-                    type="text"
-                    value={familiaForm.cidade}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, cidade: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className="form-label">Cidade</label>
+                  <input type="text" className="form-input" value={familiaForm.cidade} onChange={(e) => setFamiliaForm({ ...familiaForm, cidade: e.target.value })} />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-                  <input
-                    type="text"
-                    value={familiaForm.estado}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, estado: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    maxLength="2"
-                  />
+                  <label className="form-label">Estado</label>
+                  <input type="text" className="form-input" value={familiaForm.estado} onChange={(e) => setFamiliaForm({ ...familiaForm, estado: e.target.value })} maxLength="2" />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
-                  <input
-                    type="text"
-                    value={familiaForm.cep}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, cep: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className="form-label">CEP</label>
+                  <input type="text" className="form-input" value={familiaForm.cep} onChange={(e) => setFamiliaForm({ ...familiaForm, cep: e.target.value })} />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
-                  <input
-                    type="text"
-                    value={familiaForm.telefone}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, telefone: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                  />
+                  <label className="form-label">Telefone</label>
+                  <input type="text" className="form-input" value={familiaForm.telefone} onChange={(e) => setFamiliaForm({ ...familiaForm, telefone: e.target.value })} />
                 </div>
               </div>
             </div>
 
-            {/* Situação de Emprego */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3">💼 Situação de Emprego</h4>
+              <h4 className="text-base font-semibold mb-3" style={{ color: 'var(--color-text)' }}>💼 Situação de Emprego</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <input
-                      type="checkbox"
-                      checked={familiaForm.marido_empregado}
-                      onChange={(e) => setFamiliaForm({ ...familiaForm, marido_empregado: e.target.checked })}
-                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                    />
-                    <label className="text-sm font-medium text-gray-700">Marido empregado?</label>
+                    <input type="checkbox" checked={familiaForm.marido_empregado} onChange={(e) => setFamiliaForm({ ...familiaForm, marido_empregado: e.target.checked })} className="w-5 h-5 rounded" style={{ accentColor: 'var(--color-accent)' }} />
+                    <label className="form-label" style={{ marginBottom: 0 }}>Marido empregado?</label>
                   </div>
                   {familiaForm.marido_empregado && (
-                    <input
-                      type="text"
-                      placeholder="Profissão do marido"
-                      value={familiaForm.profissao_marido}
-                      onChange={(e) => setFamiliaForm({ ...familiaForm, profissao_marido: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    />
+                    <input type="text" placeholder="Profissão do marido" className="form-input" value={familiaForm.profissao_marido} onChange={(e) => setFamiliaForm({ ...familiaForm, profissao_marido: e.target.value })} />
                   )}
                 </div>
-
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <input
-                      type="checkbox"
-                      checked={familiaForm.esposa_empregada}
-                      onChange={(e) => setFamiliaForm({ ...familiaForm, esposa_empregada: e.target.checked })}
-                      className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                    />
-                    <label className="text-sm font-medium text-gray-700">Esposa empregada?</label>
+                    <input type="checkbox" checked={familiaForm.esposa_empregada} onChange={(e) => setFamiliaForm({ ...familiaForm, esposa_empregada: e.target.checked })} className="w-5 h-5 rounded" style={{ accentColor: 'var(--color-accent)' }} />
+                    <label className="form-label" style={{ marginBottom: 0 }}>Esposa empregada?</label>
                   </div>
                   {familiaForm.esposa_empregada && (
-                    <input
-                      type="text"
-                      placeholder="Profissão da esposa"
-                      value={familiaForm.profissao_esposa}
-                      onChange={(e) => setFamiliaForm({ ...familiaForm, profissao_esposa: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    />
+                    <input type="text" placeholder="Profissão da esposa" className="form-input" value={familiaForm.profissao_esposa} onChange={(e) => setFamiliaForm({ ...familiaForm, profissao_esposa: e.target.value })} />
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Descrição da Situação */}
             <div>
-              <h4 className="text-lg font-semibold text-gray-800 mb-3">📝 Situação Familiar</h4>
+              <h4 className="text-base font-semibold mb-3" style={{ color: 'var(--color-text)' }}>📝 Situação Familiar</h4>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição da Situação *</label>
-                  <textarea
-                    value={familiaForm.descricao_situacao}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, descricao_situacao: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    rows="4"
-                    required
-                  />
+                  <label className="form-label">Descrição da Situação *</label>
+                  <textarea className="form-input" rows="4" value={familiaForm.descricao_situacao} onChange={(e) => setFamiliaForm({ ...familiaForm, descricao_situacao: e.target.value })} required />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
-                  <textarea
-                    value={familiaForm.observacoes}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, observacoes: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-                    rows="3"
-                  />
+                  <label className="form-label">Observações</label>
+                  <textarea className="form-input" rows="3" value={familiaForm.observacoes} onChange={(e) => setFamiliaForm({ ...familiaForm, observacoes: e.target.value })} />
                 </div>
-
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={familiaForm.ativa}
-                    onChange={(e) => setFamiliaForm({ ...familiaForm, ativa: e.target.checked })}
-                    className="w-5 h-5 text-purple-600 rounded focus:ring-purple-500"
-                  />
-                  <label className="text-sm font-medium text-gray-700">Família ativa (recebendo ajuda atualmente)</label>
+                  <input type="checkbox" checked={familiaForm.ativa} onChange={(e) => setFamiliaForm({ ...familiaForm, ativa: e.target.checked })} className="w-5 h-5 rounded" style={{ accentColor: 'var(--color-accent)' }} />
+                  <label className="form-label" style={{ marginBottom: 0 }}>Família ativa (recebendo ajuda atualmente)</label>
                 </div>
               </div>
             </div>
 
-            {/* Botões */}
-            <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold"
-              >
+            <div className="flex gap-3 pt-2">
+              <button type="submit" style={{ background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer' }}>
                 {modoEdicao ? '💾 Atualizar' : '💾 Cadastrar'}
               </button>
-
-              <button
-                type="button"
-                onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-              >
+              <button type="button" onClick={limparFormulario} style={{ background: 'var(--color-surface-3)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer' }}>
                 ❌ Cancelar
               </button>
             </div>
@@ -588,22 +385,11 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
         </div>
       )}
 
-      {/* FILTROS E BUSCA */}
-      <div className="bg-white rounded-lg shadow p-4">
+      {/* FILTROS */}
+      <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          <input
-            type="text"
-            placeholder="🔍 Buscar por nome ou endereço..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-          />
-
-          <select
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-            className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
-          >
+          <input type="text" placeholder="🔍 Buscar por nome ou endereço..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="form-input flex-1" />
+          <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="form-input">
             <option value="todas">Todas</option>
             <option value="ativas">Ativas</option>
             <option value="inativas">Inativas</option>
@@ -614,112 +400,68 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       {/* LISTA DE FAMÍLIAS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {familiasFiltradas.map((familia) => (
-          <div
-            key={familia.id}
-            className={`bg-white rounded-lg shadow-lg overflow-hidden border-l-4 ${
-              familia.ativa ? 'border-green-500' : 'border-gray-400'
-            }`}
+          <div key={familia.id} className="card rounded-lg shadow-lg overflow-hidden"
+            style={{ borderLeft: `4px solid ${familia.ativa ? 'var(--color-accent)' : 'var(--color-border)'}` }}
           >
             <div className="p-6">
-              {/* Status */}
-              <div className="flex items-center justify-between mb-3">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  familia.ativa ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
+              <div className="mb-3">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{
+                  background: familia.ativa ? 'rgba(34,197,94,0.15)' : 'var(--color-surface-3)',
+                  color: familia.ativa ? '#16a34a' : 'var(--color-text-secondary)'
+                }}>
                   {familia.ativa ? '✅ Ativa' : '⏸️ Inativa'}
                 </span>
               </div>
 
-              {/* Nomes */}
-              <div className="space-y-2 mb-4">
+              <div className="space-y-1 mb-3">
                 {familia.nome_marido && (
-                  <div className="flex items-center gap-2 text-gray-800">
-                    <span className="text-lg">👨</span>
-                    <span className="font-semibold">{familia.nome_marido}</span>
+                  <div className="flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+                    <span>👨</span><span className="font-semibold">{familia.nome_marido}</span>
                   </div>
                 )}
                 {familia.nome_esposa && (
-                  <div className="flex items-center gap-2 text-gray-800">
-                    <span className="text-lg">👩</span>
-                    <span className="font-semibold">{familia.nome_esposa}</span>
+                  <div className="flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
+                    <span>👩</span><span className="font-semibold">{familia.nome_esposa}</span>
                   </div>
                 )}
               </div>
 
-              {/* Filhos */}
               {familia.tem_filhos && (
-                <div className="flex items-center gap-2 text-gray-600 mb-3">
+                <div className="flex items-center gap-2 mb-2 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
                   <span>👶</span>
-                  <span className="text-sm">{familia.quantidade_filhos} {familia.quantidade_filhos === 1 ? 'filho' : 'filhos'}</span>
+                  <span>{familia.quantidade_filhos} {familia.quantidade_filhos === 1 ? 'filho' : 'filhos'}</span>
                 </div>
               )}
 
-              {/* Endereço */}
-              <div className="text-gray-600 text-sm mb-3">
-                📍 {familia.endereco}
-                {familia.cidade && `, ${familia.cidade}`}
-                {familia.estado && `-${familia.estado}`}
+              <div className="text-sm mb-3" style={{ color: 'var(--color-text-secondary)' }}>
+                📍 {familia.endereco}{familia.cidade && `, ${familia.cidade}`}{familia.estado && `-${familia.estado}`}
               </div>
 
-              {/* Situação de emprego */}
-              <div className="flex gap-2 mb-4">
+              <div className="flex gap-2 mb-3">
                 {!familia.marido_empregado && !familia.esposa_empregada && (
-                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">
-                    ⚠️ Ambos desempregados
-                  </span>
+                  <span className="px-2 py-1 rounded text-xs" style={{ background: 'rgba(239,68,68,0.1)', color: '#dc2626' }}>⚠️ Ambos desempregados</span>
                 )}
                 {familia.marido_empregado && familia.esposa_empregada && (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
-                    ✅ Ambos empregados
-                  </span>
+                  <span className="px-2 py-1 rounded text-xs" style={{ background: 'rgba(34,197,94,0.1)', color: '#16a34a' }}>✅ Ambos empregados</span>
                 )}
-                {(familia.marido_empregado || familia.esposa_empregada) && 
-                 !(familia.marido_empregado && familia.esposa_empregada) && (
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs">
-                    ⚠️ Emprego parcial
-                  </span>
+                {(familia.marido_empregado || familia.esposa_empregada) && !(familia.marido_empregado && familia.esposa_empregada) && (
+                  <span className="px-2 py-1 rounded text-xs" style={{ background: 'rgba(234,179,8,0.1)', color: '#ca8a04' }}>⚠️ Emprego parcial</span>
                 )}
               </div>
 
-              {/* Situação */}
-              <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+              <p className="text-sm mb-4 line-clamp-2" style={{ color: 'var(--color-text-secondary)' }}>
                 {familia.descricao_situacao}
               </p>
 
-              {/* Botões */}
               <div className="flex gap-2">
-                <button
-                  onClick={() => handleVisualizarFamilia(familia)}
-                  className="flex-1 px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                >
+                <button onClick={() => handleVisualizarFamilia(familia)} style={{ ...btnStyle('var(--color-accent)'), flex: 1 }}>
                   👁️ Ver Detalhes
                 </button>
-
                 {permissoes?.pode_editar_caridade && (
                   <>
-                    <button
-                      onClick={() => abrirModalAjuda(familia)}
-                      className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                      title="Registrar Ajuda"
-                    >
-                      ➕
-                    </button>
-
-                    <button
-                      onClick={() => handleEditar(familia)}
-                      className="px-3 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
-                      title="Editar"
-                    >
-                      ✏️
-                    </button>
-
-                    <button
-                      onClick={() => handleExcluir(familia.id)}
-                      className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
-                      title="Excluir"
-                    >
-                      🗑️
-                    </button>
+                    <button onClick={() => abrirModalAjuda(familia)} style={btnStyle('#16a34a')} title="Registrar Ajuda">➕</button>
+                    <button onClick={() => handleEditar(familia)} style={btnStyle('#ca8a04')} title="Editar">✏️</button>
+                    <button onClick={() => handleExcluir(familia.id)} style={btnStyle('#dc2626')} title="Excluir">🗑️</button>
                   </>
                 )}
               </div>
@@ -728,146 +470,94 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
         ))}
       </div>
 
-      {/* Mensagem quando não há resultados */}
       {familiasFiltradas.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <div className="text-center py-12 rounded-lg" style={{ background: 'var(--color-surface-3)' }}>
           <div className="text-6xl mb-4">❤️</div>
-          <p className="text-gray-600">Nenhuma família encontrada</p>
+          <p style={{ color: 'var(--color-text-secondary)' }}>Nenhuma família encontrada</p>
         </div>
       )}
 
-      {/* MODAL DE VISUALIZAÇÃO COMPLETA */}
+      {/* MODAL VISUALIZAÇÃO DA FAMÍLIA */}
       {modalFamilia && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-purple-600 text-white p-6 rounded-t-lg">
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">Detalhes da Família</h3>
-                <button
-                  onClick={() => setModalFamilia(null)}
-                  className="text-white hover:bg-purple-700 rounded-full p-2"
-                >
-                  ✖️
-                </button>
-              </div>
+        <div style={overlayStyle}>
+          <div className="card" style={{ maxWidth: '56rem', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0 }}>
+            <div className="card-header p-6 rounded-t-lg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 className="text-2xl font-bold">Detalhes da Família</h3>
+              <button onClick={() => setModalFamilia(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', opacity: 0.8 }}>✖️</button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Dados da Família */}
+            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }} className="space-y-5">
               <div>
-                <h4 className="text-lg font-bold text-gray-800 mb-3">👫 Família</h4>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  {modalFamilia.nome_marido && (
-                    <p><strong>Marido:</strong> {modalFamilia.nome_marido}</p>
-                  )}
-                  {modalFamilia.nome_esposa && (
-                    <p><strong>Esposa:</strong> {modalFamilia.nome_esposa}</p>
-                  )}
-                  {modalFamilia.tem_filhos && (
-                    <p><strong>Filhos:</strong> {modalFamilia.quantidade_filhos}</p>
-                  )}
-                  <p><strong>Endereço:</strong> {modalFamilia.endereco}, {modalFamilia.cidade}-{modalFamilia.estado}</p>
-                  {modalFamilia.telefone && (
-                    <p><strong>Telefone:</strong> {modalFamilia.telefone}</p>
-                  )}
+                <h4 className="text-base font-bold mb-3" style={{ color: 'var(--color-text)' }}>👫 Família</h4>
+                <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
+                  {modalFamilia.nome_marido && <p style={{ color: 'var(--color-text)' }}><strong>Marido:</strong> {modalFamilia.nome_marido}</p>}
+                  {modalFamilia.nome_esposa && <p style={{ color: 'var(--color-text)' }}><strong>Esposa:</strong> {modalFamilia.nome_esposa}</p>}
+                  {modalFamilia.tem_filhos && <p style={{ color: 'var(--color-text)' }}><strong>Filhos:</strong> {modalFamilia.quantidade_filhos}</p>}
+                  <p style={{ color: 'var(--color-text)' }}><strong>Endereço:</strong> {modalFamilia.endereco}, {modalFamilia.cidade}-{modalFamilia.estado}</p>
+                  {modalFamilia.telefone && <p style={{ color: 'var(--color-text)' }}><strong>Telefone:</strong> {modalFamilia.telefone}</p>}
                 </div>
               </div>
 
-              {/* Situação de Emprego */}
               <div>
-                <h4 className="text-lg font-bold text-gray-800 mb-3">💼 Situação de Emprego</h4>
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                  <p>
-                    <strong>Marido:</strong> {modalFamilia.marido_empregado ? `✅ Empregado (${modalFamilia.profissao_marido || 'N/I'})` : '❌ Desempregado'}
-                  </p>
-                  <p>
-                    <strong>Esposa:</strong> {modalFamilia.esposa_empregada ? `✅ Empregada (${modalFamilia.profissao_esposa || 'N/I'})` : '❌ Desempregada'}
-                  </p>
+                <h4 className="text-base font-bold mb-3" style={{ color: 'var(--color-text)' }}>💼 Situação de Emprego</h4>
+                <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
+                  <p style={{ color: 'var(--color-text)' }}><strong>Marido:</strong> {modalFamilia.marido_empregado ? `✅ Empregado (${modalFamilia.profissao_marido || 'N/I'})` : '❌ Desempregado'}</p>
+                  <p style={{ color: 'var(--color-text)' }}><strong>Esposa:</strong> {modalFamilia.esposa_empregada ? `✅ Empregada (${modalFamilia.profissao_esposa || 'N/I'})` : '❌ Desempregada'}</p>
                 </div>
               </div>
 
-              {/* Situação Familiar */}
               <div>
-                <h4 className="text-lg font-bold text-gray-800 mb-3">📝 Situação Familiar</h4>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700">{modalFamilia.descricao_situacao}</p>
+                <h4 className="text-base font-bold mb-3" style={{ color: 'var(--color-text)' }}>📝 Situação Familiar</h4>
+                <div className="rounded-lg p-4" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
+                  <p style={{ color: 'var(--color-text)' }}>{modalFamilia.descricao_situacao}</p>
                   {modalFamilia.observacoes && (
                     <>
-                      <hr className="my-3" />
-                      <p className="text-gray-600 text-sm"><strong>Observações:</strong> {modalFamilia.observacoes}</p>
+                      <hr style={{ borderColor: 'var(--color-border)', margin: '0.75rem 0' }} />
+                      <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}><strong>Observações:</strong> {modalFamilia.observacoes}</p>
                     </>
                   )}
                 </div>
               </div>
 
-              {/* Histórico de Ajudas */}
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-lg font-bold text-gray-800">🎁 Histórico de Ajudas</h4>
+                  <h4 className="text-base font-bold" style={{ color: 'var(--color-text)' }}>🎁 Histórico de Ajudas</h4>
                   {permissoes?.pode_editar_caridade && (
-                    <button
-                      onClick={() => {
-                        setFamiliaParaAjuda(modalFamilia);
-                        setModalNovaAjuda(true);
-                      }}
-                      className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                    >
+                    <button onClick={() => { setFamiliaParaAjuda(modalFamilia); setModalNovaAjuda(true); }} style={{ background: '#16a34a', color: 'white', border: 'none', borderRadius: '0.375rem', padding: '0.375rem 0.875rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }}>
                       ➕ Nova Ajuda
                     </button>
                   )}
                 </div>
 
                 {ajudasFamilia.length === 0 ? (
-                  <div className="bg-gray-50 p-6 rounded-lg text-center text-gray-600">
+                  <div className="p-6 rounded-lg text-center" style={{ background: 'var(--color-surface-3)', color: 'var(--color-text-secondary)' }}>
                     Nenhuma ajuda registrada ainda
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {ajudasFamilia.map((ajuda) => (
-                      <div key={ajuda.id} className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-500">
+                      <div key={ajuda.id} className="p-4 rounded-lg" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-accent)' }}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="font-semibold text-gray-800">{ajuda.tipo_ajuda}</span>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{ajuda.tipo_ajuda}</span>
                               {ajuda.quantidade && (
-                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                                <span className="px-2 py-0.5 rounded text-xs" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', color: 'var(--color-text-secondary)' }}>
                                   {ajuda.quantidade}
                                 </span>
                               )}
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">
+                            <p className="text-sm mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                               📅 {new Date(ajuda.data_ajuda + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </p>
-                            {ajuda.descricao && (
-                              <p className="text-sm text-gray-700 mb-2">{ajuda.descricao}</p>
-                            )}
-                            {ajuda.valor_estimado && (
-                              <p className="text-sm text-gray-600">
-                                💰 Valor estimado: R$ {parseFloat(ajuda.valor_estimado).toFixed(2)}
-                              </p>
-                            )}
-                            {ajuda.responsavel_nome && (
-                              <p className="text-xs text-gray-500 mt-1">
-                                👤 Responsável: {ajuda.responsavel_nome}
-                              </p>
-                            )}
+                            {ajuda.descricao && <p className="text-sm mb-1" style={{ color: 'var(--color-text)' }}>{ajuda.descricao}</p>}
+                            {ajuda.valor_estimado && <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>💰 R$ {parseFloat(ajuda.valor_estimado).toFixed(2)}</p>}
+                            {ajuda.responsavel_nome && <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>👤 {ajuda.responsavel_nome}</p>}
                           </div>
                           {permissoes?.pode_editar_caridade && (
-                            <div className="flex gap-2 ml-2">
-                              <button
-                                onClick={() => handleEditarAjuda(ajuda)}
-                                className="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-xs"
-                                title="Editar ajuda"
-                              >
-                                ✏️
-                              </button>
-                              <button
-                                onClick={() => handleExcluirAjuda(ajuda.id)}
-                                className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
-                                title="Excluir ajuda"
-                              >
-                                🗑️
-                              </button>
+                            <div className="flex gap-1 ml-2">
+                              <button onClick={() => handleEditarAjuda(ajuda)} style={btnStyle('#ca8a04')} title="Editar">✏️</button>
+                              <button onClick={() => handleExcluirAjuda(ajuda.id)} style={btnStyle('#dc2626')} title="Excluir">🗑️</button>
                             </div>
                           )}
                         </div>
@@ -881,125 +571,56 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
         </div>
       )}
 
-      {/* MODAL DE NOVA AJUDA */}
+      {/* MODAL NOVA/EDITAR AJUDA */}
       {modalNovaAjuda && familiaParaAjuda && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
-            <div className={`${modoEdicaoAjuda ? 'bg-yellow-600' : 'bg-green-600'} text-white p-6 rounded-t-lg`}>
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">
-                  {modoEdicaoAjuda ? '✏️ Editar Ajuda' : '➕ Registrar Nova Ajuda'}
-                </h3>
-                <button
-                  onClick={() => {
-                    setModalNovaAjuda(false);
-                    limparFormularioAjuda();
-                  }}
-                  className={`text-white ${modoEdicaoAjuda ? 'hover:bg-yellow-700' : 'hover:bg-green-700'} rounded-full p-2`}
-                >
-                  ✖️
-                </button>
-              </div>
-              <p className={`${modoEdicaoAjuda ? 'text-yellow-100' : 'text-green-100'} text-sm mt-2`}>
+        <div style={overlayStyle}>
+          <div className="card" style={{ maxWidth: '42rem', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0 }}>
+            <div className="card-header p-6 rounded-t-lg">
+              <h3 className="text-xl font-bold">
+                {modoEdicaoAjuda ? '✏️ Editar Ajuda' : '➕ Registrar Nova Ajuda'}
+              </h3>
+              <p className="text-sm mt-1" style={{ opacity: 0.8 }}>
                 Para: {familiaParaAjuda.nome_marido || familiaParaAjuda.nome_esposa}
               </p>
             </div>
 
-            <form onSubmit={handleSubmitAjuda} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitAjuda} style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data da Ajuda *</label>
-                  <input
-                    type="date"
-                    value={ajudaForm.data_ajuda}
-                    onChange={(e) => setAjudaForm({ ...ajudaForm, data_ajuda: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    required
-                  />
+                  <label className="form-label">Data da Ajuda *</label>
+                  <input type="date" className="form-input" value={ajudaForm.data_ajuda} onChange={(e) => setAjudaForm({ ...ajudaForm, data_ajuda: e.target.value })} required />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Ajuda *</label>
-                  <select
-                    value={ajudaForm.tipo_ajuda}
-                    onChange={(e) => setAjudaForm({ ...ajudaForm, tipo_ajuda: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    required
-                  >
-                    <option value="Cesta Básica">Cesta Básica</option>
-                    <option value="Alimentos">Alimentos</option>
-                    <option value="Roupas">Roupas</option>
-                    <option value="Medicamentos">Medicamentos</option>
-                    <option value="Material Escolar">Material Escolar</option>
-                    <option value="Material de Construção">Material de Construção</option>
-                    <option value="Móveis">Móveis</option>
-                    <option value="Eletrodomésticos">Eletrodomésticos</option>
-                    <option value="Auxílio Financeiro">Auxílio Financeiro</option>
-                    <option value="Outros">Outros</option>
+                  <label className="form-label">Tipo de Ajuda *</label>
+                  <select className="form-input" value={ajudaForm.tipo_ajuda} onChange={(e) => setAjudaForm({ ...ajudaForm, tipo_ajuda: e.target.value })} required>
+                    {['Cesta Básica','Alimentos','Roupas','Medicamentos','Material Escolar','Material de Construção','Móveis','Eletrodomésticos','Auxílio Financeiro','Outros'].map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quantidade</label>
-                  <input
-                    type="text"
-                    placeholder="Ex: 1 cesta, 5kg arroz..."
-                    value={ajudaForm.quantidade}
-                    onChange={(e) => setAjudaForm({ ...ajudaForm, quantidade: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                  />
+                  <label className="form-label">Quantidade</label>
+                  <input type="text" placeholder="Ex: 1 cesta, 5kg arroz..." className="form-input" value={ajudaForm.quantidade} onChange={(e) => setAjudaForm({ ...ajudaForm, quantidade: e.target.value })} />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor Estimado (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={ajudaForm.valor_estimado}
-                    onChange={(e) => setAjudaForm({ ...ajudaForm, valor_estimado: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                  />
+                  <label className="form-label">Valor Estimado (R$)</label>
+                  <input type="number" step="0.01" placeholder="0.00" className="form-input" value={ajudaForm.valor_estimado} onChange={(e) => setAjudaForm({ ...ajudaForm, valor_estimado: e.target.value })} />
                 </div>
-
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                  <textarea
-                    value={ajudaForm.descricao}
-                    onChange={(e) => setAjudaForm({ ...ajudaForm, descricao: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                    rows="3"
-                  />
+                  <label className="form-label">Descrição</label>
+                  <textarea className="form-input" rows="3" value={ajudaForm.descricao} onChange={(e) => setAjudaForm({ ...ajudaForm, descricao: e.target.value })} />
                 </div>
-
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Responsável pela Entrega</label>
-                  <input
-                    type="text"
-                    placeholder="Nome de quem entregou/organizou"
-                    value={ajudaForm.responsavel_nome}
-                    onChange={(e) => setAjudaForm({ ...ajudaForm, responsavel_nome: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                  />
+                  <label className="form-label">Responsável pela Entrega</label>
+                  <input type="text" placeholder="Nome de quem entregou/organizou" className="form-input" value={ajudaForm.responsavel_nome} onChange={(e) => setAjudaForm({ ...ajudaForm, responsavel_nome: e.target.value })} />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="submit"
-                  className={`flex-1 px-6 py-2 ${modoEdicaoAjuda ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white rounded-lg font-semibold`}
-                >
+              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)', marginTop: '1rem' }}>
+                <button type="submit" className="flex-1" style={{ background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer' }}>
                   {modoEdicaoAjuda ? '💾 Atualizar Ajuda' : '💾 Registrar Ajuda'}
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setModalNovaAjuda(false);
-                    limparFormularioAjuda();
-                  }}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                >
+                <button type="button" onClick={() => { setModalNovaAjuda(false); limparFormularioAjuda(); }} style={{ background: 'var(--color-surface-3)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer' }}>
                   ❌ Cancelar
                 </button>
               </div>
