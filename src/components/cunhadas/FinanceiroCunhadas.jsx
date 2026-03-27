@@ -2,6 +2,13 @@
  * FINANCEIRO CUNHADAS
  * Dashboard, lançamentos (individual e em lote), quitações,
  * mensalidades, extrato e filtros completos.
+ *
+ * ── SQL MIGRATION (executar no Supabase SQL Editor se necessário) ──────────
+ * ALTER TABLE categorias_financeiras_cunhadas
+ *   ADD COLUMN IF NOT EXISTS categoria_pai_id UUID REFERENCES categorias_financeiras_cunhadas(id),
+ *   ADD COLUMN IF NOT EXISTS nivel INTEGER DEFAULT 1,
+ *   ADD COLUMN IF NOT EXISTS ordem INTEGER DEFAULT 0;
+ * ──────────────────────────────────────────────────────────────────────────
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -119,7 +126,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
 
   // ── gestão de categorias ──────────────────────────────────────────────────
   const [modalCat, setModalCat]         = useState(false);
-  const [catForm, setCatForm]           = useState({ nome: '', tipo: 'ambos' });
+  const [catForm, setCatForm]           = useState({ nome: '', tipo: 'receita', categoria_pai_id: null, ordem: 0 });
   const [editandoCatId, setEditandoCatId] = useState(null);
   const [salvandoCat, setSalvandoCat]   = useState(false);
 
@@ -183,7 +190,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
           .order('ano', { ascending: false })
           .order('mes', { ascending: false }),
         supabase.from('cunhadas').select('id, nome').eq('ativa', true).order('nome'),
-        supabase.from('categorias_financeiras_cunhadas').select('*').eq('ativo', true).order('nome'),
+        supabase.from('categorias_financeiras_cunhadas').select('*').order('tipo').order('nome'),
         supabase.from('configuracoes_cunhadas').select('*'),
       ]);
 
@@ -453,19 +460,31 @@ export const FinanceiroCunhadas = ({ userData }) => {
 
   // ─── Categorias ───────────────────────────────────────────────────────────
   const abrirNovaCat = () => { setCatForm({ nome: '', tipo: 'ambos' }); setEditandoCatId(null); setModalCat(true); };
-  const abrirEditarCat = (cat) => { setCatForm({ nome: cat.nome, tipo: cat.tipo }); setEditandoCatId(cat.id); setModalCat(true); };
-  const fecharModalCat = () => { setModalCat(false); setEditandoCatId(null); setCatForm({ nome: '', tipo: 'ambos' }); };
+  const abrirEditarCat = (cat) => { setCatForm({ nome: cat.nome, tipo: cat.tipo, categoria_pai_id: cat.categoria_pai_id || null, ordem: cat.ordem || 0 }); setEditandoCatId(cat.id); setModalCat(true); };
+  const fecharModalCat = () => { setModalCat(false); setEditandoCatId(null); setCatForm({ nome: '', tipo: 'receita', categoria_pai_id: null, ordem: 0 }); };
 
   const salvarCategoria = async () => {
     if (!catForm.nome.trim()) { mostrarMsg('erro', 'Nome obrigatório.'); return; }
     setSalvandoCat(true);
     try {
+      let nivel = 1;
+      if (catForm.categoria_pai_id) {
+        const pai = categorias.find(cat => String(cat.id) === String(catForm.categoria_pai_id));
+        nivel = pai ? (pai.nivel || 1) + 1 : 1;
+      }
+      const payload = {
+        nome: catForm.nome,
+        tipo: catForm.tipo,
+        categoria_pai_id: catForm.categoria_pai_id || null,
+        nivel,
+        ordem: catForm.ordem || 0,
+      };
       if (editandoCatId) {
-        const { error } = await supabase.from('categorias_financeiras_cunhadas').update({ nome: catForm.nome, tipo: catForm.tipo }).eq('id', editandoCatId);
+        const { error } = await supabase.from('categorias_financeiras_cunhadas').update(payload).eq('id', editandoCatId);
         if (error) throw error;
         mostrarMsg('sucesso', 'Categoria atualizada!');
       } else {
-        const { error } = await supabase.from('categorias_financeiras_cunhadas').insert([{ nome: catForm.nome, tipo: catForm.tipo, ativo: true }]);
+        const { error } = await supabase.from('categorias_financeiras_cunhadas').insert([payload]);
         if (error) throw error;
         mostrarMsg('sucesso', 'Categoria criada!');
       }
@@ -479,9 +498,11 @@ export const FinanceiroCunhadas = ({ userData }) => {
   };
 
   const excluirCategoria = async (id) => {
-    if (!window.confirm('Excluir esta categoria?')) return;
+    const temFilhos = categorias.some(cat => String(cat.categoria_pai_id) === String(id));
+    if (temFilhos) { mostrarMsg('erro', 'Remova as subcategorias antes de excluir esta categoria.'); return; }
+    if (!window.confirm('Excluir esta categoria? Esta ação não pode ser desfeita.')) return;
     try {
-      const { error } = await supabase.from('categorias_financeiras_cunhadas').update({ ativo: false }).eq('id', id);
+      const { error } = await supabase.from('categorias_financeiras_cunhadas').delete().eq('id', id);
       if (error) throw error;
       mostrarMsg('sucesso', 'Categoria removida!');
       carregarTudo();
@@ -505,44 +526,76 @@ export const FinanceiroCunhadas = ({ userData }) => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const renderCategorias = () => {
-    const tipoLabel = { receita: '📈 Receita', despesa: '📉 Despesa', ambos: '🔀 Ambos' };
-    const tipoColor = { receita: '#10b981', despesa: '#ef4444', ambos: 'var(--color-accent)' };
+    const tipoColor = { receita: '#10b981', despesa: '#ef4444' };
+
+    const construirArvore = (lista, tipo) => {
+      const porTipo = lista.filter(c => c.tipo === tipo);
+      const principais = porTipo.filter(c => !c.categoria_pai_id);
+      const construirFilhos = (pai) => {
+        const filhos = porTipo.filter(c => String(c.categoria_pai_id) === String(pai.id));
+        return filhos.map(f => ({ ...f, filhos: construirFilhos(f) }));
+      };
+      return principais.map(cat => ({ ...cat, filhos: construirFilhos(cat) }));
+    };
+
+    const renderLinhas = (lista, profundidade = 0) =>
+      lista.map(cat => (
+        <React.Fragment key={cat.id}>
+          <div style={{ display: 'flex', alignItems: 'center', padding: '0.65rem 0.75rem', borderBottom: '1px solid var(--color-border)', paddingLeft: `${0.75 + profundidade * 1.5}rem`, background: profundidade % 2 === 1 ? 'var(--color-surface-2)' : 'transparent' }}>
+            {profundidade > 0 && <span style={{ color: 'var(--color-text-faint)', marginRight: '0.4rem', fontSize: '0.75rem' }}>└─</span>}
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: profundidade === 0 ? '700' : '500', fontSize: '0.875rem', color: 'var(--color-text)' }}>{cat.nome}</span>
+              {cat.nivel > 1 && <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: 'var(--color-text-faint)', background: 'var(--color-surface-3)', padding: '0.1rem 0.4rem', borderRadius: '999px' }}>sub</span>}
+            </div>
+            <div style={{ display: 'flex', gap: '0.3rem' }}>
+              <button onClick={() => abrirEditarCat(cat)}
+                style={{ padding: '0.25rem 0.5rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer' }}>✏️</button>
+              <button onClick={() => excluirCategoria(cat.id)}
+                style={{ padding: '0.25rem 0.5rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer' }}>🗑</button>
+            </div>
+          </div>
+          {cat.filhos?.length > 0 && renderLinhas(cat.filhos, profundidade + 1)}
+        </React.Fragment>
+      ));
 
     return (
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p style={{ margin: 0, fontWeight: '700', color: 'var(--color-text)' }}>Categorias Financeiras</p>
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{categorias.length} categoria(s) ativa(s)</p>
+            <p style={{ margin: 0, fontWeight: '700', fontSize: '1.1rem', color: 'var(--color-text)' }}>🏷️ Categorias Financeiras</p>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{categorias.length} categoria(s) — principal + subcategorias</p>
           </div>
           <button style={s.btnPrimary('var(--color-accent)')} onClick={abrirNovaCat}>＋ Nova Categoria</button>
         </div>
 
         {categorias.length === 0 ? (
           <div style={{ ...s.card, textAlign: 'center', padding: '3rem' }}>
-            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Nenhuma categoria cadastrada.</p>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Nenhuma categoria cadastrada ainda.</p>
             <button style={s.btnPrimary('var(--color-accent)')} onClick={abrirNovaCat}>＋ Criar primeira categoria</button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-            {categorias.map((cat) => (
-              <div key={cat.id} style={{ ...s.card, padding: '1.25rem', borderLeft: `4px solid ${tipoColor[cat.tipo] || 'var(--color-border)'}` }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <p style={{ margin: '0 0 0.35rem', fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)' }}>{cat.nome}</p>
-                    <span style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: '600', background: `${tipoColor[cat.tipo]}22`, color: tipoColor[cat.tipo] }}>
-                      {tipoLabel[cat.tipo]}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+            {['receita', 'despesa'].map((tipo) => {
+              const arvore = construirArvore(categorias, tipo);
+              const total = categorias.filter(c => c.tipo === tipo).length;
+              return (
+                <div key={tipo} style={s.card}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', paddingBottom: '0.75rem', borderBottom: `2px solid ${tipoColor[tipo]}` }}>
+                    <span style={{ fontWeight: '700', color: tipoColor[tipo] }}>
+                      {tipo === 'receita' ? '📈 Receitas' : '📉 Despesas'}
+                    </span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-faint)', background: 'var(--color-surface-2)', padding: '0.15rem 0.5rem', borderRadius: '999px' }}>
+                      {total} categoria(s)
                     </span>
                   </div>
-                  <div style={{ display: 'flex', gap: '0.35rem' }}>
-                    <button onClick={() => abrirEditarCat(cat)}
-                      style={{ padding: '0.3rem 0.6rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', cursor: 'pointer' }}>✏️</button>
-                    <button onClick={() => excluirCategoria(cat.id)}
-                      style={{ padding: '0.3rem 0.6rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', cursor: 'pointer' }}>🗑</button>
-                  </div>
+                  {arvore.length === 0 ? (
+                    <p style={{ color: 'var(--color-text-faint)', fontSize: '0.85rem', textAlign: 'center', padding: '1.5rem 0' }}>
+                      Nenhuma categoria de {tipo}.
+                    </p>
+                  ) : renderLinhas(arvore)}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
@@ -1229,7 +1282,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
       {/* ── MODAL CATEGORIA ──────────────────────────────────────────────────── */}
       {modalCat && (
         <div style={s.overlay} onClick={(e) => e.target === e.currentTarget && fecharModalCat()}>
-          <div style={{ ...s.modal, maxWidth: '420px' }}>
+          <div style={{ ...s.modal, maxWidth: '460px' }}>
             <div style={s.mHead}>
               <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--color-text)' }}>
                 🏷️ {editandoCatId ? 'Editar' : 'Nova'} Categoria
@@ -1238,29 +1291,51 @@ export const FinanceiroCunhadas = ({ userData }) => {
             </div>
             <div style={s.mBody}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <Campo label="Nome da categoria *">
-                  <input style={s.input} value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} placeholder="Ex: Mensalidade, Evento, Material..." />
+                <Campo label="Nome *">
+                  <input style={s.input} value={catForm.nome}
+                    onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })}
+                    placeholder="Ex: Mensalidade, Evento, Material..." />
                 </Campo>
+
                 <Campo label="Tipo">
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                     {[
                       { value: 'receita', label: '📈 Receita', cor: '#10b981' },
                       { value: 'despesa', label: '📉 Despesa', cor: '#ef4444' },
-                      { value: 'ambos',   label: '🔀 Ambos',   cor: 'var(--color-accent)' },
                     ].map((t) => (
-                      <button key={t.value} type="button" onClick={() => setCatForm({ ...catForm, tipo: t.value })}
-                        style={{ padding: '0.55rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: catForm.tipo === t.value ? t.cor : 'var(--color-border)', background: catForm.tipo === t.value ? `${t.cor}22` : 'var(--color-surface-2)', color: catForm.tipo === t.value ? t.cor : 'var(--color-text-muted)', fontWeight: catForm.tipo === t.value ? '700' : '400', cursor: 'pointer', fontSize: '0.8rem' }}>
+                      <button key={t.value} type="button"
+                        onClick={() => setCatForm({ ...catForm, tipo: t.value, categoria_pai_id: null })}
+                        style={{ padding: '0.6rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: catForm.tipo === t.value ? t.cor : 'var(--color-border)', background: catForm.tipo === t.value ? `${t.cor}18` : 'var(--color-surface-2)', color: catForm.tipo === t.value ? t.cor : 'var(--color-text)', fontWeight: catForm.tipo === t.value ? '700' : '400', cursor: 'pointer', fontSize: '0.875rem' }}>
                         {t.label}
                       </button>
                     ))}
                   </div>
+                </Campo>
+
+                <Campo label="Categoria pai (subcategoria de…)">
+                  <select style={s.select} value={catForm.categoria_pai_id || ''}
+                    onChange={(e) => setCatForm({ ...catForm, categoria_pai_id: e.target.value || null })}>
+                    <option value="">— Principal (sem pai) —</option>
+                    {categorias
+                      .filter(c => c.tipo === catForm.tipo && !c.categoria_pai_id && c.id !== editandoCatId)
+                      .map(c => <option key={c.id} value={c.id}>{c.nome}</option>)
+                    }
+                  </select>
+                  <p style={{ margin: '0.3rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-faint)' }}>
+                    Vazio = categoria principal · Com pai = subcategoria
+                  </p>
+                </Campo>
+
+                <Campo label="Ordem de exibição">
+                  <input type="number" min="0" style={s.input} value={catForm.ordem}
+                    onChange={(e) => setCatForm({ ...catForm, ordem: parseInt(e.target.value) || 0 })} />
                 </Campo>
               </div>
             </div>
             <div style={s.mFoot}>
               <button style={s.btnSec} onClick={fecharModalCat} disabled={salvandoCat}>Cancelar</button>
               <button style={s.btnPrimary('var(--color-accent)')} onClick={salvarCategoria} disabled={salvandoCat}>
-                {salvandoCat ? '⏳...' : editandoCatId ? '💾 Salvar' : '＋ Criar'}
+                {salvandoCat ? '⏳ Salvando...' : editandoCatId ? '💾 Salvar' : '＋ Criar categoria'}
               </button>
             </div>
           </div>
