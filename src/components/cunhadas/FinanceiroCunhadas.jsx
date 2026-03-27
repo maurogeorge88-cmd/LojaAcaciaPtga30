@@ -71,7 +71,7 @@ const s = {
   mFoot:    { padding: '1rem 1.75rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', position: 'sticky', bottom: 0, background: 'var(--color-surface)' },
   btnPrimary: (cor) => ({ background: cor, color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', padding: '0.6rem 1.25rem', fontWeight: '600', fontSize: '0.875rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }),
   btnSec:   { padding: '0.6rem 1.25rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', color: 'var(--color-text-muted)', fontWeight: '600', fontSize: '0.875rem', cursor: 'pointer' },
-  navBtn:   (active) => ({ padding: '0.55rem 1.1rem', borderRadius: 'var(--radius-lg)', border: '1px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-border)', background: active ? 'var(--color-accent-bg)' : 'var(--color-surface)', color: active ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: active ? '600' : '400', fontSize: '0.85rem', cursor: 'pointer' }),
+  navBtn:   (active) => ({ padding: '0.55rem 1.1rem', borderRadius: 'var(--radius-lg)', border: '1px solid', borderColor: active ? 'var(--color-accent)' : 'var(--color-border)', background: active ? 'var(--color-accent)' : 'var(--color-surface-2)', color: active ? '#fff' : 'var(--color-text)', fontWeight: active ? '600' : '400', fontSize: '0.85rem', cursor: 'pointer' }),
   badge:    (pago) => ({ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: '600', background: pago ? 'rgba(16,185,129,0.12)' : 'rgba(245,158,11,0.12)', color: pago ? '#10b981' : '#f59e0b', border: `1px solid ${pago ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.3)'}` }),
   infoBox:  { background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '0.875rem 1rem' },
 };
@@ -115,6 +115,13 @@ export const FinanceiroCunhadas = ({ userData }) => {
   const [config, setConfig]             = useState({ valor_mensalidade: '50.00', dia_vencimento: '10' });
   const [loading, setLoading]           = useState(true);
   const [msg, setMsg]                   = useState({ tipo: '', texto: '' });
+  const [nomeGrupo, setNomeGrupo]       = useState('Flores de Acácia');
+
+  // ── gestão de categorias ──────────────────────────────────────────────────
+  const [modalCat, setModalCat]         = useState(false);
+  const [catForm, setCatForm]           = useState({ nome: '', tipo: 'ambos' });
+  const [editandoCatId, setEditandoCatId] = useState(null);
+  const [salvandoCat, setSalvandoCat]   = useState(false);
 
   // ── filtros lançamentos ────────────────────────────────────────────────────
   const [filtroTipo, setFiltroTipo]       = useState('todos');
@@ -193,6 +200,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
           valor_mensalidade: obj.valor_mensalidade || '50.00',
           dia_vencimento: obj.dia_vencimento || '10',
         });
+        if (obj.nome_grupo) setNomeGrupo(obj.nome_grupo);
       }
     } catch (err) {
       mostrarMsg('erro', 'Erro ao carregar dados: ' + err.message);
@@ -443,6 +451,45 @@ export const FinanceiroCunhadas = ({ userData }) => {
   const fecharModalLancamento = () => { setModalAberto(false); setEditandoId(null); setForm(FORM_VAZIO); };
   const mostrarMsg = (tipo, texto) => { setMsg({ tipo, texto }); setTimeout(() => setMsg({ tipo: '', texto: '' }), 4000); };
 
+  // ─── Categorias ───────────────────────────────────────────────────────────
+  const abrirNovaCat = () => { setCatForm({ nome: '', tipo: 'ambos' }); setEditandoCatId(null); setModalCat(true); };
+  const abrirEditarCat = (cat) => { setCatForm({ nome: cat.nome, tipo: cat.tipo }); setEditandoCatId(cat.id); setModalCat(true); };
+  const fecharModalCat = () => { setModalCat(false); setEditandoCatId(null); setCatForm({ nome: '', tipo: 'ambos' }); };
+
+  const salvarCategoria = async () => {
+    if (!catForm.nome.trim()) { mostrarMsg('erro', 'Nome obrigatório.'); return; }
+    setSalvandoCat(true);
+    try {
+      if (editandoCatId) {
+        const { error } = await supabase.from('categorias_financeiras_cunhadas').update({ nome: catForm.nome, tipo: catForm.tipo }).eq('id', editandoCatId);
+        if (error) throw error;
+        mostrarMsg('sucesso', 'Categoria atualizada!');
+      } else {
+        const { error } = await supabase.from('categorias_financeiras_cunhadas').insert([{ nome: catForm.nome, tipo: catForm.tipo, ativo: true }]);
+        if (error) throw error;
+        mostrarMsg('sucesso', 'Categoria criada!');
+      }
+      fecharModalCat();
+      carregarTudo();
+    } catch (err) {
+      mostrarMsg('erro', 'Erro: ' + err.message);
+    } finally {
+      setSalvandoCat(false);
+    }
+  };
+
+  const excluirCategoria = async (id) => {
+    if (!window.confirm('Excluir esta categoria?')) return;
+    try {
+      const { error } = await supabase.from('categorias_financeiras_cunhadas').update({ ativo: false }).eq('id', id);
+      if (error) throw error;
+      mostrarMsg('sucesso', 'Categoria removida!');
+      carregarTudo();
+    } catch (err) {
+      mostrarMsg('erro', 'Erro: ' + err.message);
+    }
+  };
+
   // ─── Toggle seleção cunhadas no lote ──────────────────────────────────────
   const toggleCunhadaLote = (id) => {
     setFormLote((prev) => ({
@@ -456,6 +503,51 @@ export const FinanceiroCunhadas = ({ userData }) => {
   // ═══════════════════════════════════════════════════════════════════════════
   // RENDER ABAS
   // ═══════════════════════════════════════════════════════════════════════════
+
+  const renderCategorias = () => {
+    const tipoLabel = { receita: '📈 Receita', despesa: '📉 Despesa', ambos: '🔀 Ambos' };
+    const tipoColor = { receita: '#10b981', despesa: '#ef4444', ambos: 'var(--color-accent)' };
+
+    return (
+      <div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+          <div>
+            <p style={{ margin: 0, fontWeight: '700', color: 'var(--color-text)' }}>Categorias Financeiras</p>
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{categorias.length} categoria(s) ativa(s)</p>
+          </div>
+          <button style={s.btnPrimary('var(--color-accent)')} onClick={abrirNovaCat}>＋ Nova Categoria</button>
+        </div>
+
+        {categorias.length === 0 ? (
+          <div style={{ ...s.card, textAlign: 'center', padding: '3rem' }}>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: '1rem' }}>Nenhuma categoria cadastrada.</p>
+            <button style={s.btnPrimary('var(--color-accent)')} onClick={abrirNovaCat}>＋ Criar primeira categoria</button>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
+            {categorias.map((cat) => (
+              <div key={cat.id} style={{ ...s.card, padding: '1.25rem', borderLeft: `4px solid ${tipoColor[cat.tipo] || 'var(--color-border)'}` }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <p style={{ margin: '0 0 0.35rem', fontWeight: '700', fontSize: '0.95rem', color: 'var(--color-text)' }}>{cat.nome}</p>
+                    <span style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: '600', background: `${tipoColor[cat.tipo]}22`, color: tipoColor[cat.tipo] }}>
+                      {tipoLabel[cat.tipo]}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                    <button onClick={() => abrirEditarCat(cat)}
+                      style={{ padding: '0.3rem 0.6rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', cursor: 'pointer' }}>✏️</button>
+                    <button onClick={() => excluirCategoria(cat.id)}
+                      style={{ padding: '0.3rem 0.6rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', cursor: 'pointer' }}>🗑</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const renderDashboard = () => (
     <div>
@@ -754,7 +846,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--color-text)', margin: 0 }}>💰 Financeiro</h1>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>Portal das Cunhadas</p>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>{nomeGrupo}</p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           {[
@@ -762,6 +854,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
             { id: 'lancamentos',  label: '📝 Lançamentos' },
             { id: 'mensalidades', label: '📋 Mensalidades' },
             { id: 'extrato',      label: '📄 Extrato' },
+            { id: 'categorias',   label: '🏷️ Categorias' },
           ].map((a) => (
             <button key={a.id} style={s.navBtn(aba === a.id)} onClick={() => setAba(a.id)}>{a.label}</button>
           ))}
@@ -779,6 +872,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
           {aba === 'lancamentos'  && renderLancamentos()}
           {aba === 'mensalidades' && renderMensalidades()}
           {aba === 'extrato'      && renderExtrato()}
+          {aba === 'categorias'   && renderCategorias()}
         </>
       )}
 
@@ -794,13 +888,38 @@ export const FinanceiroCunhadas = ({ userData }) => {
             </div>
             <div style={s.mBody}>
               {/* Seletor tipo */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                 {['receita', 'despesa'].map((t) => (
                   <button key={t} onClick={() => setForm({ ...form, tipo: t })}
-                    style={{ padding: '0.65rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: form.tipo === t ? (t === 'receita' ? '#10b981' : '#ef4444') : 'var(--color-border)', background: form.tipo === t ? (t === 'receita' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)') : 'transparent', color: form.tipo === t ? (t === 'receita' ? '#10b981' : '#ef4444') : 'var(--color-text-muted)', fontWeight: '700', cursor: 'pointer' }}>
+                    style={{ padding: '0.65rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: form.tipo === t ? (t === 'receita' ? '#10b981' : '#ef4444') : 'var(--color-border)', background: form.tipo === t ? (t === 'receita' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)') : 'var(--color-surface-2)', color: form.tipo === t ? (t === 'receita' ? '#10b981' : '#ef4444') : 'var(--color-text-muted)', fontWeight: '700', cursor: 'pointer' }}>
                     {t === 'receita' ? '📈 Receita' : '📉 Despesa'}
                   </button>
                 ))}
+              </div>
+
+              {/* Destino: grupo ou cunhada individual */}
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Lançamento para
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <button type="button"
+                    onClick={() => setForm({ ...form, cunhada_id: '' })}
+                    style={{ padding: '0.55rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: !form.cunhada_id ? 'var(--color-accent)' : 'var(--color-border)', background: !form.cunhada_id ? 'var(--color-accent-bg)' : 'var(--color-surface-2)', color: !form.cunhada_id ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: !form.cunhada_id ? '700' : '400', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    🌸 {nomeGrupo} (geral)
+                  </button>
+                  <button type="button"
+                    onClick={() => setForm({ ...form, cunhada_id: form.cunhada_id || (cunhadas[0]?.id || '') })}
+                    style={{ padding: '0.55rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: form.cunhada_id ? 'var(--color-accent)' : 'var(--color-border)', background: form.cunhada_id ? 'var(--color-accent-bg)' : 'var(--color-surface-2)', color: form.cunhada_id ? 'var(--color-accent)' : 'var(--color-text-muted)', fontWeight: form.cunhada_id ? '700' : '400', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    👤 Cunhada individual
+                  </button>
+                </div>
+                {form.cunhada_id !== undefined && form.cunhada_id !== '' && (
+                  <select style={{ ...s.select, marginTop: '0.5rem' }} value={form.cunhada_id} onChange={(e) => setForm({ ...form, cunhada_id: e.target.value })}>
+                    <option value="">— Selecione a cunhada —</option>
+                    {cunhadas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                  </select>
+                )}
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -818,12 +937,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
                     ))}
                   </select>
                 </Campo>
-                <Campo label="Cunhada">
-                  <select style={s.select} value={form.cunhada_id} onChange={(e) => setForm({ ...form, cunhada_id: e.target.value })}>
-                    <option value="">— Geral (todas) —</option>
-                    {cunhadas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
-                </Campo>
+
                 <Campo label="Data do lançamento">
                   <input type="date" style={s.input} value={form.data_lancamento} onChange={(e) => setForm({ ...form, data_lancamento: e.target.value })} />
                 </Campo>
@@ -917,7 +1031,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
                 <div style={{ border: '2px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1rem', maxHeight: '200px', overflowY: 'auto', background: 'var(--color-surface-2)' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.5rem' }}>
                     {cunhadas.map((c) => (
-                      <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-md)', background: formLote.cunhadas_selecionadas.includes(c.id) ? 'var(--color-accent-bg)' : 'transparent', border: `1px solid ${formLote.cunhadas_selecionadas.includes(c.id) ? 'var(--color-accent)' : 'transparent'}` }}>
+                      <label key={c.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.4rem 0.6rem', borderRadius: 'var(--radius-md)', background: formLote.cunhadas_selecionadas.includes(c.id) ? 'var(--color-accent-bg)' : 'var(--color-surface-2)', border: `1px solid ${formLote.cunhadas_selecionadas.includes(c.id) ? 'var(--color-accent)' : 'var(--color-border)'}` }}>
                         <input type="checkbox" checked={formLote.cunhadas_selecionadas.includes(c.id)} onChange={() => toggleCunhadaLote(c.id)}
                           style={{ accentColor: 'var(--color-accent)' }} />
                         <span style={{ fontSize: '0.875rem', color: 'var(--color-text)', fontWeight: formLote.cunhadas_selecionadas.includes(c.id) ? '600' : '400' }}>{c.nome}</span>
@@ -1027,7 +1141,7 @@ export const FinanceiroCunhadas = ({ userData }) => {
                     <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-faint)' }}>Nenhum lançamento pendente no filtro atual.</p>
                   ) : (
                     lancamentosFiltrados.filter((l) => !l.pago).map((l) => (
-                      <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)', cursor: 'pointer', background: selecionadosQuitacao.includes(l.id) ? 'var(--color-accent-bg)' : 'transparent' }}>
+                      <label key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', borderBottom: '1px solid var(--color-border)', cursor: 'pointer', background: selecionadosQuitacao.includes(l.id) ? 'var(--color-accent-bg)' : 'var(--color-surface-2)' }}>
                         <input type="checkbox" checked={selecionadosQuitacao.includes(l.id)} onChange={() => toggleSelecionadoQuitacao(l.id)}
                           style={{ accentColor: 'var(--color-accent)', width: '1rem', height: '1rem' }} />
                         <div style={{ flex: 1, minWidth: 0 }}>
@@ -1107,6 +1221,47 @@ export const FinanceiroCunhadas = ({ userData }) => {
             <div style={s.mFoot}>
               <button style={s.btnSec} onClick={() => setModalExcluir(null)}>Cancelar</button>
               <button style={s.btnPrimary('#ef4444')} onClick={confirmarExcluir}>Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL CATEGORIA ──────────────────────────────────────────────────── */}
+      {modalCat && (
+        <div style={s.overlay} onClick={(e) => e.target === e.currentTarget && fecharModalCat()}>
+          <div style={{ ...s.modal, maxWidth: '420px' }}>
+            <div style={s.mHead}>
+              <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '700', color: 'var(--color-text)' }}>
+                🏷️ {editandoCatId ? 'Editar' : 'Nova'} Categoria
+              </h2>
+              <button onClick={fecharModalCat} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+            </div>
+            <div style={s.mBody}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <Campo label="Nome da categoria *">
+                  <input style={s.input} value={catForm.nome} onChange={(e) => setCatForm({ ...catForm, nome: e.target.value })} placeholder="Ex: Mensalidade, Evento, Material..." />
+                </Campo>
+                <Campo label="Tipo">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                    {[
+                      { value: 'receita', label: '📈 Receita', cor: '#10b981' },
+                      { value: 'despesa', label: '📉 Despesa', cor: '#ef4444' },
+                      { value: 'ambos',   label: '🔀 Ambos',   cor: 'var(--color-accent)' },
+                    ].map((t) => (
+                      <button key={t.value} type="button" onClick={() => setCatForm({ ...catForm, tipo: t.value })}
+                        style={{ padding: '0.55rem', borderRadius: 'var(--radius-lg)', border: '2px solid', borderColor: catForm.tipo === t.value ? t.cor : 'var(--color-border)', background: catForm.tipo === t.value ? `${t.cor}22` : 'var(--color-surface-2)', color: catForm.tipo === t.value ? t.cor : 'var(--color-text-muted)', fontWeight: catForm.tipo === t.value ? '700' : '400', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </Campo>
+              </div>
+            </div>
+            <div style={s.mFoot}>
+              <button style={s.btnSec} onClick={fecharModalCat} disabled={salvandoCat}>Cancelar</button>
+              <button style={s.btnPrimary('var(--color-accent)')} onClick={salvarCategoria} disabled={salvandoCat}>
+                {salvandoCat ? '⏳...' : editandoCatId ? '💾 Salvar' : '＋ Criar'}
+              </button>
             </div>
           </div>
         </div>
