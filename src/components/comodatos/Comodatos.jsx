@@ -72,21 +72,21 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
     if (card.success)  return { background: 'linear-gradient(135deg, #10b981, #16a34a)' };
     if (card.muted)    return { background: 'linear-gradient(135deg, #6b7280, #475569)' };
     // accent: usa gradiente do tema
-    return { background: 'linear-gradient(135deg, var(--gradient-from), var(--gradient-to))' };
+    return { background: 'linear-gradient(135deg, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))' };
   };
 
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="card-header rounded-xl shadow-xl p-8">
+      <div className="card">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold mb-2">♿ Controle de Comodatos</h1>
-            <p style={{ opacity: 0.85 }} className="text-lg">
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>♿ Controle de Comodatos</h1>
+            <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
               Gestão de Empréstimos de Equipamentos de Assistência
             </p>
           </div>
-          <div className="text-7xl" style={{ opacity: 0.2 }}>🦽</div>
+          <div className="text-5xl" style={{ opacity: 0.3 }}>🦽</div>
         </div>
       </div>
 
