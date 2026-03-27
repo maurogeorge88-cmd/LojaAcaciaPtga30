@@ -128,6 +128,12 @@ export const FinanceiroCunhadas=({userData})=>{
         supabase.from('configuracoes_cunhadas').select('*'),
       ]);
       setTodos(lanc||[]);setMensalidades(mens||[]);setCunhadas(cunh||[]);setCategorias(cats||[]);
+      // DEBUG TEMPORÁRIO
+      console.log('=== DEBUG MENSALIDADES ===');
+      console.log('Total registros:', (mens||[]).length);
+      (mens||[]).slice(0,5).forEach(m=>console.log('  registro:', JSON.stringify({id:m.id,cunhada_id:m.cunhada_id,mes:m.mes,ano:m.ano,pago:m.pago,tipo_mes:typeof m.mes,tipo_ano:typeof m.ano,tipo_cid:typeof m.cunhada_id})));
+      console.log('=== DEBUG CUNHADAS ===');
+      (cunh||[]).slice(0,3).forEach(c=>console.log('  cunhada:', JSON.stringify({id:c.id,nome:c.nome,tipo_id:typeof c.id})));
       if(cfgs){const o={};cfgs.forEach(c=>o[c.chave]=c.valor);setConfig(o);setCfgForm({valor_mensalidade:o.valor_mensalidade||'50.00',dia_vencimento:o.dia_vencimento||'10'});if(o.nome_grupo)setNomeGrupo(o.nome_grupo);}
     }catch(e){showMsg('erro','Erro: '+e.message);}finally{setLoading(false);}
   },[]);
@@ -513,6 +519,15 @@ export const FinanceiroCunhadas=({userData})=>{
       const k=`${String(m.cunhada_id).trim()}-${parseInt(m.mes)}-${parseInt(m.ano)}`;
       idxMens[k]=m.pago;
     });
+    console.log('=== DEBUG MATRIX ===');
+    console.log('idxMens keys:', Object.keys(idxMens).slice(0,10));
+    console.log('colsMatrix:', colsMatrix.slice(0,6));
+    console.log('cunhadas na matrix:', cunhadas.slice(0,3).map(c=>({id:c.id,nome:c.nome})));
+    if(cunhadas.length>0&&colsMatrix.length>0){
+      const tc=cunhadas[0];const tcol=colsMatrix[0];
+      const tk=`${String(tc.id).trim()}-${parseInt(tcol.mes)}-${parseInt(tcol.ano)}`;
+      console.log('Teste lookup primeira cunhada/col:', tk, '→', idxMens[tk], '| in idxMens:', tk in idxMens);
+    }
 
     return(
     <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
