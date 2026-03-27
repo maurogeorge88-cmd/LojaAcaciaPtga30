@@ -132,10 +132,29 @@ export const CadastroCunhadas = ({ userData }) => {
       mostrarMensagem('erro', 'O nome é obrigatório.');
       return;
     }
+
+    // Verifica CPF duplicado apenas se preenchido
+    const cpfLimpo = form.cpf.replace(/\D/g, '');
+    if (cpfLimpo) {
+      let q = supabase.from('cunhadas').select('id').eq('cpf', form.cpf);
+      if (editandoId) q = q.neq('id', editandoId);
+      const { data: dup } = await q;
+      if (dup && dup.length > 0) {
+        mostrarMensagem('erro', 'Já existe uma cunhada com este CPF.');
+        return;
+      }
+    }
+
     setSalvando(true);
     try {
       const payload = {
         ...form,
+        cpf: cpfLimpo ? form.cpf : null,
+        data_nascimento: form.data_nascimento || null,
+        telefone: form.telefone || null,
+        email: form.email || null,
+        endereco: form.endereco || null,
+        observacoes: form.observacoes || null,
       };
 
       if (editandoId) {
