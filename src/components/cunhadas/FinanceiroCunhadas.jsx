@@ -45,6 +45,22 @@ const Lbl=({l,ch,st})=>(
   </div>
 );
 
+
+// Renderiza options de categorias em ordem hierárquica com prefixo para subcategorias
+const renderOptsCategoria = (categorias, filtroTipo = '') => {
+  const lista = filtroTipo ? categorias.filter(c => c.tipo === filtroTipo) : categorias;
+  const principais = lista.filter(c => !c.categoria_pai_id).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const opts = [];
+  principais.forEach(pai => {
+    opts.push(<option key={pai.id} value={pai.id}>{pai.nome}</option>);
+    const filhos = lista.filter(c => String(c.categoria_pai_id) === String(pai.id)).sort((a,b)=>a.nome.localeCompare(b.nome));
+    filhos.forEach(filho => {
+      opts.push(<option key={filho.id} value={filho.id}>&nbsp;&nbsp;— {filho.nome}</option>);
+    });
+  });
+  return opts;
+};
+
 export const FinanceiroCunhadas=({userData})=>{
   const[aba,setAba]=useState('lancamentos');
   const[lancamentos,setLancamentos]=useState([]);
@@ -315,7 +331,7 @@ export const FinanceiroCunhadas=({userData})=>{
           <label style={lblStyle}>Categoria</label>
           <select style={selSm} value={filtros.categoria_id} onChange={e=>setFiltros({...filtros,categoria_id:e.target.value})}>
             <option value="">Todas</option>
-            {categorias.filter(c=>!filtros.tipo||c.tipo===filtros.tipo).map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+            {renderOptsCategoria(categorias, filtros.tipo)}
           </select>
         </div>
         {/* Status */}
@@ -586,7 +602,7 @@ export const FinanceiroCunhadas=({userData})=>{
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem'}}>
                 <Lbl l="Descrição *" st={{gridColumn:'1/-1'}} ch={<input style={s.inp} value={form.descricao} onChange={e=>setForm({...form,descricao:e.target.value})} placeholder="Ex: Mensalidade de março"/>}/>
                 <Lbl l="Valor (R$) *" ch={<input type="number" step="0.01" min="0" style={s.inp} value={form.valor} onChange={e=>setForm({...form,valor:e.target.value})} placeholder="0,00"/>}/>
-                <Lbl l="Categoria" ch={<select style={s.sel} value={form.categoria_id} onChange={e=>setForm({...form,categoria_id:e.target.value})}><option value="">— Selecione —</option>{categorias.filter(c=>c.tipo===form.tipo).map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}</select>}/>
+                <Lbl l="Categoria" ch={<select style={s.sel} value={form.categoria_id} onChange={e=>setForm({...form,categoria_id:e.target.value})}><option value="">— Selecione —</option>{renderOptsCategoria(categorias, form.tipo)}</select>}/>
                 <Lbl l="Data lançamento" ch={<input type="date" style={s.inp} value={form.data_lancamento} onChange={e=>setForm({...form,data_lancamento:e.target.value})}/>}/>
                 <Lbl l="Data vencimento" ch={<input type="date" style={s.inp} value={form.data_vencimento} onChange={e=>setForm({...form,data_vencimento:e.target.value})}/>}/>
                 <Lbl l="Forma pagamento" ch={<select style={s.sel} value={form.forma_pagamento} onChange={e=>setForm({...form,forma_pagamento:e.target.value})}><option value="">— Selecione —</option>{FPGTO.map(f=><option key={f.v} value={f.v}>{f.l}</option>)}</select>}/>
@@ -608,7 +624,7 @@ export const FinanceiroCunhadas=({userData})=>{
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'1rem',marginBottom:'1rem'}}>
                 <Lbl l="Descrição *" st={{gridColumn:'1/-1'}} ch={<input style={s.inp} value={fLote.descricao} onChange={e=>setFLote({...fLote,descricao:e.target.value})} placeholder="Ex: Mensalidade - Março/2025"/>}/>
                 <Lbl l="Valor por cunhada *" ch={<input type="number" step="0.01" min="0" style={s.inp} value={fLote.valor} onChange={e=>setFLote({...fLote,valor:e.target.value})} placeholder="0,00"/>}/>
-                <Lbl l="Categoria" ch={<select style={s.sel} value={fLote.categoria_id} onChange={e=>setFLote({...fLote,categoria_id:e.target.value})}><option value="">— Selecione —</option>{categorias.filter(c=>c.tipo==='receita').map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}</select>}/>
+                <Lbl l="Categoria" ch={<select style={s.sel} value={fLote.categoria_id} onChange={e=>setFLote({...fLote,categoria_id:e.target.value})}><option value="">— Selecione —</option>{renderOptsCategoria(categorias, 'receita')}</select>}/>
                 <Lbl l="Data lançamento" ch={<input type="date" style={s.inp} value={fLote.data_lancamento} onChange={e=>setFLote({...fLote,data_lancamento:e.target.value})}/>}/>
                 <Lbl l="Data vencimento" ch={<input type="date" style={s.inp} value={fLote.data_vencimento} onChange={e=>setFLote({...fLote,data_vencimento:e.target.value})}/>}/>
                 <Lbl l="Forma pagamento" ch={<select style={s.sel} value={fLote.forma_pagamento} onChange={e=>setFLote({...fLote,forma_pagamento:e.target.value})}><option value="">— Selecione —</option>{FPGTO.map(f=><option key={f.v} value={f.v}>{f.l}</option>)}</select>}/>
