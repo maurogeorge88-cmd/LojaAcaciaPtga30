@@ -122,7 +122,7 @@ export const FinanceiroCunhadas=({userData})=>{
     try{
       const[{data:lanc},{data:mens},{data:cunh},{data:cats},{data:cfgs}]=await Promise.all([
         supabase.from('financeiro_cunhadas').select('*,categoria:categorias_financeiras_cunhadas(nome,tipo),cunhada:cunhadas(nome)').order('data_lancamento',{ascending:false}),
-        supabase.from('mensalidades_cunhadas').select('*,cunhada:cunhadas(nome)').order('ano',{ascending:false}).order('mes',{ascending:false}),
+        supabase.from('mensalidades_cunhadas').select('id,cunhada_id,mes,ano,valor,pago,cunhada:cunhadas(nome)').order('ano',{ascending:false}).order('mes',{ascending:false}),
         supabase.from('cunhadas').select('id,nome').eq('ativa',true).order('nome'),
         supabase.from('categorias_financeiras_cunhadas').select('*').order('tipo').order('nome'),
         supabase.from('configuracoes_cunhadas').select('*'),
@@ -495,14 +495,13 @@ export const FinanceiroCunhadas=({userData})=>{
       // Modo padrão: meses com pelo menos 1 registro, do mais antigo ao atual
       const mesesComRegistro=new Set();
       mensalidades.forEach(m=>{
-        const key=`${m.ano}-${String(m.mes).padStart(2,'0')}`;
+        const key=`${parseInt(m.ano,10)}-${String(parseInt(m.mes,10)).padStart(2,'0')}`;
         const limAtual=`${anoAtual}-${String(mesAtual).padStart(2,'0')}`;
-        // Incluir até mês atual + meses futuros que já foram pagos (adiantados)
         if(key<=limAtual||m.pago)mesesComRegistro.add(key);
       });
       colsMatrix=[...mesesComRegistro].sort().map(k=>{
         const[y,m]=k.split('-');
-        return{mes:parseInt(m),ano:parseInt(y)};
+        return{mes:parseInt(m,10),ano:parseInt(y,10)};
       });
       // Se não há registros ainda, mostrar ao menos o mês atual
       if(!colsMatrix.length)colsMatrix=[{mes:mesAtual,ano:anoAtual}];
@@ -511,7 +510,7 @@ export const FinanceiroCunhadas=({userData})=>{
     // Índice rápido: cunhada_id+mes+ano → pago
     const idxMens={};
     mensalidades.forEach(m=>{
-      const k=`${m.cunhada_id}-${m.mes}-${m.ano}`;
+      const k=`${String(m.cunhada_id).trim()}-${parseInt(m.mes)}-${parseInt(m.ano)}`;
       idxMens[k]=m.pago;
     });
 
@@ -620,7 +619,7 @@ export const FinanceiroCunhadas=({userData})=>{
                         {nome}
                       </td>
                       {colsMatrix.map(col=>{
-                        const k=`${cunh.id}-${col.mes}-${col.ano}`;
+                        const k=`${String(cunh.id).trim()}-${parseInt(col.mes)}-${parseInt(col.ano)}`;
                         const temRegistro=k in idxMens;
                         const pago=idxMens[k];
                         // Mês futuro sem registro → —
@@ -944,8 +943,8 @@ export const FinanceiroCunhadas=({userData})=>{
                     const sel=pgAdiantForm.meses.includes(mes);
                     // Verificar se já está pago
                     const jaPago=mensalidades.some(m=>
-                      m.cunhada_id===pgAdiantForm.cunhada_id&&
-                      m.mes===mes&&m.ano===pgAdiantForm.ano&&m.pago
+                      String(m.cunhada_id)===String(pgAdiantForm.cunhada_id)&&
+                      parseInt(m.mes)===parseInt(mes)&&parseInt(m.ano)===parseInt(pgAdiantForm.ano)&&m.pago
                     );
                     return(
                       <button key={mes} type="button"
