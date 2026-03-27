@@ -225,7 +225,7 @@ export const FinanceiroCunhadas=({userData})=>{
   };
 
   const toggleMens=async(m)=>{
-    const{error}=await supabase.from('mensalidades_cunhadas').update({pago:!m.pago,data_pagamento:!m.pago?HOJE.toISOString().slice(0,10):null}).eq('id',m.id);
+    const{error}=await supabase.from('mensalidades_cunhadas').update({pago:!m.pago}).eq('id',m.id);
     if(!error)carregarTudo();
   };
 
@@ -287,14 +287,13 @@ export const FinanceiroCunhadas=({userData})=>{
     try{
       // Para cada mês selecionado: upsert em mensalidades_cunhadas com pago=true
       // Se já existe o registro, atualiza; senão cria
-      const hoje=HOJE.toISOString().slice(0,10);
       for(const mes of pgAdiantForm.meses){
         // Verificar se já existe
         const{data:exist}=await supabase.from('mensalidades_cunhadas')
           .select('id').eq('cunhada_id',pgAdiantForm.cunhada_id).eq('mes',mes).eq('ano',pgAdiantForm.ano);
         if(exist&&exist.length>0){
           await supabase.from('mensalidades_cunhadas')
-            .update({pago:true,data_pagamento:hoje})
+            .update({pago:true})
             .eq('id',exist[0].id);
         }else{
           await supabase.from('mensalidades_cunhadas').insert([{
@@ -303,7 +302,6 @@ export const FinanceiroCunhadas=({userData})=>{
             ano:pgAdiantForm.ano,
             valor:parseFloat(config.valor_mensalidade),
             pago:true,
-            data_pagamento:hoje,
           }]);
         }
       }
@@ -498,9 +496,9 @@ export const FinanceiroCunhadas=({userData})=>{
       const mesesComRegistro=new Set();
       mensalidades.forEach(m=>{
         const key=`${m.ano}-${String(m.mes).padStart(2,'0')}`;
-        // Incluir apenas até o mês atual
         const limAtual=`${anoAtual}-${String(mesAtual).padStart(2,'0')}`;
-        if(key<=limAtual)mesesComRegistro.add(key);
+        // Incluir até mês atual + meses futuros que já foram pagos (adiantados)
+        if(key<=limAtual||m.pago)mesesComRegistro.add(key);
       });
       colsMatrix=[...mesesComRegistro].sort().map(k=>{
         const[y,m]=k.split('-');
@@ -554,7 +552,7 @@ export const FinanceiroCunhadas=({userData})=>{
               </div>
               <p style={{margin:'0 0 0.15rem',fontWeight:'700',fontSize:'0.875rem',color:'var(--color-text)'}}>{m.cunhada?.nome}</p>
               <p style={{margin:'0 0 0.5rem',fontWeight:'700',color:m.pago?'#10b981':'#f59e0b'}}>{fmtM(m.valor)}</p>
-              {m.data_pagamento&&<p style={{margin:'0 0 0.5rem',fontSize:'0.7rem',color:'var(--color-text-faint)'}}>Pago em {fmtD(m.data_pagamento)}</p>}
+              
               <button onClick={()=>toggleMens(m)} style={{width:'100%',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'none',background:m.pago?'rgba(245,158,11,0.12)':'rgba(16,185,129,0.12)',color:m.pago?'#f59e0b':'#10b981',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>{m.pago?'↩ Desfazer':'✓ Marcar paga'}</button>
             </div>
           ))}
@@ -634,7 +632,7 @@ export const FinanceiroCunhadas=({userData})=>{
                             ):pago?(
                               <span title="Pago" style={{fontSize:'1.1rem',lineHeight:1}}>✅</span>
                             ):(
-                              <span title="Pendente" style={{fontSize:'1.1rem',lineHeight:1}}>❌</span>
+                              <span title="Pendente" style={{fontSize:'1.1rem',lineHeight:1}}>{isFuturo?'·':'❌'}</span>
                             )}
                           </td>
                         );
