@@ -646,16 +646,28 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-800">📦 Empréstimos</h2>
-        {permissoes?.pode_editar_comodatos && (
-          <button
-            onClick={() => setModalAberto(true)}
-            className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700"
-          >
-            ➕ Novo Empréstimo
-          </button>
-        )}
+      <div className="card">
+        <div className="flex justify-between items-center">
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+            📦 Empréstimos
+          </h2>
+          {permissoes?.pode_editar_comodatos && (
+            <button
+              onClick={() => setModalAberto(true)}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              ➕ Novo Empréstimo
+            </button>
+          )}
+        </div>
       </div>
 
       {/* FILTROS */}
@@ -664,11 +676,15 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           <button
             key={status}
             onClick={() => setFiltroStatus(status)}
-            className={`px-4 py-2 rounded-lg ${
-              filtroStatus === status
-                ? 'bg-emerald-600 text-white'
-                : 'bg-gray-200 text-gray-700'
-            }`}
+            style={{
+              padding: '0.5rem 1rem',
+              background: filtroStatus === status ? 'var(--color-accent)' : 'var(--color-surface-2)',
+              color: filtroStatus === status ? 'white' : 'var(--color-text)',
+              border: filtroStatus === status ? 'none' : '1px solid var(--color-border)',
+              borderRadius: '0.5rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
           >
             {status.toUpperCase()}
           </button>
@@ -678,39 +694,75 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       {/* LISTA DE EMPRÉSTIMOS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {emprestimosFiltrados.map(emp => (
-          <div key={emp.id} className="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500">
+          <div key={emp.id} className="card" style={{ borderLeft: '4px solid var(--color-accent)' }}>
             <div className="flex flex-col gap-2 mb-3">
               <div className="flex justify-between items-start">
-                <h3 className="font-bold text-base">{emp.beneficiarios?.nome}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-                  emp.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
+                <h3 className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
+                  {emp.beneficiarios?.nome}
+                </h3>
+                <span style={{
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  background: emp.status === 'ativo' ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
+                  color: emp.status === 'ativo' ? 'var(--color-success)' : 'var(--color-text-secondary)'
+                }}>
                   {emp.status?.toUpperCase()}
                 </span>
               </div>
-              <p className="text-xs text-gray-600">CPF: {emp.beneficiarios?.cpf}</p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+                CPF: {emp.beneficiarios?.cpf}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
                 Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
               </p>
               {permissoes?.pode_editar_comodatos && (
                 <div className="flex gap-1 mt-2">
                   <button
                     onClick={() => gerarTermo(emp)}
-                    className="flex-1 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                    style={{
+                      flex: 1,
+                      padding: '0.25rem 0.5rem',
+                      background: 'var(--color-accent)',
+                      color: 'white',
+                      fontSize: '0.75rem',
+                      border: 'none',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer'
+                    }}
                     title="Gerar Termo de Comodato"
                   >
                     📄 Termo
                   </button>
                   <button
                     onClick={() => abrirEdicao(emp)}
-                    className="flex-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                    style={{
+                      flex: 1,
+                      padding: '0.25rem 0.5rem',
+                      background: 'var(--color-info)',
+                      color: 'white',
+                      fontSize: '0.75rem',
+                      border: 'none',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer'
+                    }}
                     title="Editar empréstimo"
                   >
                     ✏️ Editar
                   </button>
                   <button
                     onClick={() => excluirEmprestimo(emp)}
-                    className="flex-1 px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                    style={{
+                      flex: 1,
+                      padding: '0.25rem 0.5rem',
+                      background: 'var(--color-danger)',
+                      color: 'white',
+                      fontSize: '0.75rem',
+                      border: 'none',
+                      borderRadius: '0.25rem',
+                      cursor: 'pointer'
+                    }}
                     title="Excluir empréstimo"
                   >
                     🗑️ Excluir
@@ -721,35 +773,52 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
             {/* ITENS DO EMPRÉSTIMO */}
             <div className="space-y-1">
-              <p className="font-semibold text-xs text-gray-700 mb-1">Equipamentos:</p>
+              <p className="font-semibold text-xs mb-1" style={{ color: 'var(--color-text)' }}>
+                Equipamentos:
+              </p>
               {emp.itens?.map(item => (
                 <div
                   key={item.id}
-                  className={`p-2 rounded ${
-                    item.status === 'devolvido' ? 'bg-gray-100' : 'bg-emerald-50'
-                  }`}
+                  style={{
+                    padding: '0.5rem',
+                    borderRadius: '0.25rem',
+                    background: item.status === 'devolvido' ? 'var(--color-surface-2)' : 'var(--color-success-bg)'
+                  }}
                 >
                   <div className="flex justify-between items-start gap-2 mb-1">
-                    <p className="text-xs font-medium flex-1">
+                    <p className="text-xs font-medium flex-1" style={{ color: 'var(--color-text)' }}>
                       {item.equipamentos?.numero_patrimonio} - {item.equipamentos?.tipos_equipamentos?.nome}
                     </p>
-                    <span className={`px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap ${
-                      item.status === 'emprestado'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-gray-200 text-gray-700'
-                    }`}>
+                    <span style={{
+                      padding: '0.125rem 0.5rem',
+                      borderRadius: '0.25rem',
+                      fontSize: '0.75rem',
+                      fontWeight: '700',
+                      background: item.status === 'emprestado' ? 'var(--color-warning-bg)' : 'var(--color-surface-2)',
+                      color: item.status === 'emprestado' ? 'var(--color-warning)' : 'var(--color-text-secondary)'
+                    }}>
                       {item.status === 'emprestado' ? '🔄' : '✅'}
                     </span>
                   </div>
                   {item.status === 'devolvido' && item.data_devolucao_real && (
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
                       Devolvido: {new Date(item.data_devolucao_real).toLocaleDateString()}
                     </p>
                   )}
                   {item.status === 'emprestado' && permissoes?.pode_editar_comodatos && (
                     <button
                       onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
-                      className="w-full mt-1 px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                      style={{
+                        width: '100%',
+                        marginTop: '0.25rem',
+                        padding: '0.25rem 0.5rem',
+                        background: 'var(--color-info)',
+                        color: 'white',
+                        fontSize: '0.75rem',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer'
+                      }}
                     >
                       Devolver
                     </button>
@@ -769,109 +838,169 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
       {/* MODAL NOVO EMPRÉSTIMO */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h3 className="text-xl font-bold mb-4">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem',
+          zIndex: 9999
+        }}>
+          <div className="card" style={{
+            maxWidth: '42rem',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            margin: 0
+          }}>
+            <div className="card-header">
+              <h3 className="text-xl font-bold">
                 {editando ? '✏️ Editar Empréstimo' : '📦 Novo Empréstimo'}
               </h3>
-              <form onSubmit={salvarEmprestimo} className="space-y-4">
-                {/* Beneficiário */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Beneficiário *</label>
-                  <select
-                    value={form.beneficiario_id}
-                    onChange={(e) => setForm({...form, beneficiario_id: e.target.value})}
-                    className="w-full border rounded p-2"
-                    required
-                  >
-                    <option value="">Selecione...</option>
-                    {beneficiarios.map(ben => (
-                      <option key={ben.id} value={ben.id}>
-                        {ben.nome} - {ben.cpf}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Data Empréstimo */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Data Empréstimo *</label>
-                  <input
-                    type="date"
-                    value={form.data_emprestimo}
-                    onChange={(e) => setForm({...form, data_emprestimo: e.target.value})}
-                    className="w-full border rounded p-2"
-                    required
-                  />
-                </div>
-
-                {/* Data Devolução Prevista */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Devolução Prevista</label>
-                  <input
-                    type="date"
-                    value={form.data_devolucao_prevista}
-                    onChange={(e) => setForm({...form, data_devolucao_prevista: e.target.value})}
-                    className="w-full border rounded p-2"
-                  />
-                </div>
-
-                {/* EQUIPAMENTOS - MÚLTIPLA SELEÇÃO */}
-                <div className="border rounded p-3 bg-gray-50">
-                  <label className="block text-sm font-medium mb-2">
-                    Equipamentos * ({equipamentosSelecionados.length} selecionados)
-                  </label>
-                  <div className="max-h-48 overflow-y-auto space-y-1">
-                    {equipamentos.length === 0 ? (
-                      <p className="text-sm text-gray-500">Nenhum equipamento disponível</p>
-                    ) : (
-                      equipamentos.map(eq => (
-                        <label key={eq.id} className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={equipamentosSelecionados.includes(eq.id)}
-                            onChange={() => toggleEquipamento(eq.id)}
-                            className="w-4 h-4"
-                          />
-                          <span className="text-sm">
-                            {eq.numero_patrimonio} - {eq.tipos_equipamentos?.nome}
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                </div>
-
-                {/* Observações */}
-                <div>
-                  <label className="block text-sm font-medium mb-1">Observações</label>
-                  <textarea
-                    value={form.observacoes_entrega}
-                    onChange={(e) => setForm({...form, observacoes_entrega: e.target.value})}
-                    className="w-full border rounded p-2"
-                    rows="3"
-                  />
-                </div>
-
-                {/* Botões */}
-                <div className="flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={fecharModal}
-                    className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700"
-                  >
-                    Salvar
-                  </button>
-                </div>
-              </form>
             </div>
+            
+            <form onSubmit={salvarEmprestimo} style={{
+              padding: '1.5rem',
+              flex: 1,
+              overflowY: 'auto'
+            }}>
+              {/* Beneficiário */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Beneficiário *</label>
+                <select
+                  value={form.beneficiario_id}
+                  onChange={(e) => setForm({...form, beneficiario_id: e.target.value})}
+                  className="form-input"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {beneficiarios.map(ben => (
+                    <option key={ben.id} value={ben.id}>
+                      {ben.nome} - {ben.cpf}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Data Empréstimo */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Data Empréstimo *</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={form.data_emprestimo}
+                  onChange={(e) => setForm({...form, data_emprestimo: e.target.value})}
+                  required
+                />
+              </div>
+
+              {/* Data Devolução Prevista */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Devolução Prevista</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={form.data_devolucao_prevista}
+                  onChange={(e) => setForm({...form, data_devolucao_prevista: e.target.value})}
+                />
+              </div>
+
+              {/* EQUIPAMENTOS - MÚLTIPLA SELEÇÃO */}
+              <div style={{
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                padding: '0.75rem',
+                background: 'var(--color-surface-2)',
+                marginBottom: '1rem'
+              }}>
+                <label className="form-label" style={{ marginBottom: '0.5rem' }}>
+                  Equipamentos * ({equipamentosSelecionados.length} selecionados)
+                </label>
+                <div style={{ maxHeight: '12rem', overflowY: 'auto' }} className="space-y-1">
+                  {equipamentos.length === 0 ? (
+                    <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      Nenhum equipamento disponível
+                    </p>
+                  ) : (
+                    equipamentos.map(eq => (
+                      <label key={eq.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '0.5rem',
+                        borderRadius: '0.25rem',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface-3)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={equipamentosSelecionados.includes(eq.id)}
+                          onChange={() => toggleEquipamento(eq.id)}
+                          style={{ width: '1rem', height: '1rem' }}
+                        />
+                        <span className="text-sm" style={{ color: 'var(--color-text)' }}>
+                          {eq.numero_patrimonio} - {eq.tipos_equipamentos?.nome}
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">Observações</label>
+                <textarea
+                  className="form-input"
+                  value={form.observacoes_entrega}
+                  onChange={(e) => setForm({...form, observacoes_entrega: e.target.value})}
+                  rows="3"
+                />
+              </div>
+
+              {/* Botões */}
+              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)' }}>
+                <button
+                  type="button"
+                  onClick={fecharModal}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-surface-3)',
+                    color: 'var(--color-text)',
+                    border: '1px solid var(--color-border)',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: 'var(--color-accent)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '0.5rem',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Salvar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
