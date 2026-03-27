@@ -276,60 +276,66 @@ export const FinanceiroCunhadas=({userData})=>{
   );
 
   // ── FILTROS ─────────────────────────────────────────────────────────────────
-  const Filtros=()=>(
-    <div style={{...s.card,padding:'1rem',marginBottom:'1rem'}}>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(6,1fr)',gap:'0.65rem',alignItems:'end'}}>
+  const Filtros=()=>{
+    const lblStyle={display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'};
+    const navStyle={display:'flex',alignItems:'center',gap:'0.25rem'};
+    const navBtnSm={padding:'0 0.45rem',height:'2.25rem',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',color:'var(--color-text)',cursor:'pointer',fontSize:'0.9rem',fontWeight:'700',flexShrink:0};
+    const inpSm={...s.inp,textAlign:'center',cursor:'default',padding:'0.5rem 0.35rem',minWidth:0};
+    const selSm={...s.sel,padding:'0.5rem 0.35rem',minWidth:0};
+    return(
+    <div style={{...s.card,padding:'0.85rem 1rem',marginBottom:'1rem'}}>
+      <div style={{display:'grid',gridTemplateColumns:'auto auto 1fr 1.4fr 1fr 1.4fr',gap:'0.65rem',alignItems:'end'}}>
         {/* Mês */}
         <div>
-          <label style={{display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'}}>Mês</label>
-          <input readOnly value={MESES[filtros.mes-1]} style={{...s.inp,textAlign:'center',cursor:'default'}}/>
-          <div style={{display:'flex',gap:'0.25rem',marginTop:'0.3rem'}}>
-            <button style={s.ab} onClick={()=>navMes(-1)}>‹</button>
-            <button style={s.ab} onClick={()=>navMes(1)}>›</button>
+          <label style={lblStyle}>Mês</label>
+          <div style={navStyle}>
+            <button style={navBtnSm} onClick={()=>navMes(-1)}>‹</button>
+            <input readOnly value={MESES[filtros.mes-1]} style={{...inpSm,width:'90px'}}/>
+            <button style={navBtnSm} onClick={()=>navMes(1)}>›</button>
           </div>
         </div>
         {/* Ano */}
         <div>
-          <label style={{display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'}}>Ano</label>
-          <input readOnly value={filtros.ano} style={{...s.inp,textAlign:'center',cursor:'default'}}/>
-          <div style={{display:'flex',gap:'0.25rem',marginTop:'0.3rem'}}>
-            <button style={s.ab} onClick={()=>setFiltros({...filtros,ano:filtros.ano-1})}>‹</button>
-            <button style={s.ab} onClick={()=>setFiltros({...filtros,ano:filtros.ano+1})}>›</button>
+          <label style={lblStyle}>Ano</label>
+          <div style={navStyle}>
+            <button style={navBtnSm} onClick={()=>setFiltros({...filtros,ano:filtros.ano-1})}>‹</button>
+            <input readOnly value={filtros.ano} style={{...inpSm,width:'58px'}}/>
+            <button style={navBtnSm} onClick={()=>setFiltros({...filtros,ano:filtros.ano+1})}>›</button>
           </div>
         </div>
         {/* Tipo */}
         <div>
-          <label style={{display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'}}>Tipo</label>
-          <select style={s.sel} value={filtros.tipo} onChange={e=>setFiltros({...filtros,tipo:e.target.value,categoria_id:''})}>
+          <label style={lblStyle}>Tipo</label>
+          <select style={selSm} value={filtros.tipo} onChange={e=>setFiltros({...filtros,tipo:e.target.value,categoria_id:''})}>
             <option value="">Todos</option><option value="receita">📈 Receita</option><option value="despesa">📉 Despesa</option>
           </select>
         </div>
         {/* Categoria */}
         <div>
-          <label style={{display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'}}>Categoria</label>
-          <select style={s.sel} value={filtros.categoria_id} onChange={e=>setFiltros({...filtros,categoria_id:e.target.value})}>
+          <label style={lblStyle}>Categoria</label>
+          <select style={selSm} value={filtros.categoria_id} onChange={e=>setFiltros({...filtros,categoria_id:e.target.value})}>
             <option value="">Todas</option>
             {categorias.filter(c=>!filtros.tipo||c.tipo===filtros.tipo).map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
         </div>
         {/* Status */}
         <div>
-          <label style={{display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'}}>Status</label>
-          <select style={s.sel} value={filtros.status} onChange={e=>setFiltros({...filtros,status:e.target.value})}>
+          <label style={lblStyle}>Status</label>
+          <select style={selSm} value={filtros.status} onChange={e=>setFiltros({...filtros,status:e.target.value})}>
             <option value="">Todos</option><option value="pago">✓ Pago</option><option value="pendente">⏳ Pendente</option>
           </select>
         </div>
         {/* Cunhada */}
         <div>
-          <label style={{display:'block',fontSize:'0.68rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.25rem'}}>Cunhada</label>
-          <select style={s.sel} value={filtros.cunhada_id} onChange={e=>setFiltros({...filtros,cunhada_id:e.target.value})}>
+          <label style={lblStyle}>Cunhada</label>
+          <select style={selSm} value={filtros.cunhada_id} onChange={e=>setFiltros({...filtros,cunhada_id:e.target.value})}>
             <option value="">Todas</option>
             {cunhadas.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
         </div>
       </div>
     </div>
-  );
+  );};
 
   // ── TABELA LANÇAMENTOS ──────────────────────────────────────────────────────
   const Tabela=()=>(
