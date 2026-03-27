@@ -76,6 +76,15 @@ export const FinanceiroCunhadas=({userData})=>{
   const[filtros,setFiltros]=useState({mes:HOJE.getMonth()+1,ano:HOJE.getFullYear(),tipo:'',categoria_id:'',status:'',cunhada_id:''});
   const[mesMens,setMesMens]=useState(HOJE.getMonth()+1);
   const[anoMens,setAnoMens]=useState(HOJE.getFullYear());
+
+  // ── pagamento adiantado ────────────────────────────────────────────────────
+  const[mPgAdiant,setMPgAdiant]=useState(false);
+  const[pgAdiantForm,setPgAdiantForm]=useState({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
+  const[salvPgAdiant,setSalvPgAdiant]=useState(false);
+
+  // ── matrix ────────────────────────────────────────────────────────────────
+  const[matrixAno,setMatrixAno]=useState(HOJE.getFullYear());
+  const[matrixModoAno,setMatrixModoAno]=useState(false);
   // modais lançamento
   const[mAberto,setMAberto]=useState(false);
   const[editId,setEditId]=useState(null);
@@ -255,7 +264,63 @@ export const FinanceiroCunhadas=({userData})=>{
     if(error)showMsg('erro','Erro');else{showMsg('sucesso','Removida.');carregarTudo();}
   };
 
-  const togCunh=id=>setFLote(p=>({...p,cunhadas_selecionadas:p.cunhadas_selecionadas.includes(id)?p.cunhadas_selecionadas.filter(x=>x!==id):[...p.cunhadas_selecionadas,id]}));
+  // ── Nome abreviado para matrix ───────────────────────────────────────────
+  const PREPS=new Set(['de','da','do','dos','das','e','em','por','com','a','o','as','os']);
+  const abreviaNome=(nome)=>{
+    if(!nome)return'';
+    const partes=nome.trim().split(/\s+/);
+    if(partes.length<=2)return partes.join(' ');
+    const ultimo=partes[partes.length-1];
+    const primeiros=[];
+    for(const p of partes.slice(0,-1)){
+      if(!PREPS.has(p.toLowerCase()))primeiros.push(p);
+      if(primeiros.length===2)break;
+    }
+    return [...primeiros,ultimo].join(' ');
+  };
+
+  // ── Salvar pagamento adiantado ────────────────────────────────────────────
+  const salvarPgAdiant=async()=>{
+    if(!pgAdiantForm.cunhada_id){showMsg('erro','Selecione a cunhada.');return;}
+    if(!pgAdiantForm.meses.length){showMsg('erro','Selecione ao menos um mês.');return;}
+    setSalvPgAdiant(true);
+    try{
+      // Para cada mês selecionado: upsert em mensalidades_cunhadas com pago=true
+      // Se já existe o registro, atualiza; senão cria
+      const hoje=HOJE.toISOString().slice(0,10);
+      for(const mes of pgAdiantForm.meses){
+        // Verificar se já existe
+        const{data:exist}=await supabase.from('mensalidades_cunhadas')
+          .select('id').eq('cunhada_id',pgAdiantForm.cunhada_id).eq('mes',mes).eq('ano',pgAdiantForm.ano);
+        if(exist&&exist.length>0){
+          await supabase.from('mensalidades_cunhadas')
+            .update({pago:true,data_pagamento:hoje})
+            .eq('id',exist[0].id);
+        }else{
+          await supabase.from('mensalidades_cunhadas').insert([{
+            cunhada_id:pgAdiantForm.cunhada_id,
+            mes,
+            ano:pgAdiantForm.ano,
+            valor:parseFloat(config.valor_mensalidade),
+            pago:true,
+            data_pagamento:hoje,
+          }]);
+        }
+      }
+      showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s) como pagos!`);
+      setMPgAdiant(false);
+      setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
+      carregarTudo();
+    }catch(e){showMsg('erro','Erro: '+e.message);}
+    finally{setSalvPgAdiant(false);}
+  };
+
+  const togMesPgAdiant=(mes)=>setPgAdiantForm(p=>({
+    ...p,
+    meses:p.meses.includes(mes)?p.meses.filter(m=>m!==mes):[...p.meses,mes].sort((a,b)=>a-b)
+  }));
+
+    const togCunh=id=>setFLote(p=>({...p,cunhadas_selecionadas:p.cunhadas_selecionadas.includes(id)?p.cunhadas_selecionadas.filter(x=>x!==id):[...p.cunhadas_selecionadas,id]}));
   const togSelQ=id=>setSelQ(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
 
   // ── CARDS RESUMO ────────────────────────────────────────────────────────────
@@ -416,26 +481,69 @@ export const FinanceiroCunhadas=({userData})=>{
   );
 
   // ── ABA MENSALIDADES ─────────────────────────────────────────────────────────
-  const renderMens=()=>(
+  const renderMens=()=>{
+    // ── Matrix: calcular colunas (meses com movimento) ──────────────────────
+    const MESES_ABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const hoje=new Date();
+    const mesAtual=hoje.getMonth()+1;
+    const anoAtual=hoje.getFullYear();
+
+    // Determinar colunas da matrix
+    let colsMatrix=[];
+    if(matrixModoAno){
+      // Modo ano: todos os 12 meses do ano selecionado
+      colsMatrix=Array.from({length:12},(_,i)=>({mes:i+1,ano:matrixAno}));
+    }else{
+      // Modo padrão: meses com pelo menos 1 registro, do mais antigo ao atual
+      const mesesComRegistro=new Set();
+      mensalidades.forEach(m=>{
+        const key=`${m.ano}-${String(m.mes).padStart(2,'0')}`;
+        // Incluir apenas até o mês atual
+        const limAtual=`${anoAtual}-${String(mesAtual).padStart(2,'0')}`;
+        if(key<=limAtual)mesesComRegistro.add(key);
+      });
+      colsMatrix=[...mesesComRegistro].sort().map(k=>{
+        const[y,m]=k.split('-');
+        return{mes:parseInt(m),ano:parseInt(y)};
+      });
+      // Se não há registros ainda, mostrar ao menos o mês atual
+      if(!colsMatrix.length)colsMatrix=[{mes:mesAtual,ano:anoAtual}];
+    }
+
+    // Índice rápido: cunhada_id+mes+ano → pago
+    const idxMens={};
+    mensalidades.forEach(m=>{
+      const k=`${m.cunhada_id}-${m.mes}-${m.ano}`;
+      idxMens[k]=m.pago;
+    });
+
+    return(
     <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+
+      {/* ── Controles mensalidades ─────────────────────────────────────── */}
       <div style={{display:'flex',gap:'0.75rem',flexWrap:'wrap',alignItems:'center',justifyContent:'space-between'}}>
         <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
           <button style={s.ab} onClick={()=>{let m=mesMens-1,a=anoMens;if(m<1){m=12;a--;}setMesMens(m);setAnoMens(a);}}>‹</button>
           <span style={{fontWeight:'700',color:'var(--color-text)',minWidth:'140px',textAlign:'center'}}>{MESES[mesMens-1]} {anoMens}</span>
           <button style={s.ab} onClick={()=>{let m=mesMens+1,a=anoMens;if(m>12){m=1;a++;}setMesMens(m);setAnoMens(a);}}>›</button>
         </div>
-        <div style={{display:'flex',gap:'0.5rem'}}>
+        <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
           <button style={s.bs} onClick={()=>setMCfg(true)}>⚙️ Valor: {fmtM(config.valor_mensalidade)}</button>
+          <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
           <button style={s.bp('var(--color-accent)')} onClick={gerarMens}>⚡ Gerar mensalidades</button>
         </div>
       </div>
+
+      {/* ── Resumo do mês ──────────────────────────────────────────────── */}
       <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'1rem'}}>
         {[{l:'Total gerado',v:mensM.length,c:'var(--color-accent)'},{l:'Quitadas',v:mensM.filter(m=>m.pago).length,c:'#10b981'},{l:'Em aberto',v:mensM.filter(m=>!m.pago).length,c:'#f59e0b'}].map(r=>(
           <div key={r.l} style={s.csm}><p style={{margin:0,fontSize:'0.7rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase'}}>{r.l}</p><p style={{margin:'0.2rem 0 0',fontSize:'1.5rem',fontWeight:'700',color:r.c}}>{r.v}</p></div>
         ))}
       </div>
+
+      {/* ── Cards do mês ───────────────────────────────────────────────── */}
       {mensM.length===0?(
-        <div style={{...s.card,textAlign:'center',padding:'3rem'}}><p style={{color:'var(--color-text-muted)',marginBottom:'1rem'}}>Não geradas para {MESES[mesMens-1]}/{anoMens}.</p><button style={s.bp('var(--color-accent)')} onClick={gerarMens}>⚡ Gerar agora</button></div>
+        <div style={{...s.card,textAlign:'center',padding:'2rem'}}><p style={{color:'var(--color-text-muted)',marginBottom:'1rem'}}>Não geradas para {MESES[mesMens-1]}/{anoMens}.</p><button style={s.bp('var(--color-accent)')} onClick={gerarMens}>⚡ Gerar agora</button></div>
       ):(
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:'1rem'}}>
           {mensM.map(m=>(
@@ -452,8 +560,102 @@ export const FinanceiroCunhadas=({userData})=>{
           ))}
         </div>
       )}
+
+      {/* ══════════════════════════════════════════════════════════════════
+          MATRIX DE SITUAÇÃO
+      ══════════════════════════════════════════════════════════════════ */}
+      <div style={{...s.card,padding:'1.25rem'}}>
+        {/* Header matrix */}
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'1rem',flexWrap:'wrap',gap:'0.75rem'}}>
+          <div>
+            <p style={{margin:0,fontWeight:'700',fontSize:'1rem',color:'var(--color-text)'}}>📊 Situação das Mensalidades</p>
+            <p style={{margin:'0.15rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+              {matrixModoAno?`Ano completo ${matrixAno}`:`Do início até ${MESES_ABREV[mesAtual-1]}/${String(anoAtual).slice(2)}`}
+            </p>
+          </div>
+          <div style={{display:'flex',gap:'0.5rem',alignItems:'center'}}>
+            {matrixModoAno&&(
+              <div style={{display:'flex',alignItems:'center',gap:'0.25rem'}}>
+                <button style={s.ab} onClick={()=>setMatrixAno(a=>a-1)}>‹</button>
+                <span style={{fontWeight:'600',color:'var(--color-text)',fontSize:'0.875rem',minWidth:'40px',textAlign:'center'}}>{matrixAno}</span>
+                <button style={s.ab} onClick={()=>setMatrixAno(a=>a+1)}>›</button>
+              </div>
+            )}
+            <button
+              onClick={()=>setMatrixModoAno(v=>!v)}
+              style={{...s.bs,fontSize:'0.78rem',padding:'0.4rem 0.85rem'}}
+            >
+              {matrixModoAno?'Ver até hoje':'Ver ano completo'}
+            </button>
+          </div>
+        </div>
+
+        {/* Tabela matrix */}
+        {colsMatrix.length===0?(
+          <p style={{color:'var(--color-text-faint)',textAlign:'center',padding:'2rem 0'}}>Nenhum registro encontrado.</p>
+        ):(
+          <div style={{overflowX:'auto'}}>
+            <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.82rem'}}>
+              <thead>
+                <tr style={{background:'var(--color-surface-2)'}}>
+                  <th style={{padding:'0.6rem 0.75rem',textAlign:'left',fontWeight:'700',color:'var(--color-text)',borderBottom:'2px solid var(--color-border)',position:'sticky',left:0,background:'var(--color-surface-2)',minWidth:'140px'}}>
+                    Cunhada
+                  </th>
+                  {colsMatrix.map(col=>(
+                    <th key={`${col.ano}-${col.mes}`}
+                      style={{padding:'0.6rem 0.5rem',textAlign:'center',fontWeight:'700',color:'var(--color-text)',borderBottom:'2px solid var(--color-border)',whiteSpace:'nowrap',
+                        // Destacar mês atual
+                        background:col.mes===mesAtual&&col.ano===anoAtual?'rgba(var(--color-primary-600),0.12)':'var(--color-surface-2)',
+                        color:col.mes===mesAtual&&col.ano===anoAtual?'var(--color-accent)':'var(--color-text)',
+                      }}>
+                      {MESES_ABREV[col.mes-1]}/{String(col.ano).slice(2)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cunhadas.map((cunh,idx)=>{
+                  const nome=abreviaNome(cunh.nome);
+                  return(
+                    <tr key={cunh.id} style={{borderBottom:'1px solid var(--color-border)',background:idx%2===0?'transparent':'var(--color-surface-2)'}}>
+                      <td style={{padding:'0.55rem 0.75rem',fontWeight:'600',color:'var(--color-text)',position:'sticky',left:0,background:idx%2===0?'var(--color-surface)':'var(--color-surface-2)',whiteSpace:'nowrap'}}>
+                        {nome}
+                      </td>
+                      {colsMatrix.map(col=>{
+                        const k=`${cunh.id}-${col.mes}-${col.ano}`;
+                        const temRegistro=k in idxMens;
+                        const pago=idxMens[k];
+                        // Mês futuro sem registro → —
+                        const isFuturo=col.ano>anoAtual||(col.ano===anoAtual&&col.mes>mesAtual);
+                        return(
+                          <td key={`${col.ano}-${col.mes}`} style={{padding:'0.55rem 0.5rem',textAlign:'center'}}>
+                            {!temRegistro?(
+                              <span style={{color:'var(--color-text-faint)',fontSize:'0.8rem'}}>{isFuturo?'·':'—'}</span>
+                            ):pago?(
+                              <span title="Pago" style={{fontSize:'1.1rem',lineHeight:1}}>✅</span>
+                            ):(
+                              <span title="Pendente" style={{fontSize:'1.1rem',lineHeight:1}}>❌</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Legenda */}
+        <div style={{display:'flex',gap:'1.25rem',marginTop:'0.75rem',flexWrap:'wrap'}}>
+          {[{s:'✅',l:'Paga'},{s:'❌',l:'Pendente'},{s:'—',l:'Não gerada'},{s:'·',l:'Mês futuro'}].map(({s:sym,l})=>(
+            <span key={l} style={{fontSize:'0.72rem',color:'var(--color-text-muted)',display:'flex',alignItems:'center',gap:'0.35rem'}}><span>{sym}</span>{l}</span>
+          ))}
+        </div>
+      </div>
     </div>
-  );
+  );};
 
   // ── ABA EXTRATO ──────────────────────────────────────────────────────────────
   const renderExtrato=()=>{
@@ -698,6 +900,101 @@ export const FinanceiroCunhadas=({userData})=>{
               {selQ.length>0&&<div style={{...s.ib,marginTop:'0.75rem'}}><p style={{margin:0,fontSize:'0.875rem',color:'var(--color-accent)',fontWeight:'600'}}>Total: <strong>{fmtM(todos.filter(l=>selQ.includes(l.id)).reduce((s,l)=>s+Number(l.valor),0))}</strong> ({selQ.length} lançamento(s))</p></div>}
             </div>
             <div style={s.mf}><button style={s.bs} onClick={()=>setMQLote(false)} disabled={salvQL}>Cancelar</button><button style={s.bp('#10b981')} onClick={quitarLote} disabled={salvQL||!selQ.length}>{salvQL?'⏳...`':`✅ Quitar ${selQ.length}`}</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PAGAMENTO ADIANTADO */}
+      {mPgAdiant&&(
+        <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMPgAdiant(false)}>
+          <div style={{...s.mo,maxWidth:'520px'}}>
+            <div style={s.mh}>
+              <h2 style={{margin:0,fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)'}}>📅 Registrar Pagamento Adiantado</h2>
+              <button onClick={()=>setMPgAdiant(false)} style={{background:'none',border:'none',color:'var(--color-text-muted)',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+            </div>
+            <div style={s.mb}>
+              <p style={{margin:'0 0 1.25rem',fontSize:'0.85rem',color:'var(--color-text-muted)'}}>
+                Registre que uma cunhada pagou antecipado cobrindo múltiplos meses. O lançamento financeiro deve ser feito separadamente na aba Lançamentos.
+              </p>
+
+              {/* Cunhada */}
+              <Lbl l="Cunhada *" st={{marginBottom:'1rem'}} ch={
+                <select style={s.sel} value={pgAdiantForm.cunhada_id} onChange={e=>setPgAdiantForm({...pgAdiantForm,cunhada_id:e.target.value})}>
+                  <option value="">— Selecione —</option>
+                  {cunhadas.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              }/>
+
+              {/* Ano */}
+              <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'1rem'}}>
+                <Lbl l="Ano" ch={null}/>
+                <div style={{display:'flex',alignItems:'center',gap:'0.4rem'}}>
+                  <button style={s.ab} onClick={()=>setPgAdiantForm(p=>({...p,ano:p.ano-1}))}>‹</button>
+                  <span style={{fontWeight:'700',color:'var(--color-text)',padding:'0 0.5rem'}}>{pgAdiantForm.ano}</span>
+                  <button style={s.ab} onClick={()=>setPgAdiantForm(p=>({...p,ano:p.ano+1}))}>›</button>
+                </div>
+              </div>
+
+              {/* Meses */}
+              <div style={{marginBottom:'1rem'}}>
+                <label style={{display:'block',fontSize:'0.7rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',marginBottom:'0.5rem'}}>
+                  Meses cobertos * ({pgAdiantForm.meses.length} selecionado(s))
+                </label>
+                <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.4rem'}}>
+                  {MESES.map((nm,i)=>{
+                    const mes=i+1;
+                    const sel=pgAdiantForm.meses.includes(mes);
+                    // Verificar se já está pago
+                    const jaPago=mensalidades.some(m=>
+                      m.cunhada_id===pgAdiantForm.cunhada_id&&
+                      m.mes===mes&&m.ano===pgAdiantForm.ano&&m.pago
+                    );
+                    return(
+                      <button key={mes} type="button"
+                        onClick={()=>!jaPago&&togMesPgAdiant(mes)}
+                        style={{
+                          padding:'0.5rem 0.25rem',
+                          borderRadius:'var(--radius-md)',
+                          border:'2px solid',
+                          borderColor:jaPago?'#10b981':sel?'var(--color-accent)':'var(--color-border)',
+                          background:jaPago?'rgba(16,185,129,0.1)':sel?'var(--color-accent-bg)':'var(--color-surface-2)',
+                          color:jaPago?'#10b981':sel?'var(--color-accent)':'var(--color-text)',
+                          fontWeight:sel||jaPago?'700':'400',
+                          fontSize:'0.78rem',
+                          cursor:jaPago?'not-allowed':'pointer',
+                          position:'relative',
+                        }}>
+                        {jaPago&&<span style={{position:'absolute',top:'2px',right:'3px',fontSize:'0.55rem'}}>✓</span>}
+                        {nm.slice(0,3)}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p style={{margin:'0.4rem 0 0',fontSize:'0.68rem',color:'var(--color-text-faint)'}}>
+                  Meses com ✓ já estão registrados como pagos.
+                </p>
+              </div>
+
+              {/* Preview */}
+              {pgAdiantForm.meses.length>0&&(
+                <div style={{...s.ib}}>
+                  <p style={{margin:0,fontSize:'0.85rem',color:'var(--color-accent)',fontWeight:'600'}}>
+                    Será marcado como pago: {pgAdiantForm.meses.map(m=>MESES[m-1].slice(0,3)).join(', ')} / {pgAdiantForm.ano}
+                  </p>
+                  {pgAdiantForm.cunhada_id&&(
+                    <p style={{margin:'0.25rem 0 0',fontSize:'0.78rem',color:'var(--color-text-muted)'}}>
+                      Cunhada: {cunhadas.find(c=>c.id===pgAdiantForm.cunhada_id)?.nome}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div style={s.mf}>
+              <button style={s.bs} onClick={()=>setMPgAdiant(false)} disabled={salvPgAdiant}>Cancelar</button>
+              <button style={s.bp('#10b981')} onClick={salvarPgAdiant} disabled={salvPgAdiant||!pgAdiantForm.cunhada_id||!pgAdiantForm.meses.length}>
+                {salvPgAdiant?'⏳ Registrando...':'✅ Registrar pagamento'}
+              </button>
+            </div>
           </div>
         </div>
       )}
