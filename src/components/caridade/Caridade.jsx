@@ -225,19 +225,19 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="card-header rounded-lg p-6 shadow-lg">
+      <div className="card">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-1">❤️ Caridade</h2>
-            <p style={{ opacity: 0.85 }}>Controle de Famílias Carentes</p>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>❤️ Caridade</h2>
+            <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>Controle de Famílias Carentes</p>
           </div>
           {permissoes?.pode_editar_caridade && (
             <button
               onClick={() => { limparFormulario(); setMostrarForm(!mostrarForm); }}
               style={{
-                background: 'rgba(255,255,255,0.15)', color: 'white',
-                border: '1px solid rgba(255,255,255,0.3)', borderRadius: '0.5rem',
-                padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
+                background: 'var(--color-accent)', color: 'white',
+                border: 'none', borderRadius: '0.5rem',
+                padding: '0.625rem 1.25rem', fontWeight: '600', cursor: 'pointer'
               }}
             >
               {mostrarForm ? '✖️ Fechar' : '➕ Nova Família'}
@@ -268,8 +268,8 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       {/* FORMULÁRIO CADASTRO */}
       {(mostrarForm && permissoes?.pode_editar_caridade) && (
         <div className="card rounded-xl shadow-lg">
-          <div className="card-header p-6 rounded-t-xl">
-            <h3 className="text-xl font-bold">
+          <div style={{ borderBottom: '1px solid var(--color-border)', paddingBottom: '1rem', marginBottom: '0.5rem' }}>
+            <h3 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
               {modoEdicao ? '✏️ Editar Família' : '➕ Cadastrar Nova Família'}
             </h3>
           </div>
@@ -481,9 +481,9 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       {modalFamilia && (
         <div style={overlayStyle}>
           <div className="card" style={{ maxWidth: '56rem', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0 }}>
-            <div className="card-header p-6 rounded-t-lg" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 className="text-2xl font-bold">Detalhes da Família</h3>
-              <button onClick={() => setModalFamilia(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', opacity: 0.8 }}>✖️</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)' }}>
+              <h3 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>Detalhes da Família</h3>
+              <button onClick={() => setModalFamilia(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--color-text-muted)' }}>✖️</button>
             </div>
 
             <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }} className="space-y-5">
@@ -575,11 +575,11 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
       {modalNovaAjuda && familiaParaAjuda && (
         <div style={overlayStyle}>
           <div className="card" style={{ maxWidth: '42rem', width: '100%', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0 }}>
-            <div className="card-header p-6 rounded-t-lg">
-              <h3 className="text-xl font-bold">
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--color-border)' }}>
+              <h3 className="text-xl font-bold" style={{ color: 'var(--color-text)' }}>
                 {modoEdicaoAjuda ? '✏️ Editar Ajuda' : '➕ Registrar Nova Ajuda'}
               </h3>
-              <p className="text-sm mt-1" style={{ opacity: 0.8 }}>
+              <p className="text-sm mt-1" style={{ color: 'var(--color-text-muted)' }}>
                 Para: {familiaParaAjuda.nome_marido || familiaParaAjuda.nome_esposa}
               </p>
             </div>
