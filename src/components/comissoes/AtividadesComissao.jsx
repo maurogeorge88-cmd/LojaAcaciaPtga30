@@ -165,13 +165,13 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+      <div className=" rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
         {/* Header */}
         <div className="bg-blue-900 text-white p-6 rounded-t-xl sticky top-0 z-10">
           <div className="flex justify-between items-center">
             <div>
-              <h2 className="text-2xl font-bold">📋 Atividades da Comissão</h2>
-              <p className="text-blue-200 text-sm mt-1">{comissao.nome}</p>
+              <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📋 Atividades da Comissão</h2>
+              <p className="text-blue-200 text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.nome}</p>
             </div>
             <button
               onClick={onClose}
@@ -185,8 +185,8 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
         <div className="p-6 space-y-6">
           {/* FORMULÁRIO */}
           {podeEditar && (
-            <div className="bg-gray-50 rounded-lg p-6 border-2 border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800 mb-4">
+            <div className=" rounded-lg p-6 -2 " style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+              <h3 className="text-lg font-bold  mb-4" style={{color:"var(--color-text)"}}>
                 {modoEdicao ? '✏️ Editar Atividade' : '➕ Nova Atividade'}
               </h3>
 
@@ -194,11 +194,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                 {/* Linha 1: Tipo, Título, Data */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
                     <select
                       value={atividadeForm.tipo}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, tipo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       required
                     >
                       <option value="reuniao">👥 Reunião</option>
@@ -210,24 +210,24 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Título *</label>
                     <input
                       type="text"
                       value={atividadeForm.titulo}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, titulo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       placeholder="Ex: Reunião de Planejamento"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Data *</label>
+                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
                     <input
                       type="date"
                       value={atividadeForm.data_atividade}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, data_atividade: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       required
                     />
                   </div>
@@ -236,23 +236,23 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                 {/* Linha 2: Local, Participantes */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Local</label>
+                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Local</label>
                     <input
                       type="text"
                       value={atividadeForm.local}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, local: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       placeholder="Ex: Templo, Sala de Reuniões"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Participantes</label>
+                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Participantes</label>
                     <input
                       type="text"
                       value={atividadeForm.participantes}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, participantes: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       placeholder="Ex: 5 membros presentes"
                     />
                   </div>
@@ -260,11 +260,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
                 {/* Linha 3: Deliberações */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deliberações / Decisões *</label>
+                  <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Deliberações / Decisões *</label>
                   <textarea
                     value={atividadeForm.deliberacoes}
                     onChange={(e) => setAtividadeForm({ ...atividadeForm, deliberacoes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     rows="4"
                     placeholder="Descreva o que foi deliberado, decidido ou realizado..."
                     required
@@ -273,11 +273,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
                 {/* Linha 4: Observações */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                  <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
                   <textarea
                     value={atividadeForm.observacoes}
                     onChange={(e) => setAtividadeForm({ ...atividadeForm, observacoes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     rows="2"
                     placeholder="Observações adicionais..."
                   />
@@ -289,7 +289,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                     <button
                       type="button"
                       onClick={limparFormulario}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg transition"
+                      className="px-4 py-2 rounded-lg transition" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       Cancelar
                     </button>
@@ -297,7 +297,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition disabled:opacity-50"
+                    className="px-6 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition disabled:opacity-50"
                   >
                     {loading ? 'Salvando...' : (modoEdicao ? '💾 Atualizar' : '➕ Cadastrar')}
                   </button>
@@ -307,9 +307,9 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
           )}
 
           {/* LISTA DE ATIVIDADES */}
-          <div className="bg-white rounded-lg border-2 border-gray-200">
-            <div className="bg-gray-50 px-6 py-3 border-b-2 border-gray-200">
-              <h3 className="text-lg font-bold text-gray-800">
+          <div className=" rounded-lg -2 " style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+            <div className=" px-6 py-3 -b-2 " style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+              <h3 className="text-lg font-bold " style={{color:"var(--color-text)"}}>
                 📚 Histórico de Atividades ({atividades.length})
               </h3>
             </div>
@@ -320,16 +320,16 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                   {atividades.map((atividade) => (
                     <div
                       key={atividade.id}
-                      className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition"
+                      className="-2  rounded-lg p-4 hover:border-blue-300 transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     >
                       {/* Header da Atividade */}
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-2xl">{obterIconeTipo(atividade.tipo)}</span>
-                            <h4 className="text-lg font-bold text-gray-800">{atividade.titulo}</h4>
+                            <h4 className="text-lg font-bold ">{atividade.titulo}</h4>
                           </div>
-                          <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                          <div className="flex flex-wrap gap-4 text-sm ">
                             <span>📅 {formatarData(atividade.data_atividade)}</span>
                             <span>🏷️ {obterNomeTipo(atividade.tipo)}</span>
                             {atividade.local && <span>📍 {atividade.local}</span>}
@@ -358,21 +358,21 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                       {/* Deliberações */}
                       <div className="bg-blue-50 rounded p-3 mb-2">
                         <p className="text-xs font-bold text-blue-900 mb-1">📝 Deliberações:</p>
-                        <p className="text-sm text-gray-800 whitespace-pre-wrap">{atividade.deliberacoes}</p>
+                        <p className="text-sm  whitespace-pre-wrap">{atividade.deliberacoes}</p>
                       </div>
 
                       {/* Observações */}
                       {atividade.observacoes && (
-                        <div className="bg-gray-50 rounded p-3">
-                          <p className="text-xs font-bold text-gray-700 mb-1">💬 Observações:</p>
-                          <p className="text-sm text-gray-600 whitespace-pre-wrap">{atividade.observacoes}</p>
+                        <div className=" rounded p-3">
+                          <p className="text-xs font-bold  mb-1">💬 Observações:</p>
+                          <p className="text-sm  whitespace-pre-wrap">{atividade.observacoes}</p>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 ">
                   <p className="text-lg mb-2">📭 Nenhuma atividade registrada</p>
                   <p className="text-sm">Cadastre a primeira atividade desta comissão!</p>
                 </div>
@@ -382,10 +382,10 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
         </div>
 
         {/* Footer */}
-        <div className="bg-gray-50 px-6 py-4 rounded-b-xl flex justify-end sticky bottom-0">
+        <div className=" px-6 py-4 rounded-b-xl flex justify-end sticky bottom-0">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-semibold"
+            className="px-6 py-2 rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
           >
             Fechar
           </button>
