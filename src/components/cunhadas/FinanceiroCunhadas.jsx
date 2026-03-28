@@ -122,11 +122,14 @@ export const FinanceiroCunhadas=({userData})=>{
     try{
       const[{data:lanc},{data:mens},{data:cunh},{data:cats},{data:cfgs}]=await Promise.all([
         supabase.from('financeiro_cunhadas').select('*,categoria:categorias_financeiras_cunhadas(nome,tipo),cunhada:cunhadas(nome)').order('data_lancamento',{ascending:false}),
-        supabase.from('mensalidades_cunhadas').select('id,cunhada_id,mes,ano,valor,pago,cunhada:cunhadas(nome)').order('ano',{ascending:false}).order('mes',{ascending:false}).then(r=>{console.log('MENS QUERY result:',r.data?.length,'error:',r.error?.message);return r;}),
+        supabase.from('mensalidades_cunhadas').select('id,cunhada_id,mes,ano,valor,pago,cunhada:cunhadas(nome)').order('ano',{ascending:false}).order('mes',{ascending:false}),
         supabase.from('cunhadas').select('id,nome').eq('ativa',true).order('nome'),
         supabase.from('categorias_financeiras_cunhadas').select('*').order('tipo').order('nome'),
         supabase.from('configuracoes_cunhadas').select('*'),
       ]);
+      console.log('MENS ERROR:', mensError);
+      console.log('MENS RAW:', JSON.stringify(mens));
+      console.log('MENS ERROR check — data null?', mens===null, 'undefined?', mens===undefined);
       setTodos(lanc||[]);setMensalidades(mens||[]);setCunhadas(cunh||[]);setCategorias(cats||[]);
       // DEBUG TEMPORÁRIO
       console.log('=== DEBUG MENSALIDADES RAW ===', mens);
