@@ -583,13 +583,20 @@ export const FinanceiroCunhadas=({userData})=>{
       ):(
         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
           {mensM.map(m=>{
-            // Meses adiantados desta cunhada no ano corrente (todos os meses pagos)
+            // Meses adiantados desta cunhada no ano corrente
             const adiantados=mensalidades
               .filter(x=>x.cunhada_id===m.cunhada_id&&x.ano===anoMens&&x.pago)
               .map(x=>x.mes)
               .sort((a,b)=>a-b);
             const temAdiant=adiantados.length>1||(adiantados.length===1&&adiantados[0]!==mesMens);
             const nomeAbrev=abreviaNome(m.cunhada?.nome||'');
+            // Valor total pago: soma dos lançamentos de receita pagos no mês atual por esta cunhada
+            const valorPago=todos
+              .filter(l=>l.cunhada_id===m.cunhada_id&&l.tipo==='receita'&&l.pago)
+              .reduce((s,l)=>{
+                const[y,mo]=l.data_lancamento.split('-');
+                return parseInt(mo)===mesMens&&parseInt(y)===anoMens?s+Number(l.valor):s;
+              },0);
             return(
             <div key={m.id} style={{...s.csm,borderTop:`3px solid ${m.pago?'#10b981':'#f59e0b'}`}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.5rem'}}>
@@ -599,7 +606,7 @@ export const FinanceiroCunhadas=({userData})=>{
               {/* Nome abreviado */}
               <p style={{margin:'0 0 0.2rem',fontWeight:'700',fontSize:'0.9rem',color:'var(--color-text)',lineHeight:1.2}}>{nomeAbrev}</p>
               {/* Valor do mês */}
-              <p style={{margin:'0 0 0.35rem',fontWeight:'700',fontSize:'1rem',color:m.pago?'#10b981':'#f59e0b'}}>{fmtM(m.valor)}</p>
+              <p style={{margin:'0 0 0.35rem',fontWeight:'700',fontSize:'1rem',color:m.pago?'#10b981':'#f59e0b'}}>{fmtM(valorPago||m.valor)}</p>
               {/* Meses adiantados em numeral */}
               {temAdiant&&(
                 <p style={{margin:'0 0 0.5rem',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
