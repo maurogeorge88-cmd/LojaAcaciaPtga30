@@ -614,7 +614,26 @@ export const FinanceiroCunhadas=({userData})=>{
     finally{setGerandoPdf(false);}
   };
 
-  const togCunh=id=>setFLote(p=>({...p,cunhadas_selecionadas:p.cunhadas_selecionadas.includes(id)?p.cunhadas_selecionadas.filter(x=>x!==id):[...p.cunhadas_selecionadas,id]}));
+  // Extrai mes/ano da data de lançamento do lote para verificar adiantamentos
+  const getMesAnoLote=()=>{
+    if(!fLote.data_lancamento)return{mes:0,ano:0};
+    const[y,m]=fLote.data_lancamento.split('-');
+    return{mes:parseInt(m,10),ano:parseInt(y,10)};
+  };
+  const cunhadaJaPagouLote=(cid)=>{
+    const{mes,ano}=getMesAnoLote();
+    if(!mes||!ano)return false;
+    return mensalidades.some(m=>
+      String(m.cunhada_id)===String(cid)&&
+      parseInt(m.mes,10)===mes&&
+      parseInt(m.ano,10)===ano&&
+      m.pago
+    );
+  };
+  const togCunh=id=>{
+    if(cunhadaJaPagouLote(id))return; // bloquear se já pagou
+    setFLote(p=>({...p,cunhadas_selecionadas:p.cunhadas_selecionadas.includes(id)?p.cunhadas_selecionadas.filter(x=>x!==id):[...p.cunhadas_selecionadas,id]}));
+  };
   const togSelQ=id=>setSelQ(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
 
   // ── CARDS RESUMO ────────────────────────────────────────────────────────────
@@ -1165,25 +1184,42 @@ export const FinanceiroCunhadas=({userData})=>{
                 <Lbl l="Descrição *" st={{gridColumn:'1/-1'}} ch={<input style={s.inp} value={fLote.descricao} onChange={e=>setFLote({...fLote,descricao:e.target.value})} placeholder="Ex: Mensalidade - Março/2025"/>}/>
                 <Lbl l="Valor por cunhada *" ch={<input type="number" step="0.01" min="0" style={s.inp} value={fLote.valor} onChange={e=>setFLote({...fLote,valor:e.target.value})} placeholder="0,00"/>}/>
                 <Lbl l="Categoria" ch={<select style={s.sel} value={fLote.categoria_id} onChange={e=>setFLote({...fLote,categoria_id:e.target.value})}><option value="">— Selecione —</option>{renderOptsCategoria(categorias, 'receita')}</select>}/>
-                <Lbl l="Data lançamento" ch={<input type="date" style={s.inp} value={fLote.data_lancamento} onChange={e=>setFLote({...fLote,data_lancamento:e.target.value})}/>}/>
+                <Lbl l="Data lançamento" ch={<input type="date" style={s.inp} value={fLote.data_lancamento} onChange={e=>{
+                  const novaData=e.target.value;
+                  const[y,m]=novaData.split('-');
+                  const mes=parseInt(m,10),ano=parseInt(y,10);
+                  // Remover da seleção cunhadas que já pagaram o novo mês
+                  const semPagas=fLote.cunhadas_selecionadas.filter(cid=>
+                    !mensalidades.some(mx=>String(mx.cunhada_id)===String(cid)&&parseInt(mx.mes,10)===mes&&parseInt(mx.ano,10)===ano&&mx.pago)
+                  );
+                  setFLote({...fLote,data_lancamento:novaData,cunhadas_selecionadas:semPagas});
+                }}/>}/>
                 <Lbl l="Data vencimento" ch={<input type="date" style={s.inp} value={fLote.data_vencimento} onChange={e=>setFLote({...fLote,data_vencimento:e.target.value})}/>}/>
                 <Lbl l="Forma pagamento" ch={<select style={s.sel} value={fLote.forma_pagamento} onChange={e=>setFLote({...fLote,forma_pagamento:e.target.value})}><option value="">— Selecione —</option>{FPGTO.map(f=><option key={f.v} value={f.v}>{f.l}</option>)}</select>}/>
               </div>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.5rem'}}>
-                <label style={{fontSize:'0.7rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Cunhadas * ({fLote.cunhadas_selecionadas.length}/{cunhadas.length})</label>
+                <label style={{fontSize:'0.7rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>
+                  Cunhadas * ({fLote.cunhadas_selecionadas.length}/{cunhadas.filter(cx=>!cunhadaJaPagouLote(cx.id)).length} disponíveis
+                  {cunhadas.filter(cx=>cunhadaJaPagouLote(cx.id)).length>0&&<span style={{color:'#10b981',fontWeight:'700'}}> · {cunhadas.filter(cx=>cunhadaJaPagouLote(cx.id)).length} já pagas</span>})
+                </label>
                 <div style={{display:'flex',gap:'0.75rem'}}>
-                  <button type="button" onClick={()=>setFLote({...fLote,cunhadas_selecionadas:cunhadas.map(c=>c.id)})} style={{background:'none',border:'none',cursor:'pointer',fontSize:'0.8rem',color:'var(--color-accent)',fontWeight:'600'}}>✅ Todas</button>
+                  <button type="button" onClick={()=>setFLote({...fLote,cunhadas_selecionadas:cunhadas.filter(cx=>!cunhadaJaPagouLote(cx.id)).map(cx=>cx.id)})} style={{background:'none',border:'none',cursor:'pointer',fontSize:'0.8rem',color:'var(--color-accent)',fontWeight:'600'}}>✅ Disponíveis</button>
                   <button type="button" onClick={()=>setFLote({...fLote,cunhadas_selecionadas:[]})} style={{background:'none',border:'none',cursor:'pointer',fontSize:'0.8rem',color:'#ef4444',fontWeight:'600'}}>❌ Limpar</button>
                 </div>
               </div>
               <div style={{border:'2px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'0.75rem',maxHeight:'180px',overflowY:'auto',background:'var(--color-surface-2)'}}>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(155px,1fr))',gap:'0.4rem'}}>
-                  {cunhadas.map(c=>(
-                    <label key={c.id} style={{display:'flex',alignItems:'center',gap:'0.5rem',cursor:'pointer',padding:'0.35rem 0.6rem',borderRadius:'var(--radius-md)',background:fLote.cunhadas_selecionadas.includes(c.id)?'var(--color-accent-bg)':'transparent',border:`1px solid ${fLote.cunhadas_selecionadas.includes(c.id)?'var(--color-accent)':'var(--color-border)'}`}}>
-                      <input type="checkbox" checked={fLote.cunhadas_selecionadas.includes(c.id)} onChange={()=>togCunh(c.id)} style={{accentColor:'var(--color-accent)'}}/>
-                      <span style={{fontSize:'0.85rem',color:'var(--color-text)',fontWeight:fLote.cunhadas_selecionadas.includes(c.id)?'600':'400'}}>{c.nome}</span>
+                  {cunhadas.map(cx=>{
+                    const jaPagou=cunhadaJaPagouLote(cx.id);
+                    const sel=fLote.cunhadas_selecionadas.includes(cx.id);
+                    return(
+                    <label key={cx.id} style={{display:'flex',alignItems:'center',gap:'0.5rem',cursor:jaPagou?'not-allowed':'pointer',padding:'0.35rem 0.6rem',borderRadius:'var(--radius-md)',opacity:jaPagou?0.6:1,background:jaPagou?'rgba(16,185,129,0.08)':sel?'var(--color-accent-bg)':'transparent',border:`1px solid ${jaPagou?'rgba(16,185,129,0.4)':sel?'var(--color-accent)':'var(--color-border)'}`}}>
+                      <input type="checkbox" checked={sel} disabled={jaPagou} onChange={()=>togCunh(cx.id)} style={{accentColor:'var(--color-accent)'}}/>
+                      <span style={{flex:1,fontSize:'0.82rem',color:jaPagou?'var(--color-text-muted)':'var(--color-text)',fontWeight:sel?'600':'400',textDecoration:jaPagou?'line-through':'none'}}>{cx.nome}</span>
+                      {jaPagou&&<span style={{fontSize:'0.65rem',fontWeight:'700',color:'#10b981',background:'rgba(16,185,129,0.15)',padding:'0.05rem 0.35rem',borderRadius:'999px',flexShrink:0}}>✓ pago</span>}
                     </label>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
               {fLote.cunhadas_selecionadas.length>0&&fLote.valor&&(
