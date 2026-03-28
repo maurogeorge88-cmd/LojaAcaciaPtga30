@@ -37,7 +37,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     { value: 'administrativo', label: '📋 Administrativo', cor: 'bg-purple-100 text-purple-800' },
     { value: 'beneficente', label: '❤️ Beneficente', cor: 'bg-red-100 text-red-800' },
     { value: 'patrimonial', label: '🏛️ Patrimonial', cor: 'bg-green-100 text-green-800' },
-    { value: 'outro', label: '📌 Outro', cor: 'bg-gray-100 text-gray-800' }
+    { value: 'outro', label: '📌 Outro', cor: ' ' }
   ];
 
   const prazosProjeto = [
@@ -338,13 +338,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Header */}
       <div className="flex justify-between items-center mb-6 px-3">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800">🎯 Projetos da Loja</h2>
-          <p className="text-gray-600 mt-1">Gerencie os projetos e seus custos</p>
+          <h2 className="text-3xl font-bold " style={{color:"var(--color-text)"}}>🎯 Projetos da Loja</h2>
+          <p className=" mt-1">Gerencie os projetos e seus custos</p>
         </div>
         {permissoes?.canEdit && (
           <button
             onClick={() => setMostrarFormulario(!mostrarFormulario)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition font-bold"
+            className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover: transition font-bold"
           >
             {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto'}
           </button>
@@ -353,32 +353,32 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <form onSubmit={salvarProjeto} className="bg-white rounded-xl shadow-lg p-6 mb-6 border-2 border-indigo-200 mx-3">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">
+        <form onSubmit={salvarProjeto} className=" rounded-xl  p-6 mb-6 border-2 border-indigo-200 mx-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <h3 className="text-xl font-bold  mb-4" style={{color:"var(--color-text)"}}>
             {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Nome */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1">Nome do Projeto *</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Nome do Projeto *</label>
               <input
                 type="text"
                 required
                 value={projetoForm.nome}
                 onChange={(e) => setProjetoForm({ ...projetoForm, nome: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                 placeholder="Ex: Campanha de Doação de Alimentos"
               />
             </div>
 
             {/* Descrição */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1">Descrição</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Descrição</label>
               <textarea
                 value={projetoForm.descricao}
                 onChange={(e) => setProjetoForm({ ...projetoForm, descricao: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                 rows="3"
                 placeholder="Descreva o objetivo e escopo do projeto..."
               />
@@ -386,12 +386,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
             {/* Tipo */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Tipo *</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
               <select
                 required
                 value={projetoForm.tipo}
                 onChange={(e) => setProjetoForm({ ...projetoForm, tipo: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
               >
                 {tiposProjeto.map(tipo => (
                   <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -401,12 +401,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
             {/* Prazo */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Prazo *</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Prazo *</label>
               <select
                 required
                 value={projetoForm.prazo}
                 onChange={(e) => setProjetoForm({ ...projetoForm, prazo: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
               >
                 {prazosProjeto.map(prazo => (
                   <option key={prazo.value} value={prazo.value}>{prazo.label}</option>
@@ -416,46 +416,46 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
             {/* Data Início */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Data Início *</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Data Início *</label>
               <input
                 type="date"
                 required
                 value={projetoForm.data_inicio}
                 onChange={(e) => setProjetoForm({ ...projetoForm, data_inicio: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
               />
             </div>
 
             {/* Data Prevista Término */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Data Prevista Término</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Data Prevista Término</label>
               <input
                 type="date"
                 value={projetoForm.data_prevista_termino}
                 onChange={(e) => setProjetoForm({ ...projetoForm, data_prevista_termino: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
               />
             </div>
 
             {/* Data Finalização */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Data Finalização</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Data Finalização</label>
               <input
                 type="date"
                 value={projetoForm.data_finalizacao}
                 onChange={(e) => setProjetoForm({ ...projetoForm, data_finalizacao: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
               />
             </div>
 
             {/* Status */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">Status *</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Status *</label>
               <select
                 required
                 value={projetoForm.status}
                 onChange={(e) => setProjetoForm({ ...projetoForm, status: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
               >
                 <option value="em_andamento">🔄 Em Andamento</option>
                 <option value="concluido">✅ Concluído</option>
@@ -466,49 +466,49 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
             {/* Responsável */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1">Responsável</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Responsável</label>
               <input
                 type="text"
                 value={projetoForm.responsavel}
                 onChange={(e) => setProjetoForm({ ...projetoForm, responsavel: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                 placeholder="Nome do irmão responsável pelo projeto"
               />
             </div>
 
             {/* Valor Previsto */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1">Valor Previsto (R$)</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Valor Previsto (R$)</label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 value={projetoForm.valor_previsto}
                 onChange={(e) => setProjetoForm({ ...projetoForm, valor_previsto: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                 placeholder="0.00"
               />
             </div>
 
             {/* Fonte de Recursos */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1">Fonte de Recursos</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Fonte de Recursos</label>
               <input
                 type="text"
                 value={projetoForm.fonte_recursos}
                 onChange={(e) => setProjetoForm({ ...projetoForm, fonte_recursos: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                 placeholder="Ex: Caixa da Loja, Doações, Eventos"
               />
             </div>
 
             {/* Observações */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-bold text-gray-700 mb-1">Observações</label>
+              <label className="block text-sm font-bold  mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
               <textarea
                 value={projetoForm.observacoes}
                 onChange={(e) => setProjetoForm({ ...projetoForm, observacoes: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2   rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                 rows="2"
                 placeholder="Informações adicionais relevantes..."
               />
@@ -519,14 +519,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
           <div className="flex gap-3 mt-6">
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:shadow-lg transition font-bold"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover: transition font-bold"
             >
               💾 {projetoEditando ? 'Atualizar Projeto' : 'Cadastrar Projeto'}
             </button>
             <button
               type="button"
               onClick={limparFormulario}
-              className="px-6 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition font-bold"
+              className="px-6 py-3 rounded-lg transition font-bold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               ❌ Cancelar
             </button>
@@ -537,12 +537,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Lista de Projetos */}
       <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-3">
         {projetos.length === 0 ? (
-          <div className="col-span-2 text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500 text-lg">📋 Nenhum projeto cadastrado</p>
+          <div className="col-span-2 text-center py-12  rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+            <p className=" text-lg">📋 Nenhum projeto cadastrado</p>
             {permissoes?.canEdit && (
               <button
                 onClick={() => setMostrarFormulario(true)}
-                className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+                className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
               >
                 ➕ Cadastrar Primeiro Projeto
               </button>
@@ -558,16 +558,16 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             const percentual = calcularPercentual(projeto, totalCustos);
 
             return (
-              <div key={projeto.id} className="bg-white rounded-xl shadow-lg border-2 border-gray-200 p-6 hover:shadow-xl transition">
+              <div key={projeto.id} className=" rounded-xl  -2  p-6 hover:shadow-xl transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                 {/* Header do Card */}
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">{projeto.nome}</h3>
+                    <h3 className="text-xl font-bold  mb-2" style={{color:"var(--color-text)"}}>{projeto.nome}</h3>
                     <div className="flex flex-wrap gap-2 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${tipoInfo?.cor || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${tipoInfo?.cor || ' '}`}>
                         {tipoInfo?.label || projeto.tipo}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusInfo?.cor || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusInfo?.cor || ' '}`}>
                         {statusInfo?.label || projeto.status}
                       </span>
                     </div>
@@ -577,7 +577,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     <div className="flex gap-2">
                       <button
                         onClick={() => editarProjeto(projeto)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition text-sm"
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary-600 transition text-sm"
                       >
                         ✏️
                       </button>
@@ -593,57 +593,57 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
                 {/* Descrição */}
                 {projeto.descricao && (
-                  <p className="text-gray-600 text-sm mb-4">{projeto.descricao}</p>
+                  <p className=" text-sm mb-4">{projeto.descricao}</p>
                 )}
 
                 {/* Informações do Projeto */}
                 <div className="space-y-2 mb-4 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">📅 Início:</span>
+                    <span className="">📅 Início:</span>
                     <span className="font-semibold">{new Date(projeto.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                   </div>
                   {projeto.data_prevista_termino && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">🎯 Prev. Término:</span>
+                      <span className="">🎯 Prev. Término:</span>
                       <span className="font-semibold">{new Date(projeto.data_prevista_termino + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     </div>
                   )}
                   {projeto.data_finalizacao && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">✅ Finalizado:</span>
+                      <span className="">✅ Finalizado:</span>
                       <span className="font-semibold">{new Date(projeto.data_finalizacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     </div>
                   )}
                   {projeto.responsavel && (
                     <div className="flex justify-between">
-                      <span className="text-gray-600">👤 Responsável:</span>
+                      <span className="">👤 Responsável:</span>
                       <span className="font-semibold">{projeto.responsavel}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Financeiro */}
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 space-y-3">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 space-y-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-semibold">💰 Valor Previsto:</span>
+                    <span className=" font-semibold">💰 Valor Previsto:</span>
                     <span className="text-lg font-bold text-blue-600">
                       R$ {parseFloat(projeto.valor_previsto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-semibold">💵 Receitas:</span>
+                    <span className=" font-semibold">💵 Receitas:</span>
                     <span className="text-lg font-bold text-green-600">
                       R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-700 font-semibold">💸 Custos:</span>
+                    <span className=" font-semibold">💸 Custos:</span>
                     <span className="text-lg font-bold text-red-600">
                       R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t-2 border-gray-300">
-                    <span className="text-gray-700 font-bold">💳 Saldo:</span>
+                  <div className="flex justify-between items-center pt-2 -t-2 " style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                    <span className=" font-bold">💳 Saldo:</span>
                     <span className={`text-xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                       R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
@@ -651,11 +651,11 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
                   {/* Barra de Progresso */}
                   <div>
-                    <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <div className="flex justify-between text-xs  mb-1">
                       <span>Execução do Orçamento</span>
                       <span className="font-bold">{percentual.toFixed(1)}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div className="w-full rounded-full h-3 overflow-hidden" style={{background:"var(--color-surface-3)"}}>
                       <div
                         className={`h-3 rounded-full transition-all ${
                           percentual > 100 ? 'bg-red-500' : percentual > 75 ? 'bg-yellow-500' : 'bg-blue-500'
@@ -686,7 +686,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         carregarCustos(projeto.id);
                         setMostrarCustos(true);
                       }}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm"
                     >
                       💸 Custos
                     </button>
@@ -701,13 +701,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Modal de Receitas */}
       {mostrarReceitas && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className=" rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
             {/* Header do Modal */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 sticky top-0">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-bold">💵 Receitas do Projeto</h3>
-                  <p className="text-sm opacity-90 mt-1">{projetoSelecionado.nome}</p>
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💵 Receitas do Projeto</h3>
+                  <p className="text-sm opacity-90 mt-1" style={{color:"var(--color-text-muted)"}}>{projetoSelecionado.nome}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -725,15 +725,15 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             <div className="p-6">
               {/* Formulário de Nova Receita */}
               {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarReceita} className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">➕ Adicionar Receita</h4>
+                <form onSubmit={adicionarReceita} className=" rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                  <h4 className="font-bold  mb-3">➕ Adicionar Receita</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input
                       type="date"
                       required
                       value={receitaForm.data_receita || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, data_receita: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <input
                       type="text"
@@ -741,13 +741,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       placeholder="Descrição"
                       value={receitaForm.descricao || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, descricao: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <select
                       required
                       value={receitaForm.origem || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     >
                       <option value="">Origem</option>
                       {origensReceita.map(origem => (
@@ -761,13 +761,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       placeholder="Valor"
                       value={receitaForm.valor || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <select
                       required
                       value={receitaForm.forma_pagamento || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     >
                       <option value="">Forma Pagamento</option>
                       {formasPagamento.map(forma => (
@@ -779,14 +779,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       placeholder="Responsável"
                       value={receitaForm.responsavel || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, responsavel: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <input
                       type="text"
                       placeholder="Observação"
                       value={receitaForm.observacao || ''}
                       onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
-                      className="md:col-span-2 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                      className="md:col-span-2 px-3 py-2   rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <button
                       type="submit"
@@ -800,41 +800,41 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
               {/* Tabela de Receitas */}
               {receitasDoModal.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center  py-8">
                   <p>📋 Nenhuma receita registrada para este projeto</p>
                 </div>
               ) : (
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-100 border-b-2 border-gray-300">
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Data</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Descrição</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Origem</th>
-                          <th className="px-4 py-3 text-right text-sm font-bold text-gray-700">Valor</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Pagamento</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Responsável</th>
-                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold text-gray-700">Ações</th>}
+                      <thead style={{background:"var(--color-surface-2)"}}>
+                        <tr className=" -b-2 " style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Data</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Descrição</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Origem</th>
+                          <th className="px-4 py-3 text-right text-sm font-bold ">Valor</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Pagamento</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Responsável</th>
+                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold ">Ações</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {receitasDoModal.map((receita, i) => (
-                          <tr key={receita.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-3 text-sm">
+                          <tr key={receita.id} className={i % 2 === 0 ? '' : ''}>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
-                            <td className="px-4 py-3 text-sm">{receita.descricao}</td>
-                            <td className="px-4 py-3 text-sm">
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.descricao}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
                                 {receita.origem}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-right font-bold text-green-600">
+                            <td className="px-4 py-3 text-sm text-right font-bold text-green-600" style={{color:"var(--color-text)"}}>
                               R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="px-4 py-3 text-sm">{receita.forma_pagamento}</td>
-                            <td className="px-4 py-3 text-sm">{receita.responsavel}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.forma_pagamento}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
                                 <button
@@ -849,8 +849,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="bg-gray-200 border-t-2 border-gray-400">
-                          <td colSpan="3" className="px-4 py-3 text-right font-bold text-gray-800">
+                        <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <td colSpan="3" className="px-4 py-3 text-right font-bold ">
                             TOTAL:
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-green-700 text-lg">
@@ -871,13 +871,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Modal de Custos */}
       {mostrarCustos && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className=" rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
             {/* Header do Modal */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 sticky top-0">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-bold">💰 Custos do Projeto</h3>
-                  <p className="text-sm opacity-90 mt-1">{projetoSelecionado.nome}</p>
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Custos do Projeto</h3>
+                  <p className="text-sm opacity-90 mt-1" style={{color:"var(--color-text-muted)"}}>{projetoSelecionado.nome}</p>
                 </div>
                 <button
                   onClick={() => {
@@ -895,15 +895,15 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             <div className="p-6">
               {/* Formulário de Novo Custo */}
               {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarCusto} className="bg-gray-50 rounded-lg p-4 mb-6">
-                  <h4 className="font-bold text-gray-700 mb-3">➕ Adicionar Custo</h4>
+                <form onSubmit={adicionarCusto} className=" rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                  <h4 className="font-bold  mb-3">➕ Adicionar Custo</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input
                       type="date"
                       required
                       value={custoForm.data_custo || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, data_custo: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <input
                       type="text"
@@ -911,13 +911,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       placeholder="Descrição"
                       value={custoForm.descricao || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, descricao: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <select
                       required
                       value={custoForm.categoria || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     >
                       <option value="">Categoria</option>
                       {categoriasCusto.map(cat => (
@@ -931,13 +931,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       placeholder="Valor"
                       value={custoForm.valor || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <select
                       required
                       value={custoForm.forma_pagamento || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     >
                       <option value="">Forma Pagamento</option>
                       {formasPagamento.map(forma => (
@@ -949,18 +949,18 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       placeholder="Responsável"
                       value={custoForm.responsavel || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, responsavel: e.target.value })}
-                      className="px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <input
                       type="text"
                       placeholder="Observação"
                       value={custoForm.observacao || ''}
                       onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
-                      className="md:col-span-2 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                      className="md:col-span-2 px-3 py-2   rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     />
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium"
+                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
                     >
                       ➕ Adicionar
                     </button>
@@ -970,41 +970,41 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
               {/* Tabela de Custos */}
               {custosDoModal.length === 0 ? (
-                <div className="text-center text-gray-500 py-8">
+                <div className="text-center  py-8">
                   <p>📋 Nenhum custo registrado para este projeto</p>
                 </div>
               ) : (
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead>
-                        <tr className="bg-gray-100 border-b-2 border-gray-300">
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Data</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Descrição</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Categoria</th>
-                          <th className="px-4 py-3 text-right text-sm font-bold text-gray-700">Valor</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Pagamento</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Responsável</th>
-                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold text-gray-700">Ações</th>}
+                      <thead style={{background:"var(--color-surface-2)"}}>
+                        <tr className=" -b-2 " style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Data</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Descrição</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Categoria</th>
+                          <th className="px-4 py-3 text-right text-sm font-bold ">Valor</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Pagamento</th>
+                          <th className="px-4 py-3 text-left text-sm font-bold ">Responsável</th>
+                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold ">Ações</th>}
                         </tr>
                       </thead>
                       <tbody>
                         {custosDoModal.map((custo, i) => (
-                          <tr key={custo.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-3 text-sm">
+                          <tr key={custo.id} className={i % 2 === 0 ? '' : ''}>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {new Date(custo.data_custo + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
-                            <td className="px-4 py-3 text-sm">{custo.descricao}</td>
-                            <td className="px-4 py-3 text-sm">
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.descricao}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                                 {custo.categoria}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-right font-bold text-red-600">
+                            <td className="px-4 py-3 text-sm text-right font-bold text-red-600" style={{color:"var(--color-text)"}}>
                               R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
-                            <td className="px-4 py-3 text-sm">{custo.forma_pagamento}</td>
-                            <td className="px-4 py-3 text-sm">{custo.responsavel}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.forma_pagamento}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
                                 <button
@@ -1019,8 +1019,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         ))}
                       </tbody>
                       <tfoot>
-                        <tr className="bg-gray-200 border-t-2 border-gray-400">
-                          <td colSpan="3" className="px-4 py-3 text-right font-bold text-gray-800">
+                        <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <td colSpan="3" className="px-4 py-3 text-right font-bold ">
                             TOTAL:
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-red-700 text-lg">
