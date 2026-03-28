@@ -77,6 +77,11 @@ export const FinanceiroCunhadas=({userData})=>{
   const[mesMens,setMesMens]=useState(HOJE.getMonth()+1);
   const[anoMens,setAnoMens]=useState(HOJE.getFullYear());
 
+  // ── relatório mensalidades ───────────────────────────────────────────────────
+  const[mRelat,setMRelat]=useState(false);
+  const[relatForm,setRelatForm]=useState({modo:'mes',mes:HOJE.getMonth()+1,semestre:1,ano:HOJE.getFullYear()});
+  const[gerandoPdf,setGerandoPdf]=useState(false);
+
   // ── pagamento adiantado ────────────────────────────────────────────────────
   const[mPgAdiant,setMPgAdiant]=useState(false);
   const[pgAdiantForm,setPgAdiantForm]=useState({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
@@ -337,7 +342,115 @@ export const FinanceiroCunhadas=({userData})=>{
     meses:p.meses.includes(mes)?p.meses.filter(m=>m!==mes):[...p.meses,mes].sort((a,b)=>a-b)
   }));
 
-    const togCunh=id=>setFLote(p=>({...p,cunhadas_selecionadas:p.cunhadas_selecionadas.includes(id)?p.cunhadas_selecionadas.filter(x=>x!==id):[...p.cunhadas_selecionadas,id]}));
+  
+  // ── Gerar relatório PDF de situação de mensalidades ──────────────────────
+  const gerarRelatorio=async()=>{
+    setGerandoPdf(true);
+    try{
+      const jsPDFModule=await import('jspdf');
+      const jsPDF=jsPDFModule.default;
+      const doc=new jsPDF({orientation:'landscape'});
+      const{modo,mes,semestre,ano}=relatForm;
+      const MESES_ABREV=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+      // Determinar colunas de meses conforme modo
+      let colunas=[];
+      if(modo==='mes'){
+        colunas=[{mes:parseInt(mes),ano:parseInt(ano)}];
+      }else if(modo==='semestre'){
+        const inicio=parseInt(semestre)===1?1:7;
+        colunas=Array.from({length:6},(_,i)=>({mes:inicio+i,ano:parseInt(ano)}));
+      }else{
+        colunas=Array.from({length:12},(_,i)=>({mes:i+1,ano:parseInt(ano)}));
+      }
+
+      // Índice de situação (igual à matrix)
+      const idx={};
+      mensalidades.forEach(m=>{
+        const k=`${String(m.cunhada_id).trim()}-${parseInt(m.mes,10)}-${parseInt(m.ano,10)}`;
+        idx[k]=m.pago;
+      });
+      todos.filter(l=>l.tipo==='receita'&&l.pago&&l.cunhada_id).forEach(l=>{
+        const[y,m]=l.data_lancamento.split('-');
+        const k=`${String(l.cunhada_id).trim()}-${parseInt(m,10)}-${parseInt(y,10)}`;
+        if(!(k in idx))idx[k]=true;
+      });
+
+      // Cabeçalho
+      let y=14;
+      doc.setFontSize(13);doc.setFont('helvetica','bold');
+      doc.text(nomeGrupo,148,y,{align:'center'});
+      y+=7;
+      doc.setFontSize(10);doc.setFont('helvetica','normal');
+      const tituloRel=modo==='mes'?`Situação de Mensalidades — ${MESES_ABREV[parseInt(mes)-1]}/${ano}`:
+                      modo==='semestre'?`Situação de Mensalidades — ${parseInt(semestre)}º Semestre/${ano}`:
+                      `Situação de Mensalidades — Ano ${ano}`;
+      doc.text(tituloRel,148,y,{align:'center'});
+      y+=5;
+      doc.setFontSize(8);doc.setTextColor(120);
+      doc.text(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`,148,y,{align:'center'});
+      doc.setTextColor(0);
+      y+=8;
+
+      // Cabeçalho da tabela
+      const colW=Math.min(22,(270-60)/colunas.length);
+      const nomeW=270-(colW*colunas.length);
+      doc.setFillColor(40,40,60);doc.setTextColor(255);doc.setFontSize(8);doc.setFont('helvetica','bold');
+      doc.rect(14,y,nomeW,8,'F');
+      doc.text('Cunhada',16,y+5.5);
+      colunas.forEach((col,i)=>{
+        const x=14+nomeW+i*colW;
+        doc.rect(x,y,colW,8,'F');
+        doc.text(`${MESES_ABREV[col.mes-1]}/${String(col.ano).slice(2)}`,x+colW/2,y+5.5,{align:'center'});
+      });
+      doc.setTextColor(0);
+      y+=8;
+
+      // Linhas
+      cunhadas.forEach((cunh,ri)=>{
+        const nome=abreviaNome(cunh.nome);
+        const bg=ri%2===0?[248,248,252]:[238,238,248];
+        doc.setFillColor(...bg);
+        doc.rect(14,y,270,7,'F');
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(30);
+        doc.text(nome,16,y+5);
+        colunas.forEach((col,i)=>{
+          const k=`${String(cunh.id).trim()}-${col.mes}-${col.ano}`;
+          const temReg=k in idx;
+          const pago=idx[k];
+          const x=14+nomeW+i*colW+colW/2;
+          if(!temReg){
+            doc.setTextColor(180);doc.text('—',x,y+5,{align:'center'});
+          }else if(pago){
+            doc.setTextColor(16,185,129);doc.setFont('helvetica','bold');
+            doc.text('OK',x,y+5,{align:'center'});
+          }else{
+            doc.setTextColor(239,68,68);doc.setFont('helvetica','bold');
+            doc.text('X',x,y+5,{align:'center'});
+          }
+          doc.setTextColor(30);doc.setFont('helvetica','normal');
+        });
+        // Borda linha
+        doc.setDrawColor(210);doc.rect(14,y,270,7,'S');
+        y+=7;
+        if(y>190){doc.addPage();y=14;}
+      });
+
+      // Legenda
+      y+=4;
+      doc.setFontSize(7);doc.setTextColor(80);
+      doc.text('Legenda:  OK = pago   X = pendente   — = não gerado',14,y);
+
+      const nomeModo=modo==='mes'?`${MESES_ABREV[parseInt(mes)-1]}_${ano}`:
+                     modo==='semestre'?`${semestre}sem_${ano}`:`${ano}`;
+      doc.save(`Mensalidades_${nomeGrupo.replace(/\s+/g,'_')}_${nomeModo}.pdf`);
+      showMsg('sucesso','PDF gerado!');
+      setMRelat(false);
+    }catch(e){showMsg('erro','Erro: '+e.message);}
+    finally{setGerandoPdf(false);}
+  };
+
+  const togCunh=id=>setFLote(p=>({...p,cunhadas_selecionadas:p.cunhadas_selecionadas.includes(id)?p.cunhadas_selecionadas.filter(x=>x!==id):[...p.cunhadas_selecionadas,id]}));
   const togSelQ=id=>setSelQ(p=>p.includes(id)?p.filter(x=>x!==id):[...p,id]);
 
   // ── CARDS RESUMO ────────────────────────────────────────────────────────────
@@ -561,9 +674,8 @@ export const FinanceiroCunhadas=({userData})=>{
           <button style={s.ab} onClick={()=>{let m=mesMens+1,a=anoMens;if(m>12){m=1;a++;}setMesMens(m);setAnoMens(a);}}>›</button>
         </div>
         <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
-          <button style={s.bs} onClick={()=>setMCfg(true)}>⚙️ Valor: {fmtM(config.valor_mensalidade)}</button>
           <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
-          <button style={s.bp('var(--color-accent)')} onClick={gerarMens}>⚡ Gerar mensalidades</button>
+          <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>🖨️ Relatório</button>
         </div>
       </div>
 
@@ -961,6 +1073,84 @@ export const FinanceiroCunhadas=({userData})=>{
               {selQ.length>0&&<div style={{...s.ib,marginTop:'0.75rem'}}><p style={{margin:0,fontSize:'0.875rem',color:'var(--color-accent)',fontWeight:'600'}}>Total: <strong>{fmtM(todos.filter(l=>selQ.includes(l.id)).reduce((s,l)=>s+Number(l.valor),0))}</strong> ({selQ.length} lançamento(s))</p></div>}
             </div>
             <div style={s.mf}><button style={s.bs} onClick={()=>setMQLote(false)} disabled={salvQL}>Cancelar</button><button style={s.bp('#10b981')} onClick={quitarLote} disabled={salvQL||!selQ.length}>{salvQL?'⏳...`':`✅ Quitar ${selQ.length}`}</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL RELATÓRIO */}
+      {mRelat&&(
+        <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMRelat(false)}>
+          <div style={{...s.mo,maxWidth:'420px'}}>
+            <div style={s.mh}>
+              <h2 style={{margin:0,fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)'}}>🖨️ Relatório de Mensalidades</h2>
+              <button onClick={()=>setMRelat(false)} style={{background:'none',border:'none',color:'var(--color-text-muted)',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+            </div>
+            <div style={s.mb}>
+              <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+
+                {/* Modo */}
+                <Lbl l="Período" ch={
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.5rem'}}>
+                    {[{v:'mes',l:'Mensal'},{v:'semestre',l:'Semestral'},{v:'anual',l:'Anual'}].map(t=>(
+                      <button key={t.v} type="button" onClick={()=>setRelatForm({...relatForm,modo:t.v})}
+                        style={{padding:'0.55rem',borderRadius:'var(--radius-lg)',border:'2px solid',borderColor:relatForm.modo===t.v?'var(--color-accent)':'var(--color-border)',background:relatForm.modo===t.v?'var(--color-accent-bg)':'var(--color-surface-2)',color:relatForm.modo===t.v?'var(--color-accent)':'var(--color-text)',fontWeight:relatForm.modo===t.v?'700':'400',cursor:'pointer',fontSize:'0.82rem'}}>
+                        {t.l}
+                      </button>
+                    ))}
+                  </div>
+                }/>
+
+                {/* Mês — só no modo mensal */}
+                {relatForm.modo==='mes'&&(
+                  <Lbl l="Mês" ch={
+                    <select style={s.sel} value={relatForm.mes} onChange={e=>setRelatForm({...relatForm,mes:parseInt(e.target.value)})}>
+                      {MESES.map((nm,i)=><option key={i+1} value={i+1}>{nm}</option>)}
+                    </select>
+                  }/>
+                )}
+
+                {/* Semestre — só no modo semestral */}
+                {relatForm.modo==='semestre'&&(
+                  <Lbl l="Semestre" ch={
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.5rem'}}>
+                      {[{v:1,l:'1º Semestre (Jan–Jun)'},{v:2,l:'2º Semestre (Jul–Dez)'}].map(t=>(
+                        <button key={t.v} type="button" onClick={()=>setRelatForm({...relatForm,semestre:t.v})}
+                          style={{padding:'0.55rem',borderRadius:'var(--radius-lg)',border:'2px solid',borderColor:relatForm.semestre===t.v?'var(--color-accent)':'var(--color-border)',background:relatForm.semestre===t.v?'var(--color-accent-bg)':'var(--color-surface-2)',color:relatForm.semestre===t.v?'var(--color-accent)':'var(--color-text)',fontWeight:relatForm.semestre===t.v?'700':'400',cursor:'pointer',fontSize:'0.78rem'}}>
+                          {t.l}
+                        </button>
+                      ))}
+                    </div>
+                  }/>
+                )}
+
+                {/* Ano */}
+                <Lbl l="Ano" ch={
+                  <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                    <button style={s.ab} onClick={()=>setRelatForm({...relatForm,ano:relatForm.ano-1})}>‹</button>
+                    <span style={{fontWeight:'700',color:'var(--color-text)',flex:1,textAlign:'center'}}>{relatForm.ano}</span>
+                    <button style={s.ab} onClick={()=>setRelatForm({...relatForm,ano:relatForm.ano+1})}>›</button>
+                  </div>
+                }/>
+
+                {/* Preview */}
+                <div style={s.ib}>
+                  <p style={{margin:0,fontSize:'0.82rem',color:'var(--color-accent)',fontWeight:'600'}}>
+                    {relatForm.modo==='mes'&&`Mensal: ${MESES[relatForm.mes-1]}/${relatForm.ano}`}
+                    {relatForm.modo==='semestre'&&`${relatForm.semestre}º Semestre/${relatForm.ano} (${relatForm.semestre===1?'Jan–Jun':'Jul–Dez'})`}
+                    {relatForm.modo==='anual'&&`Anual: ${relatForm.ano} (todos os 12 meses)`}
+                  </p>
+                  <p style={{margin:'0.25rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+                    {cunhadas.length} cunhadas · formato PDF paisagem
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div style={s.mf}>
+              <button style={s.bs} onClick={()=>setMRelat(false)}>Cancelar</button>
+              <button style={s.bp('#10b981')} onClick={gerarRelatorio} disabled={gerandoPdf}>
+                {gerandoPdf?'⏳ Gerando...':'📄 Gerar PDF'}
+              </button>
+            </div>
           </div>
         </div>
       )}
