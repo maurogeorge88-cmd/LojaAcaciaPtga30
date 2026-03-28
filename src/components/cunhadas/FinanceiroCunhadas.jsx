@@ -316,10 +316,11 @@ export const FinanceiroCunhadas=({userData})=>{
         showMsg('erro','Erros: '+erros.join(' | '));
       }else{
         showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
-        setMPgAdiant(false);
-        setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
-        carregarTudo();
       }
+      // Sempre fechar e recarregar para refletir o que foi salvo
+      setMPgAdiant(false);
+      setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
+      carregarTudo();
     }catch(e){showMsg('erro','Erro: '+e.message);}
     finally{setSalvPgAdiant(false);}
   };
