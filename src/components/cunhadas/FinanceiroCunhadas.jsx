@@ -402,7 +402,7 @@ export const FinanceiroCunhadas=({userData})=>{
         setStyle(8,true,[239,68,68]);
         txt(fmtM(l.valor),190,y,{align:'right'});
         totalDesp+=Number(l.valor);
-        y+=5.5;linhaSim(doc,y);y+=1;
+        y+=5.5;
       });
       if(despesas.length===0){setStyle(8,false,[150]);txt('Nenhuma despesa neste mês.',10,y);y+=6;}
 
@@ -462,7 +462,7 @@ export const FinanceiroCunhadas=({userData})=>{
         setStyle(8,true,[16,120,60]);
         txt(fmtM(l.valor),190,y,{align:'right'});
         totalRec+=l.valor;
-        y+=5.5;linhaSim(doc,y);y+=1;
+        y+=5.5;
       });
       if(linhasReceita.length===0){setStyle(8,false,[150]);txt('Nenhuma receita neste mês.',10,y);y+=6;}
 
