@@ -122,18 +122,16 @@ export const FinanceiroCunhadas=({userData})=>{
     try{
       const[{data:lanc},{data:mens},{data:cunh},{data:cats},{data:cfgs}]=await Promise.all([
         supabase.from('financeiro_cunhadas').select('*,categoria:categorias_financeiras_cunhadas(nome,tipo),cunhada:cunhadas(nome)').order('data_lancamento',{ascending:false}),
-        supabase.from('mensalidades_cunhadas').select('id,cunhada_id,mes,ano,valor,pago,cunhada:cunhadas(nome)').order('ano',{ascending:false}).order('mes',{ascending:false}),
+        supabase.from('mensalidades_cunhadas').select('id,cunhada_id,mes,ano,valor,pago,cunhada:cunhadas(nome)').order('ano',{ascending:false}).order('mes',{ascending:false}).then(r=>{console.log('MENS QUERY result:',r.data?.length,'error:',r.error?.message);return r;}),
         supabase.from('cunhadas').select('id,nome').eq('ativa',true).order('nome'),
         supabase.from('categorias_financeiras_cunhadas').select('*').order('tipo').order('nome'),
         supabase.from('configuracoes_cunhadas').select('*'),
       ]);
       setTodos(lanc||[]);setMensalidades(mens||[]);setCunhadas(cunh||[]);setCategorias(cats||[]);
       // DEBUG TEMPORÁRIO
-      console.log('=== DEBUG MENSALIDADES ===');
-      console.log('Total registros:', (mens||[]).length);
-      (mens||[]).slice(0,5).forEach(m=>console.log('  registro:', JSON.stringify({id:m.id,cunhada_id:m.cunhada_id,mes:m.mes,ano:m.ano,pago:m.pago,tipo_mes:typeof m.mes,tipo_ano:typeof m.ano,tipo_cid:typeof m.cunhada_id})));
+      console.log('=== DEBUG MENSALIDADES RAW ===', mens);
       console.log('=== DEBUG CUNHADAS ===');
-      (cunh||[]).slice(0,3).forEach(c=>console.log('  cunhada:', JSON.stringify({id:c.id,nome:c.nome,tipo_id:typeof c.id})));
+      (cunh||[]).slice(0,3).forEach(cx=>console.log('  cunhada:', JSON.stringify({id:cx.id,nome:cx.nome})));
       if(cfgs){const o={};cfgs.forEach(c=>o[c.chave]=c.valor);setConfig(o);setCfgForm({valor_mensalidade:o.valor_mensalidade||'50.00',dia_vencimento:o.dia_vencimento||'10'});if(o.nome_grupo)setNomeGrupo(o.nome_grupo);}
     }catch(e){showMsg('erro','Erro: '+e.message);}finally{setLoading(false);}
   },[]);
