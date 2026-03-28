@@ -240,7 +240,11 @@ export const FinanceiroCunhadas=({userData})=>{
     const ja=mensM.map(m=>m.cunhada_id);
     const faltam=cunhadas.filter(c=>!ja.includes(c.id));
     if(!faltam.length){showMsg('sucesso','Já geradas!');return;}
-    const{error}=await supabase.from('mensalidades_cunhadas').insert(faltam.map(c=>({cunhada_id:c.id,mes:mesMens,ano:anoMens,valor:parseFloat(config.valor_mensalidade),pago:false})));
+    const diaV=parseInt(config.dia_vencimento||'10');
+    const ultDia=new Date(anoMens,mesMens,0).getDate();
+    const diaFinal=Math.min(diaV,ultDia);
+    const dataVencGerar=`${anoMens}-${String(mesMens).padStart(2,'0')}-${String(diaFinal).padStart(2,'0')}`;
+    const{error}=await supabase.from('mensalidades_cunhadas').insert(faltam.map(cx=>({cunhada_id:cx.id,mes:mesMens,ano:anoMens,valor:parseFloat(config.valor_mensalidade),pago:false,data_vencimento:dataVencGerar})));
     if(error)showMsg('erro','Erro');else{showMsg('sucesso',`${faltam.length} geradas!`);carregarTudo();}
   };
 
@@ -292,14 +296,22 @@ export const FinanceiroCunhadas=({userData})=>{
     if(!pgAdiantForm.meses.length){showMsg('erro','Selecione ao menos um mês.');return;}
     setSalvPgAdiant(true);
     try{
-      const registros=pgAdiantForm.meses.map(mes=>({
-        cunhada_id:pgAdiantForm.cunhada_id,
-        mes:parseInt(mes),
-        ano:parseInt(pgAdiantForm.ano),
-        valor:parseFloat(config.valor_mensalidade||'50'),
-        pago:true,
-        data_pagamento:HOJE.toISOString().slice(0,10),
-      }));
+      const diaVenc=parseInt(config.dia_vencimento||'10');
+      const registros=pgAdiantForm.meses.map(mes=>{
+        const m=parseInt(mes);const a=parseInt(pgAdiantForm.ano);
+        const ultimoDia=new Date(a,m,0).getDate();
+        const dia=Math.min(diaVenc,ultimoDia);
+        const dataVenc=`${a}-${String(m).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+        return{
+          cunhada_id:pgAdiantForm.cunhada_id,
+          mes:m,
+          ano:a,
+          valor:parseFloat(config.valor_mensalidade||'50'),
+          pago:true,
+          data_pagamento:HOJE.toISOString().slice(0,10),
+          data_vencimento:dataVenc,
+        };
+      });
       const{error:errUpsert}=await supabase
         .from('mensalidades_cunhadas')
         .upsert(registros,{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
