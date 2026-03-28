@@ -576,21 +576,42 @@ export const FinanceiroCunhadas=({userData})=>{
 
       {/* ── Cards do mês ───────────────────────────────────────────────── */}
       {mensM.length===0?(
-        <div style={{...s.card,textAlign:'center',padding:'2rem'}}><p style={{color:'var(--color-text-muted)',marginBottom:'1rem'}}>Não geradas para {MESES[mesMens-1]}/{anoMens}.</p><button style={s.bp('var(--color-accent)')} onClick={gerarMens}>⚡ Gerar agora</button></div>
+        <div style={{...s.card,textAlign:'center',padding:'2rem'}}>
+          <p style={{color:'var(--color-text-muted)',marginBottom:'1rem'}}>Não geradas para {MESES[mesMens-1]}/{anoMens}.</p>
+          <button style={s.bp('var(--color-accent)')} onClick={gerarMens}>⚡ Gerar agora</button>
+        </div>
       ):(
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(190px,1fr))',gap:'1rem'}}>
-          {mensM.map(m=>(
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:'1rem'}}>
+          {mensM.map(m=>{
+            // Meses adiantados desta cunhada no ano corrente (todos os meses pagos)
+            const adiantados=mensalidades
+              .filter(x=>x.cunhada_id===m.cunhada_id&&x.ano===anoMens&&x.pago)
+              .map(x=>x.mes)
+              .sort((a,b)=>a-b);
+            const temAdiant=adiantados.length>1||(adiantados.length===1&&adiantados[0]!==mesMens);
+            const nomeAbrev=abreviaNome(m.cunhada?.nome||'');
+            return(
             <div key={m.id} style={{...s.csm,borderTop:`3px solid ${m.pago?'#10b981':'#f59e0b'}`}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:'0.5rem'}}>
-                <div style={{width:'1.75rem',height:'1.75rem',borderRadius:'50%',background:m.pago?'rgba(16,185,129,0.15)':'rgba(245,158,11,0.15)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:'700',fontSize:'0.75rem',color:m.pago?'#10b981':'#f59e0b'}}>{m.cunhada?.nome?.charAt(0).toUpperCase()}</div>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.5rem'}}>
                 <span style={s.bdg(m.pago)}>{m.pago?'✓ Paga':'⏳ Aberto'}</span>
+                {temAdiant&&<span style={{fontSize:'0.68rem',color:'#a855f7',fontWeight:'600',background:'rgba(168,85,247,0.1)',padding:'0.1rem 0.4rem',borderRadius:'999px'}}>adiantado</span>}
               </div>
-              <p style={{margin:'0 0 0.15rem',fontWeight:'700',fontSize:'0.875rem',color:'var(--color-text)'}}>{m.cunhada?.nome}</p>
-              <p style={{margin:'0 0 0.5rem',fontWeight:'700',color:m.pago?'#10b981':'#f59e0b'}}>{fmtM(m.valor)}</p>
-              
-              <button onClick={()=>toggleMens(m)} style={{width:'100%',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'none',background:m.pago?'rgba(245,158,11,0.12)':'rgba(16,185,129,0.12)',color:m.pago?'#f59e0b':'#10b981',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>{m.pago?'↩ Desfazer':'✓ Marcar paga'}</button>
+              {/* Nome abreviado */}
+              <p style={{margin:'0 0 0.2rem',fontWeight:'700',fontSize:'0.9rem',color:'var(--color-text)',lineHeight:1.2}}>{nomeAbrev}</p>
+              {/* Valor do mês */}
+              <p style={{margin:'0 0 0.35rem',fontWeight:'700',fontSize:'1rem',color:m.pago?'#10b981':'#f59e0b'}}>{fmtM(m.valor)}</p>
+              {/* Meses adiantados em numeral */}
+              {temAdiant&&(
+                <p style={{margin:'0 0 0.5rem',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+                  Meses: <span style={{fontWeight:'600',color:'#a855f7'}}>{adiantados.join(', ')}</span>
+                </p>
+              )}
+              <button onClick={()=>toggleMens(m)} style={{width:'100%',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'none',background:m.pago?'rgba(245,158,11,0.12)':'rgba(16,185,129,0.12)',color:m.pago?'#f59e0b':'#10b981',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>
+                {m.pago?'↩ Desfazer':'✓ Marcar paga'}
+              </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
