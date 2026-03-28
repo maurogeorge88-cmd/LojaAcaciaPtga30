@@ -232,7 +232,7 @@ export const FinanceiroCunhadas=({userData})=>{
   };
 
   const toggleMens=async(m)=>{
-    const{error}=await supabase.from('mensalidades_cunhadas').update({pago:!m.pago}).eq('id',m.id);
+    const{error}=await supabase.from('mensalidades_cunhadas').update({pago:!m.pago,data_pagamento:!m.pago?HOJE.toISOString().slice(0,10):null}).eq('id',m.id);
     if(!error)carregarTudo();
   };
 
@@ -292,32 +292,27 @@ export const FinanceiroCunhadas=({userData})=>{
     if(!pgAdiantForm.meses.length){showMsg('erro','Selecione ao menos um mês.');return;}
     setSalvPgAdiant(true);
     try{
-      let erros=[];
-      for(const mes of pgAdiantForm.meses){
-        const{data:exist,error:errSel}=await supabase.from('mensalidades_cunhadas')
-          .select('id').eq('cunhada_id',pgAdiantForm.cunhada_id).eq('mes',mes).eq('ano',pgAdiantForm.ano);
-        if(errSel){erros.push(`select mes ${mes}: ${errSel.message}`);continue;}
-        if(exist&&exist.length>0){
-          const{error:errUpd}=await supabase.from('mensalidades_cunhadas')
-            .update({pago:true}).eq('id',exist[0].id);
-          if(errUpd)erros.push(`update mes ${mes}: ${errUpd.message}`);
-        }else{
-          const{error:errIns}=await supabase.from('mensalidades_cunhadas').insert([{
-            cunhada_id:pgAdiantForm.cunhada_id,
-            mes,
-            ano:pgAdiantForm.ano,
-            valor:parseFloat(config.valor_mensalidade||'50'),
-            pago:true,
-          }]);
-          if(errIns)erros.push(`insert mes ${mes}: ${errIns.message}`);
+      const registros=pgAdiantForm.meses.map(mes=>({
+        cunhada_id:pgAdiantForm.cunhada_id,
+        mes:parseInt(mes),
+        ano:parseInt(pgAdiantForm.ano),
+        valor:parseFloat(config.valor_mensalidade||'50'),
+        pago:true,
+        data_pagamento:HOJE.toISOString().slice(0,10),
+      }));
+      const{error:errUpsert}=await supabase
+        .from('mensalidades_cunhadas')
+        .upsert(registros,{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
+      if(errUpsert){
+        // upsert falhou — tentar insert simples um por um ignorando duplicatas
+        let salvos=0;
+        for(const r of registros){
+          const{error:e}=await supabase.from('mensalidades_cunhadas').insert([r]);
+          if(!e)salvos++;
         }
+        if(salvos===0)throw new Error(errUpsert.message);
       }
-      if(erros.length>0){
-        showMsg('erro','Erros: '+erros.join(' | '));
-      }else{
-        showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
-      }
-      // Sempre fechar e recarregar para refletir o que foi salvo
+      showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
       setMPgAdiant(false);
       setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
       carregarTudo();
