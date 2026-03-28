@@ -77,6 +77,11 @@ export const FinanceiroCunhadas=({userData})=>{
   const[mesMens,setMesMens]=useState(HOJE.getMonth()+1);
   const[anoMens,setAnoMens]=useState(HOJE.getFullYear());
 
+  // ── extrato fechamento mes ───────────────────────────────────────────────────
+  const[mFech,setMFech]=useState(false);
+  const[fechForm,setFechForm]=useState({mes:HOJE.getMonth()+1,ano:HOJE.getFullYear()});
+  const[gerandoFech,setGerandoFech]=useState(false);
+
   // ── relatório mensalidades ───────────────────────────────────────────────────
   const[mRelat,setMRelat]=useState(false);
   const[relatForm,setRelatForm]=useState({modo:'mes',mes:HOJE.getMonth()+1,semestre:1,ano:HOJE.getFullYear()});
@@ -344,6 +349,165 @@ export const FinanceiroCunhadas=({userData})=>{
 
   
   // ── Gerar relatório PDF de situação de mensalidades ──────────────────────
+
+  // ── Gerar extrato de fechamento mensal PDF ────────────────────────────────
+  const gerarFechamento=async()=>{
+    setGerandoFech(true);
+    try{
+      const jsPDFModule=await import('jspdf');
+      const jsPDF=jsPDFModule.default;
+      const doc=new jsPDF();
+      const{mes,ano}=fechForm;
+      const nomeMes=MESES[parseInt(mes)-1];
+      const W=190; // largura útil (210 - 2*10)
+      let y=14;
+
+      // ── helpers de layout ────────────────────────────────────────────────
+      const linhaDupla=(doc,y)=>{doc.setDrawColor(80);doc.setLineWidth(0.8);doc.line(10,y,200,y);doc.setLineWidth(0.3);doc.line(10,y+1,200,y+1);doc.setDrawColor(180);doc.setLineWidth(0.2);return y+3;};
+      const linhaSim=(doc,y,cor=[180])=>{doc.setDrawColor(...cor);doc.setLineWidth(0.2);doc.line(10,y,200,y);return y+0.5;};
+      const txt=(t,x,yy,op={})=>{doc.text(String(t),x,yy,op);};
+      const setStyle=(sz,bold,color=[0])=>{doc.setFontSize(sz);doc.setFont('helvetica',bold?'bold':'normal');doc.setTextColor(...color);};
+
+      // ── CABEÇALHO ────────────────────────────────────────────────────────
+      setStyle(14,true);txt(nomeGrupo,105,y,{align:'center'});y+=7;
+      setStyle(10,false,[80]);txt(`Extrato de Fechamento — ${nomeMes}/${ano}`,105,y,{align:'center'});y+=5;
+      setStyle(7,false,[140]);txt(`Emitido em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`,105,y,{align:'center'});
+      y=linhaDupla(doc,y+4);y+=3;
+
+      // Filtrar lançamentos do mês
+      const lancMes=todos.filter(l=>{
+        const[ly,lm]=l.data_lancamento.split('-');
+        return parseInt(lm)===parseInt(mes)&&parseInt(ly)===parseInt(ano)&&l.pago;
+      });
+
+      // ── DESPESAS ─────────────────────────────────────────────────────────
+      setStyle(10,true,[239,68,68]);txt('DESPESAS',10,y);y+=2;
+      y=linhaSim(doc,y,[239,68,68]);y+=4;
+
+      // Cabeçalho colunas
+      setStyle(7.5,true,[60]);
+      doc.setFillColor(248,232,232);doc.rect(10,y-4,W,6,'F');
+      txt('Data',11,y);txt('Descrição',30,y);txt('Categoria',100,y);txt('Valor',190,y,{align:'right'});
+      y+=3;linhaSim(doc,y,[200]);y+=3;
+
+      const despesas=lancMes.filter(l=>l.tipo==='despesa');
+      let totalDesp=0;
+      despesas.forEach((l,i)=>{
+        if(y>270){doc.addPage();y=14;}
+        if(i%2===0){doc.setFillColor(252,248,248);doc.rect(10,y-3.5,W,5.5,'F');}
+        setStyle(8,false,[30]);
+        txt(fmtD(l.data_lancamento),11,y);
+        txt(doc.splitTextToSize(l.descricao,60)[0],30,y);
+        txt(doc.splitTextToSize(l.categoria?.nome||'—',50)[0],100,y);
+        setStyle(8,true,[239,68,68]);
+        txt(fmtM(l.valor),190,y,{align:'right'});
+        totalDesp+=Number(l.valor);
+        y+=5.5;linhaSim(doc,y);y+=1;
+      });
+      if(despesas.length===0){setStyle(8,false,[150]);txt('Nenhuma despesa neste mês.',10,y);y+=6;}
+
+      // Total despesas
+      y+=1;doc.setFillColor(239,68,68);doc.setTextColor(255);
+      doc.rect(10,y-4,W,7,'F');
+      setStyle(9,true,[255]);txt('TOTAL DESPESAS',12,y);
+      txt(fmtM(totalDesp),190,y,{align:'right'});
+      y+=10;
+
+      // ── RECEITAS ─────────────────────────────────────────────────────────
+      if(y>240){doc.addPage();y=14;}
+      setStyle(10,true,[16,120,60]);txt('RECEITAS',10,y);y+=2;
+      y=linhaSim(doc,y,[16,185,129]);y+=4;
+
+      // Cabeçalho colunas
+      setStyle(7.5,true,[60]);
+      doc.setFillColor(228,248,238);doc.rect(10,y-4,W,6,'F');
+      txt('Data',11,y);txt('Descrição / Cunhada',30,y);txt('Categoria',120,y);txt('Valor',190,y,{align:'right'});
+      y+=3;linhaSim(doc,y,[200]);y+=3;
+
+      // Agrupar mensalidades em linha única
+      const receitasBrut=lancMes.filter(l=>l.tipo==='receita');
+      // Identificar mensalidades (categoria com nome contendo 'mensalidade' ou sem cunhada específica agrupada)
+      const ehMensalidade=l=>l.categoria?.nome?.toLowerCase().includes('mensalid')||(!l.cunhada_id&&l.descricao?.toLowerCase().includes('mensalid'));
+      const mensLanc=receitasBrut.filter(l=>ehMensalidade(l));
+      const outrasRec=receitasBrut.filter(l=>!ehMensalidade(l));
+
+      // Linha agrupada de mensalidades
+      const totalMens=mensLanc.reduce((s,l)=>s+Number(l.valor),0);
+      let linhasReceita=[];
+      if(mensLanc.length>0){
+        linhasReceita.push({
+          data:`${String(parseInt(mes)).padStart(2,'0')}/${ano}`,
+          desc:`Mensalidades (${mensLanc.length} cunhada${mensLanc.length>1?'s':''})`,
+          cat:'Mensalidade',
+          valor:totalMens,
+          bold:false,
+        });
+      }
+      outrasRec.forEach(l=>linhasReceita.push({
+        data:fmtD(l.data_lancamento),
+        desc:`${l.descricao}${l.cunhada?.nome?' · '+abreviaNome(l.cunhada.nome):''}`,
+        cat:l.categoria?.nome||'—',
+        valor:Number(l.valor),
+        bold:false,
+      }));
+
+      let totalRec=0;
+      linhasReceita.forEach((l,i)=>{
+        if(y>270){doc.addPage();y=14;}
+        if(i%2===0){doc.setFillColor(240,252,246);doc.rect(10,y-3.5,W,5.5,'F');}
+        setStyle(8,l.bold,[30]);
+        txt(l.data,11,y);
+        txt(doc.splitTextToSize(l.desc,80)[0],30,y);
+        txt(doc.splitTextToSize(l.cat,45)[0],120,y);
+        setStyle(8,true,[16,120,60]);
+        txt(fmtM(l.valor),190,y,{align:'right'});
+        totalRec+=l.valor;
+        y+=5.5;linhaSim(doc,y);y+=1;
+      });
+      if(linhasReceita.length===0){setStyle(8,false,[150]);txt('Nenhuma receita neste mês.',10,y);y+=6;}
+
+      // Total receitas
+      y+=1;doc.setFillColor(16,185,129);doc.setTextColor(255);
+      doc.rect(10,y-4,W,7,'F');
+      setStyle(9,true,[255]);txt('TOTAL RECEITAS',12,y);
+      txt(fmtM(totalRec),190,y,{align:'right'});
+      y+=12;
+
+      // ── RESUMO FINAL ──────────────────────────────────────────────────────
+      if(y>250){doc.addPage();y=14;}
+      const saldo=totalRec-totalDesp;
+      const boxW=80;const boxX=105+5;
+      // Fundo do box
+      doc.setFillColor(245,245,252);doc.setDrawColor(180);doc.setLineWidth(0.5);
+      doc.roundedRect(boxX,y-2,boxW,30,2,2,'FD');
+      setStyle(9,true,[40]);txt('RESUMO DO MÊS',boxX+boxW/2,y+3,{align:'center'});
+      y+=8;
+      setStyle(8,false,[239,68,68]);txt('Total Despesas',boxX+4,y);
+      setStyle(8,true,[239,68,68]);txt(fmtM(totalDesp),boxX+boxW-4,y,{align:'right'});
+      y+=6;
+      setStyle(8,false,[16,120,60]);txt('Total Receitas',boxX+4,y);
+      setStyle(8,true,[16,120,60]);txt(fmtM(totalRec),boxX+boxW-4,y,{align:'right'});
+      // Linha separadora
+      y+=3;doc.setDrawColor(120);doc.line(boxX+4,y,boxX+boxW-4,y);y+=4;
+      const corSaldo=saldo>=0?[16,120,60]:[200,30,30];
+      setStyle(10,true,corSaldo);txt('Saldo',boxX+4,y);
+      txt(fmtM(saldo),boxX+boxW-4,y,{align:'right'});
+
+      // Rodapé
+      const totalPg=doc.getNumberOfPages();
+      for(let p=1;p<=totalPg;p++){
+        doc.setPage(p);
+        setStyle(7,false,[160]);
+        txt(`Página ${p} de ${totalPg}`,105,292,{align:'center'});
+      }
+
+      doc.save(`Fechamento_${nomeGrupo.replace(/\s+/g,'_')}_${String(parseInt(mes)).padStart(2,'0')}_${ano}.pdf`);
+      showMsg('sucesso','PDF de fechamento gerado!');
+      setMFech(false);
+    }catch(e){showMsg('erro','Erro ao gerar PDF: '+e.message);}
+    finally{setGerandoFech(false);}
+  };
+
   const gerarRelatorio=async()=>{
     setGerandoPdf(true);
     try{
@@ -675,7 +839,8 @@ export const FinanceiroCunhadas=({userData})=>{
         </div>
         <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
           <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
-          <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>🖨️ Relatório</button>
+          <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>📊 Situação</button>
+          <button style={s.bp('var(--color-accent)')} onClick={()=>{setFechForm({mes:mesMens,ano:anoMens});setMFech(true);}}>📄 Fechamento</button>
         </div>
       </div>
 
@@ -1073,6 +1238,48 @@ export const FinanceiroCunhadas=({userData})=>{
               {selQ.length>0&&<div style={{...s.ib,marginTop:'0.75rem'}}><p style={{margin:0,fontSize:'0.875rem',color:'var(--color-accent)',fontWeight:'600'}}>Total: <strong>{fmtM(todos.filter(l=>selQ.includes(l.id)).reduce((s,l)=>s+Number(l.valor),0))}</strong> ({selQ.length} lançamento(s))</p></div>}
             </div>
             <div style={s.mf}><button style={s.bs} onClick={()=>setMQLote(false)} disabled={salvQL}>Cancelar</button><button style={s.bp('#10b981')} onClick={quitarLote} disabled={salvQL||!selQ.length}>{salvQL?'⏳...`':`✅ Quitar ${selQ.length}`}</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL FECHAMENTO */}
+      {mFech&&(
+        <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMFech(false)}>
+          <div style={{...s.mo,maxWidth:'400px'}}>
+            <div style={s.mh}>
+              <h2 style={{margin:0,fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)'}}>📄 Extrato de Fechamento</h2>
+              <button onClick={()=>setMFech(false)} style={{background:'none',border:'none',color:'var(--color-text-muted)',fontSize:'1.5rem',cursor:'pointer'}}>×</button>
+            </div>
+            <div style={s.mb}>
+              <div style={{display:'flex',flexDirection:'column',gap:'1rem'}}>
+                <Lbl l="Mês" ch={
+                  <select style={s.sel} value={fechForm.mes} onChange={e=>setFechForm({...fechForm,mes:parseInt(e.target.value)})}>
+                    {MESES.map((nm,i)=><option key={i+1} value={i+1}>{nm}</option>)}
+                  </select>
+                }/>
+                <Lbl l="Ano" ch={
+                  <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                    <button style={s.ab} onClick={()=>setFechForm({...fechForm,ano:fechForm.ano-1})}>‹</button>
+                    <span style={{fontWeight:'700',color:'var(--color-text)',flex:1,textAlign:'center'}}>{fechForm.ano}</span>
+                    <button style={s.ab} onClick={()=>setFechForm({...fechForm,ano:fechForm.ano+1})}>›</button>
+                  </div>
+                }/>
+                <div style={s.ib}>
+                  <p style={{margin:0,fontSize:'0.82rem',color:'var(--color-accent)',fontWeight:'600'}}>
+                    Fechamento: {MESES[fechForm.mes-1]}/{fechForm.ano}
+                  </p>
+                  <p style={{margin:'0.3rem 0 0',fontSize:'0.75rem',color:'var(--color-text-muted)'}}>
+                    Gera PDF com quadro de despesas, quadro de receitas (mensalidades agrupadas) e resumo com saldo final.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div style={s.mf}>
+              <button style={s.bs} onClick={()=>setMFech(false)}>Cancelar</button>
+              <button style={s.bp('var(--color-accent)')} onClick={gerarFechamento} disabled={gerandoFech}>
+                {gerandoFech?'⏳ Gerando...':'📄 Gerar PDF'}
+              </button>
+            </div>
           </div>
         </div>
       )}
