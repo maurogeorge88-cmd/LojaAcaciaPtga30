@@ -165,7 +165,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className=" rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+      <div className="rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
         {/* Header */}
         <div className="bg-blue-900 text-white p-6 rounded-t-xl sticky top-0 z-10">
           <div className="flex justify-between items-center">
@@ -185,8 +185,8 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
         <div className="p-6 space-y-6">
           {/* FORMULÁRIO */}
           {podeEditar && (
-            <div className=" rounded-lg p-6 -2 " style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-              <h3 className="text-lg font-bold  mb-4" style={{color:"var(--color-text)"}}>
+            <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <h3 className="text-lg font-bold mb-4" style={{color:"var(--color-text)"}}>
                 {modoEdicao ? '✏️ Editar Atividade' : '➕ Nova Atividade'}
               </h3>
 
@@ -194,11 +194,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                 {/* Linha 1: Tipo, Título, Data */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
                     <select
                       value={atividadeForm.tipo}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, tipo: e.target.value })}
-                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                      className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       required
                     >
                       <option value="reuniao">👥 Reunião</option>
@@ -210,24 +210,24 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Título *</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Título *</label>
                     <input
                       type="text"
                       value={atividadeForm.titulo}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, titulo: e.target.value })}
-                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                      className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       placeholder="Ex: Reunião de Planejamento"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
                     <input
                       type="date"
                       value={atividadeForm.data_atividade}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, data_atividade: e.target.value })}
-                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                      className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       required
                     />
                   </div>
@@ -236,23 +236,23 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                 {/* Linha 2: Local, Participantes */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Local</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Local</label>
                     <input
                       type="text"
                       value={atividadeForm.local}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, local: e.target.value })}
-                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                      className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       placeholder="Ex: Templo, Sala de Reuniões"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Participantes</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Participantes</label>
                     <input
                       type="text"
                       value={atividadeForm.participantes}
                       onChange={(e) => setAtividadeForm({ ...atividadeForm, participantes: e.target.value })}
-                      className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                      className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                       placeholder="Ex: 5 membros presentes"
                     />
                   </div>
@@ -260,11 +260,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
                 {/* Linha 3: Deliberações */}
                 <div>
-                  <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Deliberações / Decisões *</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Deliberações / Decisões *</label>
                   <textarea
                     value={atividadeForm.deliberacoes}
                     onChange={(e) => setAtividadeForm({ ...atividadeForm, deliberacoes: e.target.value })}
-                    className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                    className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     rows="4"
                     placeholder="Descreva o que foi deliberado, decidido ou realizado..."
                     required
@@ -273,11 +273,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
                 {/* Linha 4: Observações */}
                 <div>
-                  <label className="block text-sm font-medium  mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
                   <textarea
                     value={atividadeForm.observacoes}
                     onChange={(e) => setAtividadeForm({ ...atividadeForm, observacoes: e.target.value })}
-                    className="w-full px-3 py-2   rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                    className="w-full px-3 py-2 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
                     rows="2"
                     placeholder="Observações adicionais..."
                   />
@@ -307,9 +307,9 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
           )}
 
           {/* LISTA DE ATIVIDADES */}
-          <div className=" rounded-lg -2 " style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-            <div className=" px-6 py-3 -b-2 " style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-              <h3 className="text-lg font-bold " style={{color:"var(--color-text)"}}>
+          <div className="rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="px-6 py-3 -b-2" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+              <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>
                 📚 Histórico de Atividades ({atividades.length})
               </h3>
             </div>
@@ -320,16 +320,16 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                   {atividades.map((atividade) => (
                     <div
                       key={atividade.id}
-                      className="-2  rounded-lg p-4 hover:border-blue-300 transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
+                      className="rounded-lg p-4 hover:border-blue-300 transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}
                     >
                       {/* Header da Atividade */}
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-2xl">{obterIconeTipo(atividade.tipo)}</span>
-                            <h4 className="text-lg font-bold ">{atividade.titulo}</h4>
+                            <h4 className="text-lg font-bold">{atividade.titulo}</h4>
                           </div>
-                          <div className="flex flex-wrap gap-4 text-sm ">
+                          <div className="flex flex-wrap gap-4 text-sm">
                             <span>📅 {formatarData(atividade.data_atividade)}</span>
                             <span>🏷️ {obterNomeTipo(atividade.tipo)}</span>
                             {atividade.local && <span>📍 {atividade.local}</span>}
@@ -358,21 +358,21 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                       {/* Deliberações */}
                       <div className="bg-blue-50 rounded p-3 mb-2">
                         <p className="text-xs font-bold text-blue-900 mb-1">📝 Deliberações:</p>
-                        <p className="text-sm  whitespace-pre-wrap">{atividade.deliberacoes}</p>
+                        <p className="text-sm whitespace-pre-wrap">{atividade.deliberacoes}</p>
                       </div>
 
                       {/* Observações */}
                       {atividade.observacoes && (
-                        <div className=" rounded p-3">
-                          <p className="text-xs font-bold  mb-1">💬 Observações:</p>
-                          <p className="text-sm  whitespace-pre-wrap">{atividade.observacoes}</p>
+                        <div className="rounded p-3">
+                          <p className="text-xs font-bold mb-1">💬 Observações:</p>
+                          <p className="text-sm whitespace-pre-wrap">{atividade.observacoes}</p>
                         </div>
                       )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 ">
+                <div className="text-center py-8">
                   <p className="text-lg mb-2">📭 Nenhuma atividade registrada</p>
                   <p className="text-sm">Cadastre a primeira atividade desta comissão!</p>
                 </div>
@@ -382,7 +382,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
         </div>
 
         {/* Footer */}
-        <div className=" px-6 py-4 rounded-b-xl flex justify-end sticky bottom-0">
+        <div className="px-6 py-4 rounded-b-xl flex justify-end sticky bottom-0">
           <button
             onClick={onClose}
             className="px-6 py-2 rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
