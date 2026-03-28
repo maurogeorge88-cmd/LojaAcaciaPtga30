@@ -292,30 +292,34 @@ export const FinanceiroCunhadas=({userData})=>{
     if(!pgAdiantForm.meses.length){showMsg('erro','Selecione ao menos um mês.');return;}
     setSalvPgAdiant(true);
     try{
-      // Para cada mês selecionado: upsert em mensalidades_cunhadas com pago=true
-      // Se já existe o registro, atualiza; senão cria
+      let erros=[];
       for(const mes of pgAdiantForm.meses){
-        // Verificar se já existe
-        const{data:exist}=await supabase.from('mensalidades_cunhadas')
+        const{data:exist,error:errSel}=await supabase.from('mensalidades_cunhadas')
           .select('id').eq('cunhada_id',pgAdiantForm.cunhada_id).eq('mes',mes).eq('ano',pgAdiantForm.ano);
+        if(errSel){erros.push(`select mes ${mes}: ${errSel.message}`);continue;}
         if(exist&&exist.length>0){
-          await supabase.from('mensalidades_cunhadas')
-            .update({pago:true})
-            .eq('id',exist[0].id);
+          const{error:errUpd}=await supabase.from('mensalidades_cunhadas')
+            .update({pago:true}).eq('id',exist[0].id);
+          if(errUpd)erros.push(`update mes ${mes}: ${errUpd.message}`);
         }else{
-          await supabase.from('mensalidades_cunhadas').insert([{
+          const{error:errIns}=await supabase.from('mensalidades_cunhadas').insert([{
             cunhada_id:pgAdiantForm.cunhada_id,
             mes,
             ano:pgAdiantForm.ano,
-            valor:parseFloat(config.valor_mensalidade),
+            valor:parseFloat(config.valor_mensalidade||'50'),
             pago:true,
           }]);
+          if(errIns)erros.push(`insert mes ${mes}: ${errIns.message}`);
         }
       }
-      showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s) como pagos!`);
-      setMPgAdiant(false);
-      setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
-      carregarTudo();
+      if(erros.length>0){
+        showMsg('erro','Erros: '+erros.join(' | '));
+      }else{
+        showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
+        setMPgAdiant(false);
+        setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
+        carregarTudo();
+      }
     }catch(e){showMsg('erro','Erro: '+e.message);}
     finally{setSalvPgAdiant(false);}
   };
@@ -501,10 +505,18 @@ export const FinanceiroCunhadas=({userData})=>{
     }else{
       // Modo padrão: meses com pelo menos 1 registro, do mais antigo ao atual
       const mesesComRegistro=new Set();
+      // De mensalidades_cunhadas
       mensalidades.forEach(m=>{
         const key=`${parseInt(m.ano,10)}-${String(parseInt(m.mes,10)).padStart(2,'0')}`;
         const limAtual=`${anoAtual}-${String(mesAtual).padStart(2,'0')}`;
         if(key<=limAtual||m.pago)mesesComRegistro.add(key);
+      });
+      // De financeiro_cunhadas — lançamentos de receita pagos
+      todos.filter(l=>l.tipo==='receita'&&l.pago&&l.cunhada_id).forEach(l=>{
+        const[y,m]=l.data_lancamento.split('-');
+        const key=`${parseInt(y,10)}-${m.padStart(2,'0')}`;
+        const limAtual=`${anoAtual}-${String(mesAtual).padStart(2,'0')}`;
+        if(key<=limAtual)mesesComRegistro.add(key);
       });
       colsMatrix=[...mesesComRegistro].sort().map(k=>{
         const[y,m]=k.split('-');
@@ -514,11 +526,19 @@ export const FinanceiroCunhadas=({userData})=>{
       if(!colsMatrix.length)colsMatrix=[{mes:mesAtual,ano:anoAtual}];
     }
 
-    // Índice rápido: cunhada_id+mes+ano → pago
+    // Índice: cunhada_id+mes+ano → status
+    // Fonte 1: tabela mensalidades_cunhadas
     const idxMens={};
     mensalidades.forEach(m=>{
-      const k=`${String(m.cunhada_id).trim()}-${parseInt(m.mes)}-${parseInt(m.ano)}`;
+      const k=`${String(m.cunhada_id).trim()}-${parseInt(m.mes,10)}-${parseInt(m.ano,10)}`;
       idxMens[k]=m.pago;
+    });
+    // Fonte 2: financeiro_cunhadas — lançamento de receita pago no mês
+    // (cobre quem paga mensalmente pelo lançamento normal)
+    todos.filter(l=>l.tipo==='receita'&&l.pago&&l.cunhada_id).forEach(l=>{
+      const[y,m]=l.data_lancamento.split('-');
+      const k=`${String(l.cunhada_id).trim()}-${parseInt(m,10)}-${parseInt(y,10)}`;
+      if(!(k in idxMens))idxMens[k]=true; // só adiciona se não já registrado em mensalidades
     });
 
 
