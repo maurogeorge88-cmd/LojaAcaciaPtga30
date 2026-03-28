@@ -762,7 +762,7 @@ export const FinanceiroCunhadas=({userData})=>{
             <thead>
               <tr style={{background:'var(--color-surface-2)',borderBottom:'2px solid var(--color-border)'}}>
                 {['Data','Tipo','Descrição','Cunhada','Valor','Pgto','Status','Ações'].map(h=>(
-                  <th key={h} style={{padding:'0.65rem 0.8rem',textAlign:'left',fontSize:'0.67rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>{h}</th>
+                  <th key={h} style={{padding:'0.45rem 0.7rem',textAlign:'left',fontSize:'0.67rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -770,20 +770,20 @@ export const FinanceiroCunhadas=({userData})=>{
               {lancamentos.length===0?(
                 <tr><td colSpan={8} style={{textAlign:'center',padding:'2.5rem',color:'var(--color-text-faint)',fontSize:'0.875rem'}}>Nenhum lançamento para {per} com os filtros aplicados.</td></tr>
               ):lancamentos.map((l,i)=>(
-                <tr key={l.id} style={{borderBottom:'1px solid var(--color-border)',background:i%2===0?'transparent':'var(--color-surface-2)'}}>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.78rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>{fmtD(l.data_lancamento)}</td>
-                  <td style={{padding:'0.6rem 0.8rem'}}>
-                    <span style={{fontSize:'0.72rem',fontWeight:'600',padding:'0.15rem 0.45rem',borderRadius:'999px',background:l.tipo==='receita'?'rgba(16,185,129,0.12)':'rgba(239,68,68,0.12)',color:l.tipo==='receita'?'#10b981':'#ef4444'}}>
-                      {l.tipo==='receita'?'📈 Rec':'📉 Desp'}
+                <tr key={l.id} style={{borderBottom:'1px solid var(--color-border)',background:i%2===0?'transparent':'var(--color-surface-2)',lineHeight:'1'}}>
+                  <td style={{padding:'0.45rem 0.7rem',fontSize:'0.78rem',color:'var(--color-text-muted)',whiteSpace:'nowrap',verticalAlign:'middle'}}>{fmtD(l.data_lancamento)}</td>
+                  <td style={{padding:'0.5rem 0.6rem',whiteSpace:'nowrap'}}>
+                    <span style={{fontSize:'0.7rem',fontWeight:'700',padding:'0.15rem 0.5rem',borderRadius:'var(--radius-md)',background:l.tipo==='receita'?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)',color:l.tipo==='receita'?'#10b981':'#ef4444',whiteSpace:'nowrap'}}>
+                      {l.tipo==='receita'?'REC':'DESP'}
                     </span>
                   </td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.85rem',fontWeight:'500',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.descricao}</td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.cunhada?.nome||<span style={{color:'var(--color-text-faint)'}}>Geral</span>}</td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.875rem',fontWeight:'700',color:l.tipo==='receita'?'#10b981':'#ef4444',whiteSpace:'nowrap'}}>{l.tipo==='receita'?'+':'-'}{fmtM(l.valor)}</td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.72rem',color:'var(--color-text-faint)',whiteSpace:'nowrap'}}>{l.forma_pagamento||'—'}</td>
-                  <td style={{padding:'0.6rem 0.8rem'}}><span style={s.bdg(l.pago)}>{l.pago?'✓ Pago':'⏳ Pend.'}</span></td>
-                  <td style={{padding:'0.6rem 0.8rem'}}>
-                    <div style={{display:'flex',gap:'0.2rem'}}>
+                  <td style={{padding:'0.45rem 0.7rem',fontSize:'0.85rem',fontWeight:'500',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',verticalAlign:'middle'}}>{l.descricao}</td>
+                  <td style={{padding:'0.45rem 0.7rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',verticalAlign:'middle'}}>{l.cunhada?.nome||<span style={{color:'var(--color-text-faint)'}}>Geral</span>}</td>
+                  <td style={{padding:'0.45rem 0.7rem',fontSize:'0.85rem',fontWeight:'700',color:l.tipo==='receita'?'#10b981':'#ef4444',whiteSpace:'nowrap',verticalAlign:'middle'}}>{l.tipo==='receita'?'+':'-'}{fmtM(l.valor)}</td>
+                  <td style={{padding:'0.45rem 0.7rem',fontSize:'0.72rem',color:'var(--color-text-faint)',whiteSpace:'nowrap',verticalAlign:'middle'}}>{l.forma_pagamento||'—'}</td>
+                  <td style={{padding:'0.45rem 0.7rem',verticalAlign:'middle',whiteSpace:'nowrap'}}><span style={{...s.bdg(l.pago),fontSize:'0.68rem',padding:'0.15rem 0.45rem'}}>{l.pago?'✓ Pago':'⏳ Pend.'}</span></td>
+                  <td style={{padding:'0.45rem 0.7rem',verticalAlign:'middle'}}>
+                    <div style={{display:'flex',gap:'0.2rem',flexWrap:'nowrap'}}>
                       {!l.pago?(
                         <button onClick={()=>{setMQuit(l);setQForm({forma_pagamento:l.forma_pagamento||'pix',observacoes:''}); }} title="Quitar" style={{padding:'0.22rem 0.45rem',background:'rgba(16,185,129,0.12)',color:'#10b981',border:'none',borderRadius:'var(--radius-md)',cursor:'pointer',fontSize:'0.72rem',fontWeight:'600'}}>💰</button>
                       ):(
