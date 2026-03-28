@@ -356,16 +356,16 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                       </div>
 
                       {/* Deliberações */}
-                      <div className="bg-blue-50 rounded p-3 mb-2">
-                        <p className="text-xs font-bold text-blue-900 mb-1">📝 Deliberações:</p>
-                        <p className="text-sm whitespace-pre-wrap">{atividade.deliberacoes}</p>
+                      <div className="rounded p-3 mb-2" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
+                        <p className="text-xs font-bold mb-1" style={{color:"var(--color-accent)"}}>📝 Deliberações:</p>
+                        <p className="text-sm whitespace-pre-wrap" style={{color:"var(--color-text)"}}>{atividade.deliberacoes}</p>
                       </div>
 
                       {/* Observações */}
                       {atividade.observacoes && (
-                        <div className="rounded p-3">
-                          <p className="text-xs font-bold mb-1">💬 Observações:</p>
-                          <p className="text-sm whitespace-pre-wrap">{atividade.observacoes}</p>
+                        <div className="rounded p-3" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                          <p className="text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>💬 Observações:</p>
+                          <p className="text-sm whitespace-pre-wrap" style={{color:"var(--color-text)"}}>{atividade.observacoes}</p>
                         </div>
                       )}
                     </div>
