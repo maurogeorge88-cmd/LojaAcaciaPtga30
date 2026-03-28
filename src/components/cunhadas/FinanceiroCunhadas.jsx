@@ -749,16 +749,26 @@ export const FinanceiroCunhadas=({userData})=>{
       <div style={{...s.card,padding:0,overflow:'hidden'}}>
         <div style={{overflowX:'auto'}}>
           <table style={{width:'100%',borderCollapse:'collapse'}}>
+            <colgroup>
+                <col style={{width:'90px'}}/>  {/* Data */}
+                <col style={{width:'70px'}}/>  {/* Tipo */}
+                <col/>                         {/* Descrição — flex */}
+                <col style={{width:'200px'}}/> {/* Cunhada */}
+                <col style={{width:'110px'}}/> {/* Valor */}
+                <col style={{width:'70px'}}/>  {/* Pgto */}
+                <col style={{width:'80px'}}/>  {/* Status */}
+                <col style={{width:'80px'}}/>  {/* Ações */}
+              </colgroup>
             <thead>
               <tr style={{background:'var(--color-surface-2)',borderBottom:'2px solid var(--color-border)'}}>
-                {['Data','Tipo','Categoria','Descrição','Cunhada','Valor','Pgto','Status','Ações'].map(h=>(
+                {['Data','Tipo','Descrição','Cunhada','Valor','Pgto','Status','Ações'].map(h=>(
                   <th key={h} style={{padding:'0.65rem 0.8rem',textAlign:'left',fontSize:'0.67rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',whiteSpace:'nowrap'}}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {lancamentos.length===0?(
-                <tr><td colSpan={9} style={{textAlign:'center',padding:'2.5rem',color:'var(--color-text-faint)',fontSize:'0.875rem'}}>Nenhum lançamento para {per} com os filtros aplicados.</td></tr>
+                <tr><td colSpan={8} style={{textAlign:'center',padding:'2.5rem',color:'var(--color-text-faint)',fontSize:'0.875rem'}}>Nenhum lançamento para {per} com os filtros aplicados.</td></tr>
               ):lancamentos.map((l,i)=>(
                 <tr key={l.id} style={{borderBottom:'1px solid var(--color-border)',background:i%2===0?'transparent':'var(--color-surface-2)'}}>
                   <td style={{padding:'0.6rem 0.8rem',fontSize:'0.78rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>{fmtD(l.data_lancamento)}</td>
@@ -767,9 +777,8 @@ export const FinanceiroCunhadas=({userData})=>{
                       {l.tipo==='receita'?'📈 Rec':'📉 Desp'}
                     </span>
                   </td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.78rem',color:'var(--color-text-muted)',maxWidth:'110px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.categoria?.nome||'—'}</td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.85rem',fontWeight:'500',color:'var(--color-text)',maxWidth:'170px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.descricao}</td>
-                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.78rem',color:'var(--color-text-muted)',maxWidth:'130px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.cunhada?.nome||<span style={{color:'var(--color-text-faint)'}}>Geral</span>}</td>
+                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.85rem',fontWeight:'500',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.descricao}</td>
+                  <td style={{padding:'0.6rem 0.8rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{l.cunhada?.nome||<span style={{color:'var(--color-text-faint)'}}>Geral</span>}</td>
                   <td style={{padding:'0.6rem 0.8rem',fontSize:'0.875rem',fontWeight:'700',color:l.tipo==='receita'?'#10b981':'#ef4444',whiteSpace:'nowrap'}}>{l.tipo==='receita'?'+':'-'}{fmtM(l.valor)}</td>
                   <td style={{padding:'0.6rem 0.8rem',fontSize:'0.72rem',color:'var(--color-text-faint)',whiteSpace:'nowrap'}}>{l.forma_pagamento||'—'}</td>
                   <td style={{padding:'0.6rem 0.8rem'}}><span style={s.bdg(l.pago)}>{l.pago?'✓ Pago':'⏳ Pend.'}</span></td>
