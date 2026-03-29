@@ -142,13 +142,20 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
     }
   };
 
-  // Filtrar pranchas por busca
-  const pranchasFiltradas = pranchas.filter(p => 
-    !searchTerm || 
-    p.numero_prancha?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.assunto?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.destinatario?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filtrar pranchas por ano e busca
+  const pranchasFiltradas = pranchas.filter(p => {
+    if (anoSelecionado) {
+      const anoPrancha = p.data_prancha ? new Date(p.data_prancha + 'T00:00:00').getFullYear() : new Date().getFullYear();
+      if (anoPrancha !== anoSelecionado) return false;
+    }
+    if (!searchTerm) return true;
+    const termo = searchTerm.toLowerCase();
+    return (
+      p.numero_prancha?.toLowerCase().includes(termo) ||
+      p.assunto?.toLowerCase().includes(termo) ||
+      p.destinatario?.toLowerCase().includes(termo)
+    );
+  });
 
   // CONTROLE DE ACESSO POR GRAU
   // Aprendizes e Companheiros NÃO podem acessar Pranchas
@@ -251,24 +258,42 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
       </div>
       )}
 
-      {/* BUSCA */}
+      {/* BUSCA + FILTRO ANO */}
       <div className="rounded-xl p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex gap-4">
+        <div className="flex gap-3 flex-wrap">
           <input
             type="text"
             placeholder="🔍 Buscar por número, assunto ou destinatário..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+            className="flex-1 px-4 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",minWidth:'200px'}}
           />
+          {/* Seletor de ano */}
+          {anosDisponiveis.length > 1 && (
+            <div style={{display:'flex',gap:'0.4rem',alignItems:'center',flexWrap:'wrap'}}>
+              <span style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Ano:</span>
+              <button onClick={() => setAnoSelecionado(null)}
+                style={{padding:'0.3rem 0.7rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)',
+                  background:anoSelecionado===null?'var(--color-accent)':'var(--color-surface-2)',
+                  color:anoSelecionado===null?'#fff':'var(--color-text)',
+                  fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'}}>Todos</button>
+              {anosDisponiveis.map(ano => (
+                <button key={ano} onClick={() => setAnoSelecionado(ano)}
+                  style={{padding:'0.3rem 0.7rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)',
+                    background:anoSelecionado===ano?'var(--color-accent)':'var(--color-surface-2)',
+                    color:anoSelecionado===ano?'#fff':'var(--color-text)',
+                    fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'}}>{ano}</button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* LISTA DE PRANCHAS */}
       <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="p-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
-          <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Pranchas Registradas</h3>
-          <p className="text-sm text-blue-100">
+        <div className="p-4 text-white" style={{background:"var(--color-accent)"}}>
+          <h3 className="text-xl font-bold" style={{color:"#fff"}}>Pranchas Registradas</h3>
+          <p className="text-sm" style={{color:"rgba(255,255,255,0.8)"}}>
             Total: {pranchasFiltradas.length} prancha(s)
           </p>
         </div>
