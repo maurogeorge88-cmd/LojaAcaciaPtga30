@@ -586,7 +586,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   value={eventoForm.titulo}
                   onChange={(e) => setEventoForm({ ...eventoForm, titulo: e.target.value })}
                   placeholder="Ex: Sessão Ordinária de Aprendiz"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -606,7 +606,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       cor_destaque: tipo ? tipo.cor : '#3b82f6'
                     });
                   }}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   {tiposEvento.map(tipo => (
                     <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -622,7 +622,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 <select
                   value={eventoForm.grau_sessao_id}
                   onChange={(e) => setEventoForm({ ...eventoForm, grau_sessao_id: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value={1}>⬜ Aprendiz (Todos)</option>
                   <option value={2}>🔷 Companheiro (Comp. e Mestres)</option>
@@ -640,7 +640,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 <select
                   value={eventoForm.status}
                   onChange={(e) => setEventoForm({ ...eventoForm, status: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   {statusEvento.map(s => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -657,7 +657,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   type="date"
                   value={eventoForm.data_evento}
                   onChange={(e) => setEventoForm({ ...eventoForm, data_evento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -671,7 +671,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   type="time"
                   value={eventoForm.hora_inicio}
                   onChange={(e) => setEventoForm({ ...eventoForm, hora_inicio: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -684,7 +684,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   type="time"
                   value={eventoForm.hora_fim}
                   onChange={(e) => setEventoForm({ ...eventoForm, hora_fim: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -698,7 +698,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   onChange={(e) => setEventoForm({ ...eventoForm, local: e.target.value })}
                   placeholder="Ex: Templo da Loja&#10;Almoço: Espaço Realize"
                   rows="2"
-                  className="w-full px-3 py-2 border rounded resize-none"
+                  className="w-full px-3 py-2 border rounded resize-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
                 <p className="text-xs mt-1">Pressione Enter para quebrar linha</p>
               </div>
@@ -713,7 +713,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   value={eventoForm.responsavel}
                   onChange={(e) => setEventoForm({ ...eventoForm, responsavel: e.target.value })}
                   placeholder="Ex: Ir∴ João"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -733,7 +733,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     type="text"
                     value={eventoForm.cor_destaque}
                     onChange={(e) => setEventoForm({ ...eventoForm, cor_destaque: e.target.value })}
-                    className="flex-1 px-3 py-2 border rounded"
+                    className="flex-1 px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
               </div>
@@ -748,7 +748,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
                   rows={2}
                   placeholder="Descrição detalhada do evento"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -762,7 +762,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   onChange={(e) => setEventoForm({ ...eventoForm, observacoes: e.target.value })}
                   rows={2}
                   placeholder="Observações adicionais"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
             </div>
@@ -795,7 +795,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="">Todos os Tipos</option>
               {tiposEvento.map(tipo => (
@@ -810,7 +810,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               type="month"
               value={filtroMes}
               onChange={(e) => setFiltroMes(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             />
           </div>
 
@@ -905,7 +905,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     <select
                       value={relatorioForm.mes}
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, mes: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="1">Janeiro</option>
                       <option value="2">Fevereiro</option>
@@ -929,7 +929,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
                       min="2020"
                       max="2050"
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 </>
@@ -942,7 +942,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     <select
                       value={relatorioForm.semestre}
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, semestre: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="1">1º Semestre (Jan-Jun)</option>
                       <option value="2">2º Semestre (Jul-Dez)</option>
@@ -956,7 +956,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
                       min="2020"
                       max="2050"
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 </>
@@ -971,7 +971,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
                     min="2020"
                     max="2050"
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
               )}
@@ -1145,10 +1145,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           onClick={() => setModalVisualizacao(false)}
         >
           <div 
-            className="rounded-xl max-w-2xl w-full"
+            className="rounded-xl max-w-2xl w-full" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-primary-600 to-purple-600 text-white p-6 rounded-t-xl">
+            <div className="p-6 rounded-t-xl text-white" style={{background:"var(--color-accent)"}}>
               <div className="flex justify-between items-center">
                 <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📅 Detalhes do Evento</h3>
                 <button
@@ -1159,7 +1159,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 </button>
               </div>
             </div>
-            <div className="p-6 space-y-4" style={{background:"var(--color-surface)"}}>
+            <div className="p-6 space-y-4" style={{background:"var(--color-surface)",padding:"1.5rem"}}>
               <div>
                 <h4 className="text-2xl font-bold mb-2">{eventoVisualizar.titulo}</h4>
                 <div className="flex items-center gap-2 mb-3">
