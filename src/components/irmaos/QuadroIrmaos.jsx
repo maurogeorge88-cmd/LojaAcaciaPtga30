@@ -281,7 +281,6 @@ const QuadroIrmaos = ({ irmaos }) => {
               })
             )}
           </div>
-        </div>
 
         {irmaosOrdenados.length > 0 && (
           <div className="px-6 py-4 border-t">
