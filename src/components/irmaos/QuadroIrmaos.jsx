@@ -1,28 +1,39 @@
-import { useState } from 'react';
-import { formatarData, calcularIdade } from '../../utils/formatters';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../supabaseClient';
+import {
+  formatarData,
+  formatarCPF,
+  formatarTelefone,
+  calcularIdade
+} from '../../utils/formatters';
+import { STATUS_IRMAOS } from '../../utils/constants';
 
-const QuadroIrmaos = ({ irmaos }) => {
-  const [grauSelecionado, setGrauSelecionado] = useState('todos');
-  const [ordenacao, setOrdenacao] = useState('nome');
+const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto, onUpdate, showSuccess, showError, permissoes, userData }) => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [situacaoFilter, setSituacaoFilter] = useState('regular,licenciado');
+  const [grauFilter, setGrauFilter] = useState('todos');
+  const [mostrarDetalhes, setMostrarDetalhes] = useState(false);
+  const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
+  const [familiaresSelecionado, setFamiliaresSelecionado] = useState({
+    conjuge: null,
+    pais: null,
+    filhos: []
+  });
+  const [loading, setLoading] = useState(false);
 
+  // Função para determinar o grau baseado nas datas
   const obterGrau = (irmao) => {
-    if (irmao.data_exaltacao) return 'Mestre';
+    if (irmao.data_exaltacao) {
+      return irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+    }
     if (irmao.data_elevacao) return 'Companheiro';
     if (irmao.data_iniciacao) return 'Aprendiz';
-    return 'Nao iniciado';
+    return 'Não iniciado';
   };
 
-  const calcularTempoMaconariaMeses = (dataIniciacao) => {
-    if (!dataIniciacao) return 0;
-    const inicio = new Date(dataIniciacao + 'T00:00:00');
-    const hoje = new Date();
-    const anos = hoje.getFullYear() - inicio.getFullYear();
-    const meses = hoje.getMonth() - inicio.getMonth();
-    return (anos * 12) + meses;
-  };
-
-  const formatarTempoMaconaria = (dataIniciacao) => {
-    if (!dataIniciacao) return '-';
+  // Função para calcular tempo de maçonaria
+  const calcularTempoMaconaria = (dataIniciacao) => {
+    if (!dataIniciacao) return '';
     const inicio = new Date(dataIniciacao + 'T00:00:00');
     const hoje = new Date();
     let anos = hoje.getFullYear() - inicio.getFullYear();
@@ -31,303 +42,795 @@ const QuadroIrmaos = ({ irmaos }) => {
       anos--;
       meses = 12 + meses;
     }
-    return anos + 'a ' + meses + 'm';
+    return `${anos} ano(s) e ${meses} mês(es)`;
   };
 
-  const irmaosAtivos = irmaos.filter(irmao => {
-    const situacao = (irmao.situacao || 'regular').toLowerCase();
-    return situacao === 'regular' || situacao === 'licenciado';
-  });
-
-  const irmaosPorGrau = {
-    'Mestre': irmaosAtivos.filter(i => obterGrau(i) === 'Mestre'),
-    'Companheiro': irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro'),
-    'Aprendiz': irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz'),
-    'Nao iniciado': irmaosAtivos.filter(i => obterGrau(i) === 'Nao iniciado')
+  // Função para obter cor da situação
+  const obterCorSituacao = (situacao) => {
+    const cores = {
+      regular: 'bg-green-100 text-green-800 border-green-300',
+      irregular: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+      licenciado: 'bg-blue-100 text-blue-800 border-blue-300',
+      suspenso: 'bg-orange-100 text-orange-800 border-orange-300',
+      desligado: '  ',
+      excluido: 'bg-red-100 text-red-800 border-red-300',
+      falecido: 'bg-purple-100 text-purple-800 border-purple-300',
+      ex_oficio: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+    };
+    return cores[situacao] || '  ';
   };
 
-  const ordenarIrmaos = (lista) => {
-    const copia = [...lista];
-    
-    switch (ordenacao) {
-      case 'nome':
-        return copia.sort((a, b) => a.nome.localeCompare(b.nome));
-      case 'cim':
-        return copia.sort((a, b) => (a.cim || '').toString().localeCompare((b.cim || '').toString()));
-      case 'idade':
-        return copia.sort((a, b) => {
-          if (!a.data_nascimento) return 1;
-          if (!b.data_nascimento) return -1;
-          return new Date(a.data_nascimento) - new Date(b.data_nascimento);
-        });
-      case 'tempo':
-        return copia.sort((a, b) => {
-          const tempoA = calcularTempoMaconariaMeses(a.data_iniciacao);
-          const tempoB = calcularTempoMaconariaMeses(b.data_iniciacao);
-          return tempoB - tempoA;
-        });
-      default:
-        return copia;
+  // Função para obter cor do grau
+  const obterCorGrau = (grau) => {
+    const cores = {
+      'Aprendiz': 'bg-blue-500',
+      'Companheiro': 'bg-green-500',
+      'Mestre': 'bg-purple-500',
+      'Mestre Instalado': 'bg-primary-600',
+      'Não iniciado': 'bg-gray-400'
+    };
+    return cores[grau] || 'bg-gray-400';
+  };
+
+  // Carregar detalhes do irmão e familiares
+  const carregarDetalhes = async (irmao) => {
+    setLoading(true);
+    try {
+      // Carregar cônjuge
+      const { data: conjugeData } = await supabase
+        .from('familiares_conjuge')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      // Carregar pais
+      const { data: paisData } = await supabase
+        .from('familiares_pais')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
+
+      // Carregar filhos
+      const { data: filhosData } = await supabase
+        .from('familiares_filhos')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .order('data_nascimento', { ascending: true });
+
+      setFamiliaresSelecionado({
+        conjuge: conjugeData || null,
+        pais: paisData || null,
+        filhos: filhosData || []
+      });
+
+      setIrmaoSelecionado(irmao);
+      setMostrarDetalhes(true);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes:', error);
+      showError('Erro ao carregar detalhes do irmão');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const gerarQuadro = () => {
-    let conteudo = '\n========================================================\n';
-    conteudo += '           QUADRO GERAL DE IRMAOS\n';
-    conteudo += '    ARLS Acacia de Paranatinga no 30\n';
-    conteudo += '========================================================\n\n';
-    conteudo += 'Gerado em: ' + new Date().toLocaleString('pt-BR') + '\n';
-    conteudo += 'Total de Irmaos Ativos: ' + irmaosAtivos.length + '\n\n';
+  // Fechar modal de detalhes
+  const fecharDetalhes = () => {
+    setMostrarDetalhes(false);
+    setIrmaoSelecionado(null);
+    setFamiliaresSelecionado({ conjuge: null, pais: null, filhos: [] });
+  };
 
-    const graus = grauSelecionado === 'todos' 
-      ? ['Mestre', 'Companheiro', 'Aprendiz', 'Nao iniciado']
-      : [grauSelecionado];
+  // Deletar irmão
+  const deletarIrmao = async (irmaoId) => {
+    if (typeof window !== 'undefined' && !window.confirm('Tem certeza que deseja excluir este irmão? Esta ação não pode ser desfeita e irá remover também todos os dados de familiares.')) {
+      return;
+    }
 
-    graus.forEach(grau => {
-      const irmaosGrau = ordenarIrmaos(irmaosPorGrau[grau]);
-      
-      if (irmaosGrau.length > 0) {
-        conteudo += '\n========================================================\n';
-        conteudo += grau.toUpperCase() + ' (' + irmaosGrau.length + ')\n';
-        conteudo += '========================================================\n\n';
-        
-        conteudo += 'CIM'.padEnd(8) + ' | ' + 'NOME'.padEnd(35) + ' | ' + 'IDADE'.padEnd(10) + ' | ' + 'INICIACAO'.padEnd(12) + ' | ' + 'TEMPO'.padEnd(10) + '\n';
-        conteudo += '-'.repeat(90) + '\n';
+    setLoading(true);
+    try {
+      // Deletar familiares (cascade não está configurado, então fazemos manualmente)
+      await supabase.from('familiares_conjuge').delete().eq('irmao_id', irmaoId);
+      await supabase.from('familiares_pais').delete().eq('irmao_id', irmaoId);
+      await supabase.from('familiares_filhos').delete().eq('irmao_id', irmaoId);
 
-        irmaosGrau.forEach(irmao => {
-          const cim = (irmao.cim || '-').toString().padEnd(8);
-          const nome = (irmao.nome || '-').substring(0, 35).padEnd(35);
-          const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento).padEnd(10) : '-'.padEnd(10);
-          const iniciacao = irmao.data_iniciacao ? formatarData(irmao.data_iniciacao).padEnd(12) : '-'.padEnd(12);
-          const tempo = formatarTempoMaconaria(irmao.data_iniciacao).padEnd(10);
+      // Deletar irmão
+      const { error } = await supabase
+        .from('irmaos')
+        .delete()
+        .eq('id', irmaoId);
 
-          conteudo += cim + ' | ' + nome + ' | ' + idade + ' | ' + iniciacao + ' | ' + tempo + '\n';
-        });
+      if (error) throw error;
 
-        conteudo += '\n';
+      // Registrar log de exclusão
+      if (userData?.id) {
+        try {
+          const irmaoNome = irmaos.find(i => i.id === irmaoId)?.nome || 'Irmão';
+          await supabase.from('logs_acesso').insert([{
+            usuario_id: userData.id,
+            acao: 'excluir',
+            detalhes: `Excluiu irmão: ${irmaoNome}`,
+            ip: 'Browser',
+            user_agent: navigator.userAgent
+          }]);
+        } catch (logError) {
+          console.error('Erro ao registrar log:', logError);
+        }
       }
-    });
 
-    conteudo += '\n========================================================\n';
-    conteudo += 'LEGENDA:\n';
-    conteudo += '- Tempo: Xxa Xxm = X anos e X meses na Maconaria\n';
-    conteudo += '- Idade: Calculada com base na data de nascimento\n';
-    conteudo += '========================================================\n';
-
-    const blob = new Blob([conteudo], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'Quadro_Irmaos_' + grauSelecionado + '_' + new Date().toISOString().split('T')[0] + '.txt';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+      showSuccess('Irmão excluído com sucesso!');
+      onUpdate();
+    } catch (error) {
+      console.error('Erro ao excluir irmão:', error);
+      showError('Erro ao excluir irmão: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const irmaosExibir = grauSelecionado === 'todos' 
-    ? irmaosAtivos 
-    : irmaosPorGrau[grauSelecionado];
+  // Gerar PDF do irmão
+  const gerarPDF = async (irmao) => {
+    setLoading(true);
+    try {
+      // Carregar familiares
+      const { data: conjugeData } = await supabase
+        .from('familiares_conjuge')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
 
-  const irmaosOrdenados = ordenarIrmaos(irmaosExibir);
+      const { data: paisData } = await supabase
+        .from('familiares_pais')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .single();
 
-  const totalMestres = irmaosPorGrau['Mestre'].length;
-  const totalCompanheiros = irmaosPorGrau['Companheiro'].length;
-  const totalAprendizes = irmaosPorGrau['Aprendiz'].length;
+      const { data: filhosData } = await supabase
+        .from('familiares_filhos')
+        .select('*')
+        .eq('irmao_id', irmao.id)
+        .order('data_nascimento', { ascending: true });
 
-  const obterCorGrau = (grau) => {
-    const cores = {
-      'Aprendiz': 'bg-blue-100 text-blue-800',
-      'Companheiro': 'bg-green-100 text-green-800',
-      'Mestre': 'bg-purple-100 text-purple-800',
-      'Nao iniciado': ' '
-    };
-    return cores[grau] || ' ';
+      // Criar conteúdo do PDF
+      const grau = obterGrau(irmao);
+      let conteudoPDF = `
+        FICHA CADASTRAL DO IRMÃO
+        A∴R∴L∴S∴ Acácia de Paranatinga nº 30
+        ================================================
+
+        DADOS PESSOAIS
+        ------------------------------------------------
+        CIM: ${irmao.cim}
+        Nome: ${irmao.nome}
+        CPF: ${irmao.cpf ? formatarCPF(irmao.cpf) : 'Não informado'}
+        RG: ${irmao.rg || 'Não informado'}
+        Data de Nascimento: ${irmao.data_nascimento ? formatarData(irmao.data_nascimento) : 'Não informado'}
+        Idade: ${irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : 'Não informado'}
+        Estado Civil: ${irmao.estado_civil || 'Não informado'}
+        Profissão: ${irmao.profissao || 'Não informado'}
+        Escolaridade: ${irmao.escolaridade || 'Não informado'}
+
+        CONTATO
+        ------------------------------------------------
+        Email: ${irmao.email || 'Não informado'}
+        Telefone: ${irmao.telefone ? formatarTelefone(irmao.telefone) : 'Não informado'}
+        Endereço: ${irmao.endereco || 'Não informado'}
+        Número: ${irmao.numero || ''}
+        Complemento: ${irmao.complemento || ''}
+        Bairro: ${irmao.bairro || 'Não informado'}
+        Cidade: ${irmao.cidade || 'Não informado'}
+        Estado: ${irmao.estado || 'Não informado'}
+        CEP: ${irmao.cep || 'Não informado'}
+
+        DADOS MAÇÔNICOS
+        ------------------------------------------------
+        Grau Atual: ${grau}
+        Situação: ${irmao.situacao || 'Regular'}
+        Data de Iniciação: ${irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : 'Não informado'}
+        Data de Elevação: ${irmao.data_elevacao ? formatarData(irmao.data_elevacao) : 'Não informado'}
+        Data de Exaltação: ${irmao.data_exaltacao ? formatarData(irmao.data_exaltacao) : 'Não informado'}
+        Tempo de Maçonaria: ${irmao.data_iniciacao ? calcularTempoMaconaria(irmao.data_iniciacao) : 'Não informado'}
+        Loja de Origem: ${irmao.loja_origem || 'Não informado'}
+        Oriente: ${irmao.oriente || 'Não informado'}
+        Grande Oriente: ${irmao.grande_oriente || 'Não informado'}
+        Observações: ${irmao.observacoes || 'Nenhuma'}
+      `;
+
+      // Adicionar dados do cônjuge
+      if (conjugeData) {
+        conteudoPDF += `
+
+        CÔNJUGE
+        ------------------------------------------------
+        Nome: ${conjugeData.nome}
+        CPF: ${conjugeData.cpf ? formatarCPF(conjugeData.cpf) : 'Não informado'}
+        Data de Nascimento: ${conjugeData.data_nascimento ? formatarData(conjugeData.data_nascimento) : 'Não informado'}
+        Idade: ${conjugeData.data_nascimento ? calcularIdade(conjugeData.data_nascimento) : 'Não informado'}
+        Profissão: ${conjugeData.profissao || 'Não informado'}
+        `;
+      }
+
+      // Adicionar dados dos pais
+      if (paisData) {
+        conteudoPDF += `
+
+        PAIS
+        ------------------------------------------------
+        Pai: ${paisData.nome_pai || 'Não informado'} ${paisData.pai_vivo ? '(Vivo)' : '(Falecido)'}
+        Mãe: ${paisData.nome_mae || 'Não informado'} ${paisData.mae_viva ? '(Viva)' : '(Falecida)'}
+        `;
+      }
+
+      // Adicionar dados dos filhos
+      if (filhosData && filhosData.length > 0) {
+        conteudoPDF += `
+
+        FILHOS (${filhosData.length})
+        ------------------------------------------------
+        `;
+        filhosData.forEach((filho, index) => {
+          conteudoPDF += `
+        ${index + 1}. ${filho.nome}
+           Sexo: ${filho.sexo === 'M' ? 'Masculino' : 'Feminino'}
+           Data de Nascimento: ${filho.data_nascimento ? formatarData(filho.data_nascimento) : 'Não informado'}
+           Idade: ${filho.data_nascimento ? calcularIdade(filho.data_nascimento) : 'Não informado'}
+          `;
+        });
+      }
+
+      conteudoPDF += `
+
+        ================================================
+        Documento gerado em ${new Date().toLocaleString('pt-BR')}
+      `;
+
+      // Criar blob e download
+      const blob = new Blob([conteudoPDF], { type: 'text/plain' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Ficha_${irmao.nome.replace(/\s+/g, '_')}_${irmao.cim}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      showSuccess('Ficha gerada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error);
+      showError('Erro ao gerar ficha');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const obterCorSituacao = (situacao) => {
-    const sit = (situacao || 'regular').toLowerCase();
-    if (sit === 'regular') return 'bg-green-100 text-green-800';
-    return 'bg-blue-100 text-blue-800';
-  };
+  // Filtrar irmãos
+  const irmaosFiltrados = irmaos.filter(irmao => {
+    // Filtro de busca (nome ou CIM)
+    const matchSearch = irmao.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        irmao.cim?.toString().includes(searchTerm);
+
+    // Filtro de situação
+    const situacaoAtual = (irmao.situacao || 'regular').toLowerCase();
+    let matchSituacao = false;
+    
+    if (situacaoFilter === 'todos') {
+      matchSituacao = true;
+    } else if (situacaoFilter === 'regular,licenciado') {
+      matchSituacao = situacaoAtual === 'regular' || situacaoAtual === 'licenciado';
+    } else {
+      matchSituacao = situacaoAtual === situacaoFilter;
+    }
+
+    // Filtro de grau
+    const grauAtual = obterGrau(irmao);
+    const matchGrau = grauFilter === 'todos' || grauAtual === grauFilter;
+
+    return matchSearch && matchSituacao && matchGrau;
+  });
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{totalMestres}</div>
-          <div className="text-purple-100 mt-2">Mestres</div>
-          <div className="text-sm text-purple-200 mt-1">
-            {totalMestres > 0 ? ((totalMestres / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{totalCompanheiros}</div>
-          <div className="text-green-100 mt-2">Companheiros</div>
-          <div className="text-sm text-green-200 mt-1">
-            {totalCompanheiros > 0 ? ((totalCompanheiros / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{totalAprendizes}</div>
-          <div className="text-blue-100 mt-2">Aprendizes</div>
-          <div className="text-sm text-blue-200 mt-1">
-            {totalAprendizes > 0 ? ((totalAprendizes / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{irmaosAtivos.length}</div>
-          <div className="text-gray-100 mt-2">Total Ativos</div>
-          <div className="text-sm text-gray-200 mt-1">Regular + Licenciado</div>
-        </div>
-      </div>
-
+      {/* Filtros */}
       <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Busca */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
-              Filtrar por Grau
+              🔍 Buscar
+            </label>
+            <input
+              type="text"
+              placeholder="Nome ou CIM..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg"
+            />
+          </div>
+
+          {/* Filtro de Situação */}
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
+              📊 Situação
             </label>
             <select
-              value={grauSelecionado}
-              onChange={(e) => setGrauSelecionado(e.target.value)}
+              value={situacaoFilter}
+              onChange={(e) => setSituacaoFilter(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg"
             >
-              <option value="todos">Todos os Graus ({irmaosAtivos.length})</option>
-              <option value="Mestre">Mestres ({totalMestres})</option>
-              <option value="Companheiro">Companheiros ({totalCompanheiros})</option>
-              <option value="Aprendiz">Aprendizes ({totalAprendizes})</option>
+              <option value="regular,licenciado">Regulares e Licenciados</option>
+              <option value="todos">Todas as Situações</option>
+              {STATUS_IRMAOS.map(status => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
             </select>
           </div>
 
+          {/* Filtro de Grau */}
           <div>
             <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
-              Ordenar por
+              🔺 Grau
             </label>
             <select
-              value={ordenacao}
-              onChange={(e) => setOrdenacao(e.target.value)}
+              value={grauFilter}
+              onChange={(e) => setGrauFilter(e.target.value)}
               className="w-full px-4 py-2 border rounded-lg"
             >
-              <option value="nome">Nome (A-Z)</option>
-              <option value="cim">CIM</option>
-              <option value="idade">Idade (Crescente)</option>
-              <option value="tempo">Tempo na Maconaria</option>
+              <option value="todos">Todos os Graus</option>
+              <option value="Aprendiz">Aprendiz</option>
+              <option value="Companheiro">Companheiro</option>
+              <option value="Mestre">Mestre</option>
+              <option value="Não iniciado">Não iniciado</option>
             </select>
           </div>
+        </div>
 
-          <div className="flex items-end">
-            <button
-              onClick={gerarQuadro}
-              className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-            >
-              Exportar Quadro
-            </button>
-          </div>
+        {/* Contador */}
+        <div className="mt-4 text-sm">
+          Exibindo <strong>{irmaosFiltrados.length}</strong> de <strong>{irmaos.length}</strong> irmãos
         </div>
       </div>
 
-      <div className="rounded-lg shadow overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-primary-600 to-primary-700 text-white" style={{background:"var(--color-surface-2)"}}>
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>CIM</th>
-                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>NOME</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>GRAU</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>IDADE</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>DATA INICIACAO</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>TEMPO MACONARIA</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>SITUACAO</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {irmaosOrdenados.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center" style={{color:"var(--color-text)"}}>
-                    <div className="text-6xl mb-4">📋</div>
-                    <div className="text-xl font-semibold">Nenhum irmao encontrado</div>
-                    <div className="text-sm mt-2">Ajuste os filtros ou adicione novos irmaos</div>
-                  </td>
-                </tr>
-              ) : (
-                irmaosOrdenados.map((irmao, index) => {
-                  const grau = obterGrau(irmao);
-                  const corGrau = obterCorGrau(grau);
-                  const corSituacao = obterCorSituacao(irmao.situacao);
-
-                  return (
-                    <tr key={irmao.id} className={index % 2 === 0 ? '' : ''}>
-                      <td className="px-6 py-4 whitespace-nowrap" style={{color:"var(--color-text)"}}>
-                        <span className="font-mono font-semibold text-blue-600">{irmao.cim}</span>
-                      </td>
-                      <td className="px-6 py-4" style={{color:"var(--color-text)"}}>
-                        <div className="font-semibold">{irmao.nome}</div>
-                        {irmao.profissao && (
-                          <div className="text-xs mt-1">{irmao.profissao}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
-                        <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corGrau}>
-                          {grau}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
-                        {irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
-                        {irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm font-medium" style={{color:"var(--color-text)"}}>
-                        {formatarTempoMaconaria(irmao.data_iniciacao)}
-                      </td>
-                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
-                        <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corSituacao}>
-                          {irmao.situacao || 'Regular'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {irmaosOrdenados.length > 0 && (
-          <div className="px-6 py-4 border-t">
-            <div className="flex justify-between items-center text-sm">
-              <div>
-                Exibindo <strong>{irmaosOrdenados.length}</strong> irmao(s)
-                {grauSelecionado !== 'todos' && ' de grau ' + grauSelecionado}
+      {/* Cards de Irmãos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {irmaosFiltrados.map(irmao => {
+          const grau = obterGrau(irmao);
+          const situacao = (irmao.situacao || 'regular').toLowerCase();
+          
+          return (
+            <div
+              key={irmao.id}
+              className="rounded-lg hover: transition-shadow overflow-hidden"
+             style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              {/* Foto e Grau */}
+              <div className="relative">
+                {irmao.foto_url ? (
+                  <img
+                    src={irmao.foto_url}
+                    alt={irmao.nome}
+                    className="w-full h-40 object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-primary-700 flex items-center justify-center">
+                    <span className="text-6xl text-white">👤</span>
+                  </div>
+                )}
+                
+                {/* Badge do Grau */}
+                <div className={`absolute top-2 right-2 ${obterCorGrau(grau)} text-white px-3 py-1 rounded-full text-xs font-bold `}>
+                  {grau}
+                </div>
               </div>
-              <div>
-                Ordenado por: <strong>{
-                  ordenacao === 'nome' ? 'Nome' :
-                  ordenacao === 'cim' ? 'CIM' :
-                  ordenacao === 'idade' ? 'Idade' :
-                  'Tempo na Maconaria'
-                }</strong>
+
+              {/* Informações */}
+              <div className="p-4">
+                <h3 className="font-bold text-lg truncate" style={{color:"var(--color-text)"}} title={irmao.nome}>
+                  {irmao.nome}
+                </h3>
+                
+                <div className="mt-2 space-y-1">
+                  <p className="text-sm">
+                    <span className="font-semibold">CIM:</span> {irmao.cim}
+                  </p>
+                  
+                  {irmao.data_nascimento && (
+                    <p className="text-sm">
+                      <span className="font-semibold">Idade:</span> {calcularIdade(irmao.data_nascimento)}
+                    </p>
+                  )}
+                  
+                  {irmao.data_iniciacao && (
+                    <p className="text-sm">
+                      <span className="font-semibold">Iniciação:</span> {formatarData(irmao.data_iniciacao)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Badge de Situação */}
+                <div className="mt-3 flex gap-2 flex-wrap">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${obterCorSituacao(situacao)}`}>
+                    {irmao.situacao || 'Regular'}
+                  </span>
+                  
+                  {/* ← NOVO: Periodicidade de Pagamento Editável */}
+                  <select
+                    value={irmao.periodicidade_pagamento || 'Mensal'}
+                    onChange={async (e) => {
+                      e.stopPropagation();
+                      try {
+                        const { error } = await supabase
+                          .from('irmaos')
+                          .update({ periodicidade_pagamento: e.target.value })
+                          .eq('id', irmao.id);
+                        
+                        if (error) throw error;
+                        showSuccess('Periodicidade atualizada!');
+                        onUpdate();
+                      } catch (error) {
+                        showError('Erro ao atualizar: ' + error.message);
+                      }
+                    }}
+                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium border hover:"
+                    title="Periodicidade de Pagamento"
+                  >
+                    <option value="Mensal">📅 Mensal</option>
+                    <option value="Semestral">📆 Semestral</option>
+                    <option value="Anual">📊 Anual</option>
+                  </select>
+                </div>
+
+                {/* Botões de Ação */}
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => onViewProfile(irmao.id)}
+                    className="flex-1 px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 transition-colors"
+                    title="Ver Perfil"
+                  >
+                    👁️ Ver Perfil
+                  </button>
+                  
+                  <button
+                    onClick={() => onViewPerfilCompleto && onViewPerfilCompleto(irmao.id)}
+                    className="px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 transition-colors"
+                    title="Perfil Completo"
+                  >
+                    📋
+                  </button>
+                  
+                       
+                  {permissoes?.canEdit && (
+                    <button
+                      onClick={() => onEdit(irmao)}
+                      className="flex-1 px-3 py-2 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+                      title="Editar"
+                    >
+                      ✏️ Editar
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={() => gerarPDF(irmao)}
+                    className="px-3 py-2 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
+                    title="Gerar Ficha"
+                  >
+                    📄
+                  </button>
+                  
+                  {permissoes?.canEdit && (
+                    <button
+                      onClick={() => deletarIrmao(irmao.id)}
+                      className="px-3 py-2 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
+                      title="Excluir"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })}
       </div>
 
-      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-        <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>Legenda</h4>
-        <div className="text-sm text-blue-800 space-y-1">
-          <div>Tempo Maconaria: Formato Xa Xm = X anos e X meses desde a iniciacao</div>
-          <div>Idade: Calculada com base na data de nascimento</div>
-          <div>Grau: Determinado automaticamente pelas datas de iniciacao, elevacao e exaltacao</div>
-          <div>Situacao: Apenas irmaos Regulares e Licenciados sao exibidos no quadro</div>
+      {/* Mensagem quando não há resultados */}
+      {irmaosFiltrados.length === 0 && (
+        <div className="rounded-lg shadow p-12 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="text-6xl mb-4">🔍</div>
+          <h3 className="text-xl font-semibold mb-2" style={{color:"var(--color-text)"}}>
+            Nenhum irmão encontrado
+          </h3>
+          <p>
+            Tente ajustar os filtros de busca
+          </p>
         </div>
-      </div>
+      )}
+
+      {/* Modal de Detalhes */}
+      {mostrarDetalhes && irmaoSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            {/* Header do Modal */}
+            <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-t-lg">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>Detalhes do Irmão</h2>
+                <button
+                  onClick={fecharDetalhes}
+                  className="text-white hover:text-gray-200 text-3xl font-bold"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+
+            {/* Conteúdo do Modal */}
+            <div className="p-6 space-y-6">
+              {/* Foto e Informações Básicas */}
+              <div className="flex gap-6">
+                {irmaoSelecionado.foto_url ? (
+                  <img
+                    src={irmaoSelecionado.foto_url}
+                    alt={irmaoSelecionado.nome}
+                    className="w-32 h-32 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-primary-700 rounded-lg flex items-center justify-center">
+                    <span className="text-5xl text-white">👤</span>
+                  </div>
+                )}
+
+                <div className="flex-1">
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>{irmaoSelecionado.nome}</h3>
+                  <p className="mt-1">CIM: {irmaoSelecionado.cim}</p>
+                  <div className="mt-3 flex gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${obterCorGrau(obterGrau(irmaoSelecionado))} text-white`}>
+                      {obterGrau(irmaoSelecionado)}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${obterCorSituacao((irmaoSelecionado.situacao || 'regular').toLowerCase())}`}>
+                      {irmaoSelecionado.situacao || 'Regular'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados Pessoais */}
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="font-bold text-lg text-blue-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>👤 Dados Pessoais</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-semibold">CPF:</span>
+                    <span className="ml-2">{irmaoSelecionado.cpf ? formatarCPF(irmaoSelecionado.cpf) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">RG:</span>
+                    <span className="ml-2">{irmaoSelecionado.rg || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Data Nascimento:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_nascimento ? formatarData(irmaoSelecionado.data_nascimento) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Idade:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_nascimento ? calcularIdade(irmaoSelecionado.data_nascimento) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Estado Civil:</span>
+                    <span className="ml-2">{irmaoSelecionado.estado_civil || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Profissão:</span>
+                    <span className="ml-2">{irmaoSelecionado.profissao || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Escolaridade:</span>
+                    <span className="ml-2">{irmaoSelecionado.escolaridade || 'Não informado'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contato */}
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="font-bold text-lg text-green-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>📞 Contato</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-semibold">Email:</span>
+                    <span className="ml-2">{irmaoSelecionado.email || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Telefone:</span>
+                    <span className="ml-2">{irmaoSelecionado.telefone ? formatarTelefone(irmaoSelecionado.telefone) : 'Não informado'}</span>
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="font-semibold">Endereço:</span>
+                    <span className="ml-2">
+                      {irmaoSelecionado.endereco || 'Não informado'}
+                      {irmaoSelecionado.numero && `, ${irmaoSelecionado.numero}`}
+                      {irmaoSelecionado.complemento && ` - ${irmaoSelecionado.complemento}`}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Bairro:</span>
+                    <span className="ml-2">{irmaoSelecionado.bairro || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Cidade/Estado:</span>
+                    <span className="ml-2">
+                      {irmaoSelecionado.cidade || 'Não informado'}
+                      {irmaoSelecionado.estado && `/${irmaoSelecionado.estado}`}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">CEP:</span>
+                    <span className="ml-2">{irmaoSelecionado.cep || 'Não informado'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dados Maçônicos */}
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="font-bold text-lg text-purple-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>🔺 Dados Maçônicos</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-semibold">Data Iniciação:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_iniciacao ? formatarData(irmaoSelecionado.data_iniciacao) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Data Elevação:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_elevacao ? formatarData(irmaoSelecionado.data_elevacao) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Data Exaltação:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_exaltacao ? formatarData(irmaoSelecionado.data_exaltacao) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Tempo Maçonaria:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_iniciacao ? calcularTempoMaconaria(irmaoSelecionado.data_iniciacao) : 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Loja Origem:</span>
+                    <span className="ml-2">{irmaoSelecionado.loja_origem || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Oriente:</span>
+                    <span className="ml-2">{irmaoSelecionado.oriente || 'Não informado'}</span>
+                  </div>
+                  <div className="md:col-span-2">
+                    <span className="font-semibold">Grande Oriente:</span>
+                    <span className="ml-2">{irmaoSelecionado.grande_oriente || 'Não informado'}</span>
+                  </div>
+                  {irmaoSelecionado.observacoes && (
+                    <div className="md:col-span-2">
+                      <span className="font-semibold">Observações:</span>
+                      <p className="ml-2 mt-1">{irmaoSelecionado.observacoes}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Cônjuge */}
+              {familiaresSelecionado.conjuge && (
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-lg text-pink-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>💑 Cônjuge</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-semibold">Nome:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.nome}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold">CPF:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.cpf ? formatarCPF(familiaresSelecionado.conjuge.cpf) : 'Não informado'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Data Nascimento:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.data_nascimento ? formatarData(familiaresSelecionado.conjuge.data_nascimento) : 'Não informado'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Idade:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.data_nascimento ? calcularIdade(familiaresSelecionado.conjuge.data_nascimento) : 'Não informado'}</span>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Profissão:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.profissao || 'Não informado'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Pais */}
+              {familiaresSelecionado.pais && (
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-lg text-indigo-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>👨‍👩‍👦 Pais</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="font-semibold">Pai:</span>
+                      <span className="ml-2">
+                        {familiaresSelecionado.pais.nome_pai || 'Não informado'}
+                        {familiaresSelecionado.pais.nome_pai && (
+                          <span className={`ml-2 ${familiaresSelecionado.pais.pai_vivo ? 'text-green-600' : ''}`}>
+                            {familiaresSelecionado.pais.pai_vivo ? '(Vivo)' : '(Falecido)'}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-semibold">Mãe:</span>
+                      <span className="ml-2">
+                        {familiaresSelecionado.pais.nome_mae || 'Não informado'}
+                        {familiaresSelecionado.pais.nome_mae && (
+                          <span className={`ml-2 ${familiaresSelecionado.pais.mae_viva ? 'text-green-600' : ''}`}>
+                            {familiaresSelecionado.pais.mae_viva ? '(Viva)' : '(Falecida)'}
+                          </span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Filhos */}
+              {familiaresSelecionado.filhos.length > 0 && (
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-lg text-blue-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>
+                    👶 Filhos ({familiaresSelecionado.filhos.length})
+                  </h4>
+                  <div className="space-y-3">
+                    {familiaresSelecionado.filhos.map((filho, index) => (
+                      <div key={index} className="rounded p-3 border">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-2xl">{filho.sexo === 'M' ? '👦' : '👧'}</span>
+                          <span className="font-semibold">{filho.nome}</span>
+                        </div>
+                        <div className="text-sm space-y-1">
+                          <div>
+                            <span className="font-semibold">Sexo:</span> {filho.sexo === 'M' ? 'Masculino' : 'Feminino'}
+                          </div>
+                          <div>
+                            <span className="font-semibold">Data Nascimento:</span> {filho.data_nascimento ? formatarData(filho.data_nascimento) : 'Não informado'}
+                          </div>
+                          {filho.data_nascimento && (
+                            <div>
+                              <span className="font-semibold">Idade:</span> {calcularIdade(filho.data_nascimento)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer do Modal */}
+            <div className="sticky bottom-0 p-4 rounded-b-lg flex justify-end gap-3">
+              <button
+                onClick={() => gerarPDF(irmaoSelecionado)}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                📄 Gerar Ficha
+              </button>
+              {permissoes?.canEdit && (
+                <button
+                  onClick={() => {
+                    fecharDetalhes();
+                    onEdit(irmaoSelecionado);
+                  }}
+                  className="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  ✏️ Editar
+                </button>
+              )}
+              <button
+                onClick={fecharDetalhes}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default QuadroIrmaos;
+export default VisualizarIrmaos;
