@@ -408,9 +408,8 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                       </div>
                     ))}
                   </div>
-              </div>
+                </div>
             </div>
-          </div>
         ))}
 
         {grausFiltrados.length === 0 && (
