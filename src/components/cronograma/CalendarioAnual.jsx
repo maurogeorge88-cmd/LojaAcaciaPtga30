@@ -184,9 +184,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             return (
               <div
                 key={index}
-                className={`min-h-[50px] border  p-1.5 relative ${
-                  !dia ? '' : temEvento ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer transition' : ' hover: transition'
-                }`}
+                className={`min-h-[50px] border p-1.5 relative transition`}
+                style={!dia ? {} : temEvento ? {background:"var(--color-accent-bg)",border:"1px solid var(--color-accent)",cursor:"pointer"} : {borderColor:"var(--color-border)"}}
                 onClick={async () => {
                   if (temEvento) {
                     const detalhes = await buscarDetalhesEventos(dia, mesIndex);
@@ -198,7 +197,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               >
                 {dia && (
                   <>
-                    <div className={`text-sm ${temEvento ? 'font-bold text-blue-700' : 'font-medium '}`}>
+                    <div className={`text-sm ${temEvento ? 'font-bold' : 'font-medium'}`} style={{color:temEvento ? "var(--color-accent)" : "var(--color-text)"}}>
                       {dia}
                     </div>
                     
@@ -330,21 +329,21 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           }}
         >
           <div 
-            className="rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header do Modal - COR #000080 */}
             <div 
               className="text-white p-6 rounded-t-xl sticky top-0"
               style={{ 
-                background: 'linear-gradient(to right, #000080, #0000b3, #000080)'
+                background: 'var(--color-accent)'
               }}
             >
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">📅</span>
                   <div>
-                    <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>Eventos do Dia</h3>
+                    <h3 className="text-2xl font-bold" style={{color:"#fff"}}>Eventos do Dia</h3>
                     <p className="text-sm opacity-90">{diaSelecionado}</p>
                   </div>
                 </div>
@@ -362,7 +361,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             </div>
 
             {/* Corpo do Modal */}
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4" style={{background:"var(--color-surface)"}}>          
               {eventosSelecionados.map((evento, i) => {
                 const tipoEvento = getTipoEvento(evento);
                 const corClass = coresEvento[tipoEvento] || coresEvento.default;
@@ -370,8 +369,9 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                 return (
                   <div
                     key={i}
-                    className="rounded-lg p-5 border-l-4 hover: transition"
+                    className="rounded-lg p-5 border-l-4 transition"
                     style={{ 
+                      background:"var(--color-surface-2)",
                       borderColor: corClass.includes('blue') ? '#3b82f6' :
                                    corClass.includes('red') ? '#ef4444' :
                                    corClass.includes('green') ? '#22c55e' :
@@ -382,7 +382,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                     <div className="flex items-start gap-4">
                       <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${corClass}`}></div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-lg mb-2">{evento.titulo}</h4>
+                        <h4 className="font-bold text-lg mb-2" style={{color:"var(--color-text)"}}>{evento.titulo}</h4>
                         
                         {/* Tipo e Grau */}
                         <div className="mb-3 flex flex-wrap gap-2">
@@ -410,8 +410,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
                         {/* Descrição */}
                         {evento.descricao && (
-                          <div className="rounded p-3 mb-3">
-                            <p className="text-sm leading-relaxed">{evento.descricao}</p>
+                          <div className="rounded p-3 mb-3" style={{background:"var(--color-surface-3)"}}>
+                            <p className="text-sm leading-relaxed" style={{color:"var(--color-text)"}}>{evento.descricao}</p>
                           </div>
                         )}
 
