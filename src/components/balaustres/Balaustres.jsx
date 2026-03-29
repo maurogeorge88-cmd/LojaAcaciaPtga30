@@ -251,7 +251,7 @@ const Balaustres = ({
   });
 
   return (
-    <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
+    <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh', overflowX: 'hidden' }}>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
       {permissoes?.pode_editar_balaustres && (
         <div className="card" style={{overflow:"hidden"}}>
@@ -259,7 +259,7 @@ const Balaustres = ({
             {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
           </h3>
 
-        <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit} style={{width:"100%",boxSizing:"border-box"}}>
+        <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit} style={{width:"100%",maxWidth:"100%",boxSizing:"border-box",overflow:"hidden"}}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Grau da Sessão */}
             <div>
@@ -361,6 +361,7 @@ const Balaustres = ({
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
                 className="form-input"
                 rows="4"
+                style={{resize:"vertical"}}
                 placeholder="Descreva a ordem do dia da sessão..."
               />
             </div>
@@ -372,6 +373,7 @@ const Balaustres = ({
                 onChange={(e) => setBalaustreForm({ ...balaustreForm, observacoes: e.target.value })}
                 className="form-input"
                 rows="4"
+                style={{resize:"vertical"}}
                 placeholder="Observações adicionais..."
               />
             </div>
@@ -577,11 +579,14 @@ const Balaustres = ({
                           className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-3 transition-opacity hover:opacity-90"
                           style={{
                             borderLeftColor: 'var(--color-accent)',
-                            background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                            background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            minWidth: 0
                           }}
                         >
                           {/* Número/Ano */}
-                          <div style={{flexShrink:0,width:'58px'}}>
+                          <div style={{flexShrink:0,width:'68px',overflow:'hidden'}}>
                             <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
                           </div>
@@ -591,7 +596,7 @@ const Balaustres = ({
                           </div>
                           {/* Tipo */}
                           <div style={{flexShrink:0,maxWidth:'120px',overflow:'hidden'}}>
-                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800" style={{display:"block",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"100%"}}>
                               {obterNomeTipoSessao(balaustre.tipo_sessao_id)}
                             </span>
                           </div>
