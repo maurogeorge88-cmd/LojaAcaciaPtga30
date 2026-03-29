@@ -52,12 +52,12 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
       irregular: 'bg-yellow-100 text-yellow-800 border-yellow-300',
       licenciado: 'bg-blue-100 text-blue-800 border-blue-300',
       suspenso: 'bg-orange-100 text-orange-800 border-orange-300',
-      desligado: 'bg-gray-100 text-gray-800 border-gray-300',
+      desligado: '  ',
       excluido: 'bg-red-100 text-red-800 border-red-300',
       falecido: 'bg-purple-100 text-purple-800 border-purple-300',
       ex_oficio: 'bg-indigo-100 text-indigo-800 border-indigo-300'
     };
-    return cores[situacao] || 'bg-gray-100 text-gray-800 border-gray-300';
+    return cores[situacao] || '  ';
   };
 
   // Função para obter cor do grau
@@ -66,7 +66,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
       'Aprendiz': 'bg-blue-500',
       'Companheiro': 'bg-green-500',
       'Mestre': 'bg-purple-500',
-      'Mestre Instalado': 'bg-indigo-600',
+      'Mestre Instalado': 'bg-primary-600',
       'Não iniciado': 'bg-gray-400'
     };
     return cores[grau] || 'bg-gray-400';
@@ -331,11 +331,11 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
   return (
     <div className="space-y-6">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Busca */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
               🔍 Buscar
             </label>
             <input
@@ -343,19 +343,19 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               placeholder="Nome ou CIM..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg"
             />
           </div>
 
           {/* Filtro de Situação */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
               📊 Situação
             </label>
             <select
               value={situacaoFilter}
               onChange={(e) => setSituacaoFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg"
             >
               <option value="regular,licenciado">Regulares e Licenciados</option>
               <option value="todos">Todas as Situações</option>
@@ -369,13 +369,13 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
           {/* Filtro de Grau */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
               🔺 Grau
             </label>
             <select
               value={grauFilter}
               onChange={(e) => setGrauFilter(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg"
             >
               <option value="todos">Todos os Graus</option>
               <option value="Aprendiz">Aprendiz</option>
@@ -387,7 +387,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
         </div>
 
         {/* Contador */}
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm">
           Exibindo <strong>{irmaosFiltrados.length}</strong> de <strong>{irmaos.length}</strong> irmãos
         </div>
       </div>
@@ -401,8 +401,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
           return (
             <div
               key={irmao.id}
-              className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow overflow-hidden"
-            >
+              className="rounded-lg hover: transition-shadow overflow-hidden"
+             style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {/* Foto e Grau */}
               <div className="relative">
                 {irmao.foto_url ? (
@@ -412,36 +412,36 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                     className="w-full h-40 object-cover"
                   />
                 ) : (
-                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-primary-700 flex items-center justify-center">
                     <span className="text-6xl text-white">👤</span>
                   </div>
                 )}
                 
                 {/* Badge do Grau */}
-                <div className={`absolute top-2 right-2 ${obterCorGrau(grau)} text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg`}>
+                <div className={`absolute top-2 right-2 ${obterCorGrau(grau)} text-white px-3 py-1 rounded-full text-xs font-bold `}>
                   {grau}
                 </div>
               </div>
 
               {/* Informações */}
               <div className="p-4">
-                <h3 className="font-bold text-lg text-gray-800 truncate" title={irmao.nome}>
+                <h3 className="font-bold text-lg truncate" style={{color:"var(--color-text)"}} title={irmao.nome}>
                   {irmao.nome}
                 </h3>
                 
                 <div className="mt-2 space-y-1">
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm">
                     <span className="font-semibold">CIM:</span> {irmao.cim}
                   </p>
                   
                   {irmao.data_nascimento && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm">
                       <span className="font-semibold">Idade:</span> {calcularIdade(irmao.data_nascimento)}
                     </p>
                   )}
                   
                   {irmao.data_iniciacao && (
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm">
                       <span className="font-semibold">Iniciação:</span> {formatarData(irmao.data_iniciacao)}
                     </p>
                   )}
@@ -471,7 +471,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                         showError('Erro ao atualizar: ' + error.message);
                       }
                     }}
-                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium border border-gray-300 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-blue-500"
+                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium border hover:"
                     title="Periodicidade de Pagamento"
                   >
                     <option value="Mensal">📅 Mensal</option>
@@ -484,7 +484,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => onViewProfile(irmao.id)}
-                    className="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                    className="flex-1 px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 transition-colors"
                     title="Ver Perfil"
                   >
                     👁️ Ver Perfil
@@ -492,7 +492,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   
                   <button
                     onClick={() => onViewPerfilCompleto && onViewPerfilCompleto(irmao.id)}
-                    className="px-3 py-2 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+                    className="px-3 py-2 bg-primary-600 text-white text-sm rounded hover:bg-primary-700 transition-colors"
                     title="Perfil Completo"
                   >
                     📋
@@ -535,12 +535,12 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
       {/* Mensagem quando não há resultados */}
       {irmaosFiltrados.length === 0 && (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
+        <div className="rounded-lg shadow p-12 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+          <h3 className="text-xl font-semibold mb-2" style={{color:"var(--color-text)"}}>
             Nenhum irmão encontrado
           </h3>
-          <p className="text-gray-500">
+          <p>
             Tente ajustar os filtros de busca
           </p>
         </div>
@@ -549,11 +549,11 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
       {/* Modal de Detalhes */}
       {mostrarDetalhes && irmaoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
-            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-t-lg">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Detalhes do Irmão</h2>
+                <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>Detalhes do Irmão</h2>
                 <button
                   onClick={fecharDetalhes}
                   className="text-white hover:text-gray-200 text-3xl font-bold"
@@ -571,17 +571,17 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   <img
                     src={irmaoSelecionado.foto_url}
                     alt={irmaoSelecionado.nome}
-                    className="w-32 h-32 rounded-lg object-cover shadow-md"
+                    className="w-32 h-32 rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                  <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-primary-700 rounded-lg flex items-center justify-center">
                     <span className="text-5xl text-white">👤</span>
                   </div>
                 )}
 
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-gray-800">{irmaoSelecionado.nome}</h3>
-                  <p className="text-gray-600 mt-1">CIM: {irmaoSelecionado.cim}</p>
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>{irmaoSelecionado.nome}</h3>
+                  <p className="mt-1">CIM: {irmaoSelecionado.cim}</p>
                   <div className="mt-3 flex gap-2">
                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${obterCorGrau(obterGrau(irmaoSelecionado))} text-white`}>
                       {obterGrau(irmaoSelecionado)}
@@ -594,114 +594,114 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               </div>
 
               {/* Dados Pessoais */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-bold text-lg text-blue-900 mb-3 border-b pb-2">👤 Dados Pessoais</h4>
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="font-bold text-lg text-blue-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>👤 Dados Pessoais</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="font-semibold text-gray-700">CPF:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.cpf ? formatarCPF(irmaoSelecionado.cpf) : 'Não informado'}</span>
+                    <span className="font-semibold">CPF:</span>
+                    <span className="ml-2">{irmaoSelecionado.cpf ? formatarCPF(irmaoSelecionado.cpf) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">RG:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.rg || 'Não informado'}</span>
+                    <span className="font-semibold">RG:</span>
+                    <span className="ml-2">{irmaoSelecionado.rg || 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Data Nascimento:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.data_nascimento ? formatarData(irmaoSelecionado.data_nascimento) : 'Não informado'}</span>
+                    <span className="font-semibold">Data Nascimento:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_nascimento ? formatarData(irmaoSelecionado.data_nascimento) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Idade:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.data_nascimento ? calcularIdade(irmaoSelecionado.data_nascimento) : 'Não informado'}</span>
+                    <span className="font-semibold">Idade:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_nascimento ? calcularIdade(irmaoSelecionado.data_nascimento) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Estado Civil:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.estado_civil || 'Não informado'}</span>
+                    <span className="font-semibold">Estado Civil:</span>
+                    <span className="ml-2">{irmaoSelecionado.estado_civil || 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Profissão:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.profissao || 'Não informado'}</span>
+                    <span className="font-semibold">Profissão:</span>
+                    <span className="ml-2">{irmaoSelecionado.profissao || 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Escolaridade:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.escolaridade || 'Não informado'}</span>
+                    <span className="font-semibold">Escolaridade:</span>
+                    <span className="ml-2">{irmaoSelecionado.escolaridade || 'Não informado'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Contato */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-bold text-lg text-green-900 mb-3 border-b pb-2">📞 Contato</h4>
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="font-bold text-lg text-green-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>📞 Contato</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="font-semibold text-gray-700">Email:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.email || 'Não informado'}</span>
+                    <span className="font-semibold">Email:</span>
+                    <span className="ml-2">{irmaoSelecionado.email || 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Telefone:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.telefone ? formatarTelefone(irmaoSelecionado.telefone) : 'Não informado'}</span>
+                    <span className="font-semibold">Telefone:</span>
+                    <span className="ml-2">{irmaoSelecionado.telefone ? formatarTelefone(irmaoSelecionado.telefone) : 'Não informado'}</span>
                   </div>
                   <div className="md:col-span-2">
-                    <span className="font-semibold text-gray-700">Endereço:</span>
-                    <span className="ml-2 text-gray-600">
+                    <span className="font-semibold">Endereço:</span>
+                    <span className="ml-2">
                       {irmaoSelecionado.endereco || 'Não informado'}
                       {irmaoSelecionado.numero && `, ${irmaoSelecionado.numero}`}
                       {irmaoSelecionado.complemento && ` - ${irmaoSelecionado.complemento}`}
                     </span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Bairro:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.bairro || 'Não informado'}</span>
+                    <span className="font-semibold">Bairro:</span>
+                    <span className="ml-2">{irmaoSelecionado.bairro || 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Cidade/Estado:</span>
-                    <span className="ml-2 text-gray-600">
+                    <span className="font-semibold">Cidade/Estado:</span>
+                    <span className="ml-2">
                       {irmaoSelecionado.cidade || 'Não informado'}
                       {irmaoSelecionado.estado && `/${irmaoSelecionado.estado}`}
                     </span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">CEP:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.cep || 'Não informado'}</span>
+                    <span className="font-semibold">CEP:</span>
+                    <span className="ml-2">{irmaoSelecionado.cep || 'Não informado'}</span>
                   </div>
                 </div>
               </div>
 
               {/* Dados Maçônicos */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-bold text-lg text-purple-900 mb-3 border-b pb-2">🔺 Dados Maçônicos</h4>
+              <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="font-bold text-lg text-purple-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>🔺 Dados Maçônicos</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="font-semibold text-gray-700">Data Iniciação:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.data_iniciacao ? formatarData(irmaoSelecionado.data_iniciacao) : 'Não informado'}</span>
+                    <span className="font-semibold">Data Iniciação:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_iniciacao ? formatarData(irmaoSelecionado.data_iniciacao) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Data Elevação:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.data_elevacao ? formatarData(irmaoSelecionado.data_elevacao) : 'Não informado'}</span>
+                    <span className="font-semibold">Data Elevação:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_elevacao ? formatarData(irmaoSelecionado.data_elevacao) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Data Exaltação:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.data_exaltacao ? formatarData(irmaoSelecionado.data_exaltacao) : 'Não informado'}</span>
+                    <span className="font-semibold">Data Exaltação:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_exaltacao ? formatarData(irmaoSelecionado.data_exaltacao) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Tempo Maçonaria:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.data_iniciacao ? calcularTempoMaconaria(irmaoSelecionado.data_iniciacao) : 'Não informado'}</span>
+                    <span className="font-semibold">Tempo Maçonaria:</span>
+                    <span className="ml-2">{irmaoSelecionado.data_iniciacao ? calcularTempoMaconaria(irmaoSelecionado.data_iniciacao) : 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Loja Origem:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.loja_origem || 'Não informado'}</span>
+                    <span className="font-semibold">Loja Origem:</span>
+                    <span className="ml-2">{irmaoSelecionado.loja_origem || 'Não informado'}</span>
                   </div>
                   <div>
-                    <span className="font-semibold text-gray-700">Oriente:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.oriente || 'Não informado'}</span>
+                    <span className="font-semibold">Oriente:</span>
+                    <span className="ml-2">{irmaoSelecionado.oriente || 'Não informado'}</span>
                   </div>
                   <div className="md:col-span-2">
-                    <span className="font-semibold text-gray-700">Grande Oriente:</span>
-                    <span className="ml-2 text-gray-600">{irmaoSelecionado.grande_oriente || 'Não informado'}</span>
+                    <span className="font-semibold">Grande Oriente:</span>
+                    <span className="ml-2">{irmaoSelecionado.grande_oriente || 'Não informado'}</span>
                   </div>
                   {irmaoSelecionado.observacoes && (
                     <div className="md:col-span-2">
-                      <span className="font-semibold text-gray-700">Observações:</span>
-                      <p className="ml-2 text-gray-600 mt-1">{irmaoSelecionado.observacoes}</p>
+                      <span className="font-semibold">Observações:</span>
+                      <p className="ml-2 mt-1">{irmaoSelecionado.observacoes}</p>
                     </div>
                   )}
                 </div>
@@ -709,28 +709,28 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
               {/* Cônjuge */}
               {familiaresSelecionado.conjuge && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-bold text-lg text-pink-900 mb-3 border-b pb-2">💑 Cônjuge</h4>
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-lg text-pink-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>💑 Cônjuge</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="font-semibold text-gray-700">Nome:</span>
-                      <span className="ml-2 text-gray-600">{familiaresSelecionado.conjuge.nome}</span>
+                      <span className="font-semibold">Nome:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.nome}</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-700">CPF:</span>
-                      <span className="ml-2 text-gray-600">{familiaresSelecionado.conjuge.cpf ? formatarCPF(familiaresSelecionado.conjuge.cpf) : 'Não informado'}</span>
+                      <span className="font-semibold">CPF:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.cpf ? formatarCPF(familiaresSelecionado.conjuge.cpf) : 'Não informado'}</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-700">Data Nascimento:</span>
-                      <span className="ml-2 text-gray-600">{familiaresSelecionado.conjuge.data_nascimento ? formatarData(familiaresSelecionado.conjuge.data_nascimento) : 'Não informado'}</span>
+                      <span className="font-semibold">Data Nascimento:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.data_nascimento ? formatarData(familiaresSelecionado.conjuge.data_nascimento) : 'Não informado'}</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-700">Idade:</span>
-                      <span className="ml-2 text-gray-600">{familiaresSelecionado.conjuge.data_nascimento ? calcularIdade(familiaresSelecionado.conjuge.data_nascimento) : 'Não informado'}</span>
+                      <span className="font-semibold">Idade:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.data_nascimento ? calcularIdade(familiaresSelecionado.conjuge.data_nascimento) : 'Não informado'}</span>
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-700">Profissão:</span>
-                      <span className="ml-2 text-gray-600">{familiaresSelecionado.conjuge.profissao || 'Não informado'}</span>
+                      <span className="font-semibold">Profissão:</span>
+                      <span className="ml-2">{familiaresSelecionado.conjuge.profissao || 'Não informado'}</span>
                     </div>
                   </div>
                 </div>
@@ -738,26 +738,26 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
               {/* Pais */}
               {familiaresSelecionado.pais && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-bold text-lg text-indigo-900 mb-3 border-b pb-2">👨‍👩‍👦 Pais</h4>
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-lg text-indigo-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>👨‍👩‍👦 Pais</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="font-semibold text-gray-700">Pai:</span>
-                      <span className="ml-2 text-gray-600">
+                      <span className="font-semibold">Pai:</span>
+                      <span className="ml-2">
                         {familiaresSelecionado.pais.nome_pai || 'Não informado'}
                         {familiaresSelecionado.pais.nome_pai && (
-                          <span className={`ml-2 ${familiaresSelecionado.pais.pai_vivo ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span className={`ml-2 ${familiaresSelecionado.pais.pai_vivo ? 'text-green-600' : ''}`}>
                             {familiaresSelecionado.pais.pai_vivo ? '(Vivo)' : '(Falecido)'}
                           </span>
                         )}
                       </span>
                     </div>
                     <div>
-                      <span className="font-semibold text-gray-700">Mãe:</span>
-                      <span className="ml-2 text-gray-600">
+                      <span className="font-semibold">Mãe:</span>
+                      <span className="ml-2">
                         {familiaresSelecionado.pais.nome_mae || 'Não informado'}
                         {familiaresSelecionado.pais.nome_mae && (
-                          <span className={`ml-2 ${familiaresSelecionado.pais.mae_viva ? 'text-green-600' : 'text-gray-500'}`}>
+                          <span className={`ml-2 ${familiaresSelecionado.pais.mae_viva ? 'text-green-600' : ''}`}>
                             {familiaresSelecionado.pais.mae_viva ? '(Viva)' : '(Falecida)'}
                           </span>
                         )}
@@ -769,18 +769,18 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
               {/* Filhos */}
               {familiaresSelecionado.filhos.length > 0 && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-bold text-lg text-blue-900 mb-3 border-b pb-2">
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-lg text-blue-900 mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>
                     👶 Filhos ({familiaresSelecionado.filhos.length})
                   </h4>
                   <div className="space-y-3">
                     {familiaresSelecionado.filhos.map((filho, index) => (
-                      <div key={index} className="bg-white rounded p-3 border border-gray-200">
+                      <div key={index} className="rounded p-3 border">
                         <div className="flex items-center gap-2 mb-2">
                           <span className="text-2xl">{filho.sexo === 'M' ? '👦' : '👧'}</span>
-                          <span className="font-semibold text-gray-800">{filho.nome}</span>
+                          <span className="font-semibold">{filho.nome}</span>
                         </div>
-                        <div className="text-sm text-gray-600 space-y-1">
+                        <div className="text-sm space-y-1">
                           <div>
                             <span className="font-semibold">Sexo:</span> {filho.sexo === 'M' ? 'Masculino' : 'Feminino'}
                           </div>
@@ -801,7 +801,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
             </div>
 
             {/* Footer do Modal */}
-            <div className="sticky bottom-0 bg-gray-100 p-4 rounded-b-lg flex justify-end gap-3">
+            <div className="sticky bottom-0 p-4 rounded-b-lg flex justify-end gap-3">
               <button
                 onClick={() => gerarPDF(irmaoSelecionado)}
                 className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -821,7 +821,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               )}
               <button
                 onClick={fecharDetalhes}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 Fechar
               </button>
