@@ -256,7 +256,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">⏳ Carregando fila de espera...</div>
+        <div className="text-lg">⏳ Carregando fila de espera...</div>
       </div>
     );
   }
@@ -264,12 +264,12 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2">⏳ Fila de Espera</h2>
+            <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>⏳ Fila de Espera</h2>
             <p className="text-orange-100">Controle de Reservas e Solicitações</p>
-            <p className="text-orange-200 text-sm mt-1">
+            <p className="text-orange-200 text-sm mt-1" style={{color:"var(--color-text-muted)"}}>
               📚 {livrosDisponiveis.length} livros • 👥 {irmaosDisponiveis.length} irmãos • 
               📋 {filas.length} na fila
             </p>
@@ -277,7 +277,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
           {(permissoes?.canEdit || permissoes?.canEditMembers || permissoes?.pode_editar_biblioteca) && (
             <button
               onClick={() => setModalAdicionar(true)}
-              className="px-6 py-3 bg-white text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
+              className="px-6 py-3 text-orange-600 rounded-lg hover:bg-orange-50 transition-colors font-semibold"
             >
               ➕ Adicionar à Fila
             </button>
@@ -287,30 +287,30 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
 
       {/* CARDS DE RESUMO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Aguardando</p>
+              <p className="text-sm">Aguardando</p>
               <p className="text-3xl font-bold text-orange-600">{totalAguardando}</p>
             </div>
             <div className="text-4xl">⏳</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Atendidos</p>
+              <p className="text-sm">Atendidos</p>
               <p className="text-3xl font-bold text-green-600">{totalAtendidos}</p>
             </div>
             <div className="text-4xl">✅</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm">Livros com Fila</p>
+              <p className="text-sm">Livros com Fila</p>
               <p className="text-3xl font-bold text-blue-600">{livrosComFila}</p>
             </div>
             <div className="text-4xl">📚</div>
@@ -319,14 +319,14 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por Livro</label>
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Filtrar por Livro</label>
             <select
               value={filtroLivro}
               onChange={(e) => setFiltroLivro(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-orange-500"
             >
               <option value="todos">Todos os livros</option>
               {livrosDisponiveis.map(livro => (
@@ -338,11 +338,11 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Status</label>
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500"
+              className="w-full px-3 py-2 border rounded-lg focus:ring-orange-500"
             >
               <option value="aguardando">Aguardando</option>
               <option value="atendido">Atendidos</option>
@@ -355,19 +355,19 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
 
       {/* LISTA DE FILAS */}
       {Object.keys(filasAgrupadas).length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <div className="text-center py-12 rounded-lg">
           <div className="text-6xl mb-4">📚</div>
-          <p className="text-gray-600">Nenhuma solicitação encontrada</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p>Nenhuma solicitação encontrada</p>
+          <p className="text-sm mt-2">
             Clique em "➕ Adicionar à Fila" para começar
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.values(filasAgrupadas).map(({ livro, filas }) => (
-            <div key={livro.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+            <div key={livro.id} className="rounded-lg overflow-hidden">
               <div className="bg-orange-600 text-white p-4">
-                <h3 className="text-xl font-bold">{livro.titulo}</h3>
+                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>{livro.titulo}</h3>
                 <p className="text-orange-100 text-sm">{livro.autor}</p>
                 <p className="text-orange-200 text-xs mt-1">
                   {filas.filter(f => f.status === 'aguardando').length} aguardando
@@ -377,8 +377,8 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
               <div className="divide-y">
                 {filas.map((fila) => (
                   <div key={fila.id} className={`p-4 ${
-                    fila.status === 'aguardando' ? 'bg-white' :
-                    fila.status === 'atendido' ? 'bg-green-50' : 'bg-gray-50'
+                    fila.status === 'aguardando' ? '' :
+                    fila.status === 'atendido' ? 'bg-green-50' : ''
                   }`}>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -391,7 +391,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             fila.status === 'aguardando' ? 'bg-yellow-100 text-yellow-800' :
                             fila.status === 'atendido' ? 'bg-green-100 text-green-800' :
-                            'bg-gray-100 text-gray-800'
+                            ' '
                           }`}>
                             {fila.status === 'aguardando' ? '⏳ Aguardando' :
                              fila.status === 'atendido' ? '✅ Atendido' : '❌ Cancelado'}
@@ -399,16 +399,16 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                         </div>
 
                         <div className="mb-2">
-                          <p className="font-semibold text-gray-900">{fila.irmao_nome}</p>
-                          <p className="text-sm text-gray-600">CIM: {fila.irmao_cim}</p>
+                          <p className="font-semibold">{fila.irmao_nome}</p>
+                          <p className="text-sm">CIM: {fila.irmao_cim}</p>
                         </div>
 
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs">
                           📅 {new Date(fila.data_solicitacao || fila.created_at).toLocaleString('pt-BR')}
                         </p>
 
                         {fila.observacoes && (
-                          <p className="text-sm text-gray-600 mt-2 italic">💬 {fila.observacoes}</p>
+                          <p className="text-sm mt-2 italic">💬 {fila.observacoes}</p>
                         )}
                       </div>
 
@@ -450,10 +450,10 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
       {/* MODAL */}
       {modalAdicionar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full">
+          <div className="rounded-lg max-w-2xl w-full">
             <div className="bg-orange-600 text-white p-6 rounded-t-lg">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">➕ Adicionar à Fila de Espera</h3>
+                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>➕ Adicionar à Fila de Espera</h3>
                 <button
                   onClick={() => {
                     setModalAdicionar(false);
@@ -468,7 +468,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
 
             <form onSubmit={handleAdicionar} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Livro *</label>
                 <select
                   value={filaForm.livro_id}
                   onChange={(e) => setFilaForm({ ...filaForm, livro_id: e.target.value })}
@@ -485,7 +485,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Irmão *</label>
                 <select
                   value={filaForm.irmao_id}
                   onChange={(e) => setFilaForm({ ...filaForm, irmao_id: e.target.value })}
@@ -502,7 +502,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Observações</label>
                 <textarea
                   value={filaForm.observacoes}
                   onChange={(e) => setFilaForm({ ...filaForm, observacoes: e.target.value })}
