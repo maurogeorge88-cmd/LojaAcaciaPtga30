@@ -254,12 +254,12 @@ const Balaustres = ({
     <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
       {permissoes?.pode_editar_balaustres && (
-        <div className="card">
+        <div className="card" style={{overflow:"hidden"}}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '1rem' }}>
             {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
           </h3>
 
-        <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit}>
+        <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit} style={{width:"100%",boxSizing:"border-box"}}>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Grau da Sessão */}
             <div>
@@ -541,19 +541,7 @@ const Balaustres = ({
         // Se passou nas verificações, mostrar a listagem normal
         return (
           <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-            <div>
-              <table className="w-full">
-                <thead style={{ background: 'var(--color-accent)', color: 'white' }}>
-                  <tr>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '5rem' }}>Nº</th>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '8rem' }}>Data</th>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '8rem' }}>Dia</th>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '10rem' }}>Tipo</th>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'left' }}>Ordem do Dia</th>
-                    <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '20rem' }}>Ações</th>
-                  </tr>
-                </thead>
-              </table>
+            <div style={{overflow:"hidden"}}>
                 <div className="p-3 space-y-2" style={{width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
                   {(() => {
                     const getAnoBal = b => b.ano_balaustre ? parseInt(b.ano_balaustre) : (b.data_sessao ? new Date(b.data_sessao+'T00:00:00').getFullYear() : new Date().getFullYear());
