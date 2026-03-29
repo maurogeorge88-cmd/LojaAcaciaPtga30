@@ -72,26 +72,26 @@ export default function VisualizarAltosGraus() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-xl text-gray-600">Carregando...</div>
+        <div className="text-xl" style={{color:"var(--color-text-muted)"}}>Carregando...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg p-6 shadow-lg">
-        <h2 className="text-3xl font-bold mb-2">🔺 Altos Graus Maçônicos</h2>
+      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>🔺 Altos Graus Maçônicos</h2>
         <p className="text-indigo-100">Irmãos com graus filosóficos conquistados</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Rito</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Filtrar por Rito</label>
             <select
               value={filtroRito}
               onChange={(e) => setFiltroRito(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todos os Ritos</option>
               {ritos.map(rito => (
@@ -100,7 +100,7 @@ export default function VisualizarAltosGraus() {
             </select>
           </div>
           <div className="flex items-end">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm">
               <strong>{irmaosFiltrados.length}</strong> irmãos encontrados
             </div>
           </div>
@@ -110,19 +110,19 @@ export default function VisualizarAltosGraus() {
       {irmaosFiltrados.length > 0 ? (
         <div className="grid grid-cols-1 gap-6">
           {irmaosFiltrados.map((irmaoData) => (
-            <div key={irmaoData.irmao.id} className="bg-white rounded-lg shadow-lg border-2 border-indigo-100 overflow-hidden hover:shadow-xl transition-shadow">
-              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 border-b-2 border-indigo-200">
+            <div key={irmaoData.irmao.id} className="rounded-lg overflow-hidden hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="bg-gradient-to-r p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-indigo-900">{irmaoData.irmao.nome}</h3>
-                    <p className="text-sm text-gray-600">CIM: {irmaoData.irmao.cim}</p>
+                    <h3 className="text-xl font-bold text-indigo-900" style={{color:"var(--color-text)"}}>{irmaoData.irmao.nome}</h3>
+                    <p className="text-sm">CIM: {irmaoData.irmao.cim}</p>
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-indigo-600">{irmaoData.graus.length + 3}</div>
-                    <div className="text-xs text-gray-600">
+                    <div className="text-xs">
                       {irmaoData.graus.length + 3 === 1 ? 'grau' : 'graus'}
                       <br />
-                      <span className="text-gray-500">({irmaoData.graus.length} altos + 3 simbólicos)</span>
+                      <span>({irmaoData.graus.length} altos + 3 simbólicos)</span>
                     </div>
                   </div>
                 </div>
@@ -134,15 +134,15 @@ export default function VisualizarAltosGraus() {
                     <div className="flex items-center gap-2 mb-3">
                       <div className="text-lg font-bold text-indigo-900">{rito}</div>
                       <div className="flex-1 h-px bg-indigo-200"></div>
-                      <div className="text-sm text-gray-600">{graus.length} {graus.length === 1 ? 'grau' : 'graus'}</div>
+                      <div className="text-sm">{graus.length} {graus.length === 1 ? 'grau' : 'graus'}</div>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                       {graus.map((grau) => (
                         <div
                           key={grau.numero_grau}
-                          className="group relative bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-lg p-3 hover:shadow-lg transition-all cursor-pointer overflow-hidden"
-                          onClick={() => setIrmaoSelecionado({ irmao: irmaoData.irmao, grau })}
+                          className="group relative rounded-lg p-3 transition-all cursor-pointer overflow-hidden" style={{background:"var(--color-accent)",color:"#fff"}}
+                          onClick={() = style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> setIrmaoSelecionado({ irmao: irmaoData.irmao, grau })}
                         >
                           {grau.imagem_url ? (
                             <div className="flex flex-col items-center">
@@ -159,7 +159,7 @@ export default function VisualizarAltosGraus() {
                               <div className="text-xs leading-tight">{grau.nome_grau}</div>
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-white bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all"></div>
+                          <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all"></div>
                         </div>
                       ))}
                     </div>
@@ -170,10 +170,10 @@ export default function VisualizarAltosGraus() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <div className="text-center py-16 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">🔺</div>
-          <p className="text-gray-600 text-lg font-medium">Nenhum irmão com graus filosóficos cadastrados</p>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-lg font-medium">Nenhum irmão com graus filosóficos cadastrados</p>
+          <p className="text-sm mt-2">
             {filtroRito ? `Nenhum grau do rito ${filtroRito} encontrado` : 'Cadastre graus no perfil dos irmãos'}
           </p>
         </div>
@@ -181,55 +181,55 @@ export default function VisualizarAltosGraus() {
 
       {irmaoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+          <div className="rounded-lg max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-indigo-900">Detalhes do Grau</h3>
-              <button onClick={() => setIrmaoSelecionado(null)} className="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+              <h3 className="text-xl font-bold text-indigo-900" style={{color:"var(--color-text)"}}>Detalhes do Grau</h3>
+              <button onClick={() => setIrmaoSelecionado(null)} className="hover: text-2xl">×</button>
             </div>
 
             <div className="space-y-3">
               <div>
-                <p className="text-sm text-gray-600">Irmão</p>
-                <p className="font-semibold text-gray-900">{irmaoSelecionado.irmao.nome}</p>
-                <p className="text-xs text-gray-500">CIM: {irmaoSelecionado.irmao.cim}</p>
+                <p className="text-sm">Irmão</p>
+                <p className="font-semibold">{irmaoSelecionado.irmao.nome}</p>
+                <p className="text-xs">CIM: {irmaoSelecionado.irmao.cim}</p>
               </div>
 
               <div className="border-t pt-3">
                 <p className="text-3xl font-bold text-indigo-600 mb-2">{irmaoSelecionado.grau.numero_grau}º Grau</p>
-                <p className="text-lg font-semibold text-gray-900">{irmaoSelecionado.grau.nome_grau}</p>
-                <p className="text-sm text-gray-600 mt-1">Rito: {irmaoSelecionado.grau.rito}</p>
+                <p className="text-lg font-semibold">{irmaoSelecionado.grau.nome_grau}</p>
+                <p className="text-sm mt-1">Rito: {irmaoSelecionado.grau.rito}</p>
               </div>
 
               {irmaoSelecionado.grau.data_conquista && (
                 <div>
-                  <p className="text-sm text-gray-600">Data de Conquista</p>
-                  <p className="font-semibold text-gray-900">{irmaoSelecionado.grau.data_conquista.split('-').reverse().join('/')}</p>
+                  <p className="text-sm">Data de Conquista</p>
+                  <p className="font-semibold">{irmaoSelecionado.grau.data_conquista.split('-').reverse().join('/')}</p>
                 </div>
               )}
 
               {irmaoSelecionado.grau.loja_conferente && (
                 <div>
-                  <p className="text-sm text-gray-600">Loja Conferente</p>
-                  <p className="font-semibold text-gray-900">{irmaoSelecionado.grau.loja_conferente}</p>
+                  <p className="text-sm">Loja Conferente</p>
+                  <p className="font-semibold">{irmaoSelecionado.grau.loja_conferente}</p>
                 </div>
               )}
 
               {irmaoSelecionado.grau.oriente_conferente && (
                 <div>
-                  <p className="text-sm text-gray-600">Oriente</p>
-                  <p className="font-semibold text-gray-900">{irmaoSelecionado.grau.oriente_conferente}</p>
+                  <p className="text-sm">Oriente</p>
+                  <p className="font-semibold">{irmaoSelecionado.grau.oriente_conferente}</p>
                 </div>
               )}
 
               {irmaoSelecionado.grau.descricao && (
                 <div>
-                  <p className="text-sm text-gray-600">Descrição</p>
-                  <p className="text-sm text-gray-700 italic">{irmaoSelecionado.grau.descricao}</p>
+                  <p className="text-sm">Descrição</p>
+                  <p className="text-sm italic">{irmaoSelecionado.grau.descricao}</p>
                 </div>
               )}
             </div>
 
-            <button onClick={() => setIrmaoSelecionado(null)} className="mt-6 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+            <button onClick={() => setIrmaoSelecionado(null)} className="mt-6 w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
               Fechar
             </button>
           </div>
