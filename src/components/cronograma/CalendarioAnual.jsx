@@ -149,14 +149,14 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     const dias = getDiasMes(mesIndex, ano);
     
     return (
-      <div key={mesIndex} className="calendario-mes bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+      <div key={mesIndex} className="calendario-mes rounded-lg overflow-hidden border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         {/* Cabeçalho do Mês - COR #008080 */}
         <div 
           className="text-white py-2 px-4 flex items-center justify-between"
-          style={{ backgroundColor: '#008080' }}
+          style={{background:'var(--color-accent)'}}
         >
           <span className="text-xs opacity-70">{ano}</span>
-          <h3 className="text-base font-bold tracking-wide">{meses[mesIndex].toUpperCase()}</h3>
+          <h3 className="text-base font-bold tracking-wide" style={{color:"var(--color-text)"}}>{meses[mesIndex].toUpperCase()}</h3>
           {simboloMasonico && (
             <img 
               src={simboloMasonico} 
@@ -167,9 +167,9 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
         </div>
 
         {/* Dias da Semana - SIMPLIFICADO */}
-        <div className="grid grid-cols-7 bg-gray-50 border-b border-gray-300">
+        <div className="grid grid-cols-7 border-b">
           {diasSemana.map((dia, i) => (
-            <div key={i} className="text-center py-1.5 text-xs font-semibold text-gray-600">
+            <div key={i} className="text-center py-1.5 text-xs font-semibold">
               {dia}
             </div>
           ))}
@@ -184,8 +184,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
             return (
               <div
                 key={index}
-                className={`min-h-[50px] border border-gray-200 p-1.5 relative ${
-                  !dia ? 'bg-gray-50' : temEvento ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer transition' : 'bg-white hover:bg-gray-50 transition'
+                className={`min-h-[50px] border  p-1.5 relative ${
+                  !dia ? '' : temEvento ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer transition' : ' hover: transition'
                 }`}
                 onClick={async () => {
                   if (temEvento) {
@@ -198,7 +198,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
               >
                 {dia && (
                   <>
-                    <div className={`text-sm ${temEvento ? 'font-bold text-blue-700' : 'font-medium text-gray-700'}`}>
+                    <div className={`text-sm ${temEvento ? 'font-bold text-blue-700' : 'font-medium '}`}>
                       {dia}
                     </div>
                     
@@ -236,7 +236,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
     <div className="calendario-anual px-6 py-4">
       {/* Cabeçalho Principal - COR #008080 */}
       <div 
-        className="text-white py-4 px-6 rounded-xl shadow-md mb-6"
+        className="text-white py-4 px-6 rounded-xl mb-6"
         style={{ 
           background: 'linear-gradient(135deg, #008080, #00a0a0)'
         }}
@@ -261,10 +261,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           disabled={semestre === 1}
           className={`px-5 py-2 rounded-lg font-medium text-sm transition ${
             semestre === 1
-              ? 'text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              ? 'text-white '
+              : '  hover: border '
           }`}
-          style={semestre === 1 ? { backgroundColor: '#808080' } : {}}
+          style={semestre === 1 ? {background:'var(--color-surface-3)',color:'var(--color-text)'} : {}}
         >
           📆 1º Semestre (Jan-Jun)
         </button>
@@ -273,10 +273,10 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           disabled={semestre === 2}
           className={`px-5 py-2 rounded-lg font-medium text-sm transition ${
             semestre === 2
-              ? 'text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+              ? 'text-white '
+              : '  hover: border '
           }`}
-          style={semestre === 2 ? { backgroundColor: '#808080' } : {}}
+          style={semestre === 2 ? {background:'var(--color-surface-3)',color:'var(--color-text)'} : {}}
         >
           📆 2º Semestre (Jul-Dez)
         </button>
@@ -288,34 +288,34 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
       </div>
 
       {/* Legenda de Cores - SIMPLIFICADA */}
-      <div className="mt-6 bg-white rounded-lg shadow-md p-4 border border-gray-200">
-        <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+      <div className="mt-6 rounded-lg p-4 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <h3 className="text-sm font-bold mb-3 flex items-center gap-2" style={{color:"var(--color-text)"}}>
           <span>🎨</span> Legenda de Eventos
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span className="text-xs text-gray-700">Sessão</span>
+            <span className="text-xs">Sessão</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span className="text-xs text-gray-700">Sessão Magna</span>
+            <span className="text-xs">Sessão Magna</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span className="text-xs text-gray-700">Instalação/Posse</span>
+            <span className="text-xs">Instalação/Posse</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-purple-600"></div>
-            <span className="text-xs text-gray-700">Trabalho/Instrução</span>
+            <span className="text-xs">Trabalho/Instrução</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <span className="text-xs text-gray-700">Evento Externo</span>
+            <span className="text-xs">Evento Externo</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-            <span className="text-xs text-gray-700">Outro</span>
+            <span className="text-xs">Outro</span>
           </div>
         </div>
       </div>
@@ -330,7 +330,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
           }}
         >
           <div 
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+            className="rounded-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header do Modal - COR #000080 */}
@@ -344,7 +344,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">📅</span>
                   <div>
-                    <h3 className="text-2xl font-bold">Eventos do Dia</h3>
+                    <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>Eventos do Dia</h3>
                     <p className="text-sm opacity-90">{diaSelecionado}</p>
                   </div>
                 </div>
@@ -370,7 +370,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                 return (
                   <div
                     key={i}
-                    className="bg-gray-50 rounded-lg p-5 border-l-4 shadow-md hover:shadow-lg transition"
+                    className="rounded-lg p-5 border-l-4 hover: transition"
                     style={{ 
                       borderColor: corClass.includes('blue') ? '#3b82f6' :
                                    corClass.includes('red') ? '#ef4444' :
@@ -382,7 +382,7 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                     <div className="flex items-start gap-4">
                       <div className={`w-4 h-4 rounded-full mt-1 flex-shrink-0 ${corClass}`}></div>
                       <div className="flex-1">
-                        <h4 className="font-bold text-gray-900 text-lg mb-2">{evento.titulo}</h4>
+                        <h4 className="font-bold text-lg mb-2">{evento.titulo}</h4>
                         
                         {/* Tipo e Grau */}
                         <div className="mb-3 flex flex-wrap gap-2">
@@ -410,8 +410,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
 
                         {/* Descrição */}
                         {evento.descricao && (
-                          <div className="bg-gray-100 rounded p-3 mb-3">
-                            <p className="text-sm text-gray-800 leading-relaxed">{evento.descricao}</p>
+                          <div className="rounded p-3 mb-3">
+                            <p className="text-sm leading-relaxed">{evento.descricao}</p>
                           </div>
                         )}
 
@@ -419,25 +419,25 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           {evento.hora_inicio && (
                             <div>
-                              <p className="text-gray-600 mb-1">🕐 Início</p>
+                              <p className="mb-1">🕐 Início</p>
                               <p className="font-semibold">{evento.hora_inicio}</p>
                             </div>
                           )}
                           {evento.hora_fim && (
                             <div>
-                              <p className="text-gray-600 mb-1">🕐 Término</p>
+                              <p className="mb-1">🕐 Término</p>
                               <p className="font-semibold">{evento.hora_fim}</p>
                             </div>
                           )}
                           {evento.local && (
                             <div className="col-span-2">
-                              <p className="text-gray-600 mb-1">📍 Local</p>
+                              <p className="mb-1">📍 Local</p>
                               <p className="font-semibold">{evento.local}</p>
                             </div>
                           )}
                           {evento.responsavel && (
                             <div className="col-span-2">
-                              <p className="text-gray-600 mb-1">👤 Responsável</p>
+                              <p className="mb-1">👤 Responsável</p>
                               <p className="font-semibold">{evento.responsavel}</p>
                             </div>
                           )}
@@ -446,8 +446,8 @@ export default function CalendarioAnual({ eventos = [], ano = new Date().getFull
                         {/* Observações */}
                         {evento.observacoes && (
                           <div className="mt-3 pt-3 border-t">
-                            <p className="text-xs text-gray-600 mb-1">📝 Observações</p>
-                            <p className="text-sm text-gray-700">{evento.observacoes}</p>
+                            <p className="text-xs mb-1">📝 Observações</p>
+                            <p className="text-sm">{evento.observacoes}</p>
                           </div>
                         )}
                       </div>
