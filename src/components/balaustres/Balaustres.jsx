@@ -568,7 +568,7 @@ const Balaustres = ({
                     }, {});
                     const anosGrupo = Object.keys(grupos).map(Number).sort((a,b) => b-a);
                     return anosGrupo.map(ano => (
-                      <div key={ano}>
+                      <div key={ano} style={{overflow:'hidden',maxWidth:'100%'}}>
                         {/* Cabeçalho do ano */}
                         <div style={{display:'flex',alignItems:'center',gap:'0.75rem',margin:'0.75rem 0 0.5rem',padding:'0.4rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',borderLeft:'3px solid var(--color-accent)'}}>
                           <span style={{fontWeight:'700',fontSize:'0.9rem',color:'var(--color-accent)'}}>📅 {ano}</span>
@@ -601,8 +601,8 @@ const Balaustres = ({
                             </span>
                           </div>
                           {/* Ordem do dia */}
-                          <div style={{flex:1,minWidth:0,overflow:'hidden'}}>
-                            <p className="text-sm truncate" style={{color:'var(--color-text-muted)'}} title={balaustre.ordem_dia}>
+                          <div style={{flex:1,minWidth:0,overflow:'hidden',maxWidth:'100%'}}>
+                            <p style={{color:'var(--color-text-muted)',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%',display:'block'}} title={balaustre.ordem_dia}>
                               {balaustre.ordem_dia || '—'}
                             </p>
                           </div>
