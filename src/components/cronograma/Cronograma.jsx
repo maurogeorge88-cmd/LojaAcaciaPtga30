@@ -532,12 +532,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       <div 
         className="text-white rounded-lg p-6"
         style={{ 
-          background: 'linear-gradient(to right, #000080, #0000b3)'
+          background: 'var(--color-accent)'
         }}
       >
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>📅 Cronograma Anual</h2>
+            <h2 className="text-3xl font-bold mb-2" style={{color:"#fff"}}>📅 Cronograma Anual</h2>
             <p className="opacity-90">Eventos, sessões e atividades da loja</p>
           </div>
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
@@ -820,7 +820,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setFiltroTipo('');
                 setFiltroMes('');
               }}
-              className="px-4 py-2 rounded-lg hover:bg-gray-300"
+              className="px-4 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               🔄 Limpar
             </button>
@@ -833,7 +833,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 visualizacao === 'lista'
                   ? 'bg-primary-600 text-white'
-                  : '  hover:bg-gray-300'
+                  : 'btn-tab-inactive'
               }`}
             >
               📋 Lista
@@ -843,7 +843,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 visualizacao === 'calendario'
                   ? 'bg-yellow-700 text-white'
-                  : '  hover:bg-gray-300'
+                  : 'btn-tab-inactive'
               }`}
             >
               📅 Calendário
@@ -996,7 +996,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               </button>
               <button
                 onClick={() => setMostrarModalRelatorio(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
+                className="flex-1 px-4 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 Cancelar
               </button>
@@ -1013,20 +1013,20 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           <div key={mes} className="rounded-lg overflow-hidden">
             <div 
               className="p-4"
-              style={{ background: 'linear-gradient(to right, #4f46e5, #7c3aed)' }}
+              style={{background:'var(--color-accent)'}}
             >
-              <h3 className="text-xl font-bold text-white" style={{color:"var(--color-text)"}}>
+              <h3 className="text-xl font-bold" style={{color:"#fff"}}>
                 📆 {formatarMesAno(mes)}
               </h3>
-              <p className="text-indigo-100 text-sm">{eventosDoMes.length} evento(s)</p>
+              <p className="text-sm" style={{color:"rgba(255,255,255,0.8)"}}>{eventosDoMes.length} evento(s)</p>
             </div>
 
             <div className="p-4 space-y-3">
-              {eventosDoMes.map((evento) => (
+              {eventosDoMes.map((evento, evIdx) => (
                 <div
                   key={evento.id}
-                  className="border-l-4 rounded-lg p-4 hover: transition-colors"
-                  style={{ borderColor: evento.cor_destaque }}
+                  className="border-l-4 rounded-lg p-4 transition-colors"
+                  style={{ borderColor: evento.cor_destaque, background: evIdx%2===0 ? "var(--color-surface)" : "var(--color-surface-2)", marginBottom:"0.5rem" }}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -1089,21 +1089,21 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                             setEventoVisualizar(evento);
                             setModalVisualizacao(true);
                           }}
-                          className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors"
+                          style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                           title="Visualizar"
                         >
                           👁️
                         </button>
                         <button
                           onClick={() => editarEvento(evento)}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600 transition-colors"
+                          style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                           title="Editar"
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => excluirEvento(evento.id)}
-                          className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                          style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                           title="Excluir"
                         >
                           🗑️
@@ -1159,7 +1159,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 </button>
               </div>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4" style={{background:"var(--color-surface)"}}>
               <div>
                 <h4 className="text-2xl font-bold mb-2">{eventoVisualizar.titulo}</h4>
                 <div className="flex items-center gap-2 mb-3">
