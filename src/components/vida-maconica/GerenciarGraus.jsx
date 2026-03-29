@@ -154,10 +154,10 @@ export default function GerenciarGraus({ showSuccess, showError }) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg p-6 shadow-lg">
+      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2">🔺 Gerenciar Graus Maçônicos</h2>
+            <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>🔺 Gerenciar Graus Maçônicos</h2>
             <p className="text-purple-100">Cadastre ritos e graus filosóficos</p>
           </div>
           <button
@@ -165,7 +165,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
               limparFormulario();
               setMostrarFormulario(!mostrarFormulario);
             }}
-            className="px-6 py-3 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-semibold"
+            className="px-6 py-3 text-purple-600 rounded-lg transition-colors font-semibold"
           >
             {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Grau'}
           </button>
@@ -174,8 +174,8 @@ export default function GerenciarGraus({ showSuccess, showError }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div className="bg-white rounded-lg shadow-lg p-6 border-2 border-purple-200">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+        <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
             {grauEditando ? '✏️ Editar Grau' : '➕ Cadastrar Novo Grau'}
           </h3>
 
@@ -183,7 +183,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Rito */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Rito *
                 </label>
                 <input
@@ -191,14 +191,14 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                   value={grauForm.rito}
                   onChange={(e) => setGrauForm({ ...grauForm, rito: e.target.value })}
                   placeholder="Ex: REAA, Arco Real, York"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded"
                   required
                 />
               </div>
 
               {/* Número do Grau */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Número do Grau *
                 </label>
                 <input
@@ -207,14 +207,14 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                   onChange={(e) => setGrauForm({ ...grauForm, numero_grau: e.target.value })}
                   placeholder="Ex: 4, 18, 33"
                   min="1"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded"
                   required
                 />
               </div>
 
               {/* Ordem de Exibição */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Ordem de Exibição
                 </label>
                 <input
@@ -222,13 +222,13 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                   value={grauForm.ordem_exibicao}
                   onChange={(e) => setGrauForm({ ...grauForm, ordem_exibicao: e.target.value })}
                   placeholder="Ex: 1, 2, 3..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               {/* Nome do Grau */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Nome do Grau *
                 </label>
                 <input
@@ -236,14 +236,14 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                   value={grauForm.nome_grau}
                   onChange={(e) => setGrauForm({ ...grauForm, nome_grau: e.target.value })}
                   placeholder="Ex: Mestre Secreto"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded"
                   required
                 />
               </div>
 
               {/* Cor Representativa */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Cor
                 </label>
                 <div className="flex gap-2">
@@ -251,20 +251,20 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                     type="color"
                     value={grauForm.cor_representativa}
                     onChange={(e) => setGrauForm({ ...grauForm, cor_representativa: e.target.value })}
-                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-16 h-10 border rounded cursor-pointer"
                   />
                   <input
                     type="text"
                     value={grauForm.cor_representativa}
                     onChange={(e) => setGrauForm({ ...grauForm, cor_representativa: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                    className="flex-1 px-3 py-2 border rounded"
                   />
                 </div>
               </div>
 
               {/* URL da Imagem */}
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   URL da Imagem
                 </label>
                 <input
@@ -272,7 +272,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                   value={grauForm.imagem_url}
                   onChange={(e) => setGrauForm({ ...grauForm, imagem_url: e.target.value })}
                   placeholder="https://exemplo.com/imagem-grau.png"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
                 {grauForm.imagem_url && (
                   <div className="mt-2">
@@ -290,7 +290,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
 
               {/* Descrição */}
               <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Descrição
                 </label>
                 <textarea
@@ -298,7 +298,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                   onChange={(e) => setGrauForm({ ...grauForm, descricao: e.target.value })}
                   rows={3}
                   placeholder="Descrição opcional do grau"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
@@ -309,9 +309,9 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                     type="checkbox"
                     checked={grauForm.ativo}
                     onChange={(e) => setGrauForm({ ...grauForm, ativo: e.target.checked })}
-                    className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                    className="w-4 h-4 text-purple-600 rounded"
                   />
-                  <span className="text-sm font-medium text-gray-700">Grau ativo (disponível para seleção)</span>
+                  <span className="text-sm font-medium">Grau ativo (disponível para seleção)</span>
                 </label>
               </div>
             </div>
@@ -319,14 +319,14 @@ export default function GerenciarGraus({ showSuccess, showError }) {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
               >
                 {grauEditando ? '💾 Salvar Alterações' : '➕ Cadastrar Grau'}
               </button>
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 ❌ Cancelar
               </button>
@@ -336,14 +336,14 @@ export default function GerenciarGraus({ showSuccess, showError }) {
       )}
 
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Filtrar por Rito</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Filtrar por Rito</label>
             <select
               value={filtroRito}
               onChange={(e) => setFiltroRito(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todos os Ritos ({graus.length} graus)</option>
               {ritos.map(rito => (
@@ -354,7 +354,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
             </select>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm">
             <strong>{grausFiltrados.length}</strong> graus encontrados
           </div>
         </div>
@@ -363,38 +363,38 @@ export default function GerenciarGraus({ showSuccess, showError }) {
       {/* Lista de Graus por Rito */}
       <div className="space-y-6">
         {Object.entries(grausPorRito).map(([rito, grausDoRito]) => (
-          <div key={rito} className="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div className="bg-gradient-to-r from-purple-500 to-indigo-500 text-white p-4">
-              <h3 className="text-xl font-bold">{rito}</h3>
+          <div key={rito} className="rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="p-4 text-white" style={{background:"var(--color-accent)"}}>
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>{rito}</h3>
               <p className="text-sm text-purple-100">{grausDoRito.length} graus cadastrados</p>
             </div>
 
             <div className="p-4">
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead>
+                  <thead style={{background:"var(--color-surface-2)"}}>
                     <tr className="border-b">
-                      <th className="text-left py-2 px-3 text-sm font-semibold text-gray-700">Nº</th>
-                      <th className="text-left py-2 px-3 text-sm font-semibold text-gray-700">Nome</th>
-                      <th className="text-left py-2 px-3 text-sm font-semibold text-gray-700">Descrição</th>
-                      <th className="text-center py-2 px-3 text-sm font-semibold text-gray-700">Imagem</th>
-                      <th className="text-center py-2 px-3 text-sm font-semibold text-gray-700">Status</th>
-                      <th className="text-center py-2 px-3 text-sm font-semibold text-gray-700">Ações</th>
+                      <th className="text-left py-2 px-3 text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nº</th>
+                      <th className="text-left py-2 px-3 text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nome</th>
+                      <th className="text-left py-2 px-3 text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Descrição</th>
+                      <th className="text-center py-2 px-3 text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Imagem</th>
+                      <th className="text-center py-2 px-3 text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
+                      <th className="text-center py-2 px-3 text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
                     {grausDoRito.map((grau) => (
-                      <tr key={grau.id} className="border-b hover:bg-gray-50">
-                        <td className="py-3 px-3">
+                      <tr key={grau.id} className="border-b hover:">
+                        <td className="py-3 px-3" style={{color:"var(--color-text)"}}>
                           <span className="font-bold text-lg text-purple-600">{grau.numero_grau}º</span>
                         </td>
-                        <td className="py-3 px-3">
-                          <div className="font-medium text-gray-900">{grau.nome_grau}</div>
+                        <td className="py-3 px-3" style={{color:"var(--color-text)"}}>
+                          <div className="font-medium">{grau.nome_grau}</div>
                         </td>
-                        <td className="py-3 px-3 text-sm text-gray-600 max-w-xs truncate">
+                        <td className="py-3 px-3 text-sm max-w-xs truncate" style={{color:"var(--color-text)"}}>
                           {grau.descricao || '-'}
                         </td>
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-3 px-3 text-center" style={{color:"var(--color-text)"}}>
                           {grau.imagem_url ? (
                             <img
                               src={grau.imagem_url}
@@ -405,23 +405,23 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                             <span className="text-2xl">🔺</span>
                           )}
                         </td>
-                        <td className="py-3 px-3 text-center">
+                        <td className="py-3 px-3 text-center" style={{color:"var(--color-text)"}}>
                           <button
                             onClick={() => toggleAtivo(grau)}
                             className={`px-3 py-1 rounded text-xs font-medium ${
                               grau.ativo
                                 ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-700'
+                                : ' '
                             }`}
                           >
                             {grau.ativo ? '✓ Ativo' : '✗ Inativo'}
                           </button>
                         </td>
-                        <td className="py-3 px-3">
+                        <td className="py-3 px-3" style={{color:"var(--color-text)"}}>
                           <div className="flex gap-2 justify-center">
                             <button
                               onClick={() => editarGrau(grau)}
-                              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                              className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600 transition-colors"
                               title="Editar"
                             >
                               ✏️
@@ -445,10 +445,10 @@ export default function GerenciarGraus({ showSuccess, showError }) {
         ))}
 
         {grausFiltrados.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="text-6xl mb-4">🔺</div>
-            <p className="text-gray-600 text-lg font-medium">Nenhum grau cadastrado</p>
-            <p className="text-gray-500 text-sm mt-2">Clique em "Novo Grau" para começar</p>
+            <p className="text-lg font-medium">Nenhum grau cadastrado</p>
+            <p className="text-sm mt-2">Clique em "Novo Grau" para começar</p>
           </div>
         )}
       </div>
