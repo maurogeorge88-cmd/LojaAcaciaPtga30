@@ -301,8 +301,8 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
           </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px]">
+        <div>
+          <table className="w-full">
             <thead style={{background:"var(--color-surface-2)",borderBottom:"2px solid var(--color-accent)"}}>
               <tr>
                 <th className="px-4 py-3 text-left font-bold w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Número</th>
@@ -313,7 +313,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
               </tr>
             </thead>
             </table>
-            <div className="p-3 space-y-2">
+            <div className="p-3 space-y-2" style={{width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
               {(() => {
                 const getAnoPrancha = p => p.data_prancha ? new Date(p.data_prancha+'T00:00:00').getFullYear() : new Date().getFullYear();
                 const lista = [...pranchasFiltradas].sort((a,b) => new Date(b.data_prancha) - new Date(a.data_prancha));
@@ -339,22 +339,22 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
                     </div>
                     {grupos[ano].map((prancha, idx) => (
                       <div key={prancha.id}
-                        className="rounded-lg border-l-4 flex items-center gap-4 px-4 py-3 transition-opacity hover:opacity-90"
+                        className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-3 transition-opacity hover:opacity-90"
                         style={{
                           borderLeftColor: 'var(--color-accent)',
                           background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
                           marginBottom:'0.4rem'
                         }}
                       >
-                        <div style={{flexShrink:0,minWidth:'60px'}}>
+                        <div style={{flexShrink:0,width:'58px'}}>
                           <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{prancha.numero_prancha}</p>
                           <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{formatarData(prancha.data_prancha)}</p>
                         </div>
-                        <div style={{flexShrink:0,minWidth:'140px'}}>
+                        <div style={{flexShrink:0,width:'130px',overflow:'hidden'}}>
                           <p className="text-xs font-medium" style={{color:'var(--color-text-muted)'}}>Para:</p>
                           <p className="text-sm" style={{color:'var(--color-text)'}}>{prancha.destinatario}</p>
                         </div>
-                        <div style={{flex:1,minWidth:0}}>
+                        <div style={{flex:1,minWidth:0,overflow:'hidden'}}>
                           <p className="text-sm truncate" style={{color:'var(--color-text)'}}>{prancha.assunto}</p>
                         </div>
                         <div className="flex gap-1.5" style={{flexShrink:0}}>
