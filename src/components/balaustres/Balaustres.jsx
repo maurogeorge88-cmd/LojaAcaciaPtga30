@@ -30,6 +30,7 @@ const Balaustres = ({
   const [balaustreEditando, setBalaustreEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
+  const [anoSelecionado, setAnoSelecionado] = useState(null); // null = todos os anos
   const [balaustreVisualizando, setBalaustreVisualizando] = useState(null);
   const [modalVisualizar, setModalVisualizar] = useState(false);
 
@@ -204,6 +205,13 @@ const Balaustres = ({
     const tipo = tiposSessao.find(t => t.id === tipoId);
     return tipo ? tipo.nome : 'N/A';
   };
+
+  // Anos disponíveis para o grau selecionado
+  const anosDisponiveis = [...new Set(
+    balaustres
+      .filter(b => (b.grau_sessao || '').trim().toLowerCase() === (grauSelecionado || '').trim().toLowerCase())
+      .map(b => b.ano_balaustre || new Date().getFullYear())
+  )].sort((a, b) => b - a);
 
   // Filtrar balaustres por grau (ULTRA ROBUSTO)
   const balaustresFiltrados = balaustres.filter(b => {
@@ -415,7 +423,7 @@ const Balaustres = ({
       <div className="card" style={{ padding: "1rem", marginBottom: "1.5rem" }}>
         <div className="flex gap-2">
           <button
-            onClick={() => setGrauSelecionado('Aprendiz')}
+            onClick={() => { setGrauSelecionado('Aprendiz'); setAnoSelecionado(null); }}
             style={{
               padding: '0.5rem 1rem',
               background: grauSelecionado === 'Aprendiz' ? 'var(--color-accent)' : 'var(--color-surface-2)',
@@ -439,7 +447,7 @@ const Balaustres = ({
             }).length})
           </button>
           <button
-            onClick={() => setGrauSelecionado('Companheiro')}
+            onClick={() => { setGrauSelecionado('Companheiro'); setAnoSelecionado(null); }}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               grauSelecionado === 'Companheiro'
                 ? 'bg-green-600 text-white'
@@ -452,7 +460,7 @@ const Balaustres = ({
             }).length})
           </button>
           <button
-            onClick={() => setGrauSelecionado('Mestre')}
+            onClick={() => { setGrauSelecionado('Mestre'); setAnoSelecionado(null); }}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               grauSelecionado === 'Mestre'
                 ? 'bg-purple-600 text-white'
@@ -465,6 +473,37 @@ const Balaustres = ({
             }).length})
           </button>
         </div>
+
+        {/* Seletor de ano */}
+        {anosDisponiveis.length > 1 && (
+          <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center',marginTop:'0.75rem'}}>
+            <span style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Ano:</span>
+            <button
+              onClick={() => setAnoSelecionado(null)}
+              style={{
+                padding:'0.25rem 0.75rem',
+                borderRadius:'var(--radius-lg)',
+                border:'1px solid var(--color-border)',
+                background: anoSelecionado===null ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                color: anoSelecionado===null ? '#fff' : 'var(--color-text)',
+                fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'
+              }}
+            >Todos</button>
+            {anosDisponiveis.map(ano => (
+              <button key={ano}
+                onClick={() => setAnoSelecionado(ano)}
+                style={{
+                  padding:'0.25rem 0.75rem',
+                  borderRadius:'var(--radius-lg)',
+                  border:'1px solid var(--color-border)',
+                  background: anoSelecionado===ano ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                  color: anoSelecionado===ano ? '#fff' : 'var(--color-text)',
+                  fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'
+                }}
+              >{ano}</button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* LISTAGEM */}
@@ -526,8 +565,8 @@ const Balaustres = ({
                 </thead>
               </table>
                 <div className="p-3 space-y-2">
-                  {balaustresFiltradosPorAcesso.length > 0 ? (
-                    balaustresFiltradosPorAcesso
+                  {(anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>(b.ano_balaustre||new Date().getFullYear())===anoSelecionado) : balaustresFiltradosPorAcesso).length > 0 ? (
+                    (anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>(b.ano_balaustre||new Date().getFullYear())===anoSelecionado) : balaustresFiltradosPorAcesso)
                       .sort((a, b) => {
                         if (b.ano_balaustre !== a.ano_balaustre) return b.ano_balaustre - a.ano_balaustre;
                         return b.numero_balaustre - a.numero_balaustre;
