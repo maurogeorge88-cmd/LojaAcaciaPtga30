@@ -669,7 +669,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     <select
                       value={emprestimoForm.livro_id}
                       onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="">Selecione um livro</option>
                       {livrosDisponiveis.map(livro => (
@@ -685,7 +685,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     <select
                       value={emprestimoForm.irmao_id}
                       onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="">Selecione um irmão</option>
                       {irmaos.map(irmao => (
@@ -700,7 +700,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                       type="date"
                       value={emprestimoForm.data_emprestimo}
                       onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_emprestimo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 </div>
@@ -991,7 +991,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   type="date"
                   value={novoPrazo}
                   onChange={(e) => setNovoPrazo(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
