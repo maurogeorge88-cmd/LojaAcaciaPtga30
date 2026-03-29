@@ -480,32 +480,18 @@ const Balaustres = ({
 
         {/* Seletor de ano */}
         {anosDisponiveis.length >= 1 && (
-          <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center',marginTop:'0.75rem'}}>
-            <span style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Ano:</span>
-            <button
-              onClick={() => setAnoSelecionado(null)}
-              style={{
-                padding:'0.25rem 0.75rem',
-                borderRadius:'var(--radius-lg)',
-                border:'1px solid var(--color-border)',
-                background: anoSelecionado===null ? 'var(--color-accent)' : 'var(--color-surface-2)',
-                color: anoSelecionado===null ? '#fff' : 'var(--color-text)',
-                fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'
-              }}
-            >Todos</button>
-            {anosDisponiveis.map(ano => (
-              <button key={ano}
-                onClick={() => setAnoSelecionado(ano)}
-                style={{
-                  padding:'0.25rem 0.75rem',
-                  borderRadius:'var(--radius-lg)',
-                  border:'1px solid var(--color-border)',
-                  background: anoSelecionado===ano ? 'var(--color-accent)' : 'var(--color-surface-2)',
-                  color: anoSelecionado===ano ? '#fff' : 'var(--color-text)',
-                  fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'
-                }}
-              >{ano}</button>
-            ))}
+          <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginTop:'0.75rem'}}>
+            <span style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',flexShrink:0}}>Ano:</span>
+            <select
+              value={anoSelecionado ?? ''}
+              onChange={e => setAnoSelecionado(e.target.value ? parseInt(e.target.value) : null)}
+              style={{padding:'0.3rem 0.75rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)',background:'var(--color-surface-2)',color:'var(--color-text)',fontSize:'0.85rem',cursor:'pointer',outline:'none'}}
+            >
+              <option value=''>Todos</option>
+              {anosDisponiveis.map(ano => (
+                <option key={ano} value={ano}>{ano}</option>
+              ))}
+            </select>
           </div>
         )}
       </div>
@@ -569,13 +555,36 @@ const Balaustres = ({
                 </thead>
               </table>
                 <div className="p-3 space-y-2">
-                  {(anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>{const a=b.ano_balaustre?parseInt(b.ano_balaustre):(b.data_sessao?new Date(b.data_sessao+"T00:00:00").getFullYear():new Date().getFullYear());return a===anoSelecionado;}) : balaustresFiltradosPorAcesso).length > 0 ? (
-                    (anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>{const a=b.ano_balaustre?parseInt(b.ano_balaustre):(b.data_sessao?new Date(b.data_sessao+"T00:00:00").getFullYear():new Date().getFullYear());return a===anoSelecionado;}) : balaustresFiltradosPorAcesso)
+                  {(() => {
+                    const getAnoBal = b => b.ano_balaustre ? parseInt(b.ano_balaustre) : (b.data_sessao ? new Date(b.data_sessao+'T00:00:00').getFullYear() : new Date().getFullYear());
+                    const lista = balaustresFiltradosPorAcesso
+                      .filter(b => anoSelecionado ? getAnoBal(b) === anoSelecionado : true)
                       .sort((a, b) => {
-                        if (b.ano_balaustre !== a.ano_balaustre) return b.ano_balaustre - a.ano_balaustre;
+                        const anoA = getAnoBal(a), anoB = getAnoBal(b);
+                        if (anoB !== anoA) return anoB - anoA;
                         return b.numero_balaustre - a.numero_balaustre;
-                      })
-                      .map((balaustre, idx) => (
+                      });
+                    if (lista.length === 0) return (
+                      <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
+                        Nenhum balaustre cadastrado
+                      </div>
+                    );
+                    // Agrupar por ano
+                    const grupos = lista.reduce((acc, b) => {
+                      const ano = getAnoBal(b);
+                      if (!acc[ano]) acc[ano] = [];
+                      acc[ano].push(b);
+                      return acc;
+                    }, {});
+                    const anosGrupo = Object.keys(grupos).map(Number).sort((a,b) => b-a);
+                    return anosGrupo.map(ano => (
+                      <div key={ano}>
+                        {/* Cabeçalho do ano */}
+                        <div style={{display:'flex',alignItems:'center',gap:'0.75rem',margin:'0.75rem 0 0.5rem',padding:'0.4rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',borderLeft:'3px solid var(--color-accent)'}}>
+                          <span style={{fontWeight:'700',fontSize:'0.9rem',color:'var(--color-accent)'}}>📅 {ano}</span>
+                          <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{grupos[ano].length} balaustre(s)</span>
+                        </div>
+                        {grupos[ano].map((balaustre, idx) => (
                         <div key={balaustre.id}
                           className="rounded-lg border-l-4 flex items-center gap-4 px-4 py-3 transition-opacity hover:opacity-90"
                           style={{
@@ -617,12 +626,10 @@ const Balaustres = ({
                             </>)}
                           </div>
                         </div>
-                      ))
-                  ) : (
-                    <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
-                      Nenhum balaustre cadastrado para o grau {grauSelecionado}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    ));
+                  })()}
                 </div>
         </div>
       </div>
