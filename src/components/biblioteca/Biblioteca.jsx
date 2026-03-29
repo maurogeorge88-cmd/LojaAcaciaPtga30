@@ -461,7 +461,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                       type="text"
                       value={livroForm.titulo}
                       onChange={(e) => setLivroForm({ ...livroForm, titulo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       placeholder="Ex: Ritual do Aprendiz Maçom"
                     />
                   </div>
@@ -472,7 +472,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                       type="text"
                       value={livroForm.autor}
                       onChange={(e) => setLivroForm({ ...livroForm, autor: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       placeholder="Ex: Rizzardo da Camino"
                     />
                   </div>
@@ -482,7 +482,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     <select
                       value={livroForm.categoria}
                       onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="Ritualística">Ritualística</option>
                       <option value="Filosofia">Filosofia</option>
@@ -497,7 +497,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     <select
                       value={livroForm.grau}
                       onChange={(e) => setLivroForm({ ...livroForm, grau: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="Aprendiz">Aprendiz</option>
                       <option value="Companheiro">Companheiro</option>
@@ -511,7 +511,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                       type="text"
                       value={livroForm.localizacao}
                       onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       placeholder="Ex: Estante 2 - Prateleira B"
                     />
                   </div>
@@ -527,7 +527,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         quantidade_total: parseInt(e.target.value) || 1,
                         quantidade_disponivel: parseInt(e.target.value) || 1
                       })}
-                      className="w-full px-3 py-2 border rounded-lg"
+                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 </div>
@@ -544,7 +544,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   {modoEdicaoLivro && (
                     <button
                       onClick={limparFormularioLivro}
-                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      className="px-6 py-2 rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       ❌ Cancelar
                     </button>
@@ -564,7 +564,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   value={filtroNome}
                   onChange={(e) => setFiltroNome(e.target.value)}
                   placeholder="Digite o nome do livro..."
-                  className="w-full px-4 py-2 border rounded-lg"
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
               <div>
@@ -572,7 +572,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 <select
                   value={filtroGrau}
                   onChange={(e) => setFiltroGrau(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg"
+                  className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="todos">Todos os graus</option>
                   <option value="Aprendiz">Aprendiz</option>
@@ -602,22 +602,22 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   <table className="w-full">
                     <thead style={{background:"var(--color-surface-2)"}}>
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold">TÍTULO</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold">AUTOR</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold">CATEGORIA</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold">LOCALIZAÇÃO</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold">DISPONIBILIDADE</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>TÍTULO</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>AUTOR</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>CATEGORIA</th>
+                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>LOCALIZAÇÃO</th>
+                        <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>DISPONIBILIDADE</th>
                         {permissoes?.pode_editar_biblioteca && (
-                          <th className="px-4 py-3 text-center text-sm font-semibold">AÇÕES</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>AÇÕES</th>
                         )}
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {livrosDoGrau.map(livro => {
+                      {livrosDoGrau.map((livro, livroIdx) => {
                         const disponivel = obterQuantidadeDisponivel(livro.id);
                         
                         return (
-                          <tr key={livro.id} className="hover:">
+                          <tr key={livro.id} style={{borderBottom:"1px solid var(--color-border)",background:livroIdx%2===0?"var(--color-surface)":"var(--color-surface-2)"}} className="hover:opacity-80 transition-opacity">
                             <td className="px-4 py-3 font-medium text-blue-900" style={{color:"var(--color-text)"}}>{livro.titulo}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{livro.autor || '-'}</td>
                             <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
@@ -640,13 +640,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                                 <div className="flex gap-2 justify-center">
                                   <button
                                     onClick={() => editarLivro(livro)}
-                                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600"
+                                    style={{padding:"0.3rem 0.75rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.8rem",fontWeight:"600",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"0.3rem"}}
                                   >
                                     ✏️ Editar
                                   </button>
                                   <button
                                     onClick={() => excluirLivro(livro.id)}
-                                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
+                                    style={{padding:"0.3rem 0.75rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.8rem",fontWeight:"600",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"0.3rem"}}
                                   >
                                     🗑️ Excluir
                                   </button>
@@ -746,20 +746,20 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               <table className="w-full">
                 <thead style={{background:"var(--color-surface-2)"}}>
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Livro</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Irmão</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Empréstimo</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Devolução Prevista</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Livro</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Irmão</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Empréstimo</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Devolução Prevista</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
                     {permissoes?.pode_editar_biblioteca && (
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                     )}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {emprestimosAtivos.length > 0 ? (
                     emprestimosAtivos.map(emprestimo => (
-                      <tr key={emprestimo.id} className="hover:">
+                      <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
                         <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
                         <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterNomeIrmao(emprestimo.irmao_id)}</td>
                         <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
@@ -785,13 +785,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                             </button>
                             <button
                               onClick={() => abrirModalEditarPrazo(emprestimo)}
-                              className="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-sm"
+                              style={{padding:"0.25rem 0.65rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                             >
                               Editar Prazo
                             </button>
                             <button
                               onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                              style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                             >
                               Excluir
                             </button>
@@ -826,14 +826,14 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               <table className="w-full">
                 <thead style={{background:"var(--color-surface-2)"}}>
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Livro</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Irmão</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Empréstimo</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Devolução Prevista</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold">Devolução Real</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold">Situação</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Livro</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Irmão</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Empréstimo</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Devolução Prevista</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Devolução Real</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Situação</th>
                     {permissoes?.pode_editar_biblioteca && (
-                      <th className="px-4 py-3 text-center text-sm font-semibold">Ações</th>
+                      <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                     )}
                   </tr>
                 </thead>
@@ -845,7 +845,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         const devolveuAtrasado = new Date(emprestimo.data_devolucao_real) > new Date(emprestimo.data_devolucao_prevista);
                         
                         return (
-                          <tr key={emprestimo.id} className="hover:">
+                          <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
                             <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
                             <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterNomeIrmao(emprestimo.irmao_id)}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
@@ -864,7 +864,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                                 <button
                                   onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                  style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                                 >
                                   Excluir
                                 </button>
@@ -918,16 +918,16 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                       <table className="w-full">
                         <thead style={{background:"var(--color-surface-2)"}}>
                           <tr>
-                            <th className="px-4 py-2 text-left text-sm">Livro</th>
-                            <th className="px-4 py-2 text-left text-sm">Data Empréstimo</th>
-                            <th className="px-4 py-2 text-left text-sm">Devolução Prevista</th>
-                            <th className="px-4 py-2 text-center text-sm">Status</th>
-                            <th className="px-4 py-2 text-center text-sm">Ações</th>
+                            <th className="px-4 py-2 text-left text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Livro</th>
+                            <th className="px-4 py-2 text-left text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Data Empréstimo</th>
+                            <th className="px-4 py-2 text-left text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Devolução Prevista</th>
+                            <th className="px-4 py-2 text-center text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
+                            <th className="px-4 py-2 text-center text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y">
                           {item.emprestimos.map((emprestimo) => (
-                            <tr key={emprestimo.id} className="hover:">
+                            <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
                               <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
                               <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
                               <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>
@@ -952,7 +952,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                                   permissoes?.pode_editar_biblioteca ? (
                                     <button
                                       onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                                      className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-xs"
+                                      style={{padding:"0.2rem 0.5rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.72rem",fontWeight:"600",cursor:"pointer"}}
                                     >
                                       Devolver
                                     </button>
