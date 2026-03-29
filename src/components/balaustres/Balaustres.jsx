@@ -210,7 +210,11 @@ const Balaustres = ({
   const anosDisponiveis = [...new Set(
     balaustres
       .filter(b => (b.grau_sessao || '').trim().toLowerCase() === (grauSelecionado || '').trim().toLowerCase())
-      .map(b => b.ano_balaustre || new Date().getFullYear())
+      .map(b => {
+        if (b.ano_balaustre) return parseInt(b.ano_balaustre);
+        if (b.data_sessao) return new Date(b.data_sessao + 'T00:00:00').getFullYear();
+        return new Date().getFullYear();
+      })
   )].sort((a, b) => b - a);
 
   // Filtrar balaustres por grau (ULTRA ROBUSTO)
@@ -475,7 +479,7 @@ const Balaustres = ({
         </div>
 
         {/* Seletor de ano */}
-        {anosDisponiveis.length > 1 && (
+        {anosDisponiveis.length >= 1 && (
           <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center',marginTop:'0.75rem'}}>
             <span style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Ano:</span>
             <button
@@ -565,8 +569,8 @@ const Balaustres = ({
                 </thead>
               </table>
                 <div className="p-3 space-y-2">
-                  {(anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>(b.ano_balaustre||new Date().getFullYear())===anoSelecionado) : balaustresFiltradosPorAcesso).length > 0 ? (
-                    (anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>(b.ano_balaustre||new Date().getFullYear())===anoSelecionado) : balaustresFiltradosPorAcesso)
+                  {(anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>{const a=b.ano_balaustre?parseInt(b.ano_balaustre):(b.data_sessao?new Date(b.data_sessao+"T00:00:00").getFullYear():new Date().getFullYear());return a===anoSelecionado;}) : balaustresFiltradosPorAcesso).length > 0 ? (
+                    (anoSelecionado ? balaustresFiltradosPorAcesso.filter(b=>{const a=b.ano_balaustre?parseInt(b.ano_balaustre):(b.data_sessao?new Date(b.data_sessao+"T00:00:00").getFullYear():new Date().getFullYear());return a===anoSelecionado;}) : balaustresFiltradosPorAcesso)
                       .sort((a, b) => {
                         if (b.ano_balaustre !== a.ano_balaustre) return b.ano_balaustre - a.ano_balaustre;
                         return b.numero_balaustre - a.numero_balaustre;
