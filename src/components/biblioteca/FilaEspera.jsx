@@ -264,7 +264,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+      <div className="rounded-lg p-6" style={{background:"var(--color-accent)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>⏳ Fila de Espera</h2>
@@ -450,10 +450,10 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
       {/* MODAL */}
       {modalAdicionar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-lg max-w-2xl w-full">
-            <div className="bg-orange-600 text-white p-6 rounded-t-lg">
+          <div className="rounded-lg max-w-2xl w-full" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
+            <div className="p-5 rounded-t-lg" style={{background:"var(--color-accent)",borderBottom:"1px solid var(--color-border)"}}>
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>➕ Adicionar à Fila de Espera</h3>
+                <h3 className="text-xl font-bold" style={{color:"#fff"}}>➕ Adicionar à Fila de Espera</h3>
                 <button
                   onClick={() => {
                     setModalAdicionar(false);
@@ -466,7 +466,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
               </div>
             </div>
 
-            <form onSubmit={handleAdicionar} className="p-6 space-y-4">
+            <form onSubmit={handleAdicionar} className="p-6 space-y-4" style={{background:"var(--color-surface)"}}>
               <div>
                 <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Livro *</label>
                 <select
