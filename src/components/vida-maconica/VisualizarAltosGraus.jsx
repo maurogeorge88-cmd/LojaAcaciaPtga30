@@ -142,7 +142,7 @@ export default function VisualizarAltosGraus() {
                         <div
                           key={grau.numero_grau}
                           className="group relative rounded-lg p-3 transition-all cursor-pointer overflow-hidden" style={{background:"var(--color-accent)",color:"#fff"}}
-                          onClick={() = style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}> setIrmaoSelecionado({ irmao: irmaoData.irmao, grau })}
+                          onClick={() => setIrmaoSelecionado({ irmao: irmaoData.irmao, grau})}
                         >
                           {grau.imagem_url ? (
                             <div className="flex flex-col items-center">
