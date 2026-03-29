@@ -18,6 +18,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
   const [searchTerm, setSearchTerm] = useState('');
   const [pranchaVisualizando, setPranchaVisualizando] = useState(null);
   const [modalVisualizar, setModalVisualizar] = useState(false);
+  const [anoSelecionado, setAnoSelecionado] = useState(null);
 
   // Função para tratar datas vazias
   const tratarData = (data) => {
@@ -141,6 +142,10 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
       setLoading(false);
     }
   };
+
+  const anosDisponiveis = [...new Set(
+    pranchas.map(p => p.data_prancha ? new Date(p.data_prancha + 'T00:00:00').getFullYear() : new Date().getFullYear())
+  )].sort((a, b) => b - a);
 
   // Filtrar pranchas por ano e busca
   const pranchasFiltradas = pranchas.filter(p => {
