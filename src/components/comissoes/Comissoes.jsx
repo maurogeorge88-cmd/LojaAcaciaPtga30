@@ -629,7 +629,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                       <h4 className="font-bold" style={{color:"var(--color-text)"}}>🔄 Em Andamento ({emAndamento.length})</h4>
                     </div>
                     {emAndamento.map((comissao, ci) => (
-                      <div key={comissao.id} style={{borderBottom:"1px solid var(--color-border)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem"}}>
+                      <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-accent)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem"}}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h4 className="font-bold text-lg">{comissao.nome}</h4>
@@ -647,7 +647,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => handleVisualizar(comissao)}
-                              style={{padding:"0.25rem 0.65rem",background:"var(--color-accent)",color:"#fff",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                               title="Visualizar detalhes"
                             >
                               👁️ Ver
@@ -657,7 +657,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                                 setComissaoAtividades(comissao);
                                 setModalAtividades(true);
                               }}
-                              style={{padding:"0.25rem 0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                               title="Gerenciar atividades"
                             >
                               📋 Atividades
@@ -666,14 +666,14 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                               <>
                                 <button
                                   onClick={() => handleEditar(comissao)}
-                                  style={{padding:"0.25rem 0.65rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                                  style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                                   title="Editar"
                                 >
                                   ✏️ Editar
                                 </button>
                                 <button
                                   onClick={() => handleExcluir(comissao.id)}
-                                  style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                                   title="Excluir"
                                 >
                                   🗑️ Excluir
@@ -694,7 +694,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                       <h4 className="font-bold">✓ Encerradas ({encerradas.length})</h4>
                     </div>
                     {encerradas.map((comissao, ci) => (
-                      <div key={comissao.id} style={{borderBottom:"1px solid var(--color-border)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",opacity:0.8}}>
+                      <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-text-faint)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem",opacity:0.8}}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h4 className="font-bold text-lg">{comissao.nome}</h4>
@@ -711,7 +711,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => handleVisualizar(comissao)}
-                              style={{padding:"0.25rem 0.65rem",background:"var(--color-accent)",color:"#fff",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                               title="Visualizar detalhes"
                             >
                               👁️ Ver
@@ -721,7 +721,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                                 setComissaoAtividades(comissao);
                                 setModalAtividades(true);
                               }}
-                              style={{padding:"0.25rem 0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                               title="Gerenciar atividades"
                             >
                               📋 Atividades
@@ -730,14 +730,14 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                               <>
                                 <button
                                   onClick={() => handleEditar(comissao)}
-                                  style={{padding:"0.25rem 0.65rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                                  style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                                   title="Editar"
                                 >
                                   ✏️ Editar
                                 </button>
                                 <button
                                   onClick={() => handleExcluir(comissao.id)}
-                                  style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                                   title="Excluir"
                                 >
                                   🗑️ Excluir
@@ -874,7 +874,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                       setComissaoAtividades(comissaoVisualizar);
                       setModalAtividades(true);
                     }}
-                    style={{padding:"0.25rem 0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                    style={{padding:"0.25rem 0.55rem",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                               title="Gerenciar atividades"
                   >
                     ➕ Adicionar Atividade
