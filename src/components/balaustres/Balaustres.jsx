@@ -524,72 +524,63 @@ const Balaustres = ({
                     <th style={{ padding: '0.75rem 1rem', textAlign: 'center', width: '20rem' }}>Ações</th>
                   </tr>
                 </thead>
-                <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
+              </table>
+                <div className="p-3 space-y-2">
                   {balaustresFiltradosPorAcesso.length > 0 ? (
                     balaustresFiltradosPorAcesso
                       .sort((a, b) => {
-                        // Ordenar por ano desc, depois por número desc
-                        if (b.ano_balaustre !== a.ano_balaustre) {
-                          return b.ano_balaustre - a.ano_balaustre;
-                    }
-                    return b.numero_balaustre - a.numero_balaustre;
-                  })
-                  .map((balaustre) => (
-                    <tr 
-                      key={balaustre.id} 
-                      style={{ borderBottom: '1px solid var(--color-border)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                    >
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: '600', color: 'var(--color-text)' }}>
-                        {balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>{formatarData(balaustre.data_sessao)}</td>
-                      <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', color: 'var(--color-text)' }}>{balaustre.dia_semana}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>{obterNomeTipoSessao(balaustre.tipo_sessao_id)}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text)' }}>
-                        <div className="max-w-xs truncate" title={balaustre.ordem_dia}>
-                          {balaustre.ordem_dia || '-'}
+                        if (b.ano_balaustre !== a.ano_balaustre) return b.ano_balaustre - a.ano_balaustre;
+                        return b.numero_balaustre - a.numero_balaustre;
+                      })
+                      .map((balaustre, idx) => (
+                        <div key={balaustre.id}
+                          className="rounded-lg border-l-4 flex items-center gap-4 px-4 py-3 transition-opacity hover:opacity-90"
+                          style={{
+                            borderLeftColor: 'var(--color-accent)',
+                            background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                          }}
+                        >
+                          {/* Número/Ano */}
+                          <div style={{flexShrink:0,minWidth:'60px'}}>
+                            <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
+                            <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
+                          </div>
+                          {/* Data */}
+                          <div style={{flexShrink:0,minWidth:'80px'}}>
+                            <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(balaustre.data_sessao)}</p>
+                          </div>
+                          {/* Tipo */}
+                          <div style={{flexShrink:0,minWidth:'130px'}}>
+                            <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {obterNomeTipoSessao(balaustre.tipo_sessao_id)}
+                            </span>
+                          </div>
+                          {/* Ordem do dia */}
+                          <div style={{flex:1,minWidth:0}}>
+                            <p className="text-sm truncate" style={{color:'var(--color-text-muted)'}} title={balaustre.ordem_dia}>
+                              {balaustre.ordem_dia || '—'}
+                            </p>
+                          </div>
+                          {/* Ações */}
+                          <div className="flex gap-1.5" style={{flexShrink:0}}>
+                            <button onClick={() => handleVisualizar(balaustre)}
+                              style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
+                              title="Visualizar">👁️</button>
+                            {permissoes?.pode_editar_balaustres && (<>
+                              <button onClick={() => handleEditar(balaustre)}
+                                style={{padding:'0.25rem 0.55rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>✏️</button>
+                              <button onClick={() => handleExcluir(balaustre.id)}
+                                style={{padding:'0.25rem 0.55rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>🗑️</button>
+                            </>)}
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
-                        <div className="flex gap-2 justify-center flex-nowrap">
-                          <button
-                            onClick={() => handleVisualizar(balaustre)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary-600 transition-colors text-sm whitespace-nowrap"
-                            title="Visualizar detalhes"
-                          >
-                            👁️ Ver
-                          </button>
-                          {permissoes?.pode_editar_balaustres && (
-                            <>
-                              <button
-                                onClick={() => handleEditar(balaustre)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 transition-colors text-sm whitespace-nowrap"
-                              >
-                                ✏️ Editar
-                              </button>
-                              <button
-                                onClick={() => handleExcluir(balaustre.id)}
-                                className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors text-sm whitespace-nowrap"
-                              >
-                                🗑️ Excluir
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
-                    Nenhum balaustre cadastrado para o grau {grauSelecionado}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                      ))
+                  ) : (
+                    <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
+                      Nenhum balaustre cadastrado para o grau {grauSelecionado}
+                    </div>
+                  )}
+                </div>
         </div>
       </div>
         );
