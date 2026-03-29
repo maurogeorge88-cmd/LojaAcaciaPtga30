@@ -542,9 +542,8 @@ const Balaustres = ({
         
         // Se passou nas verificações, mostrar a listagem normal
         return (
-          <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-            <div style={{overflow:"hidden"}}>
-                <div className="p-3 space-y-2" style={{width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",overflow:"hidden",width:"100%",boxSizing:"border-box"}}>
+                <div style={{padding:"0.75rem",width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
                   {(() => {
                     const getAnoBal = b => b.ano_balaustre ? parseInt(b.ano_balaustre) : (b.data_sessao ? new Date(b.data_sessao+'T00:00:00').getFullYear() : new Date().getFullYear());
                     const lista = balaustresFiltradosPorAcesso
@@ -580,7 +579,8 @@ const Balaustres = ({
                           style={{
                             borderLeftColor: 'var(--color-accent)',
                             background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
-                            maxWidth: '100%',
+                            width: '100%',
+                            boxSizing: 'border-box',
                             overflow: 'hidden',
                             minWidth: 0
                           }}
@@ -601,8 +601,8 @@ const Balaustres = ({
                             </span>
                           </div>
                           {/* Ordem do dia */}
-                          <div style={{flex:1,minWidth:0,overflow:'hidden',maxWidth:'100%'}}>
-                            <p style={{color:'var(--color-text-muted)',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',maxWidth:'100%',display:'block'}} title={balaustre.ordem_dia}>
+                          <div style={{flex:1,minWidth:0,width:0,overflow:'hidden'}}>
+                            <p style={{color:'var(--color-text-muted)',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',width:'100%',display:'block'}} title={balaustre.ordem_dia}>
                               {balaustre.ordem_dia || '—'}
                             </p>
                           </div>
@@ -624,8 +624,7 @@ const Balaustres = ({
                     ));
                   })()}
                 </div>
-        </div>
-      </div>
+          </div>
         );
       })()}
 
