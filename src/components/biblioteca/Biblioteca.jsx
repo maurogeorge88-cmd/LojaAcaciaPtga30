@@ -598,67 +598,48 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   {grau === 'Aprendiz' && '🟢'} {grau === 'Companheiro' && '🔵'} {grau === 'Mestre' && '🟣'} {grau} ({livrosDoGrau.length})
                 </div>
 
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead style={{background:"var(--color-surface-2)"}}>
-                      <tr>
-                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>TÍTULO</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>AUTOR</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>CATEGORIA</th>
-                        <th className="px-4 py-3 text-left text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>LOCALIZAÇÃO</th>
-                        <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>DISPONIBILIDADE</th>
-                        {permissoes?.pode_editar_biblioteca && (
-                          <th className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>AÇÕES</th>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y">
+                <div className="p-3 space-y-2">
                       {livrosDoGrau.map((livro, livroIdx) => {
                         const disponivel = obterQuantidadeDisponivel(livro.id);
-                        
                         return (
-                          <tr key={livro.id} style={{borderBottom:"1px solid var(--color-border)",background:livroIdx%2===0?"var(--color-surface)":"var(--color-surface-2)"}} className="hover:opacity-80 transition-opacity">
-                            <td className="px-4 py-3 font-medium text-blue-900" style={{color:"var(--color-text)"}}>{livro.titulo}</td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{livro.autor || '-'}</td>
-                            <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                                {livro.categoria}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{livro.localizacao || '-'}</td>
-                            <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
-                              <span className={`px-3 py-1 rounded text-sm font-semibold ${
-                                disponivel > 0
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
+                          <div key={livro.id}
+                            className="rounded-lg border-l-4 flex items-center gap-3 px-4 py-3 transition-opacity hover:opacity-90"
+                            style={{
+                              borderLeftColor: disponivel > 0 ? '#10b981' : '#ef4444',
+                              background: livroIdx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                            }}
+                          >
+                            <div style={{flex:3,minWidth:0}}>
+                              <p className="font-semibold text-sm leading-snug" style={{color:'var(--color-text)'}}>{livro.titulo}</p>
+                              <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>{livro.autor || '—'}</p>
+                            </div>
+                            <div style={{flex:'0 0 90px'}}>
+                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{livro.categoria}</span>
+                            </div>
+                            <div style={{flex:'0 0 120px'}}>
+                              <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{livro.localizacao || '—'}</p>
+                            </div>
+                            <div style={{flex:'0 0 50px',textAlign:'center'}}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${disponivel > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                 {disponivel}/{livro.quantidade_total}
                               </span>
-                            </td>
+                            </div>
                             {permissoes?.pode_editar_biblioteca && (
-                              <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
-                                <div className="flex gap-2 justify-center">
-                                  <button
-                                    onClick={() => editarLivro(livro)}
-                                    style={{padding:"0.3rem 0.75rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.8rem",fontWeight:"600",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"0.3rem"}}
-                                  >
-                                    ✏️ Editar
-                                  </button>
-                                  <button
-                                    onClick={() => excluirLivro(livro.id)}
-                                    style={{padding:"0.3rem 0.75rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.8rem",fontWeight:"600",cursor:"pointer",display:"inline-flex",alignItems:"center",gap:"0.3rem"}}
-                                  >
-                                    🗑️ Excluir
-                                  </button>
-                                </div>
-                              </td>
+                              <div className="flex gap-1.5" style={{flexShrink:0}}>
+                                <button onClick={() => editarLivro(livro)}
+                                  style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                                  ✏️
+                                </button>
+                                <button onClick={() => excluirLivro(livro.id)}
+                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+                                  🗑️
+                                </button>
+                              </div>
                             )}
-                          </tr>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
+                    </div>
               </div>
             );
           })}
@@ -756,7 +737,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody>
                   {emprestimosAtivos.length > 0 ? (
                     emprestimosAtivos.map(emprestimo => (
                       <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
@@ -837,7 +818,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     )}
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody>
                   {emprestimosDevolvidos.length > 0 ? (
                     emprestimosDevolvidos
                       .sort((a, b) => new Date(b.data_devolucao_real) - new Date(a.data_devolucao_real))
@@ -925,7 +906,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                             <th className="px-4 py-2 text-center text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y">
+                        <tbody>
                           {item.emprestimos.map((emprestimo) => (
                             <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
                               <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
