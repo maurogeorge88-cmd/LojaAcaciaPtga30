@@ -718,7 +718,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
           {/* LISTA EMPRÉSTIMOS ATIVOS */}
           <div className="rounded-xl overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-primary-600 to-blue-700 text-white">
+            <div style={{padding:"1rem",background:"var(--color-accent)",borderRadius:"0.5rem 0.5rem 0 0"}}>
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📖 Empréstimos Ativos</h3>
               <p className="text-sm text-blue-100">{emprestimosAtivos.length} empréstimo(s) ativo(s)</p>
             </div>
@@ -737,58 +737,54 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     )}
                   </tr>
                 </thead>
-                <tbody>
+              </table>
+                <div className="p-3 space-y-2">
                   {emprestimosAtivos.length > 0 ? (
-                    emprestimosAtivos.map(emprestimo => (
-                      <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
-                        <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
-                        <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterNomeIrmao(emprestimo.irmao_id)}</td>
-                        <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
-                        <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                          {formatarData(emprestimo.data_devolucao_prevista)}
-                        </td>
-                        <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
-                          <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                            estaAtrasado(emprestimo.data_devolucao_prevista)
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-green-100 text-green-800'
-                          }`}>
+                    emprestimosAtivos.map((emprestimo, idx) => (
+                      <div key={emprestimo.id}
+                        className="rounded-lg border-l-4 flex items-center gap-3 px-4 py-3 transition-opacity hover:opacity-90"
+                        style={{
+                          borderLeftColor: estaAtrasado(emprestimo.data_devolucao_prevista) ? '#ef4444' : '#10b981',
+                          background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                        }}
+                      >
+                        <div style={{flex:2,minWidth:0}}>
+                          <p className="font-semibold text-sm" style={{color:'var(--color-text)'}}>{obterTituloLivro(emprestimo.livro_id)}</p>
+                          <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>{obterNomeIrmao(emprestimo.irmao_id)}</p>
+                        </div>
+                        <div style={{flex:'0 0 90px'}}>
+                          <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(emprestimo.data_emprestimo)}</p>
+                          <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>↩ {formatarData(emprestimo.data_devolucao_prevista)}</p>
+                        </div>
+                        <div style={{flex:'0 0 90px',textAlign:'center'}}>
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${estaAtrasado(emprestimo.data_devolucao_prevista) ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                             {estaAtrasado(emprestimo.data_devolucao_prevista) ? '⚠️ Atrasado' : '✅ No prazo'}
                           </span>
-                        </td>
+                        </div>
                         {permissoes?.pode_editar_biblioteca && (
-                          <td className="px-4 py-3 text-center space-x-2" style={{color:"var(--color-text)"}}>
-                            <button
-                              onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                              className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
-                            >
-                              Devolver
+                          <div className="flex gap-1.5" style={{flexShrink:0}}>
+                            <button onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}>
+                              ✅ Devolver
                             </button>
-                            <button
-                              onClick={() => abrirModalEditarPrazo(emprestimo)}
-                              style={{padding:"0.25rem 0.65rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
-                            >
-                              Editar Prazo
+                            <button onClick={() => abrirModalEditarPrazo(emprestimo)}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}>
+                              📅
                             </button>
-                            <button
-                              onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                              style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
-                            >
-                              Excluir
+                            <button onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                              style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}>
+                              🗑️
                             </button>
-                          </td>
+                          </div>
                         )}
-                      </tr>
+                      </div>
                     ))
                   ) : (
-                    <tr>
-                      <td colSpan={permissoes?.pode_editar_biblioteca ? "6" : "5"} className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
-                        Nenhum empréstimo ativo no momento
-                      </td>
-                    </tr>
+                    <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
+                      Nenhum empréstimo ativo no momento
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
             </div>
           </div>
         </div>
@@ -798,9 +794,9 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {abaAtiva === 'devolvidos' && (
         <div>
           <div className="rounded-xl overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
-              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>✅ Devoluções Realizadas</h3>
-              <p className="text-sm text-green-100">{emprestimosDevolvidos.length} devolução(ões) registrada(s)</p>
+            <div style={{padding:"1rem",background:"var(--color-accent)",borderRadius:"0.5rem 0.5rem 0 0"}}>
+              <h3 className="text-xl font-bold" style={{color:"#fff"}}>✅ Devoluções Realizadas</h3>
+              <p className="text-sm" style={{color:"rgba(255,255,255,0.8)"}}>{emprestimosDevolvidos.length} devolução(ões) registrada(s)</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -818,51 +814,51 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     )}
                   </tr>
                 </thead>
-                <tbody>
+              </table>
+                <div className="p-3 space-y-2">
                   {emprestimosDevolvidos.length > 0 ? (
                     emprestimosDevolvidos
                       .sort((a, b) => new Date(b.data_devolucao_real) - new Date(a.data_devolucao_real))
-                      .map(emprestimo => {
+                      .map((emprestimo, idx) => {
                         const devolveuAtrasado = new Date(emprestimo.data_devolucao_real) > new Date(emprestimo.data_devolucao_prevista);
-                        
                         return (
-                          <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
-                            <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
-                            <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterNomeIrmao(emprestimo.irmao_id)}</td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_devolucao_prevista)}</td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_devolucao_real)}</td>
-                            <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
-                              <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                                devolveuAtrasado
-                                  ? 'bg-orange-100 text-orange-800'
-                                  : 'bg-green-100 text-green-800'
-                              }`}>
+                          <div key={emprestimo.id}
+                            className="rounded-lg border-l-4 flex items-center gap-3 px-4 py-3 transition-opacity hover:opacity-90"
+                            style={{
+                              borderLeftColor: devolveuAtrasado ? '#f97316' : '#10b981',
+                              background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                            }}
+                          >
+                            <div style={{flex:2,minWidth:0}}>
+                              <p className="font-semibold text-sm" style={{color:'var(--color-text)'}}>{obterTituloLivro(emprestimo.livro_id)}</p>
+                              <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>{obterNomeIrmao(emprestimo.irmao_id)}</p>
+                            </div>
+                            <div style={{flex:'0 0 100px'}}>
+                              <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(emprestimo.data_emprestimo)}</p>
+                              <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>↩ {formatarData(emprestimo.data_devolucao_real)}</p>
+                            </div>
+                            <div style={{flex:'0 0 80px',textAlign:'center'}}>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${devolveuAtrasado ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
                                 {devolveuAtrasado ? 'Atrasado' : 'No prazo'}
                               </span>
-                            </td>
+                            </div>
                             {permissoes?.pode_editar_biblioteca && (
-                              <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
-                                <button
-                                  onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
-                                  style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
-                                >
-                                  Excluir
+                              <div style={{flexShrink:0}}>
+                                <button onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
+                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",cursor:"pointer"}}>
+                                  🗑️
                                 </button>
-                              </td>
+                              </div>
                             )}
-                          </tr>
+                          </div>
                         );
                       })
                   ) : (
-                    <tr>
-                      <td colSpan={permissoes?.pode_editar_biblioteca ? "7" : "6"} className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
-                        Nenhuma devolução registrada
-                      </td>
-                    </tr>
+                    <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
+                      Nenhuma devolução registrada
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
             </div>
           </div>
         </div>
@@ -906,50 +902,30 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                             <th className="px-4 py-2 text-center text-sm" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                           </tr>
                         </thead>
-                        <tbody>
-                          {item.emprestimos.map((emprestimo) => (
-                            <tr key={emprestimo.id} style={{borderBottom:"1px solid var(--color-border)"}}>
-                              <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
-                              <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
-                              <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>
-                                {emprestimo.status === 'emprestado' ? formatarData(emprestimo.data_devolucao_prevista) : '-'}
-                              </td>
-                              <td className="px-4 py-2 text-center" style={{color:"var(--color-text)"}}>
-                                <span className={`px-2 py-1 rounded text-xs ${
-                                  emprestimo.status === 'emprestado'
-                                    ? estaAtrasado(emprestimo.data_devolucao_prevista)
-                                      ? 'bg-red-100 text-red-800'
-                                      : 'bg-blue-100 text-blue-800'
-                                    : 'bg-green-100 text-green-800'
-                                }`}>
-                                  {emprestimo.status === 'emprestado' 
-                                    ? (estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'Ativo')
-                                    : 'Devolvido'
-                                  }
-                                </span>
-                              </td>
-                              <td className="px-4 py-2 text-center" style={{color:"var(--color-text)"}}>
-                                {emprestimo.status === 'emprestado' ? (
-                                  permissoes?.pode_editar_biblioteca ? (
-                                    <button
-                                      onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
-                                      style={{padding:"0.2rem 0.5rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.72rem",fontWeight:"600",cursor:"pointer"}}
-                                    >
-                                      Devolver
-                                    </button>
-                                  ) : (
-                                    <span className="text-xs text-blue-600 font-medium">Em uso</span>
-                                  )
-                                ) : (
-                                  <span className="text-xs">
-                                    {formatarData(emprestimo.data_devolucao_real)}
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
                       </table>
+                        <div className="p-2 space-y-1.5">
+                          {item.emprestimos.map((emprestimo, eIdx) => (
+                            <div key={emprestimo.id}
+                              className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-2"
+                              style={{
+                                borderLeftColor: emprestimo.status === 'devolvido' ? '#10b981' : estaAtrasado(emprestimo.data_devolucao_prevista) ? '#ef4444' : 'var(--color-accent)',
+                                background: eIdx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                              }}
+                            >
+                              <p className="text-sm flex-1" style={{color:'var(--color-text)'}}>{obterTituloLivro(emprestimo.livro_id)}</p>
+                              <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(emprestimo.data_emprestimo)}</p>
+                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${emprestimo.status === 'emprestado' ? estaAtrasado(emprestimo.data_devolucao_prevista) ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                                {emprestimo.status === 'emprestado' ? (estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'Ativo') : 'Devolvido'}
+                              </span>
+                              {emprestimo.status === 'emprestado' && permissoes?.pode_editar_biblioteca && (
+                                <button onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
+                                  style={{padding:"0.2rem 0.5rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.72rem",cursor:"pointer"}}>
+                                  ✅ Devolver
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                     </div>
                   </div>
                 ))
