@@ -519,7 +519,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
   const obterCorStatus = (status) => {
     const statusObj = statusEvento.find(s => s.value === status);
-    return statusObj ? statusObj.cor : 'bg-gray-100 text-gray-800';
+    return statusObj ? statusObj.cor : ' ';
   };
 
   if (loading) {
@@ -530,14 +530,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     <div className="space-y-6">
       {/* Header */}
       <div 
-        className="text-white rounded-lg p-6 shadow-lg"
+        className="text-white rounded-lg p-6"
         style={{ 
           background: 'linear-gradient(to right, #000080, #0000b3)'
         }}
       >
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2">📅 Cronograma Anual</h2>
+            <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>📅 Cronograma Anual</h2>
             <p className="opacity-90">Eventos, sessões e atividades da loja</p>
           </div>
           {(permissoes?.canEdit || permissoes?.canEditMembers) && (
@@ -554,7 +554,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   setMostrarFormulario(false);
                 }
               }}
-              className="px-6 py-3 bg-white rounded-lg hover:opacity-90 transition-opacity font-semibold"
+              className="px-6 py-3 rounded-lg hover:opacity-90 transition-opacity font-semibold"
               style={{ color: '#000080' }}
             >
               {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Evento'}
@@ -567,10 +567,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       {mostrarFormulario && (
         <div 
           key={eventoEditando?.id || 'novo'} 
-          className="bg-white rounded-lg shadow-lg p-6 border-2"
+          className="rounded-lg p-6 border-2"
           style={{ borderColor: tema.cor_primaria }}
         >
-          <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
             {eventoEditando ? '✏️ Editar Evento' : '➕ Cadastrar Novo Evento'}
           </h3>
 
@@ -578,7 +578,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Título */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Título do Evento *
                 </label>
                 <input
@@ -586,14 +586,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   value={eventoForm.titulo}
                   onChange={(e) => setEventoForm({ ...eventoForm, titulo: e.target.value })}
                   placeholder="Ex: Sessão Ordinária de Aprendiz"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                   required
                 />
               </div>
 
               {/* Tipo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Tipo *
                 </label>
                 <select
@@ -606,7 +606,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       cor_destaque: tipo ? tipo.cor : '#3b82f6'
                     });
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   {tiposEvento.map(tipo => (
                     <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -616,31 +616,31 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
               {/* Grau da Sessão */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Grau Mínimo Requerido *
                 </label>
                 <select
                   value={eventoForm.grau_sessao_id}
                   onChange={(e) => setEventoForm({ ...eventoForm, grau_sessao_id: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   <option value={1}>⬜ Aprendiz (Todos)</option>
                   <option value={2}>🔷 Companheiro (Comp. e Mestres)</option>
                   <option value={3}>🔺 Mestre (Somente Mestres)</option>
                   <option value={4}>🏛️ Evento Loja (Geral)</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">Define quem pode participar da sessão</p>
+                <p className="text-xs mt-1">Define quem pode participar da sessão</p>
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Status
                 </label>
                 <select
                   value={eventoForm.status}
                   onChange={(e) => setEventoForm({ ...eventoForm, status: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   {statusEvento.map(s => (
                     <option key={s.value} value={s.value}>{s.label}</option>
@@ -650,47 +650,47 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
               {/* Data */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data *
                 </label>
                 <input
                   type="date"
                   value={eventoForm.data_evento}
                   onChange={(e) => setEventoForm({ ...eventoForm, data_evento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                   required
                 />
               </div>
 
               {/* Hora Início */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Hora Início
                 </label>
                 <input
                   type="time"
                   value={eventoForm.hora_inicio}
                   onChange={(e) => setEventoForm({ ...eventoForm, hora_inicio: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               {/* Hora Fim */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Hora Fim
                 </label>
                 <input
                   type="time"
                   value={eventoForm.hora_fim}
                   onChange={(e) => setEventoForm({ ...eventoForm, hora_fim: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               {/* Local */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Local
                 </label>
                 <textarea
@@ -698,14 +698,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   onChange={(e) => setEventoForm({ ...eventoForm, local: e.target.value })}
                   placeholder="Ex: Templo da Loja&#10;Almoço: Espaço Realize"
                   rows="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 resize-none"
+                  className="w-full px-3 py-2 border rounded resize-none"
                 />
-                <p className="text-xs text-gray-500 mt-1">Pressione Enter para quebrar linha</p>
+                <p className="text-xs mt-1">Pressione Enter para quebrar linha</p>
               </div>
 
               {/* Responsável */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Responsável
                 </label>
                 <input
@@ -713,13 +713,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   value={eventoForm.responsavel}
                   onChange={(e) => setEventoForm({ ...eventoForm, responsavel: e.target.value })}
                   placeholder="Ex: Ir∴ João"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               {/* Cor Destaque */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Cor Destaque
                 </label>
                 <div className="flex gap-2">
@@ -727,20 +727,20 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     type="color"
                     value={eventoForm.cor_destaque}
                     onChange={(e) => setEventoForm({ ...eventoForm, cor_destaque: e.target.value })}
-                    className="w-16 h-10 border border-gray-300 rounded cursor-pointer"
+                    className="w-16 h-10 border rounded cursor-pointer"
                   />
                   <input
                     type="text"
                     value={eventoForm.cor_destaque}
                     onChange={(e) => setEventoForm({ ...eventoForm, cor_destaque: e.target.value })}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 px-3 py-2 border rounded"
                   />
                 </div>
               </div>
 
               {/* Descrição */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Descrição
                 </label>
                 <textarea
@@ -748,13 +748,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   onChange={(e) => setEventoForm({ ...eventoForm, descricao: e.target.value })}
                   rows={2}
                   placeholder="Descrição detalhada do evento"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               {/* Observações */}
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Observações
                 </label>
                 <textarea
@@ -762,7 +762,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   onChange={(e) => setEventoForm({ ...eventoForm, observacoes: e.target.value })}
                   rows={2}
                   placeholder="Observações adicionais"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
             </div>
@@ -778,7 +778,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 ❌ Cancelar
               </button>
@@ -788,14 +788,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       )}
 
       {/* Filtros e Visualização */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo</label>
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todos os Tipos</option>
               {tiposEvento.map(tipo => (
@@ -805,12 +805,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           </div>
 
           <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Mês</label>
             <input
               type="month"
               value={filtroMes}
               onChange={(e) => setFiltroMes(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
 
@@ -820,20 +820,20 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setFiltroTipo('');
                 setFiltroMes('');
               }}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              className="px-4 py-2 rounded-lg hover:bg-gray-300"
             >
               🔄 Limpar
             </button>
           </div>
 
           {/* Toggle Visualização Lista/Calendário */}
-          <div className="flex items-end gap-2 border-l-2 border-gray-300 pl-4">
+          <div className="flex items-end gap-2 border-l-2 pl-4">
             <button
               onClick={() => setVisualizacao('lista')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 visualizacao === 'lista'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-primary-600 text-white'
+                  : '  hover:bg-gray-300'
               }`}
             >
               📋 Lista
@@ -843,7 +843,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 visualizacao === 'calendario'
                   ? 'bg-yellow-700 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : '  hover:bg-gray-300'
               }`}
             >
               📅 Calendário
@@ -856,7 +856,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setTipoRelatorio('mensal');
                 setMostrarModalRelatorio(true);
               }}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
               title="Gerar PDF mensal"
             >
               📄 Mensal
@@ -883,7 +883,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             </button>
           </div>
 
-          <div className="text-sm text-gray-600">
+          <div className="text-sm">
             <strong>{eventosFiltrados.length}</strong> evento(s) encontrado(s)
           </div>
         </div>
@@ -892,8 +892,8 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
       {/* MODAL DE RELATÓRIO */}
       {mostrarModalRelatorio && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">
+          <div className="rounded-lg max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
               📄 Gerar Relatório {tipoRelatorio === 'mensal' ? 'Mensal' : tipoRelatorio === 'semestral' ? 'Semestral' : 'Anual'}
             </h3>
 
@@ -901,11 +901,11 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               {tipoRelatorio === 'mensal' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Mês</label>
                     <select
                       value={relatorioForm.mes}
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, mes: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     >
                       <option value="1">Janeiro</option>
                       <option value="2">Fevereiro</option>
@@ -922,14 +922,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
                     <input
                       type="number"
                       value={relatorioForm.ano}
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
                       min="2020"
                       max="2050"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
                 </>
@@ -938,25 +938,25 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               {tipoRelatorio === 'semestral' && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Semestre</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Semestre</label>
                     <select
                       value={relatorioForm.semestre}
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, semestre: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     >
                       <option value="1">1º Semestre (Jan-Jun)</option>
                       <option value="2">2º Semestre (Jul-Dez)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
                     <input
                       type="number"
                       value={relatorioForm.ano}
                       onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
                       min="2020"
                       max="2050"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
                 </>
@@ -964,14 +964,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
               {tipoRelatorio === 'anual' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
                   <input
                     type="number"
                     value={relatorioForm.ano}
                     onChange={(e) => setRelatorioForm({ ...relatorioForm, ano: parseInt(e.target.value) })}
                     min="2020"
                     max="2050"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                   />
                 </div>
               )}
@@ -990,13 +990,13 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   setMostrarModalRelatorio(false);
                   showSuccess('Relatório gerado com sucesso!');
                 }}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
+                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
               >
                 📄 Gerar PDF
               </button>
               <button
                 onClick={() => setMostrarModalRelatorio(false)}
-                className="flex-1 px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                className="flex-1 px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400"
               >
                 Cancelar
               </button>
@@ -1010,12 +1010,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         /* Lista de Eventos */
         <div className="space-y-6">
           {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => (
-          <div key={mes} className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div key={mes} className="rounded-lg overflow-hidden">
             <div 
               className="p-4"
               style={{ background: 'linear-gradient(to right, #4f46e5, #7c3aed)' }}
             >
-              <h3 className="text-xl font-bold text-white">
+              <h3 className="text-xl font-bold text-white" style={{color:"var(--color-text)"}}>
                 📆 {formatarMesAno(mes)}
               </h3>
               <p className="text-indigo-100 text-sm">{eventosDoMes.length} evento(s)</p>
@@ -1025,7 +1025,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               {eventosDoMes.map((evento) => (
                 <div
                   key={evento.id}
-                  className="border-l-4 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                  className="border-l-4 rounded-lg p-4 hover: transition-colors"
                   style={{ borderColor: evento.cor_destaque }}
                 >
                   <div className="flex items-start justify-between">
@@ -1033,7 +1033,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-3xl">{obterIconeTipo(evento.tipo)}</span>
                         <div>
-                          <h4 className="text-lg font-bold text-gray-900">{evento.titulo}</h4>
+                          <h4 className="text-lg font-bold">{evento.titulo}</h4>
                           <div className="flex flex-wrap gap-2 mt-1">
                             <span className={`px-2 py-1 rounded text-xs font-medium ${obterCorStatus(evento.status)}`}>
                               {obterLabelStatus(evento.status)}
@@ -1049,17 +1049,17 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                                 {getGrauNome(evento.grau_sessao_id)}
                               </span>
                             )}
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm">
                               📅 {formatarData(evento.data_evento)}
                             </span>
                             {evento.hora_inicio && (
-                              <span className="text-sm text-gray-600">
+                              <span className="text-sm">
                                 🕐 {formatarHora(evento.hora_inicio)}
                                 {evento.hora_fim && ` - ${formatarHora(evento.hora_fim)}`}
                               </span>
                             )}
                             {evento.local && (
-                              <span className="text-sm text-gray-600">
+                              <span className="text-sm">
                                 📍 {evento.local}
                               </span>
                             )}
@@ -1068,17 +1068,17 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       </div>
 
                       {evento.descricao && (
-                        <p className="text-sm text-gray-700 mt-2">{evento.descricao}</p>
+                        <p className="text-sm mt-2">{evento.descricao}</p>
                       )}
 
                       {evento.responsavel && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>
                           <strong>Responsável:</strong> {evento.responsavel}
                         </p>
                       )}
 
                       {evento.observacoes && (
-                        <p className="text-sm text-gray-500 italic mt-1">{evento.observacoes}</p>
+                        <p className="text-sm italic mt-1" style={{color:"var(--color-text-muted)"}}>{evento.observacoes}</p>
                       )}
                     </div>
 
@@ -1096,7 +1096,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                         </button>
                         <button
                           onClick={() => editarEvento(evento)}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600 transition-colors"
                           title="Editar"
                         >
                           ✏️
@@ -1118,10 +1118,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         ))}
 
         {eventosFiltrados.length === 0 && (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="text-6xl mb-4">📅</div>
-            <p className="text-gray-600 text-lg font-medium">Nenhum evento cadastrado</p>
-            <p className="text-gray-500 text-sm mt-2">Clique em "Novo Evento" para começar</p>
+            <p className="text-lg font-medium">Nenhum evento cadastrado</p>
+            <p className="text-sm mt-2">Clique em "Novo Evento" para começar</p>
           </div>
         )}
       </div>
@@ -1145,12 +1145,12 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
           onClick={() => setModalVisualizacao(false)}
         >
           <div 
-            className="bg-white rounded-xl shadow-2xl max-w-2xl w-full"
+            className="rounded-xl max-w-2xl w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-xl">
+            <div className="bg-gradient-to-r from-primary-600 to-purple-600 text-white p-6 rounded-t-xl">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">📅 Detalhes do Evento</h3>
+                <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📅 Detalhes do Evento</h3>
                 <button
                   onClick={() => setModalVisualizacao(false)}
                   className="text-white hover:text-gray-200 text-3xl"
@@ -1161,7 +1161,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <h4 className="text-2xl font-bold text-gray-900 mb-2">{eventoVisualizar.titulo}</h4>
+                <h4 className="text-2xl font-bold mb-2">{eventoVisualizar.titulo}</h4>
                 <div className="flex items-center gap-2 mb-3">
                   <span 
                     className="inline-block px-3 py-1 rounded-full text-sm font-medium text-white"
@@ -1184,25 +1184,25 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               </div>
               
               {eventoVisualizar.descricao && (
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-gray-800">{eventoVisualizar.descricao}</p>
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <p>{eventoVisualizar.descricao}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-gray-600 mb-1">📅 Data</p>
+                  <p className="text-sm mb-1">📅 Data</p>
                   <p className="font-semibold">{eventoVisualizar.data_evento}</p>
                 </div>
                 {eventoVisualizar.hora_inicio && (
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">🕐 Início</p>
+                    <p className="text-sm mb-1">🕐 Início</p>
                     <p className="font-semibold">{eventoVisualizar.hora_inicio}</p>
                   </div>
                 )}
                 {eventoVisualizar.local && (
                   <div className="col-span-2">
-                    <p className="text-sm text-gray-600 mb-1">📍 Local</p>
+                    <p className="text-sm mb-1">📍 Local</p>
                     <p className="font-semibold">{eventoVisualizar.local}</p>
                   </div>
                 )}
