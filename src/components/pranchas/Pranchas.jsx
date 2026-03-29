@@ -284,57 +284,53 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
                 <th className="px-4 py-3 text-center font-bold w-80" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            </table>
+            <div className="p-3 space-y-2">
               {pranchasFiltradas.length > 0 ? (
                 pranchasFiltradas
                   .sort((a, b) => new Date(b.data_prancha) - new Date(a.data_prancha))
-                  .map((prancha) => (
-                    <tr key={prancha.id} style={{borderBottom:"1px solid var(--color-border)"}}>
-
-                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
-                        <span className="font-semibold text-blue-900 whitespace-nowrap">{prancha.numero_prancha}</span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap" style={{color:"var(--color-text)"}}>{formatarData(prancha.data_prancha)}</td>
-                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{prancha.destinatario}</td>
-                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{prancha.assunto}</td>
-                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
-                        <div className="flex justify-center gap-2 flex-nowrap">
-                          <button
-                            onClick={() => handleVisualizar(prancha)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-primary-600 transition text-sm font-semibold whitespace-nowrap"
-                            title="Visualizar detalhes"
-                          >
-                            👁️ Ver
-                          </button>
-                          {permissoes?.pode_editar_pranchas && (
-                            <>
-                              <button
-                                onClick={() => handleEditar(prancha)}
-                                className="px-3 py-1 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition text-sm font-semibold whitespace-nowrap"
-                              >
-                                ✏️ Editar
-                              </button>
-                              <button
-                                onClick={() => handleExcluir(prancha.id)}
-                                className="px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm font-semibold whitespace-nowrap"
-                              >
-                                🗑️ Excluir
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                  .map((prancha, idx) => (
+                    <div key={prancha.id}
+                      className="rounded-lg border-l-4 flex items-center gap-4 px-4 py-3 transition-opacity hover:opacity-90"
+                      style={{
+                        borderLeftColor: 'var(--color-accent)',
+                        background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
+                      }}
+                    >
+                      {/* Número */}
+                      <div style={{flexShrink:0,minWidth:'60px'}}>
+                        <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{prancha.numero_prancha}</p>
+                        <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{formatarData(prancha.data_prancha)}</p>
+                      </div>
+                      {/* Destinatário */}
+                      <div style={{flexShrink:0,minWidth:'140px'}}>
+                        <p className="text-xs font-medium" style={{color:'var(--color-text-muted)'}}>Para:</p>
+                        <p className="text-sm" style={{color:'var(--color-text)'}}>{prancha.destinatario}</p>
+                      </div>
+                      {/* Assunto */}
+                      <div style={{flex:1,minWidth:0}}>
+                        <p className="text-sm truncate" style={{color:'var(--color-text)'}}>{prancha.assunto}</p>
+                      </div>
+                      {/* Ações */}
+                      <div className="flex gap-1.5" style={{flexShrink:0}}>
+                        <button onClick={() => handleVisualizar(prancha)}
+                          style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
+                          title="Visualizar">👁️</button>
+                        {permissoes?.pode_editar_pranchas && (<>
+                          <button onClick={() => handleEditar(prancha)}
+                            style={{padding:'0.25rem 0.55rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>✏️</button>
+                          <button onClick={() => handleExcluir(prancha.id)}
+                            style={{padding:'0.25rem 0.55rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>🗑️</button>
+                        </>)}
+                      </div>
+                    </div>
                   ))
               ) : (
-                <tr>
-                  <td colSpan="5" className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
-                    {searchTerm ? 'Nenhuma prancha encontrada com os critérios de busca' : 'Nenhuma prancha cadastrada'}
-                  </td>
-                </tr>
+                <div className="text-center py-8" style={{color:'var(--color-text-faint)'}}>
+                  {searchTerm ? 'Nenhuma prancha encontrada com os critérios de busca' : 'Nenhuma prancha cadastrada'}
+                </div>
               )}
-            </tbody>
-          </table>
+            </div>
         </div>
       </div>
 
