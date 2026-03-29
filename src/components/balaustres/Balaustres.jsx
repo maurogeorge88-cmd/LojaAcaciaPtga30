@@ -443,7 +443,7 @@ const Balaustres = ({
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               grauSelecionado === 'Companheiro'
                 ? 'bg-green-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : '  '
             }`}
           >
             Companheiro ({balaustres.filter(b => {
@@ -456,7 +456,7 @@ const Balaustres = ({
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               grauSelecionado === 'Mestre'
                 ? 'bg-purple-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : '  '
             }`}
           >
             Mestre ({balaustres.filter(b => {
@@ -552,11 +552,11 @@ const Balaustres = ({
                           {balaustre.ordem_dia || '-'}
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
                         <div className="flex gap-2 justify-center flex-nowrap">
                           <button
                             onClick={() => handleVisualizar(balaustre)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors text-sm whitespace-nowrap"
+                            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary-600 transition-colors text-sm whitespace-nowrap"
                             title="Visualizar detalhes"
                           >
                             👁️ Ver
@@ -583,7 +583,7 @@ const Balaustres = ({
                   ))
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan="6" className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
                     Nenhum balaustre cadastrado para o grau {grauSelecionado}
                   </td>
                 </tr>
@@ -598,10 +598,10 @@ const Balaustres = ({
       {/* MODAL DE VISUALIZAÇÃO */}
       {modalVisualizar && balaustreVisualizando && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="bg-blue-900 text-white p-6 rounded-t-xl">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">
+                <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
                   📋 Balaustre Nº {balaustreVisualizando.numero_balaustre} - {balaustreVisualizando.grau_sessao}
                 </h3>
                 <button
@@ -616,38 +616,38 @@ const Balaustres = ({
             <div className="p-6">
               {/* Informações da Sessão */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">Grau da Sessão</label>
-                  <p className="text-lg font-medium text-gray-900">{balaustreVisualizando.grau_sessao}</p>
+                <div className="p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>Grau da Sessão</label>
+                  <p className="text-lg font-medium">{balaustreVisualizando.grau_sessao}</p>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">Número do Balaustre</label>
-                  <p className="text-lg font-medium text-gray-900">{balaustreVisualizando.numero_balaustre}</p>
+                <div className="p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>Número do Balaustre</label>
+                  <p className="text-lg font-medium">{balaustreVisualizando.numero_balaustre}</p>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">Data da Sessão</label>
-                  <p className="text-lg font-medium text-gray-900">{formatarData(balaustreVisualizando.data_sessao)}</p>
+                <div className="p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>Data da Sessão</label>
+                  <p className="text-lg font-medium">{formatarData(balaustreVisualizando.data_sessao)}</p>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">Dia da Semana</label>
-                  <p className="text-lg font-medium text-gray-900">{balaustreVisualizando.dia_semana}</p>
+                <div className="p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>Dia da Semana</label>
+                  <p className="text-lg font-medium">{balaustreVisualizando.dia_semana}</p>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg md:col-span-2">
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">Tipo de Sessão</label>
-                  <p className="text-lg font-medium text-gray-900">{obterNomeTipoSessao(balaustreVisualizando.tipo_sessao_id)}</p>
+                <div className="p-4 rounded-lg md:col-span-2" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>Tipo de Sessão</label>
+                  <p className="text-lg font-medium">{obterNomeTipoSessao(balaustreVisualizando.tipo_sessao_id)}</p>
                 </div>
               </div>
 
               {/* Ordem do Dia */}
               <div className="mb-6">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-blue-900 mb-3">📝 Ordem do Dia</label>
-                  <div className="text-gray-800 whitespace-pre-wrap">
-                    {balaustreVisualizando.ordem_dia || <span className="text-gray-500 italic">Não informada</span>}
+                <div className="bg-blue-50 p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold text-blue-900 mb-3" style={{color:"var(--color-text-muted)"}}>📝 Ordem do Dia</label>
+                  <div className="whitespace-pre-wrap" style={{color:"var(--color-text)"}}>
+                    {balaustreVisualizando.ordem_dia || <span className="italic">Não informada</span>}
                   </div>
                 </div>
               </div>
@@ -655,9 +655,9 @@ const Balaustres = ({
               {/* Observações */}
               {balaustreVisualizando.observacoes && (
                 <div className="mb-6">
-                  <div className="bg-yellow-50 p-4 rounded-lg">
-                    <label className="block text-sm font-semibold text-yellow-900 mb-3">💡 Observações</label>
-                    <div className="text-gray-800 whitespace-pre-wrap">
+                  <div className="bg-yellow-50 p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                    <label className="block text-sm font-semibold text-yellow-900 mb-3" style={{color:"var(--color-text-muted)"}}>💡 Observações</label>
+                    <div className="whitespace-pre-wrap" style={{color:"var(--color-text)"}}>
                       {balaustreVisualizando.observacoes}
                     </div>
                   </div>
@@ -668,7 +668,7 @@ const Balaustres = ({
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
                 <button
                   onClick={() => setModalVisualizar(false)}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors"
                 >
                   Fechar
                 </button>
