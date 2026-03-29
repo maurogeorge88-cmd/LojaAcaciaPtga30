@@ -7,7 +7,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   // Verificar se as props essenciais existem
   if (!comissoes || !irmaos) {
     return (
-      <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+      <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="text-center">
           <p className="text-xl mb-4">⚠️ Carregando dados...</p>
           <p className="text-sm">Se esta mensagem persistir, recarregue a página.</p>
@@ -369,7 +369,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     <div>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
       {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
-        <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+        <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <h3 className="text-xl font-bold text-blue-900 mb-4" style={{color:"var(--color-text)"}}>
             {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
           </h3>
@@ -501,7 +501,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
           </div>
 
           {integrantesTemp.length > 0 && (
-            <div className="rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+            <div className="rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {integrantesTemp.map((integrante, index) => (
                 <div key={index} className="flex justify-between items-center py-2 border-b last:border-0">
                   <span className="font-medium">{integrante.irmao_nome}</span>
@@ -544,7 +544,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
       )}
 
       {/* LISTAGEM */}
-      <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+      <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="p-4 bg-gradient-to-r from-primary-600 to-blue-700 text-white">
           <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Comissões Cadastradas</h3>
           <p className="text-sm text-blue-100">Total: {comissoes.length} comissão(ões)</p>
@@ -625,11 +625,11 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 {/* COMISSÕES EM ANDAMENTO */}
                 {emAndamento.length > 0 && (
                   <div>
-                    <div className="bg-green-50 px-4 py-2 border-b border-green-200">
-                      <h4 className="font-bold text-green-800">🔄 Em Andamento ({emAndamento.length})</h4>
+                    <div style={{padding:"0.6rem 1rem",borderBottom:"1px solid var(--color-border)",background:"var(--color-surface-2)"}}>
+                      <h4 className="font-bold" style={{color:"var(--color-text)"}}>🔄 Em Andamento ({emAndamento.length})</h4>
                     </div>
-                    {emAndamento.map((comissao) => (
-                      <div key={comissao.id} className="p-4 hover:">
+                    {emAndamento.map((comissao, ci) => (
+                      <div key={comissao.id} style={{borderBottom:"1px solid var(--color-border)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem"}}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h4 className="font-bold text-lg">{comissao.nome}</h4>
@@ -647,7 +647,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => handleVisualizar(comissao)}
-                              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary-600 text-sm"
+                              style={{padding:"0.25rem 0.65rem",background:"var(--color-accent)",color:"#fff",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                               title="Visualizar detalhes"
                             >
                               👁️ Ver
@@ -657,7 +657,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                                 setComissaoAtividades(comissao);
                                 setModalAtividades(true);
                               }}
-                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                              style={{padding:"0.25rem 0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                               title="Gerenciar atividades"
                             >
                               📋 Atividades
@@ -666,14 +666,14 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                               <>
                                 <button
                                   onClick={() => handleEditar(comissao)}
-                                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                                  style={{padding:"0.25rem 0.65rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                                   title="Editar"
                                 >
                                   ✏️ Editar
                                 </button>
                                 <button
                                   onClick={() => handleExcluir(comissao.id)}
-                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                  style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                                   title="Excluir"
                                 >
                                   🗑️ Excluir
@@ -693,8 +693,8 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     <div className="px-4 py-2 -b" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                       <h4 className="font-bold">✓ Encerradas ({encerradas.length})</h4>
                     </div>
-                    {encerradas.map((comissao) => (
-                      <div key={comissao.id} className="p-4 opacity-75">
+                    {encerradas.map((comissao, ci) => (
+                      <div key={comissao.id} style={{borderBottom:"1px solid var(--color-border)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",opacity:0.8}}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1">
                             <h4 className="font-bold text-lg">{comissao.nome}</h4>
@@ -711,7 +711,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           <div className="flex gap-2 ml-4">
                             <button
                               onClick={() => handleVisualizar(comissao)}
-                              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary-600 text-sm"
+                              style={{padding:"0.25rem 0.65rem",background:"var(--color-accent)",color:"#fff",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                               title="Visualizar detalhes"
                             >
                               👁️ Ver
@@ -721,7 +721,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                                 setComissaoAtividades(comissao);
                                 setModalAtividades(true);
                               }}
-                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                              style={{padding:"0.25rem 0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                               title="Gerenciar atividades"
                             >
                               📋 Atividades
@@ -730,14 +730,14 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                               <>
                                 <button
                                   onClick={() => handleEditar(comissao)}
-                                  className="px-3 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 text-sm"
+                                  style={{padding:"0.25rem 0.65rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                                   title="Editar"
                                 >
                                   ✏️ Editar
                                 </button>
                                 <button
                                   onClick={() => handleExcluir(comissao.id)}
-                                  className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+                                  style={{padding:"0.25rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
                                   title="Excluir"
                                 >
                                   🗑️ Excluir
@@ -759,7 +759,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
       {/* MODAL DE VISUALIZAÇÃO */}
       {modalVisualizar && comissaoVisualizar && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <div className="rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
             <div className="bg-gradient-to-r from-primary-600 to-blue-800 text-white p-6 rounded-t-xl">
               <div className="flex justify-between items-start">
@@ -799,7 +799,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
             <div className="p-6 space-y-6">
               {/* Informações Principais */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <div className="p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm mb-1">📅 Data de Criação</p>
                   <p className="text-lg font-semibold">
                     {formatarData(comissaoVisualizar.data_criacao)}
@@ -807,7 +807,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 </div>
 
                 {comissaoVisualizar.data_inicio && (
-                  <div className="p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                  <div className="p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <p className="text-sm mb-1">🚀 Data de Início</p>
                     <p className="text-lg font-semibold">
                       {formatarData(comissaoVisualizar.data_inicio)}
@@ -816,7 +816,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 )}
 
                 {comissaoVisualizar.data_fim && (
-                  <div className="p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                  <div className="p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <p className="text-sm mb-1">🏁 Data de Término</p>
                     <p className="text-lg font-semibold">
                       {formatarData(comissaoVisualizar.data_fim)}
@@ -827,7 +827,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
               {/* Objetivo */}
               {comissaoVisualizar.objetivo && (
-                <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm mb-2 font-semibold">🎯 Objetivo</p>
                   <p className="whitespace-pre-wrap">
                     {comissaoVisualizar.objetivo}
@@ -843,7 +843,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     {integrantesVisualizar.map((integrante, index) => {
                       const irmao = irmaos.find(i => i.id === integrante.irmao_id);
                       return (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                        <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{background:index%2===0?"var(--color-surface)":"var(--color-surface-2)",borderBottom:"1px solid var(--color-border)"}}>
                           <div>
                             <p className="font-semibold">
                               {irmao?.nome || 'Irmão não encontrado'}
@@ -874,8 +874,8 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                       setComissaoAtividades(comissaoVisualizar);
                       setModalAtividades(true);
                     }}
-                    className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                    title="Gerenciar atividades"
+                    style={{padding:"0.25rem 0.65rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"600",cursor:"pointer"}}
+                              title="Gerenciar atividades"
                   >
                     ➕ Adicionar Atividade
                   </button>
@@ -883,7 +883,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 {atividadesVisualizar && atividadesVisualizar.length > 0 ? (
                   <div className="space-y-3">
                     {atividadesVisualizar.map((atividade, index) => (
-                      <div key={index} className="p-4 rounded-lg transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                      <div key={index} className="p-4 rounded-lg transition" style={{background:index%2===0?"var(--color-surface)":"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                         <div className="flex justify-between items-start mb-3">
                           <h5 className="font-bold text-base">{atividade.titulo}</h5>
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -901,7 +901,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                         <div className="space-y-3">
                           {/* Deliberações */}
                           {atividade.deliberacoes && (
-                            <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                            <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                               <p className="text-xs font-bold text-blue-800 mb-1">💬 Deliberações:</p>
                               <p className="text-sm whitespace-pre-wrap">{atividade.deliberacoes}</p>
                             </div>
@@ -909,7 +909,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           
                           {/* Observações */}
                           {atividade.observacoes && (
-                            <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                            <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                               <p className="text-xs font-bold text-purple-800 mb-1">📝 Observações:</p>
                               <p className="text-sm whitespace-pre-wrap">{atividade.observacoes}</p>
                             </div>
