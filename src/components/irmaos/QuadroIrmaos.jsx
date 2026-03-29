@@ -194,7 +194,7 @@ const QuadroIrmaos = ({ irmaos }) => {
             <select
               value={grauSelecionado}
               onChange={(e) => setGrauSelecionado(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="todos">Todos os Graus ({irmaosAtivos.length})</option>
               <option value="Mestre">Mestres ({totalMestres})</option>
@@ -210,7 +210,7 @@ const QuadroIrmaos = ({ irmaos }) => {
             <select
               value={ordenacao}
               onChange={(e) => setOrdenacao(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="nome">Nome (A-Z)</option>
               <option value="cim">CIM</option>
@@ -230,71 +230,57 @@ const QuadroIrmaos = ({ irmaos }) => {
         </div>
       </div>
 
-      <div className="rounded-lg shadow overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gradient-to-r from-primary-600 to-primary-700 text-white" style={{background:"var(--color-surface-2)"}}>
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>CIM</th>
-                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>NOME</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>GRAU</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>IDADE</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>DATA INICIACAO</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>TEMPO MACONARIA</th>
-                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>SITUACAO</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {irmaosOrdenados.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center" style={{color:"var(--color-text)"}}>
-                    <div className="text-6xl mb-4">📋</div>
-                    <div className="text-xl font-semibold">Nenhum irmao encontrado</div>
-                    <div className="text-sm mt-2">Ajuste os filtros ou adicione novos irmaos</div>
-                  </td>
-                </tr>
-              ) : (
-                irmaosOrdenados.map((irmao, index) => {
-                  const grau = obterGrau(irmao);
-                  const corGrau = obterCorGrau(grau);
-                  const corSituacao = obterCorSituacao(irmao.situacao);
-
-                  return (
-                    <tr key={irmao.id} className={index % 2 === 0 ? '' : ''}>
-                      <td className="px-6 py-4 whitespace-nowrap" style={{color:"var(--color-text)"}}>
-                        <span className="font-mono font-semibold text-blue-600">{irmao.cim}</span>
-                      </td>
-                      <td className="px-6 py-4" style={{color:"var(--color-text)"}}>
-                        <div className="font-semibold">{irmao.nome}</div>
-                        {irmao.profissao && (
-                          <div className="text-xs mt-1">{irmao.profissao}</div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
-                        <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corGrau}>
-                          {grau}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
-                        {irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
-                        {irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : '-'}
-                      </td>
-                      <td className="px-6 py-4 text-center text-sm font-medium" style={{color:"var(--color-text)"}}>
-                        {formatarTempoMaconaria(irmao.data_iniciacao)}
-                      </td>
-                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
-                        <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corSituacao}>
-                          {irmao.situacao || 'Regular'}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",overflow:"hidden"}}>
+          <div className="p-3 space-y-2">
+            {irmaosOrdenados.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">📋</div>
+                <div className="text-xl font-semibold" style={{color:'var(--color-text)'}}>Nenhum irmão encontrado</div>
+                <div className="text-sm mt-2" style={{color:'var(--color-text-muted)'}}>Ajuste os filtros ou adicione novos irmãos</div>
+              </div>
+            ) : (
+              irmaosOrdenados.map((irmao, index) => {
+                const grau = obterGrau(irmao);
+                const corGrau = obterCorGrau(grau);
+                const corSituacao = obterCorSituacao(irmao.situacao);
+                return (
+                  <div key={irmao.id}
+                    className="rounded-lg border-l-4 flex items-center gap-3 px-4 py-3 transition-opacity hover:opacity-90"
+                    style={{borderLeftColor:'var(--color-accent)',background:index%2===0?'var(--color-surface)':'var(--color-surface-2)'}}>
+                    {/* CIM */}
+                    <div style={{flexShrink:0,width:'55px'}}>
+                      <span className="font-mono font-bold text-sm" style={{color:'var(--color-accent)'}}>{irmao.cim}</span>
+                    </div>
+                    {/* Nome + profissão */}
+                    <div style={{flex:2,minWidth:0,width:0,overflow:'hidden'}}>
+                      <p className="font-semibold text-sm" style={{color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{irmao.nome}</p>
+                      {irmao.profissao&&<p className="text-xs" style={{color:'var(--color-text-muted)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{irmao.profissao}</p>}
+                    </div>
+                    {/* Grau */}
+                    <div style={{flexShrink:0}}>
+                      <span className={'inline-block px-2 py-0.5 rounded-full text-xs font-bold '+corGrau}>{grau}</span>
+                    </div>
+                    {/* Idade */}
+                    <div style={{flexShrink:0,width:'40px',textAlign:'center'}}>
+                      <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{irmao.data_nascimento?calcularIdade(irmao.data_nascimento):'-'}</p>
+                    </div>
+                    {/* Iniciação */}
+                    <div style={{flexShrink:0,width:'80px',textAlign:'center'}}>
+                      <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{irmao.data_iniciacao?formatarData(irmao.data_iniciacao):'-'}</p>
+                    </div>
+                    {/* Tempo */}
+                    <div style={{flexShrink:0,width:'65px',textAlign:'center'}}>
+                      <p className="text-xs font-medium" style={{color:'var(--color-text-muted)'}}>{formatarTempoMaconaria(irmao.data_iniciacao)}</p>
+                    </div>
+                    {/* Situação */}
+                    <div style={{flexShrink:0}}>
+                      <span className={'inline-block px-2 py-0.5 rounded-full text-xs font-bold '+corSituacao}>{irmao.situacao||'Regular'}</span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
 
         {irmaosOrdenados.length > 0 && (
