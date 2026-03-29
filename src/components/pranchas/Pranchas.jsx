@@ -156,13 +156,13 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
   if (grauUsuario && (grauUsuario.toLowerCase() === 'aprendiz' || grauUsuario.toLowerCase() === 'companheiro')) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-center bg-yellow-50 border-2 border-yellow-400 rounded-lg p-8 max-w-md">
+        <div className="text-center bg-yellow-50 border-2 border-yellow-400 rounded-lg p-8 max-w-md" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">🔒</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">Acesso Restrito</h2>
-          <p className="text-gray-700 mb-2">
+          <h2 className="text-2xl font-bold mb-3" style={{color:"var(--color-text)"}}>Acesso Restrito</h2>
+          <p className="mb-2">
             Pranchas são documentos oficiais de nível <strong>Mestre</strong>.
           </p>
-          <p className="text-gray-600 text-sm">
+          <p className="text-sm">
             Você precisa ser Mestre Maçom para acessar esta seção.
           </p>
         </div>
@@ -174,55 +174,55 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
     <div>
       {/* FORMULÁRIO DE CADASTRO - Só aparece para quem pode editar */}
       {permissoes?.pode_editar_pranchas && (
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h3 className="text-xl font-bold text-blue-900 mb-4">
+        <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-xl font-bold text-blue-900 mb-4" style={{color:"var(--color-text)"}}>
             {modoEdicao ? '✏️ Editar Prancha' : '➕ Registrar Nova Prancha'}
           </h3>
 
         <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Número da Prancha *</label>
+              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Número da Prancha *</label>
               <input
                 type="text"
                 value={pranchaForm.numero_prancha}
                 onChange={(e) => setPranchaForm({ ...pranchaForm, numero_prancha: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 placeholder="Ex: 001/2024"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Data da Prancha *</label>
+              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data da Prancha *</label>
               <input
                 type="date"
                 value={pranchaForm.data_prancha}
                 onChange={(e) => setPranchaForm({ ...pranchaForm, data_prancha: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Destinatário *</label>
+              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Destinatário *</label>
               <input
                 type="text"
                 value={pranchaForm.destinatario}
                 onChange={(e) => setPranchaForm({ ...pranchaForm, destinatario: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 placeholder="Ex: Grande Oriente de Mato Grosso"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Assunto *</label>
+              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Assunto *</label>
               <input
                 type="text"
                 value={pranchaForm.assunto}
                 onChange={(e) => setPranchaForm({ ...pranchaForm, assunto: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 placeholder="Ex: Solicitação de Regularização"
                 required
               />
@@ -234,7 +234,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition"
+                className="px-6 py-2 border rounded-lg font-semibold hover: transition" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 Cancelar
               </button>
@@ -242,7 +242,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
             <button
               type="submit"
               disabled={loading}
-              className="px-8 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition disabled:bg-gray-400"
+              className="px-8 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-lg transition disabled:opacity-50"
             >
               {loading ? 'Salvando...' : modoEdicao ? '💾 Atualizar Prancha' : '💾 Registrar Prancha'}
             </button>
@@ -252,22 +252,22 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
       )}
 
       {/* BUSCA */}
-      <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+      <div className="rounded-xl p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex gap-4">
           <input
             type="text"
             placeholder="🔍 Buscar por número, assunto ou destinatário..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+            className="flex-1 px-4 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
           />
         </div>
       </div>
 
       {/* LISTA DE PRANCHAS */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-          <h3 className="text-xl font-bold">Pranchas Registradas</h3>
+      <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div className="p-4 bg-gradient-to-r from-primary-600 to-primary-700 text-white">
+          <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Pranchas Registradas</h3>
           <p className="text-sm text-blue-100">
             Total: {pranchasFiltradas.length} prancha(s)
           </p>
@@ -275,32 +275,33 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
-            <thead className="bg-gray-100 border-b-2 border-blue-600">
+            <thead style={{background:"var(--color-surface-2)",borderBottom:"2px solid var(--color-accent)"}}>
               <tr>
-                <th className="px-4 py-3 text-left font-bold text-gray-700 w-32">Número</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700 w-32">Data</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700 w-48">Destinatário</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Assunto</th>
-                <th className="px-4 py-3 text-center font-bold text-gray-700 w-80">Ações</th>
+                <th className="px-4 py-3 text-left font-bold w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Número</th>
+                <th className="px-4 py-3 text-left font-bold w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Data</th>
+                <th className="px-4 py-3 text-left font-bold w-48" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Destinatário</th>
+                <th className="px-4 py-3 text-left font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Assunto</th>
+                <th className="px-4 py-3 text-center font-bold w-80" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y">
               {pranchasFiltradas.length > 0 ? (
                 pranchasFiltradas
                   .sort((a, b) => new Date(b.data_prancha) - new Date(a.data_prancha))
                   .map((prancha) => (
-                    <tr key={prancha.id} className="hover:bg-blue-50 transition">
-                      <td className="px-4 py-3">
+                    <tr key={prancha.id} style={{borderBottom:"1px solid var(--color-border)"}}>
+
+                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
                         <span className="font-semibold text-blue-900 whitespace-nowrap">{prancha.numero_prancha}</span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{formatarData(prancha.data_prancha)}</td>
-                      <td className="px-4 py-3 text-gray-700">{prancha.destinatario}</td>
-                      <td className="px-4 py-3 text-gray-700">{prancha.assunto}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap" style={{color:"var(--color-text)"}}>{formatarData(prancha.data_prancha)}</td>
+                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{prancha.destinatario}</td>
+                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{prancha.assunto}</td>
+                      <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
                         <div className="flex justify-center gap-2 flex-nowrap">
                           <button
                             onClick={() => handleVisualizar(prancha)}
-                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm font-semibold whitespace-nowrap"
+                            className="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-primary-600 transition text-sm font-semibold whitespace-nowrap"
                             title="Visualizar detalhes"
                           >
                             👁️ Ver
@@ -327,7 +328,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
                   ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan="5" className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
                     {searchTerm ? 'Nenhuma prancha encontrada com os critérios de busca' : 'Nenhuma prancha cadastrada'}
                   </td>
                 </tr>
@@ -340,10 +341,10 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
       {/* MODAL DE VISUALIZAÇÃO */}
       {modalVisualizar && pranchaVisualizando && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
+          <div className="rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-t-xl">
               <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-bold">
+                <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
                   📄 Prancha Nº {pranchaVisualizando.numero_prancha}
                 </h3>
                 <button
@@ -358,24 +359,24 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
             <div className="p-6">
               {/* Informações da Prancha */}
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-blue-900 mb-2">Número da Prancha</label>
-                  <p className="text-lg font-medium text-gray-900">{pranchaVisualizando.numero_prancha}</p>
+                <div className="bg-blue-50 p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold text-blue-900 mb-2" style={{color:"var(--color-text-muted)"}}>Número da Prancha</label>
+                  <p className="text-lg font-medium">{pranchaVisualizando.numero_prancha}</p>
                 </div>
 
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-blue-900 mb-2">Data</label>
-                  <p className="text-lg font-medium text-gray-900">{formatarData(pranchaVisualizando.data_prancha)}</p>
+                <div className="bg-blue-50 p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold text-blue-900 mb-2" style={{color:"var(--color-text-muted)"}}>Data</label>
+                  <p className="text-lg font-medium">{formatarData(pranchaVisualizando.data_prancha)}</p>
                 </div>
 
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-green-900 mb-2">👤 Destinatário</label>
-                  <p className="text-lg font-medium text-gray-900">{pranchaVisualizando.destinatario}</p>
+                <div className="bg-green-50 p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold text-green-900 mb-2" style={{color:"var(--color-text-muted)"}}>👤 Destinatário</label>
+                  <p className="text-lg font-medium">{pranchaVisualizando.destinatario}</p>
                 </div>
 
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <label className="block text-sm font-semibold text-yellow-900 mb-2">📋 Assunto</label>
-                  <p className="text-lg text-gray-900">{pranchaVisualizando.assunto}</p>
+                <div className="bg-yellow-50 p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <label className="block text-sm font-semibold text-yellow-900 mb-2" style={{color:"var(--color-text-muted)"}}>📋 Assunto</label>
+                  <p className="text-lg">{pranchaVisualizando.assunto}</p>
                 </div>
               </div>
 
@@ -383,7 +384,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
               <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
                 <button
                   onClick={() => setModalVisualizar(false)}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors"
                 >
                   Fechar
                 </button>
