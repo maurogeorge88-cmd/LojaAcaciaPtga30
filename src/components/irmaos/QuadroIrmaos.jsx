@@ -140,9 +140,9 @@ const QuadroIrmaos = ({ irmaos }) => {
       'Aprendiz': 'bg-blue-100 text-blue-800',
       'Companheiro': 'bg-green-100 text-green-800',
       'Mestre': 'bg-purple-100 text-purple-800',
-      'Nao iniciado': 'bg-gray-100 text-gray-800'
+      'Nao iniciado': ' '
     };
-    return cores[grau] || 'bg-gray-100 text-gray-800';
+    return cores[grau] || ' ';
   };
 
   const obterCorSituacao = (situacao) => {
@@ -154,7 +154,7 @@ const QuadroIrmaos = ({ irmaos }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg shadow-lg p-6">
+        <div className="bg-gradient-to-br from-purple-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-4xl font-bold">{totalMestres}</div>
           <div className="text-purple-100 mt-2">Mestres</div>
           <div className="text-sm text-purple-200 mt-1">
@@ -162,7 +162,7 @@ const QuadroIrmaos = ({ irmaos }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg shadow-lg p-6">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-4xl font-bold">{totalCompanheiros}</div>
           <div className="text-green-100 mt-2">Companheiros</div>
           <div className="text-sm text-green-200 mt-1">
@@ -170,7 +170,7 @@ const QuadroIrmaos = ({ irmaos }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg shadow-lg p-6">
+        <div className="bg-gradient-to-br from-blue-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-4xl font-bold">{totalAprendizes}</div>
           <div className="text-blue-100 mt-2">Aprendizes</div>
           <div className="text-sm text-blue-200 mt-1">
@@ -178,23 +178,23 @@ const QuadroIrmaos = ({ irmaos }) => {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg shadow-lg p-6">
+        <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-4xl font-bold">{irmaosAtivos.length}</div>
           <div className="text-gray-100 mt-2">Total Ativos</div>
           <div className="text-sm text-gray-200 mt-1">Regular + Licenciado</div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
               Filtrar por Grau
             </label>
             <select
               value={grauSelecionado}
               onChange={(e) => setGrauSelecionado(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg"
             >
               <option value="todos">Todos os Graus ({irmaosAtivos.length})</option>
               <option value="Mestre">Mestres ({totalMestres})</option>
@@ -204,13 +204,13 @@ const QuadroIrmaos = ({ irmaos }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
               Ordenar por
             </label>
             <select
               value={ordenacao}
               onChange={(e) => setOrdenacao(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg"
             >
               <option value="nome">Nome (A-Z)</option>
               <option value="cim">CIM</option>
@@ -230,24 +230,24 @@ const QuadroIrmaos = ({ irmaos }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="rounded-lg shadow overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+            <thead className="bg-gradient-to-r from-primary-600 to-primary-700 text-white" style={{background:"var(--color-surface-2)"}}>
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold">CIM</th>
-                <th className="px-6 py-4 text-left text-sm font-bold">NOME</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">GRAU</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">IDADE</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">DATA INICIACAO</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">TEMPO MACONARIA</th>
-                <th className="px-6 py-4 text-center text-sm font-bold">SITUACAO</th>
+                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>CIM</th>
+                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>NOME</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>GRAU</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>IDADE</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>DATA INICIACAO</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>TEMPO MACONARIA</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>SITUACAO</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y">
               {irmaosOrdenados.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="7" className="px-6 py-12 text-center" style={{color:"var(--color-text)"}}>
                     <div className="text-6xl mb-4">📋</div>
                     <div className="text-xl font-semibold">Nenhum irmao encontrado</div>
                     <div className="text-sm mt-2">Ajuste os filtros ou adicione novos irmaos</div>
@@ -260,31 +260,31 @@ const QuadroIrmaos = ({ irmaos }) => {
                   const corSituacao = obterCorSituacao(irmao.situacao);
 
                   return (
-                    <tr key={irmao.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={irmao.id} className={index % 2 === 0 ? '' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap" style={{color:"var(--color-text)"}}>
                         <span className="font-mono font-semibold text-blue-600">{irmao.cim}</span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="font-semibold text-gray-900">{irmao.nome}</div>
+                      <td className="px-6 py-4" style={{color:"var(--color-text)"}}>
+                        <div className="font-semibold">{irmao.nome}</div>
                         {irmao.profissao && (
-                          <div className="text-xs text-gray-500 mt-1">{irmao.profissao}</div>
+                          <div className="text-xs mt-1">{irmao.profissao}</div>
                         )}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
                         <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corGrau}>
                           {grau}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center text-sm text-gray-600">
+                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
                         {irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : '-'}
                       </td>
-                      <td className="px-6 py-4 text-center text-sm text-gray-600">
+                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
                         {irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : '-'}
                       </td>
-                      <td className="px-6 py-4 text-center text-sm font-medium text-gray-700">
+                      <td className="px-6 py-4 text-center text-sm font-medium" style={{color:"var(--color-text)"}}>
                         {formatarTempoMaconaria(irmao.data_iniciacao)}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
                         <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corSituacao}>
                           {irmao.situacao || 'Regular'}
                         </span>
@@ -298,8 +298,8 @@ const QuadroIrmaos = ({ irmaos }) => {
         </div>
 
         {irmaosOrdenados.length > 0 && (
-          <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
-            <div className="flex justify-between items-center text-sm text-gray-600">
+          <div className="px-6 py-4 border-t">
+            <div className="flex justify-between items-center text-sm">
               <div>
                 Exibindo <strong>{irmaosOrdenados.length}</strong> irmao(s)
                 {grauSelecionado !== 'todos' && ' de grau ' + grauSelecionado}
@@ -318,7 +318,7 @@ const QuadroIrmaos = ({ irmaos }) => {
       </div>
 
       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-        <h4 className="font-bold text-blue-900 mb-2">Legenda</h4>
+        <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>Legenda</h4>
         <div className="text-sm text-blue-800 space-y-1">
           <div>Tempo Maconaria: Formato Xa Xm = X anos e X meses desde a iniciacao</div>
           <div>Idade: Calculada com base na data de nascimento</div>
