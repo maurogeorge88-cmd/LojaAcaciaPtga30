@@ -541,8 +541,8 @@ const Balaustres = ({
         // Se passou nas verificações, mostrar a listagem normal
         return (
           <div className="card" style={{ overflow: "hidden", padding: 0 }}>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+            <div>
+              <table className="w-full">
                 <thead style={{ background: 'var(--color-accent)', color: 'white' }}>
                   <tr>
                     <th style={{ padding: '0.75rem 1rem', textAlign: 'left', width: '5rem' }}>Nº</th>
@@ -554,7 +554,7 @@ const Balaustres = ({
                   </tr>
                 </thead>
               </table>
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2" style={{width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
                   {(() => {
                     const getAnoBal = b => b.ano_balaustre ? parseInt(b.ano_balaustre) : (b.data_sessao ? new Date(b.data_sessao+'T00:00:00').getFullYear() : new Date().getFullYear());
                     const lista = balaustresFiltradosPorAcesso
@@ -586,29 +586,29 @@ const Balaustres = ({
                         </div>
                         {grupos[ano].map((balaustre, idx) => (
                         <div key={balaustre.id}
-                          className="rounded-lg border-l-4 flex items-center gap-4 px-4 py-3 transition-opacity hover:opacity-90"
+                          className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-3 transition-opacity hover:opacity-90"
                           style={{
                             borderLeftColor: 'var(--color-accent)',
                             background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)'
                           }}
                         >
                           {/* Número/Ano */}
-                          <div style={{flexShrink:0,minWidth:'60px'}}>
+                          <div style={{flexShrink:0,width:'58px'}}>
                             <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{balaustre.numero_balaustre}/{balaustre.ano_balaustre || new Date().getFullYear()}</p>
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{balaustre.dia_semana}</p>
                           </div>
                           {/* Data */}
-                          <div style={{flexShrink:0,minWidth:'80px'}}>
+                          <div style={{flexShrink:0,width:'85px'}}>
                             <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(balaustre.data_sessao)}</p>
                           </div>
                           {/* Tipo */}
-                          <div style={{flexShrink:0,minWidth:'130px'}}>
+                          <div style={{flexShrink:0,maxWidth:'120px',overflow:'hidden'}}>
                             <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                               {obterNomeTipoSessao(balaustre.tipo_sessao_id)}
                             </span>
                           </div>
                           {/* Ordem do dia */}
-                          <div style={{flex:1,minWidth:0}}>
+                          <div style={{flex:1,minWidth:0,overflow:'hidden'}}>
                             <p className="text-sm truncate" style={{color:'var(--color-text-muted)'}} title={balaustre.ordem_dia}>
                               {balaustre.ordem_dia || '—'}
                             </p>
