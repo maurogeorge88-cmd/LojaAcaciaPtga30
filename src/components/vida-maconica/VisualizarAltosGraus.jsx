@@ -1,240 +1,333 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../../supabaseClient';
+import { useState } from 'react';
+import { formatarData, calcularIdade } from '../../utils/formatters';
 
-export default function VisualizarAltosGraus() {
-  const [irmaosComGraus, setIrmaosComGraus] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filtroRito, setFiltroRito] = useState('');
-  const [irmaoSelecionado, setIrmaoSelecionado] = useState(null);
+const QuadroIrmaos = ({ irmaos }) => {
+  const [grauSelecionado, setGrauSelecionado] = useState('todos');
+  const [ordenacao, setOrdenacao] = useState('nome');
 
-  useEffect(() => {
-    carregarIrmaosComGraus();
-  }, []);
-
-  const carregarIrmaosComGraus = async () => {
-    setLoading(true);
-
-    const { data: grausData } = await supabase
-      .from('vida_maconica')
-      .select(`
-        *,
-        irmao:irmaos(id, nome, cim),
-        grau:graus_maconicos(*)
-      `)
-      .order('irmao_id');
-
-    if (grausData) {
-      const irmaosMap = {};
-      
-      grausData.forEach(item => {
-        if (!irmaosMap[item.irmao_id]) {
-          irmaosMap[item.irmao_id] = {
-            irmao: item.irmao,
-            graus: []
-          };
-        }
-        irmaosMap[item.irmao_id].graus.push({
-          ...item.grau,
-          data_conquista: item.data_conquista,
-          loja_conferente: item.loja_conferente,
-          oriente_conferente: item.oriente_conferente
-        });
-      });
-
-      Object.values(irmaosMap).forEach(irmaoData => {
-        const grausPorRito = {};
-        irmaoData.graus.forEach(grau => {
-          if (!grausPorRito[grau.rito]) {
-            grausPorRito[grau.rito] = [];
-          }
-          grausPorRito[grau.rito].push(grau);
-        });
-
-        Object.keys(grausPorRito).forEach(rito => {
-          grausPorRito[rito].sort((a, b) => a.numero_grau - b.numero_grau);
-        });
-
-        irmaoData.grausPorRito = grausPorRito;
-      });
-
-      setIrmaosComGraus(Object.values(irmaosMap));
-    }
-
-    setLoading(false);
+  const obterGrau = (irmao) => {
+    if (irmao.data_exaltacao) return 'Mestre';
+    if (irmao.data_elevacao) return 'Companheiro';
+    if (irmao.data_iniciacao) return 'Aprendiz';
+    return 'Nao iniciado';
   };
 
-  const irmaosFiltrados = filtroRito
-    ? irmaosComGraus.filter(i => i.grausPorRito[filtroRito])
-    : irmaosComGraus;
+  const calcularTempoMaconariaMeses = (dataIniciacao) => {
+    if (!dataIniciacao) return 0;
+    const inicio = new Date(dataIniciacao + 'T00:00:00');
+    const hoje = new Date();
+    const anos = hoje.getFullYear() - inicio.getFullYear();
+    const meses = hoje.getMonth() - inicio.getMonth();
+    return (anos * 12) + meses;
+  };
 
-  const ritos = [...new Set(irmaosComGraus.flatMap(i => Object.keys(i.grausPorRito)))];
+  const formatarTempoMaconaria = (dataIniciacao) => {
+    if (!dataIniciacao) return '-';
+    const inicio = new Date(dataIniciacao + 'T00:00:00');
+    const hoje = new Date();
+    let anos = hoje.getFullYear() - inicio.getFullYear();
+    let meses = hoje.getMonth() - inicio.getMonth();
+    if (meses < 0) {
+      anos--;
+      meses = 12 + meses;
+    }
+    return anos + 'a ' + meses + 'm';
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-xl" style={{color:"var(--color-text-muted)"}}>Carregando...</div>
-      </div>
-    );
-  }
+  const irmaosAtivos = irmaos.filter(irmao => {
+    const situacao = (irmao.situacao || 'regular').toLowerCase();
+    return situacao === 'regular' || situacao === 'licenciado';
+  });
+
+  const irmaosPorGrau = {
+    'Mestre': irmaosAtivos.filter(i => obterGrau(i) === 'Mestre'),
+    'Companheiro': irmaosAtivos.filter(i => obterGrau(i) === 'Companheiro'),
+    'Aprendiz': irmaosAtivos.filter(i => obterGrau(i) === 'Aprendiz'),
+    'Nao iniciado': irmaosAtivos.filter(i => obterGrau(i) === 'Nao iniciado')
+  };
+
+  const ordenarIrmaos = (lista) => {
+    const copia = [...lista];
+    
+    switch (ordenacao) {
+      case 'nome':
+        return copia.sort((a, b) => a.nome.localeCompare(b.nome));
+      case 'cim':
+        return copia.sort((a, b) => (a.cim || '').toString().localeCompare((b.cim || '').toString()));
+      case 'idade':
+        return copia.sort((a, b) => {
+          if (!a.data_nascimento) return 1;
+          if (!b.data_nascimento) return -1;
+          return new Date(a.data_nascimento) - new Date(b.data_nascimento);
+        });
+      case 'tempo':
+        return copia.sort((a, b) => {
+          const tempoA = calcularTempoMaconariaMeses(a.data_iniciacao);
+          const tempoB = calcularTempoMaconariaMeses(b.data_iniciacao);
+          return tempoB - tempoA;
+        });
+      default:
+        return copia;
+    }
+  };
+
+  const gerarQuadro = () => {
+    let conteudo = '\n========================================================\n';
+    conteudo += '           QUADRO GERAL DE IRMAOS\n';
+    conteudo += '    ARLS Acacia de Paranatinga no 30\n';
+    conteudo += '========================================================\n\n';
+    conteudo += 'Gerado em: ' + new Date().toLocaleString('pt-BR') + '\n';
+    conteudo += 'Total de Irmaos Ativos: ' + irmaosAtivos.length + '\n\n';
+
+    const graus = grauSelecionado === 'todos' 
+      ? ['Mestre', 'Companheiro', 'Aprendiz', 'Nao iniciado']
+      : [grauSelecionado];
+
+    graus.forEach(grau => {
+      const irmaosGrau = ordenarIrmaos(irmaosPorGrau[grau]);
+      
+      if (irmaosGrau.length > 0) {
+        conteudo += '\n========================================================\n';
+        conteudo += grau.toUpperCase() + ' (' + irmaosGrau.length + ')\n';
+        conteudo += '========================================================\n\n';
+        
+        conteudo += 'CIM'.padEnd(8) + ' | ' + 'NOME'.padEnd(35) + ' | ' + 'IDADE'.padEnd(10) + ' | ' + 'INICIACAO'.padEnd(12) + ' | ' + 'TEMPO'.padEnd(10) + '\n';
+        conteudo += '-'.repeat(90) + '\n';
+
+        irmaosGrau.forEach(irmao => {
+          const cim = (irmao.cim || '-').toString().padEnd(8);
+          const nome = (irmao.nome || '-').substring(0, 35).padEnd(35);
+          const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento).padEnd(10) : '-'.padEnd(10);
+          const iniciacao = irmao.data_iniciacao ? formatarData(irmao.data_iniciacao).padEnd(12) : '-'.padEnd(12);
+          const tempo = formatarTempoMaconaria(irmao.data_iniciacao).padEnd(10);
+
+          conteudo += cim + ' | ' + nome + ' | ' + idade + ' | ' + iniciacao + ' | ' + tempo + '\n';
+        });
+
+        conteudo += '\n';
+      }
+    });
+
+    conteudo += '\n========================================================\n';
+    conteudo += 'LEGENDA:\n';
+    conteudo += '- Tempo: Xxa Xxm = X anos e X meses na Maconaria\n';
+    conteudo += '- Idade: Calculada com base na data de nascimento\n';
+    conteudo += '========================================================\n';
+
+    const blob = new Blob([conteudo], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Quadro_Irmaos_' + grauSelecionado + '_' + new Date().toISOString().split('T')[0] + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const irmaosExibir = grauSelecionado === 'todos' 
+    ? irmaosAtivos 
+    : irmaosPorGrau[grauSelecionado];
+
+  const irmaosOrdenados = ordenarIrmaos(irmaosExibir);
+
+  const totalMestres = irmaosPorGrau['Mestre'].length;
+  const totalCompanheiros = irmaosPorGrau['Companheiro'].length;
+  const totalAprendizes = irmaosPorGrau['Aprendiz'].length;
+
+  const obterCorGrau = (grau) => {
+    const cores = {
+      'Aprendiz': 'bg-blue-100 text-blue-800',
+      'Companheiro': 'bg-green-100 text-green-800',
+      'Mestre': 'bg-purple-100 text-purple-800',
+      'Nao iniciado': ' '
+    };
+    return cores[grau] || ' ';
+  };
+
+  const obterCorSituacao = (situacao) => {
+    const sit = (situacao || 'regular').toLowerCase();
+    if (sit === 'regular') return 'bg-green-100 text-green-800';
+    return 'bg-blue-100 text-blue-800';
+  };
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>🔺 Altos Graus Maçônicos</h2>
-        <p className="text-indigo-100">Irmãos com graus filosóficos conquistados</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-purple-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="text-4xl font-bold">{totalMestres}</div>
+          <div className="text-purple-100 mt-2">Mestres</div>
+          <div className="text-sm text-purple-200 mt-1">
+            {totalMestres > 0 ? ((totalMestres / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="text-4xl font-bold">{totalCompanheiros}</div>
+          <div className="text-green-100 mt-2">Companheiros</div>
+          <div className="text-sm text-green-200 mt-1">
+            {totalCompanheiros > 0 ? ((totalCompanheiros / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="text-4xl font-bold">{totalAprendizes}</div>
+          <div className="text-blue-100 mt-2">Aprendizes</div>
+          <div className="text-sm text-blue-200 mt-1">
+            {totalAprendizes > 0 ? ((totalAprendizes / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="text-4xl font-bold">{irmaosAtivos.length}</div>
+          <div className="text-gray-100 mt-2">Total Ativos</div>
+          <div className="text-sm text-gray-200 mt-1">Regular + Licenciado</div>
+        </div>
       </div>
 
       <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Filtrar por Rito</label>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
+              Filtrar por Grau
+            </label>
             <select
-              value={filtroRito}
-              onChange={(e) => setFiltroRito(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              value={grauSelecionado}
+              onChange={(e) => setGrauSelecionado(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg"
             >
-              <option value="">Todos os Ritos</option>
-              {ritos.map(rito => (
-                <option key={rito} value={rito}>{rito}</option>
-              ))}
+              <option value="todos">Todos os Graus ({irmaosAtivos.length})</option>
+              <option value="Mestre">Mestres ({totalMestres})</option>
+              <option value="Companheiro">Companheiros ({totalCompanheiros})</option>
+              <option value="Aprendiz">Aprendizes ({totalAprendizes})</option>
             </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
+              Ordenar por
+            </label>
+            <select
+              value={ordenacao}
+              onChange={(e) => setOrdenacao(e.target.value)}
+              className="w-full px-4 py-2 border rounded-lg"
+            >
+              <option value="nome">Nome (A-Z)</option>
+              <option value="cim">CIM</option>
+              <option value="idade">Idade (Crescente)</option>
+              <option value="tempo">Tempo na Maconaria</option>
+            </select>
+          </div>
+
           <div className="flex items-end">
-            <div className="text-sm">
-              <strong>{irmaosFiltrados.length}</strong> irmãos encontrados
-            </div>
+            <button
+              onClick={gerarQuadro}
+              className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+            >
+              Exportar Quadro
+            </button>
           </div>
         </div>
       </div>
 
-      {irmaosFiltrados.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6">
-          {irmaosFiltrados.map((irmaoData) => (
-            <div key={irmaoData.irmao.id} className="rounded-lg overflow-hidden hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <div className="bg-gradient-to-r p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-indigo-900" style={{color:"var(--color-text)"}}>{irmaoData.irmao.nome}</h3>
-                    <p className="text-sm">CIM: {irmaoData.irmao.cim}</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-indigo-600">{irmaoData.graus.length + 3}</div>
-                    <div className="text-xs">
-                      {irmaoData.graus.length + 3 === 1 ? 'grau' : 'graus'}
-                      <br />
-                      <span>({irmaoData.graus.length} altos + 3 simbólicos)</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <div className="rounded-lg shadow overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-primary-600 to-primary-700 text-white" style={{background:"var(--color-surface-2)"}}>
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>CIM</th>
+                <th className="px-6 py-4 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>NOME</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>GRAU</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>IDADE</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>DATA INICIACAO</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>TEMPO MACONARIA</th>
+                <th className="px-6 py-4 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>SITUACAO</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {irmaosOrdenados.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-12 text-center" style={{color:"var(--color-text)"}}>
+                    <div className="text-6xl mb-4">📋</div>
+                    <div className="text-xl font-semibold">Nenhum irmao encontrado</div>
+                    <div className="text-sm mt-2">Ajuste os filtros ou adicione novos irmaos</div>
+                  </td>
+                </tr>
+              ) : (
+                irmaosOrdenados.map((irmao, index) => {
+                  const grau = obterGrau(irmao);
+                  const corGrau = obterCorGrau(grau);
+                  const corSituacao = obterCorSituacao(irmao.situacao);
 
-              <div className="p-4 space-y-4">
-                {Object.entries(irmaoData.grausPorRito).map(([rito, graus]) => (
-                  <div key={rito} className="space-y-2">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="text-lg font-bold text-indigo-900">{rito}</div>
-                      <div className="flex-1 h-px bg-indigo-200"></div>
-                      <div className="text-sm">{graus.length} {graus.length === 1 ? 'grau' : 'graus'}</div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                      {graus.map((grau) => (
-                        <div
-                          key={grau.numero_grau}
-                          className="group relative rounded-lg p-3 transition-all cursor-pointer overflow-hidden" style={{background:"var(--color-accent)",color:"#fff"}}
-                          onClick={() => setIrmaoSelecionado({ irmao: irmaoData.irmao, grau})}
-                        >
-                          {grau.imagem_url ? (
-                            <div className="flex flex-col items-center">
-                              <img 
-                                src={grau.imagem_url} 
-                                alt={grau.nome_grau}
-                                className="w-20 h-20 object-contain mb-1"
-                              />
-                              <div className="text-xl font-bold">{grau.numero_grau}º</div>
-                            </div>
-                          ) : (
-                            <div className="text-center">
-                              <div className="text-2xl font-bold mb-1">{grau.numero_grau}º</div>
-                              <div className="text-xs leading-tight">{grau.nome_grau}</div>
-                            </div>
-                          )}
-                          <div className="absolute inset-0 bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all"></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                  return (
+                    <tr key={irmao.id} className={index % 2 === 0 ? '' : ''}>
+                      <td className="px-6 py-4 whitespace-nowrap" style={{color:"var(--color-text)"}}>
+                        <span className="font-mono font-semibold text-blue-600">{irmao.cim}</span>
+                      </td>
+                      <td className="px-6 py-4" style={{color:"var(--color-text)"}}>
+                        <div className="font-semibold">{irmao.nome}</div>
+                        {irmao.profissao && (
+                          <div className="text-xs mt-1">{irmao.profissao}</div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
+                        <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corGrau}>
+                          {grau}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
+                        {irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm" style={{color:"var(--color-text)"}}>
+                        {irmao.data_iniciacao ? formatarData(irmao.data_iniciacao) : '-'}
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm font-medium" style={{color:"var(--color-text)"}}>
+                        {formatarTempoMaconaria(irmao.data_iniciacao)}
+                      </td>
+                      <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
+                        <span className={'inline-block px-3 py-1 rounded-full text-xs font-bold ' + corSituacao}>
+                          {irmao.situacao || 'Regular'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <div className="text-center py-16 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-6xl mb-4">🔺</div>
-          <p className="text-lg font-medium">Nenhum irmão com graus filosóficos cadastrados</p>
-          <p className="text-sm mt-2">
-            {filtroRito ? `Nenhum grau do rito ${filtroRito} encontrado` : 'Cadastre graus no perfil dos irmãos'}
-          </p>
-        </div>
-      )}
 
-      {irmaoSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-lg max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-indigo-900" style={{color:"var(--color-text)"}}>Detalhes do Grau</h3>
-              <button onClick={() => setIrmaoSelecionado(null)} className="hover: text-2xl">×</button>
-            </div>
-
-            <div className="space-y-3">
+        {irmaosOrdenados.length > 0 && (
+          <div className="px-6 py-4 border-t">
+            <div className="flex justify-between items-center text-sm">
               <div>
-                <p className="text-sm">Irmão</p>
-                <p className="font-semibold">{irmaoSelecionado.irmao.nome}</p>
-                <p className="text-xs">CIM: {irmaoSelecionado.irmao.cim}</p>
+                Exibindo <strong>{irmaosOrdenados.length}</strong> irmao(s)
+                {grauSelecionado !== 'todos' && ' de grau ' + grauSelecionado}
               </div>
-
-              <div className="border-t pt-3">
-                <p className="text-3xl font-bold text-indigo-600 mb-2">{irmaoSelecionado.grau.numero_grau}º Grau</p>
-                <p className="text-lg font-semibold">{irmaoSelecionado.grau.nome_grau}</p>
-                <p className="text-sm mt-1">Rito: {irmaoSelecionado.grau.rito}</p>
+              <div>
+                Ordenado por: <strong>{
+                  ordenacao === 'nome' ? 'Nome' :
+                  ordenacao === 'cim' ? 'CIM' :
+                  ordenacao === 'idade' ? 'Idade' :
+                  'Tempo na Maconaria'
+                }</strong>
               </div>
-
-              {irmaoSelecionado.grau.data_conquista && (
-                <div>
-                  <p className="text-sm">Data de Conquista</p>
-                  <p className="font-semibold">{irmaoSelecionado.grau.data_conquista.split('-').reverse().join('/')}</p>
-                </div>
-              )}
-
-              {irmaoSelecionado.grau.loja_conferente && (
-                <div>
-                  <p className="text-sm">Loja Conferente</p>
-                  <p className="font-semibold">{irmaoSelecionado.grau.loja_conferente}</p>
-                </div>
-              )}
-
-              {irmaoSelecionado.grau.oriente_conferente && (
-                <div>
-                  <p className="text-sm">Oriente</p>
-                  <p className="font-semibold">{irmaoSelecionado.grau.oriente_conferente}</p>
-                </div>
-              )}
-
-              {irmaoSelecionado.grau.descricao && (
-                <div>
-                  <p className="text-sm">Descrição</p>
-                  <p className="text-sm italic">{irmaoSelecionado.grau.descricao}</p>
-                </div>
-              )}
             </div>
-
-            <button onClick={() => setIrmaoSelecionado(null)} className="mt-6 w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-              Fechar
-            </button>
           </div>
+        )}
+      </div>
+
+      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+        <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>Legenda</h4>
+        <div className="text-sm text-blue-800 space-y-1">
+          <div>Tempo Maconaria: Formato Xa Xm = X anos e X meses desde a iniciacao</div>
+          <div>Idade: Calculada com base na data de nascimento</div>
+          <div>Grau: Determinado automaticamente pelas datas de iniciacao, elevacao e exaltacao</div>
+          <div>Situacao: Apenas irmaos Regulares e Licenciados sao exibidos no quadro</div>
         </div>
-      )}
+      </div>
     </div>
   );
-}
+};
+
+export default QuadroIrmaos;
