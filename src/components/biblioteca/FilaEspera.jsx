@@ -326,7 +326,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
             <select
               value={filtroLivro}
               onChange={(e) => setFiltroLivro(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-orange-500"
+              className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="todos">Todos os livros</option>
               {livrosDisponiveis.map(livro => (
@@ -342,7 +342,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg focus:ring-orange-500"
+              className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="aguardando">Aguardando</option>
               <option value="atendido">Atendidos</option>
@@ -472,7 +472,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                 <select
                   value={filaForm.livro_id}
                   onChange={(e) => setFilaForm({ ...filaForm, livro_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 >
                   <option value="">Selecione o livro</option>
@@ -489,7 +489,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                 <select
                   value={filaForm.irmao_id}
                   onChange={(e) => setFilaForm({ ...filaForm, irmao_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 >
                   <option value="">Selecione o irmão</option>
@@ -506,7 +506,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                 <textarea
                   value={filaForm.observacoes}
                   onChange={(e) => setFilaForm({ ...filaForm, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   rows="3"
                   placeholder="Ex: Preciso urgente para estudo"
                 />
@@ -515,7 +515,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold"
+                  className="flex-1 px-6 py-2 rounded-lg font-semibold" style={{background:"var(--color-accent)",color:"#fff"}}
                 >
                   ➕ Adicionar
                 </button>
@@ -525,7 +525,7 @@ export default function FilaEspera({ permissoes, showSuccess, showError, livros,
                     setModalAdicionar(false);
                     limparForm();
                   }}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  className="px-6 py-2 rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   ❌ Cancelar
                 </button>
