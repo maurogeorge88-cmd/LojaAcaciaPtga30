@@ -388,13 +388,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
   return (
     <div className="space-y-6">
       {/* ABAS */}
-      <div className="bg-white rounded-xl shadow-md p-2 flex gap-2">
+      <div className="rounded-xl p-2 flex gap-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <button
           onClick={() => setAbaAtiva('livros')}
           className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
             abaAtiva === 'livros'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-primary-600 text-white'
+              : 'btn-tab-inactive'
           }`}
         >
           📚 Livros ({livros.length})
@@ -403,8 +403,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           onClick={() => setAbaAtiva('emprestimos')}
           className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
             abaAtiva === 'emprestimos'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-primary-600 text-white'
+              : 'btn-tab-inactive'
           }`}
         >
           📖 Empréstimos Ativos ({emprestimosAtivos.length})
@@ -413,8 +413,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           onClick={() => setAbaAtiva('devolvidos')}
           className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
             abaAtiva === 'devolvidos'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-primary-600 text-white'
+              : 'btn-tab-inactive'
           }`}
         >
           ✅ Devolvidos ({emprestimosDevolvidos.length})
@@ -423,8 +423,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           onClick={() => setAbaAtiva('por-irmao')}
           className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
             abaAtiva === 'por-irmao'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-primary-600 text-white'
+              : 'btn-tab-inactive'
           }`}
         >
           👤 Por Irmão
@@ -433,8 +433,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           onClick={() => setAbaAtiva('fila')}
           className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
             abaAtiva === 'fila'
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? 'bg-primary-600 text-white'
+              : 'btn-tab-inactive'
           }`}
         >
           ⏳ Fila de Espera
@@ -446,9 +446,9 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         <div className="space-y-6">
           {/* FORMULÁRIO CADASTRO/EDIÇÃO */}
           {permissoes?.pode_editar_biblioteca && (
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-                <h3 className="text-xl font-bold">
+            <div className="rounded-xl overflow-hidden">
+              <div className="bg-gradient-to-r from-primary-600 to-blue-700 p-6 text-white">
+                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
                   {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
                 </h3>
               </div>
@@ -456,33 +456,33 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Título *</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Título *</label>
                     <input
                       type="text"
                       value={livroForm.titulo}
                       onChange={(e) => setLivroForm({ ...livroForm, titulo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                       placeholder="Ex: Ritual do Aprendiz Maçom"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Autor</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Autor</label>
                     <input
                       type="text"
                       value={livroForm.autor}
                       onChange={(e) => setLivroForm({ ...livroForm, autor: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                       placeholder="Ex: Rizzardo da Camino"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Categoria</label>
                     <select
                       value={livroForm.categoria}
                       onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     >
                       <option value="Ritualística">Ritualística</option>
                       <option value="Filosofia">Filosofia</option>
@@ -493,11 +493,11 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Grau</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Grau</label>
                     <select
                       value={livroForm.grau}
                       onChange={(e) => setLivroForm({ ...livroForm, grau: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     >
                       <option value="Aprendiz">Aprendiz</option>
                       <option value="Companheiro">Companheiro</option>
@@ -506,18 +506,18 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Localização</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Localização</label>
                     <input
                       type="text"
                       value={livroForm.localizacao}
                       onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                       placeholder="Ex: Estante 2 - Prateleira B"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Quantidade Total</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Quantidade Total</label>
                     <input
                       type="number"
                       min="1"
@@ -527,7 +527,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         quantidade_total: parseInt(e.target.value) || 1,
                         quantidade_disponivel: parseInt(e.target.value) || 1
                       })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded-lg"
                     />
                   </div>
                 </div>
@@ -536,7 +536,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   <button
                     onClick={salvarLivro}
                     disabled={loading}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:opacity-50"
+                    className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50"
                   >
                     {loading ? 'Salvando...' : (modoEdicaoLivro ? '💾 Salvar Alterações' : '➕ Cadastrar Livro')}
                   </button>
@@ -544,7 +544,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   {modoEdicaoLivro && (
                     <button
                       onClick={limparFormularioLivro}
-                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                      className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       ❌ Cancelar
                     </button>
@@ -555,24 +555,24 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           )}
 
           {/* FILTROS */}
-          <div className="bg-white rounded-xl shadow-md p-4">
+          <div className="rounded-xl p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">🔍 Pesquisar por nome</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>🔍 Pesquisar por nome</label>
                 <input
                   type="text"
                   value={filtroNome}
                   onChange={(e) => setFiltroNome(e.target.value)}
                   placeholder="Digite o nome do livro..."
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">📊 Filtrar por grau</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>📊 Filtrar por grau</label>
                 <select
                   value={filtroGrau}
                   onChange={(e) => setFiltroGrau(e.target.value)}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border rounded-lg"
                 >
                   <option value="todos">Todos os graus</option>
                   <option value="Aprendiz">Aprendiz</option>
@@ -589,10 +589,10 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
             if (livrosDoGrau.length === 0) return null;
 
             return (
-              <div key={grau} className="bg-white rounded-xl shadow-md overflow-hidden">
+              <div key={grau} className="rounded-xl overflow-hidden">
                 <div className={`p-4 text-white font-bold text-lg ${
                   grau === 'Aprendiz' ? 'bg-gradient-to-r from-green-600 to-green-700' :
-                  grau === 'Companheiro' ? 'bg-gradient-to-r from-blue-600 to-blue-700' :
+                  grau === 'Companheiro' ? 'bg-gradient-to-r from-primary-600 to-blue-700' :
                   'bg-gradient-to-r from-purple-600 to-purple-700'
                 }`}>
                   {grau === 'Aprendiz' && '🟢'} {grau === 'Companheiro' && '🔵'} {grau === 'Mestre' && '🟣'} {grau} ({livrosDoGrau.length})
@@ -600,7 +600,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-100">
+                    <thead style={{background:"var(--color-surface-2)"}}>
                       <tr>
                         <th className="px-4 py-3 text-left text-sm font-semibold">TÍTULO</th>
                         <th className="px-4 py-3 text-left text-sm font-semibold">AUTOR</th>
@@ -617,16 +617,16 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         const disponivel = obterQuantidadeDisponivel(livro.id);
                         
                         return (
-                          <tr key={livro.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 font-medium text-blue-900">{livro.titulo}</td>
-                            <td className="px-4 py-3 text-sm text-gray-700">{livro.autor || '-'}</td>
-                            <td className="px-4 py-3">
+                          <tr key={livro.id} className="hover:">
+                            <td className="px-4 py-3 font-medium text-blue-900" style={{color:"var(--color-text)"}}>{livro.titulo}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{livro.autor || '-'}</td>
+                            <td className="px-4 py-3" style={{color:"var(--color-text)"}}>
                               <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                                 {livro.categoria}
                               </span>
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">{livro.localizacao || '-'}</td>
-                            <td className="px-4 py-3 text-center">
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{livro.localizacao || '-'}</td>
+                            <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                               <span className={`px-3 py-1 rounded text-sm font-semibold ${
                                 disponivel > 0
                                   ? 'bg-green-100 text-green-800'
@@ -636,11 +636,11 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               </span>
                             </td>
                             {permissoes?.pode_editar_biblioteca && (
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                                 <div className="flex gap-2 justify-center">
                                   <button
                                     onClick={() => editarLivro(livro)}
-                                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600"
+                                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600"
                                   >
                                     ✏️ Editar
                                   </button>
@@ -664,7 +664,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           })}
 
           {livrosFiltrados.length === 0 && (
-            <div className="bg-white rounded-xl shadow-md p-12 text-center text-gray-500">
+            <div className="rounded-xl p-12 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               Nenhum livro encontrado com os filtros aplicados
             </div>
           )}
@@ -676,19 +676,19 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         <div className="space-y-6">
           {/* FORMULÁRIO EMPRÉSTIMO */}
           {permissoes?.pode_editar_biblioteca && (
-            <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="rounded-xl overflow-hidden">
               <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white">
-                <h3 className="text-xl font-bold">📖 Registrar Novo Empréstimo</h3>
+                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📖 Registrar Novo Empréstimo</h3>
               </div>
 
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Livro *</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Livro *</label>
                     <select
                       value={emprestimoForm.livro_id}
                       onChange={(e) => setEmprestimoForm({ ...emprestimoForm, livro_id: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                     >
                       <option value="">Selecione um livro</option>
                       {livrosDisponiveis.map(livro => (
@@ -700,11 +700,11 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Irmão *</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Irmão *</label>
                     <select
                       value={emprestimoForm.irmao_id}
                       onChange={(e) => setEmprestimoForm({ ...emprestimoForm, irmao_id: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                     >
                       <option value="">Selecione um irmão</option>
                       {irmaos.map(irmao => (
@@ -714,12 +714,12 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Data Empréstimo</label>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data Empréstimo</label>
                     <input
                       type="date"
                       value={emprestimoForm.data_emprestimo}
                       onChange={(e) => setEmprestimoForm({ ...emprestimoForm, data_emprestimo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                     />
                   </div>
                 </div>
@@ -736,15 +736,15 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           )}
 
           {/* LISTA EMPRÉSTIMOS ATIVOS */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
-              <h3 className="text-xl font-bold">📖 Empréstimos Ativos</h3>
+          <div className="rounded-xl overflow-hidden">
+            <div className="p-4 bg-gradient-to-r from-primary-600 to-blue-700 text-white">
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📖 Empréstimos Ativos</h3>
               <p className="text-sm text-blue-100">{emprestimosAtivos.length} empréstimo(s) ativo(s)</p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-100">
+                <thead style={{background:"var(--color-surface-2)"}}>
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Livro</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Irmão</th>
@@ -759,14 +759,14 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 <tbody className="divide-y">
                   {emprestimosAtivos.length > 0 ? (
                     emprestimosAtivos.map(emprestimo => (
-                      <tr key={emprestimo.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">{obterTituloLivro(emprestimo.livro_id)}</td>
-                        <td className="px-4 py-3">{obterNomeIrmao(emprestimo.irmao_id)}</td>
-                        <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
-                        <td className="px-4 py-3 text-sm">
+                      <tr key={emprestimo.id} className="hover:">
+                        <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
+                        <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterNomeIrmao(emprestimo.irmao_id)}</td>
+                        <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
+                        <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                           {formatarData(emprestimo.data_devolucao_prevista)}
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                           <span className={`px-2 py-1 rounded text-xs font-semibold ${
                             estaAtrasado(emprestimo.data_devolucao_prevista)
                               ? 'bg-red-100 text-red-800'
@@ -776,7 +776,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                           </span>
                         </td>
                         {permissoes?.pode_editar_biblioteca && (
-                          <td className="px-4 py-3 text-center space-x-2">
+                          <td className="px-4 py-3 text-center space-x-2" style={{color:"var(--color-text)"}}>
                             <button
                               onClick={() => devolverLivro(emprestimo.id, emprestimo.livro_id)}
                               className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
@@ -801,7 +801,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={permissoes?.pode_editar_biblioteca ? "6" : "5"} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={permissoes?.pode_editar_biblioteca ? "6" : "5"} className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
                         Nenhum empréstimo ativo no momento
                       </td>
                     </tr>
@@ -816,15 +816,15 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {/* ABA DEVOLVIDOS */}
       {abaAtiva === 'devolvidos' && (
         <div>
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="rounded-xl overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-green-600 to-green-700 text-white">
-              <h3 className="text-xl font-bold">✅ Devoluções Realizadas</h3>
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>✅ Devoluções Realizadas</h3>
               <p className="text-sm text-green-100">{emprestimosDevolvidos.length} devolução(ões) registrada(s)</p>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-100">
+                <thead style={{background:"var(--color-surface-2)"}}>
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Livro</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold">Irmão</th>
@@ -845,13 +845,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                         const devolveuAtrasado = new Date(emprestimo.data_devolucao_real) > new Date(emprestimo.data_devolucao_prevista);
                         
                         return (
-                          <tr key={emprestimo.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-3">{obterTituloLivro(emprestimo.livro_id)}</td>
-                            <td className="px-4 py-3">{obterNomeIrmao(emprestimo.irmao_id)}</td>
-                            <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
-                            <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_devolucao_prevista)}</td>
-                            <td className="px-4 py-3 text-sm">{formatarData(emprestimo.data_devolucao_real)}</td>
-                            <td className="px-4 py-3 text-center">
+                          <tr key={emprestimo.id} className="hover:">
+                            <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
+                            <td className="px-4 py-3" style={{color:"var(--color-text)"}}>{obterNomeIrmao(emprestimo.irmao_id)}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_devolucao_prevista)}</td>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_devolucao_real)}</td>
+                            <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${
                                 devolveuAtrasado
                                   ? 'bg-orange-100 text-orange-800'
@@ -861,7 +861,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               </span>
                             </td>
                             {permissoes?.pode_editar_biblioteca && (
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                                 <button
                                   onClick={() => excluirEmprestimo(emprestimo.id, emprestimo.livro_id, emprestimo.status)}
                                   className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
@@ -875,7 +875,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                       })
                   ) : (
                     <tr>
-                      <td colSpan={permissoes?.pode_editar_biblioteca ? "7" : "6"} className="px-4 py-8 text-center text-gray-500">
+                      <td colSpan={permissoes?.pode_editar_biblioteca ? "7" : "6"} className="px-4 py-8 text-center" style={{color:"var(--color-text)"}}>
                         Nenhuma devolução registrada
                       </td>
                     </tr>
@@ -890,9 +890,9 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {/* ABA POR IRMÃO */}
       {abaAtiva === 'por-irmao' && (
         <div>
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="rounded-xl overflow-hidden">
             <div className="p-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
-              <h3 className="text-xl font-bold">Empréstimos por Irmão</h3>
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Empréstimos por Irmão</h3>
               <p className="text-sm text-purple-100">
                 {emprestimosPorIrmao.length} irmão(s) com empréstimos registrados
               </p>
@@ -901,14 +901,14 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
             <div className="p-6 space-y-6">
               {emprestimosPorIrmao.length > 0 ? (
                 emprestimosPorIrmao.map((item) => (
-                  <div key={item.irmao.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div key={item.irmao.id} className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <div className="flex justify-between items-center mb-4">
                       <h4 className="text-lg font-bold text-blue-900">{item.irmao.nome}</h4>
                       <div className="flex gap-4">
                         <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-semibold">
                           Ativos: {item.ativos}
                         </span>
-                        <span className="px-3 py-1 bg-gray-200 text-gray-800 rounded-lg text-sm font-semibold">
+                        <span className="px-3 py-1 rounded-lg text-sm font-semibold">
                           Total: {item.total}
                         </span>
                       </div>
@@ -916,7 +916,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
                     <div className="overflow-x-auto">
                       <table className="w-full">
-                        <thead className="bg-gray-200">
+                        <thead style={{background:"var(--color-surface-2)"}}>
                           <tr>
                             <th className="px-4 py-2 text-left text-sm">Livro</th>
                             <th className="px-4 py-2 text-left text-sm">Data Empréstimo</th>
@@ -925,15 +925,15 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                             <th className="px-4 py-2 text-center text-sm">Ações</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y bg-white">
+                        <tbody className="divide-y">
                           {item.emprestimos.map((emprestimo) => (
-                            <tr key={emprestimo.id} className="hover:bg-gray-50">
-                              <td className="px-4 py-2 text-sm">{obterTituloLivro(emprestimo.livro_id)}</td>
-                              <td className="px-4 py-2 text-sm">{formatarData(emprestimo.data_emprestimo)}</td>
-                              <td className="px-4 py-2 text-sm">
+                            <tr key={emprestimo.id} className="hover:">
+                              <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{obterTituloLivro(emprestimo.livro_id)}</td>
+                              <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>{formatarData(emprestimo.data_emprestimo)}</td>
+                              <td className="px-4 py-2 text-sm" style={{color:"var(--color-text)"}}>
                                 {emprestimo.status === 'emprestado' ? formatarData(emprestimo.data_devolucao_prevista) : '-'}
                               </td>
-                              <td className="px-4 py-2 text-center">
+                              <td className="px-4 py-2 text-center" style={{color:"var(--color-text)"}}>
                                 <span className={`px-2 py-1 rounded text-xs ${
                                   emprestimo.status === 'emprestado'
                                     ? estaAtrasado(emprestimo.data_devolucao_prevista)
@@ -947,7 +947,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                                   }
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-center">
+                              <td className="px-4 py-2 text-center" style={{color:"var(--color-text)"}}>
                                 {emprestimo.status === 'emprestado' ? (
                                   permissoes?.pode_editar_biblioteca ? (
                                     <button
@@ -960,7 +960,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                                     <span className="text-xs text-blue-600 font-medium">Em uso</span>
                                   )
                                 ) : (
-                                  <span className="text-xs text-gray-500">
+                                  <span className="text-xs">
                                     {formatarData(emprestimo.data_devolucao_real)}
                                   </span>
                                 )}
@@ -973,7 +973,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12">
                   Nenhum irmão com empréstimos registrados
                 </div>
               )}
@@ -996,10 +996,10 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {/* MODAL EDITAR PRAZO */}
       {modalEditarPrazo && emprestimoEditando && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full">
+          <div className="rounded-lg max-w-md w-full">
             <div className="bg-yellow-600 text-white p-6 rounded-t-lg">
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">📅 Editar Prazo de Devolução</h3>
+                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📅 Editar Prazo de Devolução</h3>
                 <button
                   onClick={() => {
                     setModalEditarPrazo(false);
@@ -1015,26 +1015,26 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm mb-2">
                   <strong>Livro:</strong> {obterTituloLivro(emprestimoEditando.livro_id)}
                 </p>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-sm mb-2">
                   <strong>Irmão:</strong> {obterNomeIrmao(emprestimoEditando.irmao_id)}
                 </p>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-sm mb-4">
                   <strong>Prazo Atual:</strong> {formatarData(emprestimoEditando.data_devolucao_prevista)}
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
                   Nova Data de Devolução *
                 </label>
                 <input
                   type="date"
                   value={novoPrazo}
                   onChange={(e) => setNovoPrazo(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-yellow-500"
                   min={new Date().toISOString().split('T')[0]}
                 />
               </div>
