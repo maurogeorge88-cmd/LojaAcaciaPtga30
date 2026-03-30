@@ -241,7 +241,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="(00) 00000-0000"
                 />
               ) : (
@@ -255,7 +255,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={cep}
                   onChange={(e) => setCep(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="00000-000"
                 />
               ) : (
@@ -269,7 +269,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={endereco}
                   onChange={(e) => setEndereco(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Rua, número, complemento"
                 />
               ) : (
@@ -283,7 +283,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               ) : (
                 <p>{cidade || '-'}</p>
@@ -296,7 +296,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={estado}
                   onChange={(e) => setEstado(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="MT"
                   maxLength={2}
                 />
@@ -317,7 +317,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                 <select
                   value={estadoCivil}
                   onChange={(e) => setEstadoCivil(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="">Selecione</option>
                   <option value="solteiro">Solteiro</option>
@@ -336,7 +336,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={nomeConjuge}
                   onChange={(e) => setNomeConjuge(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               ) : (
                 <p>{nomeConjuge || '-'}</p>
@@ -349,7 +349,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="date"
                   value={dataMatrimonio}
                   onChange={(e) => setDataMatrimonio(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               ) : (
                 <p>{formatarData(dataMatrimonio)}</p>
@@ -362,7 +362,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   type="text"
                   value={filhos}
                   onChange={(e) => setFilhos(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Nomes e idades"
                 />
               ) : (
