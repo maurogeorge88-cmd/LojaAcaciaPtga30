@@ -222,13 +222,13 @@ export default function GestaoSituacoes({ irmaId }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
+    <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold text-gray-800">Histórico de Situações</h3>
+        <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Histórico de Situações</h3>
         <button
           type="button"
           onClick={() => abrirModal()}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-600 transition-colors"
         >
           + Nova Situação
         </button>
@@ -245,16 +245,16 @@ export default function GestaoSituacoes({ irmaId }) {
 
       {/* Lista de Situações */}
       {situacoes.length === 0 ? (
-        <p className="text-gray-500 text-center py-8">Nenhuma situação registrada</p>
+        <p className="text-center py-8">Nenhuma situação registrada</p>
       ) : (
         <div className="space-y-3">
           {situacoes.map(sit => (
             <div 
               key={sit.id} 
               className={`border rounded-lg p-4 ${
-                sit.status === 'cancelada' ? 'bg-gray-50 opacity-60' : 
+                sit.status === 'cancelada' ? ' opacity-60' : 
                 getStatusTexto(sit) === 'ATIVA' ? 'bg-green-50 border-green-300' : 
-                'bg-white'
+                ''
               }`}
             >
               <div className="flex justify-between items-start">
@@ -264,14 +264,14 @@ export default function GestaoSituacoes({ irmaId }) {
                     <span className={`text-xs font-semibold px-2 py-1 rounded ${
                       getStatusTexto(sit) === 'ATIVA' ? 'bg-green-200 text-green-800' :
                       getStatusTexto(sit) === 'AGENDADA' ? 'bg-blue-200 text-blue-800' :
-                      'bg-gray-200 text-gray-800'
+                      ' '
                     }`}>
                       {getStatusTexto(sit)}
                     </span>
                     <span className="font-semibold text-lg">{getTipoLabel(sit.tipo_situacao)}</span>
                   </div>
                   
-                  <div className="text-sm text-gray-600 space-y-1">
+                  <div className="text-sm space-y-1">
                     <div>
                       <strong>Período:</strong> {formatarData(sit.data_inicio)} 
                       {sit.data_fim ? ` → ${formatarData(sit.data_fim)}` : ' → Indefinido'}
@@ -330,9 +330,9 @@ export default function GestaoSituacoes({ irmaId }) {
       {/* Modal */}
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-blue-600 text-white p-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold">
+          <div className="rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="bg-primary-600 text-white p-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
                 {editando ? 'Editar Situação' : 'Nova Situação'}
               </h3>
               <button onClick={fecharModal} className="text-white hover:text-gray-200">
@@ -345,13 +345,13 @@ export default function GestaoSituacoes({ irmaId }) {
             <div className="p-6 space-y-4">
               {/* Tipo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Tipo de Situação *
                 </label>
                 <select
                   value={form.tipo_situacao}
                   onChange={(e) => setForm({ ...form, tipo_situacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="licenca">Licença</option>
                   <option value="desligado">Desligado (Transferência)</option>
@@ -364,40 +364,40 @@ export default function GestaoSituacoes({ irmaId }) {
               {/* Datas */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Data de Início *
                   </label>
                   <input
                     type="date"
                     value={form.data_inicio}
                     onChange={(e) => setForm({ ...form, data_inicio: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Data de Fim
-                    <span className="text-xs text-gray-500 ml-2">(vazio = indefinido)</span>
+                    <span className="text-xs ml-2">(vazio = indefinido)</span>
                   </label>
                   <input
                     type="date"
                     value={form.data_fim}
                     onChange={(e) => setForm({ ...form, data_fim: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
               </div>
 
               {/* Motivo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Motivo
                 </label>
                 <textarea
                   value={form.motivo}
                   onChange={(e) => setForm({ ...form, motivo: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Ex: Problemas de saúde, viagem, questões pessoais..."
                 />
               </div>
@@ -405,14 +405,14 @@ export default function GestaoSituacoes({ irmaId }) {
               {/* Destino (apenas para desligados) */}
               {form.tipo_situacao === 'desligado' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Destino da Transferência
                   </label>
                   <input
                     type="text"
                     value={form.destino_transferencia}
                     onChange={(e) => setForm({ ...form, destino_transferencia: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     placeholder="Ex: ARLS Estrela do Sul nº 45"
                   />
                 </div>
@@ -420,28 +420,28 @@ export default function GestaoSituacoes({ irmaId }) {
 
               {/* Documento */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Documento de Referência
                 </label>
                 <input
                   type="text"
                   value={form.documento}
                   onChange={(e) => setForm({ ...form, documento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Ex: Ata nº 123/2025, Ofício 45/2025"
                 />
               </div>
 
               {/* Observações */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Observações
                 </label>
                 <textarea
                   value={form.observacoes}
                   onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded focus:outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -450,14 +450,14 @@ export default function GestaoSituacoes({ irmaId }) {
                 <button
                   type="button"
                   onClick={salvar}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                  className="flex-1 px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-600 transition-colors"
                 >
                   {editando ? 'Atualizar' : 'Salvar'}
                 </button>
                 <button
                   type="button"
                   onClick={fecharModal}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 transition-colors"
+                  className="px-4 py-2 bg-gray-300 rounded transition-colors"
                 >
                   Cancelar
                 </button>
