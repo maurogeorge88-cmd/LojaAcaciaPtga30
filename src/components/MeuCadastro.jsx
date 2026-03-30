@@ -134,7 +134,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Carregando...</div>
+        <div className="text-lg">Carregando...</div>
       </div>
     );
   }
@@ -152,11 +152,11 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">👤 Meu Cadastro</h2>
+        <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>👤 Meu Cadastro</h2>
         {!editando ? (
           <button
             onClick={() => setEditando(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
           >
             ✏️ Editar
           </button>
@@ -173,7 +173,7 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                 setEditando(false);
                 carregarMeuCadastro();
               }}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg transition"
             >
               ❌ Cancelar
             </button>
@@ -181,21 +181,21 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
         )}
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}} style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         {/* Cabeçalho com foto */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6 text-white">
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-6 text-white">
           <div className="flex items-center gap-6">
-            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center text-6xl">
+            <div className="w-32 h-32 rounded-full flex items-center justify-center text-6xl" style={{background:"var(--color-surface-2)"}}>
               👤
             </div>
             <div>
-              <h3 className="text-3xl font-bold">{meuCadastro.nome}</h3>
+              <h3 className="text-3xl font-bold" style={{color:"var(--color-text)"}}>{meuCadastro.nome}</h3>
               <p className="text-xl opacity-90">{meuCadastro.cim || 'N/A'}</p>
               <div className="flex gap-4 mt-2">
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">
+                <span className="px-3 py-1 /20 rounded-full text-sm">
                   {meuCadastro.grau || 'Grau não informado'}
                 </span>
-                <span className="px-3 py-1 bg-white/20 rounded-full text-sm">
+                <span className="px-3 py-1 /20 rounded-full text-sm">
                   {meuCadastro.situacao || 'Situação não informada'}
                 </span>
               </div>
@@ -205,103 +205,103 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
 
         {/* Dados pessoais - SOMENTE LEITURA */}
         <div className="p-6 border-b">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">📋 Dados Pessoais (Somente Leitura)</h4>
+          <h4 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>📋 Dados Pessoais (Somente Leitura)</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">CPF</label>
-              <p className="text-gray-900">{meuCadastro.cpf || '-'}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CPF</label>
+              <p>{meuCadastro.cpf || '-'}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">RG</label>
-              <p className="text-gray-900">{meuCadastro.rg || '-'}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>RG</label>
+              <p>{meuCadastro.rg || '-'}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Data de Nascimento</label>
-              <p className="text-gray-900">{formatarData(meuCadastro.data_nascimento)}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Nascimento</label>
+              <p>{formatarData(meuCadastro.data_nascimento)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Idade</label>
-              <p className="text-gray-900">{calcularIdade(meuCadastro.data_nascimento)}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Idade</label>
+              <p>{calcularIdade(meuCadastro.data_nascimento)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Email</label>
-              <p className="text-gray-900">{meuCadastro.email || '-'}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Email</label>
+              <p>{meuCadastro.email || '-'}</p>
             </div>
           </div>
         </div>
 
         {/* Dados de contato - EDITÁVEL */}
         <div className="p-6 border-b bg-blue-50">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">📞 Contato e Endereço (Editável)</h4>
+          <h4 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>📞 Contato e Endereço (Editável)</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Telefone</label>
               {editando ? (
                 <input
                   type="text"
                   value={telefone}
                   onChange={(e) => setTelefone(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   placeholder="(00) 00000-0000"
                 />
               ) : (
-                <p className="text-gray-900">{telefone || '-'}</p>
+                <p>{telefone || '-'}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CEP</label>
               {editando ? (
                 <input
                   type="text"
                   value={cep}
                   onChange={(e) => setCep(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   placeholder="00000-000"
                 />
               ) : (
-                <p className="text-gray-900">{cep || '-'}</p>
+                <p>{cep || '-'}</p>
               )}
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Endereço</label>
               {editando ? (
                 <input
                   type="text"
                   value={endereco}
                   onChange={(e) => setEndereco(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   placeholder="Rua, número, complemento"
                 />
               ) : (
-                <p className="text-gray-900">{endereco || '-'}</p>
+                <p>{endereco || '-'}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Cidade</label>
               {editando ? (
                 <input
                   type="text"
                   value={cidade}
                   onChange={(e) => setCidade(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                 />
               ) : (
-                <p className="text-gray-900">{cidade || '-'}</p>
+                <p>{cidade || '-'}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Estado</label>
               {editando ? (
                 <input
                   type="text"
                   value={estado}
                   onChange={(e) => setEstado(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   placeholder="MT"
                   maxLength={2}
                 />
               ) : (
-                <p className="text-gray-900">{estado || '-'}</p>
+                <p>{estado || '-'}</p>
               )}
             </div>
           </div>
@@ -309,15 +309,15 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
 
         {/* Dados familiares - EDITÁVEL */}
         <div className="p-6 border-b bg-green-50">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">👨‍👩‍👧‍👦 Dados Familiares (Editável)</h4>
+          <h4 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>👨‍👩‍👧‍👦 Dados Familiares (Editável)</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado Civil</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Estado Civil</label>
               {editando ? (
                 <select
                   value={estadoCivil}
                   onChange={(e) => setEstadoCivil(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Selecione</option>
                   <option value="solteiro">Solteiro</option>
@@ -326,47 +326,47 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
                   <option value="viuvo">Viúvo</option>
                 </select>
               ) : (
-                <p className="text-gray-900 capitalize">{estadoCivil || '-'}</p>
+                <p className="capitalize">{estadoCivil || '-'}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nome do Cônjuge</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome do Cônjuge</label>
               {editando ? (
                 <input
                   type="text"
                   value={nomeConjuge}
                   onChange={(e) => setNomeConjuge(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                 />
               ) : (
-                <p className="text-gray-900">{nomeConjuge || '-'}</p>
+                <p>{nomeConjuge || '-'}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Data de Matrimônio</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Matrimônio</label>
               {editando ? (
                 <input
                   type="date"
                   value={dataMatrimonio}
                   onChange={(e) => setDataMatrimonio(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                 />
               ) : (
-                <p className="text-gray-900">{formatarData(dataMatrimonio)}</p>
+                <p>{formatarData(dataMatrimonio)}</p>
               )}
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Filhos</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Filhos</label>
               {editando ? (
                 <input
                   type="text"
                   value={filhos}
                   onChange={(e) => setFilhos(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   placeholder="Nomes e idades"
                 />
               ) : (
-                <p className="text-gray-900">{filhos || '-'}</p>
+                <p>{filhos || '-'}</p>
               )}
             </div>
           </div>
@@ -374,31 +374,31 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
 
         {/* Dados maçônicos - SOMENTE LEITURA */}
         <div className="p-6">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">🔷 Vida Maçônica (Somente Leitura)</h4>
+          <h4 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>🔷 Vida Maçônica (Somente Leitura)</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Data de Iniciação</label>
-              <p className="text-gray-900">{formatarData(meuCadastro.data_iniciacao)}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Iniciação</label>
+              <p>{formatarData(meuCadastro.data_iniciacao)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Tempo na Maçonaria</label>
-              <p className="text-gray-900">{calcularTempoMaconaria(meuCadastro.data_iniciacao)}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tempo na Maçonaria</label>
+              <p>{calcularTempoMaconaria(meuCadastro.data_iniciacao)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Data de Elevação</label>
-              <p className="text-gray-900">{formatarData(meuCadastro.data_elevacao)}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Elevação</label>
+              <p>{formatarData(meuCadastro.data_elevacao)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Data de Exaltação</label>
-              <p className="text-gray-900">{formatarData(meuCadastro.data_exaltacao)}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Exaltação</label>
+              <p>{formatarData(meuCadastro.data_exaltacao)}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Loja de Origem</label>
-              <p className="text-gray-900">{meuCadastro.loja_origem || '-'}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Loja de Origem</label>
+              <p>{meuCadastro.loja_origem || '-'}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Oriente de Origem</label>
-              <p className="text-gray-900">{meuCadastro.oriente_origem || '-'}</p>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Oriente de Origem</label>
+              <p>{meuCadastro.oriente_origem || '-'}</p>
             </div>
           </div>
         </div>
@@ -406,29 +406,29 @@ export default function MeuCadastro({ userEmail, showSuccess, showError }) {
         {/* Altos Graus - SOMENTE LEITURA */}
         {altosGraus.length > 0 && (
           <div className="p-6 border-t bg-purple-50">
-            <h4 className="text-lg font-semibold text-gray-800 mb-4">🔺 Altos Graus (Somente Leitura)</h4>
+            <h4 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>🔺 Altos Graus (Somente Leitura)</h4>
             <div className="space-y-3">
               {altosGraus.map((grau) => (
-                <div key={grau.id} className="bg-white rounded-lg p-4 border-l-4 border-purple-500">
+                <div key={grau.id} className="rounded-lg p-4 border-l-4 border-purple-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900">
+                      <p className="font-semibold">
                         {grau.altos_graus?.nome || 'Grau não especificado'}
                       </p>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm">
                         {grau.altos_graus?.sigla && `${grau.altos_graus.sigla} - `}
                         Grau {grau.altos_graus?.numero || grau.grau_numero}
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-gray-600">Recebido em</p>
+                      <p className="text-sm">Recebido em</p>
                       <p className="font-semibold text-purple-700">
                         {formatarData(grau.data_recebimento)}
                       </p>
                     </div>
                   </div>
                   {grau.local && (
-                    <p className="text-sm text-gray-600 mt-2">
+                    <p className="text-sm mt-2">
                       📍 {grau.local}
                     </p>
                   )}
