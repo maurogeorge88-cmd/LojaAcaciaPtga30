@@ -574,13 +574,13 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-white z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* CABEÇALHO */}
-      <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg p-6 flex items-center justify-between z-10">
+      <div className="sticky top-0 p-6 flex items-center justify-between z-10" style={{background:"var(--color-accent)"}}>
         <div className="flex items-center gap-3">
           <span className="text-4xl">📊</span>
           <div>
-            <h3 className="text-2xl font-bold text-white">Análise por Categoria</h3>
+            <h3 className="text-2xl font-bold text-white" style={{color:"var(--color-text)"}}>Análise por Categoria</h3>
             <p className="text-blue-100 text-sm">Visualização completa de receitas e despesas</p>
           </div>
         </div>
@@ -618,7 +618,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             }
 
             return (
-              <div className={`${corBg} rounded-lg px-4 py-2 flex items-center gap-2 shadow-lg`}>
+              <div className={`${corBg} rounded-lg px-4 py-2 flex items-center gap-2 `}>
                 <span className="text-3xl">{emoji}</span>
                 <div>
                   <p className={`text-xs font-semibold ${corTexto}`}>Saúde Financeira</p>
@@ -635,7 +635,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           <button
             onClick={gerarPDF}
             disabled={gerandoPDF}
-            className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="/20 hover:/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {gerandoPDF ? (
               <>
@@ -656,7 +656,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           {/* Botão Voltar */}
           <button 
             onClick={onClose} 
-            className="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2"
+            className="/20 hover:/30 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2"
           >
             <span>←</span>
             <span>Voltar ao Dashboard</span>
@@ -669,14 +669,14 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
         {/* SEÇÃO 1: CATEGORIAS */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-lg font-bold text-gray-700">Detalhamento por Categoria</h4>
+            <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Detalhamento por Categoria</h4>
             
             <div className="flex gap-2 items-center">
-              <label className="text-sm font-medium text-gray-600">Período:</label>
+              <label className="text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Período:</label>
               <select
                 value={filtroAnalise.mes}
                 onChange={(e) => setFiltroAnalise({ ...filtroAnalise, mes: parseInt(e.target.value) })}
-                className="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium bg-white hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all"
+                className="px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all"
               >
                 <option value={0}>📅 Ano inteiro</option>
                 {meses.map((mes, i) => (
@@ -687,7 +687,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               <select
                 value={filtroAnalise.ano}
                 onChange={(e) => setFiltroAnalise({ ...filtroAnalise, ano: parseInt(e.target.value) })}
-                className="px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-medium bg-white hover:border-blue-500 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 transition-all"
+                className="px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all"
               >
                 {anosDisponiveis.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
@@ -699,7 +699,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           {/* Grid Receitas, Despesas e Totais Anuais */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* RECEITAS POR CATEGORIA */}
-            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-3">
+            <div className="bg-green-50 border-2 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h5 className="text-sm font-bold text-green-700 mb-2">📈 Receitas por Categoria</h5>
               <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {(() => {
@@ -734,15 +734,15 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                     .map(([cat, valor]) => {
                       const percentual = total > 0 ? (valor / total) * 100 : 0;
                       return (
-                        <div key={cat} className="bg-white rounded p-1.5 border border-green-200">
+                        <div key={cat} className="rounded p-1.5" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold text-green-700 min-w-[38px] text-center">
                               {percentual.toFixed(1)}%
                             </span>
-                            <span className="text-xs font-semibold text-gray-700 flex-1 truncate">{cat}</span>
+                            <span className="text-xs font-semibold flex-1 truncate">{cat}</span>
                             <span className="text-xs font-bold text-green-700">{formatarMoeda(valor)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1 mt-0.5">
+                          <div className="w-full rounded-full h-1 mt-0.5">
                             <div 
                               className="bg-green-600 h-1 rounded-full transition-all"
                               style={{ width: `${percentual}%` }}
@@ -756,7 +756,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
 
             {/* DESPESAS POR CATEGORIA */}
-            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+            <div className="bg-red-50 border-2 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h5 className="text-sm font-bold text-red-700 mb-2">📉 Despesas por Categoria</h5>
               <div className="space-y-1.5 max-h-80 overflow-y-auto">
                 {(() => {
@@ -792,15 +792,15 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                     .map(([cat, valor]) => {
                       const percentual = total > 0 ? (valor / total) * 100 : 0;
                       return (
-                        <div key={cat} className="bg-white rounded p-1.5 border border-red-200">
+                        <div key={cat} className="rounded p-1.5" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[10px] font-bold text-red-700 min-w-[38px] text-center">
                               {percentual.toFixed(1)}%
                             </span>
-                            <span className="text-xs font-semibold text-gray-700 flex-1 truncate">{cat}</span>
+                            <span className="text-xs font-semibold flex-1 truncate">{cat}</span>
                             <span className="text-xs font-bold text-red-700">{formatarMoeda(valor)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1 mt-0.5">
+                          <div className="w-full rounded-full h-1 mt-0.5">
                             <div 
                               className="bg-red-600 h-1 rounded-full transition-all"
                               style={{ width: `${percentual}%` }}
@@ -852,15 +852,15 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
                 return (
                   <>
-                    <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+                    <div className="bg-green-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <h5 className="text-sm font-bold text-green-700 mb-2">📊 Receitas por Ano</h5>
                       <p className="text-3xl font-bold text-green-700 mb-1">{formatarMoeda(totalReceitas)}</p>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full rounded-full h-2">
                         <div className="bg-gradient-to-r from-green-500 to-green-700 h-2 rounded-full" style={{ width: '100%' }}></div>
                       </div>
                     </div>
 
-                    <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+                    <div className="bg-red-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <h5 className="text-sm font-bold text-red-700 mb-2">📉 Despesas por Ano (% da Receita)</h5>
                       <p className="text-3xl font-bold text-red-700 mb-1">{formatarMoeda(totalDespesas)}</p>
                       <div className="flex items-center justify-between text-xs mb-1">
@@ -868,14 +868,14 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                           {totalReceitas > 0 ? Math.round((totalDespesas / totalReceitas) * 100) : 0}%
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full rounded-full h-2">
                         <div className="bg-gradient-to-r from-red-500 to-red-700 h-2 rounded-full" 
                              style={{ width: `${totalReceitas > 0 ? Math.min((totalDespesas / totalReceitas) * 100, 100) : 0}%` }}>
                         </div>
                       </div>
                     </div>
 
-                    <div className={`${saldo >= 0 ? 'bg-blue-50 border-blue-300' : 'bg-red-50 border-red-300'} border-2 rounded-lg p-4`}>
+                    <div className={`${saldo >= 0 ? 'bg-blue-50 ' : 'bg-red-50 '} border-2 rounded-lg p-4`}>
                       <h5 className={`text-sm font-bold mb-2 ${saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
                         💎 Saldo por Ano (% da Receita)
                       </h5>
@@ -887,7 +887,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                           {saldo >= 0 ? '+' : ''}{totalReceitas > 0 ? Math.round((saldo / totalReceitas) * 100) : 0}%
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full rounded-full h-2">
                         <div className={`h-2 rounded-full ${saldo >= 0 ? 'bg-gradient-to-r from-blue-500 to-primary-700' : 'bg-gradient-to-r from-red-500 to-red-700'}`}
                              style={{ width: `${Math.abs(totalReceitas > 0 ? Math.min((saldo / totalReceitas) * 100, 100) : 0)}%` }}>
                         </div>
@@ -902,11 +902,11 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
 
         {/* SEÇÃO 3: EVOLUÇÃO ANUAL */}
         <div className="border-t pt-6 space-y-4">
-          <h4 className="text-lg font-bold text-gray-700">Evolução Anual</h4>
+          <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Evolução Anual</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* RECEITAS POR ANO */}
-            <div className="bg-green-50 border-2 border-green-300 rounded-lg p-4">
+            <div className="bg-green-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h5 className="text-md font-bold text-green-700 mb-3">📈 Receitas por Ano</h5>
               <div className="space-y-2">
                 {(() => {
@@ -962,10 +962,10 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       return (
                         <div key={ano} className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
-                            <span className="font-semibold text-gray-700">{ano}</span>
+                            <span className="font-semibold">{ano}</span>
                             <span className="font-bold text-green-700">{formatarMoeda(valor)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-6 relative">
+                          <div className="w-full rounded-full h-6 relative">
                             <div 
                               className="bg-gradient-to-r from-green-500 to-green-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
                               style={{ width: `${largura}%` }}
@@ -981,7 +981,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
 
             {/* DESPESAS POR ANO */}
-            <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4">
+            <div className="bg-red-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h5 className="text-md font-bold text-red-700 mb-3">📉 Despesas por Ano (% da Receita)</h5>
               <div className="space-y-2">
                 {(() => {
@@ -1036,10 +1036,10 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       return (
                         <div key={ano} className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
-                            <span className="font-semibold text-gray-700">{ano}</span>
+                            <span className="font-semibold">{ano}</span>
                             <span className="font-bold text-red-700">{formatarMoeda(valorDespesa)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-6 relative">
+                          <div className="w-full rounded-full h-6 relative">
                             <div 
                               className="bg-gradient-to-r from-red-500 to-red-700 h-6 rounded-full flex items-center justify-end pr-2 transition-all"
                               style={{ width: `${Math.min(percentual, 100)}%` }}
@@ -1055,7 +1055,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
             </div>
 
             {/* SALDO POR ANO */}
-            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4">
+            <div className="bg-blue-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h5 className="text-md font-bold text-blue-700 mb-3">💎 Saldo por Ano (% da Receita)</h5>
               <div className="space-y-2">
                 {(() => {
@@ -1114,12 +1114,12 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                       return (
                         <div key={ano} className="space-y-1">
                           <div className="flex justify-between items-center text-sm">
-                            <span className="font-semibold text-gray-700">{ano}</span>
+                            <span className="font-semibold">{ano}</span>
                             <span className={`font-bold ${isPositivo ? 'text-green-700' : 'text-red-700'}`}>
                               {formatarMoeda(valor)}
                             </span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-6 relative">
+                          <div className="w-full rounded-full h-6 relative">
                             <div 
                               className={`h-6 rounded-full flex items-center justify-end pr-2 transition-all ${
                                 isPositivo 
@@ -1142,16 +1142,16 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
           </div>
 
           {/* SEÇÃO: GRÁFICO FINANCEIRO MENSAL - Barras Verticais */}
-          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-lg p-6 border-2 border-blue-200 mt-8">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 mt-8" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="mb-4">
-              <h5 className="text-lg font-bold text-gray-800 mb-1">📊 Gráfico Financeiro Mensal</h5>
-              <p className="text-sm text-gray-600">Visualização de receitas e despesas por mês</p>
+              <h5 className="text-lg font-bold mb-1">📊 Gráfico Financeiro Mensal</h5>
+              <p className="text-sm">Visualização de receitas e despesas por mês</p>
             </div>
 
             {dadosGrafico.length > 0 ? (
-              <div className="bg-white rounded-lg p-6 shadow-inner">
+              <div className="rounded-lg p-6 shadow-inner" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 {/* Gráfico de Barras Verticais */}
-                <div className="flex items-end justify-around gap-1 h-64 border-b-2 border-gray-300 pb-2">
+                <div className="flex items-end justify-around gap-1 h-64 border-b-2 pb-2">
                   {(() => {
                     const maxValor = Math.max(...dadosGrafico.flatMap(d => [d.receitas, d.despesas]));
                     
@@ -1163,7 +1163,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                           <div className="flex flex-col items-center justify-end h-full" style={{ width: '42%' }}>
                             <div className="relative group">
                               <div 
-                                className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
+                                className="bg-gradient-to-t from-red-600 to-red-400 rounded-t-lg transition-all duration-500 hover:opacity-80"
                                 style={{ 
                                   height: `${(dado.despesas / maxValor) * 220}px`,
                                   minHeight: dado.despesas > 0 ? '10px' : '0',
@@ -1174,7 +1174,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                                 {/* Valor no topo */}
                                 {dado.despesas > 0 && (
                                   <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                                    <span className="text-[9px] font-bold text-red-600 bg-white px-1 rounded shadow">
+                                    <span className="text-[9px] font-bold text-red-600 px-1 rounded shadow">
                                       {formatarMoeda(dado.despesas).replace('R$', '').trim()}
                                     </span>
                                   </div>
@@ -1193,7 +1193,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                           <div className="flex flex-col items-center justify-end h-full" style={{ width: '42%' }}>
                             <div className="relative group">
                               <div 
-                                className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all duration-500 hover:opacity-80 shadow-lg"
+                                className="bg-gradient-to-t from-green-600 to-green-400 rounded-t-lg transition-all duration-500 hover:opacity-80"
                                 style={{ 
                                   height: `${(dado.receitas / maxValor) * 220}px`,
                                   minHeight: dado.receitas > 0 ? '10px' : '0',
@@ -1204,7 +1204,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                                 {/* Valor no topo */}
                                 {dado.receitas > 0 && (
                                   <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                                    <span className="text-[9px] font-bold text-green-600 bg-white px-1 rounded shadow">
+                                    <span className="text-[9px] font-bold text-green-600 px-1 rounded shadow">
                                       {formatarMoeda(dado.receitas).replace('R$', '').trim()}
                                     </span>
                                   </div>
@@ -1221,7 +1221,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                         </div>
 
                         {/* Label do mês */}
-                        <div className="text-xs font-semibold text-gray-700 mt-2">{dado.mes}</div>
+                        <div className="text-xs font-semibold mt-2">{dado.mes}</div>
                       </div>
                     ));
                   })()}
@@ -1231,29 +1231,29 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 <div className="flex items-center justify-center gap-6 mt-4">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-gradient-to-t from-red-600 to-red-400 rounded"></div>
-                    <span className="text-sm font-medium text-gray-700">Despesas</span>
+                    <span className="text-sm font-medium">Despesas</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 bg-gradient-to-t from-green-600 to-green-400 rounded"></div>
-                    <span className="text-sm font-medium text-gray-700">Receitas</span>
+                    <span className="text-sm font-medium">Receitas</span>
                   </div>
                 </div>
 
                 {/* Cards de resumo - altura aumentada */}
-                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
-                  <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200 text-center">
+                <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+                  <div className="bg-green-50 rounded-lg p-6 border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <p className="text-sm text-green-600 font-semibold mb-3">Total Receitas</p>
                     <p className="text-2xl font-bold text-green-700">
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.receitas, 0))}
                     </p>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-6 border-2 border-red-200 text-center">
+                  <div className="bg-red-50 rounded-lg p-6 border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <p className="text-sm text-red-600 font-semibold mb-3">Total Despesas</p>
                     <p className="text-2xl font-bold text-red-700">
                       {formatarMoeda(dadosGrafico.reduce((sum, item) => sum + item.despesas, 0))}
                     </p>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-6 border-2 border-blue-200 text-center">
+                  <div className="bg-blue-50 rounded-lg p-6 border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <p className="text-sm text-blue-600 font-semibold mb-3">Lucro Total</p>
                     <p className={`text-2xl font-bold ${
                       dadosGrafico.reduce((sum, item) => sum + item.lucro, 0) >= 0 ? 'text-blue-700' : 'text-red-700'
@@ -1264,7 +1264,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8">
                 <p>⏳ Carregando dados do gráfico...</p>
               </div>
             )}
