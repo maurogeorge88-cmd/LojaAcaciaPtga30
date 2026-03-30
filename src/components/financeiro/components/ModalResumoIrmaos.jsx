@@ -31,14 +31,14 @@ export default function ModalResumoIrmaos({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="rounded-xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         
         {/* HEADER */}
         <div 
           className="text-white p-6 flex justify-between items-center"
-          style={{ background: 'linear-gradient(to right, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))' }}
+          style={{ background:'var(--color-accent)' }}
         >
-          <h2 className="text-2xl font-bold">💰 Resumo Financeiro dos Irmãos</h2>
+          <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Resumo Financeiro dos Irmãos</h2>
           <button
             onClick={onClose}
             className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
@@ -57,7 +57,7 @@ export default function ModalResumoIrmaos({
               className={`px-4 py-2 rounded-lg font-semibold transition ${
                 filtroStatus === 'todos'
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : '  '
               }`}
             >
               📊 Todos ({resumoIrmaos.length})
@@ -67,7 +67,7 @@ export default function ModalResumoIrmaos({
               className={`px-4 py-2 rounded-lg font-semibold transition ${
                 filtroStatus === 'devendo'
                   ? 'bg-orange-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : '  '
               }`}
             >
               ⚠️ Devendo ({irmaosComPendencias.length})
@@ -77,7 +77,7 @@ export default function ModalResumoIrmaos({
               className={`px-4 py-2 rounded-lg font-semibold transition ${
                 filtroStatus === 'em-dia'
                   ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  : '  '
               }`}
             >
               ✅ Em Dia ({irmaosEmDia.length})
@@ -91,19 +91,19 @@ export default function ModalResumoIrmaos({
 
           {/* ESTATÍSTICAS DO FILTRO ATUAL */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            <div className="bg-blue-50 rounded-lg p-4 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-sm text-primary-600 font-semibold mb-1">Irmãos Exibindo</div>
               <div className="text-2xl font-bold text-blue-700">{irmaosExibir.length}</div>
             </div>
             
-            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+            <div className="bg-red-50 rounded-lg p-4 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-sm text-red-600 font-semibold mb-1">Total Despesas</div>
               <div className="text-xl font-bold text-red-700">
                 R$ {totalDespesasExibindo.toFixed(2)}
               </div>
             </div>
             
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+            <div className="bg-green-50 rounded-lg p-4 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-sm text-green-600 font-semibold mb-1">Total Receitas</div>
               <div className="text-xl font-bold text-green-700">
                 R$ {totalReceitasExibindo.toFixed(2)}
@@ -134,30 +134,30 @@ export default function ModalResumoIrmaos({
 
           {/* TABELA DE IRMÃOS */}
           {irmaosExibir.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12">
               <p className="text-xl mb-2">📭</p>
               <p>Nenhum irmão encontrado com este filtro</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">
+                <thead style={{background:"var(--color-surface-2)"}}>
+                  <tr>
+                    <th className="border px-4 py-3 text-left font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                       Irmão
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-700">
+                    <th className="border px-4 py-3 text-right font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                       Despesas
-                      <div className="text-xs font-normal text-gray-500">(Loja → Irmão)</div>
+                      <div className="text-xs font-normal">(Loja → Irmão)</div>
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-700">
+                    <th className="border px-4 py-3 text-right font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                       Receitas
-                      <div className="text-xs font-normal text-gray-500">(Irmão → Loja)</div>
+                      <div className="text-xs font-normal">(Irmão → Loja)</div>
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-right font-semibold text-gray-700">
+                    <th className="border px-4 py-3 text-right font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                       Saldo Final
                     </th>
-                    <th className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700">
+                    <th className="border px-4 py-3 text-center font-semibold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                       Status
                     </th>
                   </tr>
@@ -168,30 +168,30 @@ export default function ModalResumoIrmaos({
                     .map((irmao, index) => (
                       <tr 
                         key={index}
-                        className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-blue-50 transition`}
+                        className={`${index % 2 === 0 ? '' : ''} hover:bg-blue-50 transition`}
                       >
-                        <td className="border border-gray-300 px-4 py-3">
-                          <div className="font-medium text-gray-900">{irmao.nomeIrmao}</div>
-                          <div className="text-xs text-gray-500">CIM: {irmao.cim || 'N/A'}</div>
+                        <td className="border px-4 py-3" style={{color:"var(--color-text)"}}>
+                          <div className="font-medium">{irmao.nomeIrmao}</div>
+                          <div className="text-xs">CIM: {irmao.cim || 'N/A'}</div>
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-right">
+                        <td className="border px-4 py-3 text-right" style={{color:"var(--color-text)"}}>
                           <span className="text-red-600 font-semibold">
                             R$ {irmao.totalDespesas.toFixed(2)}
                           </span>
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-right">
+                        <td className="border px-4 py-3 text-right" style={{color:"var(--color-text)"}}>
                           <span className="text-green-600 font-semibold">
                             R$ {irmao.totalReceitas.toFixed(2)}
                           </span>
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-right">
+                        <td className="border px-4 py-3 text-right" style={{color:"var(--color-text)"}}>
                           <span className={`font-bold text-lg ${
                             irmao.saldo >= 0 ? 'text-emerald-600' : 'text-orange-600'
                           }`}>
                             R$ {irmao.saldo.toFixed(2)}
                           </span>
                         </td>
-                        <td className="border border-gray-300 px-4 py-3 text-center">
+                        <td className="border px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                             irmao.saldo >= 0 
                               ? 'bg-emerald-100 text-emerald-700' 
@@ -206,24 +206,24 @@ export default function ModalResumoIrmaos({
                 
                 {/* TOTALIZADOR */}
                 <tfoot>
-                  <tr className="bg-gray-200 font-bold">
-                    <td className="border border-gray-400 px-4 py-3">
+                  <tr className="font-bold">
+                    <td className="border px-4 py-3" style={{color:"var(--color-text)"}}>
                       TOTAL ({irmaosExibir.length} irmãos)
                     </td>
-                    <td className="border border-gray-400 px-4 py-3 text-right text-red-700">
+                    <td className="border px-4 py-3 text-right text-red-700" style={{color:"var(--color-text)"}}>
                       R$ {totalDespesasExibindo.toFixed(2)}
                     </td>
-                    <td className="border border-gray-400 px-4 py-3 text-right text-green-700">
+                    <td className="border px-4 py-3 text-right text-green-700" style={{color:"var(--color-text)"}}>
                       R$ {totalReceitasExibindo.toFixed(2)}
                     </td>
-                    <td className={`border border-gray-400 px-4 py-3 text-right text-lg ${
+                    <td className={`border  px-4 py-3 text-right text-lg ${
                       saldoTotalExibindo >= 0 
                         ? 'text-emerald-700' 
                         : 'text-orange-700'
                     }`}>
                       R$ {saldoTotalExibindo.toFixed(2)}
                     </td>
-                    <td className="border border-gray-400 px-4 py-3"></td>
+                    <td className="border px-4 py-3" style={{color:"var(--color-text)"}}></td>
                   </tr>
                 </tfoot>
               </table>
@@ -231,8 +231,8 @@ export default function ModalResumoIrmaos({
           )}
 
           {/* LEGENDA */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-semibold text-blue-900 mb-2">ℹ️ Informações:</h3>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h3 className="font-semibold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>ℹ️ Informações:</h3>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• <strong>Despesas (Loja → Irmão):</strong> Pagamentos que o irmão realizou para a Loja</li>
               <li>• <strong>Receitas (Irmão → Loja):</strong> Valores que a Loja cobra do irmão (mensalidades, multas, etc)</li>
@@ -244,10 +244,10 @@ export default function ModalResumoIrmaos({
         </div>
 
         {/* FOOTER */}
-        <div className="bg-gray-100 px-6 py-4 flex justify-end">
+        <div className="px-6 py-4 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-semibold"
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
           >
             Fechar
           </button>
