@@ -194,7 +194,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div className={`p-6 rounded-lg border-2 ${modoEdicao ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200'}`}>
+        <div className="p-6 rounded-lg border-l-4" style={{background:"var(--color-surface-2)",borderLeftColor:modoEdicao?"#f59e0b":"var(--color-accent)",border:"1px solid var(--color-border)"}}>
           <h4 className="text-lg font-bold mb-4" style={{color:"var(--color-text)"}}>
             {modoEdicao ? '✏️ Editar Grau' : '➕ Adicionar Novo Grau'}
           </h4>
@@ -291,7 +291,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
           {/* Preview do Grau Selecionado */}
           {grauSelecionado && (
-            <div className="mt-4 p-4 rounded border border-indigo-200 flex gap-4">
+            <div className="mt-4 p-4 rounded flex gap-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {grauSelecionado.imagem_url && (
                 <img 
                   src={grauSelecionado.imagem_url} 
@@ -300,7 +300,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 />
               )}
               <div className="flex-1">
-                <p className="text-sm font-semibold text-indigo-900">
+                <p className="text-sm font-semibold" style={{color:"var(--color-text)"}}>
                   🔺 {grauSelecionado.numero_grau}º Grau - {grauSelecionado.nome_grau}
                 </p>
               <p className="text-xs mt-1">
@@ -316,9 +316,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
           <button
             type="button"
             onClick={adicionarGrau}
-            className={`mt-4 px-4 py-2 text-white rounded transition-colors ${
-              modoEdicao ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'
-            }`}
+            style={{marginTop:"1rem",padding:"0.5rem 1rem",background:modoEdicao?"#d97706":"#059669",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"600",cursor:"pointer"}}
           >
             {modoEdicao ? '💾 Atualizar Grau' : '💾 Salvar Grau'}
           </button>
@@ -386,7 +384,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                   <button
                     type="button"
                     onClick={() => editarGrau(conquista)}
-                    className="px-3 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition-colors"
+                    style={{padding:"0.25rem 0.55rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                     title="Editar grau"
                   >
                     ✏️ Editar
