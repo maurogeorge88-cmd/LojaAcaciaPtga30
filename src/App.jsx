@@ -48,6 +48,7 @@ import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
+import EmailIrmaos from './components/irmaos/EmailIrmaos';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1420,7 +1421,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
 
   return (
-    <div className="flex min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
+    <div className="flex min-h-screen" style={{ backgroundColor: '#e5e7eb' }}>
       {/* SIDEBAR LATERAL COLAPSÁVEL */}
       <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
         {/* Logo e Título */}
@@ -2056,6 +2057,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           <span>🏷️</span>
                           <span>Categorias</span>
                         </button>
+
+                        <button
+                          onClick={() => setCurrentPage('email-irmaos')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'email-irmaos'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
+                          }`}
+                        >
+                          <span>📧</span>
+                          <span>E-mails Irmãos</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2452,7 +2465,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
       {/* CONTEÚDO PRINCIPAL */}
       <main 
         className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300 min-h-screen`}
-        style={{ backgroundColor: 'var(--color-bg)' }}
+        style={{ backgroundColor: '#f3f4f6' }}
       >
         {/* HEADER SUPERIOR */}
         <header 
@@ -2485,6 +2498,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
+                  {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2802,6 +2816,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CATEGORIAS FINANCEIRAS */}
         {currentPage === 'categorias-financeiras' && (
           <CategoriasFinanceiras
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {/* EMAIL IRMÃOS */}
+        {currentPage === 'email-irmaos' && (
+          <EmailIrmaos
             showSuccess={showSuccess}
             showError={showError}
           />
