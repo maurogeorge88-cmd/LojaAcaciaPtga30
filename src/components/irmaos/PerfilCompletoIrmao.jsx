@@ -202,7 +202,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+      <div className="rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"0 25px 50px rgba(0,0,0,0.5)"}}>
         <div className="p-6 text-white" style={{background:"var(--color-accent)"}}>
           <div className="flex justify-between items-start">
             <div className="flex gap-4">
@@ -233,7 +233,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                   <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Presenças</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#10b981"}}>{dadosPresenca.presencas}</p></div>
                   <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Justificadas</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#f59e0b"}}>{dadosPresenca.ausenciasJustificadas}</p></div>
                   <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Ausências</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#ef4444"}}>{dadosPresenca.ausenciasInjustificadas}</p></div>
-                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-200"><p className="text-sm text-purple-600 font-medium mb-1">Taxa</p><p className="text-2xl font-bold text-purple-800">{dadosPresenca.taxa}%</p></div>
+                  <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Taxa</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#a855f7"}}>{dadosPresenca.taxa}%</p></div>
                 </div>
                 {dadosPresenca.ultimasSessoes.length > 0 && (
                   <div className="p-4 rounded-lg">
@@ -263,7 +263,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             </div>
             {dadosFinanceiro && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200"><p className="text-sm text-orange-600 font-medium mb-1">Receitas</p><p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p></div>
+                <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Receitas</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:"var(--color-accent)"}}>{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p></div>
                 <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Despesas</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:"#10b981"}}>{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p></div>
                 <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Saldo</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:dadosFinanceiro.saldo>=0?"var(--color-accent)":"#ef4444"}}>{formatarMoeda(dadosFinanceiro.saldo)}</p></div>
                 <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Situação</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:dadosFinanceiro.saldo>=0?"#10b981":"#ef4444"}}>{dadosFinanceiro.saldo >= 0 ? '✅ Pago' : '⚠️ Devendo'}</p></div>
