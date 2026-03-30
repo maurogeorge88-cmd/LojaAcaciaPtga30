@@ -480,7 +480,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       setModoEdicao(false);
                       carregarIrmao(); // Recarrega dados originais
                     }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg transition-colors font-medium"
+                    className="rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   >
                     ✕ Cancelar
                   </button>
@@ -869,7 +869,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               </div>
 
               {/* CAMPOS DE DATAS CONDICIONAIS - Aparecem conforme a situação */}
-              <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
+              <div className="border-l-4 p-4 rounded-lg" style={{background:"rgba(245,158,11,0.08)",borderLeftColor:"#f59e0b",border:"1px solid rgba(245,158,11,0.2)"}}>
                 <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                   <span>📅</span> Datas Específicas da Situação
                 </h4>
@@ -984,7 +984,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   const idade = calcularIdade(modoEdicao ? irmaoForm.data_nascimento : irmao.data_nascimento);
                   if (idade >= 70) {
                     return (
-                      <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                      <div className="mt-3 p-3 rounded" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
                         <p className="text-sm text-blue-800">
                           💡 <strong>Com Prerrogativa por Idade</strong> - Este irmão tem {idade} anos.
                         </p>
@@ -998,7 +998,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO - Já está no lugar correto */}
 
               {/* LINHA 3: DATA DE INGRESSO NA LOJA */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
+              <div className="border-l-4 p-4 rounded-lg" style={{background:"var(--color-accent-bg)",borderLeftColor:"var(--color-accent)"}}>
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     ➡️ Data de Ingresso na Loja
@@ -1193,7 +1193,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
               {/* HISTÓRICO DE CARGOS */}
               <div className="border-t pt-6">
-                <div className="bg-blue-100 p-3 rounded-lg mb-4">
+                <div className="p-3 rounded-lg mb-4" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                   <h4 className="text-md font-semibold flex items-center gap-2" style={{color:"var(--color-text)"}}>
                     <span>🏛️</span>
                     <span>Histórico de Cargos na Loja</span>
@@ -1202,7 +1202,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
                 {/* Formulário para adicionar cargo - apenas em modo edição */}
                 {modoEdicao && (
-                  <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                  <div className="p-4 rounded-lg mb-4" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                       <div className="md:col-span-3">
                         <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
@@ -1288,7 +1288,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                         setHistoricoCargos(novosHistorico);
                                       }
                                     }}
-                                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-primary-600"
+                                    style={{padding:"0.2rem 0.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.75rem",cursor:"pointer"}}
                                     title="Editar"
                                   >
                                     ✏️
@@ -1417,7 +1417,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               </div>
 
               {/* Pais */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="p-6 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <h4 className="text-lg font-bold text-blue-900 mb-4" style={{color:"var(--color-text)"}}>👨‍👩‍👦 Pais</h4>
                 {modoEdicao ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1628,7 +1628,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   <h4 className="text-lg font-bold text-green-900 mb-4" style={{color:"var(--color-text)"}}>👶 Filhos ({familiares.filhos.length})</h4>
                   
                   {modoEdicao && (
-                    <div className="bg-green-100 p-4 rounded mb-4">
+                    <div className="p-4 rounded mb-4" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                         <div className="md:col-span-2">
                           <input 
@@ -1743,7 +1743,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               setFilhoEditandoIndex(null);
                               setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '', vivo: true, data_obito: '' });
                             }}
-                            className="px-4 py-2 bg-gray-500 text-white rounded"
+                            style={{padding:"0.45rem 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer"}}
                           >
                             ✕ Cancelar
                           </button>
@@ -1784,7 +1784,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                     });
                                     setFilhoEditandoIndex(index);
                                   }}
-                                  className="text-blue-600 hover:text-blue-800 text-sm"
+                                  style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                                 >
                                   ✏️
                                 </button>
@@ -1794,7 +1794,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                     setFamiliares({ ...familiares, filhos: novosFilhos });
                                     if (filhoEditandoIndex === index) setFilhoEditandoIndex(null);
                                   }}
-                                  className="text-red-600 hover:text-red-800 text-sm"
+                                  style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                                 >
                                   🗑️
                                 </button>
@@ -1925,7 +1925,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   setModoEdicao(false);
                   setIrmaoForm(irmao);
                 }}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors"
+                className="rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 ❌ Cancelar
               </button>
