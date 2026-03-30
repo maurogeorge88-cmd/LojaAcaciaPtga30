@@ -221,7 +221,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
           <section className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📊 Presença</h3>
-              <select value={anoPresencaSelecionado} onChange={(e) => setAnoPresencaSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+              <select value={anoPresencaSelecionado} onChange={(e) => setAnoPresencaSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
                 <option value="todos">Todos os anos</option>
                 {anosDisponiveis.map(ano => <option key={ano} value={ano}>{ano}</option>)}
               </select>
@@ -236,8 +236,8 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                   <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Taxa</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#a855f7"}}>{dadosPresenca.taxa}%</p></div>
                 </div>
                 {dadosPresenca.ultimasSessoes.length > 0 && (
-                  <div className="p-4 rounded-lg">
-                    <p className="text-sm font-medium mb-2">Últimas {dadosPresenca.ultimasSessoes.length} sessões:</p>
+                  <div className="p-4 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                    <p className="text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Últimas {dadosPresenca.ultimasSessoes.length} sessões:</p>
                     <div className="flex gap-2 flex-wrap">{dadosPresenca.ultimasSessoes.map((s, i) => (<div key={i} className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white text-lg ${s.status === 'P' ? 'bg-green-500' : s.status === 'J' ? 'bg-yellow-500' : 'bg-red-500'}`}>{s.status}</div>))}</div>
                   </div>
                 )}
@@ -249,12 +249,12 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Situação Financeira</h3>
               <div className="flex gap-2">
-                <select value={anoFinanceiroSelecionado} onChange={(e) => setAnoFinanceiroSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+                <select value={anoFinanceiroSelecionado} onChange={(e) => setAnoFinanceiroSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
                   <option value="todos">Todos os anos</option>
                   {anosFinanceiro.map(ano => <option key={ano} value={ano}>{ano}</option>)}
                 </select>
                 {anoFinanceiroSelecionado !== 'todos' && (
-                  <select value={mesFinanceiroSelecionado} onChange={(e) => setMesFinanceiroSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
+                  <select value={mesFinanceiroSelecionado} onChange={(e) => setMesFinanceiroSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
                     <option value="todos">Todos os meses</option>
                     {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                   </select>
@@ -296,7 +296,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                   {comissoesAtivas.map((c, i) => (
                     <div key={c.id} className={`flex justify-between items-center p-3 ${i !== comissoesAtivas.length - 1 ? 'border-b ' : ''} `}>
                       <span className="font-medium">{c.comissoes?.nome || 'Sem nome'}</span>
-                      <span className="text-sm bg-green-100 px-3 py-1 rounded-full">{c.funcao || 'Membro'}</span>
+                      <span className="text-sm px-3 py-1 rounded-full" style={{background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.25)"}}>{c.funcao || 'Membro'}</span>
                     </div>
                   ))}
                 </div>
@@ -309,7 +309,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
                   {comissoesInativas.map((c, i) => (
                     <div key={c.id} className="flex justify-between items-center p-3" style={{borderBottom:"1px solid var(--color-border)"}}>
                       <span>{c.comissoes?.nome || 'Sem nome'}</span>
-                      <span className="text-xs">Até {formatarData(c.data_saida)}</span>
+                      <span className="text-xs" style={{color:"var(--color-text-muted)"}}>Até {formatarData(c.data_saida)}</span>
                     </div>
                   ))}
                 </div>
