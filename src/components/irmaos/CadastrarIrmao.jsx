@@ -822,13 +822,13 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     <div className="space-y-6">
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
           {modoEdicao ? 'Editar Irmão' : 'Cadastrar Novo Irmão'}
         </h2>
         {modoEdicao && (
           <button
             onClick={cancelarEdicao}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            className="px-4 py-2 bg-gray-500 text-white rounded transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
           >
             Cancelar Edição
           </button>
@@ -836,13 +836,13 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       </div>
 
       {/* Abas */}
-      <div className="flex gap-2 border-b border-gray-200">
+      <div className="flex gap-2 border-b">
         <button
           onClick={() => setAbaSelecionada('pessoal')}
           className={`px-6 py-3 font-medium transition-colors ${
             abaSelecionada === 'pessoal'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-800'
+              ? 'border-b-2 font-semibold'
+              : ' hover:'
           }`}
         >
           Dados Pessoais
@@ -851,8 +851,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           onClick={() => setAbaSelecionada('maconico')}
           className={`px-6 py-3 font-medium transition-colors ${
             abaSelecionada === 'maconico'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-800'
+              ? 'border-b-2 font-semibold'
+              : ' hover:'
           }`}
         >
           Dados Maçônicos
@@ -861,8 +861,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           onClick={() => setAbaSelecionada('familiar')}
           className={`px-6 py-3 font-medium transition-colors ${
             abaSelecionada === 'familiar'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-800'
+              ? 'border-b-2 font-semibold'
+              : ' hover:'
           }`}
         >
           Dados Familiares
@@ -873,8 +873,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           onClick={() => setAbaSelecionada('vida-maconica')}
           className={`px-4 py-2 font-medium transition-colors ${
             abaSelecionada === 'vida-maconica'
-              ? 'border-b-2 border-blue-600 text-blue-600'
-              : 'text-gray-600 hover:text-gray-800'
+              ? 'border-b-2 font-semibold'
+              : ' hover:'
           }`}
         >
           🔺 Vida Maçônica
@@ -886,8 +886,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             onClick={() => setAbaSelecionada('situacoes')}
             className={`px-4 py-2 font-medium transition-colors ${
               abaSelecionada === 'situacoes'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'border-b-2 font-semibold'
+                : ' hover:'
             }`}
           >
             📋 Situações
@@ -900,8 +900,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             onClick={() => setAbaSelecionada('documentos')}
             className={`px-4 py-2 font-medium transition-colors ${
               abaSelecionada === 'documentos'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'border-b-2 font-semibold'
+                : ' hover:'
             }`}
           >
             📄 Documentos
@@ -913,21 +913,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* ABA: Dados Pessoais */}
         {abaSelecionada === 'pessoal' && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-4">
-            <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
+          <div className="p-6 rounded-lg shadow space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h3 className="text-lg font-semibold border-b pb-2" style={{color:"var(--color-text)"}}>
               Informações Pessoais
             </h3>
 
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Nome Completo *
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.nome}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                   required
                 />
               </div>
@@ -935,7 +935,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   CPF
                 </label>
                 <input
@@ -943,34 +943,34 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={formatarCPF(irmaoForm.cpf)}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cpf: e.target.value })}
                   placeholder="000.000.000-00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   RG
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.rg}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, rg: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Nascimento
                 </label>
                 <input
                   type="date"
                   value={irmaoForm.data_nascimento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_nascimento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
                 {irmaoForm.data_nascimento && (
-                  <span className="text-xs text-gray-500 mt-1">
+                  <span className="text-xs mt-1">
                     Idade: {calcularIdade(irmaoForm.data_nascimento)} anos
                   </span>
                 )}
@@ -979,19 +979,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Email
                 </label>
                 <input
                   type="email"
                   value={irmaoForm.email}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Telefone
                 </label>
                 <input
@@ -999,14 +999,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={formatarTelefone(irmaoForm.telefone)}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, telefone: e.target.value })}
                   placeholder="(00) 00000-0000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   CEP
                 </label>
                 <input
@@ -1014,62 +1014,62 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={irmaoForm.cep}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cep: e.target.value })}
                   placeholder="00000-000"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Endereço
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.endereco}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, endereco: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Número
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.numero}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, numero: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Complemento
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.complemento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, complemento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Cidade
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.cidade}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cidade: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Estado
                 </label>
                 <input
@@ -1078,32 +1078,32 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, estado: e.target.value })}
                   placeholder="UF"
                   maxLength="2"
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                  className="w-full px-3 py-2 border rounded uppercase"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Profissão
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.profissao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, profissao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Estado Civil
                 </label>
                 <select
                   value={irmaoForm.estado_civil}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   {ESTADOS_CIVIS.map(ec => (
                     <option key={ec.value} value={ec.value}>{ec.label}</option>
@@ -1112,13 +1112,13 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Escolaridade
                 </label>
                 <select
                   value={irmaoForm.escolaridade}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, escolaridade: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   {NIVEIS_ESCOLARIDADE.map(ne => (
                     <option key={ne.value} value={ne.value}>{ne.label}</option>
@@ -1128,7 +1128,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
                 Foto do Irmão
               </label>
               <div className="flex items-center gap-4">
@@ -1137,17 +1137,17 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   <img
                     src={irmaoForm.foto_url}
                     alt="Foto"
-                    className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
+                    className="w-20 h-20 rounded-full object-cover border-2"
                   />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{background:"var(--color-surface-2)"}}>
                     <span className="text-3xl">👤</span>
                   </div>
                 )}
                 
                 {/* Botão upload */}
                 {modoEdicao && irmaoEditando?.id && (
-                  <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                  <label className="cursor-pointer bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
                     📷 {irmaoForm.foto_url ? 'Alterar Foto' : 'Enviar Foto'}
                     <input
                       type="file"
@@ -1159,7 +1159,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 )}
                 
                 {!modoEdicao && (
-                  <p className="text-sm text-gray-500">Salve o cadastro primeiro para enviar a foto</p>
+                  <p className="text-sm">Salve o cadastro primeiro para enviar a foto</p>
                 )}
               </div>
             </div>
@@ -1168,35 +1168,35 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
         {/* ABA: Dados Maçônicos */}
         {abaSelecionada === 'maconico' && (
-          <div className="bg-white p-6 rounded-lg shadow space-y-6">
-            <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">
+          <div className="p-6 rounded-lg shadow space-y-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h3 className="text-lg font-semibold border-b pb-2" style={{color:"var(--color-text)"}}>
               Informações Maçônicas
             </h3>
 
             {/* LINHA 1: CIM e Situação */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  CIM * <span className="text-xs text-gray-500">(número único)</span>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                  CIM * <span className="text-xs">(número único)</span>
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.cim}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cim: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                   placeholder="Ex: 123456"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Situação *
                 </label>
                 <select
                   value={irmaoForm.situacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   {STATUS_IRMAOS.map(status => (
                     <option key={status.value} value={status.value}>{status.label}</option>
@@ -1207,7 +1207,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
             {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO */}
             <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
-              <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+              <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                 <span>📅</span> Datas Específicas da Situação
               </h4>
               
@@ -1218,9 +1218,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 {/* Data de Licença - aparece se situação for "licenciado" */}
                 {/* {irmaoForm.situacao === 'licenciado' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Data de Início da Licença *
-                      <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                      <span className="block text-xs font-normal mt-0.5">
                         A partir desta data, será considerado licenciado
                       </span>
                     </label>
@@ -1228,7 +1228,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={irmaoForm.data_licenca}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_licenca: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
                 )} */}
@@ -1236,9 +1236,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 {/* Data de Desligamento - aparece se situação for "desligado" ou "ex_oficio" */}
                 {/* {(irmaoForm.situacao === 'desligado' || irmaoForm.situacao === 'ex_oficio') && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Data do Desligamento *
-                      <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                      <span className="block text-xs font-normal mt-0.5">
                         {irmaoForm.situacao === 'ex_oficio' 
                           ? 'Data do desligamento forçado (Ex-Ofício)'
                           : 'A partir desta data, será considerado desligado'}
@@ -1248,7 +1248,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={irmaoForm.data_desligamento}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_desligamento: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
                 )} */}
@@ -1256,9 +1256,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 {/* Data de Falecimento - aparece se situação for "falecido" */}
                 {irmaoForm.situacao === 'falecido' && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Data do Falecimento *
-                      <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                      <span className="block text-xs font-normal mt-0.5">
                         Após esta data, não aparecerá nas listas de presença
                       </span>
                     </label>
@@ -1266,14 +1266,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={irmaoForm.data_falecimento}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_falecimento: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
                 )}
               </div>
 
               {!['falecido'].includes(irmaoForm.situacao) && (
-                <p className="text-sm text-gray-600 italic">
+                <p className="text-sm italic">
                   ℹ️ Para registrar licenças e desligamentos, use a aba "Situações" após salvar o irmão
                 </p>
               )}
@@ -1297,9 +1297,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             {/* LINHA 3: DATA DE INGRESSO NA LOJA */}
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Ingresso na Loja
-                  <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                  <span className="block text-xs font-normal mt-0.5">
                     Quando veio transferido de outra loja
                   </span>
                 </label>
@@ -1307,9 +1307,9 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="date"
                   value={irmaoForm.data_ingresso_loja}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1">
                   ℹ️ Deixe vazio se foi iniciado nesta loja. Para registrar transferências de saída, use a aba "Situações"
                 </p>
               </div>
@@ -1318,38 +1318,38 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             {/* LINHA 4: Datas de Iniciação, Elevação e Exaltação */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Iniciação
                 </label>
                 <input
                   type="date"
                   value={irmaoForm.data_iniciacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Elevação
                 </label>
                 <input
                   type="date"
                   value={irmaoForm.data_elevacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_elevacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Exaltação
                 </label>
                 <input
                   type="date"
                   value={irmaoForm.data_exaltacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_exaltacao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 />
               </div>
             </div>
@@ -1357,7 +1357,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             {/* LINHA 4.5: Mestre Instalado */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="md:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>
                   Mestre Instalado?
                 </label>
                 <div className="flex gap-4">
@@ -1369,7 +1369,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: true })}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Sim</span>
+                    <span className="ml-2 text-sm">Sim</span>
                   </label>
                   <label className="flex items-center cursor-pointer">
                     <input
@@ -1379,21 +1379,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: false, data_instalacao: '' })}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Não</span>
+                    <span className="ml-2 text-sm">Não</span>
                   </label>
                 </div>
               </div>
 
               {irmaoForm.mestre_instalado && (
                 <div className="md:col-span-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Data de Instalação
                   </label>
                   <input
                     type="date"
                     value={irmaoForm.data_instalacao || ''}
                     onChange={(e) => setIrmaoForm({ ...irmaoForm, data_instalacao: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded"
                   />
                 </div>
               )}
@@ -1402,40 +1402,40 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             {/* LINHA 5: Loja Origem, Oriente e Potência */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Loja de Origem
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.loja_origem}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, loja_origem: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                   placeholder="Ex: Acácia de Paranatinga nº 30"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Oriente
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.oriente}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, oriente: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                   placeholder="Ex: Paranatinga"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Potência
                 </label>
                 <input
                   type="text"
                   value={irmaoForm.grande_oriente}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, grande_oriente: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                   placeholder="Ex: Grande Loja do Estado de Mato Grosso"
                 />
               </div>
@@ -1444,19 +1444,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             {/* LINHA 4: Periodicidade de Pagamento */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   💰 Periodicidade de Pagamento
                 </label>
                 <select
                   value={irmaoForm.periodicidade_pagamento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, periodicidade_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border rounded"
                 >
                   <option value="Mensal">📅 Mensal - Paga todo mês</option>
                   <option value="Semestral">📆 Semestral - Paga a cada 6 meses</option>
                   <option value="Anual">📊 Anual - Paga uma vez por ano</option>
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1">
                   Define a frequência de cobrança de mensalidades para este irmão
                 </p>
               </div>
@@ -1464,21 +1464,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
             {/* LINHA 5: Observações */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Observações
               </label>
               <textarea
                 value={irmaoForm.observacoes}
                 onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
                 rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border rounded"
                 placeholder="Observações adicionais sobre o irmão..."
               />
             </div>
 
             {/* HISTÓRICO DE CARGOS */}
             <div className="border-t pt-6">
-              <h4 className="text-md font-semibold text-gray-700 mb-4 flex items-center gap-2">
+              <h4 className="text-md font-semibold mb-4 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                 <span>🏛️</span>
                 <span>Histórico de Cargos na Loja</span>
               </h4>
@@ -1487,7 +1487,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               <div className="bg-blue-50 p-4 rounded-lg mb-4">
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Ano
                     </label>
                     <input
@@ -1496,20 +1496,20 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       max="2100"
                       value={cargoForm.ano}
                       onChange={(e) => setCargoForm({ ...cargoForm, ano: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                       placeholder="Ex: 2024"
                     />
                   </div>
 
                   <div className="md:col-span-7">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Cargo
                     </label>
                     <input
                       type="text"
                       value={cargoForm.cargo}
                       onChange={(e) => setCargoForm({ ...cargoForm, cargo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                       placeholder="Ex: Venerável Mestre, 1º Vigilante, Orador..."
                     />
                   </div>
@@ -1536,7 +1536,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                             setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
                             setCargoEditandoIndex(null);
                           }}
-                          className="px-3 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium text-sm"
+                          className="px-3 py-2 bg-gray-500 text-white rounded-lg font-medium text-sm"
                         >
                           ✕
                         </button>
@@ -1552,7 +1552,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                           setHistoricoCargos([...historicoCargos, { ...cargoForm }]);
                           setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
                         }}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm"
+                        className="w-full px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm"
                       >
                         ➕ Adicionar
                       </button>
@@ -1563,29 +1563,29 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
               {/* Lista de cargos cadastrados */}
               {historicoCargos.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                <div className="border rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <table className="min-w-full divide-y">
+                    <thead style={{background:"var(--color-surface-2)"}}>
                       <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ano</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo</th>
-                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Ações</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ano</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Cargo</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium uppercase w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="divide-y">
                       {historicoCargos
                         .sort((a, b) => b.ano - a.ano) // Ordenar por ano decrescente
                         .map((cargo, index) => {
                           const indexOriginal = historicoCargos.findIndex(c => c === cargo);
                           return (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            <tr key={index} className="hover:">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium" style={{color:"var(--color-text)"}}>
                                 {cargo.ano}
                               </td>
-                              <td className="px-4 py-3 text-sm text-gray-700">
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 {cargo.cargo}
                               </td>
-                              <td className="px-4 py-3 whitespace-nowrap text-center text-sm">
+                              <td className="px-4 py-3 whitespace-nowrap text-center text-sm" style={{color:"var(--color-text)"}}>
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -1615,8 +1615,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-8 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 text-sm">
+                <div className="text-center py-8 rounded-lg">
+                  <p className="text-sm">
                     Nenhum cargo cadastrado ainda. Use o formulário acima para adicionar.
                   </p>
                 </div>
@@ -1629,17 +1629,17 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         {abaSelecionada === 'familiar' && (
           <div className="space-y-6">
             {/* Cônjuge */}
-            <div className="bg-white p-6 rounded-lg shadow space-y-4">
+            <div className="p-6 rounded-lg shadow space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between border-b pb-2">
-                <h3 className="text-lg font-semibold text-gray-700">Cônjuge</h3>
+                <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>Cônjuge</h3>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={mostrarConjuge}
                     onChange={(e) => setMostrarConjuge(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 rounded"
                   />
-                  <span className="text-sm text-gray-700">Possui cônjuge</span>
+                  <span className="text-sm">Possui cônjuge</span>
                 </label>
               </div>
 
@@ -1647,19 +1647,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Nome Completo
                       </label>
                       <input
                         type="text"
                         value={conjuge.nome}
                         onChange={(e) => setConjuge({ ...conjuge, nome: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         CPF
                       </label>
                       <input
@@ -1667,55 +1667,55 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         value={formatarCPF(conjuge.cpf)}
                         onChange={(e) => setConjuge({ ...conjuge, cpf: e.target.value })}
                         placeholder="000.000.000-00"
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data de Nascimento
                       </label>
                       <input
                         type="date"
                         value={conjuge.data_nascimento}
                         onChange={(e) => setConjuge({ ...conjuge, data_nascimento: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                       {conjuge.data_nascimento && (
-                        <span className="text-xs text-gray-500 mt-1">
+                        <span className="text-xs mt-1">
                           Idade: {calcularIdade(conjuge.data_nascimento)} anos
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         💑 Data de Casamento
                       </label>
                       <input
                         type="date"
                         value={conjuge.data_casamento}
                         onChange={(e) => setConjuge({ ...conjuge, data_casamento: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                       {conjuge.data_casamento && (
-                        <span className="text-xs text-gray-500 mt-1">
+                        <span className="text-xs mt-1">
                           Anos de união: {calcularIdade(conjuge.data_casamento)} anos
                         </span>
                       )}
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Profissão
                       </label>
                       <input
                         type="text"
                         value={conjuge.profissao}
                         onChange={(e) => setConjuge({ ...conjuge, profissao: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     </div>
                   </div>
@@ -1724,30 +1724,30 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             </div>
 
             {/* Pais */}
-            <div className="bg-white p-6 rounded-lg shadow space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Pais</h3>
+            <div className="p-6 rounded-lg shadow space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <h3 className="text-lg font-semibold border-b pb-2" style={{color:"var(--color-text)"}}>Pais</h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Nome do Pai
                   </label>
                   <input
                     type="text"
                     value={pais.nome_pai}
                     onChange={(e) => setPais({ ...pais, nome_pai: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded"
                   />
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Data de Nascimento
                     </label>
                     <input
                       type="date"
                       value={pais.data_nascimento_pai}
                       onChange={(e) => setPais({ ...pais, data_nascimento_pai: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
 
@@ -1756,46 +1756,46 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="checkbox"
                       checked={pais.pai_vivo}
                       onChange={(e) => setPais({ ...pais, pai_vivo: e.target.checked })}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
-                    <span className="text-sm text-gray-700">Pai vivo</span>
+                    <span className="text-sm">Pai vivo</span>
                   </label>
 
                   {!pais.pai_vivo && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data de Óbito
                       </label>
                       <input
                         type="date"
                         value={pais.data_obito_pai}
                         onChange={(e) => setPais({ ...pais, data_obito_pai: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     </div>
                   )}
                 </div>
 
                 <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Nome da Mãe
                   </label>
                   <input
                     type="text"
                     value={pais.nome_mae}
                     onChange={(e) => setPais({ ...pais, nome_mae: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border rounded"
                   />
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Data de Nascimento
                     </label>
                     <input
                       type="date"
                       value={pais.data_nascimento_mae}
                       onChange={(e) => setPais({ ...pais, data_nascimento_mae: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
 
@@ -1804,21 +1804,21 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="checkbox"
                       checked={pais.mae_viva}
                       onChange={(e) => setPais({ ...pais, mae_viva: e.target.checked })}
-                      className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-4 h-4 text-blue-600 rounded"
                     />
-                    <span className="text-sm text-gray-700">Mãe viva</span>
+                    <span className="text-sm">Mãe viva</span>
                   </label>
 
                   {!pais.mae_viva && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data de Óbito
                       </label>
                       <input
                         type="date"
                         value={pais.data_obito_mae}
                         onChange={(e) => setPais({ ...pais, data_obito_mae: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     </div>
                   )}
@@ -1827,44 +1827,44 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             </div>
 
             {/* Filhos */}
-            <div className="bg-white p-6 rounded-lg shadow space-y-4">
-              <h3 className="text-lg font-semibold text-gray-700 border-b pb-2">Filhos</h3>
+            <div className="p-6 rounded-lg shadow space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <h3 className="text-lg font-semibold border-b pb-2" style={{color:"var(--color-text)"}}>Filhos</h3>
 
               {/* Formulário para adicionar filho */}
-              <div className="bg-gray-50 p-4 rounded space-y-3">
+              <div className="p-4 rounded space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Nome *
                     </label>
                     <input
                       type="text"
                       value={filhoForm.nome}
                       onChange={(e) => setFilhoForm({ ...filhoForm, nome: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Data Nascimento
                     </label>
                     <input
                       type="date"
                       value={filhoForm.data_nascimento}
                       onChange={(e) => setFilhoForm({ ...filhoForm, data_nascimento: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Sexo
                     </label>
                     <select
                       value={filhoForm.sexo}
                       onChange={(e) => setFilhoForm({ ...filhoForm, sexo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     >
                       <option value="M">Masculino</option>
                       <option value="F">Feminino</option>
@@ -1872,13 +1872,13 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                       Tipo de Vínculo
                     </label>
                     <select
                       value={filhoForm.tipo_vinculo}
                       onChange={(e) => setFilhoForm({ ...filhoForm, tipo_vinculo: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border rounded"
                     >
                       <option value="filho">Filho</option>
                       <option value="filha">Filha</option>
@@ -1900,22 +1900,22 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="checkbox"
                         checked={filhoForm.vivo}
                         onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
-                        className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-600 rounded"
                       />
-                      <span className="text-sm font-medium text-gray-700">Vivo</span>
+                      <span className="text-sm font-medium">Vivo</span>
                     </label>
                   </div>
 
                   {!filhoForm.vivo && (
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data de Óbito
                       </label>
                       <input
                         type="date"
                         value={filhoForm.data_obito}
                         onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     </div>
                   )}
@@ -1933,7 +1933,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <button
                       type="button"
                       onClick={cancelarEdicaoFilho}
-                      className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+                      className="px-4 py-2 bg-gray-500 text-white rounded transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       ❌ Cancelar
                     </button>
@@ -1944,7 +1944,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               {/* Lista de filhos adicionados */}
               {filhos.length > 0 && (
                 <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-gray-700">
+                  <h4 className="text-sm font-medium">
                     Filhos cadastrados ({filhos.length}):
                   </h4>
                   {filhos.map((filho, index) => (
@@ -1953,11 +1953,11 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       className="flex items-center justify-between bg-blue-50 p-3 rounded"
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-gray-800 flex items-center gap-2">
+                        <p className="font-medium flex items-center gap-2">
                           {filho.nome}
                           {!filho.vivo && <span title="Falecido">🕊️</span>}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm">
                           {filho.sexo === 'M' ? '👦' : '👧'} 
                           <span className="font-semibold capitalize ml-1">
                             ({filho.tipo_vinculo || (filho.sexo === 'M' ? 'filho' : 'filha')})
@@ -1981,7 +1981,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         <button
                           type="button"
                           onClick={() => editarFilho(index)}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600 transition-colors"
                         >
                           ✏️ Editar
                         </button>
@@ -2003,7 +2003,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
         {/* ABA: Vida Maçônica */}
         {abaSelecionada === 'vida-maconica' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="p-6 rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {irmaoEditando?.id ? (
               <VidaMaconica
                 irmaoId={irmaoEditando.id}
@@ -2011,12 +2011,12 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 showError={showError}
               />
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="text-6xl mb-4">🔺</div>
-                <p className="text-gray-600 text-lg font-medium">
+                <p className="text-lg font-medium">
                   Salve o irmão primeiro para adicionar graus
                 </p>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-sm mt-2">
                   A vida maçônica só pode ser cadastrada após criar o registro do irmão
                 </p>
               </div>
@@ -2026,16 +2026,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
         {/* ABA: Situações */}
         {abaSelecionada === 'situacoes' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="p-6 rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {irmaoEditando?.id ? (
               <GestaoSituacoes irmaId={irmaoEditando.id} />
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="text-6xl mb-4">📋</div>
-                <p className="text-gray-600 text-lg font-medium">
+                <p className="text-lg font-medium">
                   Salve o irmão primeiro para gerenciar situações
                 </p>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-sm mt-2">
                   Licenças, desligamentos e outras situações só podem ser cadastradas após criar o registro do irmão
                 </p>
               </div>
@@ -2045,13 +2045,13 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
         {/* ABA: Documentos */}
         {abaSelecionada === 'documentos' && (
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="p-6 rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {irmaoEditando?.id ? (
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <h3 className="text-2xl font-bold text-gray-800">📄 Documentos</h3>
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📄 Documentos</h3>
                   
-                  <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                  <label className="cursor-pointer bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium" style={{color:"var(--color-text-muted)"}}>
                     📤 Enviar PDF
                     <input
                       type="file"
@@ -2063,19 +2063,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 </div>
 
                 {documentos.length === 0 ? (
-                  <div className="text-center py-12 text-gray-500">
+                  <div className="text-center py-12">
                     <p className="text-lg">Nenhum documento cadastrado</p>
                     <p className="text-sm mt-2">Use o botão acima para enviar arquivos PDF</p>
                   </div>
                 ) : (
                   <div className="grid gap-4">
                     {documentos.map(doc => (
-                      <div key={doc.id} className="bg-white border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                      <div key={doc.id} className="border rounded-lg p-4 flex items-center justify-between hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                         <div className="flex items-center gap-3">
                           <span className="text-3xl">📄</span>
                           <div>
-                            <p className="font-medium text-gray-800">{doc.nome_arquivo}</p>
-                            <p className="text-sm text-gray-500">
+                            <p className="font-medium">{doc.nome_arquivo}</p>
+                            <p className="text-sm">
                               Enviado em {new Date(doc.created_at).toLocaleDateString('pt-BR')}
                             </p>
                           </div>
@@ -2085,7 +2085,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                             href={doc.url_arquivo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                            className="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-sm"
                           >
                             👁️ Ver
                           </a>
@@ -2103,12 +2103,12 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 )}
               </div>
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="text-6xl mb-4">📄</div>
-                <p className="text-gray-600 text-lg font-medium">
+                <p className="text-lg font-medium">
                   Salve o irmão primeiro para enviar documentos
                 </p>
-                <p className="text-gray-500 text-sm mt-2">
+                <p className="text-sm mt-2">
                   Documentos só podem ser enviados após criar o registro do irmão
                 </p>
               </div>
@@ -2121,14 +2121,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           <button
             type="button"
             onClick={limparFormulario}
-            className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors"
+            className="px-6 py-2 bg-gray-500 text-white rounded transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
           >
             Limpar Formulário
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Salvando...' : modoEdicao ? 'Atualizar Irmão' : 'Cadastrar Irmão'}
           </button>
