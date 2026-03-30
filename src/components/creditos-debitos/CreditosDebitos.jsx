@@ -182,8 +182,8 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
+          <p className="mt-4">Carregando...</p>
         </div>
       </div>
     );
@@ -192,7 +192,7 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+      <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 text-white" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
@@ -206,14 +206,14 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
       </div>
 
       {/* NAVEGAÇÃO */}
-      <div className="bg-white rounded-xl shadow-md p-2">
+      <div className="rounded-xl p-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setView('dashboard')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
               view === 'dashboard'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary-600 text-white '
+                : '  hover:'
             }`}
           >
             📊 Dashboard
@@ -223,8 +223,8 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             onClick={() => setView('entidades')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
               view === 'entidades'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-primary-600 text-white '
+                : '  hover:'
             }`}
           >
             🏢 Entidades
@@ -234,8 +234,8 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             onClick={() => setView('creditos')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
               view === 'creditos'
-                ? 'bg-green-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-green-600 text-white '
+                : '  hover:'
             }`}
           >
             💵 Créditos (A Receber)
@@ -245,8 +245,8 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             onClick={() => setView('debitos')}
             className={`px-6 py-3 rounded-lg font-semibold transition-all ${
               view === 'debitos'
-                ? 'bg-red-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                ? 'bg-red-600 text-white '
+                : '  hover:'
             }`}
           >
             💳 Débitos (A Pagar)
@@ -258,17 +258,17 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
       {view === 'dashboard' && (
         <div className="space-y-6">
           {/* NEGÓCIOS CONSOLIDADOS (TOTAIS HISTÓRICOS) */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Negócios Consolidados</h3>
+          <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>📊 Negócios Consolidados</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* TOTAL EMPRESTADO A TERCEIROS */}
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border-2 border-emerald-200">
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border-2 border-emerald-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-emerald-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     📤
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-lg font-bold text-emerald-800">Emprestado a Terceiros</h4>
+                    <h4 className="text-lg font-bold text-emerald-800" style={{color:"var(--color-text)"}}>Emprestado a Terceiros</h4>
                     <p className="text-sm text-emerald-600">Total histórico de créditos concedidos</p>
                   </div>
                 </div>
@@ -281,13 +281,13 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
               </div>
 
               {/* TOTAL TOMADO EMPRESTADO */}
-              <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-6 border-2 border-rose-200">
+              <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-6 border-2 border-rose-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-rose-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     📥
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-lg font-bold text-rose-800">Tomado Emprestado</h4>
+                    <h4 className="text-lg font-bold text-rose-800" style={{color:"var(--color-text)"}}>Tomado Emprestado</h4>
                     <p className="text-sm text-rose-600">Total histórico de débitos assumidos</p>
                   </div>
                 </div>
@@ -302,13 +302,13 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
           </div>
 
           {/* CENÁRIO ATUAL (SALDOS PENDENTES) */}
-          <div className="bg-white rounded-xl shadow-md p-6">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">💼 Cenário Atual</h3>
+          <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>💼 Cenário Atual</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* A RECEBER */}
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2 border-green-200">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-green-800">💵 A Receber</h3>
+                  <h3 className="text-lg font-bold text-green-800" style={{color:"var(--color-text)"}}>💵 A Receber</h3>
                   <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
                     {stats.num_creditos_ativos} ativas
                   </span>
@@ -320,9 +320,9 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
               </div>
 
               {/* A PAGAR */}
-              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border-2 border-red-200">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-red-800">💳 A Pagar</h3>
+                  <h3 className="text-lg font-bold text-red-800" style={{color:"var(--color-text)"}}>💳 A Pagar</h3>
                   <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full">
                     {stats.num_debitos_ativos} ativas
                   </span>
@@ -336,7 +336,7 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
               {/* POSIÇÃO LÍQUIDA */}
               <div className={`bg-gradient-to-br ${
                 stats.posicao_liquida >= 0 
-                  ? 'from-blue-50 to-blue-100 border-blue-200' 
+                  ? 'from-blue-50 to-blue-100 ' 
                   : 'from-orange-50 to-orange-100 border-orange-200'
               } rounded-xl p-6 border-2`}>
                 <div className="flex items-center justify-between mb-4">
@@ -363,20 +363,20 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
           {/* ALERTAS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* ATRASADAS */}
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-800">🚨 Parcelas Atrasadas</h3>
-                <span className="bg-red-600 text-white text-sm px-3 py-1 rounded-full">
+                <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>🚨 Parcelas Atrasadas</h3>
+                <span style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
                   {stats.parcelas_atrasadas}
                 </span>
               </div>
               
               {alertas.filter(a => a.tipo === 'atrasada').length === 0 ? (
-                <p className="text-center text-gray-500 py-4">✅ Nenhuma parcela atrasada</p>
+                <p className="text-center py-4">✅ Nenhuma parcela atrasada</p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {alertas.filter(a => a.tipo === 'atrasada').map(alerta => (
-                    <div key={alerta.id} className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <div key={alerta.id} className="bg-red-50 border rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-semibold text-red-800">
@@ -397,20 +397,20 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             </div>
 
             {/* VENCENDO */}
-            <div className="bg-white rounded-xl shadow-md p-6">
+            <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-800">⏰ Vencendo em 7 dias</h3>
+                <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>⏰ Vencendo em 7 dias</h3>
                 <span className="bg-yellow-600 text-white text-sm px-3 py-1 rounded-full">
                   {stats.parcelas_vencendo_7dias}
                 </span>
               </div>
               
               {alertas.filter(a => a.tipo === 'vencendo').length === 0 ? (
-                <p className="text-center text-gray-500 py-4">✅ Nenhuma parcela próxima</p>
+                <p className="text-center py-4">✅ Nenhuma parcela próxima</p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {alertas.filter(a => a.tipo === 'vencendo').map(alerta => (
-                    <div key={alerta.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div key={alerta.id} className="bg-yellow-50 border border-yellow-200 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-semibold text-yellow-800">
