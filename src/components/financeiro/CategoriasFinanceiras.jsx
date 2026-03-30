@@ -169,10 +169,10 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   const renderizarArvore = (categorias, profundidade = 0) => {
     return categorias.map(cat => (
       <React.Fragment key={cat.id}>
-        <tr className="hover:bg-gray-50">
+        <tr className="hover:">
           <td className="px-6 py-3 text-sm" style={{ paddingLeft: `${24 + profundidade * 32}px` }}>
             {profundidade > 0 && (
-              <span className="text-gray-400 mr-2">
+              <span className="mr-2">
                 {'└─ '}
               </span>
             )}
@@ -180,7 +180,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
               {cat.nome}
             </span>
           </td>
-          <td className="px-6 py-3 text-sm">
+          <td className="px-6 py-3 text-sm" style={{color:"var(--color-text)"}}>
             <span className={`px-2 py-1 text-xs rounded-full ${
               cat.tipo === 'receita' 
                 ? 'bg-green-100 text-green-800' 
@@ -189,25 +189,25 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
               {cat.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
             </span>
           </td>
-          <td className="px-6 py-3 text-sm text-center">
+          <td className="px-6 py-3 text-sm text-center" style={{color:"var(--color-text)"}}>
             <span className={`px-2 py-1 text-xs rounded-full ${
               cat.nivel === 1 ? 'bg-blue-100 text-blue-800' :
               cat.nivel === 2 ? 'bg-purple-100 text-purple-800' :
-              'bg-gray-100 text-gray-800'
+              ' '
             }`}>
               Nível {cat.nivel}
             </span>
           </td>
-          <td className="px-6 py-3 text-sm text-center">
+          <td className="px-6 py-3 text-sm text-center" style={{color:"var(--color-text)"}}>
             <span className={`px-2 py-1 text-xs rounded-full ${
               cat.ativo 
                 ? 'bg-green-100 text-green-800' 
-                : 'bg-gray-100 text-gray-800'
+                : ' '
             }`}>
               {cat.ativo ? '✅ Ativo' : '⏸️ Inativo'}
             </span>
           </td>
-          <td className="px-6 py-3 text-sm">
+          <td className="px-6 py-3 text-sm" style={{color:"var(--color-text)"}}>
             <div className="flex gap-2">
               <button
                 onClick={() => handleEditar(cat)}
@@ -234,7 +234,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Carregando categorias...</div>
+        <div className="text-lg">Carregando categorias...</div>
       </div>
     );
   }
@@ -247,10 +247,10 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
     <div className="space-y-6">
       {/* CABEÇALHO */}
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">🏷️ Categorias Financeiras</h2>
+        <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏷️ Categorias Financeiras</h2>
         <button
           onClick={() => setMostrarFormulario(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+          className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
         >
           ➕ Nova Categoria
         </button>
@@ -258,8 +258,8 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
 
       {/* FORMULÁRIO */}
       {mostrarFormulario && (
-        <div className="bg-white rounded-lg shadow-lg p-6">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>
             {editando ? '✏️ Editar Categoria' : '➕ Nova Categoria'}
           </h3>
           
@@ -267,27 +267,27 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Nome */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Nome da Categoria *
                 </label>
                 <input
                   type="text"
                   value={formCategoria.nome}
                   onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   required
                 />
               </div>
 
               {/* Tipo */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Tipo *
                 </label>
                 <select
                   value={formCategoria.tipo}
                   onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value, categoria_pai_id: null })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="receita">📈 Receita</option>
                   <option value="despesa">📉 Despesa</option>
@@ -296,13 +296,13 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
 
               {/* Categoria Pai */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Categoria Pai (opcional)
                 </label>
                 <select
                   value={formCategoria.categoria_pai_id || ''}
                   onChange={(e) => setFormCategoria({ ...formCategoria, categoria_pai_id: e.target.value || null })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Principal (sem categoria pai)</option>
                   {categoriasPrincipais.map(cat => (
@@ -311,21 +311,21 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs mt-1">
                   Deixe vazio para criar categoria principal
                 </p>
               </div>
 
               {/* Ordem */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Ordem de Exibição
                 </label>
                 <input
                   type="number"
                   value={formCategoria.ordem}
                   onChange={(e) => setFormCategoria({ ...formCategoria, ordem: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border rounded-lg"
                   min="0"
                 />
               </div>
@@ -338,9 +338,9 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                 id="ativo"
                 checked={formCategoria.ativo}
                 onChange={(e) => setFormCategoria({ ...formCategoria, ativo: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-4 h-4 text-blue-600 rounded"
               />
-              <label htmlFor="ativo" className="text-sm font-medium text-gray-700">
+              <label htmlFor="ativo" className="text-sm font-medium" style={{color:"var(--color-text-muted)"}}>
                 Categoria Ativa
               </label>
             </div>
@@ -356,7 +356,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                className="px-6 py-2 bg-gray-300 rounded-lg"
               >
                 Cancelar
               </button>
@@ -366,22 +366,22 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
       )}
 
       {/* LISTA DE RECEITAS */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">📈 Receitas</h3>
+      <div className="rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div className="px-6 py-4 border-b">
+          <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>📈 Receitas</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full">
+            <thead style={{background:"var(--color-surface-2)"}}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nível</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Tipo</th>
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nível</th>
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {renderizarArvore(arvoreReceitas)}
             </tbody>
           </table>
@@ -389,22 +389,22 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
       </div>
 
       {/* LISTA DE DESPESAS */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">📉 Despesas</h3>
+      <div className="rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div className="px-6 py-4 border-b">
+          <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>📉 Despesas</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full">
+            <thead style={{background:"var(--color-surface-2)"}}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nível</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Tipo</th>
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nível</th>
+                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {renderizarArvore(arvoreDespesas)}
             </tbody>
           </table>
