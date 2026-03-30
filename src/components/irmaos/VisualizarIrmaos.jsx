@@ -343,7 +343,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               placeholder="Nome ou CIM..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             />
           </div>
 
@@ -355,7 +355,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
             <select
               value={situacaoFilter}
               onChange={(e) => setSituacaoFilter(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="regular,licenciado">Regulares e Licenciados</option>
               <option value="todos">Todas as Situações</option>
@@ -375,7 +375,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
             <select
               value={grauFilter}
               onChange={(e) => setGrauFilter(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg"
+              className="w-full px-4 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="todos">Todos os Graus</option>
               <option value="Aprendiz">Aprendiz</option>
@@ -404,15 +404,15 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               className="rounded-lg border-l-4 transition-opacity hover:opacity-95 overflow-hidden"
               style={{borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {/* Foto e Grau */}
-              <div className="relative" style={{background:"var(--color-surface-2)"}}>
+              <div className="relative" style={{background:"var(--color-surface-2)",overflow:"hidden",height:"10rem"}}>
                 {irmao.foto_url ? (
                   <img
                     src={irmao.foto_url}
                     alt={irmao.nome}
-                    className="w-full h-40 object-cover"
+                    style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}
                   />
                 ) : (
-                  <div style={{width:"100%",height:"10rem",background:"var(--color-accent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <div style={{width:"100%",height:"100%",background:"var(--color-accent)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     <span className="text-6xl text-white">👤</span>
                   </div>
                 )}
