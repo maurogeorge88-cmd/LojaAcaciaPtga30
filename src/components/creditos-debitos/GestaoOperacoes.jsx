@@ -317,7 +317,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
     const badges = {
       'ativo': { color: 'bg-green-100 text-green-800', label: '✓ Ativo' },
       'quitado': { color: 'bg-blue-100 text-blue-800', label: '✓ Quitado' },
-      'cancelado': { color: 'bg-gray-100 text-gray-800', label: '✗ Cancelado' }
+      'cancelado': { color: ' ', label: '✗ Cancelado' }
     };
     return badges[status] || badges.ativo;
   };
@@ -336,10 +336,10 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
             {getTipoIcon()} {getTipoLabel()}
           </h2>
-          <p className="text-gray-600 mt-1">
+          <p className="mt-1">
             {tipo === 'credito' 
               ? 'Valores a receber de terceiros'
               : 'Valores a pagar para terceiros'}
@@ -347,7 +347,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
         </div>
         <button
           onClick={abrirModalNovo}
-          className={`bg-${getTipoColor()}-600 hover:bg-${getTipoColor()}-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-all flex items-center gap-2`}
+          className={`bg-${getTipoColor()}-600 hover:bg-${getTipoColor()}-700 text-white px-6 py-3 rounded-lg font-semibold  transition-all flex items-center gap-2`}
           style={{
             backgroundColor: tipo === 'credito' ? '#16a34a' : '#dc2626',
           }}
@@ -363,11 +363,11 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Busca */}
           <div className="md:col-span-2">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
               🔍 Buscar
             </label>
             <input
@@ -375,19 +375,19 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Entidade ou descrição..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
             />
           </div>
 
           {/* Status */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
               📊 Status
             </label>
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
             >
               <option value="ativo">Ativos</option>
               <option value="quitado">Quitados</option>
@@ -397,7 +397,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
           </div>
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm">
           Mostrando <strong>{operacoesFiltradas.length}</strong> de <strong>{operacoes.length}</strong> operações
         </div>
       </div>
@@ -406,19 +406,19 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
+            <p className="mt-4">Carregando...</p>
           </div>
         </div>
       ) : operacoesFiltradas.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-md p-12 text-center">
+        <div className="rounded-xl p-12 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">{getTipoIcon()}</div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">
+          <h3 className="text-xl font-bold mb-2" style={{color:"var(--color-text)"}}>
             {operacoes.length === 0 
               ? `Nenhum ${tipo === 'credito' ? 'crédito' : 'débito'} cadastrado`
               : 'Nenhuma operação encontrada'}
           </h3>
-          <p className="text-gray-600 mb-6">
+          <p className="mb-6">
             {operacoes.length === 0 
               ? `Comece cadastrando seu primeiro ${tipo === 'credito' ? 'crédito' : 'débito'}`
               : 'Tente ajustar os filtros de busca'}
@@ -426,7 +426,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
           {operacoes.length === 0 && (
             <button
               onClick={abrirModalNovo}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
             >
               ➕ Cadastrar Primeira Operação
             </button>
@@ -441,13 +441,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               : 0;
 
             return (
-              <div key={operacao.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all">
+              <div key={operacao.id} className="rounded-xl hover: transition-all">
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     {/* Informações */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
-                        <h3 className="text-xl font-bold text-gray-800">
+                        <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
                           {operacao.entidade_nome || 'Entidade não informada'}
                         </h3>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusBadge.color}`}>
@@ -461,37 +461,37 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                       </div>
 
                       {operacao.descricao && (
-                        <p className="text-gray-700 mb-3">{operacao.descricao}</p>
+                        <p className="mb-3">{operacao.descricao}</p>
                       )}
 
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <span className="text-gray-500 block">Valor Total</span>
+                          <span className="block">Valor Total</span>
                           <span className={`font-bold text-lg ${tipo === 'credito' ? 'text-green-600' : 'text-red-600'}`}>
                             R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
 
                         <div>
-                          <span className="text-gray-500 block">Valor Pago</span>
+                          <span className="block">Valor Pago</span>
                           <span className="font-semibold text-blue-600">
                             R$ {operacao.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
 
                         <div>
-                          <span className="text-gray-500 block">Saldo Devedor</span>
+                          <span className="block">Saldo Devedor</span>
                           <span className="font-semibold text-orange-600">
                             R$ {operacao.saldo_devedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
 
                         <div>
-                          <span className="text-gray-500 block">Progresso</span>
+                          <span className="block">Progresso</span>
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-gray-200 rounded-full h-2">
+                            <div className="flex-1 rounded-full h-2">
                               <div 
-                                className="bg-blue-600 h-2 rounded-full transition-all"
+                                className="bg-primary-600 h-2 rounded-full transition-all"
                                 style={{ width: `${percentualPago}%` }}
                               />
                             </div>
@@ -500,7 +500,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-sm text-gray-600">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-sm">
                         <div>
                           <span className="font-semibold">📅 Lançamento:</span> {new Date(operacao.data_lancamento).toLocaleDateString('pt-BR')}
                         </div>
@@ -557,7 +557,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
       {/* MODAL DE CADASTRO/EDIÇÃO */}
       {modalAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div 
               className="p-6 text-white"
               style={{
@@ -566,7 +566,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   : 'linear-gradient(to right, #dc2626, #b91c1c)'
               }}
             >
-              <h3 className="text-2xl font-bold">
+              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
                 {modoEdicao ? '✏️ Editar' : '➕ Nova'} {tipo === 'credito' ? 'Crédito' : 'Débito'}
               </h3>
             </div>
@@ -574,13 +574,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Entidade */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Entidade <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.entidade_id}
                   onChange={(e) => setFormData({ ...formData, entidade_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   required
                 >
                   <option value="">Selecione uma entidade</option>
@@ -600,7 +600,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               {/* Valor Total e Data */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Valor Total <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -610,20 +610,20 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     value={formData.valor_total}
                     onChange={(e) => setFormData({ ...formData, valor_total: e.target.value })}
                     placeholder="0.00"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Data de Lançamento <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={formData.data_lancamento}
                     onChange={(e) => setFormData({ ...formData, data_lancamento: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                     required
                   />
                 </div>
@@ -632,7 +632,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               {/* Forma e Meio de Pagamento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Forma de Pagamento <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -642,7 +642,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                       forma_pagamento: e.target.value,
                       numero_parcelas: e.target.value === 'parcelado' ? 2 : 1
                     })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                     required
                   >
                     <option value="unico">Pagamento Único</option>
@@ -652,13 +652,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Meio de Pagamento
                   </label>
                   <select
                     value={formData.meio_pagamento}
                     onChange={(e) => setFormData({ ...formData, meio_pagamento: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   >
                     <option value="pix">PIX</option>
                     <option value="transferencia">Transferência</option>
@@ -671,12 +671,12 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
 
               {/* Parcelamento */}
               {formData.forma_pagamento === 'parcelado' && (
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 space-y-4">
-                  <h4 className="font-bold text-blue-900">📅 Parcelamento</h4>
+                <div className="bg-blue-50 border-2 rounded-lg p-4 space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="font-bold text-blue-900" style={{color:"var(--color-text)"}}>📅 Parcelamento</h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                         Número de Parcelas <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -685,36 +685,36 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         max="120"
                         value={formData.numero_parcelas}
                         onChange={(e) => setFormData({ ...formData, numero_parcelas: parseInt(e.target.value) })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                         Valor da Parcela
                       </label>
                       <input
                         type="text"
                         value={`R$ ${calcularValorParcela()}`}
                         disabled
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 font-semibold"
+                        className="w-full px-4 py-2 border rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                       Data do Primeiro Vencimento <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.data_primeiro_vencimento}
                       onChange={(e) => setFormData({ ...formData, data_primeiro_vencimento: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                       required
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs mt-1">
                       As demais parcelas serão geradas automaticamente a cada mês
                     </p>
                   </div>
@@ -724,21 +724,21 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               {/* Vencimento Único */}
               {formData.forma_pagamento === 'unico' && (
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Data de Vencimento
                   </label>
                   <input
                     type="date"
                     value={formData.data_primeiro_vencimento}
                     onChange={(e) => setFormData({ ...formData, data_primeiro_vencimento: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   />
                 </div>
               )}
 
               {/* Descrição */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Descrição
                 </label>
                 <input
@@ -746,13 +746,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                   placeholder="Ex: Empréstimo para reforma da loja"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                 />
               </div>
 
               {/* Observações */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Observações
                 </label>
                 <textarea
@@ -760,7 +760,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                   placeholder="Informações adicionais..."
                   rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                 />
               </div>
 
@@ -769,7 +769,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-all"
+                  className="flex-1 px-6 py-3 rounded-lg font-semibold transition-all"
                   disabled={loading}
                 >
                   Cancelar
