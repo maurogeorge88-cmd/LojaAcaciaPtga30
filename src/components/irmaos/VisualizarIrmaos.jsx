@@ -425,13 +425,13 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
 
               {/* Informações */}
               <div className="p-4">
-                <h3 className="font-bold text-lg truncate" style={{color:"var(--color-text)"}} title={irmao.nome}>
+                <h3 className="font-bold text-lg truncate" style={{color:"var(--color-accent)"}} title={irmao.nome}>
                   {irmao.nome}
                 </h3>
                 
                 <div className="mt-2 space-y-1">
-                  <p className="text-sm" style={{color:"var(--color-text-muted)"}}>
-                    <span className="font-semibold" style={{color:"var(--color-text)"}}>CIM:</span> {irmao.cim}
+                  <p className="text-sm" style={{color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
+                    <span className="font-semibold" style={{color:"var(--color-accent)",fontSize:"0.8rem",letterSpacing:"0.03em"}}>CIM</span> <span style={{color:"var(--color-text)",fontWeight:"600"}}>{irmao.cim}</span>
                   </p>
                   
                   {irmao.data_nascimento && (
