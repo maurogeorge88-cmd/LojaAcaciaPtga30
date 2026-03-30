@@ -95,26 +95,15 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     setEnviando(true);
     setResultados([]);
     try {
-      const payload = {
-        acao: tipoSelec,
-        irmaos_ids: irmaosSelec,
-        opcoes: opcoesConteudo,
-      };
-      const { data: { session } } = await supabase.auth.getSession();
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enviar-email-irmao`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session?.access_token}`,
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-      const json = await resp.json();
-      if (!json.ok) throw new Error(json.erro || 'Erro desconhecido');
+      const { data: json, error: fnError } = await supabase.functions.invoke('enviar-email-irmao', {
+        body: {
+          acao: tipoSelec,
+          irmaos_ids: irmaosSelec,
+          opcoes: opcoesConteudo,
+        },
+      });
+      if (fnError) throw fnError;
+      if (!json?.ok) throw new Error(json?.erro || 'Erro desconhecido');
       setResultados(json.resultados || []);
       const enviados = (json.resultados || []).filter(r => r.status === 'enviado').length;
       showSuccess(`✅ ${enviados} e-mail(s) enviado(s) com sucesso!`);
