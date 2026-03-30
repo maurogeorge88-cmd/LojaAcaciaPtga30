@@ -172,9 +172,9 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       'loja': 'bg-blue-100 text-blue-800',
       'fornecedor': 'bg-green-100 text-green-800',
       'pessoa_fisica': 'bg-purple-100 text-purple-800',
-      'outro': 'bg-gray-100 text-gray-800'
+      'outro': ' '
     };
-    return cores[tipo] || 'bg-gray-100 text-gray-800';
+    return cores[tipo] || ' ';
   };
 
   return (
@@ -182,23 +182,23 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">🏢 Gestão de Entidades</h2>
-          <p className="text-gray-600 mt-1">Cadastro de lojas, fornecedores e terceiros</p>
+          <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏢 Gestão de Entidades</h2>
+          <p className="mt-1">Cadastro de lojas, fornecedores e terceiros</p>
         </div>
         <button
           onClick={abrirModalNovo}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-all flex items-center gap-2"
+          className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-all flex items-center gap-2"
         >
           ➕ Nova Entidade
         </button>
       </div>
 
       {/* FILTROS */}
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Busca */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
               🔍 Buscar
             </label>
             <input
@@ -206,19 +206,19 @@ export default function GestaoEntidades({ showSuccess, showError }) {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Nome ou CPF/CNPJ..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
             />
           </div>
 
           {/* Filtro por Tipo */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
               📂 Tipo
             </label>
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
             >
               <option value="todos">Todos</option>
               <option value="loja">🏛️ Lojas</option>
@@ -229,7 +229,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
           </div>
         </div>
 
-        <div className="mt-4 text-sm text-gray-600">
+        <div className="mt-4 text-sm">
           Mostrando <strong>{entidadesFiltradas.length}</strong> de <strong>{entidades.length}</strong> entidades
         </div>
       </div>
@@ -238,15 +238,15 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       {loading ? (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
+            <p className="mt-4">Carregando...</p>
           </div>
         </div>
       ) : entidadesFiltradas.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-md p-12 text-center">
+        <div className="rounded-xl p-12 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">🏢</div>
-          <h3 className="text-xl font-bold text-gray-800 mb-2">Nenhuma entidade encontrada</h3>
-          <p className="text-gray-600 mb-6">
+          <h3 className="text-xl font-bold mb-2" style={{color:"var(--color-text)"}}>Nenhuma entidade encontrada</h3>
+          <p className="mb-6">
             {entidades.length === 0 
               ? 'Comece cadastrando sua primeira entidade'
               : 'Tente ajustar os filtros de busca'}
@@ -254,7 +254,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
           {entidades.length === 0 && (
             <button
               onClick={abrirModalNovo}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
+              className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-all"
             >
               ➕ Cadastrar Primeira Entidade
             </button>
@@ -263,19 +263,19 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {entidadesFiltradas.map(entidade => (
-            <div key={entidade.id} className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all">
+            <div key={entidade.id} className="rounded-xl hover: transition-all">
               <div className="p-6">
                 <div className="flex items-start justify-between">
                   {/* Informações */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-800">{entidade.nome}</h3>
+                      <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>{entidade.nome}</h3>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getTipoBadgeColor(entidade.tipo)}`}>
                         {getTipoLabel(entidade.tipo)}
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                       {entidade.cpf_cnpj && (
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">📋 CPF/CNPJ:</span>
@@ -335,9 +335,9 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       {/* MODAL DE CADASTRO/EDIÇÃO */}
       {modalAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white">
-              <h3 className="text-2xl font-bold">
+          <div className="rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-6 text-white">
+              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
                 {modoEdicao ? '✏️ Editar Entidade' : '➕ Nova Entidade'}
               </h3>
             </div>
@@ -345,13 +345,13 @@ export default function GestaoEntidades({ showSuccess, showError }) {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               {/* Tipo */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Tipo <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={formData.tipo}
                   onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   required
                 >
                   <option value="loja">🏛️ Loja Maçônica</option>
@@ -363,7 +363,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
 
               {/* Nome */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Nome <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -371,14 +371,14 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Nome da entidade"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   required
                 />
               </div>
 
               {/* CPF/CNPJ */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   CPF/CNPJ
                 </label>
                 <input
@@ -386,14 +386,14 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   value={formData.cpf_cnpj}
                   onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })}
                   placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                 />
               </div>
 
               {/* Telefone e Email */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Telefone
                   </label>
                   <input
@@ -401,12 +401,12 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                     value={formData.telefone}
                     onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                     placeholder="(00) 00000-0000"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                     Email
                   </label>
                   <input
@@ -414,14 +414,14 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="email@exemplo.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                   />
                 </div>
               </div>
 
               {/* Endereço */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Endereço
                 </label>
                 <input
@@ -429,13 +429,13 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   value={formData.endereco}
                   onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                   placeholder="Rua, número, cidade, estado"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                 />
               </div>
 
               {/* Observações */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
                   Observações
                 </label>
                 <textarea
@@ -443,7 +443,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                   placeholder="Informações adicionais..."
                   rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
                 />
               </div>
 
@@ -452,14 +452,14 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold transition-all"
+                  className="flex-1 px-6 py-3 rounded-lg font-semibold transition-all"
                   disabled={loading}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-all disabled:opacity-50"
+                  className="flex-1 bg-primary-600 hover:bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold transition-all disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? 'Salvando...' : (modoEdicao ? 'Atualizar' : 'Cadastrar')}
