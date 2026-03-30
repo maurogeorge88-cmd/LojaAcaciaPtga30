@@ -194,7 +194,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
     return '-';
   };
 
-  if (loading) return (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white rounded-lg p-8"><div className="flex items-center gap-3"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div><p className="text-lg">Carregando perfil...</p></div></div></div>);
+  if (loading) return (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="rounded-lg p-8"><div className="flex items-center gap-3"><div className="animate-spin rounded-full h-8 w-8 border-b-2"></div><p className="text-lg">Carregando perfil...</p></div></div></div>);
   if (!irmao) return null;
 
   const anoAtual = new Date().getFullYear();
@@ -202,11 +202,11 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6">
+      <div className="rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+        <div className="p-6 text-white" style={{background:"var(--color-accent)"}}>
           <div className="flex justify-between items-start">
             <div className="flex gap-4">
-              {irmao.foto_url && <img src={irmao.foto_url} alt={irmao.nome} className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg" />}
+              {irmao.foto_url && <img src={irmao.foto_url} alt={irmao.nome} className="w-20 h-20 rounded-full object-cover border-4" />}
               <div>
                 <h2 className="text-2xl font-bold mb-1">{irmao.nome}</h2>
                 <p className="text-blue-100">CIM: {irmao.cim || 'Não informado'}</p>
@@ -220,8 +220,8 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
           <section className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">📊 Presença</h3>
-              <select value={anoPresencaSelecionado} onChange={(e) => setAnoPresencaSelecionado(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📊 Presença</h3>
+              <select value={anoPresencaSelecionado} onChange={(e) => setAnoPresencaSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
                 <option value="todos">Todos os anos</option>
                 {anosDisponiveis.map(ano => <option key={ano} value={ano}>{ano}</option>)}
               </select>
@@ -229,15 +229,15 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             {dadosPresenca && (
               <>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200"><p className="text-sm text-blue-600 font-medium mb-1">Total Sessões</p><p className="text-2xl font-bold text-blue-800">{dadosPresenca.totalSessoes}</p></div>
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-200"><p className="text-sm text-green-600 font-medium mb-1">Presenças</p><p className="text-2xl font-bold text-green-800">{dadosPresenca.presencas}</p></div>
-                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200"><p className="text-sm text-yellow-600 font-medium mb-1">Justificadas</p><p className="text-2xl font-bold text-yellow-800">{dadosPresenca.ausenciasJustificadas}</p></div>
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-200"><p className="text-sm text-red-600 font-medium mb-1">Ausências</p><p className="text-2xl font-bold text-red-800">{dadosPresenca.ausenciasInjustificadas}</p></div>
+                  <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Total Sessões</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"var(--color-accent)"}}>{dadosPresenca.totalSessoes}</p></div>
+                  <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Presenças</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#10b981"}}>{dadosPresenca.presencas}</p></div>
+                  <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Justificadas</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#f59e0b"}}>{dadosPresenca.ausenciasJustificadas}</p></div>
+                  <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Ausências</p><p style={{fontSize:"1.5rem",fontWeight:"700",color:"#ef4444"}}>{dadosPresenca.ausenciasInjustificadas}</p></div>
                   <div className="bg-purple-50 p-4 rounded-lg border border-purple-200"><p className="text-sm text-purple-600 font-medium mb-1">Taxa</p><p className="text-2xl font-bold text-purple-800">{dadosPresenca.taxa}%</p></div>
                 </div>
                 {dadosPresenca.ultimasSessoes.length > 0 && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Últimas {dadosPresenca.ultimasSessoes.length} sessões:</p>
+                  <div className="p-4 rounded-lg">
+                    <p className="text-sm font-medium mb-2">Últimas {dadosPresenca.ultimasSessoes.length} sessões:</p>
                     <div className="flex gap-2 flex-wrap">{dadosPresenca.ultimasSessoes.map((s, i) => (<div key={i} className={`w-12 h-12 rounded-lg flex items-center justify-center font-bold text-white text-lg ${s.status === 'P' ? 'bg-green-500' : s.status === 'J' ? 'bg-yellow-500' : 'bg-red-500'}`}>{s.status}</div>))}</div>
                   </div>
                 )}
@@ -247,14 +247,14 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
 
           <section className="mb-8">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">💰 Situação Financeira</h3>
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Situação Financeira</h3>
               <div className="flex gap-2">
-                <select value={anoFinanceiroSelecionado} onChange={(e) => setAnoFinanceiroSelecionado(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                <select value={anoFinanceiroSelecionado} onChange={(e) => setAnoFinanceiroSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
                   <option value="todos">Todos os anos</option>
                   {anosFinanceiro.map(ano => <option key={ano} value={ano}>{ano}</option>)}
                 </select>
                 {anoFinanceiroSelecionado !== 'todos' && (
-                  <select value={mesFinanceiroSelecionado} onChange={(e) => setMesFinanceiroSelecionado(e.target.value)} className="border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                  <select value={mesFinanceiroSelecionado} onChange={(e) => setMesFinanceiroSelecionado(e.target.value)} className="border rounded-lg px-3 py-2 text-sm">
                     <option value="todos">Todos os meses</option>
                     {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m,i) => <option key={i} value={i+1}>{m}</option>)}
                   </select>
@@ -264,76 +264,76 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, onClose }) => {
             {dadosFinanceiro && (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-orange-50 p-4 rounded-lg border border-orange-200"><p className="text-sm text-orange-600 font-medium mb-1">Receitas</p><p className="text-xl font-bold text-orange-800">{formatarMoeda(dadosFinanceiro.receitasPendentes)}</p></div>
-                <div className="bg-green-50 p-4 rounded-lg border border-green-200"><p className="text-sm text-green-600 font-medium mb-1">Despesas</p><p className="text-xl font-bold text-green-800">{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p></div>
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200"><p className="text-sm text-blue-600 font-medium mb-1">Saldo</p><p className={`text-xl font-bold ${dadosFinanceiro.saldo >= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatarMoeda(dadosFinanceiro.saldo)}</p></div>
-                <div className={`p-4 rounded-lg border ${dadosFinanceiro.saldo >= 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}><p className={`text-sm font-medium mb-1 ${dadosFinanceiro.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>Situação</p><p className={`text-xl font-bold ${dadosFinanceiro.saldo >= 0 ? 'text-green-800' : 'text-red-800'}`}>{dadosFinanceiro.saldo >= 0 ? '✅ Pago' : '⚠️ Devendo'}</p></div>
+                <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Despesas</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:"#10b981"}}>{formatarMoeda(dadosFinanceiro.despesasPendentes)}</p></div>
+                <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Saldo</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:dadosFinanceiro.saldo>=0?"var(--color-accent)":"#ef4444"}}>{formatarMoeda(dadosFinanceiro.saldo)}</p></div>
+                <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem"}}><p style={{fontSize:"0.8rem",color:"var(--color-text-muted)",fontWeight:"600",marginBottom:"0.25rem"}}>Situação</p><p style={{fontSize:"1.25rem",fontWeight:"700",color:dadosFinanceiro.saldo>=0?"#10b981":"#ef4444"}}>{dadosFinanceiro.saldo >= 0 ? '✅ Pago' : '⚠️ Devendo'}</p></div>
               </div>
             )}
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🎓 Graus Filosóficos ({grausFilosoficos.length})</h3>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>🎓 Graus Filosóficos ({grausFilosoficos.length})</h3>
             {grausFilosoficos.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <div className="border rounded-lg overflow-hidden">
                 {grausFilosoficos.map((g, i) => (
-                  <div key={g.id} className={`flex justify-between items-center p-4 ${i !== grausFilosoficos.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
+                  <div key={g.id} className={`flex justify-between items-center p-4 ${i !== grausFilosoficos.length - 1 ? 'border-b ' : ''} hover:`}>
                     <div>
-                      <p className="font-semibold text-gray-800">Grau {g.graus_maconicos?.numero_grau}° - {g.graus_maconicos?.nome_grau}</p>
+                      <p className="font-semibold">Grau {g.graus_maconicos?.numero_grau}° - {g.graus_maconicos?.nome_grau}</p>
                     </div>
-                    <span className="text-sm text-gray-500">{formatarData(g.data_conquista)}</span>
+                    <span className="text-sm">{formatarData(g.data_conquista)}</span>
                   </div>
                 ))}
               </div>
-            ) : <p className="text-gray-400 text-center py-4">Nenhum grau filosófico registrado</p>}
+            ) : <p className="text-center py-4">Nenhum grau filosófico registrado</p>}
           </section>
 
           <section className="mb-8">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">👥 Comissões</h3>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>👥 Comissões</h3>
             <div className="mb-4">
-              <h4 className="font-semibold text-green-700 mb-2">✓ Ativas ({comissoesAtivas.length})</h4>
+              <h4 className="font-semibold text-green-700 mb-2" style={{color:"var(--color-text)"}}>✓ Ativas ({comissoesAtivas.length})</h4>
               {comissoesAtivas.length > 0 ? (
-                <div className="bg-white border border-green-200 rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden">
                   {comissoesAtivas.map((c, i) => (
-                    <div key={c.id} className={`flex justify-between items-center p-3 ${i !== comissoesAtivas.length - 1 ? 'border-b border-green-100' : ''} hover:bg-green-50`}>
-                      <span className="font-medium text-gray-800">{c.comissoes?.nome || 'Sem nome'}</span>
-                      <span className="text-sm text-gray-600 bg-green-100 px-3 py-1 rounded-full">{c.funcao || 'Membro'}</span>
+                    <div key={c.id} className={`flex justify-between items-center p-3 ${i !== comissoesAtivas.length - 1 ? 'border-b ' : ''} `}>
+                      <span className="font-medium">{c.comissoes?.nome || 'Sem nome'}</span>
+                      <span className="text-sm bg-green-100 px-3 py-1 rounded-full">{c.funcao || 'Membro'}</span>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-gray-400 text-sm pl-4">Nenhuma comissão ativa</p>}
+              ) : <p className="text-sm pl-4">Nenhuma comissão ativa</p>}
             </div>
             <div>
-              <h4 className="font-semibold text-gray-600 mb-2">✗ Inativas ({comissoesInativas.length})</h4>
+              <h4 className="font-semibold mb-2" style={{color:"var(--color-text)"}}>✗ Inativas ({comissoesInativas.length})</h4>
               {comissoesInativas.length > 0 ? (
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                <div className="border rounded-lg overflow-hidden">
                   {comissoesInativas.map((c, i) => (
-                    <div key={c.id} className={`flex justify-between items-center p-3 ${i !== comissoesInativas.length - 1 ? 'border-b border-gray-100' : ''} hover:bg-gray-50`}>
-                      <span className="text-gray-600">{c.comissoes?.nome || 'Sem nome'}</span>
-                      <span className="text-xs text-gray-500">Até {formatarData(c.data_saida)}</span>
+                    <div key={c.id} className="flex justify-between items-center p-3" style={{borderBottom:"1px solid var(--color-border)"}}>
+                      <span>{c.comissoes?.nome || 'Sem nome'}</span>
+                      <span className="text-xs">Até {formatarData(c.data_saida)}</span>
                     </div>
                   ))}
                 </div>
-              ) : <p className="text-gray-400 text-sm pl-4">Nenhuma comissão inativa</p>}
+              ) : <p className="text-sm pl-4">Nenhuma comissão inativa</p>}
             </div>
           </section>
 
           <section>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">🎉 Eventos Participados ({eventosParticipados.length})</h3>
+            <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>🎉 Eventos Participados ({eventosParticipados.length})</h3>
             {eventosParticipados.length > 0 ? (
-              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden max-h-80 overflow-y-auto">
+              <div className="border rounded-lg overflow-hidden max-h-80 overflow-y-auto">
                 {eventosParticipados.map((e, i) => (
-                  <div key={e.id} className={`p-4 ${i !== eventosParticipados.length - 1 ? 'border-b border-gray-200' : ''} hover:bg-gray-50`}>
+                  <div key={e.id} className="p-4" style={{borderBottom:"1px solid var(--color-border)"}}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <p className="font-semibold text-gray-800">{e.eventos_loja?.nome_evento || 'Sem nome'}</p>
-                        {e.eventos_loja?.descricao && <p className="text-sm text-gray-600 mt-1">{e.eventos_loja.descricao}</p>}
+                        <p className="font-semibold">{e.eventos_loja?.nome_evento || 'Sem nome'}</p>
+                        {e.eventos_loja?.descricao && <p className="text-sm mt-1">{e.eventos_loja.descricao}</p>}
                       </div>
-                      <span className="text-sm text-gray-500 ml-4 whitespace-nowrap">{formatarData(e.eventos_loja?.data_aviso)}</span>
+                      <span className="text-sm ml-4 whitespace-nowrap">{formatarData(e.eventos_loja?.data_aviso)}</span>
                     </div>
                   </div>
                 ))}
               </div>
-            ) : <p className="text-gray-400 text-center py-4">Nenhum evento participado</p>}
+            ) : <p className="text-center py-4">Nenhum evento participado</p>}
           </section>
         </div>
       </div>
