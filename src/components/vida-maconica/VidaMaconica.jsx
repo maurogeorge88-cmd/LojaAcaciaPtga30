@@ -194,7 +194,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <div className="p-6 rounded-lg border-l-4" style={{background:"var(--color-surface-2)",borderLeftColor:modoEdicao?"#f59e0b":"var(--color-accent)",border:"1px solid var(--color-border)"}}>
+        <div className="p-6 rounded-lg border-l-4" style={{background:"var(--color-surface)",borderLeftColor:modoEdicao?"#f59e0b":"var(--color-accent)",border:"1px solid var(--color-border)"}}>
           <h4 className="text-lg font-bold mb-4" style={{color:"var(--color-text)"}}>
             {modoEdicao ? '✏️ Editar Grau' : '➕ Adicionar Novo Grau'}
           </h4>
@@ -208,7 +208,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
               <select
                 value={filtroRito}
                 onChange={(e) => setFiltroRito(e.target.value)}
-                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className="w-full px-3 py-2 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               >
                 <option value="">Todos os Ritos</option>
                 {ritos.map(rito => (
@@ -225,7 +225,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
               <select
                 value={grauForm.grau_id}
                 onChange={(e) => setGrauForm({ ...grauForm, grau_id: e.target.value })}
-                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className="w-full px-3 py-2 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               >
                 <option value="">Selecione o grau</option>
                 {grausFiltrados.map(grau => (
@@ -245,7 +245,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 type="date"
                 value={grauForm.data_conquista}
                 onChange={(e) => setGrauForm({ ...grauForm, data_conquista: e.target.value })}
-                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className="w-full px-3 py-2 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               />
             </div>
 
@@ -258,7 +258,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 type="text"
                 value={grauForm.loja_conferente}
                 onChange={(e) => setGrauForm({ ...grauForm, loja_conferente: e.target.value })}
-                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className="w-full px-3 py-2 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               />
             </div>
 
@@ -271,7 +271,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 type="text"
                 value={grauForm.oriente_conferente}
                 onChange={(e) => setGrauForm({ ...grauForm, oriente_conferente: e.target.value })}
-                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className="w-full px-3 py-2 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               />
             </div>
 
@@ -284,7 +284,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 value={grauForm.observacoes}
                 onChange={(e) => setGrauForm({ ...grauForm, observacoes: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className="w-full px-3 py-2 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               />
             </div>
           </div>
