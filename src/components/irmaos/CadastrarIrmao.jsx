@@ -927,7 +927,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.nome}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, nome: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -943,7 +943,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={formatarCPF(irmaoForm.cpf)}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cpf: e.target.value })}
                   placeholder="000.000.000-00"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -955,7 +955,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.rg}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, rg: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -967,7 +967,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="date"
                   value={irmaoForm.data_nascimento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_nascimento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
                 {irmaoForm.data_nascimento && (
                   <span className="text-xs mt-1">
@@ -986,7 +986,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="email"
                   value={irmaoForm.email}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, email: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -999,7 +999,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={formatarTelefone(irmaoForm.telefone)}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, telefone: e.target.value })}
                   placeholder="(00) 00000-0000"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
             </div>
@@ -1014,7 +1014,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   value={irmaoForm.cep}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cep: e.target.value })}
                   placeholder="00000-000"
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1026,7 +1026,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.endereco}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, endereco: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1038,7 +1038,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.numero}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, numero: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
             </div>
@@ -1052,7 +1052,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.complemento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, complemento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1064,7 +1064,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.cidade}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cidade: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1078,7 +1078,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, estado: e.target.value })}
                   placeholder="UF"
                   maxLength="2"
-                  className="w-full px-3 py-2 border rounded uppercase"
+                  className="w-full px-3 py-2 border rounded uppercase" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
             </div>
@@ -1092,7 +1092,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.profissao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, profissao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1103,7 +1103,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <select
                   value={irmaoForm.estado_civil}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   {ESTADOS_CIVIS.map(ec => (
                     <option key={ec.value} value={ec.value}>{ec.label}</option>
@@ -1118,7 +1118,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <select
                   value={irmaoForm.escolaridade}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, escolaridade: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   {NIVEIS_ESCOLARIDADE.map(ne => (
                     <option key={ne.value} value={ne.value}>{ne.label}</option>
@@ -1183,7 +1183,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.cim}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, cim: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Ex: 123456"
                   required
                 />
@@ -1196,7 +1196,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <select
                   value={irmaoForm.situacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   {STATUS_IRMAOS.map(status => (
                     <option key={status.value} value={status.value}>{status.label}</option>
@@ -1228,7 +1228,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={irmaoForm.data_licenca}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_licenca: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 )} */}
@@ -1248,7 +1248,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={irmaoForm.data_desligamento}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_desligamento: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 )} */}
@@ -1266,7 +1266,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={irmaoForm.data_falecimento}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_falecimento: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
                 )}
@@ -1307,7 +1307,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="date"
                   value={irmaoForm.data_ingresso_loja}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
                 <p className="text-xs mt-1">
                   ℹ️ Deixe vazio se foi iniciado nesta loja. Para registrar transferências de saída, use a aba "Situações"
@@ -1325,7 +1325,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="date"
                   value={irmaoForm.data_iniciacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1337,7 +1337,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="date"
                   value={irmaoForm.data_elevacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_elevacao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -1349,7 +1349,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="date"
                   value={irmaoForm.data_exaltacao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, data_exaltacao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
             </div>
@@ -1393,7 +1393,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     type="date"
                     value={irmaoForm.data_instalacao || ''}
                     onChange={(e) => setIrmaoForm({ ...irmaoForm, data_instalacao: e.target.value })}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
               )}
@@ -1409,7 +1409,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.loja_origem}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, loja_origem: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Ex: Acácia de Paranatinga nº 30"
                 />
               </div>
@@ -1422,7 +1422,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.oriente}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, oriente: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Ex: Paranatinga"
                 />
               </div>
@@ -1435,7 +1435,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.grande_oriente}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, grande_oriente: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   placeholder="Ex: Grande Loja do Estado de Mato Grosso"
                 />
               </div>
@@ -1450,7 +1450,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <select
                   value={irmaoForm.periodicidade_pagamento}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, periodicidade_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="Mensal">📅 Mensal - Paga todo mês</option>
                   <option value="Semestral">📆 Semestral - Paga a cada 6 meses</option>
@@ -1471,7 +1471,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 value={irmaoForm.observacoes}
                 onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
                 rows="3"
-                className="w-full px-3 py-2 border rounded"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 placeholder="Observações adicionais sobre o irmão..."
               />
             </div>
@@ -1496,7 +1496,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       max="2100"
                       value={cargoForm.ano}
                       onChange={(e) => setCargoForm({ ...cargoForm, ano: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       placeholder="Ex: 2024"
                     />
                   </div>
@@ -1509,7 +1509,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="text"
                       value={cargoForm.cargo}
                       onChange={(e) => setCargoForm({ ...cargoForm, cargo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       placeholder="Ex: Venerável Mestre, 1º Vigilante, Orador..."
                     />
                   </div>
@@ -1654,7 +1654,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="text"
                         value={conjuge.nome}
                         onChange={(e) => setConjuge({ ...conjuge, nome: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
 
@@ -1667,7 +1667,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         value={formatarCPF(conjuge.cpf)}
                         onChange={(e) => setConjuge({ ...conjuge, cpf: e.target.value })}
                         placeholder="000.000.000-00"
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   </div>
@@ -1681,7 +1681,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="date"
                         value={conjuge.data_nascimento}
                         onChange={(e) => setConjuge({ ...conjuge, data_nascimento: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       {conjuge.data_nascimento && (
                         <span className="text-xs mt-1">
@@ -1698,7 +1698,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="date"
                         value={conjuge.data_casamento}
                         onChange={(e) => setConjuge({ ...conjuge, data_casamento: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       {conjuge.data_casamento && (
                         <span className="text-xs mt-1">
@@ -1715,7 +1715,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="text"
                         value={conjuge.profissao}
                         onChange={(e) => setConjuge({ ...conjuge, profissao: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   </div>
@@ -1736,7 +1736,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     type="text"
                     value={pais.nome_pai}
                     onChange={(e) => setPais({ ...pais, nome_pai: e.target.value })}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                   
                   <div>
@@ -1747,7 +1747,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={pais.data_nascimento_pai}
                       onChange={(e) => setPais({ ...pais, data_nascimento_pai: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
 
@@ -1770,7 +1770,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="date"
                         value={pais.data_obito_pai}
                         onChange={(e) => setPais({ ...pais, data_obito_pai: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   )}
@@ -1784,7 +1784,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     type="text"
                     value={pais.nome_mae}
                     onChange={(e) => setPais({ ...pais, nome_mae: e.target.value })}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                   
                   <div>
@@ -1795,7 +1795,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={pais.data_nascimento_mae}
                       onChange={(e) => setPais({ ...pais, data_nascimento_mae: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
 
@@ -1818,7 +1818,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="date"
                         value={pais.data_obito_mae}
                         onChange={(e) => setPais({ ...pais, data_obito_mae: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   )}
@@ -1841,7 +1841,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="text"
                       value={filhoForm.nome}
                       onChange={(e) => setFilhoForm({ ...filhoForm, nome: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
 
@@ -1853,7 +1853,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="date"
                       value={filhoForm.data_nascimento}
                       onChange={(e) => setFilhoForm({ ...filhoForm, data_nascimento: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   </div>
 
@@ -1864,7 +1864,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <select
                       value={filhoForm.sexo}
                       onChange={(e) => setFilhoForm({ ...filhoForm, sexo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="M">Masculino</option>
                       <option value="F">Feminino</option>
@@ -1878,7 +1878,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <select
                       value={filhoForm.tipo_vinculo}
                       onChange={(e) => setFilhoForm({ ...filhoForm, tipo_vinculo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="filho">Filho</option>
                       <option value="filha">Filha</option>
@@ -1915,7 +1915,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="date"
                         value={filhoForm.data_obito}
                         onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   )}
