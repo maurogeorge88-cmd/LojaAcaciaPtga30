@@ -13,7 +13,7 @@ export default function ModalBase({
   aberto, 
   onFechar, 
   titulo, 
-  corHeader = 'bg-white',
+  corHeader = '',
   tamanho = 'lg', 
   children 
 }) {
@@ -30,14 +30,14 @@ export default function ModalBase({
   };
 
   // Determinar cor do texto baseado na cor do header
-  const corTexto = corHeader === 'bg-white' ? 'text-gray-900' : 'text-white';
-  const corBotaoFechar = corHeader === 'bg-white' ? 'text-gray-400 hover:text-gray-600' : 'text-white/80 hover:text-white';
+  const corTexto = corHeader === '' ? '' : 'text-white';
+  const corBotaoFechar = corHeader === '' ? ' hover:' : 'text-white/80 hover:text-white';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-lg shadow-xl ${tamanhos[tamanho]} w-full max-h-[90vh] overflow-y-auto`}>
+      <div className={` rounded-lg  ${tamanhos[tamanho]} w-full max-h-[90vh] overflow-y-auto`}>
         {/* Header */}
-        <div className={`sticky top-0 ${corHeader} border-b border-gray-200 px-6 py-4 flex justify-between items-center rounded-t-lg`}>
+        <div className={`sticky top-0 ${corHeader} border-b  px-6 py-4 flex justify-between items-center rounded-t-lg`}>
           <h3 className={`text-xl font-bold ${corTexto}`}>{titulo}</h3>
           <button
             onClick={onFechar}
