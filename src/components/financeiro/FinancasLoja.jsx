@@ -2453,7 +2453,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Carregando dados financeiros...</div>
+        <div className="text-lg">Carregando dados financeiros...</div>
       </div>
     );
   }
@@ -2478,7 +2478,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
             viewMode === 'lancamentos'
               ? 'bg-primary-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              : '  '
           }`}
         >
           📊 Lançam.
@@ -2488,7 +2488,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
             viewMode === 'inadimplentes'
               ? 'bg-red-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              : '  '
           }`}
         >
           ⚠️ Inadimp.
@@ -2513,7 +2513,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <button
               onClick={fecharMes}
               disabled={fechandoMes}
-              className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+              className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               title={`Fechar ${meses[filtros.mes - 1]}/${filtros.ano}`}
             >
               <span>🔒 Fechar</span>
@@ -2535,13 +2535,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </button>
           
           {menuLancamentosAberto && (
-            <div className="absolute top-full left-0 mt-1 bg-white border-2 border-purple-600 rounded-lg shadow-xl z-50 min-w-[150px]">
+            <div className="absolute top-full left-0 mt-1 rounded-lg z-50 min-w-[150px]" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
               <button
                 onClick={() => {
                   abrirModalLancamento('receita');
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-green-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+                className="w-full px-4 py-3 text-left hover:bg-green-50 text-sm font-medium border-b"
               >
                 💵 Nova Receita
               </button>
@@ -2550,7 +2550,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   abrirModalLancamento('despesa');
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-red-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+                className="w-full px-4 py-3 text-left hover:bg-red-50 text-sm font-medium border-b"
               >
                 💳 Nova Despesa
               </button>
@@ -2560,7 +2560,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setModalParcelamentoAberto(true);
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-indigo-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+                className="w-full px-4 py-3 text-left hover:bg-indigo-50 text-sm font-medium border-b"
               >
                 🔀 Parcelar
               </button>
@@ -2569,7 +2569,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setMostrarModalIrmaos(true);
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-purple-50 text-sm font-medium text-gray-700"
+                className="w-full px-4 py-3 text-left hover:bg-purple-50 text-sm font-medium"
               >
                 👥 Lanç. em Lote
               </button>
@@ -2581,20 +2581,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="relative">
           <button
             onClick={() => setMenuRelatoriosAberto(!menuRelatoriosAberto)}
-            className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+            className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
           >
             <span>📄 Relatórios</span>
             <span className="text-xs">▼</span>
           </button>
           
           {menuRelatoriosAberto && (
-            <div className="absolute top-full left-0 mt-1 bg-white border-2 border-gray-600 rounded-lg shadow-xl z-50 min-w-[180px]">
+            <div className="absolute top-full left-0 mt-1 rounded-lg z-50 min-w-[150px]" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
               <button
                 onClick={() => {
                   gerarPDF();
                   setMenuRelatoriosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-200"
+                className="w-full px-4 py-3 text-left hover: text-sm font-medium border-b"
               >
                 📊 Relatório Detalhado
               </button>
@@ -2603,7 +2603,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   gerarPDFResumido();
                   setMenuRelatoriosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-blue-50 text-sm font-medium text-gray-700"
+                className="w-full px-4 py-3 text-left hover:bg-blue-50 text-sm font-medium"
               >
                 📋 Fechamento Mensal
               </button>
@@ -2620,7 +2620,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </button>
         <button
           onClick={() => setModalAnaliseAberto(true)}
-          className="w-28 h-[55px] px-3 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg hover: font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>📊 Análise</span>
           <span>Categorias</span>
@@ -2629,7 +2629,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* Botão Apresentação TV */}
         <button
           onClick={() => setTelaTV(true)}
-          className="w-28 h-[55px] px-3 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span>📺 Tela</span>
           <span>para TV</span>
@@ -2638,14 +2638,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* Botão Ocultar/Mostrar Valores */}
         <button
           onClick={() => setShowValues(!showValues)}
-          className="w-28 h-[55px] px-3 text-sm bg-gray-700 text-white rounded-lg hover:bg-gray-800 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm bg-gray-700 text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
         >
           <span className="text-xl">{showValues ? '🙈' : '👁️'}</span>
           <span className="text-xs">{showValues ? 'Ocultar' : 'Mostrar'}</span>
         </button>
         
         {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap">
+        <div className="bg-blue-50 border rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap">
           <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
           <p className="text-lg font-bold text-blue-700 leading-tight">{totalRegistros}</p>
         </div>
@@ -2657,12 +2657,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
           {/* LINHA 1: Resumo Geral */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 flex flex-col justify-center">
+            <div className="bg-purple-50 border rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
               <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
                 {showValues ? formatarMoeda(saldoAnterior) : '••••••'}
               </p>
-              <p className="text-[10px] text-gray-500 mt-0.5">
+              <p className="text-[10px] mt-0.5">
                 {filtros.mes > 0 && filtros.ano > 0 
                   ? `Antes de ${meses[filtros.mes - 1]}/${filtros.ano}`
                   : filtros.ano > 0 
@@ -2672,51 +2672,51 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             
             <div 
-              className="bg-green-50 border border-green-200 rounded-lg p-3 relative flex flex-col justify-center cursor-pointer hover:bg-green-100 transition"
+              className="bg-green-50 border rounded-lg p-3 relative flex flex-col justify-center cursor-pointer hover:bg-green-100 transition"
               onDoubleClick={abrirDetalhesReceitasPagas}
               title="Clique duplo para ver detalhes"
-            >
+             style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas 🖱️</p>
               <p className="text-lg font-bold text-green-700">{showValues ? formatarMoeda(resumo.receitas) : '••••••'}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Total recebido</p>
-              <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+              <p className="text-[10px] mt-0.5">Total recebido</p>
+              <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
             
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3 relative flex flex-col justify-center">
+            <div className="bg-red-50 border rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
               <p className="text-lg font-bold text-red-700">{showValues ? formatarMoeda(resumo.despesas) : '••••••'}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Total pago</p>
-              <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+              <p className="text-[10px] mt-0.5">Total pago</p>
+              <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
             
-            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative flex flex-col justify-center">
+            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
               <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
                 {showValues ? formatarMoeda(resumo.saldoPeriodo) : '••••••'}
               </p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Receitas - Despesas</p>
-              <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+              <p className="text-[10px] mt-0.5">Receitas - Despesas</p>
+              <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
           </div>
 
           {/* LINHA 2: Detalhamento */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 flex-1">
-          <div className="bg-sky-50 border-2 border-sky-300 rounded-lg p-3">
+          <div className="bg-sky-50 border-2 border-sky-300 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-sky-600 font-medium">🏦 Saldo Bancário</p>
             <p className={`text-lg font-bold ${resumo.saldoBancario >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
               {showValues ? formatarMoeda(resumo.saldoBancario) : '••••••'}
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">
+            <p className="text-[10px] mt-0.5">
               PIX, Transf., Cartão
             </p>
           </div>
 
-          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3">
+          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-emerald-600 font-medium">💵 Caixa Físico</p>
             <p className="text-lg font-bold text-emerald-700">
               {showValues ? formatarMoeda(resumo.caixaFisico) : '••••••'}
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5 mb-2">
+            <p className="text-[10px] mt-0.5 mb-2">
               Dinheiro não depositado
             </p>
             {resumo.caixaFisico > 0 && (
@@ -2729,46 +2729,46 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             )}
           </div>
 
-          <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-3 col-span-2 md:col-span-1">
+          <div className="bg-blue-50 border-2 rounded-lg p-3 col-span-2 md:col-span-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
             <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
               {showValues ? formatarMoeda(resumo.saldoTotal) : "••••••"}
             </p>
-            <p className="text-[10px] text-gray-500 mt-0.5">
+            <p className="text-[10px] mt-0.5">
               Bancário + Caixa
             </p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 relative">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-yellow-600 font-medium">⏳ A Receber</p>
             <p className="text-lg font-bold text-yellow-700">{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
-            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+            <p className="text-[10px] mt-0.5">Pendentes</p>
+            <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
           </div>
           
           <div 
-            className="bg-orange-50 border border-orange-200 rounded-lg p-3 relative cursor-pointer hover:bg-orange-100 transition"
+            className="rounded-lg p-3 relative cursor-pointer transition" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}
             onDoubleClick={() => setModalDespesasPendentesAberto(true)}
             title="Clique duplo para ver detalhes"
           >
-            <p className="text-xs text-orange-600 font-medium">⏰ A Pagar 🖱️</p>
-            <p className="text-lg font-bold text-orange-700">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">Pendentes</p>
-            <span className="absolute bottom-1 right-2 text-[9px] text-gray-400 font-medium">{formatarPeriodo()}</span>
+            <p className="text-xs font-medium">⏰ A Pagar 🖱️</p>
+            <p className="text-lg font-bold">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
+            <p className="text-[10px] mt-0.5">Pendentes</p>
+            <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
           </div>
         </div>
       </div>
 
       {/* COLUNA DIREITA: Tronco de Solidariedade (1/4 da largura) */}
       <div className="lg:col-span-1">
-        <div className="bg-gradient-to-br from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-4 h-full flex flex-col">
+        <div className="bg-gradient-to-br border-2 rounded-lg p-4 h-full flex flex-col" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           {/* Cabeçalho */}
-          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-amber-300">
+          <div className="flex items-center gap-3 mb-4 pb-3 border-b">
             <span className="text-3xl">💰</span>
             <div className="flex-1 text-center">
-              <p className="text-sm font-bold text-amber-800 leading-tight">Tronco de Solidariedade</p>
-              <p className="text-xs text-amber-600 mt-0.5">Saldo acumulado</p>
-              <p className={`text-2xl font-bold mt-1 ${troncoTotalGlobal.total >= 0 ? 'text-amber-700' : 'text-red-700'}`}>
+              <p className="text-sm font-bold leading-tight">Tronco de Solidariedade</p>
+              <p className="text-xs mt-0.5">Saldo acumulado</p>
+              <p className={`text-2xl font-bold mt-1 ${troncoTotalGlobal.total >= 0 ? '' : 'text-red-700'}`}>
                 {showValues ? formatarMoeda(troncoTotalGlobal.total) : '••••••'}
               </p>
             </div>
@@ -2776,13 +2776,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           <div className="space-y-3 flex-1 flex flex-col justify-center">
             {/* Card Banco */}
-            <div className="bg-white/70 rounded-lg p-3 border border-amber-200">
+            <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between">
                 <div className="flex items-start gap-2">
                   <span className="text-xl">🏦</span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-700">Banco</p>
-                    <p className="text-[10px] text-gray-500 leading-tight">PIX, Transf., Cartão</p>
+                    <p className="text-sm font-semibold">Banco</p>
+                    <p className="text-[10px] leading-tight">PIX, Transf., Cartão</p>
                   </div>
                 </div>
                 <p className={`text-xl font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
@@ -2792,13 +2792,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
 
             {/* Card Espécie */}
-            <div className="bg-white/70 rounded-lg p-3 border border-amber-200">
+            <div className="/70 rounded-lg p-3 border" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-start gap-2">
                   <span className="text-xl">💵</span>
                   <div>
-                    <p className="text-sm font-semibold text-gray-700">Espécie</p>
-                    <p className="text-[10px] text-gray-500 leading-tight">Dinheiro físico</p>
+                    <p className="text-sm font-semibold">Espécie</p>
+                    <p className="text-[10px] leading-tight">Dinheiro físico</p>
                   </div>
                 </div>
                 <p className={`text-xl font-bold ${troncoTotalGlobal.especie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
@@ -2808,7 +2808,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               {troncoTotalGlobal.especie > 0 && (
                 <button
                   onClick={() => setModalSangriaTroncoAberto(true)}
-                  className="w-full px-2 py-1.5 bg-amber-600 text-white text-[11px] rounded hover:bg-amber-700 font-semibold transition-colors"
+                  className="w-full px-2 py-1.5 text-white text-[11px] rounded hover: font-semibold transition-colors"
                 >
                   🔥 Fazer Sangria
                 </button>
@@ -2821,7 +2821,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       {/* BANNER MÊS FECHADO */}
       {mesFechadoAtual() && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4 flex items-center justify-between">
+        <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4 flex items-center justify-between" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔒</span>
             <div>
@@ -2846,15 +2846,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       )}
 
       {/* FILTROS */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
           {/* Filtro Mês */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Mês</label>
             <select
               value={filtros.mes}
               onChange={(e) => setFiltros({ ...filtros, mes: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value={0}>Todos</option>
               {meses.map((mes, idx) => (
@@ -2872,7 +2872,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       setFiltros({ ...filtros, mes: filtros.mes - 1 });
                     }
                   }}
-                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
                   title="Mês anterior"
                 >‹</button>
                 <button
@@ -2883,7 +2883,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       setFiltros({ ...filtros, mes: filtros.mes + 1 });
                     }
                   }}
-                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
                   title="Próximo mês"
                 >›</button>
               </div>
@@ -2892,11 +2892,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* Filtro Ano */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
             <select
               value={filtros.ano}
               onChange={(e) => setFiltros({ ...filtros, ano: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value={0}>Todos</option>
               {anosDisponiveis.map(ano => (
@@ -2908,12 +2908,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="flex gap-1 mt-1">
                 <button
                   onClick={() => setFiltros({ ...filtros, ano: filtros.ano - 1 })}
-                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
                   title="Ano anterior"
                 >‹</button>
                 <button
                   onClick={() => setFiltros({ ...filtros, ano: filtros.ano + 1 })}
-                  className="flex-1 py-1 bg-gray-100 hover:bg-gray-200 rounded text-sm font-bold text-gray-600 transition-colors"
+                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
                   title="Próximo ano"
                 >›</button>
               </div>
@@ -2922,11 +2922,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* Filtro Tipo */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo</label>
             <select
               value={filtros.tipo}
               onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todos</option>
               <option value="receita">Receitas</option>
@@ -2936,11 +2936,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* Filtro Categoria */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Categoria</label>
             <select
               value={filtros.categoria}
               onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todas</option>
               {categorias.map(cat => (
@@ -2951,11 +2951,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* Filtro Status */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Status</label>
             <select
               value={filtros.status}
               onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todos</option>
               <option value="pago">Pagos</option>
@@ -2967,13 +2967,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* Filtro Origem */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Origem</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Origem</label>
             <select
               value={filtros.origem_tipo}
               onChange={(e) => {
                 setFiltros({ ...filtros, origem_tipo: e.target.value, origem_irmao_id: '' });
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Todas</option>
               <option value="Loja">🏛️ Loja</option>
@@ -2984,11 +2984,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* Filtro por Irmão (só aparece se origem = Irmão) */}
           {filtros.origem_tipo === 'Irmao' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Irmão</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Irmão</label>
               <select
                 value={filtros.origem_irmao_id}
                 onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border rounded-lg"
               >
                 <option value="">Todos</option>
                 {irmaos.map(irmao => (
@@ -3021,21 +3021,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* MODAL LANÇAMENTO EM LOTE */}
       {mostrarModalIrmaos && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
-              <h3 className="text-xl font-bold text-gray-900">👥 Lançamento em Lote para Irmãos</h3>
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="sticky top-0 border-b px-6 py-4">
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>👥 Lançamento em Lote para Irmãos</h3>
             </div>
             
             <form onSubmit={handleLancamentoIrmaos} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Categoria (Receita) *
                   </label>
                   <select
                     value={lancamentoIrmaos.categoria_id}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, categoria_id: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                     required
                   >
                     <option value="">Selecione...</option>
@@ -3044,7 +3044,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
 
                 <div className="md:col-span-2">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -3056,7 +3056,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             irmaos_selecionados: [] // Limpa seleção ao mudar tipo
                           });
                         }}
-                        className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        className="w-5 h-5 text-blue-600 rounded"
                       />
                       <div className="ml-3">
                         <span className="text-sm font-medium text-blue-900">
@@ -3073,7 +3073,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Valor por Irmão (R$) *
                   </label>
                   <input
@@ -3081,62 +3081,62 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     step="0.01"
                     value={lancamentoIrmaos.valor}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, valor: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                     required
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Descrição Base *
                   </label>
                   <input
                     type="text"
                     value={lancamentoIrmaos.descricao}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, descricao: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                     placeholder="Ex: Mensalidade - Janeiro/2024"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs mt-1">
                     O nome do irmão será adicionado automaticamente no final
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Data Lançamento *
                   </label>
                   <input
                     type="date"
                     value={lancamentoIrmaos.data_lancamento}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, data_lancamento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Data Vencimento *
                   </label>
                   <input
                     type="date"
                     value={lancamentoIrmaos.data_vencimento}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, data_vencimento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Tipo de Pagamento
                   </label>
                   <select
                     value={lancamentoIrmaos.tipo_pagamento}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, tipo_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded-lg"
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -3147,7 +3147,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>
                     Selecione os Irmãos * ({lancamentoIrmaos.irmaos_selecionados.length} selecionados
                     {lancamentoIrmaos.eh_mensalidade && (
                       <span className="text-blue-600">
@@ -3172,9 +3172,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     </button>
                   </div>
                 </div>
-                <div className="border border-gray-300 rounded-lg p-4 max-h-60 overflow-y-auto">
+                <div className="border rounded-lg p-4 max-h-60 overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   {irmaos.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8">
                       <p>⚠️ Nenhum irmão ativo encontrado</p>
                       <p className="text-xs mt-2">Verifique se existem irmãos com situação "Ativo" no cadastro</p>
                     </div>
@@ -3191,14 +3191,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           return true;
                         })
                         .map(irmao => (
-                        <label key={irmao.id} className="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded">
+                        <label key={irmao.id} className="flex items-center cursor-pointer hover: p-2 rounded">
                           <input
                             type="checkbox"
                             checked={lancamentoIrmaos.irmaos_selecionados.includes(irmao.id)}
                             onChange={() => toggleIrmaoSelecionado(irmao.id)}
-                            className="w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
                           />
-                          <span className="ml-2 text-sm text-gray-700">
+                          <span className="ml-2 text-sm">
                             {irmao.nome}
                             {irmao.periodicidade_pagamento && irmao.periodicidade_pagamento !== 'Mensal' && (
                               <span className="ml-1 text-xs text-blue-600">
@@ -3213,7 +3213,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="bg-blue-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-sm text-blue-800">
                   <strong>Total a lançar:</strong> R$ {(parseFloat(lancamentoIrmaos.valor || 0) * lancamentoIrmaos.irmaos_selecionados.length).toFixed(2)}
                   {' '}({lancamentoIrmaos.irmaos_selecionados.length} irmãos × R$ {parseFloat(lancamentoIrmaos.valor || 0).toFixed(2)})
@@ -3233,7 +3233,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     setMostrarModalIrmaos(false);
                     limparLancamentoIrmaos();
                   }}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  className="px-6 py-2 bg-gray-300 rounded-lg"
                 >
                   Cancelar
                 </button>
@@ -3246,33 +3246,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* MODAL QUITAÇÃO INDIVIDUAL */}
       {mostrarModalQuitacao && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+          <div className="rounded-lg max-w-md w-full">
             <div className="bg-green-600 text-white px-6 py-4 rounded-t-lg">
-              <h3 className="text-xl font-bold">💰 Quitar Lançamento</h3>
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitar Lançamento</h3>
             </div>
             
             <form onSubmit={handleQuitacao} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Pagamento *
                 </label>
                 <input
                   type="date"
                   value={quitacaoForm.data_pagamento}
                   onChange={(e) => setQuitacaoForm({ ...quitacaoForm, data_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Tipo de Pagamento *
                 </label>
                 <select
                   value={quitacaoForm.tipo_pagamento}
                   onChange={(e) => setQuitacaoForm({ ...quitacaoForm, tipo_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                 >
                   {tiposPagamento.map(tipo => (
                     <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -3281,13 +3281,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Observações
                 </label>
                 <textarea
                   value={quitacaoForm.observacoes}
                   onChange={(e) => setQuitacaoForm({ ...quitacaoForm, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                   rows="3"
                   placeholder="Observações sobre o pagamento (opcional)"
                 />
@@ -3303,7 +3303,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <button
                   type="button"
                   onClick={() => setMostrarModalQuitacao(false)}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  className="px-6 py-2 bg-gray-300 rounded-lg"
                 >
                   Cancelar
                 </button>
@@ -3316,9 +3316,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* MODAL QUITAÇÃO EM LOTE */}
       {mostrarModalQuitacaoLote && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="bg-green-600 text-white px-6 py-4 rounded-t-lg">
-              <h3 className="text-xl font-bold">💰 Quitação em Lote</h3>
+              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitação em Lote</h3>
               <p className="text-sm text-green-100 mt-1">
                 {quitacaoLote.lancamentos_selecionados.length} lançamentos selecionados
               </p>
@@ -3327,26 +3327,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <form onSubmit={handleQuitacaoLote} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Data de Pagamento *
                   </label>
                   <input
                     type="date"
                     value={quitacaoLote.data_pagamento}
                     onChange={(e) => setQuitacaoLote({ ...quitacaoLote, data_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     Tipo de Pagamento *
                   </label>
                   <select
                     value={quitacaoLote.tipo_pagamento}
                     onChange={(e) => setQuitacaoLote({ ...quitacaoLote, tipo_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -3357,7 +3357,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>
                     Lançamentos Pendentes
                   </label>
                   <div className="flex gap-2">
@@ -3377,26 +3377,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     </button>
                   </div>
                 </div>
-                <div className="border border-gray-300 rounded-lg p-4 max-h-96 overflow-y-auto">
+                <div className="border rounded-lg p-4 max-h-96 overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <div className="space-y-2">
                     {lancamentos
                       .filter(l => l.status === 'pendente')
                       .map(lanc => (
                         <label 
                           key={lanc.id} 
-                          className="flex items-start cursor-pointer hover:bg-gray-50 p-3 rounded border border-gray-200"
+                          className="flex items-start cursor-pointer hover: p-3 rounded border"
                         >
                           <input
                             type="checkbox"
                             checked={quitacaoLote.lancamentos_selecionados.includes(lanc.id)}
                             onChange={() => toggleLancamentoParaQuitacao(lanc.id)}
-                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 rounded"
                           />
                           <div className="ml-3 flex-1">
                             <div className="flex justify-between items-start">
                               <div>
-                                <p className="font-medium text-gray-900">{lanc.descricao}</p>
-                                <p className="text-sm text-gray-600">
+                                <p className="font-medium">{lanc.descricao}</p>
+                                <p className="text-sm">
                                   {lanc.categorias_financeiras?.nome} • 
                                   Venc: {formatarDataBR(lanc.data_vencimento)}
                                 </p>
@@ -3412,7 +3412,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
               </div>
 
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="bg-green-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-sm text-green-800">
                   <strong>Total a quitar:</strong> {formatarMoeda(
                     lancamentos
@@ -3434,7 +3434,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <button
                   type="button"
                   onClick={() => setMostrarModalQuitacaoLote(false)}
-                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  className="px-6 py-2 bg-gray-300 rounded-lg"
                 >
                   Cancelar
                 </button>
@@ -3446,11 +3446,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       {/* VIEW INADIMPLENTES */}
       {viewMode === 'inadimplentes' && (
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-xl font-bold text-red-600">⚠️ Irmãos com Pendências Financeiras</h3>
-              <p className="text-sm text-gray-600">Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
+              <h3 className="text-xl font-bold text-red-600" style={{color:"var(--color-text)"}}>⚠️ Irmãos com Pendências Financeiras</h3>
+              <p className="text-sm">Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
             </div>
             {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length > 0 && (
               <div className="flex gap-2">
@@ -3471,7 +3471,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
           
           {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12">
               ✅ Nenhuma pendência financeira com irmãos neste período!
             </div>
           ) : (
@@ -3515,12 +3515,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   const corCabecalho = saldoLiquido > 0 ? 'bg-red-400' : saldoLiquido < 0 ? 'bg-blue-400' : 'bg-gray-500';
 
                   return (
-                    <div key={irmaoData.irmaoId} className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
+                    <div key={irmaoData.irmaoId} className="border-2 rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       {/* CABEÇALHO DO IRMÃO */}
                       <div className={`${corCabecalho} text-white p-4`}>
                         <div className="flex justify-between items-center">
                           <div className="flex-1">
-                            <h4 className="text-xl font-bold flex items-center gap-2">
+                            <h4 className="text-xl font-bold flex items-center gap-2" style={{color:"var(--color-text)"}}>
                               👤 {irmaoData.irmaoNome}
                             </h4>
                             <p className="text-white text-opacity-90 text-sm mt-1">
@@ -3530,7 +3530,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             {totalReceitas > 0 && totalDespesas > 0 && (
                               <button
                                 onClick={() => abrirModalCompensacao(irmaoData.irmaoId)}
-                                className="mt-2 px-3 py-1 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
+                                className="mt-2 px-3 py-1 bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
                               >
                                 🔄 Compensar Valores
                               </button>
@@ -3565,12 +3565,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       </div>
 
                       {/* LISTA DE LANÇAMENTOS DO IRMÃO */}
-                      <div className="divide-y divide-gray-200">
+                      <div>
                         {irmaoData.lancamentos.map((lanc, index) => {
                           const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
                           
                           return (
-                            <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
+                            <div key={lanc.id} className="p-4 hover: transition-colors">
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   {/* Badges de Categoria */}
@@ -3596,10 +3596,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   </div>
                                   
                                   {/* Descrição */}
-                                  <p className="font-medium text-gray-900 mb-1">{lanc.descricao}</p>
+                                  <p className="font-medium mb-1">{lanc.descricao}</p>
                                   
                                   {/* Informações detalhadas - DATAS NA MESMA LINHA */}
-                                  <div className="text-sm text-gray-600">
+                                  <div className="text-sm">
                                     <p className="mb-1">
                                       <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_pagamento)}
                                       <span className="mx-2">•</span>
@@ -3608,7 +3608,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                       </span> {formatarDataBR(lanc.data_vencimento)}
                                     </p>
                                     {lanc.observacoes && (
-                                      <p className="text-gray-500 italic">
+                                      <p className="italic">
                                         💬 {lanc.observacoes}
                                       </p>
                                     )}
@@ -3635,7 +3635,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       </div>
 
                       {/* RODAPÉ COM AÇÕES GERAIS DO IRMÃO */}
-                      <div className="bg-gray-50 p-4 border-t border-gray-200">
+                      <div className="p-4 border-t">
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
@@ -3656,18 +3656,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       {/* LISTA DE LANÇAMENTOS */}
       {viewMode === 'lancamentos' && (
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <div className="rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="px-6 py-4 border-b flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>
                 Lançamentos de {meses[filtros.mes - 1]}/{filtros.ano}
               </h3>
               <div className="flex items-center gap-2">
-                <label className="text-sm text-gray-600">Mostrar:</label>
+                <label className="text-sm" style={{color:"var(--color-text-muted)"}}>Mostrar:</label>
                 <select
                   value={limiteRegistros}
                   onChange={(e) => setLimiteRegistros(Number(e.target.value))}
-                  className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                  className="px-3 py-1 border rounded-lg text-sm"
                 >
                   <option value={20}>20</option>
                   <option value={30}>30</option>
@@ -3675,7 +3675,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <option value={50}>50</option>
                   <option value={9999}>Todos</option>
                 </select>
-                <span className="text-sm text-gray-600">registros</span>
+                <span className="text-sm">registros</span>
               </div>
             </div>
             {lancamentos.filter(l => l.status === 'pendente').length > 0 && (
@@ -3688,38 +3688,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             )}
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full">
+              <thead style={{background:"var(--color-surface-2)"}}>
                 <tr>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Competência</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Lançamento</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoria</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descrição</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Origem</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-28">Valor</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-20">Pgto</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-24">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-44">Ações</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-24" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Competência</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-24" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Lançamento</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Tipo</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Descrição</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Origem</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase w-28" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Valor</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-20" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Pgto</th>
+                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-24" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase w-44" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {lancamentos.slice(0, limiteRegistros).map((lanc) => (
-                  <tr key={lanc.id} className="hover:bg-gray-50">
+                  <tr key={lanc.id} style={{borderBottom:"1px solid var(--color-border)"}}>
                     {/* COMPETÊNCIA: Mostra data relevante (pagamento se pago, vencimento se pendente) */}
-                    <td className="px-2 py-3 whitespace-nowrap text-sm w-24">
-                      <div className={lanc.status === 'pago' ? 'text-green-700 font-medium' : 'text-gray-900'}>
+                    <td className="px-2 py-3 whitespace-nowrap text-sm w-24" style={{color:"var(--color-text)"}}>
+                      <div className={lanc.status === 'pago' ? 'text-green-700 font-medium' : ''}>
                         {formatarDataBR(lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento)}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs">
                         {lanc.status === 'pago' ? '💰 Pgto' : '📅 Venc'}
                       </div>
                     </td>
                     {/* DATA DE LANÇAMENTO: Apenas referência */}
-                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-500 w-24">
+                    <td className="px-2 py-3 whitespace-nowrap text-xs w-24" style={{color:"var(--color-text)"}}>
                       {formatarDataBR(lanc.data_lancamento)}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
+                    <td className="px-4 py-3 whitespace-nowrap" style={{color:"var(--color-text)"}}>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         lanc.categorias_financeiras?.tipo === 'receita'
                           ? 'bg-green-100 text-green-800'
@@ -3728,23 +3728,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         {lanc.categorias_financeiras?.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm" style={{color:"var(--color-text)"}}>
                       {lanc.categorias_financeiras?.nome}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
+                    <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                       {lanc.descricao}
                     </td>
                     {/* NOVA COLUNA: Origem */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm" style={{color:"var(--color-text)"}}>
                       {lanc.origem_tipo === 'Loja' ? (
                         <div className="flex items-center gap-1">
                           <span className="text-blue-600">🏛️</span>
-                          <span className="text-gray-900 font-medium">Loja</span>
+                          <span className="font-medium">Loja</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
                           <span className="text-purple-600">👤</span>
-                          <span className="text-gray-900 font-medium">
+                          <span className="font-medium">
                             {(() => {
                               const nomeCompleto = lanc.irmaos?.nome || 'Irmão';
                               const partes = nomeCompleto.split(' ');
@@ -3756,23 +3756,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         </div>
                       )}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28">
+                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28" style={{color:"var(--color-text)"}}>
                       <div>
                         <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
                           {formatarMoeda(parseFloat(lanc.valor))}
                         </span>
                         {lanc.tem_pagamento_parcial && (
-                          <div className="text-xs text-gray-500 mt-1">
+                          <div className="text-xs mt-1">
                             <div>Original: {formatarMoeda(lanc.valor_original)}</div>
                             <div className="text-green-600">Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-2 py-3 whitespace-nowrap text-xs text-gray-900 w-20">
+                    <td className="px-2 py-3 whitespace-nowrap text-xs w-20" style={{color:"var(--color-text)"}}>
                       {lanc.tipo_pagamento}
                     </td>
-                    <td className="px-2 py-3 whitespace-nowrap w-24">
+                    <td className="px-2 py-3 whitespace-nowrap w-24" style={{color:"var(--color-text)"}}>
                       {(() => {
                         const badge = obterBadgeStatus(lanc);
                         return (
@@ -3782,7 +3782,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         );
                       })()}
                     </td>
-                    <td className="px-4 py-3 text-sm w-44">
+                    <td className="px-4 py-3 text-sm w-44" style={{color:"var(--color-text)"}}>
                       <div className="flex gap-1 items-center flex-wrap max-w-[176px]">
                         {/* Badge de Parcela */}
                         {lanc.eh_parcelado && (
@@ -3811,7 +3811,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             disabled={lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)}
                             className={`text-lg ${
                               lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)
-                                ? 'text-gray-400 cursor-not-allowed'
+                                ? ' cursor-not-allowed'
                                 : 'text-indigo-600 hover:text-indigo-900'
                             }`}
                             title={
@@ -3828,7 +3828,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalPagamentoParcial(lanc)}
-                            className="text-amber-600 hover:text-amber-900 text-lg"
+                            className="hover: text-lg"
                             title="Fazer pagamento parcial"
                           >
                             💰
@@ -3869,12 +3869,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </tbody>
             </table>
             {lancamentos.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
+              <div className="text-center py-12">
                 Nenhum lançamento encontrado
               </div>
             )}
             {lancamentos.length > limiteRegistros && (
-              <div className="text-center py-4 text-sm text-gray-600 border-t border-gray-200">
+              <div className="text-center py-4 text-sm border-t">
                 Exibindo {limiteRegistros} de {lancamentos.length} registros
               </div>
             )}
@@ -3919,12 +3919,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* MODAL DETALHES RECEITAS PAGAS */}
       {modalReceitasPagasAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
+          <div className="rounded-lg max-w-2xl w-full">
             {/* Header */}
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-t-lg">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-bold">💵 Receitas Pagas - Detalhamento</h3>
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💵 Receitas Pagas - Detalhamento</h3>
                   <p className="text-sm text-green-100">Distribuição por forma de pagamento</p>
                 </div>
                 <button
@@ -3938,29 +3938,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
             {/* Corpo */}
             <div className="p-6 space-y-4">
-              <div className="bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
-                <p className="text-xl text-gray-700 mb-2">🏦 Recebido em Conta</p>
+              <div className="bg-blue-50 p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <p className="text-xl mb-2">🏦 Recebido em Conta</p>
                 <p className="text-4xl font-bold text-blue-600">{formatarMoeda(detalhesReceitasPagas.conta)}</p>
-                <p className="text-sm text-gray-500 mt-1">PIX, Transferência, Cartão</p>
+                <p className="text-sm mt-1">PIX, Transferência, Cartão</p>
               </div>
               
-              <div className="bg-green-50 p-6 rounded-xl border-2 border-green-200">
-                <p className="text-xl text-gray-700 mb-2">💵 Recebido em Dinheiro</p>
+              <div className="bg-green-50 p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <p className="text-xl mb-2">💵 Recebido em Dinheiro</p>
                 <p className="text-4xl font-bold text-green-600">{formatarMoeda(detalhesReceitasPagas.dinheiro)}</p>
-                <p className="text-sm text-gray-500 mt-1">Dinheiro físico</p>
+                <p className="text-sm mt-1">Dinheiro físico</p>
               </div>
               
-              <div className="bg-purple-50 p-6 rounded-xl border-2 border-purple-200">
-                <p className="text-xl text-gray-700 mb-2">💰 Total Recebido</p>
+              <div className="bg-purple-50 p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <p className="text-xl mb-2">💰 Total Recebido</p>
                 <p className="text-4xl font-bold text-purple-600">
                   {formatarMoeda(detalhesReceitasPagas.conta + detalhesReceitasPagas.dinheiro)}
                 </p>
-                <p className="text-sm text-gray-500 mt-1">Soma de todas as receitas pagas</p>
+                <p className="text-sm mt-1">Soma de todas as receitas pagas</p>
               </div>
 
               <button
                 onClick={() => setModalReceitasPagasAberto(false)}
-                className="w-full bg-gray-600 text-white py-3 rounded-lg text-lg font-bold hover:bg-gray-700"
+                className="w-full bg-gray-600 text-white py-3 rounded-lg text-lg font-bold"
               >
                 Fechar
               </button>
@@ -3972,13 +3972,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* MODAL DESPESAS PENDENTES */}
       {modalDespesasPendentesAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="rounded-lg max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-4">
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-bold">⏰ Despesas Pendentes</h3>
-                  <p className="text-sm text-orange-100">Valores a pagar e a compensar</p>
+                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>⏰ Despesas Pendentes</h3>
+                  <p className="text-sm">Valores a pagar e a compensar</p>
                 </div>
                 <button
                   onClick={() => setModalDespesasPendentesAberto(false)}
@@ -3993,13 +3993,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="p-6 overflow-y-auto flex-1">
               {/* Resumo */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <div className="bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
-                  <p className="text-sm text-orange-600 font-medium mb-1">⏰ Total a Pagar</p>
-                  <p className="text-3xl font-bold text-orange-700">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
-                  <p className="text-xs text-gray-500 mt-1">Despesas pendentes do período</p>
+                <div className="border-2 border-orange-300 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <p className="text-sm font-medium mb-1">⏰ Total a Pagar</p>
+                  <p className="text-3xl font-bold">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
+                  <p className="text-xs mt-1">Despesas pendentes do período</p>
                 </div>
                 
-                <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4">
+                <div className="bg-purple-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm text-purple-600 font-medium mb-1">🔄 A Compensar</p>
                   <p className="text-3xl font-bold text-purple-700">
                     {formatarMoeda(
@@ -4008,25 +4008,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0)
                     )}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Débitos de irmãos pendentes</p>
+                  <p className="text-xs mt-1">Débitos de irmãos pendentes</p>
                 </div>
               </div>
 
               {/* Tabela de Despesas */}
-              <div className="border-2 border-gray-300 rounded-lg overflow-hidden">
+              <div className="border-2 rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-gray-100 border-b-2 border-gray-300">
+                    <thead className="border-b-2" style={{background:"var(--color-surface-2)"}}>
                       <tr>
-                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Data Venc.</th>
-                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Descrição</th>
-                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Categoria</th>
-                        <th className="px-4 py-3 text-left text-sm font-bold text-gray-700">Origem</th>
-                        <th className="px-4 py-3 text-right text-sm font-bold text-gray-700">Valor</th>
-                        <th className="px-4 py-3 text-center text-sm font-bold text-gray-700">Status</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Data Venc.</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Descrição</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
+                        <th className="px-4 py-3 text-left text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Origem</th>
+                        <th className="px-4 py-3 text-right text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Valor</th>
+                        <th className="px-4 py-3 text-center text-sm font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody>
                       {lancamentos
                         .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente')
                         .sort((a, b) => new Date(a.data_vencimento) - new Date(b.data_vencimento))
@@ -4035,8 +4035,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           const diasAtraso = calcularDiasAtraso(lanc.data_vencimento);
                           
                           return (
-                            <tr key={lanc.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                              <td className="px-4 py-3 text-sm">
+                            <tr key={lanc.id} className={index % 2 === 0 ? '' : ''}>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 {formatarDataBR(lanc.data_vencimento)}
                                 {vencido && (
                                   <span className="block text-xs text-red-600 font-medium">
@@ -4044,18 +4044,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm">
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 <p className="font-medium">{lanc.descricao}</p>
                                 {lanc.observacoes && (
-                                  <p className="text-xs text-gray-500 mt-0.5">{lanc.observacoes}</p>
+                                  <p className="text-xs mt-0.5">{lanc.observacoes}</p>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-sm">
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
                                   {lanc.categorias_financeiras?.nome}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-sm">
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 {lanc.origem_tipo === 'Irmao' ? (
                                   <div>
                                     <p className="font-medium text-purple-700">
@@ -4066,17 +4066,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-medium">
+                                  <span className="px-2 py-1 rounded text-xs font-medium">
                                     Loja
                                   </span>
                                 )}
                               </td>
-                              <td className="px-4 py-3 text-right">
+                              <td className="px-4 py-3 text-right" style={{color:"var(--color-text)"}}>
                                 <p className="text-lg font-bold text-red-600">
                                   {formatarMoeda(lanc.valor)}
                                 </p>
                               </td>
-                              <td className="px-4 py-3 text-center">
+                              <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                                 {vencido ? (
                                   <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold">
                                     ⚠️ VENCIDO
@@ -4091,12 +4091,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           );
                         })}
                     </tbody>
-                    <tfoot className="bg-gray-200 border-t-2 border-gray-400">
+                    <tfoot className="border-t-2">
                       <tr>
-                        <td colSpan="4" className="px-4 py-3 text-right font-bold text-gray-800">
+                        <td colSpan="4" className="px-4 py-3 text-right font-bold" style={{color:"var(--color-text)"}}>
                           TOTAL PENDENTE:
                         </td>
-                        <td className="px-4 py-3 text-right font-bold text-red-700 text-xl">
+                        <td className="px-4 py-3 text-right font-bold text-red-700 text-xl" style={{color:"var(--color-text)"}}>
                           {showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}
                         </td>
                         <td></td>
@@ -4107,7 +4107,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
 
               {/* Informações */}
-              <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+              <div className="mt-6 bg-blue-50 border-l-4 p-4 rounded">
                 <div className="flex">
                   <span className="text-2xl mr-3">💡</span>
                   <div>
@@ -4123,10 +4123,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
 
             {/* Footer */}
-            <div className="border-t px-6 py-4 bg-gray-50">
+            <div className="border-t px-6 py-4">
               <button
                 onClick={() => setModalDespesasPendentesAberto(false)}
-                className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold transition"
+                className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg font-bold transition"
               >
                 Fechar
               </button>
@@ -4138,22 +4138,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* Modal Sangria */}
       {modalSangriaAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="rounded-xl max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">💰 Sangria</h3>
-              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="text-gray-500 hover:text-gray-700 text-2xl font-bold">×</button>
+              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Sangria</h3>
+              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="hover: text-2xl font-bold">×</button>
             </div>
-            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4 mb-6">
+            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-sm text-emerald-700 font-semibold mb-1">💵 Disponível</p>
               <p className="text-3xl font-bold text-emerald-800">{formatarMoeda(resumo.caixaFisico)}</p>
             </div>
             <div className="space-y-4">
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Valor *</label><input type="number" step="0.01" value={formSangria.valor} onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} className="w-full px-4 py-2 border rounded-lg" placeholder="0.00" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Data *</label><input type="date" value={formSangria.data} onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} className="w-full px-4 py-2 border rounded-lg" /></div>
-              <div><label className="block text-sm font-medium text-gray-700 mb-2">Obs</label><textarea value={formSangria.observacao} onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} className="w-full px-4 py-2 border rounded-lg" rows="2" /></div>
+              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Valor *</label><input type="number" step="0.01" value={formSangria.valor} onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} className="w-full px-4 py-2 border rounded-lg" placeholder="0.00" /></div>
+              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data *</label><input type="date" value={formSangria.data} onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} className="w-full px-4 py-2 border rounded-lg" /></div>
+              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Obs</label><textarea value={formSangria.observacao} onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} className="w-full px-4 py-2 border rounded-lg" rows="2" /></div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="flex-1 px-4 py-3 bg-gray-200 rounded-lg font-medium">Cancelar</button>
+              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="flex-1 px-4 py-3 rounded-lg font-medium">Cancelar</button>
               <button onClick={fazerSangria} disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Confirmar</button>
             </div>
           </div>
@@ -4163,29 +4163,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* Modal Sangria Tronco */}
       {modalSangriaTroncoAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+          <div className="rounded-xl max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-bold text-amber-800">💰 Sangria - Tronco</h3>
+              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Sangria - Tronco</h3>
               <button 
                 onClick={() => { 
                   setModalSangriaTroncoAberto(false); 
                   setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); 
                 }} 
-                className="text-gray-500 hover:text-gray-700 text-2xl font-bold"
+                className="hover: text-2xl font-bold"
               >
                 ×
               </button>
             </div>
             
-            <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6">
-              <p className="text-sm text-amber-700 font-semibold mb-1">💵 Espécie Disponível</p>
-              <p className="text-3xl font-bold text-amber-800">{formatarMoeda(troncoTotalGlobal.especie)}</p>
-              <p className="text-xs text-amber-600 mt-2">Será transferido para conta bancária</p>
+            <div className="border-2 rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <p className="text-sm font-semibold mb-1">💵 Espécie Disponível</p>
+              <p className="text-3xl font-bold">{formatarMoeda(troncoTotalGlobal.especie)}</p>
+              <p className="text-xs mt-2">Será transferido para conta bancária</p>
             </div>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Valor *</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Valor *</label>
                 <input 
                   type="number" 
                   step="0.01" 
@@ -4198,7 +4198,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Data *</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data *</label>
                 <input 
                   type="date" 
                   value={formSangria.data} 
@@ -4208,7 +4208,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Observação</label>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Observação</label>
                 <textarea 
                   value={formSangria.observacao} 
                   onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} 
@@ -4225,14 +4225,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setModalSangriaTroncoAberto(false); 
                   setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); 
                 }} 
-                className="flex-1 px-4 py-3 bg-gray-200 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+                className="flex-1 px-4 py-3 rounded-lg font-medium transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 onClick={() => fazerSangriaTronco()} 
                 disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0 || parseFloat(formSangria.valor) > troncoTotalGlobal.especie} 
-                className="flex-1 px-4 py-3 bg-amber-600 text-white rounded-lg font-medium disabled:opacity-50 hover:bg-amber-700 transition-colors"
+                className="flex-1 px-4 py-3 text-white rounded-lg font-medium disabled:opacity-50 hover: transition-colors"
               >
                 Confirmar
               </button>
@@ -4378,7 +4378,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">🏷️ Gerenciar Categorias</h2>
+        <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏷️ Gerenciar Categorias</h2>
         <button
           onClick={() => setMostrarFormulario(!mostrarFormulario)}
           className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
@@ -4388,40 +4388,40 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
       </div>
 
       {mostrarFormulario && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-lg font-semibold mb-4" style={{color:"var(--color-text)"}}>
             {editando ? '✏️ Editar Categoria' : '➕ Nova Categoria'}
           </h3>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nome *</label>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome *</label>
                 <input
                   type="text"
                   value={formCategoria.nome}
                   onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
                 <select
                   value={formCategoria.tipo}
                   onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="receita">💰 Receita</option>
                   <option value="despesa">💸 Despesa</option>
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Descrição</label>
                 <input
                   type="text"
                   value={formCategoria.descricao}
                   onChange={(e) => setFormCategoria({ ...formCategoria, descricao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg"
                 />
               </div>
               <div>
@@ -4440,7 +4440,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
               <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                 {editando ? '✅ Salvar' : '➕ Criar'}
               </button>
-              <button type="button" onClick={limparFormulario} className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg">
+              <button type="button" onClick={limparFormulario} className="px-6 py-2 bg-gray-300 rounded-lg">
                 Cancelar
               </button>
             </div>
@@ -4450,20 +4450,20 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* RECEITAS */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-green-700 mb-4">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-lg font-semibold text-green-700 mb-4" style={{color:"var(--color-text)"}}>
             💰 Receitas ({categoriasReceita.length})
           </h3>
           <div className="space-y-2">
             {categoriasReceita.map(cat => (
-              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-green-50 ' : '  opacity-60'}`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">{cat.nome}</h4>
-                      {cat.ativo === false && <span className="text-xs px-2 py-1 bg-gray-200 rounded">Inativa</span>}
+                      {cat.ativo === false && <span className="text-xs px-2 py-1 rounded">Inativa</span>}
                     </div>
-                    {cat.descricao && <p className="text-sm text-gray-600 mt-1">{cat.descricao}</p>}
+                    {cat.descricao && <p className="text-sm mt-1">{cat.descricao}</p>}
                   </div>
                   <div className="flex gap-1 ml-2">
                     <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
@@ -4473,25 +4473,25 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                 </div>
               </div>
             ))}
-            {categoriasReceita.length === 0 && <p className="text-gray-500 text-sm">Nenhuma categoria</p>}
+            {categoriasReceita.length === 0 && <p className="text-sm">Nenhuma categoria</p>}
           </div>
         </div>
 
         {/* DESPESAS */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-red-700 mb-4">
+        <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-lg font-semibold text-red-700 mb-4" style={{color:"var(--color-text)"}}>
             💸 Despesas ({categoriasDespesa.length})
           </h3>
           <div className="space-y-2">
             {categoriasDespesa.map(cat => (
-              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200 opacity-60'}`}>
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-red-50 ' : '  opacity-60'}`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium">{cat.nome}</h4>
-                      {cat.ativo === false && <span className="text-xs px-2 py-1 bg-gray-200 rounded">Inativa</span>}
+                      {cat.ativo === false && <span className="text-xs px-2 py-1 rounded">Inativa</span>}
                     </div>
-                    {cat.descricao && <p className="text-sm text-gray-600 mt-1">{cat.descricao}</p>}
+                    {cat.descricao && <p className="text-sm mt-1">{cat.descricao}</p>}
                   </div>
                   <div className="flex gap-1 ml-2">
                     <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
@@ -4501,12 +4501,12 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                 </div>
               </div>
             ))}
-            {categoriasDespesa.length === 0 && <p className="text-gray-500 text-sm">Nenhuma categoria</p>}
+            {categoriasDespesa.length === 0 && <p className="text-sm">Nenhuma categoria</p>}
           </div>
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-blue-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <p className="text-sm text-blue-800">
           💡 <strong>Dica:</strong> Categorias inativas não aparecem nos formulários, mas lançamentos antigos continuam visíveis.
         </p>
@@ -4705,12 +4705,12 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div 
           className="text-white px-6 py-4 rounded-t-lg"
-          style={{ background: 'linear-gradient(to right, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))' }}
+          style={{ background:'var(--color-accent)' }}
         >
-          <h3 className="text-xl font-bold">
+          <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
             {lancamentoExistente ? '🔀 Parcelar Lançamento Existente' : '🔢 Parcelar Despesa/Receita'}
           </h3>
           <p className="text-sm text-indigo-100">
@@ -4722,7 +4722,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Tipo *</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
             <div className="flex gap-4">
               <label className="flex items-center cursor-pointer">
                 <input type="radio" value="despesa" checked={formParcelamento.tipo === 'despesa'}
@@ -4742,7 +4742,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
           {/* Linha 1: Categoria e Descrição */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Categoria *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Categoria *</label>
               <select required value={formParcelamento.categoria_id}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg">
@@ -4752,18 +4752,18 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Descrição *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
               <input type="text" required value={formParcelamento.descricao}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: Reforma do templo" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 -mt-2">Será adicionado (1/5), (2/5), etc.</p>
+          <p className="text-xs -mt-2">Será adicionado (1/5), (2/5), etc.</p>
 
           {/* Linha 2: Origem */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Origem</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Origem</label>
               <select value={formParcelamento.origem_tipo}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_tipo: e.target.value, origem_irmao_id: '' })}
                 className="w-full px-3 py-2 border rounded-lg">
@@ -4773,7 +4773,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
             </div>
             {formParcelamento.origem_tipo === 'Irmao' && (
               <div>
-                <label className="block text-sm font-medium mb-1">Irmão</label>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Irmão</label>
                 <select value={formParcelamento.origem_irmao_id}
                   onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_irmao_id: e.target.value })}
                   className="w-full px-3 py-2 border rounded-lg">
@@ -4789,25 +4789,25 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
           {/* Linha 3: Valor Total, Nº Parcelas e Data Vencimento */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Valor Total *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Valor Total *</label>
               <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Nº Parcelas *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nº Parcelas *</label>
               <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Vencimento 1ª Parcela *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Vencimento 1ª Parcela *</label>
               <input type="date" required value={formParcelamento.data_primeira_parcela}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 -mt-2">As demais vencerão mensalmente</p>
+          <p className="text-xs -mt-2">As demais vencerão mensalmente</p>
 
           {formParcelamento.valor_total && formParcelamento.num_parcelas && (
             <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
@@ -4818,7 +4818,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-1">Forma de Pagamento</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Forma de Pagamento</label>
             <select value={formParcelamento.tipo_pagamento}
               onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
               className="w-full px-3 py-2 border rounded-lg">
@@ -4829,7 +4829,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Observações</label>
+            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
             <textarea value={formParcelamento.observacoes}
               onChange={(e) => setFormParcelamento({ ...formParcelamento, observacoes: e.target.value })}
               rows="2" className="w-full px-3 py-2 border rounded-lg" />
@@ -4837,11 +4837,11 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
 
           <div className="flex gap-3 pt-4 border-t">
             <button type="submit" 
-              className="flex-1 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">
+              className="flex-1 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium">
               🔢 Criar Parcelamento
             </button>
             <button type="button" onClick={onClose}
-              className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+              className="px-6 py-2 bg-gray-300 rounded-lg font-medium">
               Cancelar
             </button>
           </div>
@@ -4975,15 +4975,15 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full my-8">
-        <div className="bg-amber-600 text-white px-6 py-4 rounded-t-lg">
-          <h3 className="text-xl font-bold">💰 Pagamento Parcial</h3>
-          <p className="text-sm text-amber-100">Cada pagamento gera um registro que entra no balanço mensal</p>
+      <div className="rounded-lg max-w-2xl w-full my-8">
+        <div className="text-white px-6 py-4 rounded-t-lg">
+          <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Pagamento Parcial</h3>
+          <p className="text-sm">Cada pagamento gera um registro que entra no balanço mensal</p>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Informações do Lançamento */}
-          <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+          <div className="rounded-lg p-4 space-y-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="flex justify-between">
               <span className="font-medium">Descrição:</span>
               <span className="text-right">{lancamento.descricao}</span>
@@ -5010,7 +5010,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
 
           {/* Histórico de Compensações */}
           {compensacoes.length > 0 && (
-            <div className="bg-purple-50 rounded-lg p-4">
+            <div className="bg-purple-50 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h4 className="font-medium mb-2 text-purple-800">🔄 Compensações Realizadas:</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {compensacoes.map((comp, idx) => (
@@ -5025,7 +5025,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
 
           {/* Histórico de Pagamentos */}
           {pagamentosReais.length > 0 && (
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="bg-blue-50 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h4 className="font-medium mb-2">📋 Pagamentos Anteriores:</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {pagamentosReais.map((pag, idx) => (
@@ -5041,7 +5041,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
           {/* Formulário de Novo Pagamento */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Valor a Pagar *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Valor a Pagar *</label>
               <input 
                 type="number" 
                 required 
@@ -5054,11 +5054,11 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
                 placeholder="0.00"
                 autoFocus
               />
-              <p className="text-xs text-gray-500 mt-1">Máximo: R$ {valorRestante.toFixed(2)}</p>
+              <p className="text-xs mt-1">Máximo: R$ {valorRestante.toFixed(2)}</p>
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-1">Data do Pagamento *</label>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data do Pagamento *</label>
               <input 
                 type="date" 
                 required
@@ -5066,13 +5066,13 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
                 onChange={(e) => setDataPagamento(e.target.value)}
                 className="w-full px-3 py-2 border rounded-lg" 
               />
-              <p className="text-xs text-gray-500 mt-1">Entra no balanço desta data</p>
+              <p className="text-xs mt-1">Entra no balanço desta data</p>
             </div>
           </div>
 
           {/* Prévia */}
           {valorPagar && parseFloat(valorPagar) > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded p-4 space-y-2">
+            <div className="bg-blue-50 border rounded p-4 space-y-2">
               <p className="text-sm font-medium text-blue-900">📊 Após este pagamento:</p>
               <div className="flex justify-between text-sm">
                 <span className="text-green-700">Total Pago:</span>
@@ -5087,7 +5087,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
                   ✅ Este pagamento quitará o lançamento completamente!
                 </div>
               )}
-              <div className="mt-2 p-2 bg-amber-100 rounded text-amber-800 text-sm">
+              <div className="mt-2 p-2 rounded text-sm">
                 💡 Será criado um novo registro que entra no balanço de <strong>{new Date(dataPagamento + 'T00:00:00').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</strong>
               </div>
             </div>
@@ -5096,11 +5096,11 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
           {/* Botões */}
           <div className="flex gap-3 pt-4 border-t">
             <button type="submit" 
-              className="flex-1 px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 font-medium">
+              className="flex-1 px-6 py-2 text-white rounded-lg hover: font-medium">
               💰 Registrar Pagamento
             </button>
             <button type="button" onClick={onClose}
-              className="px-6 py-2 bg-gray-300 rounded-lg hover:bg-gray-400 font-medium">
+              className="px-6 py-2 bg-gray-300 rounded-lg font-medium">
               Cancelar
             </button>
           </div>
@@ -5299,50 +5299,50 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full my-8">
+      <div className="rounded-lg max-w-4xl w-full my-8">
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-t-lg">
-          <h3 className="text-xl font-bold">🔄 Compensação de Valores</h3>
+          <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>🔄 Compensação de Valores</h3>
           <p className="text-sm text-purple-100">Irmão: {irmao?.nome}</p>
         </div>
         <form onSubmit={handleCompensar} className="p-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* DÉBITOS */}
             <div>
-              <h4 className="font-bold text-red-700 mb-3">📤 Débitos (Ele deve)</h4>
+              <h4 className="font-bold text-red-700 mb-3" style={{color:"var(--color-text)"}}>📤 Débitos (Ele deve)</h4>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {debitos.length > 0 ? debitos.map(d => (
                   <div key={d.id} onClick={() => toggleDebito(d.id)}
-                    className={`p-3 border-2 rounded-lg cursor-pointer ${debitosSelecionados.includes(d.id) ? 'border-red-500 bg-red-50' : 'border-gray-200'}`}>
+                    className={`p-3 border-2 rounded-lg cursor-pointer ${debitosSelecionados.includes(d.id) ? ' bg-red-50' : ''}`}>
                     <div className="flex justify-between">
-                      <div><p className="font-medium text-sm">{d.descricao}</p><p className="text-xs text-gray-500">Venc: {formatarDataBR(d.data_vencimento)}</p></div>
+                      <div><p className="font-medium text-sm">{d.descricao}</p><p className="text-xs">Venc: {formatarDataBR(d.data_vencimento)}</p></div>
                       <p className="font-bold text-red-600">{formatarMoeda(d.valor)}</p>
                     </div>
                   </div>
-                )) : <p className="text-gray-500 text-center py-4">Sem débitos</p>}
+                )) : <p className="text-center py-4">Sem débitos</p>}
               </div>
               <div className="mt-3 p-3 bg-red-50 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-red-700">{formatarMoeda(totalDebitos)}</p></div>
             </div>
             {/* CRÉDITOS */}
             <div>
-              <h4 className="font-bold text-green-700 mb-3">📥 Créditos (Loja deve)</h4>
+              <h4 className="font-bold text-green-700 mb-3" style={{color:"var(--color-text)"}}>📥 Créditos (Loja deve)</h4>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {creditos.length > 0 ? creditos.map(c => (
                   <div key={c.id} onClick={() => toggleCredito(c.id)}
-                    className={`p-3 border-2 rounded-lg cursor-pointer ${creditosSelecionados.includes(c.id) ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
+                    className={`p-3 border-2 rounded-lg cursor-pointer ${creditosSelecionados.includes(c.id) ? ' bg-green-50' : ''}`}>
                     <div className="flex justify-between">
-                      <div><p className="font-medium text-sm">{c.descricao}</p><p className="text-xs text-gray-500">Venc: {formatarDataBR(c.data_vencimento)}</p></div>
+                      <div><p className="font-medium text-sm">{c.descricao}</p><p className="text-xs">Venc: {formatarDataBR(c.data_vencimento)}</p></div>
                       <p className="font-bold text-green-600">{formatarMoeda(c.valor)}</p>
                     </div>
                   </div>
-                )) : <p className="text-gray-500 text-center py-4">Sem créditos</p>}
+                )) : <p className="text-center py-4">Sem créditos</p>}
               </div>
               <div className="mt-3 p-3 bg-green-50 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-green-700">{formatarMoeda(totalCreditos)}</p></div>
             </div>
           </div>
           {/* RESUMO */}
           {(debitosSelecionados.length > 0 || creditosSelecionados.length > 0) && (
-            <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
-              <h4 className="font-bold mb-3">📊 Resumo</h4>
+            <div className="bg-purple-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <h4 className="font-bold mb-3" style={{color:"var(--color-text)"}}>📊 Resumo</h4>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div><p className="text-sm">Compensar</p><p className="text-2xl font-bold text-purple-700">{formatarMoeda(valorCompensar)}</p></div>
                 <div><p className="text-sm">Saldo Final</p><p className={`text-2xl font-bold ${saldoFinal > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatarMoeda(Math.abs(saldoFinal))}</p></div>
@@ -5352,10 +5352,10 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           )}
           <div className="flex gap-3 pt-4 border-t">
             <button type="submit" disabled={debitosSelecionados.length === 0 || creditosSelecionados.length === 0}
-              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold disabled:bg-gray-300">
+              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold disabled:opacity-50">
               🔄 Compensar
             </button>
-            <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-300 rounded-lg hover:bg-gray-400">Cancelar</button>
+            <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-300 rounded-lg">Cancelar</button>
           </div>
         </form>
       </div>
