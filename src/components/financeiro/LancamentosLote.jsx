@@ -280,21 +280,21 @@ export default function LancamentosLote({ showSuccess, showError }) {
   return (
     <div className="space-y-6 p-6">
       {/* HEADER COM PROGRESSO */}
-      <div className="bg-white rounded-lg shadow-md p-4">
+      <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xl font-bold text-gray-800">
+          <h2 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
             📦 Lançamentos em Lote
           </h2>
-          <span className="text-xs text-gray-600">
+          <span className="text-xs">
             Crie múltiplos lançamentos para vários irmãos de uma vez
           </span>
         </div>
         
         {/* Stepper */}
         <div className="flex items-center justify-center gap-4 mt-4">
-          <div className={`flex items-center gap-2 ${etapa >= 1 ? 'text-primary-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${etapa >= 1 ? 'text-primary-600' : ''}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              etapa >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
+              etapa >= 1 ? 'bg-primary-600 text-white' : 'bg-gray-300 '
             }`}>
               1
             </div>
@@ -303,9 +303,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
           
           <div className={`w-16 h-0.5 ${etapa >= 2 ? 'bg-primary-600' : 'bg-gray-300'}`}></div>
           
-          <div className={`flex items-center gap-2 ${etapa >= 2 ? 'text-primary-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${etapa >= 2 ? 'text-primary-600' : ''}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              etapa >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
+              etapa >= 2 ? 'bg-primary-600 text-white' : 'bg-gray-300 '
             }`}>
               2
             </div>
@@ -314,9 +314,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
           
           <div className={`w-16 h-0.5 ${etapa >= 3 ? 'bg-primary-600' : 'bg-gray-300'}`}></div>
           
-          <div className={`flex items-center gap-2 ${etapa >= 3 ? 'text-primary-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center gap-2 ${etapa >= 3 ? 'text-primary-600' : ''}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              etapa >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-300 text-gray-600'
+              etapa >= 3 ? 'bg-primary-600 text-white' : 'bg-gray-300 '
             }`}>
               3
             </div>
@@ -327,9 +327,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
       {/* ETAPA 1: ITENS */}
       {etapa === 1 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xl font-bold text-gray-800">📝 Definir Itens</h3>
+            <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📝 Definir Itens</h3>
             <button
               onClick={adicionarItem}
               className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2"
@@ -340,9 +340,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
           <div className="space-y-6">
             {itens.map((item, index) => (
-              <div key={item.id} className="border-2 border-gray-200 rounded-lg p-5 bg-gray-50">
+              <div key={item.id} className="border-2 rounded-lg p-5" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-bold text-gray-700 text-lg">📄 Item #{index + 1}</h4>
+                  <h4 className="font-bold text-lg" style={{color:"var(--color-text)"}}>📄 Item #{index + 1}</h4>
                   {itens.length > 1 && (
                     <button
                       onClick={() => removerItem(item.id)}
@@ -358,14 +358,14 @@ export default function LancamentosLote({ showSuccess, showError }) {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Tipo */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
                       <select
                         value={item.tipo}
                         onChange={(e) => {
                           atualizarItem(item.id, 'tipo', e.target.value);
                           atualizarItem(item.id, 'categoria_id', '');
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none"
                       >
                         <option value="receita">💰 Receita</option>
                         <option value="despesa">💸 Despesa</option>
@@ -374,11 +374,11 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
                     {/* Categoria */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Categoria *</label>
                       <select
                         value={item.categoria_id}
                         onChange={(e) => atualizarItem(item.id, 'categoria_id', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none"
                         required
                       >
                         <option value="">Selecione...</option>
@@ -390,13 +390,13 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
                     {/* Valor */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Valor *</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Valor *</label>
                       <input
                         type="number"
                         step="0.01"
                         value={item.valor}
                         onChange={(e) => atualizarItem(item.id, 'valor', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none"
                         placeholder="0.00"
                         required
                       />
@@ -404,17 +404,17 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
                     {/* Parcelas */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Parcelas</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Parcelas</label>
                       <input
                         type="number"
                         min="1"
                         max="12"
                         value={item.parcelas}
                         onChange={(e) => atualizarItem(item.id, 'parcelas', parseInt(e.target.value) || 1)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none"
                       />
                       {item.parcelas > 1 && (
-                        <p className="text-xs text-gray-600 mt-1">
+                        <p className="text-xs mt-1">
                           {item.parcelas}x de {formatarMoeda(parseFloat(item.valor || 0) / item.parcelas)}
                         </p>
                       )}
@@ -425,12 +425,12 @@ export default function LancamentosLote({ showSuccess, showError }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Descrição */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
                       <input
                         type="text"
                         value={item.descricao}
                         onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none"
                         placeholder="Ex: Ágape Dia das Mães"
                         required
                       />
@@ -438,12 +438,12 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
                     {/* Data Vencimento */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Vencimento *</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Vencimento *</label>
                       <input
                         type="date"
                         value={item.data_vencimento}
                         onChange={(e) => atualizarItem(item.id, 'data_vencimento', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none"
                         required
                       />
                     </div>
@@ -451,11 +451,11 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
                   {/* LINHA 3: Observações */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
                     <textarea
                       value={item.observacoes}
                       onChange={(e) => atualizarItem(item.id, 'observacoes', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                      className="w-full px-3 py-2 border rounded-lg outline-none"
                       rows="2"
                       placeholder="Observações adicionais..."
                     />
@@ -466,8 +466,8 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Resumo Parcial */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-            <h4 className="font-bold text-blue-900 mb-2">📊 Resumo dos Itens</h4>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>📊 Resumo dos Itens</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm text-blue-700">Total de Itens</p>
@@ -493,8 +493,8 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
       {/* ETAPA 2: IRMÃOS */}
       {etapa === 2 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-4">👥 Selecionar Irmãos</h3>
+        <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>👥 Selecionar Irmãos</h3>
 
           {/* Buscar */}
           <div className="mb-4">
@@ -503,13 +503,13 @@ export default function LancamentosLote({ showSuccess, showError }) {
               placeholder="🔍 Buscar por nome ou CIM..."
               value={buscarIrmao}
               onChange={(e) => setBuscarIrmao(e.target.value)}
-              className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full px-4 py-2 border-2 rounded-lg outline-none"
             />
           </div>
 
           {/* Selecionar Todos */}
           <div className="mb-4">
-            <label className="flex items-center gap-3 p-3 bg-blue-50 border-2 border-blue-200 rounded-lg cursor-pointer hover:bg-blue-100 transition">
+            <label className="flex items-center gap-3 p-3 bg-blue-50 border-2 rounded-lg cursor-pointer hover:bg-blue-100 transition">
               <input
                 type="checkbox"
                 checked={selectAll}
@@ -523,15 +523,15 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Lista de Irmãos */}
-          <div className="border-2 border-gray-200 rounded-lg p-4">
+          <div className="border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
               {irmaosFiltrados.map(irmao => (
                 <label
                   key={irmao.id}
                   className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
                     irmaosSelecionados.includes(irmao.id)
-                      ? 'bg-blue-50 border-blue-400'
-                      : 'bg-white border-gray-200 hover:bg-gray-50'
+                      ? 'bg-blue-50 '
+                      : '  hover:'
                   }`}
                 >
                   <input
@@ -541,8 +541,8 @@ export default function LancamentosLote({ showSuccess, showError }) {
                     className="w-4 h-4 cursor-pointer flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{irmao.nome}</p>
-                    <p className="text-xs text-gray-600">CIM: {irmao.cim}</p>
+                    <p className="text-sm font-medium truncate">{irmao.nome}</p>
+                    <p className="text-xs">CIM: {irmao.cim}</p>
                   </div>
                 </label>
               ))}
@@ -550,8 +550,8 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Resumo */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
-            <h4 className="font-bold text-blue-900 mb-3">📊 Resumo</h4>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <h4 className="font-bold text-blue-900 mb-3" style={{color:"var(--color-text)"}}>📊 Resumo</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <p className="text-sm text-blue-700">Irmãos Selecionados</p>
@@ -571,14 +571,14 @@ export default function LancamentosLote({ showSuccess, showError }) {
           <div className="flex justify-between gap-3 mt-6">
             <button
               onClick={voltarEtapa}
-              className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
+              className="px-8 py-3 rounded-lg transition font-medium"
             >
               ← Voltar
             </button>
             <button
               onClick={proximaEtapa}
               disabled={irmaosSelecionados.length === 0}
-              className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Próximo: Ver Resumo →
             </button>
@@ -588,41 +588,41 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
       {/* ETAPA 3: RESUMO */}
       {etapa === 3 && (
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-xl font-bold text-gray-800 mb-6">📊 Resumo Final - Confirme os Dados</h3>
+        <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <h3 className="text-xl font-bold mb-6" style={{color:"var(--color-text)"}}>📊 Resumo Final - Confirme os Dados</h3>
 
           {/* Cards de Resumo */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-            <div className="p-3 bg-blue-50 rounded-lg border-2 border-blue-200 text-center">
+            <div className="p-3 bg-blue-50 rounded-lg border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-blue-700 mb-1">Irmãos</p>
               <p className="text-3xl font-bold text-blue-900">{irmaosSelecionados.length}</p>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg border-2 border-green-200 text-center">
+            <div className="p-3 bg-green-50 rounded-lg border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-green-700 mb-1">Itens</p>
               <p className="text-3xl font-bold text-green-900">{itens.length}</p>
             </div>
-            <div className="p-3 bg-purple-50 rounded-lg border-2 border-purple-200 text-center">
+            <div className="p-3 bg-purple-50 rounded-lg border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-purple-700 mb-1">Lançamentos</p>
               <p className="text-3xl font-bold text-purple-900">{quantidadeLancamentos}</p>
             </div>
-            <div className="p-3 bg-yellow-50 rounded-lg border-2 border-yellow-200 text-center">
+            <div className="p-3 bg-yellow-50 rounded-lg border-2 border-yellow-200 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-yellow-700 mb-1">Valor Total</p>
               <p className="text-xl font-bold text-yellow-900">{formatarMoeda(totalLancamentos)}</p>
             </div>
           </div>
 
           {/* Detalhes dos Itens */}
-          <div className="mb-6 p-4 border-2 border-gray-200 rounded-lg">
-            <h4 className="font-bold text-gray-800 mb-3 text-lg">📝 Itens que serão lançados:</h4>
+          <div className="mb-6 p-4 border-2 rounded-lg">
+            <h4 className="font-bold mb-3 text-lg" style={{color:"var(--color-text)"}}>📝 Itens que serão lançados:</h4>
             <div className="space-y-3">
               {itens.map((item, index) => {
                 const categoria = categorias.find(c => c.id === item.categoria_id);
                 return (
-                  <div key={item.id} className="p-3 bg-gray-50 rounded-lg">
-                    <p className="font-medium text-gray-800 mb-1">
+                  <div key={item.id} className="p-3 rounded-lg">
+                    <p className="font-medium mb-1">
                       {index + 1}. {item.descricao}
                     </p>
-                    <div className="text-sm text-gray-600 flex flex-wrap gap-4">
+                    <div className="text-sm flex flex-wrap gap-4">
                       <span>📂 {categoria?.nome}</span>
                       <span>💰 {formatarMoeda(item.valor)}</span>
                       <span>📅 Venc: {new Date(item.data_vencimento).toLocaleDateString('pt-BR')}</span>
@@ -639,8 +639,8 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Irmãos Selecionados */}
-          <div className="mb-6 p-4 border-2 border-gray-200 rounded-lg">
-            <h4 className="font-bold text-gray-800 mb-3 text-lg">
+          <div className="mb-6 p-4 border-2 rounded-lg">
+            <h4 className="font-bold mb-3 text-lg" style={{color:"var(--color-text)"}}>
               👥 Irmãos que receberão os lançamentos ({irmaosSelecionados.length}):
             </h4>
             <div className="flex flex-wrap gap-2">
@@ -653,7 +653,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                 );
               })}
               {irmaosSelecionados.length > 20 && (
-                <span className="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm font-medium">
+                <span className="px-3 py-1 rounded-full text-sm font-medium">
                   +{irmaosSelecionados.length - 20} mais...
                 </span>
               )}
@@ -665,7 +665,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
             <div className="flex items-start gap-3">
               <span className="text-2xl">⚠️</span>
               <div>
-                <h4 className="font-bold text-yellow-900 mb-2">Atenção - Confirme antes de continuar!</h4>
+                <h4 className="font-bold text-yellow-900 mb-2" style={{color:"var(--color-text)"}}>Atenção - Confirme antes de continuar!</h4>
                 <ul className="text-sm text-yellow-800 space-y-1">
                   <li>• Serão criados <strong>{quantidadeLancamentos} lançamentos</strong> no sistema</li>
                   <li>• Cada irmão receberá <strong>{itens.length} {itens.length === 1 ? 'item' : 'itens'}</strong> no valor de <strong>{formatarMoeda(totalItens)}</strong></li>
@@ -680,14 +680,14 @@ export default function LancamentosLote({ showSuccess, showError }) {
             <button
               onClick={voltarEtapa}
               disabled={loading}
-              className="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium disabled:opacity-50"
+              className="px-8 py-3 rounded-lg transition font-medium disabled:opacity-50"
             >
               ← Voltar
             </button>
             <button
               onClick={salvarLancamentos}
               disabled={loading}
-              className="px-10 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-10 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? '⏳ Criando Lançamentos...' : '✅ Confirmar e Criar Todos'}
             </button>
