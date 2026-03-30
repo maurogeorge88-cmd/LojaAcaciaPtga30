@@ -1206,7 +1206,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             </div>
 
             {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO */}
-            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded">
+            <div className="border-l-4 p-4 rounded" style={{background:"rgba(245,158,11,0.08)",borderLeftColor:"#f59e0b",border:"1px solid rgba(245,158,11,0.2)"}}>
               <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                 <span>📅</span> Datas Específicas da Situação
               </h4>
@@ -1283,7 +1283,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 const idade = calcularIdade(irmaoForm.data_nascimento);
                 if (idade >= 70) {
                   return (
-                    <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                    <div className="mt-3 p-3 rounded" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
                       <p className="text-sm text-blue-800">
                         💡 <strong>Com Prerrogativa por Idade</strong> - Este irmão tem {idade} anos.
                       </p>
@@ -1295,7 +1295,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             </div>
 
             {/* LINHA 3: DATA DE INGRESSO NA LOJA */}
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+            <div className="border-l-4 p-4 rounded" style={{background:"var(--color-accent-bg)",borderLeftColor:"var(--color-accent)"}}>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Ingresso na Loja
@@ -1484,7 +1484,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
               </h4>
 
               {/* Formulário para adicionar/editar cargo */}
-              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <div className="p-4 rounded-lg mb-4" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-3">
                     <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
@@ -1536,7 +1536,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                             setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
                             setCargoEditandoIndex(null);
                           }}
-                          className="px-3 py-2 bg-gray-500 text-white rounded-lg font-medium text-sm"
+                          style={{padding:"0.45rem 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer"}}
                         >
                           ✕
                         </button>
@@ -1950,7 +1950,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   {filhos.map((filho, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between bg-blue-50 p-3 rounded"
+                      className="flex items-center justify-between p-3 rounded" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}
                     >
                       <div className="flex-1">
                         <p className="font-medium flex items-center gap-2">
@@ -1981,16 +1981,16 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         <button
                           type="button"
                           onClick={() => editarFilho(index)}
-                          className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-primary-600 transition-colors"
+                          style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                         >
-                          ✏️ Editar
+                          ✏️
                         </button>
                         <button
                           type="button"
                           onClick={() => removerFilho(index)}
-                          className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+                          style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                         >
-                          🗑️ Remover
+                          🗑️
                         </button>
                       </div>
                     </div>
@@ -2136,7 +2136,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       </form>
 
       {/* Informação sobre campos obrigatórios */}
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+      <div className="border-l-4 p-4" style={{background:"rgba(245,158,11,0.08)",borderLeftColor:"#f59e0b",border:"1px solid rgba(245,158,11,0.2)"}}>
         <p className="text-sm text-yellow-800">
           <strong>Campos obrigatórios:</strong> CIM e Nome Completo
         </p>
