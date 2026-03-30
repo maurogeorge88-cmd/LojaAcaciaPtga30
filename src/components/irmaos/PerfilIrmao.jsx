@@ -383,7 +383,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-xl text-gray-600">Carregando perfil...</div>
+        <div className="text-xl">Carregando perfil...</div>
       </div>
     );
   }
@@ -391,7 +391,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   if (!irmao) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600">Irmão não encontrado</p>
+        <p>Irmão não encontrado</p>
       </div>
     );
   }
@@ -399,7 +399,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   return (
     <div className="space-y-6">
       {/* Header com foto e nome */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex gap-6 items-start">
@@ -408,17 +408,17 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   <img
                     src={irmao.foto_url}
                     alt={irmao.nome}
-                    className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+                    className="w-24 h-24 rounded-full border-4 object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg bg-white flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full border-4 flex items-center justify-center">
                     <span className="text-4xl text-blue-600">👤</span>
                   </div>
                 )}
                 
                 {/* Botão upload foto */}
                 {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
-                  <label className="cursor-pointer bg-white text-blue-600 px-3 py-1 rounded-md text-xs font-medium hover:bg-gray-100 transition-colors">
+                  <label className="cursor-pointer text-blue-600 px-3 py-1 rounded-md text-xs font-medium hover: transition-colors" style={{color:"var(--color-text-muted)"}}>
                     📷 Alterar Foto
                     <input
                       type="file"
@@ -460,7 +460,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {userEmail === irmao.email && !modoEdicao && (
                 <button
                   onClick={() => setModoEdicao(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
                 >
                   ✏️ Editar Meu Perfil
                 </button>
@@ -480,7 +480,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       setModoEdicao(false);
                       carregarIrmao(); // Recarrega dados originais
                     }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium"
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg transition-colors font-medium"
                   >
                     ✕ Cancelar
                   </button>
@@ -489,7 +489,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               
               <button
                 onClick={onVoltar}
-                className="px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                className="px-4 py-2 text-blue-600 rounded-lg transition-colors font-medium"
               >
                 ← Voltar
               </button>
@@ -499,14 +499,14 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
       </div>
 
       {/* Abas */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex border-b overflow-x-auto">
           <button
             onClick={() => setAbaSelecionada('pessoal')}
             className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
               abaSelecionada === 'pessoal'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : ' hover:'
             }`}
           >
             📋 Dados Pessoais
@@ -516,7 +516,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
               abaSelecionada === 'maconico'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : ' hover:'
             }`}
           >
             🔨 Dados Maçônicos
@@ -526,7 +526,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
               abaSelecionada === 'familiar'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : ' hover:'
             }`}
           >
             👨‍👩‍👧 Dados Familiares
@@ -536,7 +536,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
               abaSelecionada === 'vida-maconica'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : ' hover:'
             }`}
           >
             🔺 Vida Maçônica
@@ -546,7 +546,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
               abaSelecionada === 'situacoes'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : ' hover:'
             }`}
           >
             📋 Situações
@@ -556,7 +556,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
               abaSelecionada === 'documentos'
                 ? 'border-b-2 border-blue-600 text-blue-600'
-                : 'text-gray-600 hover:text-gray-800'
+                : ' hover:'
             }`}
           >
             📄 Documentos
@@ -571,66 +571,66 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Nome Completo */}
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome Completo</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.nome || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, nome: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium">{irmao.nome}</p>
+                    <p className="font-medium">{irmao.nome}</p>
                   )}
                 </div>
 
                 {/* CPF */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CPF</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.cpf || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, cpf: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.cpf || 'Não informado'}</p>
+                    <p>{irmao.cpf || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* RG */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">RG</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>RG</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.rg || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, rg: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.rg || 'Não informado'}</p>
+                    <p>{irmao.rg || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* Data de Nascimento */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Nascimento</label>
                   {modoEdicao ? (
                     <input
                       type="date"
                       value={irmaoForm.data_nascimento || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_nascimento: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
                     <div>
-                      <p className="text-gray-900">
+                      <p>
                         {irmao.data_nascimento ? irmao.data_nascimento.split('-').reverse().join('/') : 'Não informado'}
                       </p>
                       {irmao.data_nascimento && (
-                        <p className="text-xs text-gray-500">{calcularIdade(irmao.data_nascimento)}</p>
+                        <p className="text-xs">{calcularIdade(irmao.data_nascimento)}</p>
                       )}
                     </div>
                   )}
@@ -638,57 +638,57 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Email</label>
                   {modoEdicao ? (
                     <input
                       type="email"
                       value={irmaoForm.email || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, email: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.email || 'Não informado'}</p>
+                    <p>{irmao.email || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* Telefone */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Telefone</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.telefone || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, telefone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.telefone || 'Não informado'}</p>
+                    <p>{irmao.telefone || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* Profissão */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Profissão</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Profissão</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.profissao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, profissao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.profissao || 'Não informado'}</p>
+                    <p>{irmao.profissao || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* Estado Civil */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estado Civil</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Estado Civil</label>
                   {modoEdicao ? (
                     <select
                       value={irmaoForm.estado_civil || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     >
                       <option value="solteiro">Solteiro</option>
                       <option value="casado">Casado</option>
@@ -696,18 +696,18 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       <option value="viuvo">Viúvo</option>
                     </select>
                   ) : (
-                    <p className="text-gray-900 capitalize">{irmao.estado_civil || 'Não informado'}</p>
+                    <p className="capitalize">{irmao.estado_civil || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* Escolaridade */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Escolaridade</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Escolaridade</label>
                   {modoEdicao ? (
                     <select
                       value={irmaoForm.escolaridade || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, escolaridade: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     >
                       <option value="fundamental_incompleto">Fundamental Incompleto</option>
                       <option value="fundamental_completo">Fundamental Completo</option>
@@ -720,104 +720,104 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       <option value="doutorado">Doutorado</option>
                     </select>
                   ) : (
-                    <p className="text-gray-900">{irmao.escolaridade?.replace(/_/g, ' ') || 'Não informado'}</p>
+                    <p>{irmao.escolaridade?.replace(/_/g, ' ') || 'Não informado'}</p>
                   )}
                 </div>
 
                 {/* Endereço Completo */}
                 <div className="md:col-span-3">
-                  <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">📍 Endereço</h4>
+                  <h4 className="font-semibold mb-3 border-b pb-2" style={{color:"var(--color-text)"}}>📍 Endereço</h4>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CEP</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.cep || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, cep: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.cep || 'Não informado'}</p>
+                        <p>{irmao.cep || 'Não informado'}</p>
                       )}
                     </div>
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Logradouro</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Logradouro</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.endereco || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, endereco: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.endereco || 'Não informado'}</p>
+                        <p>{irmao.endereco || 'Não informado'}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Número</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.numero || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, numero: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.numero || 'S/N'}</p>
+                        <p>{irmao.numero || 'S/N'}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Complemento</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.complemento || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, complemento: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.complemento || '-'}</p>
+                        <p>{irmao.complemento || '-'}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Bairro</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.bairro || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, bairro: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.bairro || 'Não informado'}</p>
+                        <p>{irmao.bairro || 'Não informado'}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Cidade</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.cidade || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, cidade: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.cidade || 'Não informado'}</p>
+                        <p>{irmao.cidade || 'Não informado'}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Estado</label>
                       {modoEdicao ? (
                         <input
                           type="text"
                           value={irmaoForm.estado || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, estado: e.target.value })}
                           maxLength={2}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">{irmao.estado || 'Não informado'}</p>
+                        <p>{irmao.estado || 'Não informado'}</p>
                       )}
                     </div>
                   </div>
@@ -832,26 +832,26 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 1: CIM e Situação */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">CIM</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>CIM</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.cim || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, cim: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900 font-medium text-lg">{irmao.cim || 'Não informado'}</p>
+                    <p className="font-medium text-lg">{irmao.cim || 'Não informado'}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Situação</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Situação</label>
                   {modoEdicao ? (
                     <select
                       value={irmaoForm.situacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     >
                       <option value="regular">Regular</option>
                       <option value="irregular">Irregular</option>
@@ -863,14 +863,14 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       <option value="ex_oficio">Ex-Ofício</option>
                     </select>
                   ) : (
-                    <p className="text-gray-900 capitalize text-lg">{irmao.situacao || 'Regular'}</p>
+                    <p className="capitalize text-lg">{irmao.situacao || 'Regular'}</p>
                   )}
                 </div>
               </div>
 
               {/* CAMPOS DE DATAS CONDICIONAIS - Aparecem conforme a situação */}
               <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-lg">
-                <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                   <span>📅</span> Datas Específicas da Situação
                 </h4>
                 
@@ -880,10 +880,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   {/* Data de Licença */}
                   {/* {(modoEdicao ? irmaoForm.situacao === 'licenciado' : irmao.situacao === 'licenciado') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data de Início da Licença
                         {modoEdicao && (
-                          <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                          <span className="block text-xs font-normal mt-0.5">
                             A partir desta data, será considerado licenciado
                           </span>
                         )}
@@ -893,10 +893,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="date"
                           value={irmaoForm.data_licenca || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, data_licenca: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">
+                        <p>
                           {irmao.data_licenca ? irmao.data_licenca.split('-').reverse().join('/') : 'Não informado'}
                         </p>
                       )}
@@ -909,10 +909,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     : (irmao.situacao === 'desligado' || irmao.situacao === 'ex_oficio')
                   ) && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data do Desligamento
                         {modoEdicao && (
-                          <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                          <span className="block text-xs font-normal mt-0.5">
                             {(modoEdicao ? irmaoForm.situacao : irmao.situacao) === 'ex_oficio' 
                               ? 'Data do desligamento forçado (Ex-Ofício)'
                               : 'A partir desta data, será considerado desligado'}
@@ -924,10 +924,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="date"
                           value={irmaoForm.data_desligamento || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, data_desligamento: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">
+                        <p>
                           {irmao.data_desligamento ? irmao.data_desligamento.split('-').reverse().join('/') : 'Não informado'}
                         </p>
                       )}
@@ -937,10 +937,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   {/* Data de Falecimento */}
                   {(modoEdicao ? irmaoForm.situacao === 'falecido' : irmao.situacao === 'falecido') && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                         Data do Falecimento
                         {modoEdicao && (
-                          <span className="block text-xs text-gray-500 font-normal mt-0.5">
+                          <span className="block text-xs font-normal mt-0.5">
                             Após esta data, não aparecerá nas listas de presença
                           </span>
                         )}
@@ -950,10 +950,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="date"
                           value={irmaoForm.data_falecimento || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, data_falecimento: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-3 py-2 border rounded"
                         />
                       ) : (
-                        <p className="text-gray-900">
+                        <p>
                           {irmao.data_falecimento ? irmao.data_falecimento.split('-').reverse().join('/') : 'Não informado'}
                         </p>
                       )}
@@ -962,7 +962,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 </div>
 
                 {modoEdicao && !['falecido'].includes(irmaoForm.situacao) && (
-                  <p className="text-sm text-gray-600 italic mt-2">
+                  <p className="text-sm italic mt-2">
                     ℹ️ Para registrar licenças e desligamentos, use a aba "Situações"
                   </p>
                 )}
@@ -1000,9 +1000,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 3: DATA DE INGRESSO NA LOJA */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                     ➡️ Data de Ingresso na Loja
-                    <span className="block text-xs text-gray-500 font-normal">Quando veio transferido de outra loja</span>
+                    <span className="block text-xs font-normal">Quando veio transferido de outra loja</span>
                   </label>
                   {modoEdicao ? (
                     <>
@@ -1010,14 +1010,14 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         type="date"
                         value={irmaoForm.data_ingresso_loja || ''}
                         onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs mt-1">
                         ℹ️ Deixe vazio se foi iniciado nesta loja. Para transferências de saída, use a aba "Situações"
                       </p>
                     </>
                   ) : (
-                    <p className="text-gray-900">
+                    <p>
                       {irmao.data_ingresso_loja ? irmao.data_ingresso_loja.split('-').reverse().join('/') : 'Iniciado nesta loja'}
                     </p>
                   )}
@@ -1027,53 +1027,53 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 4: Datas de Iniciação, Elevação e Exaltação */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">🔨 Data de Iniciação</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>🔨 Data de Iniciação</label>
                   {modoEdicao ? (
                     <input
                       type="date"
                       value={irmaoForm.data_iniciacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
                     <div>
-                      <p className="text-gray-900">
+                      <p>
                         {irmao.data_iniciacao ? irmao.data_iniciacao.split('-').reverse().join('/') : 'Não informado'}
                       </p>
                       {irmao.data_iniciacao && (
-                        <p className="text-xs text-gray-500">{calcularTempoMaconaria(irmao.data_iniciacao)}</p>
+                        <p className="text-xs">{calcularTempoMaconaria(irmao.data_iniciacao)}</p>
                       )}
                     </div>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">📐 Data de Elevação</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>📐 Data de Elevação</label>
                   {modoEdicao ? (
                     <input
                       type="date"
                       value={irmaoForm.data_elevacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_elevacao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">
+                    <p>
                       {irmao.data_elevacao ? irmao.data_elevacao.split('-').reverse().join('/') : 'Não informado'}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">🏛️ Data de Exaltação</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>🏛️ Data de Exaltação</label>
                   {modoEdicao ? (
                     <input
                       type="date"
                       value={irmaoForm.data_exaltacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_exaltacao: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">
+                    <p>
                       {irmao.data_exaltacao ? irmao.data_exaltacao.split('-').reverse().join('/') : 'Não informado'}
                     </p>
                   )}
@@ -1083,7 +1083,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 2.5: Mestre Instalado */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">⭐ Mestre Instalado?</label>
+                  <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>⭐ Mestre Instalado?</label>
                   {modoEdicao ? (
                     <div className="flex gap-4">
                       <label className="flex items-center cursor-pointer">
@@ -1094,7 +1094,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: true })}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Sim</span>
+                        <span className="ml-2 text-sm">Sim</span>
                       </label>
                       <label className="flex items-center cursor-pointer">
                         <input
@@ -1104,26 +1104,26 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: false, data_instalacao: '' })}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="ml-2 text-sm text-gray-700">Não</span>
+                        <span className="ml-2 text-sm">Não</span>
                       </label>
                     </div>
                   ) : (
-                    <p className="text-gray-900">{irmao.mestre_instalado ? 'Sim' : 'Não'}</p>
+                    <p>{irmao.mestre_instalado ? 'Sim' : 'Não'}</p>
                   )}
                 </div>
 
                 {(modoEdicao ? irmaoForm.mestre_instalado : irmao.mestre_instalado) && (
                   <div className="md:col-span-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">📅 Data de Instalação</label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>📅 Data de Instalação</label>
                     {modoEdicao ? (
                       <input
                         type="date"
                         value={irmaoForm.data_instalacao || ''}
                         onChange={(e) => setIrmaoForm({ ...irmaoForm, data_instalacao: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border rounded"
                       />
                     ) : (
-                      <p className="text-gray-900">
+                      <p>
                         {irmao.data_instalacao ? irmao.data_instalacao.split('-').reverse().join('/') : 'Não informado'}
                       </p>
                     )}
@@ -1134,67 +1134,67 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {/* LINHA 3: Loja Origem, Oriente e Potência */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Loja de Origem</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Loja de Origem</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.loja_origem || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, loja_origem: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.loja_origem || 'Não informado'}</p>
+                    <p>{irmao.loja_origem || 'Não informado'}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Oriente</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Oriente</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.oriente || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, oriente: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.oriente || 'Não informado'}</p>
+                    <p>{irmao.oriente || 'Não informado'}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Potência</label>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Potência</label>
                   {modoEdicao ? (
                     <input
                       type="text"
                       value={irmaoForm.grande_oriente || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, grande_oriente: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border rounded"
                     />
                   ) : (
-                    <p className="text-gray-900">{irmao.grande_oriente || 'Não informado'}</p>
+                    <p>{irmao.grande_oriente || 'Não informado'}</p>
                   )}
                 </div>
               </div>
 
               {/* LINHA 4: Observações */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
                 {modoEdicao ? (
                   <textarea
                     value={irmaoForm.observacoes || ''}
                     onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border rounded"
                   />
                 ) : (
-                  <p className="text-gray-900">{irmao.observacoes || 'Nenhuma observação'}</p>
+                  <p>{irmao.observacoes || 'Nenhuma observação'}</p>
                 )}
               </div>
 
               {/* HISTÓRICO DE CARGOS */}
               <div className="border-t pt-6">
                 <div className="bg-blue-100 p-3 rounded-lg mb-4">
-                  <h4 className="text-md font-semibold text-gray-700 flex items-center gap-2">
+                  <h4 className="text-md font-semibold flex items-center gap-2" style={{color:"var(--color-text)"}}>
                     <span>🏛️</span>
                     <span>Histórico de Cargos na Loja</span>
                   </h4>
@@ -1205,24 +1205,24 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   <div className="bg-blue-50 p-4 rounded-lg mb-4">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                       <div className="md:col-span-3">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+                        <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
                         <input
                           type="number"
                           id="cargo-ano"
                           min="1900"
                           max="2100"
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                           placeholder="Ex: 2024"
                         />
                       </div>
                       <div className="md:col-span-7">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Cargo(s) <span className="text-xs text-gray-500">(separe por vírgula se houver mais de um)</span>
+                        <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                          Cargo(s) <span className="text-xs">(separe por vírgula se houver mais de um)</span>
                         </label>
                         <input
                           type="text"
                           id="cargo-nome"
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                           placeholder="Ex: Tesoureiro, Bibliotecário"
                         />
                       </div>
@@ -1240,7 +1240,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             document.getElementById('cargo-ano').value = new Date().getFullYear();
                             document.getElementById('cargo-nome').value = '';
                           }}
-                          className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                          className="w-full px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
                         >
                           ➕ Adicionar
                         </button>
@@ -1250,24 +1250,24 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 )}
 
                 {historicoCargos.length > 0 ? (
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
+                  <div className="border rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                    <table className="min-w-full divide-y">
+                      <thead style={{background:"var(--color-surface-2)"}}>
                         <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ano</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cargo(s)</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ano</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Cargo(s)</th>
                           {modoEdicao && (
-                            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase w-32">Ações</th>
+                            <th className="px-4 py-3 text-center text-xs font-medium uppercase w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
                           )}
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                      <tbody className="divide-y">
                         {historicoCargos.map((cargo, index) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold text-gray-900">
+                          <tr key={index} className="hover:">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-bold" style={{color:"var(--color-text)"}}>
                               {cargo.ano}
                             </td>
-                            <td className="px-4 py-3 text-sm font-bold text-gray-900">
+                            <td className="px-4 py-3 text-sm font-bold" style={{color:"var(--color-text)"}}>
                               {cargo.cargo.split(',').map((c, i) => (
                                 <div key={i} className="flex items-start gap-1">
                                   <span className="text-blue-600">{i + 1}.</span>
@@ -1276,7 +1276,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               ))}
                             </td>
                             {modoEdicao && (
-                              <td className="px-4 py-3 text-center whitespace-nowrap">
+                              <td className="px-4 py-3 text-center whitespace-nowrap" style={{color:"var(--color-text)"}}>
                                 <div className="flex gap-2 justify-center">
                                   <button
                                     onClick={() => {
@@ -1288,7 +1288,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                         setHistoricoCargos(novosHistorico);
                                       }
                                     }}
-                                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                                    className="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-primary-600"
                                     title="Editar"
                                   >
                                     ✏️
@@ -1313,8 +1313,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-8 bg-gray-50 rounded-lg">
-                    <p className="text-gray-500 text-sm">
+                  <div className="text-center py-8 rounded-lg">
+                    <p className="text-sm">
                       Nenhum cargo registrado no histórico.
                     </p>
                   </div>
@@ -1327,14 +1327,14 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {abaSelecionada === 'familiar' && (
             <div className="space-y-6">
               {/* Cônjuge */}
-              <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200">
-                <h4 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2">
+              <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                   💑 Cônjuge
                 </h4>
                 {modoEdicao ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Nome</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome</label>
                       <input
                         type="text"
                         value={familiares.conjuge?.nome || ''}
@@ -1346,7 +1346,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Data Nascimento</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Nascimento</label>
                       <input
                         type="date"
                         value={familiares.conjuge?.data_nascimento || ''}
@@ -1358,7 +1358,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Data Casamento</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Casamento</label>
                       <input
                         type="date"
                         value={familiares.conjuge?.data_casamento || ''}
@@ -1370,7 +1370,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Profissão</label>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Profissão</label>
                       <input
                         type="text"
                         value={familiares.conjuge?.profissao || ''}
@@ -1386,29 +1386,29 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   familiares.conjuge && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                       <div>
-                        <span className="font-semibold text-gray-700">Nome:</span>
-                        <span className="ml-2 text-gray-900">{familiares.conjuge.nome}</span>
+                        <span className="font-semibold">Nome:</span>
+                        <span className="ml-2">{familiares.conjuge.nome}</span>
                       </div>
                       {familiares.conjuge.data_nascimento && (
                         <div>
-                          <span className="font-semibold text-gray-700">Data de Nascimento:</span>
-                          <span className="ml-2 text-gray-900">
+                          <span className="font-semibold">Data de Nascimento:</span>
+                          <span className="ml-2">
                             {familiares.conjuge.data_nascimento.split('-').reverse().join('/')}
                           </span>
                         </div>
                       )}
                       {familiares.conjuge.data_casamento && (
                         <div>
-                          <span className="font-semibold text-gray-700">💑 Data de Casamento:</span>
-                          <span className="ml-2 text-gray-900">
+                          <span className="font-semibold">💑 Data de Casamento:</span>
+                          <span className="ml-2">
                             {familiares.conjuge.data_casamento.split('-').reverse().join('/')}
                           </span>
                         </div>
                       )}
                       {familiares.conjuge.profissao && (
                         <div>
-                          <span className="font-semibold text-gray-700">Profissão:</span>
-                          <span className="ml-2 text-gray-900">{familiares.conjuge.profissao}</span>
+                          <span className="font-semibold">Profissão:</span>
+                          <span className="ml-2">{familiares.conjuge.profissao}</span>
                         </div>
                       )}
                     </div>
@@ -1417,8 +1417,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               </div>
 
               {/* Pais */}
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
-                <h4 className="text-lg font-bold text-blue-900 mb-4">👨‍👩‍👦 Pais</h4>
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <h4 className="text-lg font-bold text-blue-900 mb-4" style={{color:"var(--color-text)"}}>👨‍👩‍👦 Pais</h4>
                 {modoEdicao ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
@@ -1468,7 +1468,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {/* Data Óbito - aparece se falecido */}
                       {familiares.pais.pai?.falecido && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Data de Óbito</label>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
                           <input
                             type="date"
                             value={familiares.pais.pai?.data_obito || ''}
@@ -1528,7 +1528,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       {/* Data Óbito - aparece se falecida */}
                       {familiares.pais.mae?.falecido && (
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Data de Óbito</label>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
                           <input
                             type="date"
                             value={familiares.pais.mae?.data_obito || ''}
@@ -1547,7 +1547,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {/* Visualização Pai */}
                       <div className="space-y-2">
-                        <h5 className="font-semibold text-gray-700 border-b pb-1">Pai</h5>
+                        <h5 className="font-semibold border-b pb-1">Pai</h5>
                         {familiares.pais.pai ? (
                           <>
                             <div className="text-sm">
@@ -1564,7 +1564,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${!familiares.pais.pai.falecido ? 'text-green-600' : 'text-gray-600'}`}>
+                              <span className={`ml-2 ${!familiares.pais.pai.falecido ? 'text-green-600' : ''}`}>
                                 {!familiares.pais.pai.falecido ? '✓ Vivo' : '✝ Falecido'}
                               </span>
                             </div>
@@ -1578,12 +1578,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                           </>
                         ) : (
-                          <p className="text-sm text-gray-500">Não informado</p>
+                          <p className="text-sm">Não informado</p>
                         )}
                       </div>
                       {/* Visualização Mãe */}
                       <div className="space-y-2">
-                        <h5 className="font-semibold text-gray-700 border-b pb-1">Mãe</h5>
+                        <h5 className="font-semibold border-b pb-1">Mãe</h5>
                         {familiares.pais.mae ? (
                           <>
                             <div className="text-sm">
@@ -1600,7 +1600,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${!familiares.pais.mae.falecido ? 'text-green-600' : 'text-gray-600'}`}>
+                              <span className={`ml-2 ${!familiares.pais.mae.falecido ? 'text-green-600' : ''}`}>
                                 {!familiares.pais.mae.falecido ? '✓ Viva' : '✝ Falecida'}
                               </span>
                             </div>
@@ -1614,7 +1614,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                           </>
                         ) : (
-                          <p className="text-sm text-gray-500">Não informado</p>
+                          <p className="text-sm">Não informado</p>
                         )}
                       </div>
                     </div>
@@ -1624,8 +1624,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
               {/* Filhos */}
               {(familiares.filhos.length > 0 || modoEdicao) && (
-                <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-200">
-                  <h4 className="text-lg font-bold text-green-900 mb-4">👶 Filhos ({familiares.filhos.length})</h4>
+                <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <h4 className="text-lg font-bold text-green-900 mb-4" style={{color:"var(--color-text)"}}>👶 Filhos ({familiares.filhos.length})</h4>
                   
                   {modoEdicao && (
                     <div className="bg-green-100 p-4 rounded mb-4">
@@ -1683,22 +1683,22 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               type="checkbox"
                               checked={filhoForm.vivo}
                               onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-4 h-4 text-blue-600 rounded"
                             />
-                            <span className="text-sm font-medium text-gray-700">Vivo</span>
+                            <span className="text-sm font-medium">Vivo</span>
                           </label>
                         </div>
 
                         {!filhoForm.vivo && (
                           <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                               Data de Óbito
                             </label>
                             <input
                               type="date"
                               value={filhoForm.data_obito}
                               onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+                              className="w-full px-3 py-2 border rounded"
                             />
                           </div>
                         )}
@@ -1743,7 +1743,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               setFilhoEditandoIndex(null);
                               setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '', vivo: true, data_obito: '' });
                             }}
-                            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                            className="px-4 py-2 bg-gray-500 text-white rounded"
                           >
                             ✕ Cancelar
                           </button>
@@ -1756,7 +1756,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     {familiares.filhos.map((filho, index) => {
                       const sexo = filho.sexo || (filho.tipo === 'Filho' ? 'M' : 'F');
                       return (
-                        <div key={index} className="bg-white rounded-lg p-4 border border-green-200">
+                        <div key={index} className="rounded-lg p-4 border border-green-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-3">
                               <span className="text-3xl">
@@ -1764,8 +1764,8 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                 {!filho.vivo && <span className="ml-1" title="Falecido">🕊️</span>}
                               </span>
                               <div>
-                                <h5 className="font-semibold text-gray-900">{filho.nome}</h5>
-                                <p className="text-xs text-gray-600">
+                                <h5 className="font-semibold">{filho.nome}</h5>
+                                <p className="text-xs">
                                   {sexo === 'M' ? 'Masculino' : 'Feminino'}
                                   {filho.tipo_vinculo && (
                                     <span className="ml-1 capitalize">({filho.tipo_vinculo})</span>
@@ -1802,20 +1802,20 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                           </div>
                           {filho.data_nascimento && (
-                            <div className="text-sm text-gray-700">
+                            <div className="text-sm">
                               <span className="font-medium">Nascimento:</span>
                               <span className="ml-2">{filho.data_nascimento.split('-').reverse().join('/')}</span>
-                              <span className="ml-2 text-gray-500">({calcularIdade(filho.data_nascimento)})</span>
+                              <span className="ml-2">({calcularIdade(filho.data_nascimento)})</span>
                             </div>
                           )}
-                          <div className="text-sm text-gray-700">
+                          <div className="text-sm">
                             <span className="font-medium">Status:</span>
-                            <span className={`ml-2 ${filho.vivo ? 'text-green-600' : 'text-gray-600'}`}>
+                            <span className={`ml-2 ${filho.vivo ? 'text-green-600' : ''}`}>
                               {filho.vivo ? '✓ Vivo(a)' : '✝ Falecido(a)'}
                             </span>
                           </div>
                           {!filho.vivo && filho.data_obito && (
-                            <div className="text-sm text-gray-700">
+                            <div className="text-sm">
                               <span className="font-medium">Data de Óbito:</span>
                               <span className="ml-2">{filho.data_obito.split('-').reverse().join('/')}</span>
                             </div>
@@ -1829,9 +1829,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
               {/* Mensagem se não tiver familiares */}
               {!familiares.conjuge && !familiares.pais.pai && !familiares.pais.mae && familiares.filhos.length === 0 && (
-                <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <div className="text-6xl mb-4">👨‍👩‍👧‍👦</div>
-                  <p className="text-gray-600 text-lg font-medium">Nenhum familiar cadastrado</p>
+                  <p className="text-lg font-medium">Nenhum familiar cadastrado</p>
                 </div>
               )}
             </div>
@@ -1855,10 +1855,10 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {abaSelecionada === 'documentos' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">📄 Documentos</h2>
+                <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📄 Documentos</h2>
                 
                 {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
-                  <label className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                  <label className="cursor-pointer bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium" style={{color:"var(--color-text-muted)"}}>
                     📤 Enviar PDF
                     <input
                       type="file"
@@ -1871,19 +1871,19 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               </div>
 
               {documentos.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12">
                   <p className="text-lg">Nenhum documento cadastrado</p>
                   <p className="text-sm mt-2">Use o botão acima para enviar arquivos PDF</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
                   {documentos.map(doc => (
-                    <div key={doc.id} className="bg-white border rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow">
+                    <div key={doc.id} className="border rounded-lg p-4 flex items-center justify-between hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <div className="flex items-center gap-3">
                         <span className="text-3xl">📄</span>
                         <div>
-                          <p className="font-medium text-gray-800">{doc.nome_arquivo}</p>
-                          <p className="text-sm text-gray-500">
+                          <p className="font-medium">{doc.nome_arquivo}</p>
+                          <p className="text-sm">
                             Enviado em {new Date(doc.created_at).toLocaleDateString('pt-BR')}
                           </p>
                         </div>
@@ -1893,7 +1893,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           href={doc.url_arquivo}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
+                          className="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-sm"
                         >
                           👁️ Ver
                         </a>
@@ -1917,7 +1917,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
       {/* Botões de Ação */}
       {abaSelecionada !== 'vida-maconica' && (
-        <div className="flex gap-4 justify-end bg-white p-4 rounded-lg shadow">
+        <div className="flex gap-4 justify-end p-4 rounded-lg shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           {modoEdicao ? (
             <>
               <button
@@ -1925,7 +1925,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   setModoEdicao(false);
                   setIrmaoForm(irmao);
                 }}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors"
               >
                 ❌ Cancelar
               </button>
@@ -1942,7 +1942,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               {(irmao?.email === userEmail || permissoes?.canEditMembers || permissoes?.canEdit) && (
                 <button
                   onClick={() => setModoEdicao(true)}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   ✏️ Editar
                 </button>
