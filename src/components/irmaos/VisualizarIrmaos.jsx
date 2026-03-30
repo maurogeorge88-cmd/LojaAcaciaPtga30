@@ -404,7 +404,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
               className="rounded-lg border-l-4 transition-opacity hover:opacity-95 overflow-hidden"
               style={{borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               {/* Foto e Grau */}
-              <div className="relative">
+              <div className="relative" style={{background:"var(--color-surface-2)"}}>
                 {irmao.foto_url ? (
                   <img
                     src={irmao.foto_url}
@@ -435,8 +435,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   </p>
                   
                   {irmao.data_nascimento && (
-                    <p className="text-sm">
-                      <span className="font-semibold">Idade:</span> {calcularIdade(irmao.data_nascimento)}
+                    <p className="text-sm" style={{color:"var(--color-text-muted)"}}>
+                      <span className="font-semibold" style={{color:"var(--color-text)"}}>Idade:</span> {calcularIdade(irmao.data_nascimento)}
                     </p>
                   )}
                   
@@ -471,7 +471,8 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                         showError('Erro ao atualizar: ' + error.message);
                       }
                     }}
-                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium border hover:"
+                    className="inline-block px-2 py-1 rounded-lg text-xs font-medium"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     title="Periodicidade de Pagamento"
                   >
                     <option value="Mensal">📅 Mensal</option>
@@ -484,10 +485,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => onViewProfile(irmao.id)}
-                    style={{flex:1,padding:"0.45rem 0.75rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"0.85rem",fontWeight:"600",cursor:"pointer"}}
+                    style={{padding:"0.45rem 0.6rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontSize:"1rem",cursor:"pointer"}}
                     title="Ver Perfil"
                   >
-                    👁️ Ver Perfil
+                    👁️
                   </button>
                   
                   <button
@@ -502,10 +503,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   {permissoes?.canEdit && (
                     <button
                       onClick={() => onEdit(irmao)}
-                      style={{flex:1,padding:"0.45rem 0.75rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.85rem",fontWeight:"600",cursor:"pointer"}}
+                      style={{padding:"0.45rem 0.6rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"1rem",cursor:"pointer"}}
                       title="Editar"
                     >
-                      ✏️ Editar
+                      ✏️
                     </button>
                   )}
                   
