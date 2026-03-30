@@ -1615,7 +1615,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   </table>
                 </div>
               ) : (
-                <div className="text-center py-8 rounded-lg">
+                <div className="text-center py-8 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm">
                     Nenhum cargo cadastrado ainda. Use o formulário acima para adicionar.
                   </p>
