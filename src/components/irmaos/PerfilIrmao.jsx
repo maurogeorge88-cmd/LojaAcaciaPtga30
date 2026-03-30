@@ -577,7 +577,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.nome || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, nome: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p className="font-medium">{irmao.nome}</p>
@@ -592,7 +592,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.cpf || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, cpf: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.cpf || 'Não informado'}</p>
@@ -607,7 +607,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.rg || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, rg: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.rg || 'Não informado'}</p>
@@ -622,7 +622,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="date"
                       value={irmaoForm.data_nascimento || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_nascimento: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <div>
@@ -644,7 +644,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="email"
                       value={irmaoForm.email || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, email: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.email || 'Não informado'}</p>
@@ -659,7 +659,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.telefone || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, telefone: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.telefone || 'Não informado'}</p>
@@ -674,7 +674,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.profissao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, profissao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.profissao || 'Não informado'}</p>
@@ -688,7 +688,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <select
                       value={irmaoForm.estado_civil || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, estado_civil: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="solteiro">Solteiro</option>
                       <option value="casado">Casado</option>
@@ -707,7 +707,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <select
                       value={irmaoForm.escolaridade || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, escolaridade: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="fundamental_incompleto">Fundamental Incompleto</option>
                       <option value="fundamental_completo">Fundamental Completo</option>
@@ -735,7 +735,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="text"
                           value={irmaoForm.cep || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, cep: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.cep || 'Não informado'}</p>
@@ -748,7 +748,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="text"
                           value={irmaoForm.endereco || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, endereco: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.endereco || 'Não informado'}</p>
@@ -761,7 +761,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="text"
                           value={irmaoForm.numero || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, numero: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.numero || 'S/N'}</p>
@@ -774,7 +774,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="text"
                           value={irmaoForm.complemento || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, complemento: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.complemento || '-'}</p>
@@ -787,7 +787,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="text"
                           value={irmaoForm.bairro || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, bairro: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.bairro || 'Não informado'}</p>
@@ -800,7 +800,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="text"
                           value={irmaoForm.cidade || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, cidade: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.cidade || 'Não informado'}</p>
@@ -814,7 +814,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           value={irmaoForm.estado || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, estado: e.target.value })}
                           maxLength={2}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>{irmao.estado || 'Não informado'}</p>
@@ -838,7 +838,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.cim || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, cim: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p className="font-medium text-lg">{irmao.cim || 'Não informado'}</p>
@@ -851,7 +851,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     <select
                       value={irmaoForm.situacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, situacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     >
                       <option value="regular">Regular</option>
                       <option value="irregular">Irregular</option>
@@ -893,7 +893,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="date"
                           value={irmaoForm.data_licenca || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, data_licenca: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>
@@ -924,7 +924,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="date"
                           value={irmaoForm.data_desligamento || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, data_desligamento: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>
@@ -950,7 +950,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           type="date"
                           value={irmaoForm.data_falecimento || ''}
                           onChange={(e) => setIrmaoForm({ ...irmaoForm, data_falecimento: e.target.value })}
-                          className="w-full px-3 py-2 border rounded"
+                          className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         />
                       ) : (
                         <p>
@@ -1010,7 +1010,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         type="date"
                         value={irmaoForm.data_ingresso_loja || ''}
                         onChange={(e) => setIrmaoForm({ ...irmaoForm, data_ingresso_loja: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       <p className="text-xs mt-1">
                         ℹ️ Deixe vazio se foi iniciado nesta loja. Para transferências de saída, use a aba "Situações"
@@ -1033,7 +1033,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="date"
                       value={irmaoForm.data_iniciacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_iniciacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <div>
@@ -1054,7 +1054,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="date"
                       value={irmaoForm.data_elevacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_elevacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>
@@ -1070,7 +1070,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="date"
                       value={irmaoForm.data_exaltacao || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, data_exaltacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>
@@ -1120,7 +1120,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         type="date"
                         value={irmaoForm.data_instalacao || ''}
                         onChange={(e) => setIrmaoForm({ ...irmaoForm, data_instalacao: e.target.value })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     ) : (
                       <p>
@@ -1140,7 +1140,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.loja_origem || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, loja_origem: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.loja_origem || 'Não informado'}</p>
@@ -1154,7 +1154,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.oriente || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, oriente: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.oriente || 'Não informado'}</p>
@@ -1168,7 +1168,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       type="text"
                       value={irmaoForm.grande_oriente || ''}
                       onChange={(e) => setIrmaoForm({ ...irmaoForm, grande_oriente: e.target.value })}
-                      className="w-full px-3 py-2 border rounded"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     />
                   ) : (
                     <p>{irmao.grande_oriente || 'Não informado'}</p>
@@ -1184,7 +1184,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                     value={irmaoForm.observacoes || ''}
                     onChange={(e) => setIrmaoForm({ ...irmaoForm, observacoes: e.target.value })}
                     rows={3}
-                    className="w-full px-3 py-2 border rounded"
+                    className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 ) : (
                   <p>{irmao.observacoes || 'Nenhuma observação'}</p>
@@ -1342,7 +1342,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           conjuge: { ...familiares.conjuge, nome: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                     <div>
@@ -1354,7 +1354,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           conjuge: { ...familiares.conjuge, data_nascimento: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                     <div>
@@ -1366,7 +1366,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           conjuge: { ...familiares.conjuge, data_casamento: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                     <div>
@@ -1378,7 +1378,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           conjuge: { ...familiares.conjuge, profissao: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
                   </div>
@@ -1431,7 +1431,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           pais: { ...familiares.pais, pai: { ...familiares.pais.pai, nome: e.target.value }}
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       <input
                         type="date"
@@ -1441,7 +1441,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           pais: { ...familiares.pais, pai: { ...familiares.pais.pai, data_nascimento: e.target.value }}
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       
                       {/* Checkbox Vivo */}
@@ -1476,7 +1476,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               ...familiares,
                               pais: { ...familiares.pais, pai: { ...familiares.pais.pai, data_obito: e.target.value }}
                             })}
-                            className="w-full px-3 py-2 border rounded"
+                            className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                           />
                         </div>
                       )}
@@ -1491,7 +1491,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           pais: { ...familiares.pais, mae: { ...familiares.pais.mae, nome: e.target.value }}
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       <input
                         type="date"
@@ -1501,7 +1501,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           ...familiares,
                           pais: { ...familiares.pais, mae: { ...familiares.pais.mae, data_nascimento: e.target.value }}
                         })}
-                        className="w-full px-3 py-2 border rounded"
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       
                       {/* Checkbox Viva */}
@@ -1536,7 +1536,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               ...familiares,
                               pais: { ...familiares.pais, mae: { ...familiares.pais.mae, data_obito: e.target.value }}
                             })}
-                            className="w-full px-3 py-2 border rounded"
+                            className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                           />
                         </div>
                       )}
@@ -1636,7 +1636,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             value={filhoForm.nome}
                             onChange={(e) => setFilhoForm({...filhoForm, nome: e.target.value})}
                             placeholder="Nome" 
-                            className="w-full px-3 py-2 border rounded" 
+                            className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} 
                           />
                         </div>
                         <div>
@@ -1644,7 +1644,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             type="date" 
                             value={filhoForm.data_nascimento}
                             onChange={(e) => setFilhoForm({...filhoForm, data_nascimento: e.target.value})}
-                            className="w-full px-3 py-2 border rounded" 
+                            className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} 
                           />
                         </div>
                       </div>
@@ -1652,7 +1652,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         <select 
                           value={filhoForm.sexo}
                           onChange={(e) => setFilhoForm({...filhoForm, sexo: e.target.value})}
-                          className="px-3 py-2 border rounded"
+                          className="px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         >
                           <option value="">Sexo...</option>
                           <option value="M">Masculino</option>
@@ -1661,7 +1661,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         <select 
                           value={filhoForm.tipo_vinculo}
                           onChange={(e) => setFilhoForm({...filhoForm, tipo_vinculo: e.target.value})}
-                          className="px-3 py-2 border rounded"
+                          className="px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         >
                           <option value="">Vínculo...</option>
                           <option value="filho">Filho</option>
@@ -1698,7 +1698,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               type="date"
                               value={filhoForm.data_obito}
                               onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
-                              className="w-full px-3 py-2 border rounded"
+                              className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                             />
                           </div>
                         )}
