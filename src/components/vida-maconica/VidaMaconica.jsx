@@ -175,8 +175,8 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">🔺 Vida Maçônica</h3>
-          <p className="text-gray-600 mt-1">Graus filosóficos conquistados</p>
+          <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🔺 Vida Maçônica</h3>
+          <p className="mt-1">Graus filosóficos conquistados</p>
         </div>
         <button
           type="button"
@@ -186,7 +186,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
             }
             setMostrarFormulario(!mostrarFormulario);
           }}
-          className={`px-4 py-2 ${modoEdicao ? 'bg-gray-600 hover:bg-gray-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white rounded-lg transition-colors`}
+          className={`px-4 py-2 ${modoEdicao ? 'bg-primary-600 hover:bg-primary-600' : 'bg-primary-600 hover:bg-primary-600'} text-white rounded-lg transition-colors`}
         >
           {mostrarFormulario ? '✖️ Cancelar' : '➕ Adicionar Grau'}
         </button>
@@ -195,20 +195,20 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
       {/* Formulário */}
       {mostrarFormulario && (
         <div className={`p-6 rounded-lg border-2 ${modoEdicao ? 'bg-yellow-50 border-yellow-200' : 'bg-blue-50 border-blue-200'}`}>
-          <h4 className="text-lg font-bold text-gray-900 mb-4">
+          <h4 className="text-lg font-bold mb-4" style={{color:"var(--color-text)"}}>
             {modoEdicao ? '✏️ Editar Grau' : '➕ Adicionar Novo Grau'}
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Filtro de Rito */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Filtrar por Rito
               </label>
               <select
                 value={filtroRito}
                 onChange={(e) => setFiltroRito(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Todos os Ritos</option>
                 {ritos.map(rito => (
@@ -219,13 +219,13 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
             {/* Seleção de Grau */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Grau Conquistado *
               </label>
               <select
                 value={grauForm.grau_id}
                 onChange={(e) => setGrauForm({ ...grauForm, grau_id: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Selecione o grau</option>
                 {grausFiltrados.map(grau => (
@@ -238,60 +238,60 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
 
             {/* Data de Conquista */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Data de Conquista *
               </label>
               <input
                 type="date"
                 value={grauForm.data_conquista}
                 onChange={(e) => setGrauForm({ ...grauForm, data_conquista: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               />
             </div>
 
             {/* Loja Conferente */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Loja Conferente
               </label>
               <input
                 type="text"
                 value={grauForm.loja_conferente}
                 onChange={(e) => setGrauForm({ ...grauForm, loja_conferente: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               />
             </div>
 
             {/* Oriente Conferente */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Oriente Conferente
               </label>
               <input
                 type="text"
                 value={grauForm.oriente_conferente}
                 onChange={(e) => setGrauForm({ ...grauForm, oriente_conferente: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               />
             </div>
 
             {/* Observações */}
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                 Observações
               </label>
               <textarea
                 value={grauForm.observacoes}
                 onChange={(e) => setGrauForm({ ...grauForm, observacoes: e.target.value })}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               />
             </div>
           </div>
 
           {/* Preview do Grau Selecionado */}
           {grauSelecionado && (
-            <div className="mt-4 p-4 bg-white rounded border border-indigo-200 flex gap-4">
+            <div className="mt-4 p-4 rounded border border-indigo-200 flex gap-4">
               {grauSelecionado.imagem_url && (
                 <img 
                   src={grauSelecionado.imagem_url} 
@@ -303,11 +303,11 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                 <p className="text-sm font-semibold text-indigo-900">
                   🔺 {grauSelecionado.numero_grau}º Grau - {grauSelecionado.nome_grau}
                 </p>
-              <p className="text-xs text-gray-600 mt-1">
+              <p className="text-xs mt-1">
                 Rito: {grauSelecionado.rito}
               </p>
               {grauSelecionado.descricao && (
-                <p className="text-xs text-gray-500 mt-1">{grauSelecionado.descricao}</p>
+                <p className="text-xs mt-1">{grauSelecionado.descricao}</p>
               )}
               </div>
             </div>
@@ -328,12 +328,12 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
       {/* Lista de Graus Conquistados */}
       {grausConquistados.length > 0 ? (
         <div className="space-y-3">
-          <h4 className="text-lg font-bold text-gray-900">Graus Conquistados ({grausConquistados.length})</h4>
+          <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Graus Conquistados ({grausConquistados.length})</h4>
           {grausConquistados.map((conquista) => (
             <div
               key={conquista.id}
-              className="bg-white border-2 border-indigo-200 rounded-lg p-4 hover:shadow-lg transition-shadow"
-            >
+              className="rounded-lg p-4 hover: transition-shadow"
+             style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
@@ -350,7 +350,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                       <h5 className="text-lg font-bold text-indigo-900">
                         {conquista.grau.numero_grau}º - {conquista.grau.nome_grau}
                       </h5>
-                      <p className="text-sm text-gray-600">
+                      <p className="text-sm">
                         Rito: {conquista.grau.rito}
                       </p>
                     </div>
@@ -358,25 +358,25 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
                   
                   <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="font-semibold text-gray-700">Data:</span>{' '}
+                      <span className="font-semibold">Data:</span>{' '}
                       {conquista.data_conquista.split('-').reverse().join('/')}
                     </div>
                     {conquista.loja_conferente && (
                       <div>
-                        <span className="font-semibold text-gray-700">Loja:</span>{' '}
+                        <span className="font-semibold">Loja:</span>{' '}
                         {conquista.loja_conferente}
                       </div>
                     )}
                     {conquista.oriente_conferente && (
                       <div>
-                        <span className="font-semibold text-gray-700">Oriente:</span>{' '}
+                        <span className="font-semibold">Oriente:</span>{' '}
                         {conquista.oriente_conferente}
                       </div>
                     )}
                   </div>
 
                   {conquista.observacoes && (
-                    <div className="mt-2 text-sm text-gray-600 italic">
+                    <div className="mt-2 text-sm italic">
                       {conquista.observacoes}
                     </div>
                   )}
@@ -405,12 +405,12 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+        <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface-2)",borderColor:"var(--color-border)"}} style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">🔺</div>
-          <p className="text-gray-600 text-lg font-medium">
+          <p className="text-lg font-medium">
             Nenhum grau filosófico cadastrado
           </p>
-          <p className="text-gray-500 text-sm mt-2">
+          <p className="text-sm mt-2">
             Clique em "Adicionar Grau" para começar
           </p>
         </div>
