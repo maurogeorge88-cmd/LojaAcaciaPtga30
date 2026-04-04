@@ -38,6 +38,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [modalConfig, setModalConfig] = useState(null); // tipo sendo configurado
   const [formConfig, setFormConfig] = useState({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
+  const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
 
@@ -124,9 +125,9 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     try {
       const existente = configs.find(c => c.tipo === modalConfig);
       if (existente) {
-        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec }).eq('id', existente.id);
+        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }).eq('id', existente.id);
       } else {
-        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec }]);
+        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }]);
       }
       showSuccess('✅ Configuração salva!');
       carregarConfigs();
@@ -143,9 +144,11 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     if (existente) {
       setFormConfig({ ativo: existente.ativo, frequencia: existente.frequencia || 'mensal', dia_semana: existente.dia_semana || 1, dia_mes: existente.dia_mes || 1, hora: existente.hora ?? 8 });
       setIrmaosConfigSelec(existente.irmaos_ids || []);
+      setOpcoesConfig(existente.opcoes_conteudo || { financeiro: true, presenca: true, comissoes: true, eventos: true });
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
       setIrmaosConfigSelec([]);
+      setOpcoesConfig({ financeiro: true, presenca: true, comissoes: true, eventos: true });
     }
     setFiltroBuscaConfig('');
     setModalConfig(tipo);
@@ -468,6 +471,24 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
                 </select>
               </div>
+
+              {/* Opções de conteúdo — só para resumo_individual */}
+              {modalConfig === 'resumo_individual' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+                    📦 Conteúdo do e-mail
+                  </label>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                    {OPCOES_CONTEUDO.map(o => (
+                      <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', padding: '0.45rem 0.6rem', borderRadius: 'var(--radius-md)', background: opcoesConfig[o.id] ? 'var(--color-accent-bg)' : 'var(--color-surface-2)', border: '1px solid ' + (opcoesConfig[o.id] ? 'var(--color-accent)' : 'var(--color-border)') }}>
+                        <input type="checkbox" checked={opcoesConfig[o.id]} onChange={e => setOpcoesConfig(p => ({ ...p, [o.id]: e.target.checked }))}
+                          style={{ accentColor: 'var(--color-accent)', width: '15px', height: '15px' }} />
+                        <span style={{ fontSize: '0.82rem', fontWeight: '600', color: opcoesConfig[o.id] ? 'var(--color-accent)' : 'var(--color-text)' }}>{o.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Seleção de irmãos — só para tipos que enviam individualmente */}
               {(modalConfig === 'resumo_individual' || modalConfig === 'lembrete_financeiro') && (
