@@ -27,18 +27,23 @@ export default function MinhasFinancas({ userData }) {
   const carregarDados = async () => {
     setLoading(true);
     try {
-      if (!userData?.email) return;
-      const { data: irmao } = await supabase
-        .from('irmaos').select('id').eq('email', userData.email).single();
-      if (!irmao) return;
+      if (!userData?.email) { setLoading(false); return; }
 
-      const { data } = await supabase
+      // Buscar irmão — usar maybeSingle para não lançar erro se não encontrar
+      const { data: irmao, error: irmaoErr } = await supabase
+        .from('irmaos').select('id').eq('email', userData.email).maybeSingle();
+
+      if (irmaoErr) { console.error('Erro ao buscar irmão:', irmaoErr); setLoading(false); return; }
+      if (!irmao) { console.warn('Irmão não encontrado para email:', userData.email); setLoading(false); return; }
+
+      const { data, error: lancErr } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(tipo, nome)')
         .eq('origem_irmao_id', irmao.id)
         .eq('origem_tipo', 'Irmao')
         .order('data_vencimento', { ascending: false });
 
+      if (lancErr) { console.error('Erro lançamentos:', lancErr); setLoading(false); return; }
       setLancamentos(data || []);
       const anos = [...new Set((data || []).map(l => l.data_vencimento?.substring(0, 4)).filter(Boolean))].sort((a, b) => b - a);
       setAnosComRegistros(anos);
