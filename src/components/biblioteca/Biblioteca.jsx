@@ -386,56 +386,36 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
   const livrosDisponiveis = livros.filter(l => obterQuantidadeDisponivel(l.id) > 0);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* ABAS */}
       <div className="rounded-xl p-2 flex gap-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <button
           onClick={() => setAbaAtiva('livros')}
-          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
-            abaAtiva === 'livros'
-              ? 'bg-primary-600 text-white'
-              : 'btn-tab-inactive'
-          }`}
+          style={{flex:1,padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:abaAtiva==='livros'?'var(--color-accent)':'var(--color-surface-2)',color:abaAtiva==='livros'?'#fff':'var(--color-text)'}}
         >
           📚 Livros ({livros.length})
         </button>
         <button
           onClick={() => setAbaAtiva('emprestimos')}
-          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
-            abaAtiva === 'emprestimos'
-              ? 'bg-primary-600 text-white'
-              : 'btn-tab-inactive'
-          }`}
+          style={{flex:1,padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:abaAtiva==='emprestimos'?'var(--color-accent)':'var(--color-surface-2)',color:abaAtiva==='emprestimos'?'#fff':'var(--color-text)'}}
         >
           📖 Empréstimos Ativos ({emprestimosAtivos.length})
         </button>
         <button
           onClick={() => setAbaAtiva('devolvidos')}
-          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
-            abaAtiva === 'devolvidos'
-              ? 'bg-primary-600 text-white'
-              : 'btn-tab-inactive'
-          }`}
+          style={{flex:1,padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:abaAtiva==='devolvidos'?'var(--color-accent)':'var(--color-surface-2)',color:abaAtiva==='devolvidos'?'#fff':'var(--color-text)'}}
         >
           ✅ Devolvidos ({emprestimosDevolvidos.length})
         </button>
         <button
           onClick={() => setAbaAtiva('por-irmao')}
-          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
-            abaAtiva === 'por-irmao'
-              ? 'bg-primary-600 text-white'
-              : 'btn-tab-inactive'
-          }`}
+          style={{flex:1,padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:abaAtiva==='por-irmao'?'var(--color-accent)':'var(--color-surface-2)',color:abaAtiva==='por-irmao'?'#fff':'var(--color-text)'}}
         >
           👤 Por Irmão
         </button>
         <button
           onClick={() => setAbaAtiva('fila')}
-          className={`flex-1 py-3 px-4 rounded-lg font-semibold transition ${
-            abaAtiva === 'fila'
-              ? 'bg-primary-600 text-white'
-              : 'btn-tab-inactive'
-          }`}
+          style={{flex:1,padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:abaAtiva==='fila'?'var(--color-accent)':'var(--color-surface-2)',color:abaAtiva==='fila'?'#fff':'var(--color-text)'}}
         >
           ⏳ Fila de Espera
         </button>
@@ -447,13 +427,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           {/* FORMULÁRIO CADASTRO/EDIÇÃO */}
           {permissoes?.pode_editar_biblioteca && (
             <div className="rounded-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-primary-600 to-blue-700 p-6 text-white">
-                <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
+              <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem"}}>
+                <h3 style={{color:"#fff",fontWeight:"700",fontSize:"1.1rem",margin:0}}>
                   {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
                 </h3>
               </div>
 
-              <div className="p-6">
+              <div className="p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Título *</label>
@@ -590,11 +570,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
             return (
               <div key={grau} className="rounded-xl overflow-hidden">
-                <div className={`p-4 text-white font-bold text-lg ${
-                  grau === 'Aprendiz' ? 'bg-gradient-to-r from-green-600 to-green-700' :
-                  grau === 'Companheiro' ? 'bg-gradient-to-r from-primary-600 to-blue-700' :
-                  'bg-gradient-to-r from-purple-600 to-purple-700'
-                }`}>
+                <div style={{padding:'1rem',fontWeight:'700',fontSize:'1.05rem',color:'#fff',background:grau==='Aprendiz'?'#10b981':grau==='Companheiro'?'var(--color-accent)':'#8b5cf6'}}>
                   {grau === 'Aprendiz' && '🟢'} {grau === 'Companheiro' && '🔵'} {grau === 'Mestre' && '🟣'} {grau} ({livrosDoGrau.length})
                 </div>
 
@@ -614,13 +590,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>{livro.autor || '—'}</p>
                             </div>
                             <div style={{flex:'0 0 90px'}}>
-                              <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{livro.categoria}</span>
+                              <span style={{padding:"0.1rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",fontWeight:"600",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)"}}>{livro.categoria}</span>
                             </div>
                             <div style={{flex:'0 0 120px'}}>
                               <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{livro.localizacao || '—'}</p>
                             </div>
                             <div style={{flex:'0 0 50px',textAlign:'center'}}>
-                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${disponivel > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                              <span style={{padding:'0.1rem 0.5rem',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',background:disponivel>0?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)',color:disponivel>0?'#10b981':'#ef4444',border:`1px solid ${disponivel>0?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)'}`}}>
                                 {disponivel}/{livro.quantidade_total}
                               </span>
                             </div>
@@ -658,7 +634,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           {/* FORMULÁRIO EMPRÉSTIMO */}
           {permissoes?.pode_editar_biblioteca && (
             <div className="rounded-xl overflow-hidden">
-              <div className="bg-gradient-to-r from-green-600 to-green-700 p-6 text-white">
+              <div style={{background:"#10b981",padding:"1rem 1.5rem"}}>
                 <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📖 Registrar Novo Empréstimo</h3>
               </div>
 
@@ -720,7 +696,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           <div className="rounded-xl overflow-hidden">
             <div style={{padding:"1rem",background:"var(--color-accent)",borderRadius:"0.5rem 0.5rem 0 0"}}>
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>📖 Empréstimos Ativos</h3>
-              <p className="text-sm text-blue-100">{emprestimosAtivos.length} empréstimo(s) ativo(s)</p>
+              <p style={{color:"rgba(255,255,255,0.85)",fontSize:"0.82rem",margin:"0.2rem 0 0"}}>{emprestimosAtivos.length} empréstimo(s) ativo(s)</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -757,7 +733,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                           <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>↩ {formatarData(emprestimo.data_devolucao_prevista)}</p>
                         </div>
                         <div style={{flex:'0 0 90px',textAlign:'center'}}>
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${estaAtrasado(emprestimo.data_devolucao_prevista) ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                          <span style={{padding:'0.1rem 0.5rem',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',background:estaAtrasado(emprestimo.data_devolucao_prevista)?'rgba(239,68,68,0.15)':'rgba(16,185,129,0.15)',color:estaAtrasado(emprestimo.data_devolucao_prevista)?'#ef4444':'#10b981',border:`1px solid ${estaAtrasado(emprestimo.data_devolucao_prevista)?'rgba(239,68,68,0.3)':'rgba(16,185,129,0.3)'}`}}>
                             {estaAtrasado(emprestimo.data_devolucao_prevista) ? '⚠️ Atrasado' : '✅ No prazo'}
                           </span>
                         </div>
@@ -838,7 +814,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                               <p className="text-xs mt-0.5" style={{color:'var(--color-text-muted)'}}>↩ {formatarData(emprestimo.data_devolucao_real)}</p>
                             </div>
                             <div style={{flex:'0 0 80px',textAlign:'center'}}>
-                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${devolveuAtrasado ? 'bg-orange-100 text-orange-800' : 'bg-green-100 text-green-800'}`}>
+                              <span style={{padding:'0.1rem 0.5rem',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',background:devolveuAtrasado?'rgba(245,158,11,0.15)':'rgba(16,185,129,0.15)',color:devolveuAtrasado?'#f59e0b':'#10b981',border:`1px solid ${devolveuAtrasado?'rgba(245,158,11,0.3)':'rgba(16,185,129,0.3)'}`}}>
                                 {devolveuAtrasado ? 'Atrasado' : 'No prazo'}
                               </span>
                             </div>
@@ -868,9 +844,9 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {abaAtiva === 'por-irmao' && (
         <div>
           <div className="rounded-xl overflow-hidden">
-            <div className="p-4 bg-gradient-to-r from-purple-600 to-purple-700 text-white">
+            <div style={{background:"#8b5cf6",padding:"1rem 1.5rem"}}>
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Empréstimos por Irmão</h3>
-              <p className="text-sm text-purple-100">
+              <p style={{color:"rgba(255,255,255,0.85)",fontSize:"0.82rem",margin:"0.2rem 0 0"}}>
                 {emprestimosPorIrmao.length} irmão(s) com empréstimos registrados
               </p>
             </div>
@@ -880,9 +856,9 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 emprestimosPorIrmao.map((item) => (
                   <div key={item.irmao.id} className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <div className="flex justify-between items-center mb-4">
-                      <h4 className="text-lg font-bold text-blue-900">{item.irmao.nome}</h4>
+                      <h4 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",margin:0}}>{item.irmao.nome}</h4>
                       <div className="flex gap-4">
-                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-lg text-sm font-semibold">
+                        <span style={{padding:"0.2rem 0.75rem",borderRadius:"var(--radius-md)",fontSize:"0.78rem",fontWeight:"700",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)"}}>
                           Ativos: {item.ativos}
                         </span>
                         <span className="px-3 py-1 rounded-lg text-sm font-semibold">
@@ -914,7 +890,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                             >
                               <p className="text-sm flex-1" style={{color:'var(--color-text)'}}>{obterTituloLivro(emprestimo.livro_id)}</p>
                               <p className="text-xs" style={{color:'var(--color-text-muted)'}}>📅 {formatarData(emprestimo.data_emprestimo)}</p>
-                              <span className={`px-2 py-0.5 rounded text-xs font-bold ${emprestimo.status === 'emprestado' ? estaAtrasado(emprestimo.data_devolucao_prevista) ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'}`}>
+                              <span style={{padding:'0.1rem 0.5rem',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',background:emprestimo.status==='emprestado'?(estaAtrasado(emprestimo.data_devolucao_prevista)?'rgba(239,68,68,0.15)':'rgba(59,130,246,0.15)'):'rgba(16,185,129,0.15)',color:emprestimo.status==='emprestado'?(estaAtrasado(emprestimo.data_devolucao_prevista)?'#ef4444':'#3b82f6'):'#10b981',border:'1px solid transparent'}}>
                                 {emprestimo.status === 'emprestado' ? (estaAtrasado(emprestimo.data_devolucao_prevista) ? 'Atrasado' : 'Ativo') : 'Devolvido'}
                               </span>
                               {emprestimo.status === 'emprestado' && permissoes?.pode_editar_biblioteca && (
@@ -930,7 +906,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12">
+                <div className="text-center py-12" style={{color:"var(--color-text-muted)"}}>
                   Nenhum irmão com empréstimos registrados
                 </div>
               )}
@@ -963,7 +939,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     setEmprestimoEditando(null);
                     setNovoPrazo('');
                   }}
-                  className="text-white hover:bg-yellow-700 rounded-full p-2"
+                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",padding:"0.4rem",cursor:"pointer"}}
                 >
                   ✖️
                 </button>
@@ -972,13 +948,13 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
 
             <div className="p-6 space-y-4">
               <div>
-                <p className="text-sm mb-2">
+                <p style={{fontSize:"0.85rem",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   <strong>Livro:</strong> {obterTituloLivro(emprestimoEditando.livro_id)}
                 </p>
-                <p className="text-sm mb-2">
+                <p style={{fontSize:"0.85rem",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   <strong>Irmão:</strong> {obterNomeIrmao(emprestimoEditando.irmao_id)}
                 </p>
-                <p className="text-sm mb-4">
+                <p style={{fontSize:"0.85rem",color:"var(--color-text)",marginBottom:"1rem"}}>
                   <strong>Prazo Atual:</strong> {formatarData(emprestimoEditando.data_devolucao_prevista)}
                 </p>
               </div>
@@ -1011,7 +987,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                     setEmprestimoEditando(null);
                     setNovoPrazo('');
                   }}
-                  className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                 >
                   ❌ Cancelar
                 </button>
