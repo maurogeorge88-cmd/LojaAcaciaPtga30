@@ -178,12 +178,12 @@ export default function GestaoEntidades({ showSuccess, showError }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"1rem",overflowX:"hidden"}}>
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏢 Gestão de Entidades</h2>
-          <p className="mt-1">Cadastro de lojas, fornecedores e terceiros</p>
+          <p className="mt-1" style={{color:"var(--color-text-muted)"}}>Cadastro de lojas, fornecedores e terceiros</p>
         </div>
         <button
           onClick={abrirModalNovo}
@@ -229,7 +229,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
           </div>
         </div>
 
-        <div className="mt-4 text-sm">
+        <div className="mt-4 text-sm" style={{color:"var(--color-text-muted)"}}>
           Mostrando <strong>{entidadesFiltradas.length}</strong> de <strong>{entidades.length}</strong> entidades
         </div>
       </div>
@@ -237,8 +237,8 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       {/* LISTA DE ENTIDADES */}
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
+          <div className="text-center" style={{color:"var(--color-text-muted)"}}>
+            <div className="animate-spin rounded-full h-12 w-12 mx-auto" style={{borderBottom:"3px solid var(--color-accent)",borderTop:"3px solid transparent",borderLeft:"3px solid transparent",borderRight:"3px solid transparent"}}></div>
             <p className="mt-4">Carregando...</p>
           </div>
         </div>
@@ -276,7 +276,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm" style={{color:"var(--color-text-muted)"}}>
                       {entidade.cpf_cnpj && (
                         <div className="flex items-center gap-2" style={{color:"var(--color-text-muted)"}}>
                           <span className="font-semibold" style={{color:"var(--color-text)"}}>📋 CPF/CNPJ:</span>
@@ -337,8 +337,8 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       {modalAberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-6 text-white">
-              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
+            <div className="p-6 text-white" style={{background:"var(--color-accent)"}}>
+              <h3 className="text-2xl font-bold" style={{color:"#fff"}}>
                 {modoEdicao ? '✏️ Editar Entidade' : '➕ Nova Entidade'}
               </h3>
             </div>
