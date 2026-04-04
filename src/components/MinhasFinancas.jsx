@@ -15,26 +15,27 @@ const sBtn = (ativo, cor = 'var(--color-accent)') => ({
   color: ativo ? '#fff' : 'var(--color-text)',
 });
 
-export default function MinhasFinancas({ userData }) {
+export default function MinhasFinancas({ userEmail, userData }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [filtro, setFiltro]           = useState('todos');
   const [anoFiltro, setAnoFiltro]     = useState('todos');
   const [anosComRegistros, setAnosComRegistros] = useState([]);
 
-  useEffect(() => { if (userData?.email) carregarDados(); }, [userData]);
+  const email = userEmail || userData?.email;
+  useEffect(() => { if (email) carregarDados(); }, [email]);
 
   const carregarDados = async () => {
     setLoading(true);
     try {
-      if (!userData?.email) { setLoading(false); return; }
+      if (!email) { setLoading(false); return; }
 
       // Buscar irmão — usar maybeSingle para não lançar erro se não encontrar
       const { data: irmao, error: irmaoErr } = await supabase
-        .from('irmaos').select('id').eq('email', userData.email).maybeSingle();
+        .from('irmaos').select('id').eq('email', email).maybeSingle();
 
       if (irmaoErr) { console.error('Erro ao buscar irmão:', irmaoErr); setLoading(false); return; }
-      if (!irmao) { console.warn('Irmão não encontrado para email:', userData.email); setLoading(false); return; }
+      if (!irmao) { console.warn('Irmão não encontrado para email:', email); setLoading(false); return; }
 
       const { data, error: lancErr } = await supabase
         .from('lancamentos_loja')
@@ -111,7 +112,7 @@ export default function MinhasFinancas({ userData }) {
       {/* Cabeçalho */}
       <div style={{ borderRadius: 'var(--radius-xl)', padding: '1.25rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-accent)' }}>
         <h2 style={{ fontWeight: '800', fontSize: '1.2rem', color: 'var(--color-text)', margin: 0 }}>💰 Minhas Finanças</h2>
-        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0' }}>{userData?.nome}</p>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0' }}>{userData?.nome || email}</p>
       </div>
 
       {/* Cards de resumo */}
