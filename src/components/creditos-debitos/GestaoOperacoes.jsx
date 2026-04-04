@@ -332,7 +332,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"1rem",overflowX:"hidden"}}>
       {/* HEADER */}
       <div className="flex items-center justify-between">
         <div>
@@ -397,7 +397,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
           </div>
         </div>
 
-        <div className="mt-4 text-sm">
+        <div className="mt-4 text-sm" style={{color:"var(--color-text-muted)"}}>
           Mostrando <strong>{operacoesFiltradas.length}</strong> de <strong>{operacoes.length}</strong> operações
         </div>
       </div>
@@ -436,6 +436,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
         <div className="grid grid-cols-1 gap-4">
           {operacoesFiltradas.map(operacao => {
             const statusBadge = getStatusBadge(operacao.status);
+                  const statusBadgeStyle = {background:statusBadge.color?.includes("green")?"rgba(16,185,129,0.15)":statusBadge.color?.includes("red")?"rgba(239,68,68,0.15)":statusBadge.color?.includes("yellow")?"rgba(245,158,11,0.15)":"var(--color-surface-2)",color:statusBadge.color?.includes("green")?"#10b981":statusBadge.color?.includes("red")?"#ef4444":statusBadge.color?.includes("yellow")?"#f59e0b":"var(--color-text-muted)",border:"1px solid"};
             const percentualPago = operacao.valor_total > 0 
               ? ((operacao.valor_pago / operacao.valor_total) * 100).toFixed(1)
               : 0;
@@ -450,11 +451,11 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
                           {operacao.entidade_nome || 'Entidade não informada'}
                         </h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusBadge.color}`}>
+                        <span style={{...statusBadgeStyle,padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"700"}}>
                           {statusBadge.label}
                         </span>
                         {operacao.forma_pagamento === 'parcelado' && (
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">
+                          <span style={{padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"700",background:"rgba(139,92,246,0.15)",color:"#8b5cf6",border:"1px solid rgba(139,92,246,0.3)"}}>
                             📅 {operacao.numero_parcelas}x
                           </span>
                         )}
@@ -464,7 +465,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         <p className="mb-3">{operacao.descricao}</p>
                       )}
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm" style={{color:"var(--color-text)"}}>
                         <div>
                           <span className="block">Valor Total</span>
                           <span className={`font-bold text-lg ${tipo === 'credito' ? '' : ''}`}>
@@ -481,7 +482,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
 
                         <div>
                           <span className="block">Saldo Devedor</span>
-                          <span className="font-semibold text-orange-600">
+                          <span style={{fontWeight:"600",color:"#f59e0b"}}>
                             R$ {operacao.saldo_devedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -495,12 +496,12 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                                 style={{ width: `${percentualPago}%` }}
                               />
                             </div>
-                            <span className="text-xs font-semibold">{percentualPago}%</span>
+                            <span style={{fontSize:"0.72rem",fontWeight:"700",color:"var(--color-text)"}}>{percentualPago}%</span>
                           </div>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-4 text-sm" style={{color:"var(--color-text)"}}>
                         <div>
                           <span className="font-semibold">📅 Lançamento:</span> {new Date(operacao.data_lancamento).toLocaleDateString('pt-BR')}
                         </div>
