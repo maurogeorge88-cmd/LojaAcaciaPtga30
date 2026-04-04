@@ -676,7 +676,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               <select
                 value={filtroAnalise.mes}
                 onChange={(e) => setFiltroAnalise({ ...filtroAnalise, mes: parseInt(e.target.value) })}
-                className="px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all"
+                className="px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               >
                 <option value={0}>📅 Ano inteiro</option>
                 {meses.map((mes, i) => (
@@ -687,7 +687,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
               <select
                 value={filtroAnalise.ano}
                 onChange={(e) => setFiltroAnalise({ ...filtroAnalise, ano: parseInt(e.target.value) })}
-                className="px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all"
+                className="px-4 py-2 border-2 rounded-lg text-sm font-medium transition-all" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
               >
                 {anosDisponiveis.map(ano => (
                   <option key={ano} value={ano}>{ano}</option>
