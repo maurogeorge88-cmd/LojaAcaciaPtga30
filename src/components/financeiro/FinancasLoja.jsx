@@ -2541,7 +2541,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   abrirModalLancamento('receita');
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-green-50 text-sm font-medium border-b"
+                className="w-full px-4 py-3 text-left text-sm font-medium border-b"
               >
                 💵 Nova Receita
               </button>
@@ -2550,7 +2550,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   abrirModalLancamento('despesa');
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-red-50 text-sm font-medium border-b"
+                className="w-full px-4 py-3 text-left text-sm font-medium border-b"
               >
                 💳 Nova Despesa
               </button>
@@ -2560,7 +2560,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setModalParcelamentoAberto(true);
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-indigo-50 text-sm font-medium border-b"
+                className="w-full px-4 py-3 text-left text-sm font-medium border-b"
               >
                 🔀 Parcelar
               </button>
@@ -2569,7 +2569,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setMostrarModalIrmaos(true);
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-purple-50 text-sm font-medium"
+                className="w-full px-4 py-3 text-left hover: text-sm font-medium"
               >
                 👥 Lanç. em Lote
               </button>
@@ -2603,7 +2603,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   gerarPDFResumido();
                   setMenuRelatoriosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover:bg-blue-50 text-sm font-medium"
+                className="w-full px-4 py-3 text-left hover: text-sm font-medium"
               >
                 📋 Fechamento Mensal
               </button>
@@ -2645,7 +2645,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </button>
         
         {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
-        <div className="bg-blue-50 border rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap">
+        <div className="border rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
           <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
           <p className="text-lg font-bold text-blue-700 leading-tight">{totalRegistros}</p>
         </div>
@@ -2657,7 +2657,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
           {/* LINHA 1: Resumo Geral */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
-            <div className="bg-purple-50 border rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="border rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
               <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
                 {showValues ? formatarMoeda(saldoAnterior) : '••••••'}
@@ -2672,7 +2672,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             
             <div 
-              className="bg-green-50 border rounded-lg p-3 relative flex flex-col justify-center cursor-pointer hover:bg-green-100 transition"
+              className="rounded-lg p-3 relative flex flex-col justify-center cursor-pointer transition" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}
               onDoubleClick={abrirDetalhesReceitasPagas}
               title="Clique duplo para ver detalhes"
              style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
@@ -2682,14 +2682,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
             
-            <div className="bg-red-50 border rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="border rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
               <p className="text-lg font-bold text-red-700">{showValues ? formatarMoeda(resumo.despesas) : '••••••'}</p>
               <p className="text-[10px] mt-0.5">Total pago</p>
               <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
             
-            <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="border rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
               <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
                 {showValues ? formatarMoeda(resumo.saldoPeriodo) : '••••••'}
@@ -2701,7 +2701,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           {/* LINHA 2: Detalhamento */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 flex-1">
-          <div className="bg-sky-50 border-2 border-sky-300 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="border-2 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-sky-600 font-medium">🏦 Saldo Bancário</p>
             <p className={`text-lg font-bold ${resumo.saldoBancario >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
               {showValues ? formatarMoeda(resumo.saldoBancario) : '••••••'}
@@ -2711,7 +2711,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </p>
           </div>
 
-          <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="border-2 border-emerald-300 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-emerald-600 font-medium">💵 Caixa Físico</p>
             <p className="text-lg font-bold text-emerald-700">
               {showValues ? formatarMoeda(resumo.caixaFisico) : '••••••'}
@@ -2729,7 +2729,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             )}
           </div>
 
-          <div className="bg-blue-50 border-2 rounded-lg p-3 col-span-2 md:col-span-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="border-2 rounded-lg p-3 col-span-2 md:col-span-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
             <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
               {showValues ? formatarMoeda(resumo.saldoTotal) : "••••••"}
@@ -2739,7 +2739,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="border border-yellow-200 rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-xs text-yellow-600 font-medium">⏳ A Receber</p>
             <p className="text-lg font-bold text-yellow-700">{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
             <p className="text-[10px] mt-0.5">Pendentes</p>
@@ -2821,7 +2821,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       {/* BANNER MÊS FECHADO */}
       {mesFechadoAtual() && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4 flex items-center justify-between" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div className="border-l-4 border-yellow-500 rounded-lg p-4 flex items-center justify-between" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔒</span>
             <div>
@@ -2854,7 +2854,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <select
               value={filtros.mes}
               onChange={(e) => setFiltros({ ...filtros, mes: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value={0}>Todos</option>
               {meses.map((mes, idx) => (
@@ -2896,7 +2896,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <select
               value={filtros.ano}
               onChange={(e) => setFiltros({ ...filtros, ano: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value={0}>Todos</option>
               {anosDisponiveis.map(ano => (
@@ -2926,7 +2926,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <select
               value={filtros.tipo}
               onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="">Todos</option>
               <option value="receita">Receitas</option>
@@ -2940,7 +2940,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <select
               value={filtros.categoria}
               onChange={(e) => setFiltros({ ...filtros, categoria: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="">Todas</option>
               {categorias.map(cat => (
@@ -2955,7 +2955,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <select
               value={filtros.status}
               onChange={(e) => setFiltros({ ...filtros, status: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="">Todos</option>
               <option value="pago">Pagos</option>
@@ -2973,7 +2973,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               onChange={(e) => {
                 setFiltros({ ...filtros, origem_tipo: e.target.value, origem_irmao_id: '' });
               }}
-              className="w-full px-3 py-2 border rounded-lg"
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="">Todas</option>
               <option value="Loja">🏛️ Loja</option>
@@ -2988,7 +2988,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <select
                 value={filtros.origem_irmao_id}
                 onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg"
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Todos</option>
                 {irmaos.map(irmao => (
@@ -3035,7 +3035,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <select
                     value={lancamentoIrmaos.categoria_id}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, categoria_id: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   >
                     <option value="">Selecione...</option>
@@ -3044,7 +3044,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
 
                 <div className="md:col-span-2">
-                  <div className="bg-blue-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                  <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     <label className="flex items-center cursor-pointer">
                       <input
                         type="checkbox"
@@ -3081,7 +3081,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     step="0.01"
                     value={lancamentoIrmaos.valor}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, valor: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
                 </div>
@@ -3094,7 +3094,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     type="text"
                     value={lancamentoIrmaos.descricao}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, descricao: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     placeholder="Ex: Mensalidade - Janeiro/2024"
                     required
                   />
@@ -3111,7 +3111,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     type="date"
                     value={lancamentoIrmaos.data_lancamento}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, data_lancamento: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
                 </div>
@@ -3124,7 +3124,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     type="date"
                     value={lancamentoIrmaos.data_vencimento}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, data_vencimento: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
                 </div>
@@ -3136,7 +3136,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <select
                     value={lancamentoIrmaos.tipo_pagamento}
                     onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, tipo_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -3213,7 +3213,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
               </div>
 
-              <div className="bg-blue-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-sm text-blue-800">
                   <strong>Total a lançar:</strong> R$ {(parseFloat(lancamentoIrmaos.valor || 0) * lancamentoIrmaos.irmaos_selecionados.length).toFixed(2)}
                   {' '}({lancamentoIrmaos.irmaos_selecionados.length} irmãos × R$ {parseFloat(lancamentoIrmaos.valor || 0).toFixed(2)})
@@ -3412,7 +3412,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
               </div>
 
-              <div className="bg-green-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-sm text-green-800">
                   <strong>Total a quitar:</strong> {formatarMoeda(
                     lancamentos
@@ -3938,19 +3938,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
             {/* Corpo */}
             <div className="p-6 space-y-4">
-              <div className="bg-blue-50 p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-xl mb-2">🏦 Recebido em Conta</p>
                 <p className="text-4xl font-bold text-blue-600">{formatarMoeda(detalhesReceitasPagas.conta)}</p>
                 <p className="text-sm mt-1">PIX, Transferência, Cartão</p>
               </div>
               
-              <div className="bg-green-50 p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-xl mb-2">💵 Recebido em Dinheiro</p>
                 <p className="text-4xl font-bold text-green-600">{formatarMoeda(detalhesReceitasPagas.dinheiro)}</p>
                 <p className="text-sm mt-1">Dinheiro físico</p>
               </div>
               
-              <div className="bg-purple-50 p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-xl mb-2">💰 Total Recebido</p>
                 <p className="text-4xl font-bold text-purple-600">
                   {formatarMoeda(detalhesReceitasPagas.conta + detalhesReceitasPagas.dinheiro)}
@@ -3999,7 +3999,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <p className="text-xs mt-1">Despesas pendentes do período</p>
                 </div>
                 
-                <div className="bg-purple-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div className="border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm text-purple-600 font-medium mb-1">🔄 A Compensar</p>
                   <p className="text-3xl font-bold text-purple-700">
                     {formatarMoeda(
@@ -4035,7 +4035,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           const diasAtraso = calcularDiasAtraso(lanc.data_vencimento);
                           
                           return (
-                            <tr key={lanc.id} className={index % 2 === 0 ? '' : ''}>
+                            <tr key={lanc.id} style={{borderBottom:"1px solid var(--color-border)"}}className={index % 2 === 0 ? '' : ''}>
                               <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 {formatarDataBR(lanc.data_vencimento)}
                                 {vencido && (
@@ -4107,7 +4107,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
 
               {/* Informações */}
-              <div className="mt-6 bg-blue-50 border-l-4 p-4 rounded">
+              <div className="mt-6 border-l-4 p-4 rounded">
                 <div className="flex">
                   <span className="text-2xl mr-3">💡</span>
                   <div>
@@ -4143,7 +4143,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Sangria</h3>
               <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="hover: text-2xl font-bold">×</button>
             </div>
-            <div className="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="border-2 border-emerald-300 rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-sm text-emerald-700 font-semibold mb-1">💵 Disponível</p>
               <p className="text-3xl font-bold text-emerald-800">{formatarMoeda(resumo.caixaFisico)}</p>
             </div>
@@ -4376,7 +4376,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
   const categoriasDespesa = categorias.filter(c => c.tipo === 'despesa');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏷️ Gerenciar Categorias</h2>
         <button
@@ -4400,7 +4400,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                   type="text"
                   value={formCategoria.nome}
                   onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -4409,7 +4409,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                 <select
                   value={formCategoria.tipo}
                   onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="receita">💰 Receita</option>
                   <option value="despesa">💸 Despesa</option>
@@ -4421,7 +4421,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                   type="text"
                   value={formCategoria.descricao}
                   onChange={(e) => setFormCategoria({ ...formCategoria, descricao: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
               <div>
@@ -4456,7 +4456,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
           </h3>
           <div className="space-y-2">
             {categoriasReceita.map(cat => (
-              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-green-50 ' : '  opacity-60'}`}>
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? ' ' : '  opacity-60'}`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -4484,7 +4484,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
           </h3>
           <div className="space-y-2">
             {categoriasDespesa.map(cat => (
-              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? 'bg-red-50 ' : '  opacity-60'}`}>
+              <div key={cat.id} className={`p-3 rounded-lg border ${cat.ativo !== false ? ' ' : '  opacity-60'}`}>
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -4506,7 +4506,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         </div>
       </div>
 
-      <div className="bg-blue-50 border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+      <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <p className="text-sm text-blue-800">
           💡 <strong>Dica:</strong> Categorias inativas não aparecem nos formulários, mas lançamentos antigos continuam visíveis.
         </p>
@@ -4745,7 +4745,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
               <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Categoria *</label>
               <select required value={formParcelamento.categoria_id}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, categoria_id: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg">
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
                 <option value="">Selecione...</option>
                 {renderizarOpcoesCategoria(formParcelamento.tipo)}
               </select>
@@ -4755,7 +4755,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
               <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
               <input type="text" required value={formParcelamento.descricao}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, descricao: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg" placeholder="Ex: Reforma do templo" />
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} placeholder="Ex: Reforma do templo" />
             </div>
           </div>
           <p className="text-xs -mt-2">Será adicionado (1/5), (2/5), etc.</p>
@@ -4766,7 +4766,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
               <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Origem</label>
               <select value={formParcelamento.origem_tipo}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_tipo: e.target.value, origem_irmao_id: '' })}
-                className="w-full px-3 py-2 border rounded-lg">
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
                 <option value="Loja">🏛️ Loja</option>
                 <option value="Irmao">👤 Irmão</option>
               </select>
@@ -4776,7 +4776,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
                 <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Irmão</label>
                 <select value={formParcelamento.origem_irmao_id}
                   onChange={(e) => setFormParcelamento({ ...formParcelamento, origem_irmao_id: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg">
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
                   <option value="">Selecione...</option>
                   {irmaos.map(irmao => (
                     <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
@@ -4792,19 +4792,19 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
               <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Valor Total *</label>
               <input type="number" required step="0.01" min="0.01" value={formParcelamento.valor_total}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, valor_total: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg" placeholder="0.00" />
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} placeholder="0.00" />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nº Parcelas *</label>
               <input type="number" required min="2" max="24" value={formParcelamento.num_parcelas}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, num_parcelas: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg" />
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} />
             </div>
             <div>
               <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Vencimento 1ª Parcela *</label>
               <input type="date" required value={formParcelamento.data_primeira_parcela}
                 onChange={(e) => setFormParcelamento({ ...formParcelamento, data_primeira_parcela: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg" />
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} />
             </div>
           </div>
           <p className="text-xs -mt-2">As demais vencerão mensalmente</p>
@@ -4821,7 +4821,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
             <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Forma de Pagamento</label>
             <select value={formParcelamento.tipo_pagamento}
               onChange={(e) => setFormParcelamento({ ...formParcelamento, tipo_pagamento: e.target.value })}
-              className="w-full px-3 py-2 border rounded-lg">
+              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
               {tiposPagamento.map(tp => (
                 <option key={tp.value} value={tp.value}>{tp.label}</option>
               ))}
@@ -4832,7 +4832,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
             <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
             <textarea value={formParcelamento.observacoes}
               onChange={(e) => setFormParcelamento({ ...formParcelamento, observacoes: e.target.value })}
-              rows="2" className="w-full px-3 py-2 border rounded-lg" />
+              rows="2" className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} />
           </div>
 
           <div className="flex gap-3 pt-4 border-t">
@@ -5010,7 +5010,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
 
           {/* Histórico de Compensações */}
           {compensacoes.length > 0 && (
-            <div className="bg-purple-50 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h4 className="font-medium mb-2 text-purple-800">🔄 Compensações Realizadas:</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {compensacoes.map((comp, idx) => (
@@ -5025,7 +5025,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
 
           {/* Histórico de Pagamentos */}
           {pagamentosReais.length > 0 && (
-            <div className="bg-blue-50 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h4 className="font-medium mb-2">📋 Pagamentos Anteriores:</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {pagamentosReais.map((pag, idx) => (
@@ -5064,7 +5064,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
                 required
                 value={dataPagamento}
                 onChange={(e) => setDataPagamento(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg" 
+                className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} 
               />
               <p className="text-xs mt-1">Entra no balanço desta data</p>
             </div>
@@ -5072,7 +5072,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
 
           {/* Prévia */}
           {valorPagar && parseFloat(valorPagar) > 0 && (
-            <div className="bg-blue-50 border rounded p-4 space-y-2">
+            <div className="border rounded p-4 space-y-2">
               <p className="text-sm font-medium text-blue-900">📊 Após este pagamento:</p>
               <div className="flex justify-between text-sm">
                 <span className="text-green-700">Total Pago:</span>
@@ -5312,7 +5312,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {debitos.length > 0 ? debitos.map(d => (
                   <div key={d.id} onClick={() => toggleDebito(d.id)}
-                    className={`p-3 border-2 rounded-lg cursor-pointer ${debitosSelecionados.includes(d.id) ? ' bg-red-50' : ''}`}>
+                    className={`p-3 border-2 rounded-lg cursor-pointer ${debitosSelecionados.includes(d.id) ? ' ' : ''}`}>
                     <div className="flex justify-between">
                       <div><p className="font-medium text-sm">{d.descricao}</p><p className="text-xs">Venc: {formatarDataBR(d.data_vencimento)}</p></div>
                       <p className="font-bold text-red-600">{formatarMoeda(d.valor)}</p>
@@ -5320,7 +5320,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
                   </div>
                 )) : <p className="text-center py-4">Sem débitos</p>}
               </div>
-              <div className="mt-3 p-3 bg-red-50 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-red-700">{formatarMoeda(totalDebitos)}</p></div>
+              <div className="mt-3 p-3 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-red-700">{formatarMoeda(totalDebitos)}</p></div>
             </div>
             {/* CRÉDITOS */}
             <div>
@@ -5328,7 +5328,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {creditos.length > 0 ? creditos.map(c => (
                   <div key={c.id} onClick={() => toggleCredito(c.id)}
-                    className={`p-3 border-2 rounded-lg cursor-pointer ${creditosSelecionados.includes(c.id) ? ' bg-green-50' : ''}`}>
+                    className={`p-3 border-2 rounded-lg cursor-pointer ${creditosSelecionados.includes(c.id) ? ' ' : ''}`}>
                     <div className="flex justify-between">
                       <div><p className="font-medium text-sm">{c.descricao}</p><p className="text-xs">Venc: {formatarDataBR(c.data_vencimento)}</p></div>
                       <p className="font-bold text-green-600">{formatarMoeda(c.valor)}</p>
@@ -5336,12 +5336,12 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
                   </div>
                 )) : <p className="text-center py-4">Sem créditos</p>}
               </div>
-              <div className="mt-3 p-3 bg-green-50 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-green-700">{formatarMoeda(totalCreditos)}</p></div>
+              <div className="mt-3 p-3 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-green-700">{formatarMoeda(totalCreditos)}</p></div>
             </div>
           </div>
           {/* RESUMO */}
           {(debitosSelecionados.length > 0 || creditosSelecionados.length > 0) && (
-            <div className="bg-purple-50 border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h4 className="font-bold mb-3" style={{color:"var(--color-text)"}}>📊 Resumo</h4>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div><p className="text-sm">Compensar</p><p className="text-2xl font-bold text-purple-700">{formatarMoeda(valorCompensar)}</p></div>
