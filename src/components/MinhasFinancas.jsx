@@ -22,11 +22,12 @@ export default function MinhasFinancas({ userData }) {
   const [anoFiltro, setAnoFiltro]     = useState('todos');
   const [anosComRegistros, setAnosComRegistros] = useState([]);
 
-  useEffect(() => { carregarDados(); }, []);
+  useEffect(() => { if (userData?.email) carregarDados(); }, [userData]);
 
   const carregarDados = async () => {
     setLoading(true);
     try {
+      if (!userData?.email) return;
       const { data: irmao } = await supabase
         .from('irmaos').select('id').eq('email', userData.email).single();
       if (!irmao) return;
