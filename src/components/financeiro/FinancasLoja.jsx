@@ -2475,21 +2475,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* Botões de visualização */}
         <button
           onClick={() => setViewMode('lancamentos')}
-          className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
-            viewMode === 'lancamentos'
-              ? 'bg-primary-600 text-white'
-              : '  '
-          }`}
+          style={{padding:'0 0.75rem',height:'55px',borderRadius:'var(--radius-lg)',fontWeight:'600',whiteSpace:'nowrap',fontSize:'0.875rem',cursor:'pointer',border:'none',background:viewMode==='lancamentos'?'var(--color-accent)':'var(--color-surface-2)',color:viewMode==='lancamentos'?'#fff':'var(--color-text)'}}
         >
           📊 Lançam.
         </button>
         <button
           onClick={() => setViewMode('inadimplentes')}
-          className={`px-3 h-[55px] rounded-lg font-medium whitespace-nowrap text-sm ${
-            viewMode === 'inadimplentes'
-              ? 'bg-red-600 text-white'
-              : '  '
-          }`}
+          style={{padding:'0 0.75rem',height:'55px',borderRadius:'var(--radius-lg)',fontWeight:'600',whiteSpace:'nowrap',fontSize:'0.875rem',cursor:'pointer',border:'none',background:viewMode==='inadimplentes'?'#dc2626':'var(--color-surface-2)',color:viewMode==='inadimplentes'?'#fff':'var(--color-text)'}}
         >
           ⚠️ Inadimp.
         </button>
