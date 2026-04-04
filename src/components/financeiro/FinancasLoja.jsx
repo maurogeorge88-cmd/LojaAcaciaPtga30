@@ -2620,7 +2620,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         </button>
         <button
           onClick={() => setModalAnaliseAberto(true)}
-          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg hover: font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-accent)"}}
         >
           <span>📊 Análise</span>
           <span>Categorias</span>
@@ -2638,7 +2638,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* Botão Ocultar/Mostrar Valores */}
         <button
           onClick={() => setShowValues(!showValues)}
-          className="w-28 h-[55px] px-3 text-sm bg-gray-700 text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          className="w-28 h-[55px] px-3 text-sm rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-surface-3)",color:"var(--color-text)"}}
         >
           <span className="text-xl">{showValues ? '🙈' : '👁️'}</span>
           <span className="text-xs">{showValues ? 'Ocultar' : 'Mostrar'}</span>
@@ -2646,8 +2646,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         
         {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
         <div className="border rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
-          <p className="text-[9px] text-blue-600 font-medium leading-tight">Total de Registros</p>
-          <p className="text-lg font-bold text-blue-700 leading-tight">{totalRegistros}</p>
+          <p style={{fontSize:"0.6rem",color:"var(--color-text-muted)",fontWeight:"600",lineHeight:"1.2"}}>Total de Registros</p>
+          <p style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-accent)",lineHeight:"1.2"}}>{totalRegistros}</p>
         </div>
       </div>
 
@@ -3667,7 +3667,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <select
                   value={limiteRegistros}
                   onChange={(e) => setLimiteRegistros(Number(e.target.value))}
-                  className="px-3 py-1 border rounded-lg text-sm"
+                  className="px-3 py-1 border rounded-lg text-sm" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value={20}>20</option>
                   <option value={30}>30</option>
@@ -3675,7 +3675,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <option value={50}>50</option>
                   <option value={9999}>Todos</option>
                 </select>
-                <span className="text-sm">registros</span>
+                <span className="text-sm" style={{color:"var(--color-text-muted)"}}>registros</span>
               </div>
             </div>
             {lancamentos.filter(l => l.status === 'pendente').length > 0 && (
