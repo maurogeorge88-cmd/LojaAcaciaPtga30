@@ -183,7 +183,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
   }
 
   return (
-    <div>
+    <div style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* FORMULÁRIO DE CADASTRO - Só aparece para quem pode editar */}
       {permissoes?.pode_editar_pranchas && (
         <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
@@ -302,17 +302,12 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
         </div>
 
         <div>
-          <table className="w-full">
-            <thead style={{background:"var(--color-surface-2)",borderBottom:"2px solid var(--color-accent)"}}>
-              <tr>
-                <th className="px-4 py-3 text-left font-bold w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Número</th>
-                <th className="px-4 py-3 text-left font-bold w-32" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Data</th>
-                <th className="px-4 py-3 text-left font-bold w-48" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Destinatário</th>
-                <th className="px-4 py-3 text-left font-bold" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Assunto</th>
-                <th className="px-4 py-3 text-center font-bold w-80" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
-              </tr>
-            </thead>
-            </table>
+          {/* Cabeçalho fixo das colunas */}
+          <div style={{display:'grid',gridTemplateColumns:'90px 90px 1fr 2fr 120px',gap:'0',background:'var(--color-surface-2)',borderBottom:'2px solid var(--color-accent)',padding:'0.5rem 1rem'}}>
+            {['Número','Data','Destinatário','Assunto','Ações'].map((h,i) => (
+              <div key={h} style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',textAlign:i===4?'center':'left'}}>{h}</div>
+            ))}
+          </div>
             <div className="p-3 space-y-2" style={{width:"100%",boxSizing:"border-box",overflow:"hidden"}}>
               {(() => {
                 const getAnoPrancha = p => p.data_prancha ? new Date(p.data_prancha+'T00:00:00').getFullYear() : new Date().getFullYear();
@@ -339,33 +334,41 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
                     </div>
                     {grupos[ano].map((prancha, idx) => (
                       <div key={prancha.id}
-                        className="rounded-lg border-l-4 flex items-center gap-3 px-3 py-3 transition-opacity hover:opacity-90"
                         style={{
-                          borderLeftColor: 'var(--color-accent)',
+                          display:'grid',
+                          gridTemplateColumns:'90px 90px 1fr 2fr 120px',
+                          gap:'0',
+                          alignItems:'center',
+                          borderLeft:'4px solid var(--color-accent)',
+                          borderRadius:'var(--radius-md)',
                           background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
-                          marginBottom:'0.4rem'
+                          marginBottom:'0.3rem',
+                          padding:'0.6rem 1rem',
+                          border:'1px solid var(--color-border)',
+                          borderLeftColor:'var(--color-accent)',
                         }}
                       >
-                        <div style={{flexShrink:0,width:'58px'}}>
-                          <p className="font-bold text-sm" style={{color:'var(--color-accent)'}}>{prancha.numero_prancha}</p>
-                          <p className="text-xs" style={{color:'var(--color-text-muted)'}}>{formatarData(prancha.data_prancha)}</p>
+                        <div style={{overflow:'hidden'}}>
+                          <p style={{fontWeight:'700',fontSize:'0.85rem',color:'var(--color-accent)',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{prancha.numero_prancha}</p>
                         </div>
-                        <div style={{flexShrink:0,width:'130px',overflow:'hidden'}}>
-                          <p className="text-xs font-medium" style={{color:'var(--color-text-muted)'}}>Para:</p>
-                          <p className="text-sm" style={{color:'var(--color-text)'}}>{prancha.destinatario}</p>
+                        <div style={{overflow:'hidden'}}>
+                          <p style={{fontSize:'0.78rem',color:'var(--color-text-muted)',margin:0}}>{formatarData(prancha.data_prancha)}</p>
                         </div>
-                        <div style={{flex:1,minWidth:0,overflow:'hidden'}}>
-                          <p className="text-sm truncate" style={{color:'var(--color-text)'}}>{prancha.assunto}</p>
+                        <div style={{overflow:'hidden',paddingRight:'0.5rem'}}>
+                          <p style={{fontSize:'0.82rem',color:'var(--color-text)',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{prancha.destinatario}</p>
                         </div>
-                        <div className="flex gap-1.5" style={{flexShrink:0}}>
+                        <div style={{overflow:'hidden',paddingRight:'0.5rem'}}>
+                          <p style={{fontSize:'0.82rem',color:'var(--color-text)',margin:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{prancha.assunto}</p>
+                        </div>
+                        <div style={{display:'flex',gap:'0.3rem',justifyContent:'center'}}>
                           <button onClick={() => handleVisualizar(prancha)}
-                            style={{padding:'0.25rem 0.55rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
+                            style={{padding:'0.25rem 0.5rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}
                             title="Visualizar">👁️</button>
                           {permissoes?.pode_editar_pranchas && (<>
                             <button onClick={() => handleEditar(prancha)}
-                              style={{padding:'0.25rem 0.55rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>✏️</button>
+                              style={{padding:'0.25rem 0.5rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>✏️</button>
                             <button onClick={() => handleExcluir(prancha.id)}
-                              style={{padding:'0.25rem 0.55rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>🗑️</button>
+                              style={{padding:'0.25rem 0.5rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',cursor:'pointer'}}>🗑️</button>
                           </>)}
                         </div>
                       </div>
