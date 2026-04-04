@@ -167,14 +167,14 @@ export default function GestaoEntidades({ showSuccess, showError }) {
     return tipos[tipo] || tipo;
   };
 
-  const getTipoBadgeColor = (tipo) => {
-    const cores = {
-      'loja': 'bg-blue-100 ',
-      'fornecedor': 'bg-green-100 ',
-      'pessoa_fisica': 'bg-purple-100 text-purple-800',
-      'outro': ' '
+  const getTipoBadgeStyle = (tipo) => {
+    const estilos = {
+      'loja':         {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'},
+      'fornecedor':   {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'},
+      'pessoa_fisica':{background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'},
+      'outro':        {background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'}
     };
-    return cores[tipo] || ' ';
+    return estilos[tipo] || estilos['outro'];
   };
 
   return (
@@ -263,40 +263,41 @@ export default function GestaoEntidades({ showSuccess, showError }) {
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {entidadesFiltradas.map(entidade => (
-            <div key={entidade.id} className="rounded-xl hover: transition-all">
-              <div className="p-6">
+            <div key={entidade.id} className="rounded-xl border-l-4 transition-opacity hover:opacity-95"
+                style={{borderLeftColor:"var(--color-accent)",background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="p-5">
                 <div className="flex items-start justify-between">
                   {/* Informações */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>{entidade.nome}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getTipoBadgeColor(entidade.tipo)}`}>
+                      <span style={{...getTipoBadgeStyle(entidade.tipo),padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"700"}}>
                         {getTipoLabel(entidade.tipo)}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
                       {entidade.cpf_cnpj && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">📋 CPF/CNPJ:</span>
+                        <div className="flex items-center gap-2" style={{color:"var(--color-text-muted)"}}>
+                          <span className="font-semibold" style={{color:"var(--color-text)"}}>📋 CPF/CNPJ:</span>
                           {entidade.cpf_cnpj}
                         </div>
                       )}
                       {entidade.telefone && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">📞 Telefone:</span>
+                        <div className="flex items-center gap-2" style={{color:"var(--color-text-muted)"}}>
+                          <span className="font-semibold" style={{color:"var(--color-text)"}}>📞 Telefone:</span>
                           {entidade.telefone}
                         </div>
                       )}
                       {entidade.email && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">✉️ Email:</span>
+                        <div className="flex items-center gap-2" style={{color:"var(--color-text-muted)"}}>
+                          <span className="font-semibold" style={{color:"var(--color-text)"}}>✉️ Email:</span>
                           {entidade.email}
                         </div>
                       )}
                       {entidade.endereco && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">📍 Endereço:</span>
+                        <div className="flex items-center gap-2" style={{color:"var(--color-text-muted)"}}>
+                          <span className="font-semibold" style={{color:"var(--color-text)"}}>📍 Endereço:</span>
                           {entidade.endereco}
                         </div>
                       )}
@@ -314,13 +315,13 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => abrirModalEdicao(entidade)}
-                      className="bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg font-semibold transition-all"
+                      style={{padding:"0.45rem 1rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontWeight:"600",cursor:"pointer"}}
                     >
                       ✏️ Editar
                     </button>
                     <button
                       onClick={() => desativarEntidade(entidade.id, entidade.nome)}
-                      className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg font-semibold transition-all"
+                      style={{padding:"0.45rem 1rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontWeight:"600",cursor:"pointer"}}
                     >
                       🗑️ Desativar
                     </button>
