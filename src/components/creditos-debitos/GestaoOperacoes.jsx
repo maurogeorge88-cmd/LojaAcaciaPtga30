@@ -315,8 +315,8 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
 
   const getStatusBadge = (status) => {
     const badges = {
-      'ativo': { color: 'bg-green-100 text-green-800', label: '✓ Ativo' },
-      'quitado': { color: 'bg-blue-100 text-blue-800', label: '✓ Quitado' },
+      'ativo': { color: 'bg-green-100 ', label: '✓ Ativo' },
+      'quitado': { color: 'bg-blue-100 ', label: '✓ Quitado' },
       'cancelado': { color: ' ', label: '✗ Cancelado' }
     };
     return badges[status] || badges.ativo;
@@ -375,7 +375,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Entidade ou descrição..."
-              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             />
           </div>
 
@@ -387,7 +387,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="ativo">Ativos</option>
               <option value="quitado">Quitados</option>
@@ -467,14 +467,14 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <span className="block">Valor Total</span>
-                          <span className={`font-bold text-lg ${tipo === 'credito' ? 'text-green-600' : 'text-red-600'}`}>
+                          <span className={`font-bold text-lg ${tipo === 'credito' ? '' : ''}`}>
                             R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
 
                         <div>
                           <span className="block">Valor Pago</span>
-                          <span className="font-semibold text-blue-600">
+                          <span className="font-semibold">
                             R$ {operacao.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -513,9 +513,9 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                       </div>
 
                       {operacao.observacoes && (
-                        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-                          <span className="font-semibold text-yellow-800">💡 Obs:</span>
-                          <span className="text-yellow-700 ml-2">{operacao.observacoes}</span>
+                        <div className="mt-3 p-3 rounded-lg text-sm" style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.3)"}}>
+                          <span className="font-semibold">💡 Obs:</span>
+                          <span className="ml-2">{operacao.observacoes}</span>
                         </div>
                       )}
                     </div>
@@ -524,7 +524,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     <div className="flex flex-col gap-2 ml-4">
                       <button
                         onClick={() => setOperacaoDetalhes(operacao.id)}
-                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg font-semibold transition-all text-sm whitespace-nowrap"
+                        className="bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg font-semibold transition-all text-sm whitespace-nowrap"
                       >
                         👁️ Detalhes
                       </button>
@@ -533,13 +533,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         <>
                           <button
                             onClick={() => abrirModalEdicao(operacao)}
-                            className="bg-yellow-100 hover:bg-yellow-200 text-yellow-700 px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                            className="bg-yellow-100 hover:bg-yellow-200 px-4 py-2 rounded-lg font-semibold transition-all text-sm"
                           >
                             ✏️ Editar
                           </button>
                           <button
                             onClick={() => cancelarOperacao(operacao.id, operacao.descricao || operacao.entidade_nome)}
-                            className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                            className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg font-semibold transition-all text-sm"
                           >
                             🗑️ Cancelar
                           </button>
@@ -575,12 +575,12 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               {/* Entidade */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                  Entidade <span className="text-red-500">*</span>
+                  Entidade <span>*</span>
                 </label>
                 <select
                   value={formData.entidade_id}
                   onChange={(e) => setFormData({ ...formData, entidade_id: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 >
                   <option value="">Selecione uma entidade</option>
@@ -601,7 +601,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                    Valor Total <span className="text-red-500">*</span>
+                    Valor Total <span>*</span>
                   </label>
                   <input
                     type="number"
@@ -610,20 +610,20 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     value={formData.valor_total}
                     onChange={(e) => setFormData({ ...formData, valor_total: e.target.value })}
                     placeholder="0.00"
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                    Data de Lançamento <span className="text-red-500">*</span>
+                    Data de Lançamento <span>*</span>
                   </label>
                   <input
                     type="date"
                     value={formData.data_lancamento}
                     onChange={(e) => setFormData({ ...formData, data_lancamento: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   />
                 </div>
@@ -633,7 +633,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                    Forma de Pagamento <span className="text-red-500">*</span>
+                    Forma de Pagamento <span>*</span>
                   </label>
                   <select
                     value={formData.forma_pagamento}
@@ -642,7 +642,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                       forma_pagamento: e.target.value,
                       numero_parcelas: e.target.value === 'parcelado' ? 2 : 1
                     })}
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                     required
                   >
                     <option value="unico">Pagamento Único</option>
@@ -658,7 +658,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   <select
                     value={formData.meio_pagamento}
                     onChange={(e) => setFormData({ ...formData, meio_pagamento: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   >
                     <option value="pix">PIX</option>
                     <option value="transferencia">Transferência</option>
@@ -671,13 +671,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
 
               {/* Parcelamento */}
               {formData.forma_pagamento === 'parcelado' && (
-                <div className="bg-blue-50 border-2 rounded-lg p-4 space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div className="border-2 rounded-lg p-4 space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <h4 className="font-bold text-blue-900" style={{color:"var(--color-text)"}}>📅 Parcelamento</h4>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                        Número de Parcelas <span className="text-red-500">*</span>
+                        Número de Parcelas <span>*</span>
                       </label>
                       <input
                         type="number"
@@ -685,7 +685,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         max="120"
                         value={formData.numero_parcelas}
                         onChange={(e) => setFormData({ ...formData, numero_parcelas: parseInt(e.target.value) })}
-                        className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                        className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         required
                       />
                     </div>
@@ -705,13 +705,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
 
                   <div>
                     <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                      Data do Primeiro Vencimento <span className="text-red-500">*</span>
+                      Data do Primeiro Vencimento <span>*</span>
                     </label>
                     <input
                       type="date"
                       value={formData.data_primeiro_vencimento}
                       onChange={(e) => setFormData({ ...formData, data_primeiro_vencimento: e.target.value })}
-                      className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                      className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       required
                     />
                     <p className="text-xs mt-1">
@@ -731,7 +731,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     type="date"
                     value={formData.data_primeiro_vencimento}
                     onChange={(e) => setFormData({ ...formData, data_primeiro_vencimento: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
               )}
@@ -746,7 +746,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                   placeholder="Ex: Empréstimo para reforma da loja"
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -760,7 +760,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                   onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                   placeholder="Informações adicionais..."
                   rows="3"
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
