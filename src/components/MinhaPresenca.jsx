@@ -34,7 +34,7 @@ export default function MinhaPresenca({ userData }) {
   const [dataInicio, setDataInicio]     = useState(`${anoAtual}-01-01`);
   const [dataFim, setDataFim]           = useState(`${anoAtual}-12-31`);
 
-  useEffect(() => { if (periodo !== 'personalizado') carregarDados(); }, [periodo]);
+  useEffect(() => { if (periodo !== 'personalizado' && userData?.email) carregarDados(); }, [periodo, userData]);
 
   const calcularPeriodo = () => {
     const hoje = new Date();
@@ -72,6 +72,7 @@ export default function MinhaPresenca({ userData }) {
       const p = calcularPeriodo();
       if (!p) return;
 
+      if (!userData?.email) return;
       const { data: irmao } = await supabase.from('irmaos')
         .select('id, nome, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
         .eq('email', userData.email).single();
