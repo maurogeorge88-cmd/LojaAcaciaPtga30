@@ -37,6 +37,8 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [salvandoConfig, setSalvandoConfig] = useState(null);
   const [modalConfig, setModalConfig] = useState(null); // tipo sendo configurado
   const [formConfig, setFormConfig] = useState({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
+  const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
+  const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
 
   // ── Carregar dados ──────────────────────────────────────────────────────────
@@ -122,9 +124,9 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     try {
       const existente = configs.find(c => c.tipo === modalConfig);
       if (existente) {
-        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig }).eq('id', existente.id);
+        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec }).eq('id', existente.id);
       } else {
-        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig }]);
+        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec }]);
       }
       showSuccess('✅ Configuração salva!');
       carregarConfigs();
@@ -140,9 +142,12 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     const existente = configs.find(c => c.tipo === tipo);
     if (existente) {
       setFormConfig({ ativo: existente.ativo, frequencia: existente.frequencia || 'mensal', dia_semana: existente.dia_semana || 1, dia_mes: existente.dia_mes || 1, hora: existente.hora ?? 8 });
+      setIrmaosConfigSelec(existente.irmaos_ids || []);
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
+      setIrmaosConfigSelec([]);
     }
+    setFiltroBuscaConfig('');
     setModalConfig(tipo);
   };
 
@@ -323,6 +328,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                       {cfg && (
                         <p style={{ color: ativo ? '#10b981' : 'var(--color-text-muted)', margin: '0.25rem 0 0', fontSize: '0.75rem', fontWeight: '600' }}>
                           {ativo ? '▶ Ativo' : '⏸ Pausado'} — {cfg.frequencia} {cfg.frequencia === 'semanal' ? `(${DIAS_SEMANA[cfg.dia_semana]})` : `(dia ${cfg.dia_mes})`} às {String(cfg.hora).padStart(2,'0')}h
+                          {cfg.irmaos_ids?.length > 0 ? ` · ${cfg.irmaos_ids.length} irmão(s)` : ' · Todos os irmãos'}
                         </p>
                       )}
                       {!cfg && <p style={{ color: 'var(--color-text-muted)', margin: '0.25rem 0 0', fontSize: '0.75rem' }}>Não configurado</p>}
@@ -411,7 +417,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
       {/* ── Modal de configuração automática ─────────────────────────────────── */}
       {modalConfig && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
-          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', width: '100%', maxWidth: '420px', boxShadow: 'var(--shadow-xl)' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1.5rem', width: '100%', maxWidth: '480px', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
               <h3 style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '1.1rem' }}>
                 ⚙️ Configurar — {TIPOS.find(t => t.id === modalConfig)?.label}
@@ -462,6 +468,41 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
                 </select>
               </div>
+
+              {/* Seleção de irmãos — só para tipos que enviam individualmente */}
+              {(modalConfig === 'resumo_individual' || modalConfig === 'lembrete_financeiro') && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
+                    👥 Irmãos que receberão ({irmaosConfigSelec.length === 0 ? 'todos' : `${irmaosConfigSelec.length} selecionado(s)`})
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '0.35rem' }}>
+                    <input type="text" placeholder="🔍 Buscar..." value={filtroBuscaConfig}
+                      onChange={e => setFiltroBuscaConfig(e.target.value)}
+                      style={{ flex: 1, padding: '0.35rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem' }} />
+                    <button onClick={() => setIrmaosConfigSelec(irmaosConfigSelec.length === irmaos.length ? [] : irmaos.map(i => i.id))}
+                      style={{ padding: '0.35rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                      {irmaosConfigSelec.length === irmaos.length ? 'Desmarcar' : 'Todos'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.35rem' }}>
+                    ℹ️ Deixe vazio para enviar a todos os irmãos com e-mail cadastrado
+                  </p>
+                  <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.25rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)' }}>
+                    {irmaos.filter(i => i.nome.toLowerCase().includes(filtroBuscaConfig.toLowerCase())).map((irmao, idx) => {
+                      const sel = irmaosConfigSelec.includes(irmao.id);
+                      return (
+                        <div key={irmao.id} onClick={() => setIrmaosConfigSelec(p => p.includes(irmao.id) ? p.filter(x => x !== irmao.id) : [...p, irmao.id])}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.3rem 0.5rem', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                            background: sel ? 'var(--color-accent-bg)' : idx%2===0 ? 'var(--color-surface)' : 'transparent',
+                            border: sel ? '1px solid var(--color-accent)' : '1px solid transparent' }}>
+                          <input type="checkbox" checked={sel} readOnly style={{ accentColor: 'var(--color-accent)', flexShrink: 0 }} />
+                          <span style={{ fontSize: '0.78rem', color: sel ? 'var(--color-accent)' : 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{irmao.nome}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Botões */}
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
