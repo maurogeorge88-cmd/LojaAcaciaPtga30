@@ -181,7 +181,7 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-center">
+        <div className="text-center" style={{color:"var(--color-text-muted)"}}>
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"></div>
           <p className="mt-4">Carregando...</p>
         </div>
@@ -190,12 +190,12 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"1rem",overflowX:"hidden"}}>
       {/* HEADER */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 text-white" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
+            <h1 className="text-3xl font-bold flex items-center gap-3" style={{color:"var(--color-text)"}}>
               💰 Créditos e Débitos
             </h1>
             <p style={{color:"rgba(255,255,255,0.85)",marginTop:"0.5rem"}}>
@@ -248,15 +248,15 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
               {/* TOTAL EMPRESTADO A TERCEIROS */}
               <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-emerald-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
+                  <div style={{background:"#10b981",color:"#fff",width:"3rem",height:"3rem",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>
                     📤
                   </div>
                   <div className="flex-1">
                     <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Emprestado a Terceiros</h4>
-                    <p className="text-sm">Total histórico de créditos concedidos</p>
+                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Total histórico de créditos concedidos</p>
                   </div>
                 </div>
-                <p className="text-4xl font-bold mb-2">
+                <p style={{fontSize:"2.25rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   R$ {stats.total_geral_emprestado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-2 text-sm">
@@ -267,15 +267,15 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
               {/* TOTAL TOMADO EMPRESTADO */}
               <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-rose-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
+                  <div style={{background:"#ef4444",color:"#fff",width:"3rem",height:"3rem",borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"1.5rem"}}>
                     📥
                   </div>
                   <div className="flex-1">
                     <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Tomado Emprestado</h4>
-                    <p className="text-sm">Total histórico de débitos assumidos</p>
+                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Total histórico de débitos assumidos</p>
                   </div>
                 </div>
-                <p className="text-4xl font-bold mb-2">
+                <p style={{fontSize:"2.25rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   R$ {stats.total_geral_tomado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-2 text-sm">
@@ -300,7 +300,7 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
                 <p className="text-3xl font-bold">
                   R$ {stats.total_a_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-sm mt-2">Saldo pendente de recebimento</p>
+                <p style={{fontSize:"0.875rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>Saldo pendente de recebimento</p>
               </div>
 
               {/* A PAGAR */}
@@ -314,7 +314,7 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
                 <p className="text-3xl font-bold">
                   R$ {stats.total_a_pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-sm mt-2">Saldo pendente de pagamento</p>
+                <p style={{fontSize:"0.875rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>Saldo pendente de pagamento</p>
               </div>
 
               {/* POSIÇÃO LÍQUIDA */}
