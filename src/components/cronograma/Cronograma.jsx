@@ -240,6 +240,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   const [loading, setLoading] = useState(true);
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [modalVisualizacao, setModalVisualizacao] = useState(false);
+  // Meses abertos: atual e futuros abertos por padrão, passados recolhidos
+  const mesAtualKey = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}`;
+  const [mesesAbertos, setMesesAbertos] = useState({});
+  const isMesAberto = (mesKey) => {
+    if (mesKey in mesesAbertos) return mesesAbertos[mesKey];
+    return mesKey >= mesAtualKey; // atual e futuros abertos, passados fechados
+  };
+  const toggleMes = (mesKey) => setMesesAbertos(prev => ({...prev, [mesKey]: !isMesAberto(mesKey)}));
   const [eventoVisualizar, setEventoVisualizar] = useState(null);
   const [eventoEditando, setEventoEditando] = useState(null);
   const [filtroTipo, setFiltroTipo] = useState('');
@@ -285,10 +293,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   ];
 
   const statusEvento = [
-    { value: 'planejado', label: '📋 Planejado', cor: 'bg-blue-100 text-blue-800' },
-    { value: 'confirmado', label: '✅ Confirmado', cor: 'bg-green-100 text-green-800' },
-    { value: 'realizado', label: '🎯 Realizado', cor: 'bg-purple-100 text-purple-800' },
-    { value: 'cancelado', label: '❌ Cancelado', cor: 'bg-red-100 text-red-800' }
+    { value: 'planejado', label: '📋 Planejado', cor: ' ',
+      style: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'} },
+    { value: 'confirmado', label: '✅ Confirmado', cor: ' ',
+      style: {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'} },
+    { value: 'realizado', label: '🎯 Realizado', cor: ' ',
+      style: {background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'} },
+    { value: 'cancelado', label: '❌ Cancelado', cor: ' ',
+      style: {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'} }
   ];
 
   // Helper para nome do grau
@@ -517,6 +529,10 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
     return statusObj ? statusObj.label : status;
   };
 
+  const obterStyleStatus = (status) => {
+    const s = statusEvento.find(s => s.value === status);
+    return s ? s.style : {background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'};
+  };
   const obterCorStatus = (status) => {
     const statusObj = statusEvento.find(s => s.value === status);
     return statusObj ? statusObj.cor : ' ';
@@ -527,7 +543,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* Header */}
       <div 
         className="text-white rounded-lg p-6"
@@ -842,7 +858,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
               onClick={() => setVisualizacao('calendario')}
               className={`px-4 py-2 rounded-lg font-medium transition ${
                 visualizacao === 'calendario'
-                  ? 'bg-yellow-700 text-white'
+                  ? 'btn-yellow-placeholder'
                   : 'btn-tab-inactive'
               }`}
             >
@@ -856,7 +872,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setTipoRelatorio('mensal');
                 setMostrarModalRelatorio(true);
               }}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm"
+              style={{padding:"0.4rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
               title="Gerar PDF mensal"
             >
               📄 Mensal
@@ -866,7 +882,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setTipoRelatorio('semestral');
                 setMostrarModalRelatorio(true);
               }}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+              style={{padding:"0.4rem 1rem",background:"#8b5cf6",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
               title="Gerar PDF semestral"
             >
               📄 Semestral
@@ -876,7 +892,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 setTipoRelatorio('anual');
                 setMostrarModalRelatorio(true);
               }}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+              style={{padding:"0.4rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
               title="Gerar PDF anual"
             >
               📄 Anual
@@ -990,7 +1006,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   setMostrarModalRelatorio(false);
                   showSuccess('Relatório gerado com sucesso!');
                 }}
-                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+                style={{flex:1,padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 📄 Gerar PDF
               </button>
@@ -1010,18 +1026,22 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
         /* Lista de Eventos */
         <div className="space-y-6">
           {Object.entries(agruparPorMes(eventosFiltrados)).map(([mes, eventosDoMes]) => (
-          <div key={mes} className="rounded-lg overflow-hidden">
-            <div 
-              className="p-4"
-              style={{background:'var(--color-accent)'}}
+          <div key={mes} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border:'1px solid var(--color-border)',marginBottom:'0.5rem'}}>
+            <div
+              onClick={() => toggleMes(mes)}
+              style={{padding:'0.85rem 1.25rem',background:mes<mesAtualKey?'var(--color-surface-2)':'var(--color-accent)',cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',userSelect:'none'}}
             >
-              <h3 className="text-xl font-bold" style={{color:"#fff"}}>
-                📆 {formatarMesAno(mes)}
-              </h3>
-              <p className="text-sm" style={{color:"rgba(255,255,255,0.8)"}}>{eventosDoMes.length} evento(s)</p>
+              <div>
+                <h3 style={{fontSize:'1.05rem',fontWeight:'700',color:mes<mesAtualKey?'var(--color-text-muted)':'#fff',margin:0}}>
+                  📆 {formatarMesAno(mes)}
+                  {mes < mesAtualKey && <span style={{fontSize:'0.72rem',marginLeft:'0.5rem',opacity:0.7}}>(passado)</span>}
+                </h3>
+                <p style={{fontSize:'0.78rem',color:mes<mesAtualKey?'var(--color-text-muted)':'rgba(255,255,255,0.8)',margin:'0.1rem 0 0'}}>{eventosDoMes.length} evento(s)</p>
+              </div>
+              <span style={{fontSize:'1rem',color:mes<mesAtualKey?'var(--color-text-muted)':'rgba(255,255,255,0.8)',transition:'transform 0.2s',display:'inline-block',transform:isMesAberto(mes)?'rotate(0deg)':'rotate(-90deg)'}}>▼</span>
             </div>
 
-            <div className="p-4 space-y-3">
+            {isMesAberto(mes) && <div className="p-4 space-y-3" style={{background:'var(--color-surface)'}}>
               {eventosDoMes.map((evento, evIdx) => (
                 <div
                   key={evento.id}
@@ -1033,9 +1053,9 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-3xl">{obterIconeTipo(evento.tipo)}</span>
                         <div>
-                          <h4 className="text-lg font-bold">{evento.titulo}</h4>
+                          <h4 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",margin:0}}>{evento.titulo}</h4>
                           <div className="flex flex-wrap gap-2 mt-1">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${obterCorStatus(evento.status)}`}>
+                            <span style={{...obterStyleStatus(evento.status),padding:"0.15rem 0.55rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",fontWeight:"700"}}>
                               {obterLabelStatus(evento.status)}
                             </span>
                             {evento.grau_sessao_id && (
@@ -1049,18 +1069,14 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                                 {getGrauNome(evento.grau_sessao_id)}
                               </span>
                             )}
-                            <span className="text-sm">
-                              📅 {formatarData(evento.data_evento)}
-                            </span>
+                            <span style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>📅 {formatarData(evento.data_evento)}</span>
                             {evento.hora_inicio && (
-                              <span className="text-sm">
-                                🕐 {formatarHora(evento.hora_inicio)}
+                              <span style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>🕐 {formatarHora(evento.hora_inicio)}
                                 {evento.hora_fim && ` - ${formatarHora(evento.hora_fim)}`}
                               </span>
                             )}
                             {evento.local && (
-                              <span className="text-sm">
-                                📍 {evento.local}
+                              <span style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>📍 {evento.local}
                               </span>
                             )}
                           </div>
@@ -1068,7 +1084,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                       </div>
 
                       {evento.descricao && (
-                        <p className="text-sm mt-2">{evento.descricao}</p>
+                        <p style={{fontSize:"0.82rem",color:"var(--color-text)",margin:"0.4rem 0 0"}}>{evento.descricao}</p>
                       )}
 
                       {evento.responsavel && (
@@ -1113,7 +1129,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
           </div>
         ))}
 
@@ -1153,7 +1169,7 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
                 <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📅 Detalhes do Evento</h3>
                 <button
                   onClick={() => setModalVisualizacao(false)}
-                  className="text-white hover:text-gray-200 text-3xl"
+                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1rem",fontWeight:"700"}}
                 >
                   ×
                 </button>
