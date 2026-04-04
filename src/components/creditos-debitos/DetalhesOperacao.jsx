@@ -251,7 +251,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
             <h2 className="text-2xl font-bold flex items-center gap-2" style={{color:"var(--color-text)"}}>
               {getTipoIcon()} Detalhes da Operação
             </h2>
-            <p className="text-green-100 mt-1">{getTipoLabel()}</p>
+            <p style={{color:"rgba(255,255,255,0.8)",marginTop:"0.25rem"}}>{getTipoLabel()}</p>
           </div>
           <button
             onClick={onClose}
@@ -268,46 +268,46 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
             
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <span className="text-xs block">Entidade</span>
-                <span className="font-bold text-sm">{operacao.entidade_nome}</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Entidade</span>
+                <span style={{fontWeight:"700",fontSize:"0.875rem",color:"var(--color-text)"}}>{operacao.entidade_nome}</span>
               </div>
               <div>
-                <span className="text-xs block">Data de Lançamento</span>
-                <span className="font-semibold text-sm">{new Date(operacao.data_lancamento).toLocaleDateString('pt-BR')}</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Data de Lançamento</span>
+                <span style={{fontWeight:"700",fontSize:"0.875rem",color:"var(--color-text)"}}>{new Date(operacao.data_lancamento).toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
 
             {operacao.descricao && (
               <div className="mb-3">
-                <span className="text-xs block">Descrição</span>
-                <span className="font-semibold text-sm">{operacao.descricao}</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Descrição</span>
+                <span style={{fontWeight:"700",fontSize:"0.875rem",color:"var(--color-text)"}}>{operacao.descricao}</span>
               </div>
             )}
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <span className="text-xs block">Valor Total</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Valor Total</span>
                 <span className={`font-bold text-lg ${operacao.tipo_operacao === 'credito' ? '' : ''}`}>
                   R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <span className="text-xs block">Valor Pago</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Valor Pago</span>
                 <span className="font-bold text-lg">
                   R$ {operacao.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
               <div className="rounded-lg p-3 border-2 border-orange-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <span className="text-xs block">Saldo Devedor</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Saldo Devedor</span>
                 <span className="font-bold text-lg text-orange-600">
                   R$ {operacao.saldo_devedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <span className="text-xs block">Progresso</span>
+                <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Progresso</span>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="flex-1 rounded-full h-2">
                     <div 
