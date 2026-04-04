@@ -169,8 +169,8 @@ export default function GestaoEntidades({ showSuccess, showError }) {
 
   const getTipoBadgeColor = (tipo) => {
     const cores = {
-      'loja': 'bg-blue-100 text-blue-800',
-      'fornecedor': 'bg-green-100 text-green-800',
+      'loja': 'bg-blue-100 ',
+      'fornecedor': 'bg-green-100 ',
       'pessoa_fisica': 'bg-purple-100 text-purple-800',
       'outro': ' '
     };
@@ -206,7 +206,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Nome ou CPF/CNPJ..."
-              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             />
           </div>
 
@@ -218,7 +218,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+              className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="todos">Todos</option>
               <option value="loja">🏛️ Lojas</option>
@@ -303,9 +303,9 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                     </div>
 
                     {entidade.observacoes && (
-                      <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
-                        <span className="font-semibold text-yellow-800">💡 Obs:</span>
-                        <span className="text-yellow-700 ml-2">{entidade.observacoes}</span>
+                      <div className="mt-3 p-3 rounded-lg text-sm" style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.3)"}}>
+                        <span className="font-semibold">💡 Obs:</span>
+                        <span className="ml-2">{entidade.observacoes}</span>
                       </div>
                     )}
                   </div>
@@ -314,13 +314,13 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => abrirModalEdicao(entidade)}
-                      className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg font-semibold transition-all"
+                      className="bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg font-semibold transition-all"
                     >
                       ✏️ Editar
                     </button>
                     <button
                       onClick={() => desativarEntidade(entidade.id, entidade.nome)}
-                      className="bg-red-100 hover:bg-red-200 text-red-700 px-4 py-2 rounded-lg font-semibold transition-all"
+                      className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg font-semibold transition-all"
                     >
                       🗑️ Desativar
                     </button>
@@ -346,12 +346,12 @@ export default function GestaoEntidades({ showSuccess, showError }) {
               {/* Tipo */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                  Tipo <span className="text-red-500">*</span>
+                  Tipo <span>*</span>
                 </label>
                 <select
                   value={formData.tipo}
                   onChange={(e) => setFormData({ ...formData, tipo: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 >
                   <option value="loja">🏛️ Loja Maçônica</option>
@@ -364,14 +364,14 @@ export default function GestaoEntidades({ showSuccess, showError }) {
               {/* Nome */}
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                  Nome <span className="text-red-500">*</span>
+                  Nome <span>*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Nome da entidade"
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -386,7 +386,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   value={formData.cpf_cnpj}
                   onChange={(e) => setFormData({ ...formData, cpf_cnpj: e.target.value })}
                   placeholder="000.000.000-00 ou 00.000.000/0000-00"
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -401,7 +401,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                     value={formData.telefone}
                     onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                     placeholder="(00) 00000-0000"
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
 
@@ -414,7 +414,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="email@exemplo.com"
-                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                    className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   />
                 </div>
               </div>
@@ -429,7 +429,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   value={formData.endereco}
                   onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                   placeholder="Rua, número, cidade, estado"
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
@@ -443,7 +443,7 @@ export default function GestaoEntidades({ showSuccess, showError }) {
                   onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                   placeholder="Informações adicionais..."
                   rows="3"
-                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
