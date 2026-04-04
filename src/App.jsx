@@ -2940,6 +2940,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         <PerfilCompletoIrmao
           irmaoId={irmaoIdPerfilCompleto}
           userData={userData}
+          irmaoLogadoId={irmaoLogadoId}
           onClose={() => {
             setModalPerfilCompletoAberto(false);
             setIrmaoIdPerfilCompleto(null);
