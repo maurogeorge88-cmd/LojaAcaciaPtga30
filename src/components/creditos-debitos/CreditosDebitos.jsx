@@ -198,7 +198,7 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             <h1 className="text-3xl font-bold flex items-center gap-3">
               💰 Créditos e Débitos
             </h1>
-            <p className="text-green-100 mt-2">
+            <p style={{color:"rgba(255,255,255,0.85)",marginTop:"0.5rem"}}>
               Controle de operações financeiras com terceiros
             </p>
           </div>
@@ -210,44 +210,28 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
         <div className="flex gap-2 flex-wrap">
           <button
             onClick={() => setView('dashboard')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              view === 'dashboard'
-                ? 'bg-primary-600 text-white '
-                : '  hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='dashboard'?'var(--color-accent)':'var(--color-surface-2)',color:view==='dashboard'?'#fff':'var(--color-text)'}}
           >
             📊 Dashboard
           </button>
 
           <button
             onClick={() => setView('entidades')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              view === 'entidades'
-                ? 'bg-primary-600 text-white '
-                : '  hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='entidades'?'var(--color-accent)':'var(--color-surface-2)',color:view==='entidades'?'#fff':'var(--color-text)'}}
           >
             🏢 Entidades
           </button>
 
           <button
             onClick={() => setView('creditos')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              view === 'creditos'
-                ? 'bg-green-600 text-white '
-                : '  hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='creditos'?'#059669':'var(--color-surface-2)',color:view==='creditos'?'#fff':'var(--color-text)'}}
           >
             💵 Créditos (A Receber)
           </button>
 
           <button
             onClick={() => setView('debitos')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              view === 'debitos'
-                ? 'bg-red-600 text-white '
-                : '  hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.2s',background:view==='debitos'?'#dc2626':'var(--color-surface-2)',color:view==='debitos'?'#fff':'var(--color-text)'}}
           >
             💳 Débitos (A Pagar)
           </button>
@@ -262,39 +246,39 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>📊 Negócios Consolidados</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* TOTAL EMPRESTADO A TERCEIROS */}
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl p-6 border-2 border-emerald-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-emerald-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     📤
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-lg font-bold text-emerald-800" style={{color:"var(--color-text)"}}>Emprestado a Terceiros</h4>
-                    <p className="text-sm text-emerald-600">Total histórico de créditos concedidos</p>
+                    <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Emprestado a Terceiros</h4>
+                    <p className="text-sm">Total histórico de créditos concedidos</p>
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-emerald-700 mb-2">
+                <p className="text-4xl font-bold mb-2">
                   R$ {stats.total_geral_emprestado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                <div className="flex items-center gap-2 text-sm">
                   <span>✓ Inclui operações ativas e quitadas</span>
                 </div>
               </div>
 
               {/* TOTAL TOMADO EMPRESTADO */}
-              <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl p-6 border-2 border-rose-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="bg-rose-600 text-white w-12 h-12 rounded-full flex items-center justify-center text-2xl">
                     📥
                   </div>
                   <div className="flex-1">
-                    <h4 className="text-lg font-bold text-rose-800" style={{color:"var(--color-text)"}}>Tomado Emprestado</h4>
-                    <p className="text-sm text-rose-600">Total histórico de débitos assumidos</p>
+                    <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Tomado Emprestado</h4>
+                    <p className="text-sm">Total histórico de débitos assumidos</p>
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-rose-700 mb-2">
+                <p className="text-4xl font-bold mb-2">
                   R$ {stats.total_geral_tomado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <div className="flex items-center gap-2 text-sm text-rose-600">
+                <div className="flex items-center gap-2 text-sm">
                   <span>✓ Inclui operações ativas e quitadas</span>
                 </div>
               </div>
@@ -306,55 +290,45 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
             <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>💼 Cenário Atual</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* A RECEBER */}
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-green-800" style={{color:"var(--color-text)"}}>💵 A Receber</h3>
+                  <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>💵 A Receber</h3>
                   <span className="bg-green-600 text-white text-xs px-3 py-1 rounded-full">
                     {stats.num_creditos_ativos} ativas
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-green-700">
+                <p className="text-3xl font-bold">
                   R$ {stats.total_a_receber.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-sm text-green-600 mt-2">Saldo pendente de recebimento</p>
+                <p className="text-sm mt-2">Saldo pendente de recebimento</p>
               </div>
 
               {/* A PAGAR */}
-              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="rounded-xl p-6 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-red-800" style={{color:"var(--color-text)"}}>💳 A Pagar</h3>
+                  <h3 className="text-lg font-bold" style={{color:"var(--color-text)"}}>💳 A Pagar</h3>
                   <span className="bg-red-600 text-white text-xs px-3 py-1 rounded-full">
                     {stats.num_debitos_ativos} ativas
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-red-700">
+                <p className="text-3xl font-bold">
                   R$ {stats.total_a_pagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-sm text-red-600 mt-2">Saldo pendente de pagamento</p>
+                <p className="text-sm mt-2">Saldo pendente de pagamento</p>
               </div>
 
               {/* POSIÇÃO LÍQUIDA */}
-              <div className={`bg-gradient-to-br ${
+              <div className={` ${
                 stats.posicao_liquida >= 0 
-                  ? 'from-blue-50 to-blue-100 ' 
-                  : 'from-orange-50 to-orange-100 border-orange-200'
+                  ? ' ' 
+                  : ' '
               } rounded-xl p-6 border-2`}>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className={`text-lg font-bold ${
-                    stats.posicao_liquida >= 0 ? 'text-blue-800' : 'text-orange-800'
-                  }`}>
-                    ⚖️ Posição Líquida
-                  </h3>
+                  <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-text)"}}>⚖️ Posição Líquida</h3>
                 </div>
-                <p className={`text-3xl font-bold ${
-                  stats.posicao_liquida >= 0 ? 'text-blue-700' : 'text-orange-700'
-                }`}>
-                  R$ {Math.abs(stats.posicao_liquida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                <p style={{fontSize:"1.875rem",fontWeight:"700",color:stats.posicao_liquida>=0?"#10b981":"#ef4444"}}>R$ {Math.abs(stats.posicao_liquida).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className={`text-sm mt-2 ${
-                  stats.posicao_liquida >= 0 ? 'text-blue-600' : 'text-orange-600'
-                }`}>
-                  {stats.posicao_liquida >= 0 ? 'Saldo credor' : 'Saldo devedor'}
+                <p style={{fontSize:"0.875rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>  {stats.posicao_liquida >= 0 ? 'Saldo credor' : 'Saldo devedor'}
                 </p>
               </div>
             </div>
@@ -379,14 +353,14 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
                     <div key={alerta.id} className="bg-red-50 border rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-semibold text-red-800">
+                          <p className="font-semibold">
                             {alerta.operacao.entidade_nome}
                           </p>
-                          <p className="text-sm text-red-600">
+                          <p className="text-sm">
                             Parcela {alerta.numero_parcela} - {alerta.dias_atraso} dias
                           </p>
                         </div>
-                        <span className="text-red-700 font-bold">
+                        <span className="font-bold">
                           R$ {alerta.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </span>
                       </div>
