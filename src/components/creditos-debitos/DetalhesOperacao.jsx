@@ -192,9 +192,9 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
   const getStatusBadge = (status, diasAtraso = 0) => {
     const badges = {
-      'pendente': { color: 'bg-yellow-100 text-yellow-800 border-yellow-300', label: '⏳ Pendente', icon: '⏳' },
-      'pago': { color: 'bg-green-100 text-green-800 ', label: '✓ Pago', icon: '✓' },
-      'atrasado': { color: 'bg-red-100 text-red-800 ', label: `🚨 Atrasado (${diasAtraso}d)`, icon: '🚨' },
+      'pendente': { color: 'bg-yellow-100  ', label: '⏳ Pendente', icon: '⏳' },
+      'pago': { color: 'bg-green-100  ', label: '✓ Pago', icon: '✓' },
+      'atrasado': { color: 'bg-red-100  ', label: `🚨 Atrasado (${diasAtraso}d)`, icon: '🚨' },
       'cancelado': { color: '  ', label: '✗ Cancelado', icon: '✗' }
     };
     return badges[status] || badges.pendente;
@@ -287,14 +287,14 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <span className="text-xs block">Valor Total</span>
-                <span className={`font-bold text-lg ${operacao.tipo_operacao === 'credito' ? 'text-green-600' : 'text-red-600'}`}>
+                <span className={`font-bold text-lg ${operacao.tipo_operacao === 'credito' ? '' : ''}`}>
                   R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <span className="text-xs block">Valor Pago</span>
-                <span className="font-bold text-lg text-blue-600">
+                <span className="font-bold text-lg">
                   R$ {operacao.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -323,31 +323,31 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
           {/* RESUMO DAS PARCELAS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-blue-50 rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{parcelas.length}</div>
-                <div className="text-xs text-blue-700 font-semibold">Total</div>
+                <div className="text-2xl font-bold">{parcelas.length}</div>
+                <div className="text-xs font-semibold">Total</div>
               </div>
             </div>
 
-            <div className="bg-green-50 rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{parcelasPagas}</div>
-                <div className="text-xs text-green-700 font-semibold">✓ Pagas</div>
+                <div className="text-2xl font-bold">{parcelasPagas}</div>
+                <div className="text-xs font-semibold">✓ Pagas</div>
               </div>
             </div>
 
-            <div className="bg-yellow-50 rounded-lg p-3 border-2 border-yellow-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">{parcelasPendentes}</div>
-                <div className="text-xs text-yellow-700 font-semibold">⏳ Pendentes</div>
+                <div className="text-2xl font-bold">{parcelasPendentes}</div>
+                <div className="text-xs font-semibold">⏳ Pendentes</div>
               </div>
             </div>
 
-            <div className="bg-red-50 rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">{parcelasAtrasadas}</div>
-                <div className="text-xs text-red-700 font-semibold">🚨 Atrasadas</div>
+                <div className="text-2xl font-bold">{parcelasAtrasadas}</div>
+                <div className="text-xs font-semibold">🚨 Atrasadas</div>
               </div>
             </div>
           </div>
@@ -370,7 +370,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                       key={parcela.id} 
                       className={` rounded-lg p-3 border-2 ${
                         statusBadge.color.includes('red') ? '' : 
-                        statusBadge.color.includes('yellow') ? 'border-yellow-300' : 
+                        statusBadge.color.includes('yellow') ? '' : 
                         statusBadge.color.includes('green') ? '' : 
                         ''
                       } hover: transition-all`}
@@ -403,9 +403,9 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
                       {/* Pagamento (se pago) */}
                       {parcela.status === 'pago' && (
-                        <div className="text-center mb-2 bg-green-50 rounded p-1">
-                          <div className="text-xs text-green-700">Pago em</div>
-                          <div className="font-semibold text-xs text-green-800">
+                        <div className="text-center mb-2 rounded p-1" style={{background:"rgba(16,185,129,0.1)"}}>
+                          <div className="text-xs">Pago em</div>
+                          <div className="font-semibold text-xs">
                             {new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')}
                           </div>
                         </div>
@@ -413,8 +413,8 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
                       {/* Dias de atraso */}
                       {parcela.status === 'atrasado' && parcela.dias_atraso > 0 && (
-                        <div className="text-center mb-2 bg-red-50 rounded p-1">
-                          <div className="text-xs font-bold text-red-700">
+                        <div className="text-center mb-2 rounded p-1" style={{background:"rgba(239,68,68,0.1)"}}>
+                          <div className="text-xs font-bold">
                             {parcela.dias_atraso} dias
                           </div>
                         </div>
@@ -432,7 +432,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                         ) : parcela.status !== 'cancelado' && (
                           <button
                             onClick={() => abrirModalQuitacao(parcela)}
-                            className="w-full bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded font-semibold transition-all text-xs"
+                            className="w-full bg-green-100 hover:bg-green-200 px-2 py-1 rounded font-semibold transition-all text-xs"
                           >
                             💰 Quitar
                           </button>
@@ -475,8 +475,8 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
             </div>
 
             <form onSubmit={quitarParcela} className="p-6 space-y-4">
-              <div className="bg-blue-50 rounded-lg p-4 mb-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="text-sm text-blue-800">Valor da Parcela</div>
+              <div className="rounded-lg p-4 mb-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div className="text-sm">Valor da Parcela</div>
                 <div className="text-2xl font-bold text-blue-900">
                   R$ {parcelaAtual.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
@@ -484,7 +484,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                  Valor Pago <span className="text-red-500">*</span>
+                  Valor Pago <span>*</span>
                 </label>
                 <input
                   type="number"
@@ -492,20 +492,20 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                   min="0.01"
                   value={formQuitacao.valor_pago}
                   onChange={(e) => setFormQuitacao({ ...formQuitacao, valor_pago: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{color:"var(--color-text-muted)"}}>
-                  Data do Pagamento <span className="text-red-500">*</span>
+                  Data do Pagamento <span>*</span>
                 </label>
                 <input
                   type="date"
                   value={formQuitacao.data_pagamento}
                   onChange={(e) => setFormQuitacao({ ...formQuitacao, data_pagamento: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -517,7 +517,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                 <select
                   value={formQuitacao.meio_pagamento}
                   onChange={(e) => setFormQuitacao({ ...formQuitacao, meio_pagamento: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="pix">PIX</option>
                   <option value="transferencia">Transferência</option>
@@ -536,7 +536,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                   onChange={(e) => setFormQuitacao({ ...formQuitacao, observacoes: e.target.value })}
                   placeholder="Informações adicionais sobre o pagamento..."
                   rows="3"
-                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border rounded-lg focus:ring-green-500 focus:border-transparent" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
 
