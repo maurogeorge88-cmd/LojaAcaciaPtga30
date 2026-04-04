@@ -3507,135 +3507,136 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   const corCabecalho = saldoLiquido > 0 ? 'bg-red-400' : saldoLiquido < 0 ? 'bg-blue-400' : 'bg-gray-500';
 
                   return (
-                    <div key={irmaoData.irmaoId} className="border-2 rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                    <div key={irmaoData.irmaoId} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border:'1px solid var(--color-border)',background:'var(--color-surface)',marginBottom:'0.5rem'}}>
+                      
                       {/* CABEÇALHO DO IRMÃO */}
-                      <div className={`${corCabecalho} text-white p-4`}>
-                        <div className="flex justify-between items-center">
-                          <div className="flex-1">
-                            <h4 className="text-xl font-bold flex items-center gap-2" style={{color:"var(--color-text)"}}>
-                              👤 {irmaoData.irmaoNome}
-                            </h4>
-                            <p className="text-white text-opacity-90 text-sm mt-1">
-                              {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
-                            </p>
-                            {/* Botão Compensar - aparece se houver débitos E créditos */}
-                            {totalReceitas > 0 && totalDespesas > 0 && (
-                              <button
-                                onClick={() => abrirModalCompensacao(irmaoData.irmaoId)}
-                                className="mt-2 px-3 py-1 bg-opacity-20 hover:bg-opacity-30 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
-                              >
-                                🔄 Compensar Valores
-                              </button>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            {totalReceitas > 0 && (
-                              <div className="mb-1">
-                                <p className="text-xs text-white text-opacity-80">Irmão deve:</p>
-                                <p className="text-xl font-bold">{formatarMoeda(totalReceitas)}</p>
-                              </div>
-                            )}
-                            {totalDespesas > 0 && (
-                              <div className="mb-1">
-                                <p className="text-xs text-white text-opacity-80">Loja deve:</p>
-                                <p className="text-xl font-bold">{formatarMoeda(totalDespesas)}</p>
-                              </div>
-                            )}
-                            {totalReceitas > 0 && totalDespesas > 0 && (
-                              <div className="mt-2 pt-2 border-t border-white border-opacity-30">
-                                <p className="text-xs text-white text-opacity-80">Saldo:</p>
-                                <p className="text-2xl font-bold">
-                                  {formatarMoeda(Math.abs(saldoLiquido))}
-                                </p>
-                                <p className="text-xs">
-                                  {saldoLiquido > 0 ? '(Irmão deve)' : saldoLiquido < 0 ? '(Loja deve)' : '(Quitado)'}
-                                </p>
-                              </div>
-                            )}
-                          </div>
+                      <div style={{
+                        background: saldoLiquido > 0 ? 'rgba(239,68,68,0.85)' : saldoLiquido < 0 ? 'rgba(59,130,246,0.85)' : 'var(--color-surface-2)',
+                        padding:'1rem 1.25rem',
+                        display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem'
+                      }}>
+                        <div style={{flex:1}}>
+                          <h4 style={{fontSize:'1.1rem',fontWeight:'700',color:'#fff',margin:0,display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                            👤 {irmaoData.irmaoNome}
+                          </h4>
+                          <p style={{color:'rgba(255,255,255,0.85)',fontSize:'0.8rem',margin:'0.2rem 0 0'}}>
+                            {quantidadeLancamentos} {quantidadeLancamentos === 1 ? 'lançamento pendente' : 'lançamentos pendentes'}
+                          </p>
+                          {totalReceitas > 0 && totalDespesas > 0 && (
+                            <button onClick={() => abrirModalCompensacao(irmaoData.irmaoId)}
+                              style={{marginTop:'0.5rem',padding:'0.2rem 0.75rem',background:'rgba(255,255,255,0.2)',color:'#fff',border:'1px solid rgba(255,255,255,0.4)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'600',cursor:'pointer'}}>
+                              🔄 Compensar Valores
+                            </button>
+                          )}
+                        </div>
+                        <div style={{textAlign:'right'}}>
+                          {totalReceitas > 0 && (
+                            <div style={{marginBottom:'0.25rem'}}>
+                              <p style={{fontSize:'0.7rem',color:'rgba(255,255,255,0.8)',margin:0}}>Irmão deve:</p>
+                              <p style={{fontSize:'1.3rem',fontWeight:'800',color:'#fff',margin:0}}>{formatarMoeda(totalReceitas)}</p>
+                            </div>
+                          )}
+                          {totalDespesas > 0 && (
+                            <div style={{marginBottom:'0.25rem'}}>
+                              <p style={{fontSize:'0.7rem',color:'rgba(255,255,255,0.8)',margin:0}}>Loja deve:</p>
+                              <p style={{fontSize:'1.3rem',fontWeight:'800',color:'#fff',margin:0}}>{formatarMoeda(totalDespesas)}</p>
+                            </div>
+                          )}
+                          {totalReceitas > 0 && totalDespesas > 0 && (
+                            <div style={{marginTop:'0.5rem',paddingTop:'0.5rem',borderTop:'1px solid rgba(255,255,255,0.3)'}}>
+                              <p style={{fontSize:'0.7rem',color:'rgba(255,255,255,0.8)',margin:0}}>Saldo líquido:</p>
+                              <p style={{fontSize:'1.5rem',fontWeight:'800',color:'#fff',margin:0}}>{formatarMoeda(Math.abs(saldoLiquido))}</p>
+                              <p style={{fontSize:'0.7rem',color:'rgba(255,255,255,0.8)',margin:0}}>
+                                {saldoLiquido > 0 ? '(Irmão deve)' : saldoLiquido < 0 ? '(Loja deve)' : '(Quitado)'}
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* LISTA DE LANÇAMENTOS DO IRMÃO */}
-                      <div>
+                      {/* GRID DE LANÇAMENTOS */}
+                      <div style={{padding:'0.75rem',display:'flex',flexDirection:'column',gap:'0.5rem'}}>
                         {irmaoData.lancamentos.map((lanc, index) => {
                           const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                          const corBorda = ehReceita ? '#ef4444' : '#3b82f6';
+                          const bgCard = index % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)';
                           
                           return (
-                            <div key={lanc.id} className="p-4 hover: transition-colors">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  {/* Badges de Categoria */}
-                                  <div className="flex gap-2 mb-2">
-                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                      ehReceita ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                    }`}>
-                                      {ehReceita ? '📈 Receita' : '📉 Despesa'}
+                            <div key={lanc.id} style={{
+                              borderRadius:'var(--radius-lg)',
+                              borderLeft:`4px solid ${corBorda}`,
+                              background: bgCard,
+                              border:`1px solid var(--color-border)`,
+                              borderLeftColor: corBorda,
+                              padding:'0.75rem 1rem',
+                              display:'flex', justifyContent:'space-between', alignItems:'center', gap:'1rem'
+                            }}>
+                              {/* Info do lançamento */}
+                              <div style={{flex:1,minWidth:0}}>
+                                {/* Badges */}
+                                <div style={{display:'flex',gap:'0.35rem',flexWrap:'wrap',marginBottom:'0.4rem'}}>
+                                  <span style={{fontSize:'0.7rem',padding:'0.15rem 0.5rem',borderRadius:'999px',fontWeight:'700',
+                                    background: ehReceita ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+                                    color: ehReceita ? '#ef4444' : '#3b82f6',
+                                    border: `1px solid ${ehReceita ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`}}>
+                                    {ehReceita ? '📈 Receita' : '📉 Despesa'}
+                                  </span>
+                                  {lanc.categorias_financeiras?.nome && (
+                                    <span style={{fontSize:'0.7rem',padding:'0.15rem 0.5rem',borderRadius:'999px',fontWeight:'600',
+                                      background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)'}}>
+                                      {lanc.categorias_financeiras.nome}
                                     </span>
-                                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                      {lanc.categorias_financeiras?.nome}
+                                  )}
+                                  {lanc.eh_parcelado && (
+                                    <span style={{fontSize:'0.7rem',padding:'0.15rem 0.5rem',borderRadius:'999px',fontWeight:'600',
+                                      background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'}}>
+                                      📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
                                     </span>
-                                    {lanc.eh_parcelado && (
-                                      <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
-                                        📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
-                                      </span>
-                                    )}
-                                    {lanc.eh_mensalidade && (
-                                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
-                                        📅 Mensalidade
-                                      </span>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Descrição */}
-                                  <p className="font-medium mb-1">{lanc.descricao}</p>
-                                  
-                                  {/* Informações detalhadas - DATAS NA MESMA LINHA */}
-                                  <div className="text-sm">
-                                    <p className="mb-1">
-                                      <span className="font-medium">Lançamento:</span> {formatarDataBR(lanc.data_pagamento)}
-                                      <span className="mx-2">•</span>
-                                      <span className={`font-medium ${ehReceita ? 'text-red-600' : 'text-blue-600'}`}>
-                                        ⏰ Vencimento:
-                                      </span> {formatarDataBR(lanc.data_vencimento)}
-                                    </p>
-                                    {lanc.observacoes && (
-                                      <p className="italic">
-                                        💬 {lanc.observacoes}
-                                      </p>
-                                    )}
-                                  </div>
+                                  )}
+                                  {lanc.eh_mensalidade && (
+                                    <span style={{fontSize:'0.7rem',padding:'0.15rem 0.5rem',borderRadius:'999px',fontWeight:'600',
+                                      background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'}}>
+                                      📅 Mensalidade
+                                    </span>
+                                  )}
                                 </div>
-                                
-                                <div className="text-right ml-4">
-                                  <p className={`text-2xl font-bold mb-3 ${
-                                    ehReceita ? 'text-red-600' : 'text-blue-600'
-                                  }`}>
-                                    {formatarMoeda(parseFloat(lanc.valor))}
-                                  </p>
-                                  <button
-                                    onClick={() => abrirModalQuitacao(lanc)}
-                                    className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 font-medium transition-colors"
-                                  >
-                                    💰 Quitar
-                                  </button>
-                                </div>
+                                {/* Descrição */}
+                                <p style={{fontWeight:'600',color:'var(--color-text)',margin:'0 0 0.3rem',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                  {lanc.descricao}
+                                </p>
+                                {/* Datas */}
+                                <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:0}}>
+                                  📅 {formatarDataBR(lanc.data_pagamento)}
+                                  <span style={{margin:'0 0.4rem'}}>•</span>
+                                  <span style={{color: ehReceita ? '#ef4444' : '#3b82f6', fontWeight:'600'}}>
+                                    ⏰ Vence: {formatarDataBR(lanc.data_vencimento)}
+                                  </span>
+                                </p>
+                              </div>
+                              {/* Valor + botão */}
+                              <div style={{textAlign:'right',flexShrink:0}}>
+                                <p style={{fontSize:'1.25rem',fontWeight:'800',color: ehReceita ? '#ef4444' : '#3b82f6',margin:'0 0 0.4rem'}}>
+                                  {formatarMoeda(parseFloat(lanc.valor))}
+                                </p>
+                                <button onClick={() => abrirModalQuitacao(lanc)}
+                                  style={{padding:'0.35rem 0.9rem',background:'rgba(16,185,129,0.15)',color:'#10b981',
+                                    border:'1px solid rgba(16,185,129,0.4)',borderRadius:'var(--radius-md)',
+                                    fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
+                                  💰 Quitar
+                                </button>
                               </div>
                             </div>
                           );
                         })}
                       </div>
 
-                      {/* RODAPÉ COM AÇÕES GERAIS DO IRMÃO */}
-                      <div className="p-4 border-t">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
-                            className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700 font-medium transition-colors"
-                          >
-                            📄 Gerar PDF Individual
-                          </button>
-                        </div>
+                      {/* RODAPÉ */}
+                      <div style={{padding:'0.75rem 1rem',borderTop:'1px solid var(--color-border)',display:'flex',justifyContent:'flex-end'}}>
+                        <button onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
+                          style={{padding:'0.4rem 1rem',background:'var(--color-accent)',color:'#fff',
+                            border:'none',borderRadius:'var(--radius-md)',fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'}}>
+                          📄 Gerar PDF Individual
+                        </button>
                       </div>
                     </div>
                   );
