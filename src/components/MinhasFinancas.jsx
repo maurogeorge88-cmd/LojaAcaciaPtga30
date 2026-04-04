@@ -1,419 +1,230 @@
-/**
- * MINHAS FINANÇAS
- * Permite irmão comum visualizar apenas suas próprias mensalidades
- * SOMENTE LEITURA - não pode editar ou excluir
- */
-
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-export default function MinhasFinancas({ userEmail }) {
+const formatarMoeda = (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+const formatarData = (d) => {
+  if (!d) return '—';
+  const [a, m, dia] = d.split('T')[0].split('-');
+  return `${dia}/${m}/${a}`;
+};
+
+const sBtn = (ativo, cor = 'var(--color-accent)') => ({
+  padding: '0.4rem 1rem', borderRadius: 'var(--radius-lg)', fontWeight: '600',
+  fontSize: '0.82rem', cursor: 'pointer', border: 'none', transition: 'all 0.15s',
+  background: ativo ? cor : 'var(--color-surface-2)',
+  color: ativo ? '#fff' : 'var(--color-text)',
+});
+
+export default function MinhasFinancas({ userData }) {
   const [lancamentos, setLancamentos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState('todos'); // todos, pendentes, pagos
-  const [anoFiltro, setAnoFiltro] = useState('todos'); // Padrão: todos
+  const [loading, setLoading]         = useState(true);
+  const [filtro, setFiltro]           = useState('todos');
+  const [anoFiltro, setAnoFiltro]     = useState('todos');
   const [anosComRegistros, setAnosComRegistros] = useState([]);
 
-  // Estatísticas
-  const [totalReceitas, setTotalReceitas] = useState(0); // O que o irmão DEVE
-  const [totalDespesas, setTotalDespesas] = useState(0); // O que a loja DEVE (créditos)
-  const [saldoLiquido, setSaldoLiquido] = useState(0);
-  const [totalPago, setTotalPago] = useState(0); // Total já pago pelo irmão
+  useEffect(() => { carregarDados(); }, []);
 
-  useEffect(() => {
-    carregarMinhasFinancas();
-  }, [userEmail, filtro, anoFiltro]);
-
-  const carregarMinhasFinancas = async () => {
+  const carregarDados = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const { data: irmao } = await supabase
+        .from('irmaos').select('id').eq('email', userData.email).single();
+      if (!irmao) return;
 
-      // Buscar ID do irmão pelo email
-      const { data: irmao, error: irmaoError } = await supabase
-        .from('irmaos')
-        .select('id, nome')
-        .eq('email', userEmail)
-        .single();
-
-      if (irmaoError) throw irmaoError;
-      if (!irmao) {
-        console.log('Irmão não encontrado');
-        setLoading(false);
-        return;
-      }
-
-      // Buscar anos com registros
-      const { data: todosRegistros } = await supabase
+      const { data } = await supabase
         .from('lancamentos_loja')
-        .select('data_vencimento')
-        .eq('origem_irmao_id', irmao.id)
-        .eq('origem_tipo', 'Irmao');
-
-      const anosUnicos = [...new Set(
-        todosRegistros?.map(r => new Date(r.data_vencimento).getFullYear()) || []
-      )].sort((a, b) => b - a);
-      
-      setAnosComRegistros(anosUnicos);
-
-      // PRIMEIRO: Buscar lançamentos (com ou sem filtro de ano)
-      let queryTodos = supabase
-        .from('lancamentos_loja')
-        .select(`
-          *,
-          categorias_financeiras (nome, tipo)
-        `)
-        .eq('origem_irmao_id', irmao.id)
-        .eq('origem_tipo', 'Irmao');
-
-      // Aplicar filtro de ano se não for "todos"
-      if (anoFiltro !== 'todos') {
-        queryTodos = queryTodos
-          .gte('data_vencimento', `${anoFiltro}-01-01`)
-          .lte('data_vencimento', `${anoFiltro}-12-31`);
-      }
-
-      const { data: todosLancamentos, error: erroTodos } = await queryTodos.limit(300);
-
-      if (erroTodos) throw erroTodos;
-
-      // Calcular totais GERAIS (independente do filtro)
-      const todasReceitas = (todosLancamentos || []).filter(l => 
-        l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente'
-      );
-      const todasDespesas = (todosLancamentos || []).filter(l => 
-        l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente'
-      );
-      const receitasPagas = (todosLancamentos || []).filter(l => 
-        l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago'
-      );
-      const despesasPagas = (todosLancamentos || []).filter(l => 
-        l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago'
-      );
-
-      const totalReceitasPendentes = todasReceitas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalDespesasPendentes = todasDespesas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalReceitasPagas = receitasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-      const totalDespesasPagas = despesasPagas.reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
-
-      // SALDO FINAL CORRETO:
-      // Você deve (receitas pendentes) - Você já pagou (receitas pagas) + Loja deve (despesas pendentes) - Loja já pagou (despesas pagas)
-      const saldoFinal = totalReceitasPendentes - totalDespesasPendentes;
-
-      setTotalReceitas(totalReceitasPendentes);
-      setTotalDespesas(totalDespesasPendentes);
-      setSaldoLiquido(saldoFinal);
-      setTotalPago(totalReceitasPagas); // Total já pago pelo irmão
-
-      // SEGUNDO: Buscar lançamentos FILTRADOS para exibição
-      let query = supabase
-        .from('lancamentos_loja')
-        .select(`
-          *,
-          categorias_financeiras (nome, tipo)
-        `)
+        .select('*, categorias_financeiras(tipo, nome)')
         .eq('origem_irmao_id', irmao.id)
         .eq('origem_tipo', 'Irmao')
         .order('data_vencimento', { ascending: false });
 
-      // Aplicar filtro de ano se não for "todos"
-      if (anoFiltro !== 'todos') {
-        query = query
-          .gte('data_vencimento', `${anoFiltro}-01-01`)
-          .lte('data_vencimento', `${anoFiltro}-12-31`);
-      }
-
-      // Aplicar filtro de status
-      if (filtro === 'pendentes') {
-        query = query.eq('status', 'pendente');
-      } else if (filtro === 'pagos') {
-        query = query.eq('status', 'pago');
-      }
-      // Se filtro === 'todos', não aplica filtro de status
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
       setLancamentos(data || []);
-
-    } catch (error) {
-      console.error('Erro ao carregar finanças:', error);
+      const anos = [...new Set((data || []).map(l => l.data_vencimento?.substring(0, 4)).filter(Boolean))].sort((a, b) => b - a);
+      setAnosComRegistros(anos);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatarData = (data) => {
-    if (!data) return '-';
-    return new Date(data).toLocaleDateString('pt-BR');
+  const lancsFiltrados = lancamentos.filter(l => {
+    const statusOk = filtro === 'todos' || l.status === filtro;
+    const anoOk = anoFiltro === 'todos' || l.data_vencimento?.startsWith(String(anoFiltro));
+    return statusOk && anoOk;
+  });
+
+  // Totais só de pendentes
+  const pendentes   = lancamentos.filter(l => l.status === 'pendente');
+  const totalDevo   = pendentes.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+  const totalCredito = pendentes.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+  const totalPago   = lancamentos.filter(l => l.status === 'pago' && l.tipo_pagamento !== 'compensacao').reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+  const saldo       = totalDevo - totalCredito;
+
+  // Agrupar por mês
+  const porMes = {};
+  lancsFiltrados.forEach(l => {
+    const d = l.data_vencimento?.split('T')[0] || '';
+    const key = d.substring(0, 7);
+    if (!porMes[key]) porMes[key] = { lancamentos: [], mes: key };
+    porMes[key].lancamentos.push(l);
+  });
+  const mesesOrdenados = Object.keys(porMes).sort((a, b) => b.localeCompare(a));
+
+  const badgeTipo = (ehReceita) => ({
+    padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700',
+    background: ehReceita ? 'rgba(239,68,68,0.15)' : 'rgba(59,130,246,0.15)',
+    color: ehReceita ? '#ef4444' : '#3b82f6',
+    border: `1px solid ${ehReceita ? 'rgba(239,68,68,0.3)' : 'rgba(59,130,246,0.3)'}`,
+  });
+
+  const badgeStatus = (s) => {
+    const map = {
+      pago:      { bg: 'rgba(16,185,129,0.15)', cor: '#10b981', borda: 'rgba(16,185,129,0.3)', txt: '✅ Pago' },
+      pendente:  { bg: 'rgba(245,158,11,0.15)', cor: '#f59e0b', borda: 'rgba(245,158,11,0.3)', txt: '⏳ Pendente' },
+      vencido:   { bg: 'rgba(239,68,68,0.15)',  cor: '#ef4444', borda: 'rgba(239,68,68,0.3)',  txt: '⚠️ Vencido' },
+      cancelado: { bg: 'rgba(148,163,184,0.15)',cor: '#94a3b8', borda: 'rgba(148,163,184,0.3)',txt: '✕ Cancelado' },
+    };
+    const v = map[s] || map.cancelado;
+    return { style: { padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700', background: v.bg, color: v.cor, border: `1px solid ${v.borda}` }, txt: v.txt };
   };
 
-  const formatarMoeda = (valor) => {
-    return parseFloat(valor || 0).toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    });
+  const nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const labelMes = (key) => {
+    const [a, m] = key.split('-');
+    return `${nomesMes[parseInt(m) - 1]} ${a}`;
   };
 
-  const getStatusBadge = (lancamento) => {
-    if (lancamento.data_pagamento) {
-      return (
-        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-          ✅ Pago
-        </span>
-      );
-    }
-
-    const hoje = new Date();
-    const vencimento = new Date(lancamento.data_vencimento);
-    
-    if (vencimento < hoje) {
-      return (
-        <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">
-          ⚠️ Atrasado
-        </span>
-      );
-    }
-
-    return (
-      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-        ⏳ Pendente
-      </span>
-    );
-  };
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg text-gray-600">Carregando suas finanças...</div>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
+      Carregando suas finanças...
+    </div>
+  );
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">💰 Minhas Finanças</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', background: 'var(--color-bg)', minHeight: '100vh', overflowX: 'hidden' }}>
 
-      {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gradient-to-br from-red-400 to-red-500 rounded-lg p-4 text-white shadow-lg">
-          <p className="text-sm opacity-90">Você Deve</p>
-          <p className="text-2xl font-bold mt-1">{formatarMoeda(totalReceitas)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-blue-400 to-blue-500 rounded-lg p-4 text-white shadow-lg">
-          <p className="text-sm opacity-90">Loja Deve (Créditos)</p>
-          <p className="text-2xl font-bold mt-1">{formatarMoeda(totalDespesas)}</p>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-400 to-green-500 rounded-lg p-4 text-white shadow-lg">
-          <p className="text-sm opacity-90">Total Pago</p>
-          <p className="text-2xl font-bold mt-1">{formatarMoeda(totalPago)}</p>
-        </div>
-
-        <div className={`rounded-lg p-4 text-white shadow-lg ${
-          saldoLiquido > 0 ? 'bg-gradient-to-br from-orange-400 to-orange-500' : 
-          saldoLiquido < 0 ? 'bg-gradient-to-br from-purple-400 to-purple-500' : 
-          'bg-gradient-to-br from-gray-400 to-gray-500'
-        }`}>
-          <p className="text-sm opacity-90">Saldo Final</p>
-          <p className="text-2xl font-bold mt-1">{formatarMoeda(Math.abs(saldoLiquido))}</p>
-          <p className="text-xs mt-1">
-            {saldoLiquido > 0 ? '(Você deve)' : saldoLiquido < 0 ? '(Você tem crédito)' : '(Quitado)'}
-          </p>
-        </div>
+      {/* Cabeçalho */}
+      <div style={{ borderRadius: 'var(--radius-xl)', padding: '1.25rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-accent)' }}>
+        <h2 style={{ fontWeight: '800', fontSize: '1.2rem', color: 'var(--color-text)', margin: 0 }}>💰 Minhas Finanças</h2>
+        <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem', margin: '0.2rem 0 0' }}>{userData?.nome}</p>
       </div>
 
-      {/* Filtros - COMPACTO */}
-      <div className="bg-white rounded-lg shadow p-3 mb-4 flex flex-wrap gap-3 items-center">
-        {/* Filtro de status */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFiltro('todos')}
-            className={`px-3 py-1.5 text-sm rounded-lg transition ${
-              filtro === 'todos'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Todos
-          </button>
-          <button
-            onClick={() => setFiltro('pendentes')}
-            className={`px-3 py-1.5 text-sm rounded-lg transition ${
-              filtro === 'pendentes'
-                ? 'bg-yellow-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Pendentes
-          </button>
-          <button
-            onClick={() => setFiltro('pagos')}
-            className={`px-3 py-1.5 text-sm rounded-lg transition ${
-              filtro === 'pagos'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            Pagos
-          </button>
-        </div>
+      {/* Cards de resumo */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
+        {[
+          { label: 'Você Deve', valor: totalDevo,    cor: '#ef4444' },
+          { label: 'Loja Deve', valor: totalCredito, cor: '#3b82f6' },
+          { label: 'Total Pago', valor: totalPago,   cor: '#10b981' },
+          { label: saldo > 0 ? 'Saldo Devedor' : saldo < 0 ? 'Saldo a Favor' : 'Quitado',
+            valor: Math.abs(saldo), cor: saldo > 0 ? '#ef4444' : saldo < 0 ? '#3b82f6' : '#10b981' },
+        ].map((item, i) => (
+          <div key={i} style={{ borderRadius: 'var(--radius-lg)', padding: '1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderLeft: `4px solid ${item.cor}`, textAlign: 'center' }}>
+            <p style={{ fontSize: '1.4rem', fontWeight: '800', color: item.cor, margin: 0 }}>{formatarMoeda(item.valor)}</p>
+            <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>{item.label}</p>
+          </div>
+        ))}
+      </div>
 
-        {/* Filtro de ano */}
-        <select
-          value={anoFiltro}
-          onChange={(e) => setAnoFiltro(e.target.value === 'todos' ? 'todos' : parseInt(e.target.value))}
-          className="px-3 py-1.5 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
+      {/* Filtros */}
+      <div style={{ borderRadius: 'var(--radius-lg)', padding: '0.75rem 1rem', background: 'var(--color-surface)', border: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        {[
+          { id: 'todos',    label: 'Todos' },
+          { id: 'pendente', label: '⏳ Pendentes' },
+          { id: 'pago',     label: '✅ Pagos' },
+          { id: 'vencido',  label: '⚠️ Vencidos' },
+        ].map(f => (
+          <button key={f.id} onClick={() => setFiltro(f.id)}
+            style={sBtn(filtro === f.id, f.id === 'pendente' ? '#f59e0b' : f.id === 'pago' ? '#10b981' : f.id === 'vencido' ? '#ef4444' : 'var(--color-accent)')}>
+            {f.label}
+          </button>
+        ))}
+        <select value={anoFiltro} onChange={e => setAnoFiltro(e.target.value === 'todos' ? 'todos' : parseInt(e.target.value))}
+          style={{ padding: '0.4rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.82rem', cursor: 'pointer' }}>
           <option value="todos">Todos os anos</option>
-          {anosComRegistros.map(ano => (
-            <option key={ano} value={ano}>{ano}</option>
-          ))}
+          {anosComRegistros.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
       </div>
 
-      {/* Lista de lançamentos - AGRUPADO POR MÊS */}
-      {lancamentos.length === 0 ? (
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg">
-          <div className="flex items-center">
-            <span className="text-3xl mr-3">ℹ️</span>
-            <div>
-              <p className="font-semibold text-blue-800">Nenhum lançamento encontrado</p>
-              <p className="text-sm text-blue-600">Não há registros financeiros para o filtro selecionado.</p>
-            </div>
-          </div>
+      {/* Lista agrupada por mês */}
+      {mesesOrdenados.length === 0 ? (
+        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--color-text-muted)', background: 'var(--color-surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+          ℹ️ Nenhum lançamento encontrado para o filtro selecionado.
         </div>
       ) : (
-        <div className="space-y-4">
-          {(() => {
-            // Agrupar por mês/ano
-            const porMes = {};
-            lancamentos.forEach(lanc => {
-              const data = new Date(lanc.data_vencimento);
-              const mesAno = `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`;
-              if (!porMes[mesAno]) {
-                porMes[mesAno] = {
-                  lancamentos: [],
-                  total: 0,
-                  mes: data.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-                };
-              }
-              porMes[mesAno].lancamentos.push(lanc);
-              porMes[mesAno].total += parseFloat(lanc.valor || 0);
-            });
-
-            // Ordenar meses (mais recente primeiro)
-            const mesesOrdenados = Object.keys(porMes).sort((a, b) => b.localeCompare(a));
-
-            return mesesOrdenados.map(mesAno => {
-              const grupo = porMes[mesAno];
-              return (
-                <div key={mesAno} className="border-2 border-gray-300 rounded-lg overflow-hidden bg-white shadow-md">
-                  {/* Cabeçalho do Mês */}
-                  <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white p-4">
-                    <div className="flex justify-between items-center">
-                      <h3 className="text-lg font-bold capitalize">
-                        📅 {grupo.mes}
-                      </h3>
-                      <div className="text-right">
-                        <p className="text-sm opacity-90">{grupo.lancamentos.length} lançamento(s)</p>
-                        <p className="text-xl font-bold">{formatarMoeda(grupo.total)}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Lista de lançamentos do mês */}
-                  <div className="divide-y divide-gray-200">
-                    {grupo.lancamentos.map((lanc) => {
-                      const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
-                      
-                      return (
-                        <div key={lanc.id} className="p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              {/* Badges de Categoria */}
-                              <div className="flex gap-2 mb-2 flex-wrap">
-                                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                                  ehReceita ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'
-                                }`}>
-                                  {ehReceita ? '📈 Você Deve' : '💰 Loja Deve'}
-                                </span>
-                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-800 rounded-full">
-                                  {lanc.categorias_financeiras?.nome}
-                                </span>
-                                {lanc.eh_parcelado && (
-                                  <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
-                                    📋 Parcela {lanc.parcela_numero}/{lanc.parcela_total}
-                                  </span>
-                                )}
-                                {lanc.eh_mensalidade && (
-                                  <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">
-                                    📅 Mensalidade
-                                  </span>
-                                )}
-                                {getStatusBadge(lanc)}
-                              </div>
-                              
-                              {/* Descrição */}
-                              <p className="font-medium text-gray-900 mb-2">{lanc.descricao}</p>
-                              
-                              {/* Informações - DATAS NA MESMA LINHA */}
-                              <div className="text-sm text-gray-600">
-                                <p>
-                                  <span className="font-medium">Vencimento:</span> {formatarData(lanc.data_vencimento)}
-                                  {lanc.data_pagamento && (
-                                    <>
-                                      <span className="mx-2">•</span>
-                                      <span className="font-medium text-green-600">Pago em:</span> {formatarData(lanc.data_pagamento)}
-                                    </>
-                                  )}
-                                  {lanc.tipo_pagamento && (
-                                    <>
-                                      <span className="mx-2">•</span>
-                                      <span className="font-medium">Forma:</span> {lanc.tipo_pagamento}
-                                    </>
-                                  )}
-                                </p>
-                                {lanc.observacoes && (
-                                  <p className="text-gray-500 italic mt-1">
-                                    💬 {lanc.observacoes}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <div className="text-right ml-4">
-                              <p className={`text-2xl font-bold ${
-                                ehReceita ? 'text-red-600' : 'text-blue-600'
-                              }`}>
-                                {formatarMoeda(lanc.valor)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          {mesesOrdenados.map(mesAno => {
+            const grupo = porMes[mesAno];
+            const totalMes = grupo.lancamentos.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+            const pendMes  = grupo.lancamentos.filter(l => l.status === 'pendente').length;
+            return (
+              <div key={mesAno} style={{ borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}>
+                {/* Cabeçalho do mês */}
+                <div style={{ padding: '0.75rem 1rem', background: 'var(--color-surface-2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--color-border)' }}>
+                  <span style={{ fontWeight: '700', color: 'var(--color-accent)', fontSize: '0.95rem' }}>📅 {labelMes(mesAno)}</span>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    {pendMes > 0 && <span style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: '700' }}>{pendMes} pendente(s)</span>}
+                    <span style={{ fontWeight: '700', color: 'var(--color-text)', fontSize: '0.9rem' }}>{formatarMoeda(totalMes)}</span>
                   </div>
                 </div>
-              );
-            });
-          })()}
+                {/* Cards de lançamento */}
+                <div style={{ padding: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {grupo.lancamentos.map((lanc, idx) => {
+                    const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                    const corBorda  = ehReceita ? '#ef4444' : '#3b82f6';
+                    const bs        = badgeStatus(lanc.status);
+                    return (
+                      <div key={lanc.id} style={{
+                        borderRadius: 'var(--radius-lg)', borderLeft: `4px solid ${corBorda}`,
+                        background: idx % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                        border: '1px solid var(--color-border)', borderLeftColor: corBorda,
+                        padding: '0.65rem 0.9rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem'
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          {/* Badges */}
+                          <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                            <span style={badgeTipo(ehReceita)}>{ehReceita ? '📈 Você Deve' : '💰 Loja Deve'}</span>
+                            {lanc.categorias_financeiras?.nome && (
+                              <span style={{ padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '600', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)' }}>
+                                {lanc.categorias_financeiras.nome}
+                              </span>
+                            )}
+                            {lanc.eh_parcelado && (
+                              <span style={{ padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '600', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' }}>
+                                📋 {lanc.parcela_numero}/{lanc.parcela_total}
+                              </span>
+                            )}
+                            <span style={bs.style}>{bs.txt}</span>
+                          </div>
+                          {/* Descrição */}
+                          <p style={{ fontWeight: '600', color: 'var(--color-text)', margin: '0 0 0.2rem', fontSize: '0.85rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {lanc.descricao}
+                          </p>
+                          {/* Datas */}
+                          <p style={{ fontSize: '0.73rem', color: 'var(--color-text-muted)', margin: 0 }}>
+                            Vence: {formatarData(lanc.data_vencimento)}
+                            {lanc.data_pagamento && <> · <span style={{ color: '#10b981', fontWeight: '600' }}>Pago: {formatarData(lanc.data_pagamento)}</span></>}
+                            {lanc.tipo_pagamento && <> · {lanc.tipo_pagamento}</>}
+                          </p>
+                        </div>
+                        <p style={{ fontSize: '1.15rem', fontWeight: '800', color: corBorda, flexShrink: 0, margin: 0 }}>
+                          {formatarMoeda(parseFloat(lanc.valor))}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Informações importantes - COMPACTO */}
-      <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-        <div className="flex">
-          <span className="text-2xl mr-3">💡</span>
-          <div>
-            <h4 className="font-semibold text-yellow-800 mb-1 text-sm">Informações Importantes</h4>
-            <ul className="text-xs text-yellow-700 space-y-1">
-              <li>• Para efetuar pagamentos, entre em contato com o Tesoureiro</li>
-              <li>• Mantenha suas mensalidades em dia para regularidade</li>
-            </ul>
-          </div>
-        </div>
+      {/* Rodapé informativo */}
+      <div style={{ padding: '0.9rem 1rem', borderRadius: 'var(--radius-lg)', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)' }}>
+        <p style={{ fontWeight: '700', color: 'var(--color-text)', margin: '0 0 0.35rem', fontSize: '0.85rem' }}>💡 Informações Importantes</p>
+        <ul style={{ margin: 0, paddingLeft: '1rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', lineHeight: '1.7' }}>
+          <li>Para efetuar pagamentos, entre em contato com o Tesoureiro</li>
+          <li>Mantenha suas mensalidades em dia para regularidade</li>
+        </ul>
       </div>
     </div>
   );
