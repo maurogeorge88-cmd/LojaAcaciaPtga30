@@ -166,75 +166,85 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   // ========================================
   // 🎨 RENDERIZAR ÁRVORE
   // ========================================
-  const renderizarArvore = (categorias, profundidade = 0) => {
-    return categorias.map(cat => (
-      <React.Fragment key={cat.id}>
-        <tr className="hover:">
-          <td className="px-6 py-3 text-sm" style={{ paddingLeft: `${24 + profundidade * 32}px` }}>
-            {profundidade > 0 && (
-              <span className="mr-2">
-                {'└─ '}
-              </span>
-            )}
-            <span className={profundidade === 0 ? 'font-bold' : ''}>
-              {cat.nome}
-            </span>
-          </td>
-          <td className="px-6 py-3 text-sm" style={{color:"var(--color-text)"}}>
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              cat.tipo === 'receita' 
-                ? 'bg-green-100 text-green-800' 
-                : 'bg-red-100 text-red-800'
-            }`}>
-              {cat.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
-            </span>
-          </td>
-          <td className="px-6 py-3 text-sm text-center" style={{color:"var(--color-text)"}}>
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              cat.nivel === 1 ? 'bg-blue-100 text-blue-800' :
-              cat.nivel === 2 ? 'bg-purple-100 text-purple-800' :
-              ' '
-            }`}>
-              Nível {cat.nivel}
-            </span>
-          </td>
-          <td className="px-6 py-3 text-sm text-center" style={{color:"var(--color-text)"}}>
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              cat.ativo 
-                ? 'bg-green-100 text-green-800' 
-                : ' '
-            }`}>
-              {cat.ativo ? '✅ Ativo' : '⏸️ Inativo'}
-            </span>
-          </td>
-          <td className="px-6 py-3 text-sm" style={{color:"var(--color-text)"}}>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleEditar(cat)}
-                className="text-blue-600 hover:text-blue-900"
-                title="Editar"
-              >
-                ✏️
-              </button>
-              <button
-                onClick={() => handleExcluir(cat.id)}
-                className="text-red-600 hover:text-red-900"
-                title="Excluir"
-              >
-                🗑️
-              </button>
+  const BadgeTipo = ({ tipo }) => (
+    <span style={{padding:"0.15rem 0.6rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"700",
+      background: tipo==='receita'?"rgba(16,185,129,0.15)":"rgba(239,68,68,0.15)",
+      color: tipo==='receita'?"#10b981":"#ef4444",
+      border: `1px solid ${tipo==='receita'?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`}}>
+      {tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
+    </span>
+  );
+
+  const BadgeNivel = ({ nivel }) => (
+    <span style={{padding:"0.15rem 0.6rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"700",
+      background: nivel===1?"rgba(59,130,246,0.15)":"rgba(139,92,246,0.15)",
+      color: nivel===1?"#3b82f6":"#8b5cf6",
+      border: `1px solid ${nivel===1?"rgba(59,130,246,0.3)":"rgba(139,92,246,0.3)"}`}}>
+      Nível {nivel}
+    </span>
+  );
+
+  const BadgeStatus = ({ ativo }) => (
+    <span style={{padding:"0.15rem 0.6rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"700",
+      background: ativo?"rgba(16,185,129,0.15)":"rgba(239,68,68,0.1)",
+      color: ativo?"#10b981":"#ef4444",
+      border: `1px solid ${ativo?"rgba(16,185,129,0.3)":"rgba(239,68,68,0.3)"}`}}>
+      {ativo ? '✅ Ativo' : '⏸️ Inativo'}
+    </span>
+  );
+
+  const BotoesAcao = ({ cat }) => (
+    <div style={{display:"flex",gap:"0.35rem"}}>
+      <button onClick={() => handleEditar(cat)} title="Editar"
+        style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",
+          border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+        ✏️
+      </button>
+      <button onClick={() => handleExcluir(cat.id)} title="Excluir"
+        style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",
+          border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
+        🗑️
+      </button>
+    </div>
+  );
+
+  const renderizarGrupos = (arvore) => {
+    return (
+      <div style={{display:"flex",flexDirection:"column",gap:"0.75rem",padding:"0.75rem"}}>
+        {arvore.map(cat => (
+          <div key={cat.id} style={{borderRadius:"var(--radius-xl)",border:"1px solid var(--color-border)",overflow:"hidden",borderLeft:"4px solid var(--color-accent)"}}>
+            {/* Linha da categoria principal */}
+            <div style={{display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.65rem 1rem",
+              background:"var(--color-surface-2)",borderBottom: cat.filhos?.length?"1px solid var(--color-border)":"none"}}>
+              <span style={{flex:1,fontWeight:"700",fontSize:"0.95rem",color:"var(--color-accent)"}}>{cat.nome}</span>
+              <BadgeTipo tipo={cat.tipo} />
+              <BadgeNivel nivel={cat.nivel} />
+              <BadgeStatus ativo={cat.ativo} />
+              <BotoesAcao cat={cat} />
             </div>
-          </td>
-        </tr>
-        {cat.filhos && cat.filhos.length > 0 && renderizarArvore(cat.filhos, profundidade + 1)}
-      </React.Fragment>
-    ));
+            {/* Subcategorias */}
+            {cat.filhos && cat.filhos.map((sub, idx) => (
+              <div key={sub.id} style={{display:"flex",alignItems:"center",gap:"0.75rem",padding:"0.5rem 1rem 0.5rem 2rem",
+                background: idx%2===0?"var(--color-surface)":"var(--color-surface-2)",
+                borderBottom:"1px solid var(--color-border)"}}>
+                <span style={{color:"var(--color-text-muted)",fontSize:"0.8rem",flexShrink:0}}>└─</span>
+                <span style={{flex:1,fontSize:"0.875rem",color:"var(--color-text)"}}>{sub.nome}</span>
+                <BadgeTipo tipo={sub.tipo} />
+                <BadgeNivel nivel={sub.nivel} />
+                <BadgeStatus ativo={sub.ativo} />
+                <BotoesAcao cat={sub} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Carregando categorias...</div>
+        <div className="text-lg" style={{color:"var(--color-text-muted)"}}>Carregando categorias...</div>
       </div>
     );
   }
@@ -244,7 +254,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
   const categoriasPrincipais = categorias.filter(c => c.nivel === 1 && c.tipo === formCategoria.tipo);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"1rem",overflowX:"hidden"}}>
       {/* CABEÇALHO */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏷️ Categorias Financeiras</h2>
@@ -274,7 +284,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                   type="text"
                   value={formCategoria.nome}
                   onChange={(e) => setFormCategoria({ ...formCategoria, nome: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   required
                 />
               </div>
@@ -287,7 +297,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                 <select
                   value={formCategoria.tipo}
                   onChange={(e) => setFormCategoria({ ...formCategoria, tipo: e.target.value, categoria_pai_id: null })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="receita">📈 Receita</option>
                   <option value="despesa">📉 Despesa</option>
@@ -302,7 +312,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                 <select
                   value={formCategoria.categoria_pai_id || ''}
                   onChange={(e) => setFormCategoria({ ...formCategoria, categoria_pai_id: e.target.value || null })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 >
                   <option value="">Principal (sem categoria pai)</option>
                   {categoriasPrincipais.map(cat => (
@@ -311,7 +321,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                     </option>
                   ))}
                 </select>
-                <p className="text-xs mt-1">
+                <p className="text-xs mt-1" style={{color:"var(--color-text-muted)"}}>
                   Deixe vazio para criar categoria principal
                 </p>
               </div>
@@ -325,7 +335,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
                   type="number"
                   value={formCategoria.ordem}
                   onChange={(e) => setFormCategoria({ ...formCategoria, ordem: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                   min="0"
                 />
               </div>
@@ -356,7 +366,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-300 rounded-lg"
+                style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer"}}
               >
                 Cancelar
               </button>
@@ -370,22 +380,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
         <div className="px-6 py-4 border-b">
           <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>📈 Receitas</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead style={{background:"var(--color-surface-2)"}}>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Tipo</th>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nível</th>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderizarArvore(arvoreReceitas)}
-            </tbody>
-          </table>
-        </div>
+        {renderizarGrupos(arvoreReceitas)}
       </div>
 
       {/* LISTA DE DESPESAS */}
@@ -393,22 +388,7 @@ export default function CategoriasFinanceiras({ showSuccess, showError }) {
         <div className="px-6 py-4 border-b">
           <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>📉 Despesas</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead style={{background:"var(--color-surface-2)"}}>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Tipo</th>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nível</th>
-                <th className="px-6 py-3 text-center text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderizarArvore(arvoreDespesas)}
-            </tbody>
-          </table>
-        </div>
+        {renderizarGrupos(arvoreDespesas)}
       </div>
     </div>
   );
