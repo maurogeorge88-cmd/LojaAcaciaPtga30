@@ -48,7 +48,6 @@ import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
-import EmailIrmaos from './components/irmaos/EmailIrmaos';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -143,6 +142,7 @@ function App() {
   const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
   const [modalPerfilCompletoAberto, setModalPerfilCompletoAberto] = useState(false);
   const [irmaoIdPerfilCompleto, setIrmaoIdPerfilCompleto] = useState(null);
+  const [irmaoLogadoId, setIrmaoLogadoId] = useState(null);
   const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -352,11 +352,12 @@ function App() {
       if (data.nivel_acesso === 'irmao') {
         const { data: irmaoData } = await supabase
           .from('irmaos')
-          .select('data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
+          .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
           .eq('email', userEmail)
           .single();
         
         if (irmaoData) {
+          setIrmaoLogadoId(irmaoData.id);
           let grau = 'Não Iniciado';
           if (irmaoData.data_exaltacao) {
             grau = irmaoData.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
@@ -1492,8 +1493,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
               <button
                 onClick={() => {
-                  setIrmaoIdPerfilCompleto(userData.membro_id);
-                  setModalPerfilCompletoAberto(true);
+                  if (irmaoLogadoId) {
+                    setIrmaoIdPerfilCompleto(irmaoLogadoId);
+                    setModalPerfilCompletoAberto(true);
+                  }
                 }}
                 className="w-full px-4 py-2 flex items-center gap-2 transition text-sm hover:bg-primary-800"
                 title="Meu Perfil Completo"
@@ -2057,18 +2060,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           <span>🏷️</span>
                           <span>Categorias</span>
                         </button>
-
-                        <button
-                          onClick={() => setCurrentPage('email-irmaos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'email-irmaos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>📧</span>
-                          <span>E-mails Irmãos</span>
-                        </button>
                       </div>
                     )}
                   </div>
@@ -2498,7 +2489,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
-                  {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2816,14 +2806,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CATEGORIAS FINANCEIRAS */}
         {currentPage === 'categorias-financeiras' && (
           <CategoriasFinanceiras
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* EMAIL IRMÃOS */}
-        {currentPage === 'email-irmaos' && (
-          <EmailIrmaos
             showSuccess={showSuccess}
             showError={showError}
           />
