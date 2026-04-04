@@ -340,7 +340,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
           <div className="space-y-6">
             {itens.map((item, index) => (
-              <div key={item.id} className="border-2 rounded-lg p-5" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div key={item.id} className="rounded-lg p-5" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex justify-between items-center mb-4">
                   <h4 className="font-bold text-lg" style={{color:"var(--color-text)"}}>📄 Item #{index + 1}</h4>
                   {itens.length > 1 && (
@@ -365,7 +365,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                           atualizarItem(item.id, 'tipo', e.target.value);
                           atualizarItem(item.id, 'categoria_id', '');
                         }}
-                        className="w-full px-3 py-2 border rounded-lg outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       >
                         <option value="receita">💰 Receita</option>
                         <option value="despesa">💸 Despesa</option>
@@ -378,7 +378,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                       <select
                         value={item.categoria_id}
                         onChange={(e) => atualizarItem(item.id, 'categoria_id', e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         required
                       >
                         <option value="">Selecione...</option>
@@ -396,7 +396,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                         step="0.01"
                         value={item.valor}
                         onChange={(e) => atualizarItem(item.id, 'valor', e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         placeholder="0.00"
                         required
                       />
@@ -411,7 +411,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                         max="12"
                         value={item.parcelas}
                         onChange={(e) => atualizarItem(item.id, 'parcelas', parseInt(e.target.value) || 1)}
-                        className="w-full px-3 py-2 border rounded-lg outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                       {item.parcelas > 1 && (
                         <p className="text-xs mt-1">
@@ -430,7 +430,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                         type="text"
                         value={item.descricao}
                         onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         placeholder="Ex: Ágape Dia das Mães"
                         required
                       />
@@ -443,7 +443,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                         type="date"
                         value={item.data_vencimento}
                         onChange={(e) => atualizarItem(item.id, 'data_vencimento', e.target.value)}
-                        className="w-full px-3 py-2 border rounded-lg outline-none"
+                        className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                         required
                       />
                     </div>
@@ -455,7 +455,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                     <textarea
                       value={item.observacoes}
                       onChange={(e) => atualizarItem(item.id, 'observacoes', e.target.value)}
-                      className="w-full px-3 py-2 border rounded-lg outline-none"
+                      className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       rows="2"
                       placeholder="Observações adicionais..."
                     />
@@ -466,7 +466,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Resumo Parcial */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="mt-6 p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>📊 Resumo dos Itens</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -503,36 +503,32 @@ export default function LancamentosLote({ showSuccess, showError }) {
               placeholder="🔍 Buscar por nome ou CIM..."
               value={buscarIrmao}
               onChange={(e) => setBuscarIrmao(e.target.value)}
-              className="w-full px-4 py-2 border-2 rounded-lg outline-none"
+              className="w-full px-4 py-2 rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"2px solid var(--color-border)"}}
             />
           </div>
 
           {/* Selecionar Todos */}
           <div className="mb-4">
-            <label className="flex items-center gap-3 p-3 bg-blue-50 border-2 rounded-lg cursor-pointer hover:bg-blue-100 transition">
+            <label className="flex items-center gap-3 p-3 rounded-lg cursor-pointer transition" style={{background:"var(--color-surface-2)",border:"2px solid var(--color-border)"}}>
               <input
                 type="checkbox"
                 checked={selectAll}
                 onChange={toggleSelectAll}
                 className="w-5 h-5 cursor-pointer"
               />
-              <span className="font-bold text-blue-900">
+              <span className="font-bold" style={{color:"var(--color-text)"}}>
                 Selecionar Todos ({irmaosFiltrados.length} irmãos)
               </span>
             </label>
           </div>
 
           {/* Lista de Irmãos */}
-          <div className="border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
               {irmaosFiltrados.map(irmao => (
                 <label
                   key={irmao.id}
-                  className={`flex items-center gap-2 p-2 border-2 rounded-lg cursor-pointer transition ${
-                    irmaosSelecionados.includes(irmao.id)
-                      ? 'bg-blue-50 '
-                      : '  hover:'
-                  }`}
+                  style={{display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.5rem',borderRadius:'var(--radius-md)',cursor:'pointer',border:'2px solid',borderColor:irmaosSelecionados.includes(irmao.id)?'var(--color-accent)':'var(--color-border)',background:irmaosSelecionados.includes(irmao.id)?'var(--color-accent-bg)':'var(--color-surface-2)',transition:'all 0.15s'}}
                 >
                   <input
                     type="checkbox"
@@ -550,7 +546,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Resumo */}
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div className="mt-6 p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <h4 className="font-bold text-blue-900 mb-3" style={{color:"var(--color-text)"}}>📊 Resumo</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
@@ -593,32 +589,32 @@ export default function LancamentosLote({ showSuccess, showError }) {
 
           {/* Cards de Resumo */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-            <div className="p-3 bg-blue-50 rounded-lg border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="p-3 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-blue-700 mb-1">Irmãos</p>
               <p className="text-3xl font-bold text-blue-900">{irmaosSelecionados.length}</p>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="p-3 bg-green-50 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-green-700 mb-1">Itens</p>
               <p className="text-3xl font-bold text-green-900">{itens.length}</p>
             </div>
-            <div className="p-3 bg-purple-50 rounded-lg border-2 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="p-3 bg-purple-50 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-purple-700 mb-1">Lançamentos</p>
               <p className="text-3xl font-bold text-purple-900">{quantidadeLancamentos}</p>
             </div>
-            <div className="p-3 bg-yellow-50 rounded-lg border-2 border-yellow-200 text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="p-3 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-xs text-yellow-700 mb-1">Valor Total</p>
-              <p className="text-xl font-bold text-yellow-900">{formatarMoeda(totalLancamentos)}</p>
+              <p className="text-xl font-bold" style={{color:"var(--color-accent)"}}>{formatarMoeda(totalLancamentos)}</p>
             </div>
           </div>
 
           {/* Detalhes dos Itens */}
-          <div className="mb-6 p-4 border-2 rounded-lg">
+          <div className="mb-6 p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <h4 className="font-bold mb-3 text-lg" style={{color:"var(--color-text)"}}>📝 Itens que serão lançados:</h4>
             <div className="space-y-3">
               {itens.map((item, index) => {
                 const categoria = categorias.find(c => c.id === item.categoria_id);
                 return (
-                  <div key={item.id} className="p-3 rounded-lg">
+                  <div key={item.id} className="p-3 rounded-lg" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                     <p className="font-medium mb-1">
                       {index + 1}. {item.descricao}
                     </p>
@@ -639,7 +635,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Irmãos Selecionados */}
-          <div className="mb-6 p-4 border-2 rounded-lg">
+          <div className="mb-6 p-4 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <h4 className="font-bold mb-3 text-lg" style={{color:"var(--color-text)"}}>
               👥 Irmãos que receberão os lançamentos ({irmaosSelecionados.length}):
             </h4>
@@ -647,7 +643,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
               {irmaosSelecionados.slice(0, 20).map(id => {
                 const irmao = irmaos.find(i => i.id === id);
                 return (
-                  <span key={id} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                  <span key={id} className="px-3 py-1 rounded-full text-sm font-medium" style={{background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)"}}>
                     {irmao?.nome}
                   </span>
                 );
@@ -661,12 +657,12 @@ export default function LancamentosLote({ showSuccess, showError }) {
           </div>
 
           {/* Alerta Final */}
-          <div className="p-4 bg-yellow-50 border-2 border-yellow-300 rounded-lg mb-6">
+          <div className="p-4 rounded-lg mb-6" style={{background:"rgba(245,158,11,0.08)",border:"1px solid rgba(245,158,11,0.3)"}}>
             <div className="flex items-start gap-3">
               <span className="text-2xl">⚠️</span>
               <div>
-                <h4 className="font-bold text-yellow-900 mb-2" style={{color:"var(--color-text)"}}>Atenção - Confirme antes de continuar!</h4>
-                <ul className="text-sm text-yellow-800 space-y-1">
+                <h4 className="font-bold mb-2" style={{color:"var(--color-text)"}}>Atenção - Confirme antes de continuar!</h4>
+                <ul className="text-sm space-y-1" style={{color:"var(--color-text-muted)"}}>
                   <li>• Serão criados <strong>{quantidadeLancamentos} lançamentos</strong> no sistema</li>
                   <li>• Cada irmão receberá <strong>{itens.length} {itens.length === 1 ? 'item' : 'itens'}</strong> no valor de <strong>{formatarMoeda(totalItens)}</strong></li>
                   <li>• O valor total movimentado será de <strong>{formatarMoeda(totalLancamentos)}</strong></li>
