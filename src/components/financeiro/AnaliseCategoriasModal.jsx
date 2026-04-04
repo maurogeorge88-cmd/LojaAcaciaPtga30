@@ -574,7 +574,7 @@ const AnaliseCategoriasModal = ({ isOpen, onClose, showError }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto" style={{background:"var(--color-bg)"}}>
       {/* CABEÇALHO */}
       <div className="sticky top-0 p-6 flex items-center justify-between z-10" style={{background:"var(--color-accent)"}}>
         <div className="flex items-center gap-3">
