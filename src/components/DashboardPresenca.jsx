@@ -857,17 +857,13 @@ export default function DashboardPresenca() {
         
         {/* Seletor de Período */}
         <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700 min-w-[60px]">Período:</label>
+          <label className="text-sm font-medium min-w-[60px]" style={{color:"var(--color-text-muted)"}}>Período:</label>
           <div className="flex gap-3 flex-1">
             {['mes', 'trimestre', 'semestre'].map(p => (
               <button
                 key={p}
                 onClick={() => definirPeriodo(p)}
-                className={`flex-1 py-4 rounded-lg text-base font-bold transition-all ${
-                  periodo === p
-                    ? 'bg-green-400 text-white shadow-lg scale-105'
-                    : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                }`}
+                style={{flex:1,padding:'1rem',borderRadius:'var(--radius-lg)',fontSize:'1rem',fontWeight:'700',cursor:'pointer',border:'none',transition:'all 0.15s',background:periodo===p?'var(--color-accent)':'var(--color-surface-2)',color:periodo===p?'#fff':'var(--color-text)',transform:periodo===p?'scale(1.02)':'none'}}
               >
                 {p === 'mes' ? 'Mês' : p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
@@ -882,11 +878,7 @@ export default function DashboardPresenca() {
                 setDataFim(`${ano}-12-31`);
               }}
               disabled={!anoSelecionado}
-              className={`flex-1 py-4 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
-                periodo === 'ano'
-                  ? 'bg-green-400 text-white shadow-lg'
-                  : 'bg-blue-100 text-blue-700'
-              }`}
+              style={{flex:1,padding:'1rem',borderRadius:'var(--radius-lg)',fontSize:'0.875rem',fontWeight:'600',cursor:'pointer',border:'1px solid var(--color-border)',background:periodo==='ano'?'var(--color-accent)':'var(--color-surface-2)',color:periodo==='ano'?'#fff':'var(--color-text)'}}
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
@@ -895,33 +887,25 @@ export default function DashboardPresenca() {
           </div>
         </div>
 
-        <p className="mt-3 text-sm text-gray-600">
+        <p style={{marginTop:"0.75rem",fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
           📅 De <strong>{new Date(dataInicio).toLocaleDateString('pt-BR')}</strong> até <strong>{new Date(dataFim).toLocaleDateString('pt-BR')}</strong>
         </p>
       </div>
       {/* Cards Totais */}
       <div className="grid grid-cols-5 gap-6 mb-6">
         <div style={{ 
-          background: 'var(--color-accent-bg)', 
-          border: '1px solid var(--color-border)', 
-          borderRadius: 'var(--radius-lg)', 
-          padding: '1.5rem', 
-          textAlign: 'center' 
+          background:'rgba(59,130,246,0.1)',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid var(--color-accent)'
         }}>
-          <p style={{ color: 'var(--color-accent)', fontWeight: '600', marginBottom: '0.5rem' }}>Sessões</p>
-          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.sessoes}</p>
+          <p style={{ color:'var(--color-accent)',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Sessões</p>
+          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.sessoes}</p>
         </div>
         <div style={{ 
-          background: 'var(--color-success-bg)', 
-          border: '1px solid var(--color-border)', 
-          borderRadius: 'var(--radius-lg)', 
-          padding: '1.5rem', 
-          textAlign: 'center' 
+          background:'rgba(16,185,129,0.1)',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid #10b981'
         }}>
-          <p style={{ color: 'var(--color-success)', fontWeight: '600', marginBottom: '0.5rem' }}>Total de Irmãos</p>
-          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.irmaos}</p>
+          <p style={{ color:'#10b981',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Total de Irmãos</p>
+          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.irmaos}</p>
           {dados.stats && (
-            <div className="mt-3 text-xs text-gray-600 space-y-1">
+            <div style={{marginTop:"0.5rem",fontSize:"0.72rem",color:"var(--color-text-muted)",lineHeight:"1.6"}}>
               <div>✅ Ativos: {dados.stats.ativos}</div>
               {dados.stats.falecidos > 0 && <div>🕊️ Falecidos: {dados.stats.falecidos}</div>}
               {dados.stats.irregulares > 0 && <div>⚠️ Irregulares: {dados.stats.irregulares}</div>}
@@ -931,38 +915,30 @@ export default function DashboardPresenca() {
           )}
         </div>
         <div style={{ 
-          background: 'var(--color-info-bg)', 
-          border: '1px solid var(--color-border)', 
-          borderRadius: 'var(--radius-lg)', 
-          padding: '1.5rem', 
-          textAlign: 'center' 
+          background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid #6366f1'
         }}>
-          <p style={{ color: 'var(--color-info)', fontWeight: '600', marginBottom: '0.5rem' }}>Irmãos Ativos</p>
-          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.irmaosAtivos || 0}</p>
+          <p style={{ color:'#6366f1',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Irmãos Ativos</p>
+          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.irmaosAtivos || 0}</p>
           {dados.stats && (
-            <div className="mt-3 text-xs text-gray-600 space-y-1">
+            <div style={{marginTop:"0.5rem",fontSize:"0.72rem",color:"var(--color-text-muted)",lineHeight:"1.6"}}>
               <div>✅ Regulares: {dados.stats.regulares}</div>
               <div>🎫 Licenciados: {dados.stats.licenciados}</div>
             </div>
           )}
         </div>
         <div style={{ 
-          background: 'var(--color-warning-bg)', 
-          border: '1px solid var(--color-border)', 
-          borderRadius: 'var(--radius-lg)', 
-          padding: '1.5rem', 
-          textAlign: 'center' 
+          background:'rgba(245,158,11,0.1)',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-xl)',padding:'1.25rem',textAlign:'center',borderLeft:'4px solid #f59e0b'
         }}>
-          <p style={{ color: 'var(--color-warning)', fontWeight: '600', marginBottom: '0.5rem' }}>Média Presença</p>
-          <p style={{ fontSize: '2.25rem', fontWeight: 'bold', color: 'var(--color-text)' }}>{dados.mediaPresenca || 0}%</p>
+          <p style={{ color:'#f59e0b',fontWeight:'700',marginBottom:'0.4rem',fontSize:'0.85rem',textTransform:'uppercase',letterSpacing:'0.05em' }}>Média Presença</p>
+          <p style={{ fontSize:'2rem',fontWeight:'800',color:'var(--color-text)',lineHeight:'1.1' }}>{dados.mediaPresenca || 0}%</p>
         </div>
         <div className="card" style={{ textAlign: "center" }}>
           <button
             onClick={() => setMostrarGrade(true)}
-            className="w-full h-full flex flex-col items-center justify-center hover:bg-gray-50 transition-colors"
+            style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",background:"none",border:"none",cursor:"pointer",color:"var(--color-text)"}}
           >
             <span className="text-3xl mb-2">📊</span>
-            <span className="font-semibold text-gray-700">Matrix Presença</span>
+            <span style={{fontWeight:"600",color:"var(--color-text-muted)",fontSize:"0.85rem",marginTop:"0.25rem"}}>Matrix Presença</span>
           </button>
         </div>
       </div>
@@ -1024,33 +1000,24 @@ export default function DashboardPresenca() {
                       <td style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: 'var(--color-text)' }}>
                         {new Date(sessao.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
                       </td>
-                      <td className="px-4 py-3 text-center text-sm">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          sessao.grau === 1 ? 'bg-blue-100 text-blue-800' :
-                          sessao.grau === 2 ? 'bg-green-100 text-green-800' :
-                          sessao.grau === 4 ? 'bg-orange-100 text-orange-800' :
-                          'bg-purple-100 text-purple-800'
-                        }`}>
+                      <td className="px-4 py-3 text-center text-sm" style={{color:"var(--color-text)"}}>
+                        <span style={{...({1:{background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'},2:{background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'},4:{background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'},3:{background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'}}[sessao.grau]||{}),padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                           {sessao.grau === 1 ? 'Aprendiz' : 
                            sessao.grau === 2 ? 'Companheiro' : 
                            sessao.grau === 4 ? 'Administrativa' :
                            'Mestre'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-sm font-semibold">{sessao.elegiveis}</td>
-                      <td className="px-4 py-3 text-center text-sm font-semibold text-green-600">{sessao.presencas}</td>
-                      <td className="px-4 py-3 text-center text-sm font-semibold text-red-600">{sessao.ausencias}</td>
-                      <td className="px-4 py-3 text-center text-sm">
-                        <span className="px-2 py-1 rounded bg-indigo-100 text-indigo-800 font-semibold">
+                      <td className="px-4 py-3 text-center text-sm font-semibold" style={{color:"var(--color-text)"}}>{sessao.elegiveis}</td>
+                      <td className="px-4 py-3 text-center text-sm font-semibold text-green-600" style={{color:"var(--color-text)"}}>{sessao.presencas}</td>
+                      <td className="px-4 py-3 text-center text-sm font-semibold text-red-600" style={{color:"var(--color-text)"}}>{sessao.ausencias}</td>
+                      <td className="px-4 py-3 text-center text-sm" style={{color:"var(--color-text)"}}>
+                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(99,102,241,0.15)",color:"#6366f1",fontWeight:"700"}}>
                           {sessao.visitantes}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-center text-sm">
-                        <span className={`px-2 py-1 rounded font-semibold ${
-                          sessao.percentual >= 80 ? 'bg-green-100 text-green-800' :
-                          sessao.percentual >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                      <td className="px-4 py-3 text-center text-sm" style={{color:"var(--color-text)"}}>
+                        <span style={{background:sessao.percentual>=80?'rgba(16,185,129,0.15)':sessao.percentual>=60?'rgba(245,158,11,0.15)':'rgba(239,68,68,0.15)',color:sessao.percentual>=80?'#10b981':sessao.percentual>=60?'#f59e0b':'#ef4444',border:'1px solid currentColor',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                           {sessao.percentual}%
                         </span>
                       </td>
@@ -1118,22 +1085,22 @@ export default function DashboardPresenca() {
                     </div>
                     <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                       {irmao.aprendiz > 0 && (
-                        <span className="bg-blue-100 px-2 py-1 rounded">
+                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(59,130,246,0.15)",color:"#3b82f6"}}>
                           Apr: {irmao.aprendiz}
                         </span>
                       )}
                       {irmao.companheiro > 0 && (
-                        <span className="bg-yellow-100 px-2 py-1 rounded">
+                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(245,158,11,0.15)",color:"#f59e0b"}}>
                           Comp: {irmao.companheiro}
                         </span>
                       )}
                       {irmao.mestre > 0 && (
-                        <span className="bg-purple-100 px-2 py-1 rounded">
+                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(139,92,246,0.15)",color:"#8b5cf6"}}>
                           Mest: {irmao.mestre}
                         </span>
                       )}
                       {irmao.administrativa > 0 && (
-                        <span className="bg-orange-100 px-2 py-1 rounded">
+                        <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",background:"rgba(245,158,11,0.15)",color:"#f59e0b"}}>
                           Adm: {irmao.administrativa}
                         </span>
                       )}
@@ -1204,11 +1171,7 @@ export default function DashboardPresenca() {
                           {irmao.presencas}/{irmao.total}
                         </td>
                         <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                          <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
-                            irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
-                            irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
+                          <span style={{background:irmao.percentual>=75?'rgba(16,185,129,0.15)':irmao.percentual>=50?'rgba(245,158,11,0.15)':'rgba(239,68,68,0.15)',color:irmao.percentual>=75?'#10b981':irmao.percentual>=50?'#f59e0b':'#ef4444',border:'1px solid currentColor',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                             {irmao.percentual}%
                           </span>
                         </td>
@@ -1279,12 +1242,8 @@ export default function DashboardPresenca() {
                         <td style={{ padding: '0.75rem 1rem', textAlign: 'center', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
                           {irmao.presencas}/{irmao.total}
                         </td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block px-3 py-1 rounded text-sm font-semibold ${
-                            irmao.percentual >= 75 ? 'bg-green-100 text-green-800' :
-                            irmao.percentual >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                          }`}>
+                        <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
+                          <span style={{background:irmao.percentual>=75?'rgba(16,185,129,0.15)':irmao.percentual>=50?'rgba(245,158,11,0.15)':'rgba(239,68,68,0.15)',color:irmao.percentual>=75?'#10b981':irmao.percentual>=50?'#f59e0b':'#ef4444',border:'1px solid currentColor',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                             {irmao.percentual}%
                           </span>
                         </td>
@@ -1379,7 +1338,7 @@ export default function DashboardPresenca() {
                     setDataFim(`${ano}-${String(mes).padStart(2, '0')}-${ultimoDia}`);
                   }
                 }}
-                className="px-3 py-1.5 bg-orange-700 text-white rounded font-semibold"
+                style={{padding:"0.35rem 0.75rem",background:"#f59e0b",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontWeight:"600",cursor:"pointer"}}
               >
                 <option value={0}>Ano todo</option>
                 {['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
@@ -1438,42 +1397,38 @@ export default function DashboardPresenca() {
       </div>
 
       {/* Tabela - COMENTADA para adicionar quadros
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="bg-gray-800 text-white p-4">
-          <h2 className="text-2xl font-bold">Resumo por Irmão</h2>
+      <div className="rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div style={{background:"var(--color-accent)",color:"#fff",padding:"1rem"}}>
+          <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>Resumo por Irmão</h2>
         </div>
         
         <table className="min-w-full">
-          <thead className="bg-gray-100">
+          <thead style={{background:"var(--color-surface-2)"}}>
             <tr>
-              <th className="px-6 py-4 text-left text-sm font-bold text-gray-700 uppercase">Irmão</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Registros</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Presentes</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Ausentes</th>
-              <th className="px-6 py-4 text-center text-sm font-bold text-gray-700 uppercase">Taxa</th>
+              <th className="px-6 py-4 text-left text-sm font-bold uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Irmão</th>
+              <th className="px-6 py-4 text-center text-sm font-bold uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Registros</th>
+              <th className="px-6 py-4 text-center text-sm font-bold uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Presentes</th>
+              <th className="px-6 py-4 text-center text-sm font-bold uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ausentes</th>
+              <th className="px-6 py-4 text-center text-sm font-bold uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Taxa</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y">
             {resumo.map(irmao => (
-              <tr key={irmao.id} className="hover:bg-blue-50 transition-colors">
-                <td className="px-6 py-4">
-                  <span className="font-semibold text-gray-900">{formatarNome(irmao.nome)}</span>
+              <tr key={irmao.id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s"}}>
+                <td className="px-6 py-4" style={{color:"var(--color-text)"}}>
+                  <span className="font-semibold">{formatarNome(irmao.nome)}</span>
                 </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-lg font-bold text-blue-600">{irmao.total_registros}</span>
+                <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
+                  <span style={{fontSize:"1.1rem",fontWeight:"800",color:"var(--color-accent)"}}>{irmao.total_registros}</span>
                 </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="text-lg font-bold text-green-600">{irmao.presentes}</span>
+                <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
+                  <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#10b981"}}>{irmao.presentes}</span>
                 </td>
-                <td className="px-6 py-4 text-center">
+                <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
                   <span className="text-lg font-bold text-red-600">{irmao.ausentes}</span>
                 </td>
-                <td className="px-6 py-4 text-center">
-                  <span className={`px-4 py-2 rounded-full font-bold text-sm ${
-                    irmao.taxa >= 90 ? 'bg-green-100 text-green-800' :
-                    irmao.taxa >= 70 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                <td className="px-6 py-4 text-center" style={{color:"var(--color-text)"}}>
+                  <span style={{background:irmao.taxa>=90?'rgba(16,185,129,0.15)':irmao.taxa>=70?'rgba(245,158,11,0.15)':'rgba(239,68,68,0.15)',color:irmao.taxa>=90?'#10b981':irmao.taxa>=70?'#f59e0b':'#ef4444',border:'1px solid currentColor',padding:'0.2rem 0.6rem',borderRadius:'999px',fontSize:'0.75rem',fontWeight:'700'}}>
                     {irmao.taxa}%
                   </span>
                 </td>
