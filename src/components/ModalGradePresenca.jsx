@@ -253,8 +253,8 @@ export default function ModalGradePresenca({ onFechar }) {
     
     if (!irmao || !sessao) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
+        <td key={sessaoId} className="border px-2 py-2 text-center" style={{color:"var(--color-text)"}}>
+          <span>-</span>
         </td>
       );
     }
@@ -271,8 +271,8 @@ export default function ModalGradePresenca({ onFechar }) {
     if (dataInicio && dataSessao < dataInicio) {
       // Sessão antes de ingressar na loja → não se aplica
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
+        <td key={sessaoId} className="border px-2 py-2 text-center" style={{color:"var(--color-text)"}}>
+          <span>-</span>
         </td>
       );
     }
@@ -313,8 +313,8 @@ export default function ModalGradePresenca({ onFechar }) {
     // 4. Se sessão é de grau superior ao do irmão NA DATA DA SESSÃO → não pode participar
     if (grauSessao > grauIrmao) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
+        <td key={sessaoId} className="border px-2 py-2 text-center" style={{color:"var(--color-text)"}}>
+          <span>-</span>
         </td>
       );
     }
@@ -365,14 +365,14 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se não computa, mostra - (sem obrigação)
       if (!computa) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-            <span className="text-gray-400">-</span>
+          <td key={sessaoId} className="border px-2 py-2 text-center" style={{color:"var(--color-text)"}}>
+            <span>-</span>
           </td>
         );
       }
       // Se computa, mostra ausência (✗ vermelho)
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+        <td key={sessaoId} className="border px-2 py-2 text-center bg-red-50" style={{color:"var(--color-text)"}}>
           <span className="text-red-600 text-lg font-bold">✗</span>
         </td>
       );
@@ -383,15 +383,15 @@ export default function ModalGradePresenca({ onFechar }) {
       // Se veio (presente), mostra ✓ normal
       if (reg.presente) {
         return (
-          <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+          <td key={sessaoId} className="border px-2 py-2 text-center bg-green-50" style={{color:"var(--color-text)"}}>
             <span className="text-green-600 text-lg font-bold">✓</span>
           </td>
         );
       }
       // Se ausente (não computa), mostra -
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-gray-100">
-          <span className="text-gray-400">-</span>
+        <td key={sessaoId} className="border px-2 py-2 text-center" style={{color:"var(--color-text)"}}>
+          <span>-</span>
         </td>
       );
     }
@@ -399,7 +399,7 @@ export default function ModalGradePresenca({ onFechar }) {
     // Computa normalmente
     if (reg.presente) {
       return (
-        <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-green-50">
+        <td key={sessaoId} className="border px-2 py-2 text-center bg-green-50" style={{color:"var(--color-text)"}}>
           <span className="text-green-600 text-lg font-bold">✓</span>
         </td>
       );
@@ -409,7 +409,7 @@ export default function ModalGradePresenca({ onFechar }) {
       return (
         <td 
           key={sessaoId} 
-          className="border border-gray-300 px-2 py-2 text-center bg-yellow-50"
+          className="border px-2 py-2 text-center bg-yellow-50" style={{color:"var(--color-text)"}}
           title={reg.justificativa}
         >
           <span className="text-yellow-600 text-lg font-bold">J</span>
@@ -418,7 +418,7 @@ export default function ModalGradePresenca({ onFechar }) {
     }
 
     return (
-      <td key={sessaoId} className="border border-gray-300 px-2 py-2 text-center bg-red-50">
+      <td key={sessaoId} className="border px-2 py-2 text-center bg-red-50" style={{color:"var(--color-text)"}}>
         <span className="text-red-600 text-lg font-bold">✗</span>
       </td>
     );
@@ -427,7 +427,7 @@ export default function ModalGradePresenca({ onFechar }) {
   if (loading) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-8 rounded-lg">
+        <div className="p-8 rounded-lg">
           <div className="text-center">Carregando grade...</div>
         </div>
       </div>
@@ -436,13 +436,13 @@ export default function ModalGradePresenca({ onFechar }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="card w-full max-w-[95vw] flex flex-col" style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", height: "90vh" }}>
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"98vw",display:"flex",flexDirection:"column"}} style={{ boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", height: "90vh" }}>
         
         {/* Cabeçalho */}
         <div style={{ background: "var(--color-accent)", color: "white", padding: "1.5rem" }}>
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h2 className="text-2xl font-bold">Grade de Presença</h2>
+              <h2 style={{fontSize:"1.25rem",fontWeight:"800",color:"#fff",margin:0}}>Grade de Presença</h2>
               <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.9)" }}>
                 {sessoes.length} sessões • {irmaos.length} irmãos
               </p>
@@ -465,7 +465,7 @@ export default function ModalGradePresenca({ onFechar }) {
             <select
               value={anoSelecionado}
               onChange={(e) => setAnoSelecionado(Number(e.target.value))}
-              className="px-4 py-2 rounded text-gray-800 font-semibold"
+              style={{padding:"0.4rem 0.75rem",borderRadius:"var(--radius-md)",fontWeight:"600",background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",cursor:"pointer"}}
             >
               {anosDisponiveis.map(ano => (
                 <option key={ano} value={ano}>{ano}</option>
@@ -474,7 +474,7 @@ export default function ModalGradePresenca({ onFechar }) {
             <select
               value={mesSelecionado}
               onChange={(e) => setMesSelecionado(Number(e.target.value))}
-              className="px-4 py-2 rounded text-gray-800 font-semibold"
+              style={{padding:"0.4rem 0.75rem",borderRadius:"var(--radius-md)",fontWeight:"600",background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",cursor:"pointer"}}
             >
               <option value={0}>Ano todo</option>
               <option value={-1}>1º Semestre</option>
@@ -502,7 +502,7 @@ export default function ModalGradePresenca({ onFechar }) {
                 }
                 gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja);
               }}
-              className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold flex items-center gap-2 transition"
+              style={{marginLeft:"auto",padding:"0.4rem 1rem",background:"#ef4444",color:"#fff",border:"none",borderRadius:"var(--radius-md)",fontWeight:"600",display:"flex",alignItems:"center",gap:"0.4rem",cursor:"pointer",whiteSpace:"nowrap"}}
               title="Gerar relatório em PDF"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -518,13 +518,13 @@ export default function ModalGradePresenca({ onFechar }) {
             placeholder="🔍 Buscar irmão..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="w-full px-4 py-2 rounded text-gray-800 placeholder-gray-500"
+            style={{width:"100%",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)",background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.3)",fontSize:"0.875rem",boxSizing:"border-box"}}
           />
         </div>
 
         {/* Tabela */}
         <div className="flex-1 overflow-auto">
-          <table className="w-full border-collapse text-xs">
+          <table style={{width:"100%",borderCollapse:"collapse",fontSize:"clamp(0.65rem, 1.5vw, 0.75rem)",minWidth:"600px"}}>
             <thead style={{ background: 'var(--color-surface-2)', position: 'sticky', top: 0 }}>
               <tr>
                 <th style={{ 
@@ -559,7 +559,7 @@ export default function ModalGradePresenca({ onFechar }) {
                                    s.grau_sessao_id === 3 ? 'M' :
                                    s.grau_sessao_id === 4 ? 'ADM' : 'A';
                   return (
-                    <th key={s.id} className="border border-gray-300 px-2 py-2 text-center whitespace-nowrap">
+                    <th key={s.id} className="border px-2 py-2 text-center whitespace-nowrap" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                       <div>{formatarData(s.data_sessao)}</div>
                       <div className="text-xs font-semibold text-blue-600 mt-0.5">{grauTexto}</div>
                     </th>
@@ -683,7 +683,7 @@ export default function ModalGradePresenca({ onFechar }) {
                   const temPrerrogativa = sessoesPrerrogativa > 0;
                   
                   return (
-                <tr key={irmao.id} className="hover:bg-gray-50">
+                <tr key={irmao.id} className="hover:">
                   <td style={{ 
                     border: '1px solid var(--color-border)', 
                     padding: '0.75rem 1rem', 
@@ -783,10 +783,10 @@ export default function ModalGradePresenca({ onFechar }) {
         </div>
 
         {/* Rodapé */}
-        <div className="bg-gray-50 px-6 py-4 border-t">
+        <div className="px-6 py-4 border-t">
           <button
             onClick={onFechar}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-primary-700 transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
           >
             Fechar
           </button>
