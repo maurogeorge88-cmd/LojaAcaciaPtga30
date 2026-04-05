@@ -674,18 +674,27 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 </div>
 
                 <div className="overflow-x-auto">
-                  <table className="min-w-full" style={{ borderTop: '1px solid var(--color-border)' }}>
-                    <thead style={{ background: 'var(--color-surface-2)' }}>
-                      <tr>
-                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Data</th>
-                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Tipo de Sessão</th>
-                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Classificação</th>
-                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Presença</th>
-                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Visitantes</th>
-                        <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ações</th>
-                      </tr>
-                    </thead>
-                  </table>
+                  {/* Cabeçalho alinhado com os cards */}
+                  <div style={{
+                    display:'grid',
+                    gridTemplateColumns:'120px 1fr 130px 1fr 70px 120px',
+                    gap:'0.75rem',
+                    padding:'0.5rem 1rem',
+                    background:'var(--color-surface-2)',
+                    borderBottom:'2px solid var(--color-accent)',
+                    fontSize:'0.7rem',
+                    fontWeight:'700',
+                    color:'var(--color-text-muted)',
+                    textTransform:'uppercase',
+                    letterSpacing:'0.05em',
+                  }}>
+                    <div>Data</div>
+                    <div>Tipo de Sessão</div>
+                    <div>Classificação</div>
+                    <div style={{textAlign:'center'}}>Presença</div>
+                    <div style={{textAlign:'center'}}>Visit.</div>
+                    <div style={{textAlign:'center'}}>Ações</div>
+                  </div>
                   {/* Cards de sessões */}
                   <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.5rem'}}>
                       {grupo.sessoes.map((sessao, idx) => {
@@ -701,7 +710,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                             key={sessao.id}
                             style={{
                               display:'grid',
-                              gridTemplateColumns:'100px 1fr 110px 1fr 60px auto',
+                              gridTemplateColumns:'120px 1fr 130px 1fr 70px 120px',
                               alignItems:'center',
                               gap:'0.75rem',
                               padding:'0.65rem 1rem',
@@ -735,43 +744,43 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                                 {sessao.classificacao || '—'}
                               </span>
                             </div>
-                            {/* Presença */}
-                            <div style={{display:'flex',flexDirection:'column',gap:'0.2rem'}}>
-                              <div style={{display:'flex',alignItems:'center',gap:'0.5rem',flexWrap:'wrap'}}>
-                                <span style={{...corPct,padding:'0.15rem 0.6rem',borderRadius:'999px',fontSize:'0.8rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                  {percentual}% ({presentes}/{totalRegistros})
+                            {/* Presença — 3 linhas centralizadas */}
+                            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.2rem',textAlign:'center'}}>
+                              {/* Linha 1: percentual */}
+                              <span style={{...corPct,padding:'0.15rem 0.7rem',borderRadius:'999px',fontSize:'0.82rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                {percentual}% ({presentes}/{totalRegistros})
+                              </span>
+                              {/* Linha 2: ausentes */}
+                              {totalRegistros > 0 && (
+                                <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
+                                  {ausentes} ausente(s)
                                 </span>
-                                {totalRegistros > 0 && (
-                                  <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
-                                    {ausentes} ausente(s)
-                                  </span>
-                                )}
-                                {/* Graus na mesma linha */}
-                                {graus && presentes > 0 && (
-                                  <div style={{display:'flex',gap:'0.3rem',flexWrap:'nowrap'}}>
-                                    {graus.aprendizes > 0 && (
-                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                        A:{graus.aprendizes}
-                                      </span>
-                                    )}
-                                    {graus.companheiros > 0 && (
-                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                        C:{graus.companheiros}
-                                      </span>
-                                    )}
-                                    {graus.mestres > 0 && (
-                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                        M:{graus.mestres}
-                                      </span>
-                                    )}
-                                    {graus.mestres_instalados > 0 && (
-                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                                        M.I:{graus.mestres_instalados}
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                              )}
+                              {/* Linha 3: badges de grau */}
+                              {graus && presentes > 0 && (
+                                <div style={{display:'flex',gap:'0.25rem',flexWrap:'nowrap',justifyContent:'center'}}>
+                                  {graus.aprendizes > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      A:{graus.aprendizes}
+                                    </span>
+                                  )}
+                                  {graus.companheiros > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      C:{graus.companheiros}
+                                    </span>
+                                  )}
+                                  {graus.mestres > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      M:{graus.mestres}
+                                    </span>
+                                  )}
+                                  {graus.mestres_instalados > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      M.I:{graus.mestres_instalados}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             {/* Visitantes */}
                             <div style={{textAlign:'center'}}>
