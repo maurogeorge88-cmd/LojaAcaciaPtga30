@@ -685,117 +685,128 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                         <th style={{ padding: '0.75rem 1.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '500', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ações</th>
                       </tr>
                     </thead>
-                    <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
-                      {grupo.sessoes.map((sessao) => {
+                  </table>
+                  {/* Cards de sessões */}
+                  <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.5rem'}}>
+                      {grupo.sessoes.map((sessao, idx) => {
                         const totalRegistros = sessao.total_registros || 0;
                         const presentes = sessao.total_presentes || 0;
                         const ausentes = sessao.total_ausentes || 0;
                         const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+                        const corPct = obterCorPorcentagem(totalRegistros, presentes);
+                        const graus = sessao.graus_presentes;
 
                         return (
-                          <tr 
-                            key={sessao.id} 
-                            style={{ borderBottom: '1px solid var(--color-border)' }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          <div
+                            key={sessao.id}
+                            style={{
+                              display:'grid',
+                              gridTemplateColumns:'100px 1fr 110px 1fr 60px auto',
+                              alignItems:'center',
+                              gap:'0.75rem',
+                              padding:'0.65rem 1rem',
+                              borderRadius:'var(--radius-lg)',
+                              border:'1px solid var(--color-border)',
+                              borderLeft:'4px solid var(--color-accent)',
+                              background: idx%2===0 ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                              transition:'opacity 0.15s',
+                            }}
                           >
-                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', fontSize: '0.875rem', fontWeight: '500', color: 'var(--color-text)' }}>
+                            {/* Data */}
+                            <div style={{fontSize:'0.85rem',fontWeight:'600',color:'var(--color-text)',whiteSpace:'nowrap'}}>
                               {formatarData(sessao.data_sessao)}
-                            </td>
-                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', fontSize: '0.875rem', color: 'var(--color-text)' }}>{sessao.grau_sessao}</td>
-                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap' }}>
+                            </div>
+                            {/* Tipo de Sessão */}
+                            <div style={{fontSize:'0.85rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                              {sessao.grau_sessao}
+                            </div>
+                            {/* Classificação */}
+                            <div>
                               <span style={{
-                                padding: '0.25rem 0.5rem',
-                                fontSize: '0.75rem',
-                                fontWeight: '600',
-                                borderRadius: '9999px',
-                                background: sessao.classificacao ? 'var(--color-warning-bg)' : 'var(--color-surface-2)',
-                                color: sessao.classificacao ? 'var(--color-warning)' : 'var(--color-text-muted)'
+                                padding:'0.15rem 0.55rem',
+                                fontSize:'0.72rem',
+                                fontWeight:'700',
+                                borderRadius:'999px',
+                                background: sessao.classificacao ? 'rgba(245,158,11,0.15)' : 'var(--color-surface-2)',
+                                color: sessao.classificacao ? '#f59e0b' : 'var(--color-text-muted)',
+                                border: sessao.classificacao ? '1px solid rgba(245,158,11,0.3)' : '1px solid var(--color-border)',
+                                whiteSpace:'nowrap',
                               }}>
-                                {sessao.classificacao || '-'}
+                                {sessao.classificacao || '—'}
                               </span>
-                            </td>
-                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap' }}>
-                              <div className="flex flex-col items-center">
-                                <div style={{
-                                  padding: '0.25rem 0.75rem',
-                                  borderRadius: '9999px',
-                                  fontSize: '0.875rem',
-                                  fontWeight: '600',
-                                  ...obterCorPorcentagem(totalRegistros, presentes)
-                                }}>
+                            </div>
+                            {/* Presença */}
+                            <div style={{display:'flex',flexDirection:'column',gap:'0.2rem'}}>
+                              <div style={{display:'flex',alignItems:'center',gap:'0.5rem',flexWrap:'wrap'}}>
+                                <span style={{...corPct,padding:'0.15rem 0.6rem',borderRadius:'999px',fontSize:'0.8rem',fontWeight:'700',whiteSpace:'nowrap'}}>
                                   {percentual}% ({presentes}/{totalRegistros})
-                                </div>
+                                </span>
                                 {totalRegistros > 0 && (
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+                                  <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
                                     {ausentes} ausente(s)
-                                  </div>
+                                  </span>
                                 )}
-                                {sessao.graus_presentes && presentes > 0 && (
-                                  <div className="flex flex-wrap gap-1 mt-2 text-xs">
-                                    {sessao.graus_presentes.aprendizes > 0 && (
-                                      <span style={{ padding: '0.125rem 0.5rem', background: '#fef9c3', color: '#854d0e', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
-                                        A: {sessao.graus_presentes.aprendizes}
+                                {/* Graus na mesma linha */}
+                                {graus && presentes > 0 && (
+                                  <div style={{display:'flex',gap:'0.3rem',flexWrap:'nowrap'}}>
+                                    {graus.aprendizes > 0 && (
+                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                        A:{graus.aprendizes}
                                       </span>
                                     )}
-                                    {sessao.graus_presentes.companheiros > 0 && (
-                                      <span style={{ padding: '0.125rem 0.5rem', background: '#dbeafe', color: '#1e40af', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
-                                        C: {sessao.graus_presentes.companheiros}
+                                    {graus.companheiros > 0 && (
+                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                        C:{graus.companheiros}
                                       </span>
                                     )}
-                                    {sessao.graus_presentes.mestres > 0 && (
-                                      <span style={{ padding: '0.125rem 0.5rem', background: '#dcfce7', color: '#166534', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
-                                        M: {sessao.graus_presentes.mestres}
+                                    {graus.mestres > 0 && (
+                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                        M:{graus.mestres}
                                       </span>
                                     )}
-                                    {sessao.graus_presentes.mestres_instalados > 0 && (
-                                      <span style={{ padding: '0.125rem 0.5rem', background: '#f3e8ff', color: '#6b21a8', borderRadius: 'var(--radius-sm)', fontWeight: '500' }}>
-                                        M.I: {sessao.graus_presentes.mestres_instalados}
+                                    {graus.mestres_instalados > 0 && (
+                                      <span style={{padding:'0.1rem 0.45rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                        M.I:{graus.mestres_instalados}
                                       </span>
                                     )}
                                   </div>
                                 )}
                               </div>
-                            </td>
-                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                              <span style={{
-                                padding: '0.25rem 0.5rem',
-                                background: 'var(--color-info-bg)',
-                                color: 'var(--color-info)',
-                                borderRadius: '9999px',
-                                fontSize: '0.875rem',
-                                fontWeight: '500'
-                              }}>
+                            </div>
+                            {/* Visitantes */}
+                            <div style={{textAlign:'center'}}>
+                              <span style={{padding:'0.15rem 0.55rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'999px',fontSize:'0.8rem',fontWeight:'600'}}>
                                 {sessao.total_visitantes}
                               </span>
-                            </td>
-                            <td style={{ padding: '1rem 1.5rem', whiteSpace: 'nowrap', textAlign: 'center' }}>
-                              <div className="flex justify-center gap-2">
-                                <button
-                                  onClick={() => onVisualizarPresenca(sessao.id)}
-                                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm"
-                                >
-                                  👁️ Visualizar
-                                </button>
-                                <button
-                                  onClick={() => onEditarPresenca(sessao.id)}
-                                  className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm"
-                                >
-                                  ✏️ Editar
-                                </button>
-                                <button
-                                  onClick={() => handleExcluir(sessao.id)}
-                                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm"
-                                >
-                                  🗑️ Excluir
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
+                            </div>
+                            {/* Ações */}
+                            <div style={{display:'flex',gap:'0.3rem',justifyContent:'flex-end'}}>
+                              <button
+                                onClick={() => onVisualizarPresenca(sessao.id)}
+                                style={{padding:'0.35rem 0.7rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Visualizar"
+                              >
+                                👁️
+                              </button>
+                              <button
+                                onClick={() => onEditarPresenca(sessao.id)}
+                                style={{padding:'0.35rem 0.7rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleExcluir(sessao.id)}
+                                style={{padding:'0.35rem 0.7rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Excluir"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
                         );
                       })}
-                    </tbody>
-                  </table>
+                  </div>
                 </div>
 
                 {/* VISITAS DO MÊS */}
@@ -838,7 +849,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                                 <div className="flex gap-1">
                                   <button
                                     onClick={() => abrirModalVisita(visita)}
-                                    className="p-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-xs"
+                                    className="p-1 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-xs"
                                     title="Editar"
                                   >
                                     ✏️
@@ -872,7 +883,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
 
       {/* Resumo */}
       {sessoes.length > 0 && (
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <p className="text-sm text-blue-800">
             <strong>Total:</strong> {sessoes.length} sessão(ões) encontrada(s)
             {filtroMes && ` em ${meses.find(m => m.valor === filtroMes)?.nome}`}
@@ -884,9 +895,9 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
       {/* MODAL */}
       {modalVisita && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="bg-purple-600 text-white p-6">
-              <h3 className="text-2xl font-bold">
+              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
                 {visitaEditando ? '✏️ Editar Visita' : '➕ Nova Visita'}
               </h3>
             </div>
@@ -897,7 +908,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 <select
                   value={visitaForm.irmao_id}
                   onChange={(e) => setVisitaForm({ ...visitaForm, irmao_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                   required
                 >
                   <option value="">Selecione...</option>
@@ -913,7 +924,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                   type="date"
                   value={visitaForm.data_visita}
                   onChange={(e) => setVisitaForm({ ...visitaForm, data_visita: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                   required
                 />
               </div>
@@ -925,7 +936,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                     type="text"
                     value={visitaForm.nome_loja}
                     onChange={(e) => setVisitaForm({ ...visitaForm, nome_loja: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                     placeholder="Ex: Acácia do Cerrado"
                     required
                   />
@@ -937,7 +948,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                     type="text"
                     value={visitaForm.oriente}
                     onChange={(e) => setVisitaForm({ ...visitaForm, oriente: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                     placeholder="Ex: Cuiabá"
                     required
                   />
@@ -947,7 +958,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               {/* Potência com gerenciador */}
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Potência Maçônica</label>
+                  <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Potência Maçônica</label>
                   <button
                     type="button"
                     onClick={() => setMostrarFormPotencia(!mostrarFormPotencia)}
@@ -966,14 +977,14 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                         placeholder="Sigla (ex: GLESP)"
                         value={novaPotencia.sigla}
                         onChange={(e) => setNovaPotencia({ ...novaPotencia, sigla: e.target.value.toUpperCase() })}
-                        className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                        className="px-2 py-1 text-sm border rounded focus:ring-purple-500"
                       />
                       <input
                         type="text"
                         placeholder="Nome completo"
                         value={novaPotencia.nome_completo}
                         onChange={(e) => setNovaPotencia({ ...novaPotencia, nome_completo: e.target.value })}
-                        className="px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500"
+                        className="px-2 py-1 text-sm border rounded focus:ring-purple-500"
                       />
                     </div>
                     <button
@@ -996,18 +1007,18 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                             type="text"
                             defaultValue={pot.sigla}
                             onBlur={(e) => atualizarPotencia(pot.id, { sigla: e.target.value })}
-                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-purple-500"
                           />
                           <input
                             type="text"
                             defaultValue={pot.nome_completo}
                             onBlur={(e) => atualizarPotencia(pot.id, { nome_completo: e.target.value })}
-                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-2 focus:ring-purple-500"
+                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-purple-500"
                           />
                           <button
                             type="button"
                             onClick={() => setEditandoPotencia(null)}
-                            className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-gray-600"
+                            className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-primary-700"
                           >
                             ✓
                           </button>
@@ -1028,7 +1039,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                           <button
                             type="button"
                             onClick={() => setEditandoPotencia(pot.id)}
-                            className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                            className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700"
                             title="Editar potência"
                           >
                             ✏️
@@ -1045,7 +1056,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 <textarea
                   value={visitaForm.observacoes}
                   onChange={(e) => setVisitaForm({ ...visitaForm, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
                   rows="3"
                   placeholder="Informações adicionais..."
                 />
@@ -1055,7 +1066,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
                 <button
                   type="button"
                   onClick={() => setModalVisita(false)}
-                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   ❌ Cancelar
                 </button>
