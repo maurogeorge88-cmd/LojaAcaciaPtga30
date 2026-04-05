@@ -346,7 +346,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
                   {itens.length > 1 && (
                     <button
                       onClick={() => removerItem(item.id)}
-                      className="text-red-600 hover:text-red-800 font-medium"
+                      style={{background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",padding:"0.25rem 0.55rem",cursor:"pointer",fontWeight:"600"}}
                     >
                       ❌ Remover
                     </button>
@@ -470,12 +470,12 @@ export default function LancamentosLote({ showSuccess, showError }) {
             <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>📊 Resumo dos Itens</h4>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm text-blue-700">Total de Itens</p>
-                <p className="text-2xl font-bold text-blue-900">{itens.length}</p>
+                <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)",marginBottom:"0.25rem"}}>Total de Itens</p>
+                <p style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)",margin:0}}>{itens.length}</p>
               </div>
               <div>
-                <p className="text-sm text-blue-700">Valor Total</p>
-                <p className="text-2xl font-bold text-blue-900">{formatarMoeda(totalItens)}</p>
+                <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)",marginBottom:"0.25rem"}}>Valor Total</p>
+                <p style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)",margin:0}}>{formatarMoeda(totalItens)}</p>
               </div>
             </div>
           </div>
@@ -550,16 +550,16 @@ export default function LancamentosLote({ showSuccess, showError }) {
             <h4 className="font-bold text-blue-900 mb-3" style={{color:"var(--color-text)"}}>📊 Resumo</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-sm text-blue-700">Irmãos Selecionados</p>
-                <p className="text-2xl font-bold text-blue-900">{irmaosSelecionados.length}</p>
+                <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)",marginBottom:"0.25rem"}}>Irmãos Selecionados</p>
+                <p style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)",margin:0}}>{irmaosSelecionados.length}</p>
               </div>
               <div>
-                <p className="text-sm text-blue-700">Itens por Irmão</p>
-                <p className="text-2xl font-bold text-blue-900">{itens.length}</p>
+                <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)",marginBottom:"0.25rem"}}>Itens por Irmão</p>
+                <p style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)",margin:0}}>{itens.length}</p>
               </div>
               <div>
-                <p className="text-sm text-blue-700">Total de Lançamentos</p>
-                <p className="text-2xl font-bold text-blue-900">{quantidadeLancamentos}</p>
+                <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)",marginBottom:"0.25rem"}}>Total de Lançamentos</p>
+                <p style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)",margin:0}}>{quantidadeLancamentos}</p>
               </div>
             </div>
           </div>
@@ -590,19 +590,19 @@ export default function LancamentosLote({ showSuccess, showError }) {
           {/* Cards de Resumo */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
             <div className="p-3 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-blue-700 mb-1">Irmãos</p>
-              <p className="text-3xl font-bold text-blue-900">{irmaosSelecionados.length}</p>
+              <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginBottom:"0.25rem"}}>Irmãos</p>
+              <p style={{fontSize:"1.875rem",fontWeight:"800",color:"var(--color-accent)",margin:0}}>{irmaosSelecionados.length}</p>
             </div>
             <div className="p-3 bg-green-50 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-green-700 mb-1">Itens</p>
-              <p className="text-3xl font-bold text-green-900">{itens.length}</p>
+              <p style={{fontSize:"0.72rem",color:"#10b981",marginBottom:"0.25rem"}}>Itens</p>
+              <p style={{fontSize:"1.875rem",fontWeight:"800",color:"#10b981",margin:0}}>{itens.length}</p>
             </div>
             <div className="p-3 bg-purple-50 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-purple-700 mb-1">Lançamentos</p>
-              <p className="text-3xl font-bold text-purple-900">{quantidadeLancamentos}</p>
+              <p style={{fontSize:"0.72rem",color:"#8b5cf6",marginBottom:"0.25rem"}}>Lançamentos</p>
+              <p style={{fontSize:"1.875rem",fontWeight:"800",color:"#8b5cf6",margin:0}}>{quantidadeLancamentos}</p>
             </div>
             <div className="p-3 rounded-lg text-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-yellow-700 mb-1">Valor Total</p>
+              <p style={{fontSize:"0.72rem",color:"#f59e0b",marginBottom:"0.25rem"}}>Valor Total</p>
               <p className="text-xl font-bold" style={{color:"var(--color-accent)"}}>{formatarMoeda(totalLancamentos)}</p>
             </div>
           </div>
