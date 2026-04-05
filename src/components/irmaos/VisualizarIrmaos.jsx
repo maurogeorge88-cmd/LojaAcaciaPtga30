@@ -46,11 +46,11 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
   };
 
   // Função para obter cor da situação
-  const obterCorSituacao = (situacao) => {
+  const obterStyleSituacao = (situacao) => {
     const cores = {
-      regular: 'bg-green-100 text-green-800 border-green-300',
-      irregular: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-      licenciado: 'bg-blue-100 text-blue-800 border-blue-300',
+      regular:    {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'},
+      irregular:  {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'},
+      licenciado: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'},
       suspenso: 'bg-orange-100 text-orange-800 border-orange-300',
       desligado: '  ',
       excluido: 'bg-red-100 text-red-800 border-red-300',
@@ -329,7 +329,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"1rem",overflowX:"hidden"}}>
       {/* Filtros */}
       <div className="rounded-lg shadow p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -387,13 +387,13 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
         </div>
 
         {/* Contador */}
-        <div className="mt-4 text-sm">
+        <div style={{marginTop:"1rem",fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
           Exibindo <strong>{irmaosFiltrados.length}</strong> de <strong>{irmaos.length}</strong> irmãos
         </div>
       </div>
 
       {/* Cards de Irmãos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" style={{padding:"0.25rem"}}>
         {irmaosFiltrados.map(irmao => {
           const grau = obterGrau(irmao);
           const situacao = (irmao.situacao || 'regular').toLowerCase();
@@ -418,7 +418,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                 )}
                 
                 {/* Badge do Grau */}
-                <div className={`absolute top-2 right-2 ${obterCorGrau(grau)} text-white px-3 py-1 rounded-full text-xs font-bold `}>
+                <div style={{position:"absolute",top:"0.5rem",right:"0.5rem",color:"#fff",padding:"0.2rem 0.65rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"800",...obterStyleGrau(grau)}}>
                   {grau}
                 </div>
               </div>
@@ -441,15 +441,15 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   )}
                   
                   {irmao.data_iniciacao && (
-                    <p className="text-sm">
-                      <span className="font-semibold">Iniciação:</span> {formatarData(irmao.data_iniciacao)}
+                    <p style={{fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
+                      <span style={{fontWeight:"600",color:"var(--color-text)"}}>Iniciação:</span> {formatarData(irmao.data_iniciacao)}
                     </p>
                   )}
                 </div>
 
                 {/* Badge de Situação */}
                 <div className="mt-3 flex gap-2 flex-wrap">
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold border ${obterCorSituacao(situacao)}`}>
+                  <span style={{display:"inline-block",padding:"0.2rem 0.65rem",borderRadius:"999px",fontSize:"0.72rem",fontWeight:"700",...obterStyleSituacao(situacao)}}>
                     {irmao.situacao || 'Regular'}
                   </span>
                   
@@ -552,7 +552,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
-            <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-t-lg">
+            <div style={{position:"sticky",top:0,background:"var(--color-accent)",padding:"1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>Detalhes do Irmão</h2>
                 <button
@@ -575,7 +575,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                     className="w-32 h-32 rounded-lg object-cover"
                   />
                 ) : (
-                  <div className="w-32 h-32 bg-gradient-to-br from-blue-400 to-primary-700 rounded-lg flex items-center justify-center">
+                  <div style={{width:"8rem",height:"8rem",background:"var(--color-accent)",borderRadius:"var(--radius-lg)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                     <span className="text-5xl text-white">👤</span>
                   </div>
                 )}
@@ -747,7 +747,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                       <span className="ml-2">
                         {familiaresSelecionado.pais.nome_pai || 'Não informado'}
                         {familiaresSelecionado.pais.nome_pai && (
-                          <span className={`ml-2 ${familiaresSelecionado.pais.pai_vivo ? 'text-green-600' : ''}`}>
+                          <span style={{marginLeft:'0.5rem',color:familiaresSelecionado.pais.pai_vivo?'#10b981':'var(--color-text-muted)'}}>
                             {familiaresSelecionado.pais.pai_vivo ? '(Vivo)' : '(Falecido)'}
                           </span>
                         )}
@@ -758,7 +758,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                       <span className="ml-2">
                         {familiaresSelecionado.pais.nome_mae || 'Não informado'}
                         {familiaresSelecionado.pais.nome_mae && (
-                          <span className={`ml-2 ${familiaresSelecionado.pais.mae_viva ? 'text-green-600' : ''}`}>
+                          <span style={{marginLeft:'0.5rem',color:familiaresSelecionado.pais.mae_viva?'#10b981':'var(--color-text-muted)'}}>
                             {familiaresSelecionado.pais.mae_viva ? '(Viva)' : '(Falecida)'}
                           </span>
                         )}
@@ -805,7 +805,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
             <div className="sticky bottom-0 p-4 rounded-b-lg flex justify-end gap-3">
               <button
                 onClick={() => gerarPDF(irmaoSelecionado)}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                style={{padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
               >
                 📄 Gerar Ficha
               </button>
@@ -815,7 +815,7 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                     fecharDetalhes();
                     onEdit(irmaoSelecionado);
                   }}
-                  className="px-6 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+                  style={{padding:"0.5rem 1.5rem",background:"#f59e0b",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                 >
                   ✏️ Editar
                 </button>
