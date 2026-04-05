@@ -137,9 +137,9 @@ const QuadroIrmaos = ({ irmaos }) => {
 
   const obterCorGrau = (grau) => {
     const cores = {
-      'Aprendiz': 'bg-blue-100 text-blue-800',
-      'Companheiro': 'bg-green-100 text-green-800',
-      'Mestre': 'bg-purple-100 text-purple-800',
+      'Aprendiz': 'aprendiz-ph',
+      'Companheiro': 'companheiro-ph',
+      'Mestre': 'mestre-ph',
       'Nao iniciado': ' '
     };
     return cores[grau] || ' ';
@@ -147,8 +147,8 @@ const QuadroIrmaos = ({ irmaos }) => {
 
   const obterCorSituacao = (situacao) => {
     const sit = (situacao || 'regular').toLowerCase();
-    if (sit === 'regular') return 'bg-green-100 text-green-800';
-    return 'bg-blue-100 text-blue-800';
+    if (sit === 'regular') return 'situacao-regular-ph';
+    return 'situacao-outro-ph';
   };
 
   return (
@@ -222,7 +222,7 @@ const QuadroIrmaos = ({ irmaos }) => {
           <div className="flex items-end">
             <button
               onClick={gerarQuadro}
-              className="w-full px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
+              style={{width:"100%",padding:"0.5rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
             >
               Exportar Quadro
             </button>
@@ -258,7 +258,10 @@ const QuadroIrmaos = ({ irmaos }) => {
                     </div>
                     {/* Grau */}
                     <div style={{flexShrink:0}}>
-                      <span className={'inline-block px-2 py-0.5 rounded-full text-xs font-bold '+corGrau}>{grau}</span>
+                      <span style={{display:'inline-block',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
+                        background:corGrau==='aprendiz-ph'?'rgba(59,130,246,0.15)':corGrau==='companheiro-ph'?'rgba(16,185,129,0.15)':corGrau==='mestre-ph'?'rgba(139,92,246,0.15)':'var(--color-surface-2)',
+                        color:corGrau==='aprendiz-ph'?'#3b82f6':corGrau==='companheiro-ph'?'#10b981':corGrau==='mestre-ph'?'#8b5cf6':'var(--color-text-muted)',
+                        border:'1px solid currentColor'}}>{grau}</span>
                     </div>
                     {/* Idade */}
                     <div style={{flexShrink:0,width:'40px',textAlign:'center'}}>
@@ -274,7 +277,10 @@ const QuadroIrmaos = ({ irmaos }) => {
                     </div>
                     {/* Situação */}
                     <div style={{flexShrink:0}}>
-                      <span className={'inline-block px-2 py-0.5 rounded-full text-xs font-bold '+corSituacao}>{irmao.situacao||'Regular'}</span>
+                      <span style={{display:'inline-block',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
+                        background:corSituacao==='situacao-regular-ph'?'rgba(16,185,129,0.15)':'rgba(59,130,246,0.15)',
+                        color:corSituacao==='situacao-regular-ph'?'#10b981':'#3b82f6',
+                        border:'1px solid currentColor'}}>{irmao.situacao||'Regular'}</span>
                     </div>
                   </div>
                 );
@@ -302,9 +308,9 @@ const QuadroIrmaos = ({ irmaos }) => {
         )}
       </div>
 
-      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+      <div style={{background:"var(--color-accent-bg)",borderLeft:"4px solid var(--color-accent)",padding:"1rem",borderRadius:"var(--radius-md)"}}>
         <h4 className="font-bold text-blue-900 mb-2" style={{color:"var(--color-text)"}}>Legenda</h4>
-        <div className="text-sm text-blue-800 space-y-1">
+        <div style={{fontSize:"0.85rem",color:"var(--color-text)",lineHeight:"1.7"}}>
           <div>Tempo Maconaria: Formato Xa Xm = X anos e X meses desde a iniciacao</div>
           <div>Idade: Calculada com base na data de nascimento</div>
           <div>Grau: Determinado automaticamente pelas datas de iniciacao, elevacao e exaltacao</div>
