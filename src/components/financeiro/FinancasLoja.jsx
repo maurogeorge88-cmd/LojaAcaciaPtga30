@@ -2495,21 +2495,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <button
               onClick={reabrirMes}
               disabled={fechandoMes}
-              className="w-28 h-[55px] px-3 text-sm text-white rounded-lg hover: font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+              style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#f59e0b",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"700",fontSize:"0.82rem",cursor:"pointer",display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:"0.3rem",whiteSpace:"nowrap"}}
               title={`Reabrir ${meses[filtros.mes - 1]}/${filtros.ano}`}
             >
-              <span>🔓 Reabrir</span>
-              <span>Mês</span>
+              🔓 Reabrir Mês
             </button>
           ) : (
             <button
               onClick={fecharMes}
               disabled={fechandoMes}
-              style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+              style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"700",fontSize:"0.82rem",cursor:"pointer",display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:"0.3rem",whiteSpace:"nowrap"}}
               title={`Fechar ${meses[filtros.mes - 1]}/${filtros.ano}`}
             >
-              <span>🔒 Fechar</span>
-              <span>Mês</span>
+              🔒 Fechar Mês
             </button>
           )
         )}
@@ -2522,8 +2520,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             onClick={() => setMenuLancamentosAberto(!menuLancamentosAberto)}
             style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#8b5cf6",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
           >
-            <span>📝 Lançam.</span>
-            <span className="text-xs">▼</span>
+            📝 Lançam. ▼
           </button>
           
           {menuLancamentosAberto && (
@@ -2533,7 +2530,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   abrirModalLancamento('receita');
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left text-sm font-medium border-b"
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 💵 Nova Receita
               </button>
@@ -2542,7 +2539,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   abrirModalLancamento('despesa');
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left text-sm font-medium border-b"
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 💳 Nova Despesa
               </button>
@@ -2552,7 +2549,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setModalParcelamentoAberto(true);
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left text-sm font-medium border-b"
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 🔀 Parcelar
               </button>
@@ -2561,7 +2558,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   setMostrarModalIrmaos(true);
                   setMenuLancamentosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover: text-sm font-medium"
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 👥 Lanç. em Lote
               </button>
@@ -2575,8 +2572,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             onClick={() => setMenuRelatoriosAberto(!menuRelatoriosAberto)}
             style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
           >
-            <span>📄 Relatórios</span>
-            <span className="text-xs">▼</span>
+            📄 Relatórios ▼
           </button>
           
           {menuRelatoriosAberto && (
@@ -2586,7 +2582,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   gerarPDF();
                   setMenuRelatoriosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover: text-sm font-medium border-b"
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 📊 Relatório Detalhado
               </button>
@@ -2595,7 +2591,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   gerarPDFResumido();
                   setMenuRelatoriosAberto(false);
                 }}
-                className="w-full px-4 py-3 text-left hover: text-sm font-medium"
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 📋 Fechamento Mensal
               </button>
