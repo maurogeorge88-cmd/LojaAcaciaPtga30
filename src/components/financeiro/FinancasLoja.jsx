@@ -2495,7 +2495,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <button
               onClick={reabrirMes}
               disabled={fechandoMes}
-              className="w-28 h-[55px] px-3 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+              className="w-28 h-[55px] px-3 text-sm text-white rounded-lg hover: font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
               title={`Reabrir ${meses[filtros.mes - 1]}/${filtros.ano}`}
             >
               <span>🔓 Reabrir</span>
@@ -2505,7 +2505,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <button
               onClick={fecharMes}
               disabled={fechandoMes}
-              className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+              style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               title={`Fechar ${meses[filtros.mes - 1]}/${filtros.ano}`}
             >
               <span>🔒 Fechar</span>
@@ -2520,7 +2520,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="relative">
           <button
             onClick={() => setMenuLancamentosAberto(!menuLancamentosAberto)}
-            className="w-28 h-[55px] px-3 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+            style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#8b5cf6",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
           >
             <span>📝 Lançam.</span>
             <span className="text-xs">▼</span>
@@ -2573,7 +2573,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="relative">
           <button
             onClick={() => setMenuRelatoriosAberto(!menuRelatoriosAberto)}
-            className="w-28 h-[55px] px-3 text-sm bg-gray-600 text-white rounded-lg font-medium transition-colors flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+            style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
           >
             <span>📄 Relatórios</span>
             <span className="text-xs">▼</span>
@@ -2605,7 +2605,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         <button
           onClick={calcularResumoIrmaos}
-          className="w-28 h-[55px] px-3 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
+          style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
         >
           <span>💰 Resumo</span>
           <span>dos Irmãos</span>
@@ -2650,8 +2650,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* LINHA 1: Resumo Geral */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
             <div className="border rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-purple-600 font-medium">💰 Saldo Anterior</p>
-              <p className={`text-lg font-bold ${saldoAnterior >= 0 ? 'text-purple-700' : 'text-red-700'}`}>
+              <p style={{fontSize:"0.7rem",color:"#8b5cf6",fontWeight:"600"}}>💰 Saldo Anterior</p>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:saldoAnterior>=0?"#8b5cf6":"#ef4444"}}>
                 {showValues ? formatarMoeda(saldoAnterior) : '••••••'}
               </p>
               <p className="text-[10px] mt-0.5">
@@ -2668,22 +2668,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               onDoubleClick={abrirDetalhesReceitasPagas}
               title="Clique duplo para ver detalhes"
              style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-green-600 font-medium">📈 Receitas Pagas 🖱️</p>
-              <p className="text-lg font-bold text-green-700">{showValues ? formatarMoeda(resumo.receitas) : '••••••'}</p>
+              <p style={{fontSize:"0.7rem",color:"#10b981",fontWeight:"600"}}>📈 Receitas Pagas 🖱️</p>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#10b981"}}>{showValues ? formatarMoeda(resumo.receitas) : '••••••'}</p>
               <p className="text-[10px] mt-0.5">Total recebido</p>
               <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
             
             <div className="border rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-red-600 font-medium">📉 Despesas Pagas</p>
-              <p className="text-lg font-bold text-red-700">{showValues ? formatarMoeda(resumo.despesas) : '••••••'}</p>
+              <p style={{fontSize:"0.7rem",color:"#ef4444",fontWeight:"600"}}>📉 Despesas Pagas</p>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#ef4444"}}>{showValues ? formatarMoeda(resumo.despesas) : '••••••'}</p>
               <p className="text-[10px] mt-0.5">Total pago</p>
               <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
             
             <div className="border rounded-lg p-3 relative flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <p className="text-xs text-cyan-600 font-medium">📊 Saldo do Período</p>
-              <p className={`text-lg font-bold ${resumo.saldoPeriodo >= 0 ? 'text-cyan-700' : 'text-red-700'}`}>
+              <p style={{fontSize:"0.7rem",color:"#06b6d4",fontWeight:"600"}}>📊 Saldo do Período</p>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:resumo.saldoPeriodo>=0?"#06b6d4":"#ef4444"}}>
                 {showValues ? formatarMoeda(resumo.saldoPeriodo) : '••••••'}
               </p>
               <p className="text-[10px] mt-0.5">Receitas - Despesas</p>
@@ -2694,8 +2694,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* LINHA 2: Detalhamento */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 flex-1">
           <div className="border-2 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <p className="text-xs text-sky-600 font-medium">🏦 Saldo Bancário</p>
-            <p className={`text-lg font-bold ${resumo.saldoBancario >= 0 ? 'text-sky-700' : 'text-red-700'}`}>
+            <p style={{fontSize:"0.7rem",color:"#0ea5e9",fontWeight:"600"}}>🏦 Saldo Bancário</p>
+            <p style={{fontSize:"1.1rem",fontWeight:"800",color:resumo.saldoBancario>=0?"#0ea5e9":"#ef4444"}}>
               {showValues ? formatarMoeda(resumo.saldoBancario) : '••••••'}
             </p>
             <p className="text-[10px] mt-0.5">
@@ -2714,7 +2714,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             {resumo.caixaFisico > 0 && (
               <button
                 onClick={() => setModalSangriaAberto(true)}
-                className="w-full px-2 py-1 bg-emerald-600 text-white text-[10px] rounded hover:bg-emerald-700 font-medium"
+                style={{width:"100%",padding:"0.2rem 0.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-sm)",fontSize:"0.65rem",fontWeight:"600",cursor:"pointer"}}
               >
                 💰 Fazer Sangria
               </button>
@@ -2722,8 +2722,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
 
           <div className="border-2 rounded-lg p-3 col-span-2 md:col-span-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <p className="text-xs text-blue-600 font-medium">💎 Saldo Total</p>
-            <p className={`text-lg font-bold ${resumo.saldoTotal >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+            <p style={{fontSize:"0.7rem",color:"var(--color-accent)",fontWeight:"600"}}>💎 Saldo Total</p>
+            <p style={{fontSize:"1.1rem",fontWeight:"800",color:resumo.saldoTotal>=0?"var(--color-accent)":"#ef4444"}}>
               {showValues ? formatarMoeda(resumo.saldoTotal) : "••••••"}
             </p>
             <p className="text-[10px] mt-0.5">
@@ -2732,8 +2732,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
 
           <div className="border border-yellow-200 rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <p className="text-xs text-yellow-600 font-medium">⏳ A Receber</p>
-            <p className="text-lg font-bold text-yellow-700">{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
+            <p style={{fontSize:"0.7rem",color:"#f59e0b",fontWeight:"600"}}>⏳ A Receber</p>
+            <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#f59e0b"}}>{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
             <p className="text-[10px] mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
           </div>
@@ -2760,7 +2760,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="flex-1 text-center">
               <p className="text-sm font-bold leading-tight">Tronco de Solidariedade</p>
               <p className="text-xs mt-0.5">Saldo acumulado</p>
-              <p className={`text-2xl font-bold mt-1 ${troncoTotalGlobal.total >= 0 ? '' : 'text-red-700'}`}>
+              <p style={{fontSize:"1.5rem",fontWeight:"800",color:troncoTotalGlobal.total>=0?"var(--color-text)":"#ef4444",marginTop:"0.25rem"}}>
                 {showValues ? formatarMoeda(troncoTotalGlobal.total) : '••••••'}
               </p>
             </div>
@@ -2777,7 +2777,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <p className="text-[10px] leading-tight">PIX, Transf., Cartão</p>
                   </div>
                 </div>
-                <p className={`text-xl font-bold ${troncoTotalGlobal.banco >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                <p style={{fontSize:"1.25rem",fontWeight:"800",color:troncoTotalGlobal.banco>=0?"var(--color-accent)":"#ef4444"}}>
                   {showValues ? formatarMoeda(troncoTotalGlobal.banco) : '••••••'}
                 </p>
               </div>
@@ -2793,7 +2793,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <p className="text-[10px] leading-tight">Dinheiro físico</p>
                   </div>
                 </div>
-                <p className={`text-xl font-bold ${troncoTotalGlobal.especie >= 0 ? 'text-green-700' : 'text-red-700'}`}>
+                <p style={{fontSize:"1.25rem",fontWeight:"800",color:troncoTotalGlobal.especie>=0?"#10b981":"#ef4444"}}>
                   {showValues ? formatarMoeda(troncoTotalGlobal.especie) : '••••••'}
                 </p>
               </div>
@@ -2817,10 +2817,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="flex items-center gap-3">
             <span className="text-2xl">🔒</span>
             <div>
-              <p className="font-semibold text-yellow-800">
+              <p style={{fontWeight:"600",color:"var(--color-text)"}}>
                 {meses[filtros.mes - 1]}/{filtros.ano} está fechado
               </p>
-              <p className="text-sm text-yellow-700">
+              <p style={{fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
                 Novos lançamentos neste mês estão bloqueados.
                 {mesesFechados.find(m => m.mes === filtros.mes && m.ano === filtros.ano)?.fechado_por && (
                   <span> Fechado por: {mesesFechados.find(m => m.mes === filtros.mes && m.ano === filtros.ano).fechado_por}</span>
@@ -2830,7 +2830,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
           <button
             onClick={reabrirMes}
-            className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-sm font-medium"
+            className="px-4 py-2 text-white rounded-lg hover: text-sm font-medium"
           >
             🔓 Reabrir Mês
           </button>
@@ -3048,13 +3048,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             irmaos_selecionados: [] // Limpa seleção ao mudar tipo
                           });
                         }}
-                        className="w-5 h-5 text-blue-600 rounded"
+                        style={{width:"1.1rem",height:"1.1rem",accentColor:"var(--color-accent)"}}
                       />
                       <div className="ml-3">
-                        <span className="text-sm font-medium text-blue-900">
+                        <span style={{fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text)"}}>
                           📅 Este lançamento é uma MENSALIDADE?
                         </span>
-                        <p className="text-xs text-blue-700 mt-1">
+                        <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
                           {lancamentoIrmaos.eh_mensalidade 
                             ? '✅ Mostrando apenas irmãos com pagamento MENSAL' 
                             : '📋 Mostrando TODOS os irmãos (para outras cobranças)'}
@@ -3142,7 +3142,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>
                     Selecione os Irmãos * ({lancamentoIrmaos.irmaos_selecionados.length} selecionados
                     {lancamentoIrmaos.eh_mensalidade && (
-                      <span className="text-blue-600">
+                      <span style={{color:"var(--color-accent)"}}>
                         {' '}de {irmaos.filter(i => i.periodicidade_pagamento === 'Mensal' || !i.periodicidade_pagamento).length} mensais
                       </span>
                     )})
@@ -3151,14 +3151,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <button
                       type="button"
                       onClick={selecionarTodosIrmaos}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      style={{fontSize:"0.875rem",color:"var(--color-accent)",background:"none",border:"none",cursor:"pointer",fontWeight:"600"}}
                     >
                       ✅ Selecionar Todos
                     </button>
                     <button
                       type="button"
                       onClick={limparSelecaoIrmaos}
-                      className="text-sm text-red-600 hover:text-red-800"
+                      style={{fontSize:"0.875rem",color:"#ef4444",background:"none",border:"none",cursor:"pointer",fontWeight:"600"}}
                     >
                       ❌ Limpar Seleção
                     </button>
@@ -3188,12 +3188,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             type="checkbox"
                             checked={lancamentoIrmaos.irmaos_selecionados.includes(irmao.id)}
                             onChange={() => toggleIrmaoSelecionado(irmao.id)}
-                            className="w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+                            style={{width:"1rem",height:"1rem",accentColor:"#10b981"}}
                           />
                           <span className="ml-2 text-sm">
                             {irmao.nome}
                             {irmao.periodicidade_pagamento && irmao.periodicidade_pagamento !== 'Mensal' && (
-                              <span className="ml-1 text-xs text-blue-600">
+                              <span style={{marginLeft:"0.25rem",fontSize:"0.72rem",color:"var(--color-accent)"}}>
                                 ({irmao.periodicidade_pagamento})
                               </span>
                             )}
@@ -3206,7 +3206,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
 
               <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <p className="text-sm text-blue-800">
+                <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
                   <strong>Total a lançar:</strong> R$ {(parseFloat(lancamentoIrmaos.valor || 0) * lancamentoIrmaos.irmaos_selecionados.length).toFixed(2)}
                   {' '}({lancamentoIrmaos.irmaos_selecionados.length} irmãos × R$ {parseFloat(lancamentoIrmaos.valor || 0).toFixed(2)})
                 </p>
@@ -3215,7 +3215,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  className="px-6 py-2 text-white rounded-lg hover: font-medium"
                 >
                   ✅ Criar Lançamentos
                 </button>
@@ -3225,7 +3225,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     setMostrarModalIrmaos(false);
                     limparLancamentoIrmaos();
                   }}
-                  className="px-6 py-2 bg-gray-300 rounded-lg"
+                  style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                 >
                   Cancelar
                 </button>
@@ -3239,7 +3239,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {mostrarModalQuitacao && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg max-w-md w-full">
-            <div className="bg-green-600 text-white px-6 py-4 rounded-t-lg">
+            <div className="text-white px-6 py-4 rounded-t-lg">
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitar Lançamento</h3>
             </div>
             
@@ -3288,14 +3288,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  className="flex-1 px-6 py-2 text-white rounded-lg hover: font-medium"
                 >
                   ✅ Confirmar Quitação
                 </button>
                 <button
                   type="button"
                   onClick={() => setMostrarModalQuitacao(false)}
-                  className="px-6 py-2 bg-gray-300 rounded-lg"
+                  style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                 >
                   Cancelar
                 </button>
@@ -3309,9 +3309,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {mostrarModalQuitacaoLote && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <div className="bg-green-600 text-white px-6 py-4 rounded-t-lg">
+            <div className="text-white px-6 py-4 rounded-t-lg">
               <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitação em Lote</h3>
-              <p className="text-sm text-green-100 mt-1">
+              <p style={{fontSize:"0.85rem",color:"rgba(255,255,255,0.85)",marginTop:"0.25rem"}}>
                 {quitacaoLote.lancamentos_selecionados.length} lançamentos selecionados
               </p>
             </div>
@@ -3356,14 +3356,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <button
                       type="button"
                       onClick={selecionarTodosParaQuitacao}
-                      className="text-sm text-green-600 hover:text-green-800"
+                      style={{fontSize:"0.875rem",color:"#10b981",background:"none",border:"none",cursor:"pointer"}}
                     >
                       ✅ Selecionar Todos
                     </button>
                     <button
                       type="button"
                       onClick={limparSelecaoQuitacao}
-                      className="text-sm text-red-600 hover:text-red-800"
+                      style={{fontSize:"0.875rem",color:"#ef4444",background:"none",border:"none",cursor:"pointer",fontWeight:"600"}}
                     >
                       ❌ Limpar Seleção
                     </button>
@@ -3382,18 +3382,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             type="checkbox"
                             checked={quitacaoLote.lancamentos_selecionados.includes(lanc.id)}
                             onChange={() => toggleLancamentoParaQuitacao(lanc.id)}
-                            className="mt-1 w-4 h-4 text-green-600 focus:ring-green-500 rounded"
+                            style={{marginTop:"0.25rem",width:"1rem",height:"1rem",accentColor:"#10b981"}}
                           />
                           <div className="ml-3 flex-1">
                             <div className="flex justify-between items-start">
                               <div>
                                 <p className="font-medium">{lanc.descricao}</p>
-                                <p className="text-sm">
+                                <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>
                                   {lanc.categorias_financeiras?.nome} • 
                                   Venc: {formatarDataBR(lanc.data_vencimento)}
                                 </p>
                               </div>
-                              <p className="text-lg font-bold text-green-600">
+                              <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#10b981"}}>
                                 {formatarMoeda(parseFloat(lanc.valor))}
                               </p>
                             </div>
@@ -3405,7 +3405,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </div>
 
               <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <p className="text-sm text-green-800">
+                <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
                   <strong>Total a quitar:</strong> {formatarMoeda(
                     lancamentos
                       .filter(l => quitacaoLote.lancamentos_selecionados.includes(l.id))
@@ -3418,7 +3418,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <div className="flex gap-3 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  className="flex-1 px-6 py-2 text-white rounded-lg hover: font-medium"
                   disabled={quitacaoLote.lancamentos_selecionados.length === 0}
                 >
                   ✅ Quitar Selecionados
@@ -3426,7 +3426,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <button
                   type="button"
                   onClick={() => setMostrarModalQuitacaoLote(false)}
-                  className="px-6 py-2 bg-gray-300 rounded-lg"
+                  style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                 >
                   Cancelar
                 </button>
@@ -3441,8 +3441,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-xl font-bold text-red-600" style={{color:"var(--color-text)"}}>⚠️ Irmãos com Pendências Financeiras</h3>
-              <p className="text-sm">Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
+              <h3 style={{fontSize:"1.25rem",fontWeight:"700",color:"var(--color-text)"}}>⚠️ Irmãos com Pendências Financeiras</h3>
+              <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
             </div>
             {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length > 0 && (
               <div className="flex gap-2">
@@ -3454,7 +3454,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </button>
                 <button
                   onClick={() => setMostrarModalQuitacaoLote(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+                  className="px-4 py-2 text-white rounded-lg hover: font-medium"
                 >
                   💰 Quitar em Lote
                 </button>
@@ -3504,7 +3504,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   const quantidadeLancamentos = irmaoData.lancamentos.length;
                   
                   // Definir cor do cabeçalho baseado no saldo
-                  const corCabecalho = saldoLiquido > 0 ? 'bg-red-400' : saldoLiquido < 0 ? 'bg-blue-400' : 'bg-gray-500';
+                  const corCabecalho = saldoLiquido > 0 ? '' : saldoLiquido < 0 ? '' : 'bg-gray-500';
 
                   return (
                     <div key={irmaoData.irmaoId} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border:'1px solid var(--color-border)',background:'var(--color-surface)',marginBottom:'0.5rem'}}>
@@ -3674,7 +3674,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             {lancamentos.filter(l => l.status === 'pendente').length > 0 && (
               <button
                 onClick={() => setMostrarModalQuitacaoLote(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm"
+                className="px-4 py-2 text-white rounded-lg hover: font-medium text-sm"
               >
                 💰 Quitar em Lote
               </button>
@@ -3701,7 +3701,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <tr key={lanc.id} style={{borderBottom:"1px solid var(--color-border)"}}>
                     {/* COMPETÊNCIA: Mostra data relevante (pagamento se pago, vencimento se pendente) */}
                     <td className="px-2 py-3 whitespace-nowrap text-sm w-24" style={{color:"var(--color-text)"}}>
-                      <div className={lanc.status === 'pago' ? 'text-green-700 font-medium' : ''}>
+                      <div style={{color:lanc.status==='pago'?'#10b981':'var(--color-text)',fontWeight:lanc.status==='pago'?'600':'400'}}>
                         {formatarDataBR(lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento)}
                       </div>
                       <div className="text-xs">
@@ -3715,8 +3715,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <td className="px-4 py-3 whitespace-nowrap" style={{color:"var(--color-text)"}}>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                         lanc.categorias_financeiras?.tipo === 'receita'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'badge-verde-ph' : 'badge-vermelho-ph'
                       }`}>
                         {lanc.categorias_financeiras?.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
                       </span>
@@ -3731,12 +3730,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <td className="px-4 py-3 whitespace-nowrap text-sm" style={{color:"var(--color-text)"}}>
                       {lanc.origem_tipo === 'Loja' ? (
                         <div className="flex items-center gap-1">
-                          <span className="text-blue-600">🏛️</span>
+                          <span style={{color:"var(--color-accent)"}}>🏛️</span>
                           <span className="font-medium">Loja</span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1">
-                          <span className="text-purple-600">👤</span>
+                          <span style={{color:"#8b5cf6"}}>👤</span>
                           <span className="font-medium">
                             {(() => {
                               const nomeCompleto = lanc.irmaos?.nome || 'Irmão';
@@ -3751,13 +3750,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28" style={{color:"var(--color-text)"}}>
                       <div>
-                        <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'text-green-600' : 'text-red-600'}>
+                        <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'color-green-placeholder' : 'color-red-placeholder'}>
                           {formatarMoeda(parseFloat(lanc.valor))}
                         </span>
                         {lanc.tem_pagamento_parcial && (
                           <div className="text-xs mt-1">
                             <div>Original: {formatarMoeda(lanc.valor_original)}</div>
-                            <div className="text-green-600">Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
+                            <div style={{color:"#10b981"}}>Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
                           </div>
                         )}
                       </div>
@@ -3779,7 +3778,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       <div className="flex gap-1 items-center flex-wrap max-w-[176px]">
                         {/* Badge de Parcela */}
                         {lanc.eh_parcelado && (
-                          <span className="text-xs px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full font-medium">
+                          <span style={{fontSize:"0.7rem",padding:"0.15rem 0.5rem",borderRadius:"999px",fontWeight:"700",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)"}}>
                             {lanc.parcela_numero}/{lanc.parcela_total}
                           </span>
                         )}
@@ -3805,7 +3804,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                             className={`text-lg ${
                               lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)
                                 ? ' cursor-not-allowed'
-                                : 'text-indigo-600 hover:text-indigo-900'
+                                : 'color-indigo-placeholder'
                             }`}
                             title={
                               lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)
@@ -3832,7 +3831,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         {lanc.status === 'pendente' && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalQuitacao(lanc)}
-                            className="text-green-600 hover:text-green-900 text-lg"
+                            style={{color:"#10b981",background:"none",border:"none",cursor:"pointer",fontSize:"1.1rem"}}
                             title="Quitar"
                           >
                             ✅
@@ -3842,7 +3841,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <button
                           onClick={() => editarLancamento(lanc)}
                           disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          className={`text-lg ${verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:text-blue-900'}`}
+                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"1.1rem"}}
                           title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Editar'}
                         >
                           ✏️
@@ -3850,7 +3849,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
                           disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          className={`text-lg ${verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
+                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"1.1rem"}}
                           title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Excluir'}
                         >
                           🗑️
@@ -3914,7 +3913,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg max-w-2xl w-full">
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-t-lg">
+            <div className="text-white px-6 py-4 rounded-t-lg">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💵 Receitas Pagas - Detalhamento</h3>
@@ -3933,19 +3932,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="p-6 space-y-4">
               <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-xl mb-2">🏦 Recebido em Conta</p>
-                <p className="text-4xl font-bold text-blue-600">{formatarMoeda(detalhesReceitasPagas.conta)}</p>
+                <p style={{fontSize:"2.25rem",fontWeight:"800",color:"var(--color-accent)"}}>{formatarMoeda(detalhesReceitasPagas.conta)}</p>
                 <p className="text-sm mt-1">PIX, Transferência, Cartão</p>
               </div>
               
               <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-xl mb-2">💵 Recebido em Dinheiro</p>
-                <p className="text-4xl font-bold text-green-600">{formatarMoeda(detalhesReceitasPagas.dinheiro)}</p>
+                <p style={{fontSize:"2.25rem",fontWeight:"800",color:"#10b981"}}>{formatarMoeda(detalhesReceitasPagas.dinheiro)}</p>
                 <p className="text-sm mt-1">Dinheiro físico</p>
               </div>
               
               <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <p className="text-xl mb-2">💰 Total Recebido</p>
-                <p className="text-4xl font-bold text-purple-600">
+                <p style={{fontSize:"2.25rem",fontWeight:"800",color:"#8b5cf6"}}>
                   {formatarMoeda(detalhesReceitasPagas.conta + detalhesReceitasPagas.dinheiro)}
                 </p>
                 <p className="text-sm mt-1">Soma de todas as receitas pagas</p>
@@ -3967,11 +3966,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
           <div className="rounded-lg max-w-6xl w-full my-8 max-h-[90vh] overflow-hidden flex flex-col" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white px-6 py-4">
+            <div className="text-white px-6 py-4">
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>⏰ Despesas Pendentes</h3>
-                  <p className="text-sm">Valores a pagar e a compensar</p>
+                  <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Valores a pagar e a compensar</p>
                 </div>
                 <button
                   onClick={() => setModalDespesasPendentesAberto(false)}
@@ -3993,8 +3992,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
                 
                 <div className="border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                  <p className="text-sm text-purple-600 font-medium mb-1">🔄 A Compensar</p>
-                  <p className="text-3xl font-bold text-purple-700">
+                  <p style={{fontSize:"0.875rem",color:"#8b5cf6",fontWeight:"600",marginBottom:"0.25rem"}}>🔄 A Compensar</p>
+                  <p style={{fontSize:"1.875rem",fontWeight:"800",color:"#8b5cf6"}}>
                     {formatarMoeda(
                       lancamentos
                         .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente' && l.origem_tipo === 'Irmao')
@@ -4032,7 +4031,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                               <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 {formatarDataBR(lanc.data_vencimento)}
                                 {vencido && (
-                                  <span className="block text-xs text-red-600 font-medium">
+                                  <span style={{display:"block",fontSize:"0.7rem",color:"#ef4444",fontWeight:"600"}}>
                                     {diasAtraso} dia{diasAtraso !== 1 ? 's' : ''} atraso
                                   </span>
                                 )}
@@ -4044,17 +4043,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                 )}
                               </td>
                               <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                                <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-medium">
+                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",color:"#ef4444",fontSize:"0.7rem",fontWeight:"600",background:"rgba(239,68,68,0.1)"}}>
                                   {lanc.categorias_financeiras?.nome}
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                                 {lanc.origem_tipo === 'Irmao' ? (
                                   <div>
-                                    <p className="font-medium text-purple-700">
+                                    <p style={{fontWeight:"600",color:"#8b5cf6"}}>
                                       {irmaos.find(i => i.id === lanc.origem_irmao_id)?.nome || 'Irmão'}
                                     </p>
-                                    <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-800 rounded">
+                                    <span style={{fontSize:"0.7rem",padding:"0.15rem 0.5rem",color:"#8b5cf6",borderRadius:"var(--radius-sm)",background:"rgba(139,92,246,0.1)"}}>
                                       A Compensar
                                     </span>
                                   </div>
@@ -4065,17 +4064,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                 )}
                               </td>
                               <td className="px-4 py-3 text-right" style={{color:"var(--color-text)"}}>
-                                <p className="text-lg font-bold text-red-600">
+                                <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#ef4444"}}>
                                   {formatarMoeda(lanc.valor)}
                                 </p>
                               </td>
                               <td className="px-4 py-3 text-center" style={{color:"var(--color-text)"}}>
                                 {vencido ? (
-                                  <span className="px-2 py-1 bg-red-100 text-red-800 rounded text-xs font-bold">
+                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",color:"#ef4444",fontSize:"0.7rem",fontWeight:"700",background:"rgba(239,68,68,0.1)"}}>
                                     ⚠️ VENCIDO
                                   </span>
                                 ) : (
-                                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">
+                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",color:"#f59e0b",fontSize:"0.7rem",fontWeight:"700",background:"rgba(245,158,11,0.1)"}}>
                                     ⏳ PENDENTE
                                   </span>
                                 )}
@@ -4089,7 +4088,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <td colSpan="4" className="px-4 py-3 text-right font-bold" style={{color:"var(--color-text)"}}>
                           TOTAL PENDENTE:
                         </td>
-                        <td className="px-4 py-3 text-right font-bold text-red-700 text-xl" style={{color:"var(--color-text)"}}>
+                        <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",fontSize:"1.25rem",color:"var(--color-text)"}}>
                           {showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}
                         </td>
                         <td></td>
@@ -4104,8 +4103,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <div className="flex">
                   <span className="text-2xl mr-3">💡</span>
                   <div>
-                    <p className="font-semibold text-blue-800 mb-1">Informações</p>
-                    <ul className="text-sm text-blue-700 space-y-1">
+                    <p style={{fontWeight:"700",color:"var(--color-text)",marginBottom:"0.25rem"}}>Informações</p>
+                    <ul style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>
                       <li>• <strong>Despesas da Loja:</strong> Valores que a loja deve pagar a fornecedores/terceiros</li>
                       <li>• <strong>A Compensar:</strong> Débitos de irmãos que podem ser compensados com créditos</li>
                       <li>• Para realizar compensação, acesse o módulo de Créditos e Débitos</li>
@@ -4374,7 +4373,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
         <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>🏷️ Gerenciar Categorias</h2>
         <button
           onClick={() => setMostrarFormulario(!mostrarFormulario)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium"
+          className="px-4 py-2 text-white rounded-lg hover: font-medium"
         >
           {mostrarFormulario ? '❌ Cancelar' : '➕ Nova Categoria'}
         </button>
@@ -4423,7 +4422,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                     type="checkbox"
                     checked={formCategoria.ativo}
                     onChange={(e) => setFormCategoria({ ...formCategoria, ativo: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                   />
                   <span className="ml-2 text-sm">Categoria ativa</span>
                 </label>
@@ -4433,7 +4432,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
               <button type="submit" className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">
                 {editando ? '✅ Salvar' : '➕ Criar'}
               </button>
-              <button type="button" onClick={limparFormulario} className="px-6 py-2 bg-gray-300 rounded-lg">
+              <button type="button" onClick={limparFormulario} style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
                 Cancelar
               </button>
             </div>
@@ -4444,7 +4443,7 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* RECEITAS */}
         <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <h3 className="text-lg font-semibold text-green-700 mb-4" style={{color:"var(--color-text)"}}>
+          <h3 style={{fontSize:"1.1rem",fontWeight:"700",marginBottom:"1rem",color:"var(--color-text)"}}>
             💰 Receitas ({categoriasReceita.length})
           </h3>
           <div className="space-y-2">
@@ -4459,20 +4458,20 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                     {cat.descricao && <p className="text-sm mt-1">{cat.descricao}</p>}
                   </div>
                   <div className="flex gap-1 ml-2">
-                    <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
-                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} className="p-1 text-yellow-600 hover:bg-yellow-100 rounded" title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
-                    <button onClick={() => excluirCategoria(cat.id)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Excluir">🗑️</button>
+                    <button onClick={() => editarCategoria(cat)} style={{padding:"0.25rem",color:"var(--color-accent)",background:"none",border:"none",cursor:"pointer",borderRadius:"var(--radius-sm)"}} title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} style={{padding:"0.25rem",color:"#f59e0b",background:"none",border:"none",cursor:"pointer",borderRadius:"var(--radius-sm)"}} title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
+                    <button onClick={() => excluirCategoria(cat.id)} style={{padding:"0.25rem",color:"#ef4444",background:"none",border:"none",cursor:"pointer",borderRadius:"var(--radius-sm)"}} title="Excluir">🗑️</button>
                   </div>
                 </div>
               </div>
             ))}
-            {categoriasReceita.length === 0 && <p className="text-sm">Nenhuma categoria</p>}
+            {categoriasReceita.length === 0 && <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Nenhuma categoria</p>}
           </div>
         </div>
 
         {/* DESPESAS */}
         <div className="rounded-lg shadow p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <h3 className="text-lg font-semibold text-red-700 mb-4" style={{color:"var(--color-text)"}}>
+          <h3 style={{fontSize:"1.1rem",fontWeight:"700",marginBottom:"1rem",color:"var(--color-text)"}}>
             💸 Despesas ({categoriasDespesa.length})
           </h3>
           <div className="space-y-2">
@@ -4487,20 +4486,20 @@ function GerenciarCategorias({ categorias, onUpdate, showSuccess, showError }) {
                     {cat.descricao && <p className="text-sm mt-1">{cat.descricao}</p>}
                   </div>
                   <div className="flex gap-1 ml-2">
-                    <button onClick={() => editarCategoria(cat)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Editar">✏️</button>
-                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} className="p-1 text-yellow-600 hover:bg-yellow-100 rounded" title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
-                    <button onClick={() => excluirCategoria(cat.id)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Excluir">🗑️</button>
+                    <button onClick={() => editarCategoria(cat)} style={{padding:"0.25rem",color:"var(--color-accent)",background:"none",border:"none",cursor:"pointer",borderRadius:"var(--radius-sm)"}} title="Editar">✏️</button>
+                    <button onClick={() => toggleAtivo(cat.id, cat.ativo !== false)} style={{padding:"0.25rem",color:"#f59e0b",background:"none",border:"none",cursor:"pointer",borderRadius:"var(--radius-sm)"}} title={cat.ativo !== false ? 'Desativar' : 'Ativar'}>{cat.ativo !== false ? '👁️' : '👁️‍🗨️'}</button>
+                    <button onClick={() => excluirCategoria(cat.id)} style={{padding:"0.25rem",color:"#ef4444",background:"none",border:"none",cursor:"pointer",borderRadius:"var(--radius-sm)"}} title="Excluir">🗑️</button>
                   </div>
                 </div>
               </div>
             ))}
-            {categoriasDespesa.length === 0 && <p className="text-sm">Nenhuma categoria</p>}
+            {categoriasDespesa.length === 0 && <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Nenhuma categoria</p>}
           </div>
         </div>
       </div>
 
       <div className="border rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <p className="text-sm text-blue-800">
+        <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
           💡 <strong>Dica:</strong> Categorias inativas não aparecem nos formulários, mas lançamentos antigos continuam visíveis.
         </p>
       </div>
@@ -4803,7 +4802,7 @@ function ModalParcelamento({ categorias, irmaos, lancamentoExistente, onClose, o
           <p className="text-xs -mt-2">As demais vencerão mensalmente</p>
 
           {formParcelamento.valor_total && formParcelamento.num_parcelas && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded p-3">
+            <div className="border border-indigo-200 rounded p-3">
               <p className="text-sm font-medium">
                 💡 Cada parcela: R$ {((parseFloat(formParcelamento.valor_total) || 0) / (parseInt(formParcelamento.num_parcelas) || 1)).toFixed(2)}
               </p>
@@ -4971,7 +4970,7 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
       <div className="rounded-lg max-w-2xl w-full my-8">
         <div className="text-white px-6 py-4 rounded-t-lg">
           <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Pagamento Parcial</h3>
-          <p className="text-sm">Cada pagamento gera um registro que entra no balanço mensal</p>
+          <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Cada pagamento gera um registro que entra no balanço mensal</p>
         </div>
         
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -4987,29 +4986,29 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
             </div>
             {totalCompensado > 0 && (
               <div className="flex justify-between">
-                <span className="font-medium text-purple-600">🔄 Compensado:</span>
-                <span className="font-bold text-purple-600">R$ {totalCompensado.toFixed(2)}</span>
+                <span style={{fontWeight:"600",color:"#8b5cf6"}}>🔄 Compensado:</span>
+                <span style={{fontWeight:"700",color:"#8b5cf6"}}>R$ {totalCompensado.toFixed(2)}</span>
               </div>
             )}
             <div className="flex justify-between">
-              <span className="font-medium text-green-600">✅ Pago:</span>
-              <span className="font-bold text-green-600">R$ {totalPago.toFixed(2)}</span>
+              <span style={{fontWeight:"600",color:"#10b981"}}>✅ Pago:</span>
+              <span style={{fontWeight:"700",color:"#10b981"}}>R$ {totalPago.toFixed(2)}</span>
             </div>
             <div className="flex justify-between border-t pt-2">
-              <span className="font-medium text-red-600 text-lg">Valor Restante:</span>
-              <span className="font-bold text-red-600 text-lg">R$ {valorRestante.toFixed(2)}</span>
+              <span style={{fontWeight:"600",color:"#ef4444",fontSize:"1.1rem"}}>Valor Restante:</span>
+              <span style={{fontWeight:"700",color:"#ef4444",fontSize:"1.1rem"}}>R$ {valorRestante.toFixed(2)}</span>
             </div>
           </div>
 
           {/* Histórico de Compensações */}
           {compensacoes.length > 0 && (
             <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <h4 className="font-medium mb-2 text-purple-800">🔄 Compensações Realizadas:</h4>
+              <h4 style={{fontWeight:"600",marginBottom:"0.5rem",color:"#8b5cf6"}}>🔄 Compensações Realizadas:</h4>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {compensacoes.map((comp, idx) => (
                   <div key={comp.id} className="flex justify-between text-sm">
                     <span>#{idx + 1} - {new Date(comp.data_pagamento + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                    <span className="font-medium text-purple-700">R$ {parseFloat(comp.valor).toFixed(2)}</span>
+                    <span style={{fontWeight:"600",color:"#8b5cf6"}}>R$ {parseFloat(comp.valor).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -5066,17 +5065,17 @@ function ModalPagamentoParcial({ lancamento, pagamentosExistentes, onClose, onSu
           {/* Prévia */}
           {valorPagar && parseFloat(valorPagar) > 0 && (
             <div className="border rounded p-4 space-y-2">
-              <p className="text-sm font-medium text-blue-900">📊 Após este pagamento:</p>
+              <p style={{fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text)"}}>📊 Após este pagamento:</p>
               <div className="flex justify-between text-sm">
-                <span className="text-green-700">Total Pago:</span>
-                <span className="font-bold text-green-700">R$ {previewTotalPago}</span>
+                <span style={{color:"#10b981"}}>Total Pago:</span>
+                <span style={{fontWeight:"700",color:"#10b981"}}>R$ {previewTotalPago}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-red-700">Restante:</span>
-                <span className="font-bold text-red-700">R$ {previewRestante}</span>
+                <span style={{color:"#ef4444"}}>Restante:</span>
+                <span style={{fontWeight:"700",color:"#ef4444"}}>R$ {previewRestante}</span>
               </div>
               {parseFloat(previewRestante) === 0 && (
-                <div className="mt-2 p-2 bg-green-100 rounded text-green-800 text-sm font-medium text-center">
+                <div style={{marginTop:"0.5rem",padding:"0.5rem",borderRadius:"var(--radius-md)",color:"var(--color-text)",fontSize:"0.875rem",fontWeight:"600",textAlign:"center"}}>
                   ✅ Este pagamento quitará o lançamento completamente!
                 </div>
               )}
@@ -5293,7 +5292,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="rounded-lg max-w-4xl w-full my-8">
-        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-t-lg">
+        <div className="text-white px-6 py-4 rounded-t-lg">
           <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>🔄 Compensação de Valores</h3>
           <p className="text-sm text-purple-100">Irmão: {irmao?.nome}</p>
         </div>
@@ -5301,35 +5300,35 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* DÉBITOS */}
             <div>
-              <h4 className="font-bold text-red-700 mb-3" style={{color:"var(--color-text)"}}>📤 Débitos (Ele deve)</h4>
+              <h4 style={{fontWeight:"700",marginBottom:"0.75rem",color:"var(--color-text)"}}>📤 Débitos (Ele deve)</h4>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {debitos.length > 0 ? debitos.map(d => (
                   <div key={d.id} onClick={() => toggleDebito(d.id)}
                     className={`p-3 border-2 rounded-lg cursor-pointer ${debitosSelecionados.includes(d.id) ? ' ' : ''}`}>
                     <div className="flex justify-between">
                       <div><p className="font-medium text-sm">{d.descricao}</p><p className="text-xs">Venc: {formatarDataBR(d.data_vencimento)}</p></div>
-                      <p className="font-bold text-red-600">{formatarMoeda(d.valor)}</p>
+                      <p style={{fontWeight:"700",color:"#ef4444"}}>{formatarMoeda(d.valor)}</p>
                     </div>
                   </div>
                 )) : <p className="text-center py-4">Sem débitos</p>}
               </div>
-              <div className="mt-3 p-3 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-red-700">{formatarMoeda(totalDebitos)}</p></div>
+              <div className="mt-3 p-3 rounded-lg"><p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Total:</p><p style={{fontSize:"1.25rem",fontWeight:"800",color:"#ef4444"}}>{formatarMoeda(totalDebitos)}</p></div>
             </div>
             {/* CRÉDITOS */}
             <div>
-              <h4 className="font-bold text-green-700 mb-3" style={{color:"var(--color-text)"}}>📥 Créditos (Loja deve)</h4>
+              <h4 style={{fontWeight:"700",marginBottom:"0.75rem",color:"var(--color-text)"}}>📥 Créditos (Loja deve)</h4>
               <div className="space-y-2 max-h-80 overflow-y-auto">
                 {creditos.length > 0 ? creditos.map(c => (
                   <div key={c.id} onClick={() => toggleCredito(c.id)}
                     className={`p-3 border-2 rounded-lg cursor-pointer ${creditosSelecionados.includes(c.id) ? ' ' : ''}`}>
                     <div className="flex justify-between">
                       <div><p className="font-medium text-sm">{c.descricao}</p><p className="text-xs">Venc: {formatarDataBR(c.data_vencimento)}</p></div>
-                      <p className="font-bold text-green-600">{formatarMoeda(c.valor)}</p>
+                      <p style={{fontWeight:"700",color:"#10b981"}}>{formatarMoeda(c.valor)}</p>
                     </div>
                   </div>
                 )) : <p className="text-center py-4">Sem créditos</p>}
               </div>
-              <div className="mt-3 p-3 rounded-lg"><p className="text-sm">Total:</p><p className="text-xl font-bold text-green-700">{formatarMoeda(totalCreditos)}</p></div>
+              <div className="mt-3 p-3 rounded-lg"><p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Total:</p><p style={{fontSize:"1.25rem",fontWeight:"800",color:"#10b981"}}>{formatarMoeda(totalCreditos)}</p></div>
             </div>
           </div>
           {/* RESUMO */}
@@ -5337,15 +5336,15 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
             <div className="border-2 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <h4 className="font-bold mb-3" style={{color:"var(--color-text)"}}>📊 Resumo</h4>
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div><p className="text-sm">Compensar</p><p className="text-2xl font-bold text-purple-700">{formatarMoeda(valorCompensar)}</p></div>
-                <div><p className="text-sm">Saldo Final</p><p className={`text-2xl font-bold ${saldoFinal > 0 ? 'text-red-700' : 'text-green-700'}`}>{formatarMoeda(Math.abs(saldoFinal))}</p></div>
-                <div><p className="text-sm">Status</p><p className="text-lg font-bold">{saldoFinal === 0 ? '✅ Quitado' : '⚖️ Compensado'}</p></div>
+                <div><p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Compensar</p><p style={{fontSize:"1.5rem",fontWeight:"800",color:"#8b5cf6"}}>{formatarMoeda(valorCompensar)}</p></div>
+                <div><p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Saldo Final</p><p style={{fontSize:'1.5rem',fontWeight:'800',color:saldoFinal>0?'#ef4444':'#10b981'}}>{formatarMoeda(Math.abs(saldoFinal))}</p></div>
+                <div><p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Status</p><p className="text-lg font-bold">{saldoFinal === 0 ? '✅ Quitado' : '⚖️ Compensado'}</p></div>
               </div>
             </div>
           )}
           <div className="flex gap-3 pt-4 border-t">
             <button type="submit" disabled={debitosSelecionados.length === 0 || creditosSelecionados.length === 0}
-              className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold disabled:opacity-50">
+              className="flex-1 px-6 py-3 text-white rounded-lg hover: font-bold disabled:opacity-50">
               🔄 Compensar
             </button>
             <button type="button" onClick={onClose} className="px-6 py-3 bg-gray-300 rounded-lg">Cancelar</button>
