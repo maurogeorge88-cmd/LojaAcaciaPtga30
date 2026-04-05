@@ -152,20 +152,20 @@ export default function GerenciarGraus({ showSuccess, showError }) {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.75rem",overflowX:"hidden"}}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+      <div style={{background:"var(--color-accent)",borderRadius:"var(--radius-lg)",padding:"1.5rem"}}>
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold mb-2" style={{color:"var(--color-text)"}}>🔺 Gerenciar Graus Maçônicos</h2>
-            <p className="text-purple-100">Cadastre ritos e graus filosóficos</p>
+            <h2 style={{fontSize:"1.75rem",fontWeight:"800",color:"#fff",margin:"0 0 0.25rem"}}>🔺 Gerenciar Graus Maçônicos</h2>
+            <p style={{color:"rgba(255,255,255,0.85)",fontSize:"0.9rem"}}>Cadastre ritos e graus filosóficos</p>
           </div>
           <button
             onClick={() => {
               limparFormulario();
               setMostrarFormulario(!mostrarFormulario);
             }}
-            className="px-6 py-3 text-purple-600 rounded-lg transition-colors font-semibold"
+            style={{padding:"0.6rem 1.5rem",background:"rgba(255,255,255,0.15)",color:"#fff",border:"1px solid rgba(255,255,255,0.4)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700",fontSize:"0.9rem"}}
           >
             {mostrarFormulario ? '✖️ Cancelar' : '➕ Novo Grau'}
           </button>
@@ -309,9 +309,9 @@ export default function GerenciarGraus({ showSuccess, showError }) {
                     type="checkbox"
                     checked={grauForm.ativo}
                     onChange={(e) => setGrauForm({ ...grauForm, ativo: e.target.checked })}
-                    className="w-4 h-4 text-purple-600 rounded"
+                    style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                   />
-                  <span className="text-sm font-medium">Grau ativo (disponível para seleção)</span>
+                  <span style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--color-text)"}}>Grau ativo (disponível para seleção)</span>
                 </label>
               </div>
             </div>
@@ -319,14 +319,14 @@ export default function GerenciarGraus({ showSuccess, showError }) {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+                style={{padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 {grauEditando ? '💾 Salvar Alterações' : '➕ Cadastrar Grau'}
               </button>
               <button
                 type="button"
                 onClick={limparFormulario}
-                className="px-6 py-2 bg-gray-500 text-white rounded-lg transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
               >
                 ❌ Cancelar
               </button>
@@ -343,7 +343,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
             <select
               value={filtroRito}
               onChange={(e) => setFiltroRito(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+              style={{width:"100%",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-lg)",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             >
               <option value="">Todos os Ritos ({graus.length} graus)</option>
               {ritos.map(rito => (
@@ -354,8 +354,8 @@ export default function GerenciarGraus({ showSuccess, showError }) {
             </select>
           </div>
           
-          <div className="text-sm">
-            <strong>{grausFiltrados.length}</strong> graus encontrados
+          <div style={{fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
+            <strong style={{color:"var(--color-text)"}}>{grausFiltrados.length}</strong> graus encontrados
           </div>
         </div>
       </div>
@@ -415,7 +415,7 @@ export default function GerenciarGraus({ showSuccess, showError }) {
         {grausFiltrados.length === 0 && (
           <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="text-6xl mb-4">🔺</div>
-            <p className="text-lg font-medium">Nenhum grau cadastrado</p>
+            <p style={{fontSize:"1rem",fontWeight:"600",color:"var(--color-text)"}}>Nenhum grau cadastrado</p>
             <p className="text-sm mt-2">Clique em "Novo Grau" para começar</p>
           </div>
         )}
