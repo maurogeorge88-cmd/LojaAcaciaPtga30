@@ -454,32 +454,32 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   }, [irmaos]);
 
   return (
-    <div className="px-8 py-6 min-h-screen" style={{ backgroundColor: '#f3f4f6' }}>
+    <div style={{padding:'1.5rem 2rem',minHeight:'100vh',background:'var(--color-bg)',overflowX:'hidden'}}>
       {/* Cards de Graus */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold mb-3">Irmãos Regulares</h3>
+        <div style={{background:"var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff"}}>
+          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff",marginBottom:"0.75rem"}}>Irmãos Regulares</h3>
           <div className="mb-4">
-            <div className="flex justify-between items-center border-b border-blue-400 pb-3 mb-3">
-              <span className="text-sm">📊 Total de Irmãos Ativos:</span>
-              <span className="font-bold text-5xl">{irmaosAtivos.length}</span>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.2)",paddingBottom:"0.75rem",marginBottom:"0.75rem"}}>
+              <span style={{fontSize:"0.82rem",opacity:0.9}}>📊 Total de Irmãos Ativos:</span>
+              <span style={{fontWeight:"800",fontSize:"3rem"}}>{irmaosAtivos.length}</span>
             </div>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="flex justify-between">
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem",fontSize:"0.82rem"}}>
+              <div style={{display:"flex",justifyContent:"space-between"}}>
                 <span>✅ Regulares:</span>
                 <span className="font-bold">{irmaosRegulares.length}</span>
               </div>
-              <div className="flex justify-between">
+              <div style={{display:"flex",justifyContent:"space-between"}}>
                 <span>🎫 Licenciados:</span>
                 <span className="font-bold">{irmaosLicenciados.length}</span>
               </div>
             </div>
           </div>
-          <div className="border-t border-blue-400 pt-3">
+          <div className="border-t pt-3">
             <div className="grid grid-cols-3 gap-4 text-sm">
               {/* Coluna 1: Aprendizes */}
               <div>
-                <div className="flex justify-between font-semibold mb-1">
+                <div style={{display:"flex",justifyContent:"space-between",fontWeight:"600"}}>
                   <span>⬜ Aprendizes:</span>
                   <span>{irmaosAprendiz}</span>
                 </div>
@@ -487,7 +487,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               
               {/* Coluna 2: Companheiros */}
               <div>
-                <div className="flex justify-between font-semibold mb-1">
+                <div style={{display:"flex",justifyContent:"space-between",fontWeight:"600"}}>
                   <span>🔷 Companheiros:</span>
                   <span>{irmaosCompanheiro}</span>
                 </div>
@@ -495,16 +495,16 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               
               {/* Coluna 3: Mestres */}
               <div>
-                <div className="flex justify-between font-bold mb-1">
+                <div style={{display:"flex",justifyContent:"space-between",fontWeight:"700"}}>
                   <span>🔺 Total Mestres:</span>
                   <span>{totalMestres}</span>
                 </div>
-                <div className="text-xs opacity-90 space-y-0.5">
-                  <div className="flex justify-between pl-2">
+                <div style={{fontSize:"0.72rem",opacity:0.8,display:"flex",flexDirection:"column",gap:"0.1rem"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",paddingLeft:"0.5rem"}}>
                     <span>Mestres:</span>
                     <span>{irmaosMestre}</span>
                   </div>
-                  <div className="flex justify-between pl-2">
+                  <div style={{display:"flex",justifyContent:"space-between",paddingLeft:"0.5rem"}}>
                     <span>M. Instalados:</span>
                     <span>{irmaosMestreInstalado}</span>
                   </div>
@@ -514,26 +514,26 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold mb-3">Total Geral</h3>
-          <p className="text-5xl font-bold mb-2">{totalIrmaos}</p>
-          <p className="text-sm opacity-90">Todas as situações</p>
+        <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
+          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.75rem"}}>Total Geral</h3>
+          <p style={{fontSize:"3rem",fontWeight:"800",color:"var(--color-text)",marginBottom:"0.5rem"}}>{totalIrmaos}</p>
+          <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>Todas as situações</p>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl shadow-lg relative">
-          <div className="absolute top-4 right-4 bg-white/20 px-3 py-1 rounded-full text-sm font-bold">
+        <div style={{background:"#8b5cf6",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff",position:"relative"}}>
+          <div style={{position:"absolute",top:"1rem",right:"1rem",background:"rgba(255,255,255,0.15)",padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.82rem",fontWeight:"700",color:"#fff"}}>
             {new Date().getFullYear()}
           </div>
-          <h3 className="text-lg font-semibold mb-3">Balaustres</h3>
-          <p className="text-5xl font-bold mb-4">
+          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff",marginBottom:"0.75rem"}}>Balaustres</h3>
+          <p style={{fontSize:"3rem",fontWeight:"800",color:"#fff",marginBottom:"1rem"}}>
             {balaustres.filter(b => {
               if (!b.data_sessao) return false;
               const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
               return dataBalaustre.getFullYear() === new Date().getFullYear();
             }).length}
           </p>
-          <div className="border-t border-purple-400 pt-3 space-y-1">
-            <div className="flex justify-between text-sm">
+          <div style={{borderTop:"1px solid rgba(255,255,255,0.2)",paddingTop:"0.75rem",display:"flex",flexDirection:"column",gap:"0.25rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.82rem",color:"rgba(255,255,255,0.85)"}}>
               <span>⬜ Grau 1 (Aprendiz):</span>
               <span className="font-bold">
                 {balaustres.filter(b => {
@@ -543,7 +543,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                 }).length}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.82rem",color:"rgba(255,255,255,0.85)"}}>
               <span>🔷 Grau 2 (Companheiro):</span>
               <span className="font-bold">
                 {balaustres.filter(b => {
@@ -553,7 +553,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                 }).length}
               </span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.82rem",color:"rgba(255,255,255,0.85)"}}>
               <span>🔺 Grau 3 (Mestre):</span>
               <span className="font-bold">
                 {balaustres.filter(b => {
@@ -568,81 +568,81 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       </div>
 
       {/* Cards de Situações */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">📋 Situação dos Irmãos</h3>
+      <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>📋 Situação dos Irmãos</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div 
-            className="bg-green-50 border-2 border-green-200 p-4 rounded-lg cursor-pointer hover:bg-green-100 transition"
+            style={{border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '✅ Irmãos Regulares', irmaos: irmaosRegulares })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-green-600 text-sm font-semibold mb-1">✅ Regulares</div>
-            <div className="text-3xl font-bold text-green-700">{irmaosRegulares.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#10b981",marginBottom:"0.4rem"}}>✅ Regulares</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosRegulares.length}</div>
           </div>
           <div 
-            className="bg-blue-50 border-2 border-primary-200 p-4 rounded-lg cursor-pointer hover:bg-blue-100 transition"
+            style={{border:"1px solid rgba(59,130,246,0.3)",borderLeft:"4px solid #3b82f6",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer",background:"rgba(59,130,246,0.1)"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '🎫 Irmãos Licenciados', irmaos: irmaosLicenciados })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-primary-600 text-sm font-semibold mb-1">🎫 Licenciados</div>
-            <div className="text-3xl font-bold text-blue-700">{irmaosLicenciados.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#3b82f6",marginBottom:"0.4rem"}}>🎫 Licenciados</div>
+            <div className="text-3xl font-bold">{irmaosLicenciados.length}</div>
           </div>
           <div 
-            className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-lg cursor-pointer hover:bg-yellow-100 transition"
+            style={{border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '⚠️ Irmãos Irregulares', irmaos: irmaosIrregulares })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-yellow-600 text-sm font-semibold mb-1">⚠️ Irregulares</div>
-            <div className="text-3xl font-bold text-yellow-700">{irmaosIrregulares.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#f59e0b",marginBottom:"0.4rem"}}>⚠️ Irregulares</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosIrregulares.length}</div>
           </div>
           <div 
-            className="bg-orange-50 border-2 border-orange-200 p-4 rounded-lg cursor-pointer hover:bg-orange-100 transition"
+            style={{border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '🚫 Irmãos Suspensos', irmaos: irmaosSuspensos })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-orange-600 text-sm font-semibold mb-1">🚫 Suspensos</div>
-            <div className="text-3xl font-bold text-orange-700">{irmaosSuspensos.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#ef4444",marginBottom:"0.4rem"}}>🚫 Suspensos</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosSuspensos.length}</div>
           </div>
           <div 
-            className="bg-gray-50 border-2 border-gray-200 p-4 rounded-lg cursor-pointer hover:bg-gray-100 transition"
+            style={{border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '↩️ Irmãos Desligados', irmaos: irmaosDesligados })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-gray-600 text-sm font-semibold mb-1">↩️ Desligados</div>
-            <div className="text-3xl font-bold text-gray-700">{irmaosDesligados.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#64748b",marginBottom:"0.4rem"}}>↩️ Desligados</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosDesligados.length}</div>
           </div>
           <div 
-            className="bg-red-50 border-2 border-red-200 p-4 rounded-lg cursor-pointer hover:bg-red-100 transition"
+            style={{border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '❌ Irmãos Excluídos', irmaos: irmaosExcluidos })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-red-600 text-sm font-semibold mb-1">❌ Excluídos</div>
-            <div className="text-3xl font-bold text-red-700">{irmaosExcluidos.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#dc2626",marginBottom:"0.4rem"}}>❌ Excluídos</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosExcluidos.length}</div>
           </div>
           <div 
-            className="bg-purple-50 border-2 border-purple-200 p-4 rounded-lg cursor-pointer hover:bg-purple-100 transition"
+            style={{border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '🕊️ Irmãos Falecidos', irmaos: irmaosFalecidos })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-purple-600 text-sm font-semibold mb-1">🕊️ Falecidos</div>
-            <div className="text-3xl font-bold text-purple-700">{irmaosFalecidos.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#6366f1",marginBottom:"0.4rem"}}>🕊️ Falecidos</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosFalecidos.length}</div>
           </div>
           <div 
-            className="bg-indigo-50 border-2 border-indigo-200 p-4 rounded-lg cursor-pointer hover:bg-indigo-100 transition"
+            style={{border:"1px solid rgba(99,102,241,0.3)",borderLeft:"4px solid #6366f1",borderRadius:"var(--radius-lg)",padding:"1rem",cursor:"pointer",background:"rgba(99,102,241,0.1)"}}
             onDoubleClick={() => setModalSituacao({ aberto: true, titulo: '👔 Irmãos Ex-Ofício', irmaos: irmaosExOficio })}
             title="Clique duplo para ver detalhes"
           >
-            <div className="text-indigo-600 text-sm font-semibold mb-1">👔 Ex-Ofício</div>
-            <div className="text-3xl font-bold text-indigo-700">{irmaosExOficio.length}</div>
+            <div style={{fontSize:"0.78rem",fontWeight:"700",color:"#8b5cf6",marginBottom:"0.4rem"}}>👔 Ex-Ofício</div>
+            <div style={{fontSize:"1.75rem",fontWeight:"800",color:"var(--color-text)"}}>{irmaosExOficio.length}</div>
           </div>
         </div>
       </div>
 
       {/* PRESENÇA 100% - 3 COLUNAS */}
       {irmaos100.length > 0 && (
-        <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+        <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="text-xl font-bold flex items-center gap-2" style={{color:"var(--color-text)"}}>
               <span className="text-2xl">🏆</span>
               Presença 100% no Ano ({irmaos100.length} {irmaos100.length === 1 ? 'Irmão' : 'Irmãos'})
             </h3>
@@ -661,13 +661,12 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                   {irmaosColuna.map(irmao => (
                     <div 
                       key={irmao.id}
-                      className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-3 hover:shadow-md transition-shadow"
-                    >
+                      style={{background:"var(--color-surface)",border:"1px solid rgba(16,185,129,0.3)",borderLeft:"3px solid #10b981",borderRadius:"var(--radius-md)",padding:"0.75rem"}}>
                       <div className="flex items-center gap-2">
-                        <span className="text-green-600 text-xl">✅</span>
+                        <span className="text-xl">✅</span>
                         <div className="flex-1">
-                          <div className="font-semibold text-gray-800 text-sm">{irmao.nome}</div>
-                          <div className="text-xs text-gray-600">{irmao.total} sessões</div>
+                          <div style={{fontWeight:"600",fontSize:"0.82rem",color:"var(--color-text)"}}>{irmao.nome}</div>
+                          <div style={{fontSize:"0.7rem",color:"var(--color-text-muted)"}}>{irmao.total} sessões</div>
                         </div>
                       </div>
                     </div>
@@ -685,15 +684,15 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         {totalVisitasIrmaos > 0 && (
           <div
             onDoubleClick={() => setModalVisitasIrmaos(true)}
-            className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+            style={{background:"var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff",cursor:"pointer"}}
             title="Clique 2x para ver detalhes"
           >
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">📍 Visitas a Outras Lojas</h3>
+              <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff"}}>📍 Visitas a Outras Lojas</h3>
               <span className="text-4xl">🚶</span>
             </div>
-            <p className="text-5xl font-bold mb-1">{totalVisitasIrmaos}</p>
-            <p className="text-sm opacity-90">Realizadas em {new Date().getFullYear()}</p>
+            <p style={{fontSize:"3rem",fontWeight:"800",marginBottom:"0.25rem"}}>{totalVisitasIrmaos}</p>
+            <p style={{fontSize:"0.82rem",opacity:0.85}}>Realizadas em {new Date().getFullYear()}</p>
           </div>
         )}
 
@@ -701,15 +700,15 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         {totalVisitantes > 0 && (
           <div
             onDoubleClick={() => setModalVisitantesRecebidos(true)}
-            className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg cursor-pointer hover:shadow-xl transition-shadow"
+            style={{background:"#10b981",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff",cursor:"pointer"}}
             title="Clique 2x para ver detalhes"
           >
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">👥 Visitantes Recebidos</h3>
+              <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff"}}>👥 Visitantes Recebidos</h3>
               <span className="text-4xl">🏛️</span>
             </div>
-            <p className="text-5xl font-bold mb-1">{totalVisitantes}</p>
-            <p className="text-sm opacity-90">Registrados em {new Date().getFullYear()}</p>
+            <p style={{fontSize:"3rem",fontWeight:"800",marginBottom:"0.25rem"}}>{totalVisitantes}</p>
+            <p style={{fontSize:"0.82rem",opacity:0.85}}>Registrados em {new Date().getFullYear()}</p>
           </div>
         )}
       </div>
@@ -717,13 +716,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       {/* Card de Visitantes ANTIGO - REMOVER */}
       {false && totalVisitantes > 0 && (
         <div className="mb-6">
-          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl shadow-lg">
+          <div className="text-white p-6 rounded-xl">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-semibold">👥 Visitantes Recebidos</h3>
+              <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff"}}>👥 Visitantes Recebidos</h3>
               <span className="text-4xl">🏛️</span>
             </div>
-            <p className="text-5xl font-bold mb-1">{totalVisitantes}</p>
-            <p className="text-sm opacity-90">Registrados em {new Date().getFullYear()}</p>
+            <p style={{fontSize:"3rem",fontWeight:"800",marginBottom:"0.25rem"}}>{totalVisitantes}</p>
+            <p style={{fontSize:"0.82rem",opacity:0.85}}>Registrados em {new Date().getFullYear()}</p>
           </div>
         </div>
       )}
@@ -731,9 +730,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       {/* ANIVERSARIANTES - LAYOUT COMPACTO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* ANIVERSARIANTES DO DIA - COR MAIS CLARA */}
-        <div className="bg-gradient-to-br from-pink-300 to-rose-400 text-white rounded-xl shadow-lg p-6">
+        <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid #f43f5e",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">🎂 Aniversariantes do Dia</h3>
+            <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-text)"}}>🎂 Aniversariantes do Dia</h3>
             <div className="text-4xl">🎉</div>
           </div>
           
@@ -742,10 +741,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               {aniversariantes.aniversariantesHoje.map(pessoa => (
                 <div 
                   key={pessoa.id}
-                  className="bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-white/30"
-                >
-                  <div className="font-bold text-base">{pessoa.nome}</div>
-                  <div className="text-sm opacity-90">
+                  style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.75rem"}}>
+                  <div style={{fontWeight:"700",color:"var(--color-text)"}}>{pessoa.nome}</div>
+                  <div style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>
                     {pessoa.vinculos && pessoa.vinculos.length > 1 ? (
                       // Múltiplos vínculos
                       <div className="space-y-1">
@@ -782,17 +780,17 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-6 bg-white/10 rounded-lg">
-              <div className="text-3xl mb-2">📅</div>
-              <p className="text-white/80 text-sm">Nenhum aniversariante hoje</p>
+            <div style={{textAlign:"center",padding:"1.5rem",borderRadius:"var(--radius-md)",background:"var(--color-surface-2)"}}>
+              <div style={{fontSize:"2rem",marginBottom:"0.5rem"}}>📅</div>
+              <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>Nenhum aniversariante hoje</p>
             </div>
           )}
         </div>
 
         {/* PRÓXIMOS 7 DIAS - LAYOUT COMPACTO */}
-        <div className="bg-gradient-to-br from-cyan-500 to-blue-600 text-white rounded-xl shadow-lg p-6">
+        <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid #06b6d4",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">📅 Próximos 7 Dias</h3>
+            <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-text)"}}>📅 Próximos 7 Dias</h3>
             <div className="text-4xl">🎁</div>
           </div>
           
@@ -801,15 +799,14 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               {aniversariantes.proximos7Dias.map(pessoa => (
                 <div 
                   key={pessoa.id}
-                  className="bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-white/30"
-                >
+                  style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.75rem"}}>
                   <div className="flex items-center justify-between mb-1">
-                    <div className="font-bold text-base flex-1">{pessoa.nome}</div>
-                    <div className="bg-white/30 rounded-full px-2 py-0.5 text-xs font-bold ml-2">
+                    <div style={{fontWeight:"700",color:"var(--color-text)",flex:1}}>{pessoa.nome}</div>
+                    <div style={{background:"var(--color-accent-bg)",color:"var(--color-accent)",borderRadius:"999px",padding:"0.1rem 0.5rem",fontSize:"0.7rem",fontWeight:"700",marginLeft:"0.5rem",whiteSpace:"nowrap"}}>
                       {pessoa.diasRestantes} {pessoa.diasRestantes === 1 ? 'dia' : 'dias'}
                     </div>
                   </div>
-                  <div className="text-sm opacity-90">
+                  <div style={{fontSize:"0.8rem",color:"var(--color-text-muted)"}}>
                     {pessoa.vinculos && pessoa.vinculos.length > 1 ? (
                       // Múltiplos vínculos
                       <div className="space-y-1">
@@ -856,17 +853,17 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-6 bg-white/10 rounded-lg">
-              <div className="text-3xl mb-2">📅</div>
-              <p className="text-white/80 text-sm">Nenhum aniversário nos próximos 7 dias</p>
+            <div style={{textAlign:"center",padding:"1.5rem",borderRadius:"var(--radius-md)",background:"var(--color-surface-2)"}}>
+              <div style={{fontSize:"2rem",marginBottom:"0.5rem"}}>📅</div>
+              <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>Nenhum aniversário nos próximos 7 dias</p>
             </div>
           )}
         </div>
 
         {/* EVENTOS COMEMORATIVOS */}
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-xl shadow-lg p-6">
+        <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid #f59e0b",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">📅 Datas Comemorativas</h3>
+            <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-text)"}}>📅 Datas Comemorativas</h3>
             <div className="text-4xl">🎊</div>
           </div>
           
@@ -920,17 +917,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                   return (
                     <div 
                       key={idx}
-                      className={`backdrop-blur-sm rounded-lg p-3 border ${
-                        ehHoje 
-                          ? 'bg-yellow-300/40 border-yellow-200' 
-                          : 'bg-white/20 border-white/30'
-                      }`}
+                      style={{background:ehHoje?'rgba(245,158,11,0.15)':'var(--color-surface-2)',border:ehHoje?'1px solid rgba(245,158,11,0.4)':'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.75rem'}}
                     >
                       <div className="flex items-start gap-2">
                         <div className="text-2xl">{evento.tipo === 'Maçônico' ? '🔷' : '🎊'}</div>
                         <div className="flex-1">
-                          <div className="font-bold text-base">{evento.nome}</div>
-                          <div className="text-sm opacity-90 flex items-center gap-2 flex-wrap mt-1">
+                          <div style={{fontWeight:"700",color:"var(--color-text)"}}>{evento.nome}</div>
+                          <div style={{fontSize:"0.78rem",color:"var(--color-text-muted)",display:"flex",alignItems:"center",gap:"0.4rem",flexWrap:"wrap",marginTop:"0.25rem"}}>
                             <span>{evento.tipo}</span>
                             <span>•</span>
                             <span>📆 {dataEvento.toLocaleDateString('pt-BR', { 
@@ -940,7 +933,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                             {ehHoje && (
                               <>
                                 <span>•</span>
-                                <span className="bg-yellow-300 text-yellow-900 px-2 py-0.5 rounded-full text-xs font-bold">
+                                <span style={{background:"rgba(245,158,11,0.2)",color:"#f59e0b",padding:"0.1rem 0.5rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"700"}}>
                                   HOJE
                                 </span>
                               </>
@@ -953,9 +946,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                 })}
               </div>
             ) : (
-              <div className="text-center py-6 bg-white/10 rounded-lg">
-                <div className="text-3xl mb-2">📅</div>
-                <p className="text-white/80 text-sm">Nenhum evento nos próximos 30 dias</p>
+              <div style={{textAlign:"center",padding:"1.5rem",borderRadius:"var(--radius-md)",background:"var(--color-surface-2)"}}>
+                <div style={{fontSize:"2rem",marginBottom:"0.5rem"}}>📅</div>
+                <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>Nenhum evento nos próximos 30 dias</p>
               </div>
             );
           })()}
@@ -965,9 +958,9 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       {/* PARTICIPAÇÃO EM COMISSÕES */}
       <ParticipacaoComissoes />
 
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Bem-vindo ao Sistema</h3>
-        <p className="text-gray-600">
+      <div className="rounded-xl p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>Bem-vindo ao Sistema</h3>
+        <p style={{color:"var(--color-text-muted)"}}>
           Utilize o menu de navegação para acessar as diferentes funcionalidades do sistema.
         </p>
       </div>
@@ -975,22 +968,22 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       {/* Modal de Situação dos Irmãos */}
       {modalSituacao.aberto && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-4">
+            <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem"}}>
               <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">{modalSituacao.titulo}</h3>
+                <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"#fff",margin:0}}>{modalSituacao.titulo}</h3>
                 <button
                   onClick={() => {
                     setModalSituacao({ aberto: false, titulo: '', irmaos: [] });
                     setFiltroComCargo(false);
                   }}
-                  className="text-white hover:opacity-80 text-3xl leading-none"
+                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}
                 >
                   ×
                 </button>
               </div>
-              <p className="text-sm text-blue-100 mt-1">
+              <p style={{fontSize:"0.82rem",color:"rgba(255,255,255,0.85)",marginTop:"0.25rem"}}>
                 Total: {modalSituacao.irmaos.filter(i => !filtroComCargo || obterCargoAtual(i.id)).length} {modalSituacao.irmaos.filter(i => !filtroComCargo || obterCargoAtual(i.id)).length === 1 ? 'irmão' : 'irmãos'}
               </p>
               
@@ -999,21 +992,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => setFiltroComCargo(false)}
-                    className={`px-3 py-1 rounded text-xs font-semibold transition ${
-                      !filtroComCargo 
-                        ? 'bg-white text-blue-600' 
-                        : 'bg-blue-400 text-white hover:bg-blue-300'
-                    }`}
+                    style={{padding:'0.2rem 0.65rem',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:'700',cursor:'pointer',border:'none',background:!filtroComCargo?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.1)',color:'#fff'}}
                   >
                     Todos
                   </button>
                   <button
                     onClick={() => setFiltroComCargo(true)}
-                    className={`px-3 py-1 rounded text-xs font-semibold transition ${
-                      filtroComCargo 
-                        ? 'bg-white text-blue-600' 
-                        : 'bg-blue-400 text-white hover:bg-blue-300'
-                    }`}
+                    style={{padding:'0.2rem 0.65rem',borderRadius:'var(--radius-md)',fontSize:'0.72rem',fontWeight:'700',cursor:'pointer',border:'none',background:filtroComCargo?'rgba(255,255,255,0.3)':'rgba(255,255,255,0.1)',color:'#fff'}}
                   >
                     Apenas com Cargo
                   </button>
@@ -1031,33 +1016,27 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                 return irmaosFiltrados.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {irmaosFiltrados.map((irmao) => (
-                    <div key={irmao.id} className="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
+                    <div key={irmao.id} className="border-2 rounded-lg p-4 hover: transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                       <div className="flex items-start gap-3">
                         {irmao.foto_url ? (
-                          <img src={irmao.foto_url} alt={irmao.nome} className="w-16 h-16 rounded-full object-cover border-2 border-blue-500" />
+                          <img src={irmao.foto_url} alt={irmao.nome} className="w-16 h-16 rounded-full object-cover border-2" />
                         ) : (
-                          <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xl">
+                          <div style={{width:"4rem",height:"4rem",borderRadius:"50%",background:"var(--color-accent)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontWeight:"700",fontSize:"1.25rem"}}>
                             {irmao.nome?.charAt(0)}
                           </div>
                         )}
                         
                         <div className="flex-1">
-                          <h4 className="font-bold text-gray-800 flex items-center gap-2">
+                          <h4 className="font-bold flex items-center gap-2" style={{color:"var(--color-text)"}}>
                             {modalSituacao.titulo.includes('Falecidos') && <span className="text-lg">🕊️</span>}
                             {formatarNome(irmao.nome)}
                           </h4>
                           
                           <div className="flex flex-wrap gap-2 mt-2">
                             {/* Badge de Grau */}
-                            <span className={`text-xs px-2 py-1 rounded font-semibold ${
-                              obterGrau(irmao) === 'Mestre Instalado' 
-                                ? 'bg-indigo-100 text-indigo-800'
-                                : obterGrau(irmao) === 'Mestre'
-                                ? 'bg-purple-100 text-purple-800'
-                                : obterGrau(irmao) === 'Companheiro'
-                                ? 'bg-green-100 text-green-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
+                            <span style={{fontSize:'0.7rem',padding:'0.15rem 0.5rem',borderRadius:'var(--radius-sm)',fontWeight:'700',
+                              background:obterGrau(irmao)==='Mestre Instalado'?'rgba(245,158,11,0.15)':obterGrau(irmao)==='Mestre'?'rgba(139,92,246,0.15)':obterGrau(irmao)==='Companheiro'?'rgba(16,185,129,0.15)':'rgba(59,130,246,0.15)',
+                              color:obterGrau(irmao)==='Mestre Instalado'?'#f59e0b':obterGrau(irmao)==='Mestre'?'#8b5cf6':obterGrau(irmao)==='Companheiro'?'#10b981':'#3b82f6'}}>
                               {obterGrau(irmao)}
                             </span>
 
@@ -1065,7 +1044,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                             {obterCargoAtual(irmao.id) && (
                               <div className="flex flex-col gap-1">
                                 {obterCargoAtual(irmao.id).split(',').map((cargo, i) => (
-                                  <span key={i} className="text-xs px-2 py-1 rounded font-semibold bg-amber-100 text-amber-800">
+                                  <span key={i} style={{fontSize:"0.7rem",padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontWeight:"700",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)"}}>
                                     {cargo.trim()}
                                   </span>
                                 ))}
@@ -1075,7 +1054,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
 
                           {/* CIM */}
                           {irmao.cim && (
-                            <p className="text-xs text-gray-500 mt-2">CIM: {irmao.cim}</p>
+                            <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.5rem"}}>CIM: {irmao.cim}</p>
                           )}
                         </div>
                       </div>
@@ -1083,7 +1062,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-gray-500">
+                <div className="text-center py-12">
                   <p className="text-4xl mb-3">📭</p>
                   <p>{filtroComCargo ? 'Nenhum irmão com cargo nesta categoria' : 'Nenhum irmão nesta categoria'}</p>
                 </div>
@@ -1092,13 +1071,13 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             </div>
 
             {/* Footer */}
-            <div className="border-t px-6 py-4 bg-gray-50">
+            <div style={{borderTop:"1px solid var(--color-border)",padding:"1rem 1.5rem"}}>
               <button
                 onClick={() => {
                   setModalSituacao({ aberto: false, titulo: '', irmaos: [] });
                   setFiltroComCargo(false);
                 }}
-                className="w-full px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold transition"
+                style={{width:"100%",padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 Fechar
               </button>
@@ -1110,29 +1089,29 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       {/* MODAL: Visitas dos Irmãos a Outras Lojas */}
       {modalVisitasIrmaos && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-700 text-white p-6">
-              <h3 className="text-2xl font-bold">📍 Visitas dos Irmãos a Outras Lojas - {new Date().getFullYear()}</h3>
-              <p className="text-purple-100 text-sm mt-1">Total: {totalVisitasIrmaos} visita(s)</p>
+            <div style={{background:"var(--color-accent)",padding:"1.25rem 1.5rem"}}>
+              <h3 style={{fontSize:"1.25rem",fontWeight:"700",color:"#fff",margin:0}}>📍 Visitas dos Irmãos a Outras Lojas - {new Date().getFullYear()}</h3>
+              <p style={{fontSize:"0.82rem",color:"rgba(255,255,255,0.85)",marginTop:"0.25rem"}}>Total: {totalVisitasIrmaos} visita(s)</p>
             </div>
 
             {/* Conteúdo */}
             <div className="p-6">
               <div className="grid grid-cols-3 gap-3">
                 {visitasIrmaos.map(visita => (
-                  <div key={visita.id} className="bg-white border border-purple-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                  <div key={visita.id} className="border rounded-lg p-3 hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     {/* Linha 1: Data e Nome */}
                     <div className="mb-1">
-                      <div className="text-sm">
-                        <span className="text-gray-600">{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                        <span className="text-gray-600"> - </span>
-                        <span className="font-semibold text-purple-900">{formatarNomeCurto(visita.irmaos?.nome)}</span>
+                      <div style={{fontSize:"0.82rem",color:"var(--color-text)"}}>
+                        <span>{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                        <span> - </span>
+                        <span className="font-semibold">{formatarNomeCurto(visita.irmaos?.nome)}</span>
                       </div>
                     </div>
                     
                     {/* Linha 2: Loja - Potência - Oriente */}
-                    <div className="text-xs text-gray-600">
+                    <div style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>
                       {visita.nome_loja} - {visita.potencias_masonicas?.sigla || 'N/A'} - {visita.oriente}
                     </div>
                   </div>
@@ -1141,10 +1120,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             </div>
 
             {/* Footer */}
-            <div className="border-t px-6 py-4 bg-gray-50">
+            <div style={{borderTop:"1px solid var(--color-border)",padding:"1rem 1.5rem"}}>
               <button
                 onClick={() => setModalVisitasIrmaos(false)}
-                className="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold transition"
+                style={{width:"100%",padding:"0.75rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 Fechar
               </button>
@@ -1156,37 +1135,37 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       {/* MODAL: Visitantes Recebidos */}
       {modalVisitantesRecebidos && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-700 text-white p-6">
-              <h3 className="text-2xl font-bold">👥 Visitantes Recebidos - {new Date().getFullYear()}</h3>
-              <p className="text-indigo-100 text-sm mt-1">Total: {totalVisitantes} visitante(s)</p>
+            <div style={{background:"#10b981",padding:"1.25rem 1.5rem"}}>
+              <h3 style={{fontSize:"1.25rem",fontWeight:"700",color:"#fff",margin:0}}>👥 Visitantes Recebidos - {new Date().getFullYear()}</h3>
+              <p style={{fontSize:"0.82rem",color:"rgba(255,255,255,0.85)",marginTop:"0.25rem"}}>Total: {totalVisitantes} visitante(s)</p>
             </div>
 
             {/* Conteúdo */}
             <div className="p-6">
               <div className="grid grid-cols-3 gap-3">
                 {visitantesRecebidos.map(visitante => (
-                  <div key={visitante.id} className="bg-white border border-indigo-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                  <div key={visitante.id} className="border border-indigo-200 rounded-lg p-3 hover: transition-shadow" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                     {/* Linha 1: Data e Nome */}
                     <div className="mb-1">
-                      <div className="text-sm">
-                        <span className="text-gray-600">
+                      <div style={{fontSize:"0.82rem",color:"var(--color-text)"}}>
+                        <span>
                           {visitante.sessoes_presenca?.data_sessao 
                             ? new Date(visitante.sessoes_presenca.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')
                             : visitante.data_visita
                             ? new Date(visitante.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')
                             : new Date(visitante.created_at).toLocaleDateString('pt-BR')}
                         </span>
-                        <span className="text-gray-600"> - </span>
-                        <span className="font-semibold text-indigo-900">
+                        <span> - </span>
+                        <span className="font-semibold">
                           {visitante.nome || visitante.nome_visitante || 'N/A'}
                         </span>
                       </div>
                     </div>
                     
                     {/* Linha 2: Loja - Oriente */}
-                    <div className="text-xs text-gray-600">
+                    <div style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>
                       {visitante.nome_loja || visitante.loja_origem || visitante.loja || visitante.loja_visitante || 'Loja não informada'} - {visitante.oriente || visitante.cidade || visitante.oriente_visitante || 'Oriente não informado'}
                     </div>
                   </div>
@@ -1195,10 +1174,10 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
             </div>
 
             {/* Footer */}
-            <div className="border-t px-6 py-4 bg-gray-50">
+            <div style={{borderTop:"1px solid var(--color-border)",padding:"1rem 1.5rem"}}>
               <button
                 onClick={() => setModalVisitantesRecebidos(false)}
-                className="w-full px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold transition"
+                style={{width:"100%",padding:"0.75rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 Fechar
               </button>
