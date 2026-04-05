@@ -2469,7 +2469,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   }
 
   return (
-    <div className="space-y-6 px-3 py-3">
+    <div className="space-y-6 px-3 py-3" style={{background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
       {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
       <div className="flex gap-2 items-center flex-nowrap mt-3">
         {/* Botões de visualização */}
