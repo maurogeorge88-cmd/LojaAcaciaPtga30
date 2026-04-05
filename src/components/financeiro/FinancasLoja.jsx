@@ -3676,102 +3676,81 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               </button>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              <thead style={{background:"var(--color-surface-2)"}}>
-                <tr>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-24" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Competência</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-24" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Lançamento</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Categoria</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Descrição</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Origem</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase w-28" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Valor</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-20" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Pgto</th>
-                  <th className="px-2 py-3 text-left text-xs font-medium uppercase w-24" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase w-44" style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lancamentos.slice(0, limiteRegistros).map((lanc) => (
-                  <tr key={lanc.id} style={{borderBottom:"1px solid var(--color-border)"}}>
-                    {/* COMPETÊNCIA: Mostra data relevante (pagamento se pago, vencimento se pendente) */}
-                    <td className="px-2 py-3 whitespace-nowrap text-sm w-24" style={{color:"var(--color-text)"}}>
-                      <div style={{color:lanc.status==='pago'?'#10b981':'var(--color-text)',fontWeight:lanc.status==='pago'?'600':'400'}}>
-                        {formatarDataBR(lanc.status === 'pago' ? lanc.data_pagamento : lanc.data_vencimento)}
+          <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.75rem'}}>
+                {lancamentos.slice(0, limiteRegistros).map((lanc, idx) => {
+                  const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                  const corBorda  = ehReceita ? '#10b981' : '#ef4444';
+                  const badge     = obterBadgeStatus(lanc);
+                  const nomeIrmao = (() => {
+                    const n = lanc.irmaos?.nome || '';
+                    const p = n.split(' ');
+                    return p.length > 2 ? `${p[0]} ${p[1]}` : n;
+                  })();
+                  return (
+                  <div key={lanc.id} style={{
+                    borderRadius:'var(--radius-lg)',
+                    borderLeft:`4px solid ${corBorda}`,
+                    background: idx%2===0 ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                    border:'1px solid var(--color-border)',
+                    borderLeftColor: corBorda,
+                    padding:'0.6rem 0.9rem',
+                    display:'grid',
+                    gridTemplateColumns:'90px 90px auto 1fr 1fr auto auto auto auto',
+                    alignItems:'center',
+                    gap:'0.5rem',
+                    minWidth:0,
+                  }}>
+                    {/* Competência */}
+                    <div style={{minWidth:0}}>
+                      <div style={{fontSize:'0.8rem',fontWeight:'600',color:lanc.status==='pago'?'#10b981':'var(--color-text)',whiteSpace:'nowrap'}}>
+                        {formatarDataBR(lanc.status==='pago'?lanc.data_pagamento:lanc.data_vencimento)}
                       </div>
-                      <div className="text-xs">
-                        {lanc.status === 'pago' ? '💰 Pgto' : '📅 Venc'}
+                      <div style={{fontSize:'0.68rem',color:'var(--color-text-muted)'}}>
+                        {lanc.status==='pago'?'💰 Pgto':'📅 Venc'}
                       </div>
-                    </td>
-                    {/* DATA DE LANÇAMENTO: Apenas referência */}
-                    <td className="px-2 py-3 whitespace-nowrap text-xs w-24" style={{color:"var(--color-text)"}}>
+                    </div>
+                    {/* Lançamento */}
+                    <div style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
                       {formatarDataBR(lanc.data_lancamento)}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{color:"var(--color-text)"}}>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        lanc.categorias_financeiras?.tipo === 'receita'
-                          ? 'badge-verde-ph' : 'badge-vermelho-ph'
-                      }`}>
-                        {lanc.categorias_financeiras?.tipo === 'receita' ? '📈 Receita' : '📉 Despesa'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm" style={{color:"var(--color-text)"}}>
+                    </div>
+                    {/* Tipo */}
+                    <span style={{padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',
+                      background:ehReceita?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)',
+                      color:ehReceita?'#10b981':'#ef4444',
+                      border:`1px solid ${ehReceita?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)'}`,
+                      whiteSpace:'nowrap'}}>
+                      {ehReceita?'📈 Receita':'📉 Despesa'}
+                    </span>
+                    {/* Categoria */}
+                    <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {lanc.categorias_financeiras?.nome}
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                    </div>
+                    {/* Descrição */}
+                    <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                       {lanc.descricao}
-                    </td>
-                    {/* NOVA COLUNA: Origem */}
-                    <td className="px-4 py-3 whitespace-nowrap text-sm" style={{color:"var(--color-text)"}}>
-                      {lanc.origem_tipo === 'Loja' ? (
-                        <div className="flex items-center gap-1">
-                          <span style={{color:"var(--color-accent)"}}>🏛️</span>
-                          <span className="font-medium">Loja</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          <span style={{color:"#8b5cf6"}}>👤</span>
-                          <span className="font-medium">
-                            {(() => {
-                              const nomeCompleto = lanc.irmaos?.nome || 'Irmão';
-                              const partes = nomeCompleto.split(' ');
-                              return partes.length > 2 
-                                ? `${partes[0]} ${partes[1]}`
-                                : nomeCompleto;
-                            })()}
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium w-28" style={{color:"var(--color-text)"}}>
-                      <div>
-                        <span className={lanc.categorias_financeiras?.tipo === 'receita' ? 'color-green-placeholder' : 'color-red-placeholder'}>
-                          {formatarMoeda(parseFloat(lanc.valor))}
-                        </span>
-                        {lanc.tem_pagamento_parcial && (
-                          <div className="text-xs mt-1">
-                            <div>Original: {formatarMoeda(lanc.valor_original)}</div>
-                            <div style={{color:"#10b981"}}>Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
-                          </div>
-                        )}
+                    </div>
+                    {/* Origem */}
+                    <div style={{display:'flex',alignItems:'center',gap:'0.25rem',fontSize:'0.82rem',color:'var(--color-text)',whiteSpace:'nowrap'}}>
+                      {lanc.origem_tipo==='Loja'
+                        ? <><span style={{color:'var(--color-accent)'}}>🏛️</span><span>Loja</span></>
+                        : <><span style={{color:'#8b5cf6'}}>👤</span><span>{nomeIrmao}</span></>}
+                    </div>
+                    {/* Valor */}
+                    <div style={{textAlign:'right',minWidth:'80px'}}>
+                      <div style={{fontSize:'0.9rem',fontWeight:'700',color:ehReceita?'#10b981':'#ef4444',whiteSpace:'nowrap'}}>
+                        {formatarMoeda(parseFloat(lanc.valor))}
                       </div>
-                    </td>
-                    <td className="px-2 py-3 whitespace-nowrap text-xs w-20" style={{color:"var(--color-text)"}}>
-                      {lanc.tipo_pagamento}
-                    </td>
-                    <td className="px-2 py-3 whitespace-nowrap w-24" style={{color:"var(--color-text)"}}>
-                      {(() => {
-                        const badge = obterBadgeStatus(lanc);
-                        return (
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${badge.cor}`}>
-                            {badge.icone} {badge.texto}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-sm w-44" style={{color:"var(--color-text)"}}>
-                      <div className="flex gap-1 items-center flex-wrap max-w-[176px]">
+                      {lanc.tipo_pagamento && <div style={{fontSize:'0.68rem',color:'var(--color-text-muted)'}}>{lanc.tipo_pagamento}</div>}
+                      {lanc.tem_pagamento_parcial && (
+                        <div style={{fontSize:'0.68rem',color:'#10b981'}}>Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
+                      )}
+                    </div>
+                    {/* Status */}
+                    <span style={{...badge.style,padding:'0.2rem 0.6rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                      {badge.icone} {badge.texto}
+                    </span>
+                    {/* Ações */}
+                    <div style={{display:'flex',gap:'0.3rem',alignItems:'center',justifyContent:'flex-end'}}>
                         {/* Badge de Parcela */}
                         {lanc.eh_parcelado && (
                           <span style={{fontSize:"0.7rem",padding:"0.15rem 0.5rem",borderRadius:"999px",fontWeight:"700",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)"}}>
@@ -3850,12 +3829,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         >
                           🗑️
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                  );
+                })}
             {lancamentos.length === 0 && (
               <div className="text-center py-12">
                 Nenhum lançamento encontrado
