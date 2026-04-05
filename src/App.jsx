@@ -17,6 +17,7 @@ import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
 import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
 import PerfilIrmao from './components/irmaos/PerfilIrmao';
 import PerfilCompletoIrmao from './components/irmaos/PerfilCompletoIrmao';
+import EmailIrmaos from './components/irmaos/EmailIrmaos';
 import Balaustres from './components/balaustres/Balaustres';
 import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
@@ -2060,6 +2061,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           <span>🏷️</span>
                           <span>Categorias</span>
                         </button>
+
+                        <button
+                          onClick={() => setCurrentPage('email-irmaos')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'email-irmaos'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
+                          }`}
+                        >
+                          <span>📧</span>
+                          <span>E-mails para Irmãos</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -2489,6 +2502,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
+                  {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2806,6 +2820,13 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CATEGORIAS FINANCEIRAS */}
         {currentPage === 'categorias-financeiras' && (
           <CategoriasFinanceiras
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {currentPage === 'email-irmaos' && (
+          <EmailIrmaos
             showSuccess={showSuccess}
             showError={showError}
           />
