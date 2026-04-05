@@ -130,33 +130,29 @@ const ParticipacaoComissoes = () => {
   };
 
   const getBadgeFuncao = (funcao) => {
-    const cores = {
-      'Presidente': 'bg-blue-100 text-blue-800',
-      'Vice-Presidente': 'bg-indigo-100 text-indigo-800',
-      'Secretário': 'bg-green-100 text-green-800',
-      'Tesoureiro': 'bg-yellow-100 text-yellow-800',
-      'Membro': 'bg-gray-100 text-gray-800'
+    const estilos = {
+      'Presidente':      {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'},
+      'Vice-Presidente': {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'},
+      'Secretário':      {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'},
+      'Tesoureiro':      {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'},
+      'Membro':          {background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},
     };
-    
     const icones = {
-      'Presidente': '👑',
-      'Vice-Presidente': '👔',
-      'Secretário': '📝',
-      'Tesoureiro': '💰',
-      'Membro': '👤'
+      'Presidente': '👑', 'Vice-Presidente': '📋', 'Secretário': '📝',
+      'Tesoureiro': '💰', 'Membro': '👤'
     };
-    
+    const s = estilos[funcao] || estilos['Membro'];
     return (
-      <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold whitespace-nowrap ${cores[funcao] || cores.Membro}`}>
-        {icones[funcao] || icones.Membro} {funcao}
+      <span style={{...s,padding:'0.1rem 0.45rem',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+        {icones[funcao] || '👤'} {funcao}
       </span>
     );
   };
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <p className="text-center text-gray-500">⏳ Carregando participações...</p>
+      <div className="rounded-lg shadow p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <p style={{textAlign:"center",color:"var(--color-text-muted)"}}>⏳ Carregando participações...</p>
       </div>
     );
   }
@@ -166,66 +162,54 @@ const ParticipacaoComissoes = () => {
 
   if (dados.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-2">📋 Participação em Comissões</h3>
-        <p className="text-center text-gray-500 py-4">Nenhuma participação em comissões ativas</p>
+      <div className="rounded-lg shadow p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <h3 className="text-lg font-bold mb-2" style={{color:"var(--color-text)"}}>📋 Participação em Comissões</h3>
+        <p style={{textAlign:"center",padding:"1rem",color:"var(--color-text-muted)"}}>Nenhuma participação em comissões ativas</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 p-4">
-        <h3 className="text-lg font-bold text-white mb-3">📋 Participação em Comissões</h3>
+    <div className="rounded-lg overflow-hidden mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+      <div style={{background:"var(--color-accent)",padding:"1rem 1.25rem"}}>
+        <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff",marginBottom:"0.75rem"}}>📋 Participação em Comissões</h3>
         
         <div className="flex gap-2">
           <button
             onClick={() => setAba('irmao')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              aba === 'irmao'
-                ? 'bg-white text-primary-700'
-                : 'bg-primary-500 text-white hover:bg-primary-400'
-            }`}
+            style={{padding:'0.4rem 1rem',borderRadius:'var(--radius-md)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:aba==='irmao'?'rgba(255,255,255,0.95)':'rgba(255,255,255,0.15)',color:aba==='irmao'?'var(--color-accent)':'#fff'}}
           >
             👥 Por Irmão ({porIrmao.length})
           </button>
           <button
             onClick={() => setAba('comissao')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              aba === 'comissao'
-                ? 'bg-white text-primary-700'
-                : 'bg-primary-500 text-white hover:bg-primary-400'
-            }`}
+            style={{padding:'0.4rem 1rem',borderRadius:'var(--radius-md)',fontWeight:'600',cursor:'pointer',border:'none',transition:'all 0.15s',background:aba==='comissao'?'rgba(255,255,255,0.95)':'rgba(255,255,255,0.15)',color:aba==='comissao'?'var(--color-accent)':'#fff'}}
           >
             📊 Por Comissão ({porComissao.length})
           </button>
         </div>
       </div>
 
-      <div className="p-4">
+      <div style={{padding:"1rem",background:"var(--color-bg)"}}>
         {aba === 'irmao' ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {porIrmao.map((irmao, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-3 hover:shadow-md transition">
+              <div key={index} className="border rounded-lg p-3 hover: transition" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="flex items-start gap-2 mb-2">
                   <span className="text-2xl">👤</span>
                   <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm text-gray-900 truncate" title={irmao.nome}>{irmao.nome}</h4>
-                    <p className="text-xs text-gray-500">CIM {irmao.cim}</p>
+                    <h4 className="font-bold text-sm truncate" style={{color:"var(--color-text)"}} title={irmao.nome}>{irmao.nome}</h4>
+                    <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>CIM {irmao.cim}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-1.5">
                   {irmao.comissoes.map((com, idx) => (
-                    <div key={idx} className="bg-gray-50 p-1.5 rounded border-l-2 border-primary-500">
-                      <p className="text-xs font-medium text-gray-800 truncate" title={com.nome}>{com.nome}</p>
+                    <div key={idx} style={{padding:"0.35rem 0.5rem",borderRadius:"var(--radius-sm)",borderLeft:"2px solid var(--color-accent)",background:"var(--color-surface-2)"}}>
+                      <p style={{fontSize:"0.72rem",fontWeight:"600",color:"var(--color-text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}} title={com.nome}>{com.nome}</p>
                       <div className="flex items-center gap-1 mt-1 flex-wrap">
                         {getBadgeFuncao(com.funcao)}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                          com.origem === 'interna' 
-                            ? 'bg-blue-50 text-blue-700' 
-                            : 'bg-purple-50 text-purple-700'
-                        }`}>
+                        <span style={{fontSize:"0.65rem",padding:"0.1rem 0.4rem",borderRadius:"var(--radius-sm)",background:com.origem==='interna'?'rgba(59,130,246,0.15)':'rgba(139,92,246,0.15)',color:com.origem==='interna'?'#3b82f6':'#8b5cf6'}}>
                           {com.origem === 'interna' ? '🏛️' : '🌐'}
                         </span>
                       </div>
@@ -238,37 +222,29 @@ const ParticipacaoComissoes = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {porComissao.map((comissao, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className={`p-3 ${
-                  comissao.origem === 'interna' 
-                    ? 'bg-blue-50 border-l-4 border-blue-500' 
-                    : 'bg-purple-50 border-l-4 border-purple-500'
-                }`}>
-                  <h4 className="font-bold text-gray-900 text-sm mb-2" title={comissao.nome}>{comissao.nome}</h4>
+              <div key={index} className="border rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div style={{padding:"0.75rem",borderLeft:comissao.origem==='interna'?'4px solid #3b82f6':'4px solid #8b5cf6',background:comissao.origem==='interna'?'rgba(59,130,246,0.08)':'rgba(139,92,246,0.08)'}}>
+                  <h4 className="font-bold text-sm mb-2" style={{color:"var(--color-text)"}} title={comissao.nome}>{comissao.nome}</h4>
                   <div className="flex gap-1.5 flex-wrap">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
+                    <span style={{padding:"0.1rem 0.5rem",borderRadius:"999px",fontSize:"0.68rem",fontWeight:"700",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
                       🟢 Em Andamento
                     </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      comissao.origem === 'interna'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
-                    }`}>
+                    <span style={{padding:'0.1rem 0.5rem',borderRadius:'999px',fontSize:'0.68rem',fontWeight:'700',background:comissao.origem==='interna'?'rgba(59,130,246,0.15)':'rgba(139,92,246,0.15)',color:comissao.origem==='interna'?'#3b82f6':'#8b5cf6',border:`1px solid ${comissao.origem==='interna'?'rgba(59,130,246,0.3)':'rgba(139,92,246,0.3)'}`}}>
                       {comissao.origem === 'interna' ? '🏛️ Interna' : '🌐 Externa'}
                     </span>
                   </div>
                 </div>
                 
                 <div className="p-3">
-                  <p className="text-[10px] font-semibold text-gray-600 mb-2">
+                  <p style={{fontSize:"0.65rem",fontWeight:"700",color:"var(--color-text-muted)",marginBottom:"0.5rem",textTransform:"uppercase",letterSpacing:"0.05em"}}>
                     INTEGRANTES ({comissao.integrantes.length})
                   </p>
                   <div className="space-y-2">
                     {comissao.integrantes.map((integrante, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-gray-50 p-2 rounded border border-gray-200">
+                      <div key={idx} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0.4rem 0.5rem",borderRadius:"var(--radius-sm)",background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-xs text-gray-900 truncate" title={integrante.nome}>{integrante.nome}</p>
-                          <p className="text-[10px] text-gray-500">CIM {integrante.cim}</p>
+                          <p style={{fontWeight:"600",fontSize:"0.78rem",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",color:"var(--color-text)"}} title={integrante.nome}>{integrante.nome}</p>
+                          <p style={{fontSize:"0.65rem",color:"var(--color-text-muted)"}}>CIM {integrante.cim}</p>
                         </div>
                         <div className="ml-2">
                           {getBadgeFuncao(integrante.funcao)}
