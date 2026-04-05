@@ -61,16 +61,17 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
   };
 
   // Função para obter cor do grau
-  const obterCorGrau = (grau) => {
+  const obterStyleGrau = (grau) => {
     const cores = {
-      'Aprendiz': 'bg-blue-500',
-      'Companheiro': 'bg-green-500',
-      'Mestre': 'bg-purple-500',
-      'Mestre Instalado': 'bg-primary-600',
-      'Não iniciado': 'bg-gray-400'
+      'Aprendiz':        {background:'#3b82f6'},
+      'Companheiro':     {background:'#10b981'},
+      'Mestre':          {background:'#8b5cf6'},
+      'Mestre Instalado':{background:'#f59e0b'},
+      'Não iniciado':    {background:'#64748b'},
     };
-    return cores[grau] || 'bg-gray-400';
+    return cores[grau] || {background:'#64748b'};
   };
+  const obterCorGrau = (grau) => '';
 
   // Carregar detalhes do irmão e familiares
   const carregarDetalhes = async (irmao) => {
@@ -584,10 +585,10 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>{irmaoSelecionado.nome}</h3>
                   <p className="mt-1">CIM: {irmaoSelecionado.cim}</p>
                   <div className="mt-3 flex gap-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${obterCorGrau(obterGrau(irmaoSelecionado))} text-white`}>
+                    <span style={{...obterStyleGrau(obterGrau(irmaoSelecionado)),padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.82rem",fontWeight:"700",color:"#fff"}}>
                       {obterGrau(irmaoSelecionado)}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${obterCorSituacao((irmaoSelecionado.situacao || 'regular').toLowerCase())}`}>
+                    <span style={{...obterStyleSituacao((irmaoSelecionado.situacao||'regular').toLowerCase()),padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.82rem",fontWeight:"700"}}>
                       {irmaoSelecionado.situacao || 'Regular'}
                     </span>
                   </div>
