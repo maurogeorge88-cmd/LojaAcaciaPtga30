@@ -152,34 +152,34 @@ const QuadroIrmaos = ({ irmaos }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-purple-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{totalMestres}</div>
+        <div style={{background:"#8b5cf6",borderRadius:"var(--radius-lg)",padding:"1.5rem",color:"#fff"}}>
+          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{totalMestres}</div>
           <div className="text-purple-100 mt-2">Mestres</div>
-          <div className="text-sm text-purple-200 mt-1">
+          <div style={{fontSize:"0.82rem",color:"rgba(255,255,255,0.7)",marginTop:"0.25rem"}}>
             {totalMestres > 0 ? ((totalMestres / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{totalCompanheiros}</div>
-          <div className="text-green-100 mt-2">Companheiros</div>
+        <div style={{background:"#10b981",borderRadius:"var(--radius-lg)",padding:"1.5rem",color:"#fff"}}>
+          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{totalCompanheiros}</div>
+          <div style={{color:"rgba(255,255,255,0.8)",marginTop:"0.5rem"}}>Companheiros</div>
           <div className="text-sm text-green-200 mt-1">
             {totalCompanheiros > 0 ? ((totalCompanheiros / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-primary-700 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{totalAprendizes}</div>
-          <div className="text-blue-100 mt-2">Aprendizes</div>
+        <div style={{background:"#3b82f6",borderRadius:"var(--radius-lg)",padding:"1.5rem",color:"#fff"}}>
+          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{totalAprendizes}</div>
+          <div style={{color:"rgba(255,255,255,0.8)",marginTop:"0.5rem"}}>Aprendizes</div>
           <div className="text-sm text-blue-200 mt-1">
             {totalAprendizes > 0 ? ((totalAprendizes / irmaosAtivos.length) * 100).toFixed(0) + '%' : '0%'}
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-gray-500 to-gray-600 text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <div className="text-4xl font-bold">{irmaosAtivos.length}</div>
+        <div className="text-white rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <div style={{fontSize:"2.25rem",fontWeight:"800",color:"inherit"}}>{irmaosAtivos.length}</div>
           <div className="text-gray-100 mt-2">Total Ativos</div>
           <div className="text-sm text-gray-200 mt-1">Regular + Licenciado</div>
         </div>
