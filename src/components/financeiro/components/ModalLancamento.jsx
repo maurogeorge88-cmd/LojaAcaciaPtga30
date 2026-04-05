@@ -56,14 +56,14 @@ export default function ModalLancamento({
   const config = {
     receita: {
       titulo: editando ? '✏️ Editar Receita' : '💰 Nova Receita',
-      corHeader: 'bg-primary-600',
+      corHeader: '#10b981',
       corFoco: 'focus:ring-green-500',
       corBotao: 'bg-green-600 hover:bg-green-700',
       textoBotao: editando ? '💾 Salvar Receita' : '✅ Criar Receita'
     },
     despesa: {
       titulo: editando ? '✏️ Editar Despesa' : '💳 Nova Despesa',
-      corHeader: 'bg-red-500',
+      corHeader: '#ef4444',
       corFoco: 'focus:ring-red-500',
       corBotao: 'bg-red-600 hover:bg-red-700',
       textoBotao: editando ? '💾 Salvar Despesa' : '✅ Criar Despesa'
@@ -90,7 +90,7 @@ export default function ModalLancamento({
             <select
               value={formData.categoria_id}
               onChange={(e) => setFormData({ ...formData, categoria_id: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             >
               <option value="">Selecione...</option>
@@ -106,7 +106,7 @@ export default function ModalLancamento({
               type="text"
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               placeholder={tipo === 'receita' ? 'Ex: Mensalidade Dezembro' : 'Ex: Conta de Luz'}
               required
             />
@@ -128,7 +128,7 @@ export default function ModalLancamento({
                   origem_irmao_id: ''
                 });
               }}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             >
               <option value="Loja">🏛️ Loja</option>
@@ -144,7 +144,7 @@ export default function ModalLancamento({
               <select
                 value={formData.origem_irmao_id}
                 onChange={(e) => setFormData({ ...formData, origem_irmao_id: e.target.value })}
-                className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+                className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 required
               >
                 <option value="">Selecione...</option>
@@ -167,7 +167,7 @@ export default function ModalLancamento({
               step="0.01"
               value={formData.valor}
               onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               placeholder="0,00"
               required
             />
@@ -181,7 +181,7 @@ export default function ModalLancamento({
               type="date"
               value={formData.data_lancamento}
               onChange={(e) => setFormData({ ...formData, data_lancamento: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             />
           </div>
@@ -194,7 +194,7 @@ export default function ModalLancamento({
               type="date"
               value={formData.data_vencimento}
               onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             />
           </div>
@@ -209,7 +209,7 @@ export default function ModalLancamento({
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             >
               <option value="pendente">⏳ Pendente</option>
@@ -224,7 +224,7 @@ export default function ModalLancamento({
             <select
               value={formData.tipo_pagamento}
               onChange={(e) => setFormData({ ...formData, tipo_pagamento: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             >
               <option value="dinheiro">💵 Dinheiro</option>
@@ -247,7 +247,7 @@ export default function ModalLancamento({
               type="date"
               value={formData.data_pagamento}
               onChange={(e) => setFormData({ ...formData, data_pagamento: e.target.value })}
-              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+              className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               required
             />
           </div>
@@ -261,7 +261,7 @@ export default function ModalLancamento({
           <textarea
             value={formData.observacoes || ''}
             onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-            className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`}
+            className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
             rows="3"
             placeholder="Observações adicionais..."
           />
@@ -278,7 +278,7 @@ export default function ModalLancamento({
           <button
             type="button"
             onClick={onFechar}
-            className="px-6 py-2 bg-gray-300 rounded-lg transition-colors"
+            style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
           >
             Cancelar
           </button>
