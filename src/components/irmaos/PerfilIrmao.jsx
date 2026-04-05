@@ -397,9 +397,9 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* Header com foto e nome */}
-      <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",overflow:"hidden"}}>
         <div className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex gap-6 items-start">
@@ -412,13 +412,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   />
                 ) : (
                   <div className="w-24 h-24 rounded-full border-4 flex items-center justify-center">
-                    <span className="text-4xl text-blue-600">👤</span>
+                    <span style={{fontSize:"2.5rem"}}>👤</span>
                   </div>
                 )}
                 
                 {/* Botão upload foto */}
                 {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
-                  <label className="cursor-pointer text-blue-600 px-3 py-1 rounded-md text-xs font-medium hover: transition-colors" style={{color:"var(--color-text-muted)"}}>
+                  <label style={{cursor:"pointer",color:"var(--color-text-muted)",padding:"0.15rem 0.75rem",borderRadius:"var(--radius-md)",fontSize:"0.75rem",fontWeight:"600",border:"1px solid var(--color-border)",background:"var(--color-surface-2)"}}>
                     📷 Alterar Foto
                     <input
                       type="file"
@@ -445,9 +445,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="font-semibold">Status:</span>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      irmao.status === 'ativo' ? 'bg-green-500' : 'bg-gray-500'
-                    }`}>
+                    <span style={{padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.72rem',fontWeight:'700',color:'#fff',background:irmao.status==='ativo'?'#10b981':'var(--color-surface-3)'}}>
                       {irmao.status?.toUpperCase() || 'ATIVO'}
                     </span>
                   </div>
@@ -471,7 +469,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                 <>
                   <button
                     onClick={handleSalvarEdicao}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                    style={{padding:"0.5rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
                   >
                     ✓ Salvar
                   </button>
@@ -480,7 +478,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                       setModoEdicao(false);
                       carregarIrmao(); // Recarrega dados originais
                     }}
-                    className="rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                    style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                   >
                     ✕ Cancelar
                   </button>
@@ -489,7 +487,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
               
               <button
                 onClick={onVoltar}
-                className="px-4 py-2 text-blue-600 rounded-lg transition-colors font-medium"
+                style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
               >
                 ← Voltar
               </button>
@@ -503,61 +501,37 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
         <div className="flex border-b overflow-x-auto">
           <button
             onClick={() => setAbaSelecionada('pessoal')}
-            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-              abaSelecionada === 'pessoal'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : ' hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='pessoal'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='pessoal'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             📋 Dados Pessoais
           </button>
           <button
             onClick={() => setAbaSelecionada('maconico')}
-            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-              abaSelecionada === 'maconico'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : ' hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='maconico'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='maconico'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             🔨 Dados Maçônicos
           </button>
           <button
             onClick={() => setAbaSelecionada('familiar')}
-            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-              abaSelecionada === 'familiar'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : ' hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='familiar'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='familiar'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             👨‍👩‍👧 Dados Familiares
           </button>
           <button
             onClick={() => setAbaSelecionada('vida-maconica')}
-            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-              abaSelecionada === 'vida-maconica'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : ' hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='vida-maconica'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='vida-maconica'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             🔺 Vida Maçônica
           </button>
           <button
             onClick={() => setAbaSelecionada('situacoes')}
-            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-              abaSelecionada === 'situacoes'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : ' hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='situacoes'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='situacoes'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             📋 Situações
           </button>
           <button
             onClick={() => setAbaSelecionada('documentos')}
-            className={`px-6 py-3 font-medium transition-colors whitespace-nowrap ${
-              abaSelecionada === 'documentos'
-                ? 'border-b-2 border-blue-600 text-blue-600'
-                : ' hover:'
-            }`}
+            style={{padding:'0.75rem 1.5rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='documentos'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='documentos'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             📄 Documentos
           </button>
@@ -985,7 +959,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   if (idade >= 70) {
                     return (
                       <div className="mt-3 p-3 rounded" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
-                        <p className="text-sm text-blue-800">
+                        <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
                           💡 <strong>Com Prerrogativa por Idade</strong> - Este irmão tem {idade} anos.
                         </p>
                       </div>
@@ -1092,7 +1066,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           name="mestre_instalado"
                           checked={irmaoForm.mestre_instalado === true}
                           onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: true })}
-                          className="w-4 h-4 text-blue-600"
+                          style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                         />
                         <span className="ml-2 text-sm">Sim</span>
                       </label>
@@ -1102,7 +1076,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           name="mestre_instalado"
                           checked={irmaoForm.mestre_instalado === false}
                           onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: false, data_instalacao: '' })}
-                          className="w-4 h-4 text-blue-600"
+                          style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                         />
                         <span className="ml-2 text-sm">Não</span>
                       </label>
@@ -1270,7 +1244,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             <td className="px-4 py-3 text-sm font-bold" style={{color:"var(--color-text)"}}>
                               {cargo.cargo.split(',').map((c, i) => (
                                 <div key={i} className="flex items-start gap-1">
-                                  <span className="text-blue-600">{i + 1}.</span>
+                                  <span style={{color:"var(--color-accent)"}}>{i + 1}.</span>
                                   <span>{c.trim()}</span>
                                 </div>
                               ))}
@@ -1299,7 +1273,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                                         setHistoricoCargos(historicoCargos.filter((_, i) => i !== index));
                                       }
                                     }}
-                                    className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600"
+                                    style={{padding:"0.15rem 0.5rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",cursor:"pointer"}}
                                     title="Excluir"
                                   >
                                     🗑️
@@ -1327,7 +1301,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
           {abaSelecionada === 'familiar' && (
             <div className="space-y-6">
               {/* Cônjuge */}
-              <div className="bg-gradient-to-r from-pink-50 to-purple-50 p-6 rounded-lg border-2 border-pink-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              <div className="p-6 rounded-lg border-2 border-pink-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <h4 className="text-lg font-bold text-pink-900 mb-4 flex items-center gap-2" style={{color:"var(--color-text)"}}>
                   💑 Cônjuge
                 </h4>
@@ -1460,7 +1434,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               }
                             }
                           })}
-                          className="w-4 h-4 text-blue-600 rounded"
+                          style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                         />
                         <span className="text-sm font-medium">Vivo</span>
                       </label>
@@ -1520,7 +1494,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               }
                             }
                           })}
-                          className="w-4 h-4 text-blue-600 rounded"
+                          style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                         />
                         <span className="text-sm font-medium">Viva</span>
                       </label>
@@ -1564,7 +1538,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${!familiares.pais.pai.falecido ? 'text-green-600' : ''}`}>
+                              <span style={{marginLeft:'0.5rem',color:!familiares.pais.pai.falecido?'#10b981':'var(--color-text-muted)'}}>
                                 {!familiares.pais.pai.falecido ? '✓ Vivo' : '✝ Falecido'}
                               </span>
                             </div>
@@ -1600,7 +1574,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             )}
                             <div className="text-sm">
                               <span className="font-medium">Status:</span>
-                              <span className={`ml-2 ${!familiares.pais.mae.falecido ? 'text-green-600' : ''}`}>
+                              <span style={{marginLeft:'0.5rem',color:!familiares.pais.mae.falecido?'#10b981':'var(--color-text-muted)'}}>
                                 {!familiares.pais.mae.falecido ? '✓ Viva' : '✝ Falecida'}
                               </span>
                             </div>
@@ -1624,7 +1598,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
 
               {/* Filhos */}
               {(familiares.filhos.length > 0 || modoEdicao) && (
-                <div className="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-lg border-2 border-green-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div className="p-6 rounded-lg border-2 border-green-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <h4 className="text-lg font-bold text-green-900 mb-4" style={{color:"var(--color-text)"}}>👶 Filhos ({familiares.filhos.length})</h4>
                   
                   {modoEdicao && (
@@ -1683,7 +1657,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                               type="checkbox"
                               checked={filhoForm.vivo}
                               onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
-                              className="w-4 h-4 text-blue-600 rounded"
+                              style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                             />
                             <span className="text-sm font-medium">Vivo</span>
                           </label>
@@ -1732,7 +1706,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                             }
                             setFilhoForm({ nome: '', data_nascimento: '', sexo: '', tipo_vinculo: '', vivo: true, data_obito: '' });
                           }}
-                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                          style={{padding:"0.5rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                         >
                           {filhoEditandoIndex !== null ? '💾 Salvar' : '➕ Adicionar'}
                         </button>
@@ -1810,7 +1784,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                           )}
                           <div className="text-sm">
                             <span className="font-medium">Status:</span>
-                            <span className={`ml-2 ${filho.vivo ? 'text-green-600' : ''}`}>
+                            <span style={{marginLeft:'0.5rem',color:filho.vivo?'#10b981':'var(--color-text-muted)'}}>
                               {filho.vivo ? '✓ Vivo(a)' : '✝ Falecido(a)'}
                             </span>
                           </div>
@@ -1900,7 +1874,7 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         {(permissoes?.pode_editar_irmaos || userEmail === irmao.email) && (
                           <button
                             onClick={() => handleExcluirDocumento(doc.id, doc.url_arquivo)}
-                            className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                            style={{padding:"0.4rem 0.75rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.82rem",fontWeight:"600"}}
                           >
                             🗑️ Excluir
                           </button>
@@ -1925,13 +1899,13 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   setModoEdicao(false);
                   setIrmaoForm(irmao);
                 }}
-                className="rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
               >
                 ❌ Cancelar
               </button>
               <button
                 onClick={handleSalvar}
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                style={{padding:"0.5rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
               >
                 💾 Salvar Alterações
               </button>
