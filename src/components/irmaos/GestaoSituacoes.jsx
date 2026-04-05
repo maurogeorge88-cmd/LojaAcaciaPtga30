@@ -224,7 +224,7 @@ export default function GestaoSituacoes({ irmaId }) {
   return (
     <div className="rounded-lg p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Histórico de Situações</h3>
+        <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"#fff",margin:0}}>Histórico de Situações</h3>
         <button
           type="button"
           onClick={() => abrirModal()}
@@ -236,42 +236,46 @@ export default function GestaoSituacoes({ irmaId }) {
 
       {/* Mensagem */}
       {mensagem.texto && (
-        <div className={`mb-4 p-3 rounded ${
-          mensagem.tipo === 'sucesso' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div style={{marginBottom:"1rem",padding:"0.75rem",borderRadius:"var(--radius-md)",background:mensagem.tipo==='sucesso'?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)',color:mensagem.tipo==='sucesso'?'#10b981':'#ef4444',border:`1px solid ${mensagem.tipo==='sucesso'?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)'}`}}>
           {mensagem.texto}
         </div>
       )}
 
       {/* Lista de Situações */}
       {situacoes.length === 0 ? (
-        <p className="text-center py-8">Nenhuma situação registrada</p>
+        <p style={{textAlign:"center",padding:"2rem",color:"var(--color-text-muted)"}}>Nenhuma situação registrada</p>
       ) : (
         <div className="space-y-3">
           {situacoes.map(sit => (
             <div 
               key={sit.id} 
-              className={`border rounded-lg p-4 ${
-                sit.status === 'cancelada' ? ' opacity-60' : 
-                getStatusTexto(sit) === 'ATIVA' ? 'bg-green-50 border-green-300' : 
-                ''
-              }`}
+              style={{
+                borderRadius:'var(--radius-lg)',
+                padding:'1rem',
+                border:'1px solid var(--color-border)',
+                borderLeft: getStatusTexto(sit)==='ATIVA' ? '4px solid #10b981' :
+                            getStatusTexto(sit)==='AGENDADA' ? '4px solid var(--color-accent)' :
+                            '4px solid var(--color-border)',
+                background: sit.status==='cancelada' ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                opacity: sit.status==='cancelada' ? 0.6 : 1,
+              }}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-2xl">{getStatusIcon(sit)}</span>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded ${
-                      getStatusTexto(sit) === 'ATIVA' ? 'bg-green-200 text-green-800' :
-                      getStatusTexto(sit) === 'AGENDADA' ? 'bg-blue-200 text-blue-800' :
-                      ' '
-                    }`}>
+                    <span style={{
+                      fontSize:'0.7rem',fontWeight:'700',padding:'0.15rem 0.5rem',borderRadius:'999px',
+                      background:getStatusTexto(sit)==='ATIVA'?'rgba(16,185,129,0.15)':getStatusTexto(sit)==='AGENDADA'?'rgba(59,130,246,0.15)':'var(--color-surface-2)',
+                      color:getStatusTexto(sit)==='ATIVA'?'#10b981':getStatusTexto(sit)==='AGENDADA'?'#3b82f6':'var(--color-text-muted)',
+                      border:`1px solid ${getStatusTexto(sit)==='ATIVA'?'rgba(16,185,129,0.3)':getStatusTexto(sit)==='AGENDADA'?'rgba(59,130,246,0.3)':'var(--color-border)'}`,
+                    }}>
                       {getStatusTexto(sit)}
                     </span>
-                    <span className="font-semibold text-lg">{getTipoLabel(sit.tipo_situacao)}</span>
+                    <span style={{fontWeight:"700",fontSize:"1rem",color:"var(--color-text)"}}>{getTipoLabel(sit.tipo_situacao)}</span>
                   </div>
                   
-                  <div className="text-sm space-y-1">
+                  <div style={{fontSize:"0.82rem",color:"var(--color-text)",lineHeight:"1.6"}}>
                     <div>
                       <strong>Período:</strong> {formatarData(sit.data_inicio)} 
                       {sit.data_fim ? ` → ${formatarData(sit.data_fim)}` : ' → Indefinido'}
@@ -297,7 +301,7 @@ export default function GestaoSituacoes({ irmaId }) {
                     <button
                       type="button"
                       onClick={() => abrirModal(sit)}
-                      className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                     >
                       Editar
                     </button>
@@ -305,7 +309,7 @@ export default function GestaoSituacoes({ irmaId }) {
                       <button
                         type="button"
                         onClick={() => encerrar(sit.id)}
-                        className="px-3 py-1 text-sm bg-orange-100 text-orange-700 rounded hover:bg-orange-200"
+                        style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                       >
                         Encerrar
                       </button>
@@ -314,7 +318,7 @@ export default function GestaoSituacoes({ irmaId }) {
                       <button
                         type="button"
                         onClick={() => cancelar(sit.id)}
-                        className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                        style={{padding:"0.25rem 0.65rem",fontSize:"0.8rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                       >
                         Cancelar
                       </button>
@@ -331,11 +335,11 @@ export default function GestaoSituacoes({ irmaId }) {
       {mostrarModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <div className="bg-primary-600 text-white p-4 flex justify-between items-center">
-              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>
+            <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"#fff",margin:0}}>
                 {editando ? 'Editar Situação' : 'Nova Situação'}
               </h3>
-              <button onClick={fecharModal} className="text-white hover:text-gray-200">
+              <button onClick={fecharModal} style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -457,7 +461,7 @@ export default function GestaoSituacoes({ irmaId }) {
                 <button
                   type="button"
                   onClick={fecharModal}
-                  className="px-4 py-2 bg-gray-300 rounded transition-colors"
+                  style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                 >
                   Cancelar
                 </button>
