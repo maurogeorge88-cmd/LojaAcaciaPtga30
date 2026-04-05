@@ -278,7 +278,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
   const { totalItens, totalLancamentos, quantidadeLancamentos } = calcularTotais();
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-6" style={{background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
       {/* HEADER COM PROGRESSO */}
       <div className="rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between mb-3">
