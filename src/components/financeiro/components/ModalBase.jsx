@@ -1,14 +1,5 @@
 import React from 'react';
 
-/**
- * Modal Base - Componente reutilizável para todos os modais
- * @param {boolean} aberto - Controla se o modal está visível
- * @param {function} onFechar - Callback para fechar o modal
- * @param {string} titulo - Título do modal
- * @param {string} corHeader - Classe CSS para cor de fundo do header (opcional)
- * @param {string} tamanho - Tamanho do modal: 'sm', 'md', 'lg', 'xl', '2xl', '4xl'
- * @param {ReactNode} children - Conteúdo do modal
- */
 export default function ModalBase({ 
   aberto, 
   onFechar, 
@@ -20,38 +11,63 @@ export default function ModalBase({
   if (!aberto) return null;
 
   const tamanhos = {
-    sm: 'max-w-sm',
-    md: 'max-w-md',
-    lg: 'max-w-lg',
-    xl: 'max-w-xl',
+    sm:  'max-w-sm',
+    md:  'max-w-md',
+    lg:  'max-w-lg',
+    xl:  'max-w-xl',
     '2xl': 'max-w-2xl',
     '3xl': 'max-w-3xl',
     '4xl': 'max-w-4xl',
   };
 
-  // Determinar cor do texto baseado na cor do header
-  const corTexto = corHeader === '' ? '' : 'text-white';
-  const corBotaoFechar = corHeader === '' ? ' hover:' : 'text-white/80 hover:text-white';
+  const headerBg = corHeader || 'var(--color-accent)';
+  // Se corHeader é uma classe Tailwind (bg-*), manter como className
+  const usaClassHeader = corHeader.startsWith('bg-') || corHeader.startsWith('from-');
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={` rounded-lg  ${tamanhos[tamanho]} w-full max-h-[90vh] overflow-y-auto`}>
+    <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:50,padding:'1rem'}}>
+      <div
+        className={tamanhos[tamanho]}
+        style={{
+          width:'100%',
+          maxHeight:'90vh',
+          overflowY:'auto',
+          background:'var(--color-surface)',
+          border:'1px solid var(--color-border)',
+          borderRadius:'var(--radius-xl)',
+          boxShadow:'0 20px 60px rgba(0,0,0,0.3)',
+        }}
+      >
         {/* Header */}
-        <div className={`sticky top-0 ${corHeader} border-b  px-6 py-4 flex justify-between items-center rounded-t-lg`}>
-          <h3 className={`text-xl font-bold ${corTexto}`}>{titulo}</h3>
+        <div
+          className={usaClassHeader ? corHeader : ''}
+          style={{
+            position:'sticky',
+            top:0,
+            zIndex:10,
+            ...(!usaClassHeader ? {background: headerBg === '' ? 'var(--color-surface-2)' : headerBg} : {}),
+            padding:'1rem 1.5rem',
+            display:'flex',
+            justifyContent:'space-between',
+            alignItems:'center',
+            borderBottom:'1px solid var(--color-border)',
+            borderRadius:'var(--radius-xl) var(--radius-xl) 0 0',
+          }}
+        >
+          <h3 style={{fontSize:'1.1rem',fontWeight:'700',color:'#fff',margin:0}}>{titulo}</h3>
           <button
             onClick={onFechar}
-            className={`${corBotaoFechar} transition-colors`}
             type="button"
+            style={{background:'rgba(255,255,255,0.15)',border:'1px solid rgba(255,255,255,0.3)',color:'#fff',borderRadius:'50%',width:'2rem',height:'2rem',display:'flex',alignItems:'center',justifyContent:'center',cursor:'pointer'}}
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg style={{width:'1rem',height:'1rem'}} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6">
+        <div style={{padding:'1.5rem'}}>
           {children}
         </div>
       </div>
