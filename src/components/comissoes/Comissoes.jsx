@@ -366,7 +366,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   };
 
   return (
-    <div>
+    <div style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* FORMULÁRIO - Só aparece para quem pode editar */}
       {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
         <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
@@ -494,7 +494,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
             <button
               type="button"
               onClick={adicionarIntegrante}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              style={{padding:"0.4rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
             >
               Adicionar
             </button>
@@ -509,7 +509,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                   <button
                     type="button"
                     onClick={() => removerIntegrante(integrante.irmao_id)}
-                    className="text-red-600 hover:text-red-800"
+                    style={{background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",padding:"0.2rem 0.5rem",cursor:"pointer",fontSize:"0.82rem"}}
                   >
                     ❌
                   </button>
@@ -545,7 +545,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
       {/* LISTAGEM */}
       <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div className="p-4 bg-gradient-to-r from-primary-600 to-blue-700 text-white">
+        <div style={{padding:"1rem 1.25rem",background:"var(--color-accent)"}}>
           <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Comissões Cadastradas</h3>
           <p className="text-sm text-blue-100">Total: {comissoes.length} comissão(ões)</p>
         </div>
@@ -569,7 +569,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                 onClick={() => setAbaAtiva('externa')}
                 className={`px-4 py-2 rounded-lg font-medium transition ${
                   abaAtiva === 'externa'
-                    ? 'bg-purple-600 text-white'
+                    ? 'aba-ativa-placeholder'
                     : '  hover:'
                 }`}
               >
@@ -635,10 +635,10 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                             <h4 className="font-bold text-lg">{comissao.nome}</h4>
                             <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
                             <div className="flex gap-4 mt-2 text-sm">
-                              <span className="px-2 py-1 rounded bg-green-100 text-green-800">
+                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",fontWeight:"600",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
                                 Em Andamento
                               </span>
-                              <span className="">
+                              <span>
                                 📅 {formatarData(comissao.data_inicio)} 
                                 {comissao.data_fim && ` - ${formatarData(comissao.data_fim)}`}
                               </span>
@@ -703,7 +703,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                               <span className="px-2 py-1 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                                 Encerrada
                               </span>
-                              <span className="">
+                              <span>
                                 📅 {formatarData(comissao.data_inicio)} - {formatarData(comissao.data_fim)}
                               </span>
                             </div>
@@ -761,33 +761,29 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
-            <div className="bg-gradient-to-r from-primary-600 to-blue-800 text-white p-6 rounded-t-xl">
+            <div style={{background:"var(--color-accent)",padding:"1.25rem 1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
               <div className="flex justify-between items-start">
                 <div>
-                  <h3 className="text-2xl font-bold mb-2" style={{color:"var(--color-text)"}}>📋 {comissaoVisualizar.nome}</h3>
+                  <h3 style={{fontSize:"1.25rem",fontWeight:"800",color:"#fff",margin:"0 0 0.5rem"}}>📋 {comissaoVisualizar.nome}</h3>
                   <div className="flex gap-2 flex-wrap">
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                      comissaoVisualizar.status === 'em_andamento'
-                        ? 'bg-green-500'
-                        : comissaoVisualizar.status === 'concluida'
-                        ? 'bg-blue-500'
-                        : 'opacity-60'
-                    }`}>
+                    <span style={{padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:"700",
+                      background:comissaoVisualizar.status==='em_andamento'?'rgba(16,185,129,0.2)':comissaoVisualizar.status==='concluida'?'rgba(59,130,246,0.2)':'rgba(148,163,184,0.2)',
+                      color:comissaoVisualizar.status==='em_andamento'?'#10b981':comissaoVisualizar.status==='concluida'?'#3b82f6':'#94a3b8',
+                      border:'1px solid currentColor'}}>
                       {comissaoVisualizar.status === 'em_andamento' ? '🔄 Em Andamento' : 
                        comissaoVisualizar.status === 'concluida' ? '✅ Concluída' : '⏸️ Suspensa'}
                     </span>
-                    <span className={`px-3 py-1 rounded-full text-sm ${
-                      comissaoVisualizar.origem === 'interna' 
-                        ? 'bg-blue-400' 
-                        : 'bg-purple-400'
-                    }`}>
+                    <span style={{padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:"700",
+                      background:comissaoVisualizar.origem==='interna'?'rgba(59,130,246,0.2)':'rgba(139,92,246,0.2)',
+                      color:comissaoVisualizar.origem==='interna'?'#3b82f6':'#8b5cf6',
+                      border:'1px solid currentColor'}}>
                       {comissaoVisualizar.origem === 'interna' ? '🏢 Interna' : '🌐 Externa'}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={() => setModalVisualizar(false)}
-                  className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
+                  style={{background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",color:"#fff",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}
                   title="Fechar"
                 >
                   ×
@@ -827,7 +823,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
               {/* Objetivo */}
               {comissaoVisualizar.objetivo && (
-                <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-600" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                <div className="p-4 rounded-lg border-l-4 border-blue-600" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <p className="text-sm mb-2 font-semibold">🎯 Objetivo</p>
                   <p className="whitespace-pre-wrap">
                     {comissaoVisualizar.objetivo}
@@ -852,7 +848,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                               <p className="text-sm">CIM: {irmao.cim}</p>
                             )}
                           </div>
-                          <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          <span style={{padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.78rem",fontWeight:"700",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
                             {integrante.funcao}
                           </span>
                         </div>
@@ -888,9 +884,9 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           <h5 className="font-bold text-base">{atividade.titulo}</h5>
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                             atividade.status === 'concluida' 
-                              ? 'bg-green-100 text-green-800' 
+                              ? ' text-green-800' 
                               : atividade.status === 'em_andamento'
-                              ? 'bg-yellow-100 text-yellow-800'
+                              ? ' text-yellow-800'
                               : ' '
                           }`}>
                             {atividade.status === 'concluida' ? '✅ Concluída' : 
@@ -901,7 +897,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                         <div className="space-y-3">
                           {/* Deliberações */}
                           {atividade.deliberacoes && (
-                            <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                            <div className="p-3 rounded-lg border-l-4 border-blue-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                               <p className="text-xs font-bold text-blue-800 mb-1">💬 Deliberações:</p>
                               <p className="text-sm whitespace-pre-wrap">{atividade.deliberacoes}</p>
                             </div>
@@ -909,7 +905,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                           
                           {/* Observações */}
                           {atividade.observacoes && (
-                            <div className="bg-purple-50 p-3 rounded-lg border-l-4 border-purple-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                            <div className="p-3 rounded-lg border-l-4 border-purple-500" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                               <p className="text-xs font-bold text-purple-800 mb-1">📝 Observações:</p>
                               <p className="text-sm whitespace-pre-wrap">{atividade.observacoes}</p>
                             </div>
@@ -938,7 +934,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                   setModalVisualizar(false);
                   handleEditar(comissaoVisualizar);
                 }}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 font-semibold"
+                className="px-4 py-2 text-white rounded-lg hover: font-semibold"
               >
                 ✏️ Editar
               </button>
