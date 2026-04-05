@@ -33,10 +33,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   });
 
   const tiposProjeto = [
-    { value: 'social', label: '🤝 Social', cor: 'bg-blue-100 text-blue-800' },
-    { value: 'administrativo', label: '📋 Administrativo', cor: 'bg-purple-100 text-purple-800' },
-    { value: 'beneficente', label: '❤️ Beneficente', cor: 'bg-red-100 text-red-800' },
-    { value: 'patrimonial', label: '🏛️ Patrimonial', cor: 'bg-green-100 text-green-800' },
+    { value: 'social', label: '🤝 Social', style: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'} },
+    { value: 'administrativo', label: '📋 Administrativo', style: {background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'} },
+    { value: 'beneficente', label: '❤️ Beneficente', style: {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'} },
+    { value: 'patrimonial', label: '🏛️ Patrimonial', style: {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'} },
     { value: 'outro', label: '📌 Outro', cor: ' ' }
   ];
 
@@ -323,28 +323,28 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   };
 
   const statusLabels = {
-    em_andamento: { label: '🔄 Em Andamento', cor: 'bg-blue-100 text-blue-800' },
-    concluido: { label: '✅ Concluído', cor: 'bg-green-100 text-green-800' },
-    suspenso: { label: '⏸️ Suspenso', cor: 'bg-yellow-100 text-yellow-800' },
-    cancelado: { label: '❌ Cancelado', cor: 'bg-red-100 text-red-800' }
+    em_andamento: { label: '🔄 Em Andamento', style: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'} },
+    concluido:    { label: '✅ Concluído',    style: {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'} },
+    suspenso:     { label: '⏸️ Suspenso',    style: {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'} },
+    cancelado:    { label: '❌ Cancelado',   style: {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'} }
   };
 
   if (loading) {
-    return <div className="text-center py-12">⏳ Carregando projetos...</div>;
+    return <div style={{textAlign:"center",padding:"3rem",color:"var(--color-text-muted)"}}>⏳ Carregando projetos...</div>;
   }
 
   return (
-    <div className="max-w-7xl mx-auto -mx-3">
+    <div className="max-w-7xl mx-auto -mx-3" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* Header */}
       <div className="flex justify-between items-center mb-6 px-3">
         <div>
           <h2 className="text-3xl font-bold" style={{color:"var(--color-text)"}}>🎯 Projetos da Loja</h2>
-          <p className="mt-1">Gerencie os projetos e seus custos</p>
+          <p className="mt-1" style={{color:"var(--color-text-muted)"}}>Gerencie os projetos e seus custos</p>
         </div>
         {permissoes?.canEdit && (
           <button
             onClick={() => setMostrarFormulario(!mostrarFormulario)}
-            className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg transition font-bold"
+            style={{padding:"0.6rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
           >
             {mostrarFormulario ? '❌ Cancelar' : '➕ Novo Projeto'}
           </button>
@@ -519,7 +519,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
           <div className="flex gap-3 mt-6">
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg transition font-bold"
+              style={{flex:1,padding:"0.6rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
             >
               💾 {projetoEditando ? 'Atualizar Projeto' : 'Cadastrar Projeto'}
             </button>
@@ -537,12 +537,12 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Lista de Projetos */}
       <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-3">
         {projetos.length === 0 ? (
-          <div className="col-span-2 text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <div className="col-span-2 text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-lg">📋 Nenhum projeto cadastrado</p>
             {permissoes?.canEdit && (
               <button
                 onClick={() => setMostrarFormulario(true)}
-                className="mt-4 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition"
+                style={{marginTop:"1rem",padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer"}}
               >
                 ➕ Cadastrar Primeiro Projeto
               </button>
@@ -564,10 +564,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <div className="flex-1">
                     <h3 className="text-xl font-bold mb-2" style={{color:"var(--color-text)"}}>{projeto.nome}</h3>
                     <div className="flex flex-wrap gap-2 mb-2">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${tipoInfo?.cor || ' '}`}>
+                      <span style={{...tipoInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                         {tipoInfo?.label || projeto.tipo}
                       </span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusInfo?.cor || ' '}`}>
+                      <span style={{...statusInfo?.style||{background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'},padding:'0.2rem 0.65rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700'}}>
                         {statusInfo?.label || projeto.status}
                       </span>
                     </div>
@@ -577,13 +577,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     <div className="flex gap-2">
                       <button
                         onClick={() => editarProjeto(projeto)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-primary-600 transition text-sm"
+                        style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                       >
                         ✏️
                       </button>
                       <button
                         onClick={() => excluirProjeto(projeto.id)}
-                        className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition text-sm"
+                        style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
                       >
                         🗑️
                       </button>
@@ -593,58 +593,58 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
                 {/* Descrição */}
                 {projeto.descricao && (
-                  <p className="text-sm mb-4">{projeto.descricao}</p>
+                  <p style={{fontSize:"0.85rem",color:"var(--color-text-muted)",marginBottom:"1rem"}}>{projeto.descricao}</p>
                 )}
 
                 {/* Informações do Projeto */}
                 <div className="space-y-2 mb-4 text-sm">
                   <div className="flex justify-between">
-                    <span className="">📅 Início:</span>
+                    <span>📅 Início:</span>
                     <span className="font-semibold">{new Date(projeto.data_inicio + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                   </div>
                   {projeto.data_prevista_termino && (
                     <div className="flex justify-between">
-                      <span className="">🎯 Prev. Término:</span>
+                      <span>🎯 Prev. Término:</span>
                       <span className="font-semibold">{new Date(projeto.data_prevista_termino + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     </div>
                   )}
                   {projeto.data_finalizacao && (
                     <div className="flex justify-between">
-                      <span className="">✅ Finalizado:</span>
+                      <span>✅ Finalizado:</span>
                       <span className="font-semibold">{new Date(projeto.data_finalizacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                     </div>
                   )}
                   {projeto.responsavel && (
                     <div className="flex justify-between">
-                      <span className="">👤 Responsável:</span>
+                      <span>👤 Responsável:</span>
                       <span className="font-semibold">{projeto.responsavel}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Financeiro */}
-                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 space-y-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <div className="rounded-lg p-4 space-y-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">💰 Valor Previsto:</span>
-                    <span className="text-lg font-bold text-blue-600">
+                    <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#3b82f6"}}>
                       R$ {parseFloat(projeto.valor_previsto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">💵 Receitas:</span>
-                    <span className="text-lg font-bold text-green-600">
+                    <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#10b981"}}>
                       R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-semibold">💸 Custos:</span>
-                    <span className="text-lg font-bold text-red-600">
+                    <span style={{fontSize:"1.1rem",fontWeight:"800",color:"#ef4444"}}>
                       R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 -t-2" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                     <span className="font-bold">💳 Saldo:</span>
-                    <span className={`text-xl font-bold ${saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span style={{fontSize:"1.25rem",fontWeight:"800",color:saldo>=0?"#10b981":"#ef4444"}}>
                       R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
@@ -658,13 +658,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     <div className="w-full rounded-full h-3 overflow-hidden" style={{background:"var(--color-surface-3)"}}>
                       <div
                         className={`h-3 rounded-full transition-all ${
-                          percentual > 100 ? 'bg-red-500' : percentual > 75 ? 'bg-yellow-500' : 'bg-blue-500'
+                          percentual > 100 ? '#ef4444' : percentual > 75 ? '#f59e0b' : 'var(--color-accent)'
                         }`}
                         style={{ width: `${Math.min(100, percentual)}%` }}
                       />
                     </div>
                     {percentual > 100 && (
-                      <p className="text-xs text-red-600 mt-1">⚠️ Custos ultrapassaram o valor previsto!</p>
+                      <p style={{fontSize:"0.72rem",color:"#ef4444",marginTop:"0.25rem"}}>⚠️ Custos ultrapassaram o valor previsto!</p>
                     )}
                   </div>
 
@@ -676,7 +676,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         carregarReceitas(projeto.id);
                         setMostrarReceitas(true);
                       }}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium text-sm"
+                      style={{padding:"0.4rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
                     >
                       💵 Receitas
                     </button>
@@ -703,7 +703,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
             {/* Header do Modal */}
-            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 sticky top-0">
+            <div style={{background:"#10b981",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💵 Receitas do Projeto</h3>
@@ -790,7 +790,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     />
                     <button
                       type="submit"
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium"
+                      style={{padding:"0.45rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                     >
                       ➕ Adicionar
                     </button>
@@ -826,7 +826,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.descricao}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">
+                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
                                 {receita.origem}
                               </span>
                             </td>
@@ -839,7 +839,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               <td className="px-4 py-3 text-center">
                                 <button
                                   onClick={() => excluirReceita(receita.id)}
-                                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                  style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
                                 >
                                   🗑️
                                 </button>
@@ -853,7 +853,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                           <td colSpan="3" className="px-4 py-3 text-right font-bold">
                             TOTAL:
                           </td>
-                          <td className="px-4 py-3 text-right font-bold text-green-700 text-lg">
+                          <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:"1.05rem"}}>
                             R$ {receitasDoModal.reduce((sum, r) => sum + parseFloat(r.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
@@ -873,7 +873,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
             {/* Header do Modal */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 sticky top-0">
+            <div style={{background:"#8b5cf6",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Custos do Projeto</h3>
@@ -996,7 +996,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.descricao}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
                                 {custo.categoria}
                               </span>
                             </td>
@@ -1009,7 +1009,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               <td className="px-4 py-3 text-center">
                                 <button
                                   onClick={() => excluirCusto(custo.id)}
-                                  className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-xs"
+                                  style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
                                 >
                                   🗑️
                                 </button>
@@ -1023,7 +1023,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                           <td colSpan="3" className="px-4 py-3 text-right font-bold">
                             TOTAL:
                           </td>
-                          <td className="px-4 py-3 text-right font-bold text-red-700 text-lg">
+                          <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:"1.05rem"}}>
                             R$ {custosDoModal.reduce((sum, c) => sum + parseFloat(c.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
