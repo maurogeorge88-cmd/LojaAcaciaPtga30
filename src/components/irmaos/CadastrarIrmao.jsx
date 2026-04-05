@@ -819,7 +819,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.75rem",overflowX:"hidden"}}>
       {/* Cabeçalho */}
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
@@ -828,7 +828,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         {modoEdicao && (
           <button
             onClick={cancelarEdicao}
-            className="px-4 py-2 bg-gray-500 text-white rounded transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+            style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
           >
             Cancelar Edição
           </button>
@@ -839,31 +839,19 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       <div className="flex gap-2 border-b">
         <button
           onClick={() => setAbaSelecionada('pessoal')}
-          className={`px-6 py-3 font-medium transition-colors ${
-            abaSelecionada === 'pessoal'
-              ? 'border-b-2 font-semibold'
-              : ' hover:'
-          }`}
+          style={{padding:'0.6rem 1.25rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='pessoal'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='pessoal'?'var(--color-accent)':'var(--color-text-muted)'}}
         >
           Dados Pessoais
         </button>
         <button
           onClick={() => setAbaSelecionada('maconico')}
-          className={`px-6 py-3 font-medium transition-colors ${
-            abaSelecionada === 'maconico'
-              ? 'border-b-2 font-semibold'
-              : ' hover:'
-          }`}
+          style={{padding:'0.6rem 1.25rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='maconico'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='maconico'?'var(--color-accent)':'var(--color-text-muted)'}}
         >
           Dados Maçônicos
         </button>
         <button
           onClick={() => setAbaSelecionada('familiar')}
-          className={`px-6 py-3 font-medium transition-colors ${
-            abaSelecionada === 'familiar'
-              ? 'border-b-2 font-semibold'
-              : ' hover:'
-          }`}
+          style={{padding:'0.6rem 1.25rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='familiar'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='familiar'?'var(--color-accent)':'var(--color-text-muted)'}}
         >
           Dados Familiares
         </button>
@@ -871,11 +859,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         <button
           type="button"
           onClick={() => setAbaSelecionada('vida-maconica')}
-          className={`px-4 py-2 font-medium transition-colors ${
-            abaSelecionada === 'vida-maconica'
-              ? 'border-b-2 font-semibold'
-              : ' hover:'
-          }`}
+          style={{padding:'0.6rem 1.25rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='vida-maconica'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='vida-maconica'?'var(--color-accent)':'var(--color-text-muted)'}}
         >
           🔺 Vida Maçônica
         </button>
@@ -884,11 +868,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           <button
             type="button"
             onClick={() => setAbaSelecionada('situacoes')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              abaSelecionada === 'situacoes'
-                ? 'border-b-2 font-semibold'
-                : ' hover:'
-            }`}
+            style={{padding:'0.6rem 1.25rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='situacoes'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='situacoes'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             📋 Situações
           </button>
@@ -898,11 +878,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           <button
             type="button"
             onClick={() => setAbaSelecionada('documentos')}
-            className={`px-4 py-2 font-medium transition-colors ${
-              abaSelecionada === 'documentos'
-                ? 'border-b-2 font-semibold'
-                : ' hover:'
-            }`}
+            style={{padding:'0.6rem 1.25rem',fontWeight:'600',cursor:'pointer',border:'none',background:'transparent',whiteSpace:'nowrap',borderBottom:abaSelecionada==='documentos'?'3px solid var(--color-accent)':'3px solid transparent',color:abaSelecionada==='documentos'?'var(--color-accent)':'var(--color-text-muted)'}}
           >
             📄 Documentos
           </button>
@@ -1147,7 +1123,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 
                 {/* Botão upload */}
                 {modoEdicao && irmaoEditando?.id && (
-                  <label className="cursor-pointer bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors">
+                  <label style={{cursor:"pointer",background:"var(--color-accent)",color:"#fff",padding:"0.5rem 1rem",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",display:"inline-block"}}>
                     📷 {irmaoForm.foto_url ? 'Alterar Foto' : 'Enviar Foto'}
                     <input
                       type="file"
@@ -1207,7 +1183,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
             {/* LINHA 2: DATAS ESPECÍFICAS DA SITUAÇÃO */}
             <div className="border-l-4 p-4 rounded" style={{background:"rgba(245,158,11,0.08)",borderLeftColor:"#f59e0b",border:"1px solid rgba(245,158,11,0.2)"}}>
-              <h4 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2" style={{color:"var(--color-text)"}}>
+              <h4 style={{fontSize:"0.85rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.75rem",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 <span>📅</span> Datas Específicas da Situação
               </h4>
               
@@ -1284,7 +1260,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 if (idade >= 70) {
                   return (
                     <div className="mt-3 p-3 rounded" style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-border)"}}>
-                      <p className="text-sm text-blue-800">
+                      <p style={{fontSize:"0.85rem",color:"var(--color-text)"}}>
                         💡 <strong>Com Prerrogativa por Idade</strong> - Este irmão tem {idade} anos.
                       </p>
                     </div>
@@ -1367,7 +1343,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       name="mestre_instalado"
                       checked={irmaoForm.mestre_instalado === true}
                       onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: true })}
-                      className="w-4 h-4 text-blue-600"
+                      style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                     />
                     <span className="ml-2 text-sm">Sim</span>
                   </label>
@@ -1377,7 +1353,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       name="mestre_instalado"
                       checked={irmaoForm.mestre_instalado === false}
                       onChange={() => setIrmaoForm({ ...irmaoForm, mestre_instalado: false, data_instalacao: '' })}
-                      className="w-4 h-4 text-blue-600"
+                      style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                     />
                     <span className="ml-2 text-sm">Não</span>
                   </label>
@@ -1526,7 +1502,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                             setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
                             setCargoEditandoIndex(null);
                           }}
-                          className="w-full px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium text-sm mr-1"
+                          style={{width:"100%",padding:"0.45rem 0.75rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
                         >
                           ✓ Salvar
                         </button>
@@ -1552,7 +1528,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                           setHistoricoCargos([...historicoCargos, { ...cargoForm }]);
                           setCargoForm({ ano: new Date().getFullYear(), cargo: '' });
                         }}
-                        className="w-full px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm"
+                        style={{width:"100%",padding:"0.45rem 0.75rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
                       >
                         ➕ Adicionar
                       </button>
@@ -1592,7 +1568,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                                     setCargoForm(cargo);
                                     setCargoEditandoIndex(indexOriginal);
                                   }}
-                                  className="text-blue-600 hover:text-blue-800 font-medium mr-3"
+                                  style={{color:"var(--color-accent)",background:"none",border:"none",cursor:"pointer",fontWeight:"600",marginRight:"0.75rem"}}
                                 >
                                   ✏️ Editar
                                 </button>
@@ -1603,7 +1579,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                                       setHistoricoCargos(historicoCargos.filter((_, i) => i !== indexOriginal));
                                     }
                                   }}
-                                  className="text-red-600 hover:text-red-800 font-medium"
+                                  style={{color:"#ef4444",background:"none",border:"none",cursor:"pointer",fontWeight:"600"}}
                                 >
                                   🗑️ Excluir
                                 </button>
@@ -1637,7 +1613,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     type="checkbox"
                     checked={mostrarConjuge}
                     onChange={(e) => setMostrarConjuge(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded"
+                    style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                   />
                   <span className="text-sm">Possui cônjuge</span>
                 </label>
@@ -1756,7 +1732,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="checkbox"
                       checked={pais.pai_vivo}
                       onChange={(e) => setPais({ ...pais, pai_vivo: e.target.checked })}
-                      className="w-4 h-4 text-blue-600 rounded"
+                      style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                     />
                     <span className="text-sm">Pai vivo</span>
                   </label>
@@ -1804,7 +1780,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                       type="checkbox"
                       checked={pais.mae_viva}
                       onChange={(e) => setPais({ ...pais, mae_viva: e.target.checked })}
-                      className="w-4 h-4 text-blue-600 rounded"
+                      style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                     />
                     <span className="text-sm">Mãe viva</span>
                   </label>
@@ -1900,7 +1876,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="checkbox"
                         checked={filhoForm.vivo}
                         onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
-                        className="w-4 h-4 text-blue-600 rounded"
+                        style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
                       />
                       <span className="text-sm font-medium">Vivo</span>
                     </label>
@@ -1925,7 +1901,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   <button
                     type="button"
                     onClick={adicionarFilho}
-                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                    style={{padding:"0.5rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                   >
                     {filhoEditandoIndex !== null ? '💾 Salvar Alterações' : '➕ Adicionar Filho'}
                   </button>
@@ -1933,7 +1909,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <button
                       type="button"
                       onClick={cancelarEdicaoFilho}
-                      className="px-4 py-2 bg-gray-500 text-white rounded transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
                     >
                       ❌ Cancelar
                     </button>
@@ -2051,7 +2027,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 <div className="flex justify-between items-center">
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>📄 Documentos</h3>
                   
-                  <label className="cursor-pointer bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors font-medium" style={{color:"var(--color-text-muted)"}}>
+                  <label style={{cursor:"pointer",background:"var(--color-accent)",color:"#fff",padding:"0.5rem 1rem",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",display:"inline-block"}}>
                     📤 Enviar PDF
                     <input
                       type="file"
@@ -2085,14 +2061,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                             href={doc.url_arquivo}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="px-3 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-sm"
+                            style={{padding:"0.4rem 0.75rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.82rem",textDecoration:"none",display:"inline-block"}}
                           >
                             👁️ Ver
                           </a>
                           <button
                             type="button"
                             onClick={() => handleExcluirDocumento(doc.id, doc.url_arquivo)}
-                            className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+                            style={{padding:"0.4rem 0.75rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.82rem"}}
                           >
                             🗑️ Excluir
                           </button>
@@ -2105,10 +2081,10 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             ) : (
               <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <div className="text-6xl mb-4">📄</div>
-                <p className="text-lg font-medium">
+                <p style={{fontSize:"1rem",fontWeight:"600",color:"var(--color-text)"}}>
                   Salve o irmão primeiro para enviar documentos
                 </p>
-                <p className="text-sm mt-2">
+                <p style={{fontSize:"0.85rem",marginTop:"0.5rem",color:"var(--color-text-muted)"}}>
                   Documentos só podem ser enviados após criar o registro do irmão
                 </p>
               </div>
@@ -2121,14 +2097,14 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           <button
             type="button"
             onClick={limparFormulario}
-            className="px-6 py-2 bg-gray-500 text-white rounded transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+            style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
           >
             Limpar Formulário
           </button>
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"700",opacity:loading?0.6:1}}
           >
             {loading ? 'Salvando...' : modoEdicao ? 'Atualizar Irmão' : 'Cadastrar Irmão'}
           </button>
@@ -2137,10 +2113,10 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
       {/* Informação sobre campos obrigatórios */}
       <div className="border-l-4 p-4" style={{background:"rgba(245,158,11,0.08)",borderLeftColor:"#f59e0b",border:"1px solid rgba(245,158,11,0.2)"}}>
-        <p className="text-sm text-yellow-800">
+        <p style={{fontSize:"0.85rem",color:"var(--color-text)",fontWeight:"500"}}>
           <strong>Campos obrigatórios:</strong> CIM e Nome Completo
         </p>
-        <p className="text-xs text-yellow-700 mt-1">
+        <p style={{fontSize:"0.75rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
           Os demais campos são opcionais e podem ser preenchidos posteriormente.
         </p>
       </div>
