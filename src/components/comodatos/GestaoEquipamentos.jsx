@@ -349,7 +349,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       {/* HEADER */}
       <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">
+          <h2 style={{fontSize:"1.5rem",fontWeight:"700",color:"var(--color-text)"}}>
             🛠️ Gestão de Equipamentos
           </h2>
           {permissoes?.pode_editar_comodatos && (
@@ -383,13 +383,13 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
             placeholder="🔍 Buscar..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="border rounded-lg px-4 py-2"
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
           />
           
           <select
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
-            className="border rounded-lg px-4 py-2"
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
           >
             <option value="todos">Todos os Tipos</option>
             {tipos.map(tipo => (
@@ -400,7 +400,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
-            className="border rounded-lg px-4 py-2"
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
           >
             <option value="todos">Todos os Status</option>
             <option value="disponivel">✅ Disponível</option>
@@ -534,7 +534,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <select
                     value={form.tipo_id}
                     onChange={(e) => setForm({ ...form, tipo_id: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     required
                   >
                     <option value="">Selecione...</option>
@@ -552,7 +552,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     type="text"
                     value={form.numero_patrimonio}
                     onChange={(e) => setForm({ ...form, numero_patrimonio: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     required
                   />
                 </div>
@@ -564,7 +564,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <select
                     value={form.estado_conservacao}
                     onChange={(e) => setForm({ ...form, estado_conservacao: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   >
                     <option value="Novo">Novo</option>
                     <option value="Bom">Bom</option>
@@ -580,7 +580,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <select
                     value={form.status}
                     onChange={(e) => setForm({ ...form, status: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   >
                     <option value="disponivel">Disponível</option>
                     <option value="manutencao">Manutenção</option>
@@ -595,7 +595,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     type="date"
                     value={form.data_aquisicao}
                     onChange={(e) => setForm({ ...form, data_aquisicao: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -608,7 +608,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     step="0.01"
                     value={form.valor_aquisicao}
                     onChange={(e) => setForm({ ...form, valor_aquisicao: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
               </div>
@@ -620,7 +620,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                 <textarea
                   value={form.descricao}
                   onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   rows="3"
                 />
               </div>
@@ -632,7 +632,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                 <textarea
                   value={form.observacoes}
                   onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   rows="2"
                 />
               </div>
@@ -677,7 +677,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <select
                     value={formLote.tipo_id}
                     onChange={(e) => setFormLote({ ...formLote, tipo_id: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     required
                   >
                     <option value="">Selecione...</option>
@@ -697,7 +697,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     max="1000"
                     value={formLote.quantidade}
                     onChange={(e) => setFormLote({ ...formLote, quantidade: parseInt(e.target.value) })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     required
                   />
                 </div>
@@ -710,11 +710,11 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     type="text"
                     value={formLote.prefixo_patrimonio}
                     onChange={(e) => setFormLote({ ...formLote, prefixo_patrimonio: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     placeholder="Ex: CR (para Cadeira de Rodas)"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
                     Exemplo: CR-001, CR-002, CR-003...
                   </p>
                 </div>
@@ -728,7 +728,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     min="1"
                     value={formLote.numero_inicial}
                     onChange={(e) => setFormLote({ ...formLote, numero_inicial: parseInt(e.target.value) })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     required
                   />
                 </div>
@@ -740,7 +740,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   <select
                     value={formLote.estado_conservacao}
                     onChange={(e) => setFormLote({ ...formLote, estado_conservacao: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   >
                     <option value="Novo">Novo</option>
                     <option value="Bom">Bom</option>
@@ -757,7 +757,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     type="date"
                     value={formLote.data_aquisicao}
                     onChange={(e) => setFormLote({ ...formLote, data_aquisicao: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -770,7 +770,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     step="0.01"
                     value={formLote.valor_aquisicao}
                     onChange={(e) => setFormLote({ ...formLote, valor_aquisicao: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
               </div>
@@ -782,7 +782,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                 <textarea
                   value={formLote.descricao}
                   onChange={(e) => setFormLote({ ...formLote, descricao: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   rows="2"
                 />
               </div>
@@ -794,17 +794,17 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                 <textarea
                   value={formLote.observacoes}
                   onChange={(e) => setFormLote({ ...formLote, observacoes: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   rows="2"
                 />
               </div>
 
               {/* PREVIEW */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm font-semibold text-blue-900 mb-2">
+              <div style={{background:"var(--color-accent-bg)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-lg)",padding:"1rem"}}>
+                <p style={{fontSize:"0.875rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   📋 Pré-visualização:
                 </p>
-                <p className="text-sm text-blue-800">
+                <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
                   Serão criados <strong>{formLote.quantidade}</strong> equipamento(s) numerados de{' '}
                   <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial).padStart(3, '0')}</strong> até{' '}
                   <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial + formLote.quantidade - 1).padStart(3, '0')}</strong>
@@ -848,7 +848,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                   type="text"
                   value={formTipo.nome}
                   onChange={(e) => setFormTipo({ ...formTipo, nome: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   placeholder="Ex: Cadeira de Rodas Motorizada"
                   required
                 />
@@ -861,7 +861,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                 <textarea
                   value={formTipo.descricao}
                   onChange={(e) => setFormTipo({ ...formTipo, descricao: e.target.value })}
-                  className="w-full border rounded-lg px-4 py-2"
+                  style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   rows="3"
                   placeholder="Descrição do tipo de equipamento..."
                 />
