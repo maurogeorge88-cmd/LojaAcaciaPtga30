@@ -223,7 +223,7 @@ export default function Caridade({ permissoes, showSuccess, showError }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* HEADER */}
       <div className="card">
         <div className="flex items-center justify-between">
