@@ -24,6 +24,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     observacoes: ''
   });
 
+  // Form para cadastro em lote
   const [formLote, setFormLote] = useState({
     tipo_id: '',
     prefixo_patrimonio: '',
@@ -50,6 +51,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     try {
       setLoading(true);
 
+      // Carregar tipos
       const { data: tiposData, error: tiposError } = await supabase
         .from('tipos_equipamentos')
         .select('*')
@@ -59,6 +61,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       if (tiposError) throw tiposError;
       setTipos(tiposData || []);
 
+      // Carregar equipamentos
       const { data: equipData, error: equipError } = await supabase
         .from('equipamentos')
         .select(`
@@ -155,6 +158,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     }
   };
 
+  // NOVO: Cadastro em lote
   const salvarLote = async (e) => {
     e.preventDefault();
 
@@ -207,6 +211,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     }
   };
 
+  // NOVO: Exclusão permanente
   const excluirEquipamento = async (id) => {
     if (typeof window !== 'undefined' && !window.confirm('⚠️ ATENÇÃO! Esta ação NÃO pode ser desfeita.\n\nTem certeza que deseja EXCLUIR permanentemente este equipamento?')) {
       return;
@@ -259,6 +264,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     }
 
     try {
+      // Verificar se já existe
       const { data: tipoExistente } = await supabase
         .from('tipos_equipamentos')
         .select('id')
@@ -297,11 +303,11 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   });
 
   const getStatusBadge = (status) => {
-    const styles = {
-      disponivel: { background: 'rgba(34,197,94,0.15)', color: '#16a34a' },
-      emprestado:  { background: 'rgba(59,130,246,0.15)', color: '#dc2626' },
-      manutencao:  { background: 'rgba(234,179,8,0.15)',  color: '#ca8a04' },
-      descartado:  { background: 'var(--color-surface-3)', color: 'var(--color-text-secondary)' }
+    const badges = {
+      disponivel: '__verde__',
+      emprestado: '__azul__',
+      manutencao: '__amarelo__',
+      descartado: '__cinza__'
     };
     const labels = {
       disponivel: '✅ Disponível',
@@ -310,21 +316,21 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       descartado: '🗑️ Descartado'
     };
     return (
-      <span className="px-3 py-1 rounded-full text-xs font-semibold" style={styles[status]}>
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badges[status]}`}>
         {labels[status]}
       </span>
     );
   };
 
   const getEstadoBadge = (estado) => {
-    const styles = {
-      'Novo':     { background: 'rgba(16,185,129,0.15)', color: '#059669' },
-      'Bom':      { background: 'rgba(34,197,94,0.15)',  color: '#16a34a' },
-      'Regular':  { background: 'rgba(234,179,8,0.15)',  color: '#ca8a04' },
-      'Ruim':     { background: 'rgba(239,68,68,0.15)',  color: '#dc2626' }
+    const badges = {
+      'Novo': 'bg-emerald-100 text-emerald-800',
+      'Bom': '__verde__',
+      'Regular': '__amarelo__',
+      'Ruim': '__vermelho__'
     };
     return (
-      <span className="px-2 py-1 rounded text-xs font-medium" style={styles[estado] || {}}>
+      <span className={`px-2 py-1 rounded text-xs font-medium ${badges[estado]}`}>
         {estado}
       </span>
     );
@@ -333,72 +339,36 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: 'var(--color-accent)' }}></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
       </div>
     );
   }
 
-  // Estilo reutilizável para botões de ação da tabela
-  const btnAcao = (cor) => ({
-    background: cor,
-    color: 'white',
-    border: 'none',
-    borderRadius: '0.25rem',
-    padding: '0.25rem 0.625rem',
-    fontSize: '0.75rem',
-    fontWeight: '500',
-    cursor: 'pointer'
-  });
-
   return (
     <div className="space-y-6">
       {/* HEADER */}
-      <div className="card p-6">
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+          <h2 className="text-2xl font-bold text-gray-800">
             🛠️ Gestão de Equipamentos
           </h2>
           {permissoes?.pode_editar_comodatos && (
             <div className="flex gap-2">
               <button
                 onClick={() => setModalTipo(true)}
-                style={{
-                  background: 'var(--color-surface-3)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
               >
                 ➕ Novo Tipo
               </button>
               <button
                 onClick={() => setModalLote(true)}
-                style={{
-                  background: 'var(--color-surface-3)',
-                  color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)',
-                  borderRadius: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 📦 Cadastro em Lote
               </button>
               <button
                 onClick={() => abrirModal()}
-                style={{
-                  background: 'var(--color-accent)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
               >
                 ➕ Novo Equipamento
               </button>
@@ -413,22 +383,24 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
             placeholder="🔍 Buscar..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="form-input"
+            className="border rounded-lg px-4 py-2"
           />
+          
           <select
             value={filtroTipo}
             onChange={(e) => setFiltroTipo(e.target.value)}
-            className="form-input"
+            className="border rounded-lg px-4 py-2"
           >
             <option value="todos">Todos os Tipos</option>
             {tipos.map(tipo => (
               <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
             ))}
           </select>
+
           <select
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
-            className="form-input"
+            className="border rounded-lg px-4 py-2"
           >
             <option value="todos">Todos os Status</option>
             <option value="disponivel">✅ Disponível</option>
@@ -436,49 +408,54 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
             <option value="manutencao">🔧 Manutenção</option>
             <option value="descartado">🗑️ Descartado</option>
           </select>
-          <div className="flex items-center" style={{ color: 'var(--color-text-secondary)' }}>
-            <strong style={{ color: 'var(--color-text)' }}>{equipamentosFiltrados.length}</strong>
+
+          <div style={{color:"var(--color-text-muted)",display:"flex",alignItems:"center"}}>
+            <strong>{equipamentosFiltrados.length}</strong>
             <span className="ml-2">equipamento(s)</span>
           </div>
         </div>
       </div>
 
-      {/* TABELA */}
-      <div className="card overflow-hidden">
+      {/* TABELA DE EQUIPAMENTOS */}
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",overflow:"hidden"}}>
         <div className="overflow-x-auto">
-          <table className="min-w-full" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ background: 'var(--color-surface-3)', borderBottom: '1px solid var(--color-border)' }}>
-                {['Patrimônio', 'Tipo', 'Status Uso', 'Conservação', 'Dt Aquisição'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider"
-                      style={{ color: 'var(--color-text-secondary)' }}>
-                    {h}
-                  </th>
-                ))}
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead style={{background:"var(--color-surface-2)"}}>
+              <tr>
+                <th style={{padding:"0.75rem 1rem",textAlign:"left",fontSize:"0.7rem",fontWeight:"700",color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                  Patrimônio
+                </th>
+                <th style={{padding:"0.75rem 1rem",textAlign:"left",fontSize:"0.7rem",fontWeight:"700",color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                  Tipo
+                </th>
+                <th style={{padding:"0.75rem 1rem",textAlign:"left",fontSize:"0.7rem",fontWeight:"700",color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                  Status Uso
+                </th>
+                <th style={{padding:"0.75rem 1rem",textAlign:"left",fontSize:"0.7rem",fontWeight:"700",color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                  Conservação
+                </th>
+                <th style={{padding:"0.75rem 1rem",textAlign:"left",fontSize:"0.7rem",fontWeight:"700",color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>
+                  Dt Aquisição
+                </th>
                 {permissoes?.pode_editar_comodatos && (
-                  <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider"
-                      style={{ color: 'var(--color-text-secondary)' }}>
+                  <th style={{padding:"0.75rem 1rem",textAlign:"center",fontSize:"0.7rem",fontWeight:"700",color:"var(--color-text-muted)",textTransform:"uppercase",letterSpacing:"0.05em"}}>
                     Ações
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody>
-              {equipamentosFiltrados.map((equipamento, idx) => (
-                <tr key={equipamento.id}
-                    style={{
-                      borderBottom: '1px solid var(--color-border)',
-                      background: idx % 2 === 0 ? 'transparent' : 'var(--color-surface-3)'
-                    }}>
+            <tbody style={{background:"var(--color-surface)"}}>
+              {equipamentosFiltrados.map(equipamento => (
+                <tr key={equipamento.id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s"}}>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm font-semibold" style={{ color: 'var(--color-text)' }}>
+                    <div style={{fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text)"}}>
                       {equipamento.numero_patrimonio}
-                    </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm" style={{ color: 'var(--color-text)' }}>
+                    <div style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>
                       {equipamento.tipos_equipamentos?.nome}
-                    </span>
+                    </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {getStatusBadge(equipamento.status)}
@@ -487,18 +464,18 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                     {getEstadoBadge(equipamento.estado_conservacao)}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm" style={{ color: 'var(--color-text)' }}>
-                      {equipamento.data_aquisicao
+                    <div style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>
+                      {equipamento.data_aquisicao 
                         ? new Date(equipamento.data_aquisicao + 'T00:00:00').toLocaleDateString('pt-BR')
                         : '-'}
-                    </span>
+                    </div>
                   </td>
                   {permissoes?.pode_editar_comodatos && (
                     <td className="px-4 py-3 whitespace-nowrap text-center">
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => abrirModal(equipamento)}
-                          style={btnAcao('var(--color-accent)')}
+                          style={{padding:"0.2rem 0.6rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-sm)",cursor:"pointer",fontSize:"0.72rem",fontWeight:"700"}}
                           disabled={equipamento.status === 'descartado'}
                           title="Editar"
                         >
@@ -508,14 +485,14 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                           <>
                             <button
                               onClick={() => descartar(equipamento.id)}
-                              style={btnAcao('#ea580c')}
+                              className="px-3 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors text-xs font-medium"
                               title="Descartar"
                             >
                               🗑️ Descartar
                             </button>
                             <button
                               onClick={() => excluirEquipamento(equipamento.id)}
-                              style={btnAcao('#dc2626')}
+                              style={{padding:"0.2rem 0.6rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-sm)",cursor:"pointer",fontSize:"0.72rem",fontWeight:"700"}}
                               title="Excluir permanentemente"
                             >
                               ❌ Excluir
@@ -533,87 +510,145 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       </div>
 
       {equipamentosFiltrados.length === 0 && (
-        <div className="text-center py-12" style={{ color: 'var(--color-text-secondary)' }}>
+        <div style={{textAlign:"center",padding:"3rem",color:"var(--color-text-muted)"}}>
           <p className="text-xl">Nenhum equipamento encontrado</p>
         </div>
       )}
 
       {/* MODAL EQUIPAMENTO */}
       {modalAberto && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="card" style={{
-            maxWidth: '42rem', width: '100%', maxHeight: '90vh',
-            overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0
-          }}>
-            <div className="card-header">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"42rem",maxHeight:"90vh",overflowY:"auto"}}>
+            <div className="bg-emerald-600 text-white p-6 rounded-t-xl">
               <h3 className="text-2xl font-bold">
                 {editando ? '✏️ Editar Equipamento' : '➕ Novo Equipamento'}
               </h3>
             </div>
 
-            <form onSubmit={salvarEquipamento} style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+            <form onSubmit={salvarEquipamento} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Tipo de Equipamento *</label>
-                  <select value={form.tipo_id} onChange={(e) => setForm({ ...form, tipo_id: e.target.value })} className="form-input" required>
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Tipo de Equipamento *
+                  </label>
+                  <select
+                    value={form.tipo_id}
+                    onChange={(e) => setForm({ ...form, tipo_id: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  >
                     <option value="">Selecione...</option>
-                    {tipos.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>)}
+                    {tipos.map(tipo => (
+                      <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+                    ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="form-label">Número do Patrimônio *</label>
-                  <input type="text" value={form.numero_patrimonio} onChange={(e) => setForm({ ...form, numero_patrimonio: e.target.value })} className="form-input" required />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Número do Patrimônio *
+                  </label>
+                  <input
+                    type="text"
+                    value={form.numero_patrimonio}
+                    onChange={(e) => setForm({ ...form, numero_patrimonio: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Estado de Conservação</label>
-                  <select value={form.estado_conservacao} onChange={(e) => setForm({ ...form, estado_conservacao: e.target.value })} className="form-input">
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Estado de Conservação
+                  </label>
+                  <select
+                    value={form.estado_conservacao}
+                    onChange={(e) => setForm({ ...form, estado_conservacao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
                     <option value="Novo">Novo</option>
                     <option value="Bom">Bom</option>
                     <option value="Regular">Regular</option>
                     <option value="Ruim">Ruim</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="form-label">Status</label>
-                  <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })} className="form-input">
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Status
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm({ ...form, status: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
                     <option value="disponivel">Disponível</option>
                     <option value="manutencao">Manutenção</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="form-label">Data de Aquisição</label>
-                  <input type="date" value={form.data_aquisicao} onChange={(e) => setForm({ ...form, data_aquisicao: e.target.value })} className="form-input" />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Data de Aquisição
+                  </label>
+                  <input
+                    type="date"
+                    value={form.data_aquisicao}
+                    onChange={(e) => setForm({ ...form, data_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Valor de Aquisição (R$)</label>
-                  <input type="number" step="0.01" value={form.valor_aquisicao} onChange={(e) => setForm({ ...form, valor_aquisicao: e.target.value })} className="form-input" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="form-label">Descrição</label>
-                  <textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} className="form-input" rows="3" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="form-label">Observações</label>
-                  <textarea value={form.observacoes} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="form-input" rows="2" />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Valor de Aquisição (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.valor_aquisicao}
+                    onChange={(e) => setForm({ ...form, valor_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)', marginTop: '1rem' }}>
-                <button type="submit" className="flex-1" style={{
-                  background: 'var(--color-accent)', color: 'white', border: 'none',
-                  borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
-                }}>
+              <div>
+                <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                  Descrição
+                </label>
+                <textarea
+                  value={form.descricao}
+                  onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="3"
+                />
+              </div>
+
+              <div>
+                <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                  Observações
+                </label>
+                <textarea
+                  value={form.observacoes}
+                  onChange={(e) => setForm({ ...form, observacoes: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors font-semibold"
+                >
                   💾 Salvar
                 </button>
-                <button type="button" onClick={() => setModalAberto(false)} style={{
-                  background: 'var(--color-surface-3)', color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)', borderRadius: '0.5rem',
-                  padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
-                }}>
+                <button
+                  type="button"
+                  onClick={() => setModalAberto(false)}
+                  style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
+                >
                   ❌ Cancelar
                 </button>
               </div>
@@ -624,91 +659,170 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
       {/* MODAL CADASTRO EM LOTE */}
       {modalLote && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="card" style={{
-            maxWidth: '42rem', width: '100%', maxHeight: '90vh',
-            overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0
-          }}>
-            <div className="card-header">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"42rem",maxHeight:"90vh",overflowY:"auto"}}>
+            <div className="bg-purple-600 text-white p-6 rounded-t-xl">
               <h3 className="text-2xl font-bold">📦 Cadastro em Lote</h3>
-              <p className="text-sm mt-1" style={{ opacity: 0.8 }}>Cadastre vários equipamentos de uma vez</p>
+              <p className="text-purple-100 text-sm mt-1">
+                Cadastre vários equipamentos de uma vez
+              </p>
             </div>
 
-            <form onSubmit={salvarLote} style={{ padding: '1.5rem', flex: 1, overflowY: 'auto' }}>
+            <form onSubmit={salvarLote} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Tipo de Equipamento *</label>
-                  <select value={formLote.tipo_id} onChange={(e) => setFormLote({ ...formLote, tipo_id: e.target.value })} className="form-input" required>
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Tipo de Equipamento *
+                  </label>
+                  <select
+                    value={formLote.tipo_id}
+                    onChange={(e) => setFormLote({ ...formLote, tipo_id: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  >
                     <option value="">Selecione...</option>
-                    {tipos.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>)}
+                    {tipos.map(tipo => (
+                      <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
+                    ))}
                   </select>
                 </div>
+
                 <div>
-                  <label className="form-label">Quantidade *</label>
-                  <input type="number" min="1" max="1000" value={formLote.quantidade} onChange={(e) => setFormLote({ ...formLote, quantidade: parseInt(e.target.value) })} className="form-input" required />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Quantidade *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="1000"
+                    value={formLote.quantidade}
+                    onChange={(e) => setFormLote({ ...formLote, quantidade: parseInt(e.target.value) })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Prefixo do Patrimônio *</label>
-                  <input type="text" value={formLote.prefixo_patrimonio} onChange={(e) => setFormLote({ ...formLote, prefixo_patrimonio: e.target.value })} className="form-input" placeholder="Ex: CR" required />
-                  <p className="text-xs mt-1" style={{ color: 'var(--color-text-secondary)' }}>Exemplo: CR-001, CR-002...</p>
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Prefixo do Patrimônio *
+                  </label>
+                  <input
+                    type="text"
+                    value={formLote.prefixo_patrimonio}
+                    onChange={(e) => setFormLote({ ...formLote, prefixo_patrimonio: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    placeholder="Ex: CR (para Cadeira de Rodas)"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Exemplo: CR-001, CR-002, CR-003...
+                  </p>
                 </div>
+
                 <div>
-                  <label className="form-label">Número Inicial *</label>
-                  <input type="number" min="1" value={formLote.numero_inicial} onChange={(e) => setFormLote({ ...formLote, numero_inicial: parseInt(e.target.value) })} className="form-input" required />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Número Inicial *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={formLote.numero_inicial}
+                    onChange={(e) => setFormLote({ ...formLote, numero_inicial: parseInt(e.target.value) })}
+                    className="w-full border rounded-lg px-4 py-2"
+                    required
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Estado de Conservação</label>
-                  <select value={formLote.estado_conservacao} onChange={(e) => setFormLote({ ...formLote, estado_conservacao: e.target.value })} className="form-input">
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Estado de Conservação
+                  </label>
+                  <select
+                    value={formLote.estado_conservacao}
+                    onChange={(e) => setFormLote({ ...formLote, estado_conservacao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  >
                     <option value="Novo">Novo</option>
                     <option value="Bom">Bom</option>
                     <option value="Regular">Regular</option>
                     <option value="Ruim">Ruim</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="form-label">Data de Aquisição</label>
-                  <input type="date" value={formLote.data_aquisicao} onChange={(e) => setFormLote({ ...formLote, data_aquisicao: e.target.value })} className="form-input" />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Data de Aquisição
+                  </label>
+                  <input
+                    type="date"
+                    value={formLote.data_aquisicao}
+                    onChange={(e) => setFormLote({ ...formLote, data_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Valor Unitário (R$)</label>
-                  <input type="number" step="0.01" value={formLote.valor_aquisicao} onChange={(e) => setFormLote({ ...formLote, valor_aquisicao: e.target.value })} className="form-input" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="form-label">Descrição (aplicada a todos)</label>
-                  <textarea value={formLote.descricao} onChange={(e) => setFormLote({ ...formLote, descricao: e.target.value })} className="form-input" rows="2" />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="form-label">Observações (aplicadas a todos)</label>
-                  <textarea value={formLote.observacoes} onChange={(e) => setFormLote({ ...formLote, observacoes: e.target.value })} className="form-input" rows="2" />
+                  <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                    Valor Unitário (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={formLote.valor_aquisicao}
+                    onChange={(e) => setFormLote({ ...formLote, valor_aquisicao: e.target.value })}
+                    className="w-full border rounded-lg px-4 py-2"
+                  />
                 </div>
               </div>
 
-              {/* Preview */}
-              <div className="rounded-lg p-4 mt-4" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
-                <p className="text-sm font-semibold mb-1" style={{ color: 'var(--color-text)' }}>📋 Pré-visualização:</p>
-                <p className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
-                  Serão criados <strong style={{ color: 'var(--color-text)' }}>{formLote.quantidade}</strong> equipamento(s) de{' '}
-                  <strong style={{ color: 'var(--color-text)' }}>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial).padStart(3, '0')}</strong> até{' '}
-                  <strong style={{ color: 'var(--color-text)' }}>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial + formLote.quantidade - 1).padStart(3, '0')}</strong>
+              <div>
+                <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                  Descrição (aplicada a todos)
+                </label>
+                <textarea
+                  value={formLote.descricao}
+                  onChange={(e) => setFormLote({ ...formLote, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              <div>
+                <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                  Observações (aplicadas a todos)
+                </label>
+                <textarea
+                  value={formLote.observacoes}
+                  onChange={(e) => setFormLote({ ...formLote, observacoes: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="2"
+                />
+              </div>
+
+              {/* PREVIEW */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-semibold text-blue-900 mb-2">
+                  📋 Pré-visualização:
+                </p>
+                <p className="text-sm text-blue-800">
+                  Serão criados <strong>{formLote.quantidade}</strong> equipamento(s) numerados de{' '}
+                  <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial).padStart(3, '0')}</strong> até{' '}
+                  <strong>{formLote.prefixo_patrimonio}-{String(formLote.numero_inicial + formLote.quantidade - 1).padStart(3, '0')}</strong>
                 </p>
               </div>
 
-              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)', marginTop: '1rem' }}>
-                <button type="submit" className="flex-1" style={{
-                  background: 'var(--color-accent)', color: 'white', border: 'none',
-                  borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
-                }}>
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors font-semibold"
+                >
                   💾 Cadastrar {formLote.quantidade} Equipamento(s)
                 </button>
-                <button type="button" onClick={() => setModalLote(false)} style={{
-                  background: 'var(--color-surface-3)', color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)', borderRadius: '0.5rem',
-                  padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
-                }}>
+                <button
+                  type="button"
+                  onClick={() => setModalLote(false)}
+                  style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
+                >
                   ❌ Cancelar
                 </button>
               </div>
@@ -719,55 +833,52 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
       {/* MODAL NOVO TIPO */}
       {modalTipo && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="card" style={{
-            maxWidth: '28rem', width: '100%', margin: 0
-          }}>
-            <div className="card-header">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"28rem"}}>
+            <div style={{background:"var(--color-accent)",color:"#fff",padding:"1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
               <h3 className="text-2xl font-bold">➕ Novo Tipo de Equipamento</h3>
             </div>
 
-            <form onSubmit={salvarTipo} style={{ padding: '1.5rem' }}>
-              <div className="space-y-4">
-                <div>
-                  <label className="form-label">Nome do Tipo *</label>
-                  <input
-                    type="text"
-                    value={formTipo.nome}
-                    onChange={(e) => setFormTipo({ ...formTipo, nome: e.target.value })}
-                    className="form-input"
-                    placeholder="Ex: Cadeira de Rodas Motorizada"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Descrição</label>
-                  <textarea
-                    value={formTipo.descricao}
-                    onChange={(e) => setFormTipo({ ...formTipo, descricao: e.target.value })}
-                    className="form-input"
-                    rows="3"
-                    placeholder="Descrição do tipo de equipamento..."
-                  />
-                </div>
+            <form onSubmit={salvarTipo} className="p-6 space-y-4">
+              <div>
+                <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                  Nome do Tipo *
+                </label>
+                <input
+                  type="text"
+                  value={formTipo.nome}
+                  onChange={(e) => setFormTipo({ ...formTipo, nome: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  placeholder="Ex: Cadeira de Rodas Motorizada"
+                  required
+                />
               </div>
 
-              <div className="flex gap-3 pt-4 border-t" style={{ borderColor: 'var(--color-border)', marginTop: '1rem' }}>
-                <button type="submit" className="flex-1" style={{
-                  background: 'var(--color-accent)', color: 'white', border: 'none',
-                  borderRadius: '0.5rem', padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
-                }}>
+              <div>
+                <label style={{display:"block",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text-muted)",marginBottom:"0.5rem"}}>
+                  Descrição
+                </label>
+                <textarea
+                  value={formTipo.descricao}
+                  onChange={(e) => setFormTipo({ ...formTipo, descricao: e.target.value })}
+                  className="w-full border rounded-lg px-4 py-2"
+                  rows="3"
+                  placeholder="Descrição do tipo de equipamento..."
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  style={{flex:1,padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
+                >
                   💾 Salvar Tipo
                 </button>
-                <button type="button" onClick={() => setModalTipo(false)} style={{
-                  background: 'var(--color-surface-3)', color: 'var(--color-text)',
-                  border: '1px solid var(--color-border)', borderRadius: '0.5rem',
-                  padding: '0.75rem 1.5rem', fontWeight: '600', cursor: 'pointer'
-                }}>
+                <button
+                  type="button"
+                  onClick={() => setModalTipo(false)}
+                  style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
+                >
                   ❌ Cancelar
                 </button>
               </div>
