@@ -391,8 +391,8 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Carregando dados da sessão...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{borderColor:"var(--color-accent)"}}></div>
+          <p style={{marginTop:"1rem",color:"var(--color-text-muted)"}}>Carregando dados da sessão...</p>
         </div>
       </div>
     );
@@ -400,11 +400,11 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
   if (!sessao) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-800">Sessão não encontrada.</p>
+      <div style={{background:"rgba(239,68,68,0.08)",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-lg)",padding:"1.5rem",textAlign:"center"}}>
+        <p style={{color:"#ef4444"}}>Sessão não encontrada.</p>
         <button
           onClick={onVoltar}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          style={{marginTop:"1rem",padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
         >
           Voltar
         </button>
@@ -413,25 +413,25 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div style={{maxWidth:"72rem",margin:"0 auto",padding:"1.5rem",background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
       {/* Cabeçalho */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div className="rounded-lg p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
               Registro de Presença
             </h2>
-            <p className="text-gray-600 mt-1">
+            <p style={{color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
               {sessao.graus_sessao?.nome}
               {sessao.classificacoes_sessao && ` - ${sessao.classificacoes_sessao.nome}`}
             </p>
-            <p className="text-sm text-gray-500">
+            <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>
               Data: {new Date(sessao.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
             </p>
           </div>
           <button
             onClick={onVoltar}
-            className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+            style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
           >
             ← Voltar
           </button>
@@ -439,51 +439,47 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
 
         {/* Estatísticas */}
         <div className="grid grid-cols-3 gap-4 mt-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-            <p className="text-sm text-blue-600 font-medium">Total de Irmãos</p>
-            <p className="text-3xl font-bold text-blue-800">{totalIrmaos}</p>
+          <div style={{background:"rgba(59,130,246,0.1)",border:"1px solid rgba(59,130,246,0.3)",borderLeft:"4px solid #3b82f6",borderRadius:"var(--radius-lg)",padding:"1rem",textAlign:"center"}}>
+            <p style={{fontSize:"0.82rem",fontWeight:"600",color:"#3b82f6",marginBottom:"0.25rem"}}>Total de Irmãos</p>
+            <p style={{fontSize:"1.875rem",fontWeight:"800",color:"var(--color-text)"}}>{totalIrmaos}</p>
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-            <p className="text-sm text-green-600 font-medium">Presentes</p>
-            <p className="text-3xl font-bold text-green-800">{totalPresentes}</p>
+          <div style={{background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.3)",borderLeft:"4px solid #10b981",borderRadius:"var(--radius-lg)",padding:"1rem",textAlign:"center"}}>
+            <p style={{fontSize:"0.82rem",fontWeight:"600",color:"#10b981",marginBottom:"0.25rem"}}>Presentes</p>
+            <p style={{fontSize:"1.875rem",fontWeight:"800",color:"#10b981"}}>{totalPresentes}</p>
           </div>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-            <p className="text-sm text-red-600 font-medium">Ausentes</p>
-            <p className="text-3xl font-bold text-red-800">{totalAusentes}</p>
+          <div style={{background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",borderLeft:"4px solid #ef4444",borderRadius:"var(--radius-lg)",padding:"1rem",textAlign:"center"}}>
+            <p style={{fontSize:"0.82rem",fontWeight:"600",color:"#ef4444",marginBottom:"0.25rem"}}>Ausentes</p>
+            <p style={{fontSize:"1.875rem",fontWeight:"800",color:"#ef4444"}}>{totalAusentes}</p>
           </div>
         </div>
       </div>
 
       {/* Mensagens */}
       {mensagem.texto && (
-        <div className={`mb-4 p-4 rounded-lg ${
-          mensagem.tipo === 'sucesso'
-            ? 'bg-green-100 text-green-800 border border-green-300'
-            : 'bg-red-100 text-red-800 border border-red-300'
-        }`}>
+        <div style={{marginBottom:"1rem",padding:"1rem",borderRadius:"var(--radius-lg)",background:mensagem.tipo==='sucesso'?'rgba(16,185,129,0.15)':'rgba(239,68,68,0.15)',color:mensagem.tipo==='sucesso'?'#10b981':'#ef4444',border:`1px solid ${mensagem.tipo==='sucesso'?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)'}`}}>
           {mensagem.texto}
         </div>
       )}
 
       {/* Ferramentas */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+      <div className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex gap-4 items-center">
           <input
             type="text"
             placeholder="🔍 Buscar irmão..."
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{flex:1,background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 1rem",outline:"none"}}
           />
           <button
             onClick={marcarTodosPresentes}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+            style={{padding:"0.5rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"700"}}
           >
             ✓ Marcar Todos Presentes
           </button>
           <button
             onClick={desmarcarTodos}
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+            style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
           >
             ✗ Desmarcar Todos
           </button>
@@ -491,29 +487,29 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       </div>
 
       {/* Lista de Irmãos */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="rounded-lg overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y">
+            <thead style={{background:"var(--color-surface-2)"}}>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                   Irmão
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                   Grau
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                   Presença
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>
                   Justificativa (se ausente)
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y">
               {irmaosFiltrados.map((irmao) => (
-                <tr key={irmao.membro_id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                <tr key={irmao.membro_id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s"}}>
+                  <td style={{color:"var(--color-text)"}}>
                     <div className="flex items-center gap-2">
                       {irmao.foto_url && (
                         <img
@@ -523,48 +519,48 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
                         />
                       )}
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div style={{fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text)"}}>
                           {irmao.nome_completo}
                         </div>
                         {irmao.esta_licenciado_efetivo && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                          <span style={{display:"inline-block",marginTop:"0.25rem",padding:"0.1rem 0.5rem",fontSize:"0.7rem",fontWeight:"700",borderRadius:"999px",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)"}}>
                             Licenciado
                           </span>
                         )}
                         {irmao.tem_prerrogativa && (
-                          <span className="inline-block mt-1 px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
+                          <span style={{display:"inline-block",marginTop:"0.25rem",padding:"0.1rem 0.5rem",fontSize:"0.7rem",fontWeight:"700",borderRadius:"999px",background:"rgba(139,92,246,0.15)",color:"#8b5cf6",border:"1px solid rgba(139,92,246,0.3)"}}>
                             Com Prerrogativa
                           </span>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                  <td style={{color:"var(--color-text)"}}>
+                    <span style={{padding:"0.15rem 0.55rem",fontSize:"0.7rem",fontWeight:"700",borderRadius:"999px",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
                       {irmao.grau_atual}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td style={{color:"var(--color-text)"}}>
                     <label className="inline-flex items-center cursor-pointer">
                       <input
                         type="checkbox"
                         checked={presencas[irmao.membro_id] || false}
                         onChange={(e) => handlePresencaChange(irmao.membro_id, e.target.checked)}
-                        className="w-6 h-6 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                        style={{width:"1.25rem",height:"1.25rem",accentColor:"#10b981",cursor:"pointer"}}
                       />
-                      <span className="ml-2 text-sm font-medium text-gray-700">
+                      <span style={{marginLeft:"0.5rem",fontSize:"0.875rem",fontWeight:"600",color:"var(--color-text)"}}>
                         {presencas[irmao.membro_id] ? 'Presente' : 'Ausente'}
                       </span>
                     </label>
                   </td>
-                  <td className="px-6 py-4">
+                  <td style={{color:"var(--color-text)"}}>
                     {!presencas[irmao.membro_id] && (
                       <input
                         type="text"
                         placeholder="Motivo da ausência..."
                         value={justificativas[irmao.membro_id] || ''}
                         onChange={(e) => handleJustificativaChange(irmao.membro_id, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style={{width:"100%",padding:"0.35rem 0.6rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",fontSize:"0.875rem",outline:"none"}}
                       />
                     )}
                   </td>
@@ -575,15 +571,15 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         </div>
 
         {irmaosFiltrados.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            {busca ? 'Nenhum irmão encontrado com esse nome.' : 'Nenhum irmão elegível para esta sessão.'}
+          <div className="text-center py-8">
+  <span style={{color:"var(--color-text-muted)"}}>{busca ? 'Nenhum irmão encontrado com esse nome.' : 'Nenhum irmão elegível para esta sessão.'}</span>
           </div>
         )}
       </div>
 
       {/* Seção de Visitantes */}
-      <div className="bg-white rounded-lg shadow-md p-6 mt-6">
-        <h3 className="text-lg font-bold text-gray-800 mb-4">👥 Visitantes</h3>
+      <div className="rounded-lg p-6 mt-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <h3 className="text-lg font-bold mb-4" style={{color:"var(--color-text)"}}>👥 Visitantes</h3>
         
         {/* Formulário */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
@@ -592,25 +588,25 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             placeholder="Nome do Visitante"
             value={visitanteForm.nome_visitante}
             onChange={(e) => setVisitanteForm({...visitanteForm, nome_visitante: e.target.value})}
-            className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%"}}
           />
           <input
             type="text"
             placeholder="Loja"
             value={visitanteForm.nome_loja}
             onChange={(e) => setVisitanteForm({...visitanteForm, nome_loja: e.target.value})}
-            className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%"}}
           />
           <input
             type="text"
             placeholder="Cidade"
             value={visitanteForm.cidade}
             onChange={(e) => setVisitanteForm({...visitanteForm, cidade: e.target.value})}
-            className="px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none",width:"100%"}}
           />
           <button
             onClick={adicionarVisitante}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            style={{padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
           >
             ➕ Adicionar
           </button>
@@ -619,24 +615,24 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
         {/* Tabela */}
         {visitantes.length > 0 ? (
           <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="px-3 py-2 text-left">Nome</th>
-                <th className="px-3 py-2 text-left">Loja</th>
-                <th className="px-3 py-2 text-left">Cidade</th>
-                <th className="px-3 py-2 w-20">Ações</th>
+            <thead style={{background:"var(--color-surface-2)"}}>
+              <tr style={{borderBottom:"1px solid var(--color-border)"}}>
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Nome</th>
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Loja</th>
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Cidade</th>
+                <th style={{color:"var(--color-text-muted)",background:"var(--color-surface-2)"}}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {visitantes.map((v) => (
-                <tr key={v.id} className="border-b hover:bg-gray-50">
-                  <td className="px-3 py-2">{v.nome_visitante}</td>
-                  <td className="px-3 py-2">{v.nome_loja}</td>
-                  <td className="px-3 py-2">{v.cidade}</td>
-                  <td className="px-3 py-2">
+                <tr key={v.id} style={{borderBottom:"1px solid var(--color-border)",transition:"background 0.1s"}}>
+                  <td style={{color:"var(--color-text)"}}>{v.nome_visitante}</td>
+                  <td style={{color:"var(--color-text)"}}>{v.nome_loja}</td>
+                  <td style={{color:"var(--color-text)"}}>{v.cidade}</td>
+                  <td style={{color:"var(--color-text)"}}>
                     <button
                       onClick={() => excluirVisitante(v.id)}
-                      className="text-red-600 hover:text-red-800"
+                      style={{color:"#ef4444",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}
                     >
                       🗑️
                     </button>
@@ -646,7 +642,7 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
             </tbody>
           </table>
         ) : (
-          <p className="text-gray-500 text-sm text-center py-3">Nenhum visitante registrado</p>
+          <p style={{fontSize:"0.875rem",textAlign:"center",padding:"0.75rem",color:"var(--color-text-muted)"}}>Nenhum visitante registrado</p>
         )}
       </div>
 
@@ -654,18 +650,14 @@ export default function RegistroPresenca({ sessaoId, onVoltar }) {
       <div className="mt-6 flex justify-end gap-4">
         <button
           onClick={onVoltar}
-          className="px-6 py-3 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-50 transition"
+          style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
         >
           Cancelar
         </button>
         <button
           onClick={handleSalvar}
           disabled={salvando}
-          className={`px-6 py-3 rounded-md text-white font-medium transition ${
-            salvando
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700'
-          }`}
+          style={{padding:'0.75rem 1.5rem',background:salvando?'var(--color-surface-3)':'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-md)',cursor:salvando?'not-allowed':'pointer',fontWeight:'700',opacity:salvando?0.6:1}}
         >
           {salvando ? 'Salvando...' : 'Salvar Presenças'}
         </button>
