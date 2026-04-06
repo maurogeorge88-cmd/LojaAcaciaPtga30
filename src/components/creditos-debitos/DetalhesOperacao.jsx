@@ -192,10 +192,10 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
   const getStatusBadge = (status, diasAtraso = 0) => {
     const badges = {
-      'pendente': { color: 'bg-yellow-100  ', label: '⏳ Pendente', icon: '⏳' },
-      'pago': { color: 'bg-green-100  ', label: '✓ Pago', icon: '✓' },
-      'atrasado': { color: 'bg-red-100  ', label: `🚨 Atrasado (${diasAtraso}d)`, icon: '🚨' },
-      'cancelado': { color: '  ', label: '✗ Cancelado', icon: '✗' }
+      'pendente': { styleObj: {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'}, label: '⏳ Pendente', icon: '⏳' },
+      'pago':     { styleObj: {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'}, label: '✓ Pago', icon: '✓' },
+      'atrasado': { styleObj: {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}, label: `🚨 Atrasado (${diasAtraso}d)`, icon: '🚨' },
+      'cancelado':{ styleObj: {background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'}, label: '✗ Cancelado', icon: '✗' }
     };
     return badges[status] || badges.pendente;
   };
@@ -237,7 +237,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="rounded-xl max-w-6xl w-full my-8">
+      <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"72rem",margin:"2rem auto"}}>
         {/* HEADER */}
         <div 
           className="p-6 text-white flex items-center justify-between"
@@ -248,20 +248,20 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
           }}
         >
           <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2" style={{color:"var(--color-text)"}}>
+            <h2 style={{fontSize:"1.5rem",fontWeight:"700",color:"#fff",display:"flex",alignItems:"center",gap:"0.5rem",margin:0}}>
               {getTipoIcon()} Detalhes da Operação
             </h2>
             <p style={{color:"rgba(255,255,255,0.8)",marginTop:"0.25rem"}}>{getTipoLabel()}</p>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover: hover:bg-opacity-20 rounded-full p-2 transition-all"
+            style={{color:"#fff",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1rem",fontWeight:"700"}}
           >
             ✕
           </button>
         </div>
 
-        <div className="p-4 space-y-4 max-h-[80vh] overflow-y-auto">
+        <div style={{padding:"1rem",display:"flex",flexDirection:"column",gap:"1rem",maxHeight:"80vh",overflowY:"auto",background:"var(--color-bg)"}}>
           {/* INFORMAÇÕES DA OPERAÇÃO */}
           <div className="rounded-xl p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <h3 className="text-lg font-bold mb-3" style={{color:"var(--color-text)"}}>📋 Informações Gerais</h3>
@@ -287,21 +287,21 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Valor Total</span>
-                <span className={`font-bold text-lg ${operacao.tipo_operacao === 'credito' ? '' : ''}`}>
+                <span style={{fontWeight:"700",fontSize:"1.1rem",color:"var(--color-text)"}}>
                   R$ {operacao.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Valor Pago</span>
-                <span className="font-bold text-lg">
+                <span style={{fontWeight:"700",fontSize:"1.1rem",color:"var(--color-text)"}}>
                   R$ {operacao.valor_pago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
 
               <div className="rounded-lg p-3 border-2 border-orange-200" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Saldo Devedor</span>
-                <span className="font-bold text-lg text-orange-600">
+                <span style={{fontWeight:"700",fontSize:"1.1rem",color:"#f59e0b"}}>
                   R$ {operacao.saldo_devedor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </span>
               </div>
@@ -309,13 +309,13 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
               <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                 <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)",display:"block"}}>Progresso</span>
                 <div className="flex items-center gap-2 mt-1">
-                  <div className="flex-1 rounded-full h-2">
+                  <div style={{flex:1,background:"var(--color-surface-2)",borderRadius:"999px",height:"0.5rem"}}>
                     <div 
-                      className="bg-purple-600 h-2 rounded-full transition-all"
+                      style={{background:"#8b5cf6",height:"0.5rem",borderRadius:"999px",transition:"width 0.3s"}}
                       style={{ width: `${percentualPago}%` }}
                     />
                   </div>
-                  <span className="text-sm font-bold text-purple-600">{percentualPago}%</span>
+                  <span style={{fontSize:"0.82rem",fontWeight:"700",color:"#8b5cf6"}}>{percentualPago}%</span>
                 </div>
               </div>
             </div>
@@ -325,29 +325,29 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold">{parcelas.length}</div>
-                <div className="text-xs font-semibold">Total</div>
+                <div style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-text)"}}>{parcelas.length}</div>
+                <div style={{fontSize:"0.72rem",fontWeight:"700",color:"var(--color-text-muted)"}}>Total</div>
               </div>
             </div>
 
             <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold">{parcelasPagas}</div>
-                <div className="text-xs font-semibold">✓ Pagas</div>
+                <div style={{fontSize:"1.5rem",fontWeight:"800",color:"#10b981"}}>{parcelasPagas}</div>
+                <div style={{fontSize:"0.72rem",fontWeight:"700",color:"#10b981"}}>✓ Pagas</div>
               </div>
             </div>
 
             <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold">{parcelasPendentes}</div>
-                <div className="text-xs font-semibold">⏳ Pendentes</div>
+                <div style={{fontSize:"1.5rem",fontWeight:"800",color:"#f59e0b"}}>{parcelasPendentes}</div>
+                <div style={{fontSize:"0.72rem",fontWeight:"700",color:"#f59e0b"}}>⏳ Pendentes</div>
               </div>
             </div>
 
             <div className="rounded-lg p-3 border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <div className="text-center">
-                <div className="text-2xl font-bold">{parcelasAtrasadas}</div>
-                <div className="text-xs font-semibold">🚨 Atrasadas</div>
+                <div style={{fontSize:"1.5rem",fontWeight:"800",color:"#ef4444"}}>{parcelasAtrasadas}</div>
+                <div style={{fontSize:"0.72rem",fontWeight:"700",color:"#ef4444"}}>🚨 Atrasadas</div>
               </div>
             </div>
           </div>
@@ -368,35 +368,34 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                   return (
                     <div 
                       key={parcela.id} 
-                      className={` rounded-lg p-3 border-2 ${
-                        statusBadge.color.includes('red') ? '' : 
-                        statusBadge.color.includes('yellow') ? '' : 
-                        statusBadge.color.includes('green') ? '' : 
-                        ''
-                      } hover: transition-all`}
+                      style={{
+                        background:parcela.status==='pago'?'rgba(16,185,129,0.06)':parcela.status==='atrasado'?'rgba(239,68,68,0.06)':parcela.status==='pendente'?'rgba(245,158,11,0.06)':'var(--color-surface-2)',
+                        border:parcela.status==='pago'?'1px solid rgba(16,185,129,0.3)':parcela.status==='atrasado'?'1px solid rgba(239,68,68,0.3)':parcela.status==='pendente'?'1px solid rgba(245,158,11,0.3)':'1px solid var(--color-border)',
+                        borderRadius:'var(--radius-lg)',padding:'0.75rem',
+                      }}
                     >
                       {/* Número e Status */}
                       <div className="text-center mb-2">
-                        <div className="text-lg font-bold">
+                        <div style={{fontSize:"1rem",fontWeight:"800",color:"var(--color-text)"}}>
                           {parcela.numero_parcela}/{parcelas.length}
                         </div>
-                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-semibold border ${statusBadge.color}`}>
+                        <span style={{...statusBadge.styleObj,display:"inline-block",padding:"0.15rem 0.5rem",borderRadius:"999px",fontSize:"0.7rem",fontWeight:"700"}}>
                           {statusBadge.icon}
                         </span>
                       </div>
 
                       {/* Valor */}
                       <div className="text-center mb-2">
-                        <div className="text-xs">Valor</div>
-                        <div className="font-bold text-sm">
+                        <div style={{fontSize:"0.65rem",color:"var(--color-text-muted)"}}>Valor</div>
+                        <div style={{fontWeight:"700",fontSize:"0.82rem",color:"var(--color-text)"}}>
                           R$ {parcela.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                       </div>
 
                       {/* Vencimento */}
                       <div className="text-center mb-2">
-                        <div className="text-xs">Vencimento</div>
-                        <div className="font-semibold text-xs">
+                        <div style={{fontSize:"0.65rem",color:"var(--color-text-muted)"}}>Vencimento</div>
+                        <div style={{fontWeight:"600",fontSize:"0.72rem",color:"var(--color-text)"}}>
                           {new Date(parcela.data_vencimento).toLocaleDateString('pt-BR')}
                         </div>
                       </div>
@@ -404,8 +403,8 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                       {/* Pagamento (se pago) */}
                       {parcela.status === 'pago' && (
                         <div className="text-center mb-2 rounded p-1" style={{background:"rgba(16,185,129,0.1)"}}>
-                          <div className="text-xs">Pago em</div>
-                          <div className="font-semibold text-xs">
+                          <div style={{fontSize:"0.65rem",color:"var(--color-text-muted)"}}>Pago em</div>
+                          <div style={{fontWeight:"600",fontSize:"0.72rem",color:"var(--color-text)"}}>
                             {new Date(parcela.data_pagamento).toLocaleDateString('pt-BR')}
                           </div>
                         </div>
@@ -414,7 +413,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                       {/* Dias de atraso */}
                       {parcela.status === 'atrasado' && parcela.dias_atraso > 0 && (
                         <div className="text-center mb-2 rounded p-1" style={{background:"rgba(239,68,68,0.1)"}}>
-                          <div className="text-xs font-bold">
+                          <div style={{fontSize:"0.72rem",fontWeight:"700",color:"#ef4444"}}>
                             {parcela.dias_atraso} dias
                           </div>
                         </div>
@@ -425,14 +424,14 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                         {parcela.status === 'pago' ? (
                           <button
                             onClick={() => estornarParcela(parcela)}
-                            className="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 px-2 py-1 rounded font-semibold transition-all text-xs"
+                            style={{width:"100%",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",padding:"0.25rem 0.5rem",borderRadius:"var(--radius-sm)",fontWeight:"700",cursor:"pointer",fontSize:"0.72rem"}}
                           >
                             ↶ Estornar
                           </button>
                         ) : parcela.status !== 'cancelado' && (
                           <button
                             onClick={() => abrirModalQuitacao(parcela)}
-                            className="w-full bg-green-100 hover:bg-green-200 px-2 py-1 rounded font-semibold transition-all text-xs"
+                            style={{width:"100%",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",padding:"0.25rem 0.5rem",borderRadius:"var(--radius-sm)",fontWeight:"700",cursor:"pointer",fontSize:"0.72rem"}}
                           >
                             💰 Quitar
                           </button>
@@ -458,7 +457,7 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-6 py-3 rounded-lg font-semibold transition-all"
+              style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
             >
               Fechar
             </button>
@@ -469,15 +468,15 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
       {/* MODAL DE QUITAÇÃO */}
       {modalQuitacao && parcelaAtual && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
-          <div className="rounded-xl max-w-md w-full">
-            <div className="bg-green-600 p-6 text-white rounded-t-xl">
-              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitar Parcela {parcelaAtual.numero_parcela}</h3>
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"28rem"}}>
+            <div style={{background:"#10b981",padding:"1.25rem 1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
+              <h3 style={{fontSize:"1.1rem",fontWeight:"700",color:"#fff",margin:0}}>💰 Quitar Parcela {parcelaAtual.numero_parcela}</h3>
             </div>
 
-            <form onSubmit={quitarParcela} className="p-6 space-y-4">
+            <form onSubmit={quitarParcela} style={{padding:"1.5rem",display:"flex",flexDirection:"column",gap:"1rem"}}>
               <div className="rounded-lg p-4 mb-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="text-sm">Valor da Parcela</div>
-                <div className="text-2xl font-bold text-blue-900">
+                <div style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>Valor da Parcela</div>
+                <div style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-text)"}}>
                   R$ {parcelaAtual.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </div>
               </div>
@@ -544,14 +543,14 @@ export default function DetalhesOperacao({ operacaoId, onClose, onUpdate, showSu
                 <button
                   type="button"
                   onClick={() => setModalQuitacao(false)}
-                  className="flex-1 px-6 py-3 rounded-lg font-semibold transition-all"
+                  style={{flex:1,padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
                   disabled={loading}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-all disabled:opacity-50"
+                  style={{flex:1,padding:"0.75rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700",opacity:loading?0.6:1}}
                   disabled={loading}
                 >
                   {loading ? 'Quitando...' : 'Confirmar Pagamento'}
