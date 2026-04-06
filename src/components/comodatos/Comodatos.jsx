@@ -67,16 +67,15 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
   ];
 
   const getCardStyle = (card) => {
-    if (card.danger)   return { background: 'linear-gradient(135deg, #ef4444, #e11d48)' };
-    if (card.warning)  return { background: 'linear-gradient(135deg, #f59e0b, #ea580c)' };
-    if (card.success)  return { background: 'linear-gradient(135deg, #10b981, #16a34a)' };
-    if (card.muted)    return { background: 'linear-gradient(135deg, #6b7280, #475569)' };
-    // accent: usa gradiente do tema
-    return { background: 'linear-gradient(135deg, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))' };
+    if (card.danger)   return { background:'#ef4444',color:'#fff' };
+    if (card.warning)  return { background:'#f59e0b',color:'#fff' };
+    if (card.success)  return { background:'#10b981',color:'#fff' };
+    if (card.muted)    return { background:'#64748b',color:'#fff' };
+    return { background:'var(--color-accent)',color:'#fff' };
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* HEADER */}
       <div className="card">
         <div className="flex items-center justify-between">
