@@ -289,17 +289,17 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
       {/* HEADER */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
+          <h2 style={{fontSize:"1.5rem",fontWeight:"700",color:"var(--color-text)"}}>
             👥 Beneficiários
           </h2>
           {permissoes?.pode_editar_comodatos && (
             <button
               onClick={() => abrirModal()}
-              className="btn-primary"
+              style={{padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
             >
               ➕ Novo Beneficiário
             </button>
@@ -311,6 +311,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
           placeholder="🔍 Buscar por nome ou CPF..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
+          style={{width:"100%",padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",outline:"none"}}
         />
       </div>
 
@@ -319,15 +320,16 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         {beneficiariosFiltrados.map(beneficiario => (
           <div
             key={beneficiario.id}
-            onMouseEnter={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-xl)'}
-            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'var(--shadow-md)'}
+            style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.25rem",display:"flex",flexDirection:"column",gap:"0.75rem",transition:"box-shadow 0.2s"}}
+            onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)'}
+            onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="text-xl font-bold text-gray-800">
+                <h3 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",margin:0}}>
                   {beneficiario.nome}
                 </h3>
-                <p className="text-teal-600 text-sm">
+                <p style={{color:"var(--color-accent)",fontSize:"0.78rem",marginTop:"0.2rem"}}>
                   CPF: {beneficiario.cpf}
                 </p>
               </div>
@@ -336,22 +338,22 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
             <div className="grid grid-cols-2 gap-3 text-sm mb-4">
               {beneficiario.data_nascimento && (
                 <div>
-                  <span className="text-gray-500">Nascimento:</span>
-                  <p className="font-semibold">
+                  <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Nascimento:</span>
+                  <p style={{fontWeight:"600",color:"var(--color-text)",margin:0}}>
                     {new Date(beneficiario.data_nascimento + 'T00:00:00').toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               )}
               {beneficiario.celular && (
                 <div>
-                  <span className="text-gray-500">Celular:</span>
-                  <p className="font-semibold">{beneficiario.celular}</p>
+                  <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Celular:</span>
+                  <p style={{fontWeight:"600",color:"var(--color-text)",margin:0}}>{beneficiario.celular}</p>
                 </div>
               )}
               {beneficiario.cidade && (
                 <div>
-                  <span className="text-gray-500">Cidade:</span>
-                  <p className="font-semibold">
+                  <span style={{fontSize:"0.72rem",color:"var(--color-text-muted)"}}>Cidade:</span>
+                  <p style={{fontWeight:"600",color:"var(--color-text)",margin:0}}>
                     {beneficiario.cidade}/{beneficiario.estado}
                   </p>
                 </div>
@@ -359,15 +361,15 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
             </div>
 
             {beneficiario.responsaveis && beneficiario.responsaveis.length > 0 && (
-              <div className="bg-blue-50 rounded p-3 mb-3">
-                <p className="text-sm font-semibold text-blue-900 mb-2">
+              <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.75rem"}}>
+                <p style={{fontSize:"0.82rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   👤 Responsáveis:
                 </p>
                 {beneficiario.responsaveis.map((resp, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-white rounded p-2 mb-2">
+                  <div key={idx} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"var(--color-surface)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.6rem",marginBottom:"0.4rem",border:"1px solid var(--color-border)"}}>
                     <div>
-                      <p className="text-sm text-blue-800 font-medium">{resp.nome}</p>
-                      <p className="text-xs text-blue-600">{resp.parentesco} • {resp.telefone || resp.celular}</p>
+                      <p style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text)",margin:0}}>{resp.nome}</p>
+                      <p style={{fontSize:"0.7rem",color:"var(--color-text-muted)",margin:0}}>{resp.parentesco} • {resp.telefone || resp.celular}</p>
                     </div>
                     {permissoes?.pode_editar_comodatos && (
                       <div className="flex gap-2">
@@ -396,19 +398,19 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               <div className="flex gap-2">
                 <button
                   onClick={() => abrirModal(beneficiario)}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  style={{flex:1,padding:"0.4rem 0.75rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.82rem",fontWeight:"700"}}
                 >
                   ✏️ Editar
                 </button>
                 <button
                   onClick={() => abrirModalResponsavel(beneficiario)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  style={{padding:"0.4rem 0.75rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.82rem",fontWeight:"700"}}
                 >
                   👤 Responsável
                 </button>
                 <button
                   onClick={() => excluir(beneficiario.id)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                  style={{padding:"0.4rem 0.75rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.82rem",fontWeight:"700"}}
                 >
                   ❌
                 </button>
@@ -446,8 +448,8 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
             margin: 0
           }}>
             {/* Header */}
-            <div className="card-header">
-              <h3 className="text-2xl font-bold">
+            <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem",borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
+              <h3 style={{fontSize:"1.25rem",fontWeight:"700",color:"#fff",margin:0}}>
                 {editando ? '✏️ Editar Beneficiário' : '➕ Novo Beneficiário'}
               </h3>
             </div>
@@ -688,7 +690,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
           <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)"}}>
             <div className="bg-green-600 text-white p-6 rounded-t-xl">
-              <h3 className="text-2xl font-bold">
+              <h3 style={{fontSize:"1.25rem",fontWeight:"700",color:"#fff",margin:0}}>
                 👤 {editandoResponsavel ? 'Editar Responsável' : 'Adicionar Responsável'}
               </h3>
               <p className="text-green-100 text-sm mt-1">
@@ -706,7 +708,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.nome}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, nome: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     required
                   />
                 </div>
@@ -719,7 +721,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.cpf}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cpf: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -731,7 +733,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.parentesco}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, parentesco: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     placeholder="Ex: Filho, Esposa, Mãe"
                   />
                 </div>
@@ -744,7 +746,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.telefone}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, telefone: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -756,7 +758,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.celular}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, celular: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -768,7 +770,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.rg}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, rg: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -780,7 +782,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.endereco}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, endereco: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     placeholder="Rua, número, complemento"
                   />
                 </div>
@@ -793,7 +795,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.cidade}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, cidade: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
 
@@ -805,7 +807,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="text"
                     value={formResponsavel.estado}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, estado: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                     maxLength="2"
                   />
                 </div>
@@ -818,7 +820,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
                     type="email"
                     value={formResponsavel.email}
                     onChange={(e) => setFormResponsavel({ ...formResponsavel, email: e.target.value })}
-                    className="w-full border rounded-lg px-4 py-2"
+                    style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"0.5rem 1rem",width:"100%",outline:"none"}}
                   />
                 </div>
               </div>
