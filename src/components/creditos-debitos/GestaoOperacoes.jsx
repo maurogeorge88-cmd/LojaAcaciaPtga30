@@ -525,7 +525,7 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                     <div className="flex flex-col gap-2 ml-4">
                       <button
                         onClick={() => setOperacaoDetalhes(operacao.id)}
-                        className="bg-blue-100 hover:bg-blue-200 px-4 py-2 rounded-lg font-semibold transition-all text-sm whitespace-nowrap"
+                        style={{padding:"0.4rem 0.9rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"700",fontSize:"0.82rem",whiteSpace:"nowrap"}}
                       >
                         👁️ Detalhes
                       </button>
@@ -534,13 +534,13 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
                         <>
                           <button
                             onClick={() => abrirModalEdicao(operacao)}
-                            className="bg-yellow-100 hover:bg-yellow-200 px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                            style={{padding:"0.4rem 0.9rem",background:"rgba(245,158,11,0.15)",color:"#f59e0b",border:"1px solid rgba(245,158,11,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"700",fontSize:"0.82rem"}}
                           >
                             ✏️ Editar
                           </button>
                           <button
                             onClick={() => cancelarOperacao(operacao.id, operacao.descricao || operacao.entidade_nome)}
-                            className="bg-red-100 hover:bg-red-200 px-4 py-2 rounded-lg font-semibold transition-all text-sm"
+                            style={{padding:"0.4rem 0.9rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"700",fontSize:"0.82rem"}}
                           >
                             🗑️ Cancelar
                           </button>
