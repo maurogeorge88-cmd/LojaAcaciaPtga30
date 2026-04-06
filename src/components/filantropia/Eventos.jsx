@@ -9,29 +9,32 @@ export default function Eventos({ userPermissions, userData }) {
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
+  // Verificar se tem permissão de edição
+  // Admin pode editar eventos
   const podeEditar = Boolean(
-    userPermissions?.pode_gerenciar_usuarios ||
+    userPermissions?.pode_gerenciar_usuarios || 
     userPermissions?.canManageUsers
   );
 
   const [formData, setFormData] = useState({
-    tipo_evento: 'externo',
+    tipo_evento: 'externo', // externo ou interno
     nome_evento: '',
     idealizador: '',
     local_evento: '',
     data_aviso: '',
     data_prevista: '',
     descricao: '',
-    status: 'planejamento'
+    status: 'planejamento' // planejamento, em_andamento, concluido
   });
 
   const [itensEvento, setItensEvento] = useState([]);
   const [novoItem, setNovoItem] = useState({ descricao: '', quantidade: '', valor: '' });
   const [itemEditando, setItemEditando] = useState(null);
-
+  
   const [participantes, setParticipantes] = useState([]);
   const [novoParticipante, setNovoParticipante] = useState('');
-
+  
+  // Estados para armazenar itens e participantes de TODOS os eventos
   const [todosItens, setTodosItens] = useState([]);
   const [todosParticipantes, setTodosParticipantes] = useState([]);
 
@@ -43,13 +46,23 @@ export default function Eventos({ userPermissions, userData }) {
   }, []);
 
   const carregarTodosItens = async () => {
-    const { data, error } = await supabase.from('eventos_itens').select('*');
-    if (!error) setTodosItens(data || []);
+    const { data, error } = await supabase
+      .from('eventos_itens')
+      .select('*');
+    
+    if (!error) {
+      setTodosItens(data || []);
+    }
   };
 
   const carregarTodosParticipantes = async () => {
-    const { data, error } = await supabase.from('eventos_participantes').select('*');
-    if (!error) setTodosParticipantes(data || []);
+    const { data, error } = await supabase
+      .from('eventos_participantes')
+      .select('*');
+    
+    if (!error) {
+      setTodosParticipantes(data || []);
+    }
   };
 
   const carregarEventos = async () => {
@@ -57,10 +70,13 @@ export default function Eventos({ userPermissions, userData }) {
       .from('eventos_loja')
       .select('*')
       .order('data_prevista', { ascending: false })
-      .limit(100);
-
-    if (error) console.error('Erro ao carregar eventos:', error);
-    else setEventos(data || []);
+      .limit(100); // ⚡ PERFORMANCE: Limita a 100 eventos
+    
+    if (error) {
+      console.error('Erro ao carregar eventos:', error);
+    } else {
+      setEventos(data || []);
+    }
   };
 
   const carregarIrmaos = async () => {
@@ -68,14 +84,16 @@ export default function Eventos({ userPermissions, userData }) {
       .from('irmaos')
       .select('id, nome, situacao')
       .order('nome');
-
+    
     if (error) {
       console.error('Erro ao carregar irmãos:', error);
     } else {
+      // Filtrar apenas regulares e licenciados
       const irmaosFiltrados = (data || []).filter(irmao => {
         const situacao = (irmao.situacao || 'regular').toLowerCase();
         return situacao === 'regular' || situacao === 'licenciado';
       });
+      console.log('Irmãos carregados:', irmaosFiltrados);
       setIrmaos(irmaosFiltrados);
     }
   };
@@ -135,15 +153,25 @@ export default function Eventos({ userPermissions, userData }) {
       .select('*')
       .eq('evento_id', eventoId)
       .order('created_at');
-    if (!error) setItensEvento(data || []);
+    
+    if (!error) {
+      setItensEvento(data || []);
+    }
   };
 
   const carregarParticipantes = async (eventoId) => {
     const { data, error } = await supabase
       .from('eventos_participantes')
-      .select('id, irmao_id, irmaos (nome)')
+      .select(`
+        id,
+        irmao_id,
+        irmaos (nome)
+      `)
       .eq('evento_id', eventoId);
-    if (!error) setParticipantes(data || []);
+    
+    if (!error) {
+      setParticipantes(data || []);
+    }
   };
 
   const salvarEvento = async () => {
@@ -153,82 +181,127 @@ export default function Eventos({ userPermissions, userData }) {
     }
 
     if (modoEdicao && eventoSelecionado) {
+      // Atualizar evento
       const { error } = await supabase
         .from('eventos_loja')
         .update(formData)
         .eq('id', eventoSelecionado.id);
-
-      if (error) { alert('Erro ao atualizar evento!'); return; }
-      await salvarItens(eventoSelecionado.id);
+      
+      if (error) {
+        console.error('Erro ao atualizar evento:', error);
+        alert('Erro ao atualizar evento!');
+      } else {
+        await salvarItens(eventoSelecionado.id);
+        carregarEventos();
+        carregarTodosItens();
+        carregarTodosParticipantes();
+        fecharModal();
+      }
     } else {
+      // Criar novo evento
       const { data, error } = await supabase
         .from('eventos_loja')
         .insert([formData])
         .select();
-
-      if (error) { alert('Erro ao criar evento!'); return; }
-      if (data?.[0]) await salvarItens(data[0].id);
+      
+      if (error) {
+        console.error('Erro ao criar evento:', error);
+        alert('Erro ao criar evento!');
+      } else if (data && data[0]) {
+        await salvarItens(data[0].id);
+        carregarEventos();
+        carregarTodosItens();
+        carregarTodosParticipantes();
+        fecharModal();
+      }
     }
-
-    carregarEventos();
-    carregarTodosItens();
-    carregarTodosParticipantes();
-    fecharModal();
   };
 
   const salvarItens = async (eventoId) => {
+    // Salvar novos itens
     for (const item of itensEvento) {
       if (!item.id) {
-        await supabase.from('eventos_itens').insert([{
-          evento_id: eventoId,
-          descricao: item.descricao,
-          quantidade: item.quantidade,
-          valor: item.valor
-        }]);
+        await supabase
+          .from('eventos_itens')
+          .insert([{ 
+            evento_id: eventoId,
+            descricao: item.descricao,
+            quantidade: item.quantidade,
+            valor: item.valor
+          }]);
       }
     }
+
+    // Salvar novos participantes
     for (const participante of participantes) {
       if (!participante.id) {
-        await supabase.from('eventos_participantes').insert([{
-          evento_id: eventoId,
-          irmao_id: participante.irmao_id
-        }]);
+        await supabase
+          .from('eventos_participantes')
+          .insert([{
+            evento_id: eventoId,
+            irmao_id: participante.irmao_id
+          }]);
       }
     }
   };
 
   const excluirEvento = async (id) => {
     if (!confirm('Deseja realmente excluir este evento?')) return;
+
+    // Excluir itens e participantes primeiro
     await supabase.from('eventos_itens').delete().eq('evento_id', id);
     await supabase.from('eventos_participantes').delete().eq('evento_id', id);
-    const { error } = await supabase.from('eventos_loja').delete().eq('id', id);
-    if (error) alert('Erro ao excluir evento!');
-    else carregarEventos();
+    
+    // Excluir evento
+    const { error } = await supabase
+      .from('eventos_loja')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('Erro ao excluir evento:', error);
+      alert('Erro ao excluir evento!');
+    } else {
+      carregarEventos();
+    }
   };
 
   const adicionarItem = () => {
     if (!novoItem.descricao) return;
+    
     if (itemEditando !== null) {
+      // Editando item existente
       const novosItens = [...itensEvento];
       novosItens[itemEditando] = { ...novoItem };
       setItensEvento(novosItens);
       setItemEditando(null);
     } else {
+      // Novo item
       setItensEvento([...itensEvento, { ...novoItem }]);
     }
     setNovoItem({ descricao: '', quantidade: '', valor: '' });
   };
 
-  const editarItem = (index) => { setNovoItem(itensEvento[index]); setItemEditando(index); };
-  const cancelarEdicaoItem = () => { setNovoItem({ descricao: '', quantidade: '', valor: '' }); setItemEditando(null); };
+  const editarItem = (index) => {
+    setNovoItem(itensEvento[index]);
+    setItemEditando(index);
+  };
+
+  const cancelarEdicaoItem = () => {
+    setNovoItem({ descricao: '', quantidade: '', valor: '' });
+    setItemEditando(null);
+  };
 
   const removerItem = async (index, itemId) => {
-    if (itemId) await supabase.from('eventos_itens').delete().eq('id', itemId);
+    if (itemId) {
+      await supabase.from('eventos_itens').delete().eq('id', itemId);
+    }
     setItensEvento(itensEvento.filter((_, i) => i !== index));
   };
 
   const adicionarParticipante = () => {
     if (!novoParticipante) return;
+    
     const irmao = irmaos.find(i => i.id === parseInt(novoParticipante));
     if (irmao && !participantes.find(p => p.irmao_id === irmao.id)) {
       setParticipantes([...participantes, { irmao_id: irmao.id, irmaos: { nome: irmao.nome } }]);
@@ -237,76 +310,75 @@ export default function Eventos({ userPermissions, userData }) {
   };
 
   const removerParticipante = async (index, participanteId) => {
-    if (participanteId) await supabase.from('eventos_participantes').delete().eq('id', participanteId);
+    if (participanteId) {
+      await supabase.from('eventos_participantes').delete().eq('id', participanteId);
+    }
     setParticipantes(participantes.filter((_, i) => i !== index));
   };
 
   const totalCusto = itensEvento.reduce((sum, item) => {
-    return sum + (parseFloat(item.valor) || 0) * (parseFloat(item.quantidade) || 1);
+    const valor = parseFloat(item.valor) || 0;
+    const qtd = parseFloat(item.quantidade) || 1;
+    return sum + (valor * qtd);
   }, 0);
 
   return (
     <div className="p-6">
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>Eventos da Loja</h1>
+        <h1 className="text-2xl font-bold">Eventos da Loja</h1>
         {podeEditar && (
           <button
             onClick={() => abrirModal()}
-            style={{
-              background: 'var(--color-accent)', color: 'white', border: 'none',
-              borderRadius: '0.5rem', padding: '0.625rem 1.25rem',
-              fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
-            }}
+            style={{display:"flex",alignItems:"center",gap:"0.5rem",background:"var(--color-accent)",color:"#fff",padding:"0.5rem 1rem",borderRadius:"var(--radius-md)",border:"none",cursor:"pointer",fontWeight:"600"}}
           >
-            <span>➕</span> Novo Evento
+            <span>➕</span>
+            Novo Evento
           </button>
         )}
       </div>
 
       {/* Aviso para irmãos sem permissão */}
       {!podeEditar && (
-        <div className="rounded-r-lg p-4 mb-6" style={{
-          background: 'var(--color-surface-3)',
-          borderLeft: '4px solid var(--color-accent)'
-        }}>
+        <div style={{background:"var(--color-accent-bg)",borderLeft:"4px solid var(--color-accent)",padding:"1rem",borderRadius:"0 var(--radius-md) var(--radius-md) 0",marginBottom:"1.5rem"}}>
           <div className="flex items-center gap-2">
-            <span className="text-lg">ℹ️</span>
-            <p className="text-sm" style={{ color: 'var(--color-text)' }}>
-              <strong>Visualização:</strong> Você pode visualizar os eventos da loja.
+            <span style={{fontSize:"1.1rem"}}>ℹ️</span>
+            <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
+              <strong>Visualização:</strong> Você pode visualizar os eventos da loja. 
               Para criar ou editar eventos, entre em contato com a administração.
             </p>
           </div>
         </div>
       )}
 
-      {/* LISTA DE EVENTOS */}
+      {/* Lista de Eventos */}
       <div className="grid gap-4">
         {eventos.map(evento => {
           const custoTotal = todosItens
             .filter(item => item.evento_id === evento.id)
             .reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0);
+          
           const numParticipantes = todosParticipantes.filter(p => p.evento_id === evento.id).length;
 
           return (
-            <div key={evento.id} className="card overflow-hidden"
-              style={{
-                borderLeft: `4px solid ${evento.tipo_evento === 'externo' ? 'var(--color-accent)' : 'var(--gradient-from)'}`,
-                transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            <div key={evento.id} className="overflow-hidden border-l-4" 
+                 style={{
+                   background: 'var(--card-bg)',
+                   borderRadius: 'var(--border-radius)',
+                   borderLeftColor: evento.tipo_evento === 'externo' ? 'var(--accent-color)' : 'var(--success-color)',
+                   boxShadow: 'var(--shadow-md)',
+                   transition: 'all 0.3s ease'
+                 }}
+                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    {/* Badges tipo e status */}
-                    <div className="flex items-center gap-3 mb-3 flex-wrap">
+                    <div className="flex items-center gap-3 mb-3">
                       <span style={{
-                        background: 'var(--color-surface-3)',
-                        color: 'var(--color-accent)',
-                        border: '1px solid var(--color-border)',
-                        padding: '0.25rem 0.75rem',
+                        background: evento.tipo_evento === 'externo' ? 'var(--accent-bg)' : 'var(--success-bg)',
+                        color: evento.tipo_evento === 'externo' ? 'var(--accent-color)' : 'var(--success-color)',
+                        padding: '0.375rem 1rem',
                         borderRadius: '9999px',
                         fontSize: '0.875rem',
                         fontWeight: '600'
@@ -314,11 +386,11 @@ export default function Eventos({ userPermissions, userData }) {
                         {evento.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}
                       </span>
                       <span style={{
-                        background: 'var(--color-surface-3)',
-                        color: evento.status === 'concluido' ? '#16a34a' :
-                               evento.status === 'em_andamento' ? 'var(--color-accent)' : '#ca8a04',
-                        border: '1px solid var(--color-border)',
-                        padding: '0.25rem 0.75rem',
+                        background: evento.status === 'planejamento' ? 'var(--warning-bg)' :
+                                  evento.status === 'em_andamento' ? 'var(--info-bg)' : 'var(--muted-bg)',
+                        color: evento.status === 'planejamento' ? 'var(--warning-color)' :
+                               evento.status === 'em_andamento' ? 'var(--info-color)' : 'var(--text-secondary)',
+                        padding: '0.375rem 1rem',
                         borderRadius: '9999px',
                         fontSize: '0.875rem',
                         fontWeight: '600'
@@ -327,12 +399,15 @@ export default function Eventos({ userPermissions, userData }) {
                          evento.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
                       </span>
                     </div>
-
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.5rem' }}>
+                    <h3 style={{ 
+                      fontSize: '1.25rem', 
+                      fontWeight: '700', 
+                      color: 'var(--text-primary)', 
+                      marginBottom: '0.5rem' 
+                    }}>
                       {evento.nome_evento}
                     </h3>
-
-                    <div className="grid grid-cols-2 gap-3" style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
+                    <div className="grid grid-cols-2 gap-3" style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                       <div className="flex items-center gap-2">
                         <span style={{ fontWeight: '600' }}>👤 Idealizador:</span>
                         <span>{evento.idealizador || 'Não informado'}</span>
@@ -350,60 +425,62 @@ export default function Eventos({ userPermissions, userData }) {
                         <span>{new Date(evento.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
                       </div>
                     </div>
-
                     {evento.descricao && (
-                      <p style={{
-                        marginTop: '0.75rem', fontSize: '0.875rem',
-                        color: 'var(--color-text-secondary)',
-                        background: 'var(--color-surface-3)',
-                        padding: '0.75rem', borderRadius: '0.5rem'
+                      <p style={{ 
+                        marginTop: '0.75rem', 
+                        fontSize: '0.875rem', 
+                        color: 'var(--text-secondary)', 
+                        background: 'var(--muted-bg)', 
+                        padding: '0.75rem', 
+                        borderRadius: 'var(--border-radius)' 
                       }}>
                         {evento.descricao}
                       </p>
                     )}
                   </div>
-
                   {podeEditar && (
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => abrirModal(evento)}
+                        className="btn-icon-secondary"
                         title="Editar"
-                        style={{
-                          background: 'var(--color-surface-3)', color: 'var(--color-text)',
-                          border: '1px solid var(--color-border)', borderRadius: '0.5rem',
-                          padding: '0.5rem', cursor: 'pointer', fontSize: '1rem'
-                        }}
-                      >✏️</button>
+                      >
+                        ✏️
+                      </button>
                       <button
                         onClick={() => excluirEvento(evento.id)}
+                        className="btn-icon-danger"
                         title="Excluir"
-                        style={{
-                          background: 'rgba(239,68,68,0.1)', color: '#dc2626',
-                          border: '1px solid rgba(239,68,68,0.3)', borderRadius: '0.5rem',
-                          padding: '0.5rem', cursor: 'pointer', fontSize: '1rem'
-                        }}
-                      >🗑️</button>
+                      >
+                        🗑️
+                      </button>
                     </div>
                   )}
                 </div>
 
-                {/* Mini cards de resumo */}
+                {/* Informações adicionais em cards */}
                 <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', padding: '1rem', borderRadius: '0.5rem' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>💰 Custo Total</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-accent)' }}>R$ {custoTotal.toFixed(2)}</div>
+                  <div style={{ background: 'var(--info-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--info-color)', marginBottom: '0.25rem' }}>
+                      💰 Custo Total
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--info-color)' }}>
+                      R$ {custoTotal.toFixed(2)}
+                    </div>
                   </div>
-                  <div style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', padding: '1rem', borderRadius: '0.5rem' }}>
-                    <div style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-secondary)', marginBottom: '0.25rem' }}>👥 Participantes</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--color-accent)' }}>{numParticipantes} irmãos</div>
+                  <div style={{ background: 'var(--success-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }}>
+                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--success-color)', marginBottom: '0.25rem' }}>
+                      👥 Participantes
+                    </div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--success-color)' }}>
+                      {numParticipantes} irmãos
+                    </div>
                   </div>
-                  <div style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', padding: '1rem', borderRadius: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ background: 'var(--accent-bg)', padding: '1rem', borderRadius: 'var(--border-radius)' }} className="flex items-center justify-center">
                     <button
                       onClick={() => abrirVisualizacao(evento)}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: 'var(--color-accent)', fontWeight: '600', fontSize: '0.875rem'
-                      }}
+                      className="btn-link"
+                      style={{ color: 'var(--accent-color)' }}
                     >
                       👁️ Ver Detalhes
                     </button>
@@ -415,42 +492,41 @@ export default function Eventos({ userPermissions, userData }) {
         })}
       </div>
 
-      {eventos.length === 0 && (
-        <div className="text-center py-12" style={{ color: 'var(--color-text-secondary)' }}>
-          <p className="text-xl">Nenhum evento cadastrado</p>
-        </div>
-      )}
-
-      {/* MODAL EDIÇÃO/CRIAÇÃO */}
+      {/* Modal */}
       {modalAberto && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="card" style={{
-            width: '100%', maxWidth: '56rem', maxHeight: '90vh',
-            overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0
-          }}>
-            {/* Header fixo */}
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 className="text-xl font-bold">{modoEdicao ? 'Editar Evento' : 'Novo Evento'}</h2>
-              <button onClick={fecharModal} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', opacity: 0.8 }}>✖️</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"56rem",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{position:"sticky",top:0,background:"var(--color-accent)",padding:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10}}>
+              <h2 className="text-xl font-bold">
+                {modoEdicao ? 'Editar Evento' : 'Novo Evento'}
+              </h2>
+              <button onClick={fecharModal} style={{color:"#fff",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}>
+                ✖️
+              </button>
             </div>
 
-            {/* Corpo com scroll */}
-            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }} className="space-y-5">
+            <div className="p-6 space-y-6">
+              {/* Informações Básicas */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Tipo de Evento *</label>
-                  <select value={formData.tipo_evento} onChange={(e) => setFormData({...formData, tipo_evento: e.target.value})} className="form-input">
+                  <label className="block text-sm font-medium mb-1">Tipo de Evento *</label>
+                  <select
+                    value={formData.tipo_evento}
+                    onChange={(e) => setFormData({...formData, tipo_evento: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  >
                     <option value="externo">Externo</option>
                     <option value="interno">Interno</option>
                   </select>
                 </div>
+
                 <div>
-                  <label className="form-label">Status</label>
-                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="form-input">
+                  <label className="block text-sm font-medium mb-1">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  >
                     <option value="planejamento">Planejamento</option>
                     <option value="em_andamento">Em Andamento</option>
                     <option value="concluido">Concluído</option>
@@ -459,82 +535,170 @@ export default function Eventos({ userPermissions, userData }) {
               </div>
 
               <div>
-                <label className="form-label">Nome do Evento *</label>
-                <input type="text" value={formData.nome_evento} onChange={(e) => setFormData({...formData, nome_evento: e.target.value})} className="form-input" placeholder="Ex: Festa Junina na Escola Municipal" />
+                <label className="block text-sm font-medium mb-1">Nome do Evento *</label>
+                <input
+                  type="text"
+                  value={formData.nome_evento}
+                  onChange={(e) => setFormData({...formData, nome_evento: e.target.value})}
+                  className="w-full border rounded px-3 py-2"
+                  placeholder="Ex: Festa Junina na Escola Municipal"
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Idealizador</label>
-                  <input type="text" value={formData.idealizador} onChange={(e) => setFormData({...formData, idealizador: e.target.value})} className="form-input" placeholder="Quem está organizando" />
+                  <label className="block text-sm font-medium mb-1">Idealizador</label>
+                  <input
+                    type="text"
+                    value={formData.idealizador}
+                    onChange={(e) => setFormData({...formData, idealizador: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="Quem está organizando"
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Local do Evento</label>
-                  <input type="text" value={formData.local_evento} onChange={(e) => setFormData({...formData, local_evento: e.target.value})} className="form-input" placeholder="Onde será realizado" />
+                  <label className="block text-sm font-medium mb-1">Local do Evento</label>
+                  <input
+                    type="text"
+                    value={formData.local_evento}
+                    onChange={(e) => setFormData({...formData, local_evento: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                    placeholder="Onde será realizado"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Data do Aviso</label>
-                  <input type="date" value={formData.data_aviso} onChange={(e) => setFormData({...formData, data_aviso: e.target.value})} className="form-input" />
+                  <label className="block text-sm font-medium mb-1">Data do Aviso</label>
+                  <input
+                    type="date"
+                    value={formData.data_aviso}
+                    onChange={(e) => setFormData({...formData, data_aviso: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  />
                 </div>
+
                 <div>
-                  <label className="form-label">Data Prevista do Evento *</label>
-                  <input type="date" value={formData.data_prevista} onChange={(e) => setFormData({...formData, data_prevista: e.target.value})} className="form-input" />
+                  <label className="block text-sm font-medium mb-1">Data Prevista do Evento *</label>
+                  <input
+                    type="date"
+                    value={formData.data_prevista}
+                    onChange={(e) => setFormData({...formData, data_prevista: e.target.value})}
+                    className="w-full border rounded px-3 py-2"
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="form-label">Descrição</label>
-                <textarea value={formData.descricao} onChange={(e) => setFormData({...formData, descricao: e.target.value})} className="form-input" rows="3" placeholder="Detalhes sobre o evento..." />
+                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <textarea
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                  className="w-full border rounded px-3 py-2"
+                  rows="3"
+                  placeholder="Detalhes sobre o evento..."
+                />
               </div>
 
               {/* Itens/Custos */}
-              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
-                <h3 className="font-bold mb-4 text-lg" style={{ color: 'var(--color-text)' }}>💰 Itens e Custos</h3>
-
+              <div className="border-t pt-6">
+                <h3 className="font-bold mb-4 text-lg">💰 Itens e Custos</h3>
+                
                 <div className="grid grid-cols-12 gap-2 mb-3">
-                  <input type="text" placeholder="Descrição do item" value={novoItem.descricao} onChange={(e) => setNovoItem({...novoItem, descricao: e.target.value})} className="form-input col-span-5" style={{ fontSize: '0.875rem' }} />
-                  <input type="number" placeholder="Qtd" value={novoItem.quantidade} onChange={(e) => setNovoItem({...novoItem, quantidade: e.target.value})} className="form-input col-span-2" style={{ fontSize: '0.875rem' }} />
-                  <input type="number" step="0.01" placeholder="Valor R$" value={novoItem.valor} onChange={(e) => setNovoItem({...novoItem, valor: e.target.value})} className="form-input col-span-3" style={{ fontSize: '0.875rem' }} />
+                  <input
+                    type="text"
+                    placeholder="Descrição do item"
+                    value={novoItem.descricao}
+                    onChange={(e) => setNovoItem({...novoItem, descricao: e.target.value})}
+                    className="col-span-5 border rounded px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="number"
+                    placeholder="Qtd"
+                    value={novoItem.quantidade}
+                    onChange={(e) => setNovoItem({...novoItem, quantidade: e.target.value})}
+                    className="col-span-2 border rounded px-3 py-2 text-sm"
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Valor R$"
+                    value={novoItem.valor}
+                    onChange={(e) => setNovoItem({...novoItem, valor: e.target.value})}
+                    className="col-span-3 border rounded px-3 py-2 text-sm"
+                  />
                   {itemEditando !== null ? (
                     <>
-                      <button onClick={adicionarItem} className="col-span-1 rounded flex items-center justify-center" style={{ background: 'var(--color-accent)', color: 'white', border: 'none', cursor: 'pointer' }} title="Salvar">💾</button>
-                      <button onClick={cancelarEdicaoItem} className="col-span-1 rounded flex items-center justify-center" style={{ background: 'var(--color-surface-3)', color: 'var(--color-text)', border: '1px solid var(--color-border)', cursor: 'pointer' }} title="Cancelar">✖️</button>
+                      <button
+                        onClick={adicionarItem}
+                        style={{background:"#10b981",color:"#fff",borderRadius:"var(--radius-md)",border:"none",padding:"0.5rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                        title="Salvar edição"
+                      >
+                        💾
+                      </button>
+                      <button
+                        onClick={cancelarEdicaoItem}
+                        style={{background:"var(--color-surface-2)",color:"var(--color-text)",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)",padding:"0.5rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
+                        title="Cancelar"
+                      >
+                        ✖️
+                      </button>
                     </>
                   ) : (
-                    <button onClick={adicionarItem} className="col-span-2 rounded flex items-center justify-center gap-1" style={{ background: 'var(--color-accent)', color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.875rem' }}>➕ Add</button>
+                    <button
+                      onClick={adicionarItem}
+                      style={{gridColumn:"span 2",background:"#10b981",color:"#fff",borderRadius:"var(--radius-md)",border:"none",padding:"0.5rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"0.25rem"}}
+                    >
+                      ➕ Adicionar
+                    </button>
                   )}
                 </div>
 
                 {itensEvento.length > 0 && (
                   <div className="space-y-2">
-                    <div className="grid grid-cols-12 gap-2 px-2" style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--color-text-secondary)' }}>
+                    <div style={{display:"grid",gridTemplateColumns:"repeat(12,minmax(0,1fr))",gap:"0.5rem",fontSize:"0.72rem",fontWeight:"700",color:"var(--color-text-muted)",padding:"0 0.5rem"}}>
                       <div className="col-span-5">Descrição</div>
                       <div className="col-span-2 text-center">Qtd</div>
-                      <div className="col-span-2 text-right">Unit.</div>
+                      <div className="col-span-2 text-right">Valor Unit.</div>
                       <div className="col-span-2 text-right">Total</div>
                       <div className="col-span-1"></div>
                     </div>
                     {itensEvento.map((item, index) => (
-                      <div key={index} className="grid grid-cols-12 gap-2 items-center p-3 rounded-lg" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
-                        <span className="col-span-5 font-medium text-sm" style={{ color: 'var(--color-text)' }}>{item.descricao}</span>
-                        <span className="col-span-2 text-center text-sm" style={{ color: 'var(--color-text-secondary)' }}>{item.quantidade}x</span>
-                        <span className="col-span-2 text-right text-sm" style={{ color: 'var(--color-text-secondary)' }}>R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
-                        <span className="col-span-2 text-right font-bold text-sm" style={{ color: 'var(--color-accent)' }}>
+                      <div key={index} style={{display:"grid",gridTemplateColumns:"repeat(12,minmax(0,1fr))",gap:"0.5rem",alignItems:"center",background:"var(--color-surface-2)",padding:"0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)"}}>
+                        <span className="col-span-5 font-medium text-sm">{item.descricao}</span>
+                        <span className="col-span-2 text-center text-sm">{item.quantidade}x</span>
+                        <span className="col-span-2 text-right text-sm">R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
+                        <span style={{gridColumn:"span 2",textAlign:"right",fontWeight:"700",fontSize:"0.875rem",color:"var(--color-accent)"}}>
                           R$ {(parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)).toFixed(2)}
                         </span>
                         <div className="col-span-1 flex gap-1 justify-end">
-                          <button onClick={() => editarItem(index)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }} title="Editar">✏️</button>
-                          <button onClick={() => removerItem(index, item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem' }} title="Remover">🗑️</button>
+                          <button
+                            onClick={() => editarItem(index)}
+                            style={{color:"var(--color-accent)",background:"none",border:"none",padding:"0.35rem",borderRadius:"var(--radius-sm)",cursor:"pointer"}}
+                            title="Editar"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => removerItem(index, item.id)}
+                            style={{color:"#ef4444",background:"none",border:"none",padding:"0.35rem",borderRadius:"var(--radius-sm)",cursor:"pointer"}}
+                            title="Remover"
+                          >
+                            🗑️
+                          </button>
                         </div>
                       </div>
                     ))}
-                    <div className="p-4 rounded-lg" style={{ background: 'var(--color-surface-3)', border: '2px solid var(--color-accent)' }}>
+                    
+                    {/* Total Geral */}
+                    <div style={{background:"var(--color-accent-bg)",padding:"1rem",borderRadius:"var(--radius-lg)",border:"1px solid var(--color-accent)",marginTop:"1rem"}}>
                       <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>💰 Custo Total do Evento</span>
-                        <span className="text-2xl font-bold" style={{ color: 'var(--color-accent)' }}>R$ {totalCusto.toFixed(2)}</span>
+                        <span style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)"}}>💰 Custo Total do Evento</span>
+                        <span style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)"}}>
+                          R$ {totalCusto.toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -542,24 +706,45 @@ export default function Eventos({ userPermissions, userData }) {
               </div>
 
               {/* Participantes */}
-              <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1.25rem' }}>
-                <h3 className="font-bold mb-4 text-lg" style={{ color: 'var(--color-text)' }}>👥 Irmãos Participantes</h3>
+              <div className="border-t pt-6">
+                <h3 className="font-bold mb-4 text-lg">👥 Irmãos Participantes</h3>
+                
                 <div className="flex gap-2 mb-3">
-                  <select value={novoParticipante} onChange={(e) => setNovoParticipante(e.target.value)} className="form-input flex-1">
+                  <select
+                    value={novoParticipante}
+                    onChange={(e) => setNovoParticipante(e.target.value)}
+                    className="flex-1 border rounded px-3 py-2"
+                  >
                     <option value="">Selecione um irmão...</option>
-                    {irmaos.map(irmao => <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>)}
+                    {irmaos.map(irmao => (
+                      <option key={irmao.id} value={irmao.id}>
+                        {irmao.nome}
+                      </option>
+                    ))}
                   </select>
-                  <button onClick={adicionarParticipante} style={{ background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.5rem 1rem', fontWeight: '600', cursor: 'pointer' }}>➕ Adicionar</button>
+                  <button
+                    onClick={adicionarParticipante}
+                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 flex items-center gap-2"
+                  >
+                    ➕ Adicionar
+                  </button>
                 </div>
+
                 {participantes.length > 0 && (
                   <div className="grid gap-2">
                     {participantes.map((part, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border hover:bg-gray-100 transition">
                         <div className="flex items-center gap-2">
-                          <span>👤</span>
-                          <span className="font-medium" style={{ color: 'var(--color-text)' }}>{part.irmaos?.nome || 'Nome não encontrado'}</span>
+                          <span className="text-lg">👤</span>
+                          <span className="font-medium">{part.irmaos?.nome || 'Nome não encontrado'}</span>
                         </div>
-                        <button onClick={() => removerParticipante(index, part.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0.25rem' }} title="Remover">🗑️</button>
+                        <button
+                          onClick={() => removerParticipante(index, part.id)}
+                          style={{color:"#ef4444",background:"none",border:"none",padding:"0.5rem",borderRadius:"var(--radius-sm)",cursor:"pointer"}}
+                          title="Remover"
+                        >
+                          🗑️
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -567,79 +752,96 @@ export default function Eventos({ userPermissions, userData }) {
               </div>
             </div>
 
-            {/* Footer fixo */}
-            <div style={{ borderTop: '1px solid var(--color-border)', padding: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
-              <button onClick={fecharModal} style={{ background: 'var(--color-surface-3)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.625rem 1.25rem', fontWeight: '600', cursor: 'pointer' }}>
+            <div style={{position:"sticky",bottom:0,background:"var(--color-surface)",borderTop:"1px solid var(--color-border)",padding:"1rem",display:"flex",justifyContent:"flex-end",gap:"0.5rem"}}>
+              <button
+                onClick={fecharModal}
+                style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer"}}
+              >
                 Cancelar
               </button>
-              <button onClick={salvarEvento} style={{ background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '0.5rem', padding: '0.625rem 1.25rem', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                💾 Salvar
+              <button
+                onClick={salvarEvento}
+                style={{display:"flex",alignItems:"center",gap:"0.5rem",background:"var(--color-accent)",color:"#fff",padding:"0.5rem 1rem",borderRadius:"var(--radius-md)",border:"none",cursor:"pointer",fontWeight:"600"}}
+              >
+                💾
+                Salvar
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL VISUALIZAÇÃO */}
+      {/* Modal de Visualização */}
       {modalVisualizacao && eventoSelecionado && (
-        <div style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          zIndex: 9999, padding: '1rem'
-        }}>
-          <div className="card" style={{
-            width: '100%', maxWidth: '56rem', maxHeight: '90vh',
-            overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: 0
-          }}>
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"56rem",maxHeight:"90vh",overflowY:"auto"}}>
+            <div style={{position:"sticky",top:0,background:"var(--color-accent)",padding:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10}}>
               <h2 className="text-xl font-bold">{eventoSelecionado.nome_evento}</h2>
-              <button onClick={fecharModal} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', opacity: 0.8 }}>✖️</button>
+              <button onClick={fecharModal} style={{color:"#fff",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}>
+                ✖️
+              </button>
             </div>
 
-            <div style={{ padding: '1.5rem', overflowY: 'auto', flex: 1 }} className="space-y-6">
+            <div className="p-6 space-y-6">
+              {/* Informações Básicas */}
               <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Tipo', value: eventoSelecionado.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno' },
-                  { label: 'Status', value: eventoSelecionado.status === 'planejamento' ? '📋 Planejamento' : eventoSelecionado.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído' },
-                  { label: 'Idealizador', value: eventoSelecionado.idealizador || 'Não informado' },
-                  { label: 'Local', value: eventoSelecionado.local_evento || 'Não informado' },
-                  { label: 'Data do Aviso', value: eventoSelecionado.data_aviso ? new Date(eventoSelecionado.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-' },
-                  { label: 'Data do Evento', value: new Date(eventoSelecionado.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR') }
-                ].map(({ label, value }) => (
-                  <div key={label}>
-                    <span className="text-sm font-semibold" style={{ color: 'var(--color-text-secondary)' }}>{label}:</span>
-                    <p className="text-base mt-1" style={{ color: 'var(--color-text)' }}>{value}</p>
-                  </div>
-                ))}
+                <div>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Tipo:</span>
+                  <p className="text-lg">{eventoSelecionado.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}</p>
+                </div>
+                <div>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Status:</span>
+                  <p className="text-lg">
+                    {eventoSelecionado.status === 'planejamento' ? '📋 Planejamento' :
+                     eventoSelecionado.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
+                  </p>
+                </div>
+                <div>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Idealizador:</span>
+                  <p className="text-lg">{eventoSelecionado.idealizador || 'Não informado'}</p>
+                </div>
+                <div>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Local:</span>
+                  <p className="text-lg">{eventoSelecionado.local_evento || 'Não informado'}</p>
+                </div>
+                <div>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Data do Aviso:</span>
+                  <p className="text-lg">{eventoSelecionado.data_aviso ? new Date(eventoSelecionado.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
+                </div>
+                <div>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Data do Evento:</span>
+                  <p className="text-lg">{new Date(eventoSelecionado.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
+                </div>
               </div>
 
               {eventoSelecionado.descricao && (
                 <div>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--color-text-secondary)' }}>Descrição:</span>
-                  <p className="mt-1" style={{ color: 'var(--color-text)' }}>{eventoSelecionado.descricao}</p>
+                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Descrição:</span>
+                  <p style={{color:"var(--color-text)",marginTop:"0.25rem"}}>{eventoSelecionado.descricao}</p>
                 </div>
               )}
 
+              {/* Itens */}
               {itensEvento.length > 0 && (
-                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
-                  <h3 className="font-bold mb-3 text-lg" style={{ color: 'var(--color-text)' }}>💰 Itens e Custos</h3>
+                <div className="border-t pt-4">
+                  <h3 className="font-bold mb-3 text-lg">💰 Itens e Custos</h3>
                   <div className="space-y-2">
                     {itensEvento.map((item, index) => (
-                      <div key={index} className="flex justify-between items-center p-3 rounded" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)' }}>
-                        <span className="font-medium" style={{ color: 'var(--color-text)' }}>{item.descricao}</span>
-                        <div className="flex gap-4 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+                      <div key={index} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"var(--color-surface-2)",padding:"0.75rem",borderRadius:"var(--radius-md)"}}>
+                        <span className="font-medium">{item.descricao}</span>
+                        <div className="flex gap-4 text-sm">
                           <span>{item.quantidade}x</span>
                           <span>R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
-                          <span className="font-bold" style={{ color: 'var(--color-accent)' }}>
+                          <span style={{fontWeight:"700",color:"var(--color-accent)"}}>
                             R$ {(parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)).toFixed(2)}
                           </span>
                         </div>
                       </div>
                     ))}
-                    <div className="p-4 rounded-lg" style={{ background: 'var(--color-surface-3)', border: '2px solid var(--color-accent)' }}>
+                    <div style={{background:"var(--color-accent-bg)",padding:"1rem",borderRadius:"var(--radius-lg)",border:"1px solid var(--color-accent)"}}>
                       <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold" style={{ color: 'var(--color-text)' }}>Total</span>
-                        <span className="text-2xl font-bold" style={{ color: 'var(--color-accent)' }}>
+                        <span style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)"}}>Total</span>
+                        <span style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)"}}>
                           R$ {itensEvento.reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0).toFixed(2)}
                         </span>
                       </div>
@@ -648,12 +850,13 @@ export default function Eventos({ userPermissions, userData }) {
                 </div>
               )}
 
+              {/* Participantes */}
               {participantes.length > 0 && (
-                <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: '1rem' }}>
-                  <h3 className="font-bold mb-3 text-lg" style={{ color: 'var(--color-text)' }}>👥 Irmãos Participantes ({participantes.length})</h3>
+                <div className="border-t pt-4">
+                  <h3 className="font-bold mb-3 text-lg">👥 Irmãos Participantes ({participantes.length})</h3>
                   <div className="grid grid-cols-4 gap-2">
                     {participantes.map((part, index) => (
-                      <div key={index} className="p-2 rounded text-sm text-center" style={{ background: 'var(--color-surface-3)', border: '1px solid var(--color-border)', color: 'var(--color-text)' }}>
+                      <div key={index} className="bg-gray-50 p-2 rounded text-sm text-center border hover:bg-gray-100">
                         {part.irmaos?.nome || 'Nome não encontrado'}
                       </div>
                     ))}
@@ -662,8 +865,11 @@ export default function Eventos({ userPermissions, userData }) {
               )}
             </div>
 
-            <div style={{ borderTop: '1px solid var(--color-border)', padding: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button onClick={fecharModal} style={{ background: 'var(--color-surface-3)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', padding: '0.625rem 1.5rem', fontWeight: '600', cursor: 'pointer' }}>
+            <div className="sticky bottom-0 bg-white border-t p-4 flex justify-end">
+              <button
+                onClick={fecharModal}
+                className="px-6 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
                 Fechar
               </button>
             </div>
