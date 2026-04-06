@@ -80,13 +80,13 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
       .from('operacoes_credito_debito')
       .select('valor_total')
       .eq('tipo_operacao', 'credito')
-      .neq('status', 'cancelado');
+      .eq('status', 'ativo');
 
     const { data: debitosGeral } = await supabase
       .from('operacoes_credito_debito')
       .select('valor_total')
       .eq('tipo_operacao', 'debito')
-      .neq('status', 'cancelado');
+      .eq('status', 'ativo');
 
     const totalGeralEmprestado = creditosGeral?.reduce((sum, op) => sum + op.valor_total, 0) || 0;
     const totalGeralTomado = debitosGeral?.reduce((sum, op) => sum + op.valor_total, 0) || 0;
@@ -253,14 +253,14 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
                   </div>
                   <div className="flex-1">
                     <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Emprestado a Terceiros</h4>
-                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Total histórico de créditos concedidos</p>
+                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Operações ativas (a receber)</p>
                   </div>
                 </div>
                 <p style={{fontSize:"2.25rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   R$ {stats.total_geral_emprestado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-2 text-sm">
-                  <span>✓ Inclui operações ativas e quitadas</span>
+                  <span>✓ Apenas operações em andamento</span>
                 </div>
               </div>
 
@@ -272,14 +272,14 @@ export default function CreditosDebitos({ permissoes, showSuccess, showError }) 
                   </div>
                   <div className="flex-1">
                     <h4 className="text-lg font-bold" style={{color:"var(--color-text)"}}>Tomado Emprestado</h4>
-                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Total histórico de débitos assumidos</p>
+                    <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Operações ativas (a pagar)</p>
                   </div>
                 </div>
                 <p style={{fontSize:"2.25rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.5rem"}}>
                   R$ {stats.total_geral_tomado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center gap-2 text-sm">
-                  <span>✓ Inclui operações ativas e quitadas</span>
+                  <span>✓ Apenas operações em andamento</span>
                 </div>
               </div>
             </div>
