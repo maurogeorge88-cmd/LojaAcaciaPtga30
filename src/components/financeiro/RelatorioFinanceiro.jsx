@@ -13,7 +13,7 @@ const nomeAb = (nome) => {
 };
 
 const VAZIO  = { status: null, obs: '' };
-const LS_KEY = 'relatorio_financeiro_conf_v1';
+const LS_KEY = 'relatorio_financeiro_conf_v2';
 
 export default function RelatorioFinanceiro({ showError }) {
   const anoAtual = new Date().getFullYear();
@@ -46,7 +46,7 @@ export default function RelatorioFinanceiro({ showError }) {
 
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
 
-  const chave   = (id, idx) => `${id || idx}|${filtros.mes}-${filtros.ano}|${filtros.tipo}|${filtros.status}`;
+  const chave   = (id, idx) => `lrc_${id || 'idx_' + idx}`;
   const getConf = (id, idx) => conf[chave(id, idx)] || VAZIO;
 
   const setStatus = (id, idx, novoStatus) => {
@@ -105,9 +105,9 @@ export default function RelatorioFinanceiro({ showError }) {
 
   const totalReceitas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor||0), 0);
   const totalDespesas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor||0), 0);
-  const prefixo       = `|${filtros.mes}-${filtros.ano}|${filtros.tipo}|${filtros.status}`;
-  const totalOk       = Object.entries(conf).filter(([k,v]) => v.status === 'ok'  && k.endsWith(prefixo)).length;
-  const totalVer      = Object.entries(conf).filter(([k,v]) => v.status === 'ver' && k.endsWith(prefixo)).length;
+  // Contar apenas os marcados que estão na lista visível atual
+  const totalOk  = lancamentos.filter((l,i) => (conf[chave(l.id, i)] || VAZIO).status === 'ok').length;
+  const totalVer = lancamentos.filter((l,i) => (conf[chave(l.id, i)] || VAZIO).status === 'ver').length;
 
   const imprimir = () => {
     const titulo = `Relatório Financeiro — ${meses[filtros.mes-1]}/${filtros.ano}`;
