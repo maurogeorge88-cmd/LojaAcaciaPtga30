@@ -22,8 +22,24 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
-  const [conf, setConf]               = useState({});
-  const [modalObs, setModalObs]       = useState(null);
+  const LS_KEY = 'relatorio_financeiro_conf';
+
+  const [conf, setConf] = useState(() => {
+    try {
+      const salvo = localStorage.getItem(LS_KEY);
+      return salvo ? JSON.parse(salvo) : {};
+    } catch { return {}; }
+  });
+  const [modalObs, setModalObs] = useState(null);
+
+  // Persiste conf no localStorage sempre que mudar
+  const setConfPersist = (updater) => {
+    setConf(prev => {
+      const novo = typeof updater === 'function' ? updater(prev) : updater;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(novo)); } catch {}
+      return novo;
+    });
+  };
 
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
 
@@ -32,14 +48,14 @@ export default function RelatorioFinanceiro({ showError }) {
 
   const setStatus = (id, idx, novoStatus) => {
     const k = chave(id, idx);
-    setConf(prev => {
+    setConfPersist(prev => {
       const atual = prev[k] || VAZIO;
       return { ...prev, [k]: { ...atual, status: atual.status === novoStatus ? null : novoStatus } };
     });
   };
 
   const salvarObs = (k, texto) => {
-    setConf(prev => ({ ...prev, [k]: { ...(prev[k] || VAZIO), obs: texto } }));
+    setConfPersist(prev => ({ ...prev, [k]: { ...(prev[k] || VAZIO), obs: texto } }));
     setModalObs(null);
   };
 
