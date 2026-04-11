@@ -196,6 +196,34 @@ export default function RelatorioFinanceiro({ showError }) {
       <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.25rem', marginBottom:'1rem'}}>
         <h2 style={{fontSize:'1.25rem', fontWeight:'700', color:'var(--color-text)', margin:'0 0 0.2rem'}}>📊 Relatório Financeiro</h2>
         <p style={{fontSize:'0.82rem', color:'var(--color-text-muted)', margin:0}}>Conferência e conciliação de lançamentos</p>
+
+        {/* DEBUG TEMPORÁRIO — remover após resolver */}
+        <div style={{marginTop:'0.75rem', padding:'0.75rem', background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:'var(--radius-md)', fontSize:'0.72rem', fontFamily:'monospace'}}>
+          <strong style={{color:'#f59e0b'}}>🔍 Diagnóstico localStorage:</strong>
+          <div style={{marginTop:'0.4rem', color:'var(--color-text)'}}>
+            {(() => {
+              const todas = [];
+              try {
+                for (let i = 0; i < localStorage.length; i++) {
+                  const k = localStorage.key(i);
+                  if (k && k.includes('relatorio')) {
+                    const v = localStorage.getItem(k);
+                    const parsed = JSON.parse(v);
+                    const qtd = Object.keys(parsed).length;
+                    const comStatus = Object.values(parsed).filter(x => x.status).length;
+                    todas.push(`• "${k}" → ${qtd} chaves, ${comStatus} com status`);
+                  }
+                }
+              } catch(e) { todas.push('Erro: ' + e.message); }
+              return todas.length > 0
+                ? todas.map((t,i) => <div key={i}>{t}</div>)
+                : <div style={{color:'#ef4444'}}>Nenhuma chave "relatorio*" encontrada no localStorage</div>;
+            })()}
+          </div>
+          <div style={{marginTop:'0.4rem', color:'var(--color-text-muted)'}}>
+            conf atual em memória: {Object.keys(conf).length} entradas, {Object.values(conf).filter(v=>v.status).length} com status
+          </div>
+        </div>
       </div>
 
       <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.25rem', marginBottom:'1rem'}}>
