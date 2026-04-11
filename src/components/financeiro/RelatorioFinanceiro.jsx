@@ -25,7 +25,7 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [carregou, setCarregou] = useState(false);
-  const [conferidos, setConferidos] = useState({}); // id -> 'ok' | 'ver' | null
+  const [aVerificar, setAVerificar] = useState({}); // id -> true | false
 
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
 
@@ -71,7 +71,7 @@ export default function RelatorioFinanceiro({ showError }) {
       });
 
       setLancamentos(sorted);
-      setConferidos({});
+      setAVerificar({});
       setCarregou(true);
     } catch (e) {
       showError?.('Erro ao buscar lançamentos: ' + e.message);
@@ -84,8 +84,7 @@ export default function RelatorioFinanceiro({ showError }) {
   const totalReceitas = lancamentos
     .filter(l => l.categorias_financeiras?.tipo === 'receita')
     .reduce((s, l) => s + parseFloat(l.valor || 0), 0);
-  const totalConferidos = Object.values(conferidos).filter(v => v === 'ok').length;
-  const totalVer = Object.values(conferidos).filter(v => v === 'ver').length;
+  const totalVer = Object.values(aVerificar).filter(Boolean).length;
 
   const totalDespesas = lancamentos
     .filter(l => l.categorias_financeiras?.tipo === 'despesa')
@@ -106,7 +105,7 @@ export default function RelatorioFinanceiro({ showError }) {
           <td>${nomeIrmao}</td>
           <td style="text-align:right;color:${tipo==='receita'?'#166534':'#991b1b'}">R$ ${fmt(l.valor)}</td>
           <td style="text-align:center">${l.status === 'pago' ? 'S' : 'N'}</td>
-          <td style="text-align:center">${conferidos[l.id] === 'ok' ? '✓' : conferidos[l.id] === 'ver' ? '!' : ''}</td>
+          <td style="text-align:center">${aVerificar[l.id] ? '!' : ''}</td>
         </tr>`;
     }).join('');
 
@@ -149,11 +148,8 @@ export default function RelatorioFinanceiro({ showError }) {
     setTimeout(() => w.print(), 400);
   };
 
-  const toggleConferido = (id, estado) => {
-    setConferidos(prev => ({
-      ...prev,
-      [id]: prev[id] === estado ? null : estado
-    }));
+  const toggleVerificar = (id) => {
+    setAVerificar(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const sInput = { background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.45rem 0.75rem', fontSize:'0.875rem' };
@@ -221,13 +217,12 @@ export default function RelatorioFinanceiro({ showError }) {
       {carregou && (
         <>
           {/* Totalizadores */}
-          <div style={{display:'grid', gridTemplateColumns:'repeat(6, 1fr)', gap:'0.75rem', marginBottom:'1rem'}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:'0.75rem', marginBottom:'1rem'}}>
             {[
               { label:'Registros', valor: lancamentos.length, cor:'var(--color-accent)', bg:'rgba(59,130,246,0.1)', border:'rgba(59,130,246,0.3)', fmt: v => v },
               { label:'Total Receitas', valor: totalReceitas, cor:'#10b981', bg:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.3)', fmt: v => `R$ ${fmt(v)}` },
               { label:'Total Despesas', valor: totalDespesas, cor:'#ef4444', bg:'rgba(239,68,68,0.1)', border:'rgba(239,68,68,0.3)', fmt: v => `R$ ${fmt(v)}` },
               { label:'Saldo', valor: totalReceitas - totalDespesas, cor: totalReceitas-totalDespesas>=0?'#10b981':'#ef4444', bg: totalReceitas-totalDespesas>=0?'rgba(16,185,129,0.1)':'rgba(239,68,68,0.1)', border: totalReceitas-totalDespesas>=0?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)', fmt: v => `R$ ${fmt(v)}` },
-              { label:'✓ Conferidos', valor: totalConferidos, cor:'#10b981', bg:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.3)', fmt: v => `${v}/${lancamentos.length}` },
               { label:'! A Verificar', valor: totalVer, cor:'#ef4444', bg:'rgba(239,68,68,0.1)', border:'rgba(239,68,68,0.3)', fmt: v => v },
             ].map(c => (
               <div key={c.label} style={{background:c.bg, border:`1px solid ${c.border}`, borderLeft:`4px solid ${c.cor}`, borderRadius:'var(--radius-lg)', padding:'0.85rem 1rem'}}>
@@ -328,28 +323,17 @@ export default function RelatorioFinanceiro({ showError }) {
                           {pago ? 'S' : 'N'}
                         </span>
                       </div>
-                      {/* Conf. OK / VER */}
-                      <div style={{display:'flex', gap:'0.2rem', justifyContent:'center'}}>
+                      {/* Conf. — marcar a verificar */}
+                      <div style={{display:'flex', justifyContent:'center'}}>
                         <button
-                          onClick={() => toggleConferido(l.id || idx, 'ok')}
-                          title="Conferido - OK"
+                          onClick={() => toggleVerificar(l.id || idx)}
+                          title={aVerificar[l.id || idx] ? 'Remover marcação' : 'Marcar para verificar'}
                           style={{
-                            padding:'0.1rem 0.35rem', borderRadius:'var(--radius-sm)', fontSize:'0.65rem', fontWeight:'800',
+                            padding:'0.15rem 0.45rem', borderRadius:'var(--radius-sm)', fontSize:'0.7rem', fontWeight:'800',
                             cursor:'pointer', border:'1px solid',
-                            background: conferidos[l.id || idx] === 'ok' ? '#10b981' : 'transparent',
-                            color: conferidos[l.id || idx] === 'ok' ? '#fff' : '#10b981',
-                            borderColor: '#10b981',
-                          }}
-                        >✓</button>
-                        <button
-                          onClick={() => toggleConferido(l.id || idx, 'ver')}
-                          title="Precisa verificar"
-                          style={{
-                            padding:'0.1rem 0.35rem', borderRadius:'var(--radius-sm)', fontSize:'0.65rem', fontWeight:'800',
-                            cursor:'pointer', border:'1px solid',
-                            background: conferidos[l.id || idx] === 'ver' ? '#ef4444' : 'transparent',
-                            color: conferidos[l.id || idx] === 'ver' ? '#fff' : '#ef4444',
-                            borderColor: '#ef4444',
+                            background: aVerificar[l.id || idx] ? '#ef4444' : 'transparent',
+                            color: aVerificar[l.id || idx] ? '#fff' : 'var(--color-text-muted)',
+                            borderColor: aVerificar[l.id || idx] ? '#ef4444' : 'var(--color-border)',
                           }}
                         >!</button>
                       </div>
