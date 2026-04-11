@@ -71,7 +71,6 @@ export default function RelatorioFinanceiro({ showError }) {
       });
 
       setLancamentos(sorted);
-      setAVerificar({});
       setCarregou(true);
     } catch (e) {
       showError?.('Erro ao buscar lançamentos: ' + e.message);
