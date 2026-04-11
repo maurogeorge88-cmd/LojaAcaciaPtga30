@@ -13,7 +13,8 @@ const nomeAb = (nome) => {
 };
 
 const VAZIO  = { status: null, obs: '' };
-const LS_KEY = 'relatorio_financeiro_conf_v2';
+const LS_KEY     = 'relatorio_financeiro_conf_v2';
+const LS_KEY_OLD = 'relatorio_financeiro_conf_v1';
 
 export default function RelatorioFinanceiro({ showError }) {
   const anoAtual = new Date().getFullYear();
@@ -23,11 +24,34 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
-  // Carrega do localStorage na inicialização
+  // Carrega do localStorage — migra dados da chave antiga se necessário
   const [conf, setConf] = useState(() => {
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      return raw ? JSON.parse(raw) : {};
+      // Tentar carregar dados novos (v2)
+      const rawV2 = localStorage.getItem(LS_KEY);
+      if (rawV2) return JSON.parse(rawV2);
+
+      // Não tem v2 — tentar migrar de v1 (chave antiga incluía filtros na chave)
+      const rawV1 = localStorage.getItem(LS_KEY_OLD);
+      if (rawV1) {
+        const dadosV1 = JSON.parse(rawV1);
+        // Migrar: extrair só o ID de cada chave (formato antigo: "id|mes-ano|tipo|status")
+        const migrado = {};
+        Object.entries(dadosV1).forEach(([k, v]) => {
+          // Novo formato: "lrc_ID", velho formato: "ID|filtros" ou "lrc_ID|filtros"
+          const partes = k.split('|');
+          const idBruto = partes[0]; // pega só a parte do ID
+          const novaChave = idBruto.startsWith('lrc_') ? idBruto : `lrc_${idBruto}`;
+          // Se já existe entrada para esse ID, manter a mais recente (status não nulo)
+          if (!migrado[novaChave] || (!migrado[novaChave].status && v.status)) {
+            migrado[novaChave] = v;
+          }
+        });
+        // Salvar já no novo formato
+        localStorage.setItem(LS_KEY, JSON.stringify(migrado));
+        return migrado;
+      }
+      return {};
     } catch { return {}; }
   });
   const confRef = useRef(conf);
