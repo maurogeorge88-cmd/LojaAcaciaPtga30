@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 
 const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -12,7 +12,8 @@ const nomeAb = (nome) => {
   return p.length >= 2 ? `${p[0]} ${p[1]}` : p[0];
 };
 
-const VAZIO = { status: null, obs: '' };
+const VAZIO  = { status: null, obs: '' };
+const LS_KEY = 'relatorio_financeiro_conf_v1';
 
 export default function RelatorioFinanceiro({ showError }) {
   const anoAtual = new Date().getFullYear();
@@ -22,23 +23,25 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
-  const LS_KEY = 'relatorio_financeiro_conf';
-
+  // Carrega do localStorage na inicialização
   const [conf, setConf] = useState(() => {
     try {
-      const salvo = localStorage.getItem(LS_KEY);
-      return salvo ? JSON.parse(salvo) : {};
+      const raw = localStorage.getItem(LS_KEY);
+      return raw ? JSON.parse(raw) : {};
     } catch { return {}; }
   });
+  const confRef = useRef(conf);
   const [modalObs, setModalObs] = useState(null);
 
-  // Persiste conf no localStorage sempre que mudar
+  // Sincroniza confRef e salva no localStorage sempre que conf mudar
+  useEffect(() => {
+    confRef.current = conf;
+    try { localStorage.setItem(LS_KEY, JSON.stringify(conf)); } catch {}
+  }, [conf]);
+
+  // setConfPersist — atualiza estado (useEffect cuida do save)
   const setConfPersist = (updater) => {
-    setConf(prev => {
-      const novo = typeof updater === 'function' ? updater(prev) : updater;
-      try { localStorage.setItem(LS_KEY, JSON.stringify(novo)); } catch {}
-      return novo;
-    });
+    setConf(prev => typeof updater === 'function' ? updater(prev) : updater);
   };
 
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
