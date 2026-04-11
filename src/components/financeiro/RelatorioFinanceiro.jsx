@@ -24,34 +24,52 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
-  // Carrega do localStorage — migra dados da chave antiga se necessário
+  // Carrega e migra dados de qualquer versão anterior do localStorage
   const [conf, setConf] = useState(() => {
     try {
-      // Tentar carregar dados novos (v2)
-      const rawV2 = localStorage.getItem(LS_KEY);
-      if (rawV2) return JSON.parse(rawV2);
-
-      // Não tem v2 — tentar migrar de v1 (chave antiga incluía filtros na chave)
-      const rawV1 = localStorage.getItem(LS_KEY_OLD);
-      if (rawV1) {
-        const dadosV1 = JSON.parse(rawV1);
-        // Migrar: extrair só o ID de cada chave (formato antigo: "id|mes-ano|tipo|status")
-        const migrado = {};
-        Object.entries(dadosV1).forEach(([k, v]) => {
-          // Novo formato: "lrc_ID", velho formato: "ID|filtros" ou "lrc_ID|filtros"
-          const partes = k.split('|');
-          const idBruto = partes[0]; // pega só a parte do ID
+      const migrar = (dados) => {
+        // Converte chaves antigas "ID|filtros" → "lrc_ID"
+        const m = {};
+        Object.entries(dados).forEach(([k, v]) => {
+          if (!v || !v.status) return; // ignorar entradas sem status
+          const idBruto = k.split('|')[0];
           const novaChave = idBruto.startsWith('lrc_') ? idBruto : `lrc_${idBruto}`;
-          // Se já existe entrada para esse ID, manter a mais recente (status não nulo)
-          if (!migrado[novaChave] || (!migrado[novaChave].status && v.status)) {
-            migrado[novaChave] = v;
+          if (!m[novaChave] || (!m[novaChave].status && v.status)) {
+            m[novaChave] = v;
           }
         });
-        // Salvar já no novo formato
-        localStorage.setItem(LS_KEY, JSON.stringify(migrado));
-        return migrado;
-      }
-      return {};
+        return m;
+      };
+
+      // Verificar todas as chaves conhecidas e pegar a mais completa
+      const fontes = [
+        'relatorio_financeiro_conf',
+        'relatorio_financeiro_conf_v1',
+        'relatorio_financeiro_conf_v2',
+      ];
+
+      let melhor = {};
+      let melhorQtd = 0;
+
+      fontes.forEach(fonte => {
+        try {
+          const raw = localStorage.getItem(fonte);
+          if (!raw) return;
+          const dados = JSON.parse(raw);
+          const comStatus = Object.values(dados).filter(v => v && v.status).length;
+          if (comStatus > melhorQtd) {
+            melhorQtd = comStatus;
+            melhor = dados;
+          }
+        } catch {}
+      });
+
+      if (melhorQtd === 0) return {};
+
+      // Migrar para formato novo e salvar em v2
+      const migrado = migrar(melhor);
+      localStorage.setItem(LS_KEY, JSON.stringify(migrado));
+      return migrado;
     } catch { return {}; }
   });
   const confRef = useRef(conf);
