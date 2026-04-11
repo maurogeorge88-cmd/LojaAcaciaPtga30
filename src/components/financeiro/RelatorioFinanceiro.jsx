@@ -83,7 +83,9 @@ export default function RelatorioFinanceiro({ showError }) {
   const totalReceitas = lancamentos
     .filter(l => l.categorias_financeiras?.tipo === 'receita')
     .reduce((s, l) => s + parseFloat(l.valor || 0), 0);
-  const totalVer = Object.values(aVerificar).filter(Boolean).length;
+  // Contar apenas marcações do filtro atual
+  const prefixoFiltro = `|${filtros.mes}-${filtros.ano}|${filtros.tipo}|${filtros.status}`;
+  const totalVer = Object.entries(aVerificar).filter(([k,v]) => v && k.endsWith(prefixoFiltro)).length;
 
   const totalDespesas = lancamentos
     .filter(l => l.categorias_financeiras?.tipo === 'despesa')
@@ -104,7 +106,7 @@ export default function RelatorioFinanceiro({ showError }) {
           <td>${nomeIrmao}</td>
           <td style="text-align:right;color:${tipo==='receita'?'#166534':'#991b1b'}">R$ ${fmt(l.valor)}</td>
           <td style="text-align:center">${l.status === 'pago' ? 'S' : 'N'}</td>
-          <td style="text-align:center">${aVerificar[l.id] ? '!' : ''}</td>
+          <td style="text-align:center">${aVerificar[chaveVerif(l.id)] ? '!' : ''}</td>
         </tr>`;
     }).join('');
 
@@ -147,8 +149,13 @@ export default function RelatorioFinanceiro({ showError }) {
     setTimeout(() => w.print(), 400);
   };
 
+  // Chave composta: id do registro + contexto do filtro ativo
+  const chaveVerif = (id) =>
+    `${id}|${filtros.mes}-${filtros.ano}|${filtros.tipo}|${filtros.status}`;
+
   const toggleVerificar = (id) => {
-    setAVerificar(prev => ({ ...prev, [id]: !prev[id] }));
+    const k = chaveVerif(id);
+    setAVerificar(prev => ({ ...prev, [k]: !prev[k] }));
   };
 
   const sInput = { background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.45rem 0.75rem', fontSize:'0.875rem' };
@@ -326,13 +333,13 @@ export default function RelatorioFinanceiro({ showError }) {
                       <div style={{display:'flex', justifyContent:'center'}}>
                         <button
                           onClick={() => toggleVerificar(l.id || idx)}
-                          title={aVerificar[l.id || idx] ? 'Remover marcação' : 'Marcar para verificar'}
+                          title={aVerificar[chaveVerif(l.id || idx)] ? 'Remover marcação' : 'Marcar para verificar'}
                           style={{
                             padding:'0.15rem 0.45rem', borderRadius:'var(--radius-sm)', fontSize:'0.7rem', fontWeight:'800',
                             cursor:'pointer', border:'1px solid',
-                            background: aVerificar[l.id || idx] ? '#ef4444' : 'transparent',
-                            color: aVerificar[l.id || idx] ? '#fff' : 'var(--color-text-muted)',
-                            borderColor: aVerificar[l.id || idx] ? '#ef4444' : 'var(--color-border)',
+                            background: aVerificar[chaveVerif(l.id || idx)] ? '#ef4444' : 'transparent',
+                            color: aVerificar[chaveVerif(l.id || idx)] ? '#fff' : 'var(--color-text-muted)',
+                            borderColor: aVerificar[chaveVerif(l.id || idx)] ? '#ef4444' : 'var(--color-border)',
                           }}
                         >!</button>
                       </div>
