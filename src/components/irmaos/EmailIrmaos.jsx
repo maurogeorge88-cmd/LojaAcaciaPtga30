@@ -3,15 +3,16 @@ import { supabase } from '../../supabaseClient';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const TIPOS = [
-  { id: 'resumo_individual', label: 'Resumo Individual', emoji: '📋', desc: 'Financeiro, presença, comissões e eventos de cada irmão' },
-  { id: 'aniversariantes',   label: 'Aniversariantes',  emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
+  { id: 'resumo_individual',   label: 'Resumo Individual',   emoji: '📋', desc: 'Financeiro, presença, comissões e eventos de cada irmão' },
+  { id: 'aniversariantes',     label: 'Aniversariantes',     emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
   { id: 'lembrete_financeiro', label: 'Lembrete Financeiro', emoji: '⚠️', desc: 'Apenas irmãos com saldo devedor' },
+  { id: 'cronograma_mes',      label: 'Cronograma do Mês',   emoji: '📅', desc: 'Eventos do mês selecionado enviados aos irmãos' },
 ];
 
 const FREQ = [
-  { id: 'semanal',    label: 'Semanal' },
-  { id: 'quinzenal',  label: 'Quinzenal' },
-  { id: 'mensal',     label: 'Mensal' },
+  { id: 'semanal',   label: 'Semanal' },
+  { id: 'quinzenal', label: 'Quinzenal' },
+  { id: 'mensal',    label: 'Mensal' },
 ];
 
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -22,6 +23,8 @@ const OPCOES_CONTEUDO = [
   { id: 'comissoes',  label: '👥 Comissões' },
   { id: 'eventos',    label: '🎉 Eventos do mês' },
 ];
+
+const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 export default function EmailIrmaos({ showSuccess, showError }) {
   const [aba, setAba] = useState('manual');
@@ -35,12 +38,17 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [logs, setLogs] = useState([]);
   const [loadingConfigs, setLoadingConfigs] = useState(false);
   const [salvandoConfig, setSalvandoConfig] = useState(null);
-  const [modalConfig, setModalConfig] = useState(null); // tipo sendo configurado
+  const [modalConfig, setModalConfig] = useState(null);
   const [formConfig, setFormConfig] = useState({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
   const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
+
+  // ── Cronograma ──────────────────────────────────────────────────────────────
+  const [mesesComRegistros, setMesesComRegistros] = useState([]); // [{ valor: '2026-04', label: 'Abril 2026' }]
+  const [mesCronograma, setMesCronograma] = useState('');         // '2026-04'
+  const [loadingMeses, setLoadingMeses] = useState(false);
 
   // ── Carregar dados ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -48,6 +56,10 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     carregarConfigs();
     carregarLogs();
   }, []);
+
+  useEffect(() => {
+    if (tipoSelec === 'cronograma_mes') carregarMesesCronograma();
+  }, [tipoSelec]);
 
   const carregarIrmaos = async () => {
     const { data } = await supabase
@@ -57,6 +69,35 @@ export default function EmailIrmaos({ showSuccess, showError }) {
       .neq('email', '')
       .order('nome');
     setIrmaos(data || []);
+  };
+
+  const carregarMesesCronograma = async () => {
+    setLoadingMeses(true);
+    const anoAtual = new Date().getFullYear();
+    const { data } = await supabase
+      .from('cronograma')
+      .select('data_evento')
+      .gte('data_evento', `${anoAtual}-01-01`)
+      .lte('data_evento', `${anoAtual}-12-31`)
+      .order('data_evento', { ascending: true });
+
+    // Extrair meses únicos
+    const mesesUnicos = [...new Set((data || []).map(e => e.data_evento.substring(0, 7)))];
+    const lista = mesesUnicos.map(m => {
+      const [ano, mes] = m.split('-');
+      return { valor: m, label: `${MESES_NOMES[parseInt(mes) - 1]} ${ano}` };
+    });
+    setMesesComRegistros(lista);
+
+    // Pré-selecionar o próximo mês se existir, senão o primeiro disponível
+    if (lista.length > 0 && !mesCronograma) {
+      const proximoMes = String(new Date().getMonth() + 2).padStart(2, '0');
+      const proximoAno = new Date().getFullYear();
+      const chaveProximo = `${proximoAno}-${proximoMes}`;
+      const encontrado = lista.find(l => l.valor === chaveProximo);
+      setMesCronograma(encontrado ? chaveProximo : lista[0].valor);
+    }
+    setLoadingMeses(false);
   };
 
   const carregarConfigs = async () => {
@@ -94,6 +135,12 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     if (tipoSelec === 'lembrete_financeiro' && irmaosSelec.length === 0) {
       showError('Selecione ao menos um irmão.'); return;
     }
+    if (tipoSelec === 'cronograma_mes' && !mesCronograma) {
+      showError('Selecione um mês do cronograma.'); return;
+    }
+    if (tipoSelec === 'cronograma_mes' && irmaosSelec.length === 0) {
+      showError('Selecione ao menos um irmão.'); return;
+    }
 
     setEnviando(true);
     setResultados([]);
@@ -103,6 +150,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
           acao: tipoSelec,
           irmaos_ids: irmaosSelec,
           opcoes: opcoesConteudo,
+          mes_cronograma: mesCronograma, // ex: '2026-05'
         },
       });
       if (fnError) throw fnError;
@@ -169,6 +217,9 @@ export default function EmailIrmaos({ showSuccess, showError }) {
 
   const irmaosVisiveis = irmaos.filter(i => i.nome.toLowerCase().includes(filtroBusca.toLowerCase()));
 
+  // Rótulo do mês selecionado
+  const labelMesSel = mesesComRegistros.find(m => m.valor === mesCronograma)?.label || '';
+
   // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '1.5rem', background: 'var(--color-bg)', minHeight: '100vh', overflowX: 'hidden' }}>
@@ -229,6 +280,42 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               </div>
             )}
 
+            {/* Seletor de mês — cronograma */}
+            {tipoSelec === 'cronograma_mes' && (
+              <div style={sCard}>
+                <p style={{ fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>2. Mês do cronograma</p>
+                {loadingMeses ? (
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Carregando meses...</p>
+                ) : mesesComRegistros.length === 0 ? (
+                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                    ⚠️ Nenhum evento cadastrado no cronograma para o ano atual.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    {mesesComRegistros.map(m => (
+                      <div key={m.valor} onClick={() => setMesCronograma(m.valor)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                          background: mesCronograma === m.valor ? 'var(--color-accent-bg)' : 'var(--color-surface-2)',
+                          border: '1px solid ' + (mesCronograma === m.valor ? 'var(--color-accent)' : 'var(--color-border)') }}>
+                        <span style={{ fontSize: '1.1rem' }}>📅</span>
+                        <span style={{ fontWeight: '600', fontSize: '0.875rem', color: mesCronograma === m.valor ? 'var(--color-accent)' : 'var(--color-text)' }}>
+                          {m.label}
+                        </span>
+                        {mesCronograma === m.valor && (
+                          <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-accent)' }}>✓ Selecionado</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {mesCronograma && (
+                  <p style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                    Os eventos de <strong>{labelMesSel}</strong> serão incluídos no e-mail.
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Info para aniversariantes */}
             {tipoSelec === 'aniversariantes' && (
               <div style={{ ...sCard, background: 'var(--color-accent-bg)', borderColor: 'var(--color-accent)' }}>
@@ -241,7 +328,13 @@ export default function EmailIrmaos({ showSuccess, showError }) {
             {/* Botão enviar */}
             <button onClick={enviarManual} disabled={enviando}
               style={{ padding: '0.75rem', background: enviando ? 'var(--color-surface-3)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', fontSize: '1rem', cursor: enviando ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}>
-              {enviando ? '📤 Enviando...' : `📤 Enviar ${tipoSelec === 'aniversariantes' ? 'para Liderança' : `para ${irmaosSelec.length} irmão(s)`}`}
+              {enviando
+                ? '📤 Enviando...'
+                : tipoSelec === 'aniversariantes'
+                  ? '📤 Enviar para Liderança'
+                  : tipoSelec === 'cronograma_mes'
+                    ? `📅 Enviar cronograma de ${labelMesSel || '...'} para ${irmaosSelec.length} irmão(s)`
+                    : `📤 Enviar para ${irmaosSelec.length} irmão(s)`}
             </button>
 
             {/* Resultados */}
@@ -385,7 +478,6 @@ export default function EmailIrmaos({ showSuccess, showError }) {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-              {/* Cabeçalho */}
               <div style={{ display: 'flex', gap: '1rem', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)' }}>
                 <span style={{ flex: '0 0 140px' }}>Data/Hora</span>
                 <span style={{ flex: '0 0 120px' }}>Tipo</span>
@@ -444,7 +536,6 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                 </select>
               </div>
 
-              {/* Dia da semana (se semanal) */}
               {formConfig.frequencia === 'semanal' && (
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia da semana</label>
@@ -454,7 +545,6 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                 </div>
               )}
 
-              {/* Dia do mês */}
               {(formConfig.frequencia === 'mensal' || formConfig.frequencia === 'quinzenal') && (
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia do mês</label>
@@ -490,8 +580,8 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                 </div>
               )}
 
-              {/* Seleção de irmãos — só para tipos que enviam individualmente */}
-              {(modalConfig === 'resumo_individual' || modalConfig === 'lembrete_financeiro') && (
+              {/* Seleção de irmãos */}
+              {(modalConfig === 'resumo_individual' || modalConfig === 'lembrete_financeiro' || modalConfig === 'cronograma_mes') && (
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
                     👥 Irmãos que receberão ({irmaosConfigSelec.length === 0 ? 'todos' : `${irmaosConfigSelec.length} selecionado(s)`})
