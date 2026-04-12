@@ -230,16 +230,23 @@ export default function RelatorioFinanceiro({ showError }) {
                     const qtd = Object.keys(parsed).length;
                     const comStatus = Object.values(parsed).filter(x => x.status).length;
                     todas.push(`• "${k}" → ${qtd} chaves, ${comStatus} com status`);
+                    // Mostrar primeiras 5 chaves com status para diagnóstico
+                    Object.entries(parsed).filter(([,val]) => val.status).slice(0,5).forEach(([chk, val]) => {
+                      todas.push(`  ↳ chave: "${chk}" | status: ${val.status}`);
+                    });
                   }
                 }
               } catch(e) { todas.push('Erro: ' + e.message); }
               return todas.length > 0
-                ? todas.map((t,i) => <div key={i}>{t}</div>)
+                ? todas.map((t,i) => <div key={i} style={{paddingLeft:t.startsWith('  ')? '1rem':'0'}}>{t}</div>)
                 : <div style={{color:'#ef4444'}}>Nenhuma chave "relatorio*" encontrada no localStorage</div>;
             })()}
           </div>
           <div style={{marginTop:'0.4rem', color:'var(--color-text-muted)'}}>
-            conf atual em memória: {Object.keys(conf).length} entradas, {Object.values(conf).filter(v=>v.status).length} com status
+            conf v2 em memória: {Object.keys(conf).length} entradas, {Object.values(conf).filter(v=>v.status).length} com status
+          </div>
+          <div style={{marginTop:'0.2rem', color:'var(--color-text-muted)'}}>
+            primeiras chaves v2: {Object.keys(conf).slice(0,3).join(' | ') || '(vazio)'}
           </div>
         </div>
       </div>
