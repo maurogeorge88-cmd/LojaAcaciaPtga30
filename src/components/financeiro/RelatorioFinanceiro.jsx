@@ -108,17 +108,35 @@ export default function RelatorioFinanceiro({ showError }) {
     setLoading(true);
     try {
       const { mes, ano, tipo, status } = filtros;
+      const prim = `${ano}-${String(mes).padStart(2,'0')}-01`;
+      const ult  = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
+
+      // IDs marcados no conf — sempre incluir independente do filtro de período
+      const idsMarcados = Object.keys(confRef.current)
+        .filter(k => confRef.current[k]?.status)
+        .map(k => k.replace('lrc_', ''))
+        .filter(id => !id.startsWith('idx_') && !isNaN(Number(id)))
+        .map(Number);
+
+      // Query principal: lançamentos do período
       let query = supabase
         .from('lancamentos_loja')
         .select('id, data_pagamento, data_vencimento, status, valor, descricao, categoria_id, categorias_financeiras(nome, tipo), irmaos(nome), origem_tipo')
         .limit(1000);
 
-      const prim = `${ano}-${String(mes).padStart(2,'0')}-01`;
-      const ult  = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
-      query = query.or(
-        `and(status.eq.pago,data_pagamento.gte.${prim},data_pagamento.lte.${ult}),` +
-        `and(status.eq.pendente,data_vencimento.gte.${prim},data_vencimento.lte.${ult})`
-      );
+      if (idsMarcados.length > 0) {
+        // Incluir: registros do período OU registros marcados
+        query = query.or(
+          `and(status.eq.pago,data_pagamento.gte.${prim},data_pagamento.lte.${ult}),` +
+          `and(status.eq.pendente,data_vencimento.gte.${prim},data_vencimento.lte.${ult}),` +
+          `id.in.(${idsMarcados.join(',')})`
+        );
+      } else {
+        query = query.or(
+          `and(status.eq.pago,data_pagamento.gte.${prim},data_pagamento.lte.${ult}),` +
+          `and(status.eq.pendente,data_vencimento.gte.${prim},data_vencimento.lte.${ult})`
+        );
+      }
 
       if (tipo) {
         const { data: cats } = await supabase.from('categorias_financeiras').select('id').eq('tipo', tipo);
@@ -215,40 +233,7 @@ export default function RelatorioFinanceiro({ showError }) {
         <h2 style={{fontSize:'1.25rem', fontWeight:'700', color:'var(--color-text)', margin:'0 0 0.2rem'}}>📊 Relatório Financeiro</h2>
         <p style={{fontSize:'0.82rem', color:'var(--color-text-muted)', margin:0}}>Conferência e conciliação de lançamentos</p>
 
-        {/* DEBUG TEMPORÁRIO — remover após resolver */}
-        <div style={{marginTop:'0.75rem', padding:'0.75rem', background:'rgba(245,158,11,0.1)', border:'1px solid rgba(245,158,11,0.3)', borderRadius:'var(--radius-md)', fontSize:'0.72rem', fontFamily:'monospace'}}>
-          <strong style={{color:'#f59e0b'}}>🔍 Diagnóstico localStorage:</strong>
-          <div style={{marginTop:'0.4rem', color:'var(--color-text)'}}>
-            {(() => {
-              const todas = [];
-              try {
-                for (let i = 0; i < localStorage.length; i++) {
-                  const k = localStorage.key(i);
-                  if (k && k.includes('relatorio')) {
-                    const v = localStorage.getItem(k);
-                    const parsed = JSON.parse(v);
-                    const qtd = Object.keys(parsed).length;
-                    const comStatus = Object.values(parsed).filter(x => x.status).length;
-                    todas.push(`• "${k}" → ${qtd} chaves, ${comStatus} com status`);
-                    // Mostrar primeiras 5 chaves com status para diagnóstico
-                    Object.entries(parsed).filter(([,val]) => val.status).slice(0,5).forEach(([chk, val]) => {
-                      todas.push(`  ↳ chave: "${chk}" | status: ${val.status}`);
-                    });
-                  }
-                }
-              } catch(e) { todas.push('Erro: ' + e.message); }
-              return todas.length > 0
-                ? todas.map((t,i) => <div key={i} style={{paddingLeft:t.startsWith('  ')? '1rem':'0'}}>{t}</div>)
-                : <div style={{color:'#ef4444'}}>Nenhuma chave "relatorio*" encontrada no localStorage</div>;
-            })()}
-          </div>
-          <div style={{marginTop:'0.4rem', color:'var(--color-text-muted)'}}>
-            conf v2 em memória: {Object.keys(conf).length} entradas, {Object.values(conf).filter(v=>v.status).length} com status
-          </div>
-          <div style={{marginTop:'0.2rem', color:'var(--color-text-muted)'}}>
-            primeiras chaves v2: {Object.keys(conf).slice(0,3).join(' | ') || '(vazio)'}
-          </div>
-        </div>
+
       </div>
 
       <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.25rem', marginBottom:'1rem'}}>
