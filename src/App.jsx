@@ -629,6 +629,15 @@ function App() {
         .order('numero_balaustre', { ascending: false });
       
       if (balaustreError) {
+        // Se JWT expirou, tentar renovar sessão e repetir
+        if (balaustreError.message?.includes('JWT') || balaustreError.code === 'PGRST301') {
+          console.warn('⚠️ JWT expirado — tentando renovar sessão...');
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          if (!refreshError) {
+            console.log('✅ Sessão renovada — recarregando balaustres');
+            return loadBalaustres(); // retry
+          }
+        }
         console.error('❌ Erro ao carregar balaustres:', balaustreError);
         setError('Erro ao carregar balaustres: ' + balaustreError.message);
         return;
