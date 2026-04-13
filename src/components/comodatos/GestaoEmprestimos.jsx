@@ -775,15 +775,16 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         return rows;
       };
 
+      // Larguras proporcionais: soma = pW - 20 = 277mm
       const colStyles = {
-        0: { halign: 'left', cellWidth: 50 },
-        1: { cellWidth: 30 },
-        2: { halign: 'left', cellWidth: 42 },
-        3: { cellWidth: 24 },
-        4: { cellWidth: 26 },
-        5: { cellWidth: 26 },
-        6: { cellWidth: 26 },
-        7: { cellWidth: 22 },
+        0: { halign: 'left', cellWidth: 56 },
+        1: { cellWidth: 34 },
+        2: { halign: 'left', cellWidth: 47 },
+        3: { cellWidth: 27 },
+        4: { cellWidth: 29 },
+        5: { cellWidth: 29 },
+        6: { cellWidth: 29 },
+        7: { cellWidth: 26 },
       };
       const HEAD = [['Beneficiário', 'CPF', 'Tipo de Equipamento', 'Patrimônio', 'Dt. Empréstimo', 'Prev. Devolução', 'Dt. Devolução', 'Situação']];
 
