@@ -87,11 +87,11 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
     });
 
-    // Ativos de outros anos (só aparece quando filtro de ano específico)
+    // Ativos de anos ANTERIORES ao filtrado (não inclui anos posteriores)
     const ativosOutrosAnos = ano !== 'todos'
       ? todosAtivos.filter(e => {
           if (!e.data_emprestimo) return false;
-          return new Date(e.data_emprestimo + 'T00:00:00').getFullYear() !== ano;
+          return new Date(e.data_emprestimo + 'T00:00:00').getFullYear() < ano;
         })
       : [];
 
@@ -99,6 +99,14 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       if (!e.data_devolucao_prevista) return false;
       return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
     });
+
+    // Vencidos do próprio ano filtrado
+    const vencidosDoAno = ano !== 'todos'
+      ? ativosNoFiltro.filter(e => {
+          if (!e.data_devolucao_prevista) return false;
+          return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
+        })
+      : vencidosTodos;
 
     setStats({
       // Equipamentos (sempre totais)
@@ -112,7 +120,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
       emp_devolvidos:      devolvidosNoFiltro.length,
       emp_total:           empFiltrados.length,
       // Vencidos: sempre todos os ativos vencidos (qualquer ano)
-      emp_vencidos:        vencidosTodos.length,
+      emp_vencidos:        (ano !== 'todos' ? vencidosDoAno.length : vencidosTodos.length),
       // Outros anos (só quando filtro de ano específico)
       ativos_outros_anos:  ativosOutrosAnos.length,
       vencidos_outros_anos: vencidosOutrosAnos.length,
@@ -234,24 +242,32 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
               ⚠️ Atenção — vencidos
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Quando "Todos": mostra vencidos gerais de qualquer ano */}
-              {!temFiltroAno && (
-                <DashCard emoji="⚠️" label="Vencidos" sub="Prazo expirado — precisam devolução"
+              {/* Vencidos do período selecionado — sempre visível quando > 0 */}
+              {s.emp_vencidos > 0 && (
+                <DashCard emoji="⚠️"
+                  label={temFiltroAno ? `Vencidos em ${filtroAno}` : 'Vencidos'}
+                  sub="Prazo expirado — precisam devolução"
                   val={s.emp_vencidos}
-                  bg={s.emp_vencidos > 0 ? '#ef4444' : '#10b981'}
-                  pulse={s.emp_vencidos > 0} />
+                  bg="#ef4444"
+                  pulse={true} />
+              )}
+              {s.emp_vencidos === 0 && !temFiltroAno && (
+                <DashCard emoji="✅" label="Vencidos" sub="Nenhum em atraso"
+                  val={0} bg="#10b981" />
               )}
 
-              {/* Quando ano específico: só mostra cards de outros anos se houver registros */}
+              {/* Ativos de anos anteriores — só quando ano específico e houver registros */}
               {temFiltroAno && s.ativos_outros_anos > 0 && (
-                <DashCard emoji="📅" label="Ativos outros anos" sub={`Emprestados antes de ${filtroAno}`}
+                <DashCard emoji="📅" label="Ativos anos anteriores" sub={`Emprestados antes de ${filtroAno}`}
                   val={s.ativos_outros_anos}
                   bg="#f59e0b" />
               )}
+
+              {/* Vencidos de anos anteriores — só quando ano específico e houver registros */}
               {temFiltroAno && s.vencidos_outros_anos > 0 && (
-                <DashCard emoji="⚠️" label="Vencidos outros anos" sub={`Prazo expirado antes de ${filtroAno}`}
+                <DashCard emoji="🔴" label="Vencidos anos anteriores" sub={`Prazo expirado antes de ${filtroAno}`}
                   val={s.vencidos_outros_anos}
-                  bg="#ef4444"
+                  bg="#b91c1c"
                   pulse={true} />
               )}
             </div>
