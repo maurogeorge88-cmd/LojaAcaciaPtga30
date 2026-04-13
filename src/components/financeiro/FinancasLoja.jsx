@@ -3677,6 +3677,25 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             )}
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.75rem'}}>
+                {/* Cabeçalho das colunas */}
+                <div style={{
+                  display:'grid',
+                  gridTemplateColumns:'90px 90px 90px 1fr 1fr 130px 80px 80px 100px',
+                  gap:'0.5rem',
+                  padding:'0.3rem 0.9rem 0.3rem 1.3rem',
+                  borderBottom:'2px solid var(--color-border)',
+                  marginBottom:'0.25rem',
+                }}>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Competência</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Lançamento</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Tipo</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Categoria</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Descrição</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em'}}>Irmão</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'right'}}>Valor</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'center'}}>Status</div>
+                  <div style={{fontSize:'0.68rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.04em',textAlign:'right'}}>Ações</div>
+                </div>
                 {lancamentos.slice(0, limiteRegistros).map((lanc, idx) => {
                   const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
                   const corBorda  = ehReceita ? '#10b981' : '#ef4444';
@@ -3695,7 +3714,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     borderLeftColor: corBorda,
                     padding:'0.6rem 0.9rem',
                     display:'grid',
-                    gridTemplateColumns:'90px 90px auto 1fr 1fr auto auto auto auto',
+                    gridTemplateColumns:'90px 90px 90px 1fr 1fr 130px 80px 80px 100px',
                     alignItems:'center',
                     gap:'0.5rem',
                     minWidth:0,
@@ -3745,19 +3764,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <div style={{fontSize:'0.68rem',color:'#10b981'}}>Pago: {formatarMoeda(lanc.total_pago_parcial)}</div>
                       )}
                     </div>
-                    {/* Status */}
-                    <span style={{...badge.style,padding:'0.2rem 0.6rem',borderRadius:'999px',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
-                      {badge.icone} {badge.texto}
-                    </span>
+                    {/* Status + Parcela empilhados */}
+                    <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.2rem'}}>
+                      <span style={{...badge.style,padding:'0.2rem 0.5rem',borderRadius:'999px',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap',textAlign:'center'}}>
+                        {badge.icone} {badge.texto}
+                      </span>
+                      {lanc.eh_parcelado && (
+                        <span style={{fontSize:'0.65rem',padding:'0.1rem 0.45rem',borderRadius:'999px',fontWeight:'700',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
+                          {lanc.parcela_numero}/{lanc.parcela_total}
+                        </span>
+                      )}
+                    </div>
                     {/* Ações */}
                     <div style={{display:'flex',gap:'0.3rem',alignItems:'center',justifyContent:'flex-end'}}>
-                        {/* Badge de Parcela */}
-                        {lanc.eh_parcelado && (
-                          <span style={{fontSize:"0.7rem",padding:"0.15rem 0.5rem",borderRadius:"999px",fontWeight:"700",background:"rgba(99,102,241,0.15)",color:"#6366f1",border:"1px solid rgba(99,102,241,0.3)"}}>
-                            {lanc.parcela_numero}/{lanc.parcela_total}
-                          </span>
-                        )}
-                        
                         {/* Botão Parcelar */}
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
