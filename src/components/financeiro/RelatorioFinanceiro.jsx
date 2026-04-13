@@ -24,66 +24,48 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
-  // Carrega e migra dados de qualquer versão anterior do localStorage
-  const [conf, setConf] = useState(() => {
+  // Conf: lê todas as chaves conhecidas do localStorage e mescla
+  const lerConf = () => {
     try {
-      const migrar = (dados) => {
-        // Converte chaves antigas "ID|filtros" → "lrc_ID"
-        const m = {};
-        Object.entries(dados).forEach(([k, v]) => {
-          if (!v || !v.status) return; // ignorar entradas sem status
-          const idBruto = k.split('|')[0];
-          const novaChave = idBruto.startsWith('lrc_') ? idBruto : `lrc_${idBruto}`;
-          if (!m[novaChave] || (!m[novaChave].status && v.status)) {
-            m[novaChave] = v;
-          }
-        });
-        return m;
-      };
-
-      // Verificar todas as chaves conhecidas e pegar a mais completa
-      const fontes = [
-        'relatorio_financeiro_conf',
-        'relatorio_financeiro_conf_v1',
-        'relatorio_financeiro_conf_v2',
-      ];
-
-      let melhor = {};
-      let melhorQtd = 0;
-
+      const fontes = ['relatorio_financeiro_conf', 'relatorio_financeiro_conf_v1', 'relatorio_financeiro_conf_v2'];
+      const merged = {};
       fontes.forEach(fonte => {
         try {
           const raw = localStorage.getItem(fonte);
           if (!raw) return;
           const dados = JSON.parse(raw);
-          const comStatus = Object.values(dados).filter(v => v && v.status).length;
-          if (comStatus > melhorQtd) {
-            melhorQtd = comStatus;
-            melhor = dados;
-          }
+          Object.entries(dados).forEach(([k, v]) => {
+            if (!v) return;
+            // Normalizar chave para lrc_{id}
+            const base = k.split('|')[0];
+            const nk = base.startsWith('lrc_') ? base : `lrc_${base}`;
+            // Manter se tiver status ou obs
+            if (v.status || v.obs) merged[nk] = { status: v.status || null, obs: v.obs || '' };
+          });
         } catch {}
       });
-
-      if (melhorQtd === 0) return {};
-
-      // Migrar para formato novo e salvar em v2
-      const migrado = migrar(melhor);
-      localStorage.setItem(LS_KEY, JSON.stringify(migrado));
-      return migrado;
+      return merged;
     } catch { return {}; }
-  });
+  };
+
+  const [conf, setConf] = useState(lerConf);
+  // confRef sempre sincronizado — usado em buscar() para evitar closure stale
   const confRef = useRef(conf);
   const [modalObs, setModalObs] = useState(null);
 
-  // Sincroniza confRef e salva no localStorage sempre que conf mudar
+  // Salvar no localStorage e sincronizar ref sempre que conf mudar
   useEffect(() => {
     confRef.current = conf;
     try { localStorage.setItem(LS_KEY, JSON.stringify(conf)); } catch {}
   }, [conf]);
 
-  // setConfPersist — atualiza estado (useEffect cuida do save)
   const setConfPersist = (updater) => {
-    setConf(prev => typeof updater === 'function' ? updater(prev) : updater);
+    setConf(prev => {
+      const novo = typeof updater === 'function' ? updater(prev) : updater;
+      confRef.current = novo; // atualizar ref imediatamente (não esperar o useEffect)
+      try { localStorage.setItem(LS_KEY, JSON.stringify(novo)); } catch {}
+      return novo;
+    });
   };
 
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
@@ -144,12 +126,22 @@ export default function RelatorioFinanceiro({ showError }) {
         if (!ids.length) { setLancamentos([]); setCarregou(true); setLoading(false); return; }
         query = query.in('categoria_id', ids);
       }
-      if (status) query = query.eq('status', status);
+      // Filtro de status: NÃO aplicar se houver marcados — eles podem ter status diferente
+      if (status && idsMarcados.length === 0) query = query.eq('status', status);
 
       const { data, error } = await query;
       if (error) throw error;
 
-      const sorted = (data || []).sort((a, b) => {
+      // Pós-filtro em JS: se tem marcados E filtro de status ativo,
+      // manter os marcados independente do status deles
+      let resultado = data || [];
+      if (status && idsMarcados.length > 0) {
+        resultado = resultado.filter(l =>
+          l.status === status || idsMarcados.includes(String(l.id))
+        );
+      }
+
+      const sorted = resultado.sort((a, b) => {
         const da = a.status === 'pago' ? a.data_pagamento : a.data_vencimento;
         const db = b.status === 'pago' ? b.data_pagamento : b.data_vencimento;
         return (da || '').localeCompare(db || '');
