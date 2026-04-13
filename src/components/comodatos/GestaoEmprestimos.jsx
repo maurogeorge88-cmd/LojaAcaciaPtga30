@@ -9,6 +9,11 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
+  const [filtroPeriodo, setFiltroPeriodo] = useState('ano');   // mes|trimestre|semestre|ano
+  const [filtroMes, setFiltroMes]         = useState(new Date().getMonth());        // 0-11
+  const [filtroTrimestre, setFiltroTrimestre] = useState(Math.floor(new Date().getMonth() / 3)); // 0-3
+  const [filtroSemestre, setFiltroSemestre]   = useState(new Date().getMonth() < 6 ? 0 : 1);
+  const [filtroAno, setFiltroAno]         = useState(new Date().getFullYear());
   const [editando, setEditando] = useState(null);
   
   // Múltiplos equipamentos
@@ -619,7 +624,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     try {
       showSuccess('Gerando relatório...');
 
-      const anoAtual = new Date().getFullYear();
+      const anoAtual = filtroAno;
 
       // Buscar empréstimos do ano (ativos + devolvidos)
       const { data: dadosLoja } = await supabase
@@ -891,10 +896,24 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   };
 
   const emprestimosFiltrados = emprestimos.filter(emp => {
-    if (filtroStatus === 'todos') return true;
-    return emp.status === filtroStatus;
+    // Filtro status
+    if (filtroStatus !== 'todos' && emp.status !== filtroStatus) return false;
+
+    // Filtro de período — usa data_emprestimo como referência
+    const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
+    if (!dt) return false;
+    if (dt.getFullYear() !== filtroAno) return false;
+
+    if (filtroPeriodo === 'mes') {
+      if (dt.getMonth() !== filtroMes) return false;
+    } else if (filtroPeriodo === 'trimestre') {
+      if (Math.floor(dt.getMonth() / 3) !== filtroTrimestre) return false;
+    } else if (filtroPeriodo === 'semestre') {
+      if ((dt.getMonth() < 6 ? 0 : 1) !== filtroSemestre) return false;
+    }
+    // 'ano' não aplica filtro de sub-período
+    return true;
   }).sort((a, b) => {
-    // Vencidos primeiro
     const aVenc = isVencido(a) ? 0 : 1;
     const bVenc = isVencido(b) ? 0 : 1;
     return aVenc - bVenc;
@@ -961,24 +980,103 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       </div>
 
       {/* FILTROS */}
-      <div className="flex gap-2">
-        {['ativo', 'devolvido', 'todos'].map(status => (
-          <button
-            key={status}
-            onClick={() => setFiltroStatus(status)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: filtroStatus === status ? 'var(--color-accent)' : 'var(--color-surface-2)',
-              color: filtroStatus === status ? 'white' : 'var(--color-text)',
-              border: filtroStatus === status ? 'none' : '1px solid var(--color-border)',
-              borderRadius: '0.5rem',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            {status.toUpperCase()}
-          </button>
-        ))}
+      <div className="card" style={{ padding: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+
+        {/* Ano */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ano</label>
+          <select value={filtroAno} onChange={e => setFiltroAno(parseInt(e.target.value))}
+            style={{ padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(a => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Período */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Período</label>
+          <div style={{ display: 'flex', gap: '0.35rem' }}>
+            {[
+              { id: 'mes', label: 'Mês' },
+              { id: 'trimestre', label: 'Trimestre' },
+              { id: 'semestre', label: 'Semestre' },
+              { id: 'ano', label: 'Ano todo' },
+            ].map(p => (
+              <button key={p.id} onClick={() => setFiltroPeriodo(p.id)}
+                style={{ padding: '0.4rem 0.75rem', background: filtroPeriodo === p.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroPeriodo === p.id ? 'white' : 'var(--color-text)', border: filtroPeriodo === p.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                {p.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sub-período */}
+        {filtroPeriodo === 'mes' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Mês</label>
+            <select value={filtroMes} onChange={e => setFiltroMes(parseInt(e.target.value))}
+              style={{ padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
+              {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                <option key={i} value={i}>{m}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {filtroPeriodo === 'trimestre' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Trimestre</label>
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              {['1º Tri (Jan–Mar)','2º Tri (Abr–Jun)','3º Tri (Jul–Set)','4º Tri (Out–Dez)'].map((t, i) => (
+                <button key={i} onClick={() => setFiltroTrimestre(i)}
+                  style={{ padding: '0.4rem 0.65rem', background: filtroTrimestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroTrimestre === i ? 'white' : 'var(--color-text)', border: filtroTrimestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.75rem' }}>
+                  {t}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {filtroPeriodo === 'semestre' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+            <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Semestre</label>
+            <div style={{ display: 'flex', gap: '0.35rem' }}>
+              {['1º Semestre (Jan–Jun)','2º Semestre (Jul–Dez)'].map((s, i) => (
+                <button key={i} onClick={() => setFiltroSemestre(i)}
+                  style={{ padding: '0.4rem 0.75rem', background: filtroSemestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroSemestre === i ? 'white' : 'var(--color-text)', border: filtroSemestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Divisor */}
+        <div style={{ width: '1px', height: '2rem', background: 'var(--color-border)', alignSelf: 'center' }} />
+
+        {/* Status */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Situação</label>
+          <div style={{ display: 'flex', gap: '0.35rem' }}>
+            {[{ id: 'ativo', label: 'Ativos' }, { id: 'devolvido', label: 'Devolvidos' }, { id: 'todos', label: 'Todos' }].map(s => (
+              <button key={s.id} onClick={() => setFiltroStatus(s.id)}
+                style={{ padding: '0.4rem 0.75rem', background: filtroStatus === s.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroStatus === s.id ? 'white' : 'var(--color-text)', border: filtroStatus === s.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Contador */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+            {emprestimosFiltrados.length} empréstimo(s)
+            {emprestimosFiltrados.filter(isVencido).length > 0 && (
+              <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontWeight: '700' }}>
+                · {emprestimosFiltrados.filter(isVencido).length} vencido(s)
+              </span>
+            )}
+          </span>
+        </div>
       </div>
 
       {/* LISTA DE EMPRÉSTIMOS */}
