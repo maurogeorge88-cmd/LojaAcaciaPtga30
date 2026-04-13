@@ -733,8 +733,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           return (
           <div key={emp.id} className="card" style={{
             borderLeft: `4px solid ${vencido ? '#ef4444' : 'var(--color-accent)'}`,
-            background: vencido ? 'rgba(239,68,68,0.04)' : 'var(--color-surface)',
-            boxShadow: vencido ? '0 0 0 1px rgba(239,68,68,0.2), 0 2px 8px rgba(239,68,68,0.1)' : undefined,
+            outline: vencido ? '2px solid #ef4444' : 'none',
+            outlineOffset: '0px',
             position: 'relative'
           }}>
             {/* Banner de vencido */}
@@ -752,7 +752,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             )}
             <div className="flex flex-col gap-2 mb-3">
               <div className="flex justify-between items-start" style={{ paddingRight: vencido ? '5rem' : 0 }}>
-                <h3 className="font-bold text-base" style={{ color: vencido ? '#b91c1c' : 'var(--color-text)' }}>
+                <h3 className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
                   {emp.beneficiarios?.nome}
                 </h3>
                 <span style={{
@@ -760,8 +760,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                   borderRadius: '9999px',
                   fontSize: '0.75rem',
                   fontWeight: '700',
-                  background: emp.status === 'ativo' ? (vencido ? 'rgba(239,68,68,0.15)' : 'var(--color-success-bg)') : 'var(--color-surface-2)',
-                  color: emp.status === 'ativo' ? (vencido ? '#b91c1c' : 'var(--color-success)') : 'var(--color-text-secondary)'
+                  background: emp.status === 'ativo' ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
+                  color: emp.status === 'ativo' ? 'var(--color-success)' : 'var(--color-text-secondary)'
                 }}>
                   {emp.status?.toUpperCase()}
                 </span>
