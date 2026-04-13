@@ -66,7 +66,14 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   }, []);
 
   useEffect(() => {
-    if (tipoSelec === 'cronograma_mes') carregarMesesCronograma();
+    if (tipoSelec === 'cronograma_mes') {
+      carregarMesesCronograma();
+      // Se já tinha mês selecionado, recarrega eventos imediatamente
+      if (mesCronograma) carregarEventosCronograma(mesCronograma);
+    } else {
+      setEventosCronograma([]);
+      setEventosDestaque([]);
+    }
   }, [tipoSelec]);
 
   useEffect(() => {
