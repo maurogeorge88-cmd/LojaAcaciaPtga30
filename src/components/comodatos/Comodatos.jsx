@@ -228,26 +228,30 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             </div>
           </div>
 
-          {/* ── Seção: Atenção — vencidos (sempre todos os ativos) ── */}
+          {/* ── Seção: Atenção — vencidos ── */}
           <div>
             <p style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.6rem', letterSpacing: '0.05em' }}>
-              ⚠️ Atenção — todos os ativos vencidos (qualquer ano)
+              ⚠️ Atenção — vencidos
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <DashCard emoji="⚠️" label="Vencidos" sub="Prazo expirado — precisam devolução"
-                val={s.emp_vencidos}
-                bg={s.emp_vencidos > 0 ? '#ef4444' : '#10b981'}
-                pulse={s.emp_vencidos > 0} />
+              {/* Quando "Todos": mostra vencidos gerais de qualquer ano */}
+              {!temFiltroAno && (
+                <DashCard emoji="⚠️" label="Vencidos" sub="Prazo expirado — precisam devolução"
+                  val={s.emp_vencidos}
+                  bg={s.emp_vencidos > 0 ? '#ef4444' : '#10b981'}
+                  pulse={s.emp_vencidos > 0} />
+              )}
 
-              {/* Ativos de outros anos (só quando filtro de ano ativo) */}
+              {/* Quando ano específico: mostra ativos e vencidos de outros anos */}
               {temFiltroAno && (
                 <>
                   <DashCard emoji="📅" label="Ativos outros anos" sub={`Emprestados antes de ${filtroAno}`}
                     val={s.ativos_outros_anos}
                     bg={s.ativos_outros_anos > 0 ? '#f59e0b' : '#10b981'} />
-                  <DashCard emoji="🔴" label="Vencidos outros anos" sub={`Prazo expirado antes de ${filtroAno}`}
+                  <DashCard emoji="⚠️" label="Vencidos outros anos" sub={`Prazo expirado antes de ${filtroAno}`}
                     val={s.vencidos_outros_anos}
-                    bg={s.vencidos_outros_anos > 0 ? '#ef4444' : '#10b981'} />
+                    bg={s.vencidos_outros_anos > 0 ? '#ef4444' : '#10b981'}
+                    pulse={s.vencidos_outros_anos > 0} />
                 </>
               )}
             </div>
