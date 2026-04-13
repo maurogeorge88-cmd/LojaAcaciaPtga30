@@ -1339,8 +1339,25 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                 </div>
               )}
 
+              {/* Checkbox: outros anos */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', cursor: 'pointer', padding: '0.75rem', borderRadius: '0.5rem',
+                background: relIncluirOutrosAnos ? 'rgba(120,53,15,0.08)' : 'var(--color-surface-2)',
+                border: `1px solid ${relIncluirOutrosAnos ? 'rgba(120,53,15,0.35)' : 'var(--color-border)'}`,
+                transition: 'all 0.15s' }}>
+                <input type="checkbox" checked={relIncluirOutrosAnos} onChange={e => setRelIncluirOutrosAnos(e.target.checked)}
+                  style={{ accentColor: '#78350f', marginTop: '0.15rem', flexShrink: 0, width: '15px', height: '15px' }} />
+                <div>
+                  <p style={{ margin: 0, fontWeight: '700', fontSize: '0.82rem', color: relIncluirOutrosAnos ? '#78350f' : 'var(--color-text)' }}>
+                    Incluir ativos/vencidos de anos anteriores
+                  </p>
+                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.72rem', color: 'var(--color-text-muted)', lineHeight: '1.4' }}>
+                    Adiciona uma seção extra no PDF com empréstimos de anos anteriores ainda em aberto.
+                  </p>
+                </div>
+              </label>
+
               {/* Botões */}
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
                 <button onClick={() => setModalRelatorio(false)}
                   style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer' }}>
                   Cancelar
