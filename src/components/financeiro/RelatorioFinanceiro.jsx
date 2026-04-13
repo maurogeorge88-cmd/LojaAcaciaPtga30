@@ -13,9 +13,6 @@ const nomeAb = (nome) => {
 };
 
 const VAZIO  = { status: null, obs: '' };
-const LS_KEY     = 'relatorio_financeiro_conf_v2';
-const LS_KEY_OLD = 'relatorio_financeiro_conf_v1';
-
 export default function RelatorioFinanceiro({ showError }) {
   const anoAtual = new Date().getFullYear();
   const mesAtual = new Date().getMonth() + 1;
@@ -24,67 +21,92 @@ export default function RelatorioFinanceiro({ showError }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
-  // Conf: lê todas as chaves conhecidas do localStorage e mescla
-  const lerConf = () => {
+  // conf: mapa { [lancamento_id]: { status: 'ok'|'ver'|null, obs: '' } }
+  // Persistido no Supabase — tabela relatorio_financeiro_conferencia
+  const [conf, setConf] = useState({});
+  const confRef = useRef({});
+  const [modalObs, setModalObs] = useState(null);
+  const [salvando, setSalvando] = useState({}); // ids sendo salvos
+
+  // Sincronizar confRef com conf
+  useEffect(() => { confRef.current = conf; }, [conf]);
+
+  // Carregar conferências do Supabase ao montar
+  useEffect(() => { carregarConf(); }, []);
+
+  const carregarConf = async () => {
     try {
-      const fontes = ['relatorio_financeiro_conf', 'relatorio_financeiro_conf_v1', 'relatorio_financeiro_conf_v2'];
-      const merged = {};
-      fontes.forEach(fonte => {
-        try {
-          const raw = localStorage.getItem(fonte);
-          if (!raw) return;
-          const dados = JSON.parse(raw);
-          Object.entries(dados).forEach(([k, v]) => {
-            if (!v) return;
-            // Normalizar chave para lrc_{id}
-            const base = k.split('|')[0];
-            const nk = base.startsWith('lrc_') ? base : `lrc_${base}`;
-            // Manter se tiver status ou obs
-            if (v.status || v.obs) merged[nk] = { status: v.status || null, obs: v.obs || '' };
-          });
-        } catch {}
+      const { data, error } = await supabase
+        .from('relatorio_financeiro_conferencia')
+        .select('lancamento_id, status_conf, observacao');
+      if (error) throw error;
+      const mapa = {};
+      (data || []).forEach(r => {
+        mapa[r.lancamento_id] = { status: r.status_conf, obs: r.observacao || '' };
       });
-      return merged;
-    } catch { return {}; }
+      setConf(mapa);
+      confRef.current = mapa;
+    } catch (e) {
+      console.error('Erro ao carregar conferências:', e.message);
+    }
   };
 
-  const [conf, setConf] = useState(lerConf);
-  // confRef sempre sincronizado — usado em buscar() para evitar closure stale
-  const confRef = useRef(conf);
-  const [modalObs, setModalObs] = useState(null);
+  const setStatus = async (id, novoStatus) => {
+    if (!id) return;
+    const atual = confRef.current[id] || { status: null, obs: '' };
+    const statusFinal = atual.status === novoStatus ? null : novoStatus;
 
-  // Salvar no localStorage e sincronizar ref sempre que conf mudar
-  useEffect(() => {
-    confRef.current = conf;
-    try { localStorage.setItem(LS_KEY, JSON.stringify(conf)); } catch {}
-  }, [conf]);
+    // Atualizar local imediatamente (otimista)
+    const novoConf = { ...confRef.current, [id]: { ...atual, status: statusFinal } };
+    setConf(novoConf);
+    confRef.current = novoConf;
 
-  const setConfPersist = (updater) => {
-    setConf(prev => {
-      const novo = typeof updater === 'function' ? updater(prev) : updater;
-      confRef.current = novo; // atualizar ref imediatamente (não esperar o useEffect)
-      try { localStorage.setItem(LS_KEY, JSON.stringify(novo)); } catch {}
-      return novo;
-    });
+    setSalvando(s => ({ ...s, [id]: true }));
+    try {
+      if (statusFinal === null) {
+        // Remover registro se ambos nulos
+        const obsAtual = atual.obs || '';
+        if (!obsAtual) {
+          await supabase.from('relatorio_financeiro_conferencia').delete().eq('lancamento_id', Number(id));
+        } else {
+          await supabase.from('relatorio_financeiro_conferencia')
+            .update({ status_conf: 'ok', observacao: obsAtual })
+            .eq('lancamento_id', id);
+          // Mantém com status 'ok' se tinha obs — não deletar
+        }
+      } else {
+        await supabase.from('relatorio_financeiro_conferencia')
+          .upsert({ lancamento_id: id, status_conf: statusFinal, observacao: atual.obs || '' },
+                  { onConflict: 'lancamento_id' });
+      }
+    } catch (e) {
+      console.error('Erro ao salvar conferência:', e.message);
+    } finally {
+      setSalvando(s => { const n = { ...s }; delete n[id]; return n; });
+    }
+  };
+
+  const salvarObs = async (id, texto) => {
+    if (!id) return;
+    const atual = confRef.current[id] || { status: 'ver', obs: '' };
+    const novoConf = { ...confRef.current, [id]: { ...atual, obs: texto } };
+    setConf(novoConf);
+    confRef.current = novoConf;
+    setModalObs(null);
+    try {
+      await supabase.from('relatorio_financeiro_conferencia')
+        .upsert({ lancamento_id: Number(id), status_conf: atual.status || 'ver', observacao: texto },
+                { onConflict: 'lancamento_id' });
+    } catch (e) {
+      console.error('Erro ao salvar observação:', e.message);
+    }
   };
 
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
 
-  const chave   = (id, idx) => `lrc_${id || 'idx_' + idx}`;
-  const getConf = (id, idx) => conf[chave(id, idx)] || VAZIO;
+  const getConf = (id) => conf[id] || VAZIO;
 
-  const setStatus = (id, idx, novoStatus) => {
-    const k = chave(id, idx);
-    setConfPersist(prev => {
-      const atual = prev[k] || VAZIO;
-      return { ...prev, [k]: { ...atual, status: atual.status === novoStatus ? null : novoStatus } };
-    });
-  };
 
-  const salvarObs = (k, texto) => {
-    setConfPersist(prev => ({ ...prev, [k]: { ...(prev[k] || VAZIO), obs: texto } }));
-    setModalObs(null);
-  };
 
   const buscar = async () => {
     setLoading(true);
@@ -93,12 +115,9 @@ export default function RelatorioFinanceiro({ showError }) {
       const prim = `${ano}-${String(mes).padStart(2,'0')}-01`;
       const ult  = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
 
-      // IDs marcados no conf — sempre incluir independente do filtro de período
-      // IDs podem ser UUID (string) ou numérico — aceitar qualquer um que não seja 'idx_'
+      // IDs marcados — são UUIDs diretos do lancamento_id
       const idsMarcados = Object.keys(confRef.current)
-        .filter(k => confRef.current[k]?.status)
-        .map(k => k.replace('lrc_', ''))
-        .filter(id => id && !id.startsWith('idx_'));
+        .filter(k => confRef.current[k]?.status);
 
       // Query principal: lançamentos do período
       let query = supabase
@@ -158,13 +177,13 @@ export default function RelatorioFinanceiro({ showError }) {
   const totalReceitas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor||0), 0);
   const totalDespesas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor||0), 0);
   // Contar apenas os marcados que estão na lista visível atual
-  const totalOk  = lancamentos.filter((l,i) => (conf[chave(l.id, i)] || VAZIO).status === 'ok').length;
-  const totalVer = lancamentos.filter((l,i) => (conf[chave(l.id, i)] || VAZIO).status === 'ver').length;
+  const totalOk  = lancamentos.filter(l => getConf(l.id).status === 'ok').length;
+  const totalVer = lancamentos.filter(l => getConf(l.id).status === 'ver').length;
 
   const imprimir = () => {
     const titulo = `Relatório Financeiro — ${meses[filtros.mes-1]}/${filtros.ano}`;
     const rows = lancamentos.map((l, idx) => {
-      const c     = getConf(l.id, idx);
+      const c     = getConf(l.id);
       const tipo  = l.categorias_financeiras?.tipo || '—';
       const dtRef = l.status === 'pago' ? l.data_pagamento : l.data_vencimento;
       const irmao = l.origem_tipo !== 'Loja' ? nomeAb(l.irmaos?.nome) : '—';
@@ -290,8 +309,8 @@ export default function RelatorioFinanceiro({ showError }) {
             const dtRef     = l.status === 'pago' ? l.data_pagamento : l.data_vencimento;
             const irmao     = l.origem_tipo !== 'Loja' ? nomeAb(l.irmaos?.nome) : '—';
             const pago      = l.status === 'pago';
-            const c         = getConf(l.id, idx);
-            const k         = chave(l.id, idx);
+            const c         = getConf(l.id);
+            const k         = l.id;
             const bgLinha   = c.status==='ok'  ? (idx%2===0?'rgba(16,185,129,0.07)':'rgba(16,185,129,0.12)')
                             : c.status==='ver' ? (idx%2===0?'rgba(239,68,68,0.07)':'rgba(239,68,68,0.12)')
                             : idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)';
@@ -339,13 +358,13 @@ export default function RelatorioFinanceiro({ showError }) {
                 </div>
 
                 <div style={{display:'flex',gap:'0.22rem',justifyContent:'center',alignItems:'center'}}>
-                  <button onClick={()=>setStatus(l.id,idx,'ok')} title="Conferido — OK"
+                  <button onClick={()=>setStatus(l.id,'ok')} title="Conferido — OK"
                     style={{padding:'0.1rem 0.36rem',borderRadius:'var(--radius-sm)',fontSize:'0.68rem',fontWeight:'800',
                       cursor:'pointer',border:'1px solid #10b981',
                       background:c.status==='ok'?'#10b981':'transparent',
                       color:c.status==='ok'?'#fff':'#10b981'}}>✓</button>
 
-                  <button onClick={()=>setStatus(l.id,idx,'ver')} title="Marcar para verificar"
+                  <button onClick={()=>setStatus(l.id,'ver')} title="Marcar para verificar"
                     style={{padding:'0.1rem 0.36rem',borderRadius:'var(--radius-sm)',fontSize:'0.68rem',fontWeight:'800',
                       cursor:'pointer',border:'1px solid #ef4444',
                       background:c.status==='ver'?'#ef4444':'transparent',
@@ -353,7 +372,7 @@ export default function RelatorioFinanceiro({ showError }) {
 
                   {c.status === 'ver' && (
                     <button
-                      onClick={()=>setModalObs({k, obs:c.obs, descricao:l.descricao||l.categorias_financeiras?.nome||''})}
+                      onClick={()=>setModalObs({k:l.id, obs:c.obs, descricao:l.descricao||l.categorias_financeiras?.nome||''})}
                       title={c.obs?`Obs: ${c.obs}`:"Adicionar observação"}
                       style={{padding:'0.1rem 0.28rem',borderRadius:'var(--radius-sm)',fontSize:'0.62rem',
                         cursor:'pointer',border:`1px solid ${c.obs?'rgba(239,68,68,0.5)':'var(--color-border)'}`,
