@@ -242,17 +242,17 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
                   pulse={s.emp_vencidos > 0} />
               )}
 
-              {/* Quando ano específico: mostra ativos e vencidos de outros anos */}
-              {temFiltroAno && (
-                <>
-                  <DashCard emoji="📅" label="Ativos outros anos" sub={`Emprestados antes de ${filtroAno}`}
-                    val={s.ativos_outros_anos}
-                    bg={s.ativos_outros_anos > 0 ? '#f59e0b' : '#10b981'} />
-                  <DashCard emoji="⚠️" label="Vencidos outros anos" sub={`Prazo expirado antes de ${filtroAno}`}
-                    val={s.vencidos_outros_anos}
-                    bg={s.vencidos_outros_anos > 0 ? '#ef4444' : '#10b981'}
-                    pulse={s.vencidos_outros_anos > 0} />
-                </>
+              {/* Quando ano específico: só mostra cards de outros anos se houver registros */}
+              {temFiltroAno && s.ativos_outros_anos > 0 && (
+                <DashCard emoji="📅" label="Ativos outros anos" sub={`Emprestados antes de ${filtroAno}`}
+                  val={s.ativos_outros_anos}
+                  bg="#f59e0b" />
+              )}
+              {temFiltroAno && s.vencidos_outros_anos > 0 && (
+                <DashCard emoji="⚠️" label="Vencidos outros anos" sub={`Prazo expirado antes de ${filtroAno}`}
+                  val={s.vencidos_outros_anos}
+                  bg="#ef4444"
+                  pulse={true} />
               )}
             </div>
           </div>
