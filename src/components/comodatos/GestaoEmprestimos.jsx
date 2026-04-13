@@ -689,9 +689,12 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         { label: 'Vencidos',             val: vencidos.length },
         { label: 'Itens Emprestados',    val: totalItens },
       ];
-      const boxW = 48, boxH = 16, startX = 10, y = 36;
+      const totalW = pW - 20; // mesma largura da tabela (margin 10+10)
+      const gap = 3;
+      const boxW = (totalW - gap * 4) / 5;
+      const boxH = 16, startX = 10, y = 36;
       stats.forEach((s, i) => {
-        const x = startX + i * (boxW + 4);
+        const x = startX + i * (boxW + gap);
         const isCrit = s.label === 'Vencidos' && s.val > 0;
         doc.setFillColor(isCrit ? 254 : 248, isCrit ? 242 : 250, isCrit ? 242 : 252);
         doc.setDrawColor(isCrit ? 239 : 226, isCrit ? 68 : 232, isCrit ? 68 : 240);
@@ -775,7 +778,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(`📋  EMPRÉSTIMOS ATIVOS — ${ativos.length} registro(s)   |   Vencidos: ${vencidos.length}`, 14, nextY + 5.5);
+      doc.text(`EMPRESTIMOS ATIVOS  —  ${ativos.length} registro(s)   |   Vencidos: ${vencidos.length}`, 14, nextY + 5.5);
       nextY += 9;
 
       if (rowsAtivos.length > 0) {
@@ -808,7 +811,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
-      doc.text(`✅  EMPRÉSTIMOS DEVOLVIDOS — ${devolvidos.length} registro(s)`, 14, nextY + 5.5);
+      doc.text(`EMPRESTIMOS DEVOLVIDOS  —  ${devolvidos.length} registro(s)`, 14, nextY + 5.5);
       nextY += 9;
 
       if (rowsDev.length > 0) {
