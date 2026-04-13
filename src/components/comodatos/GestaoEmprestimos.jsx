@@ -9,11 +9,14 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState('ativo');
-  const [filtroPeriodo, setFiltroPeriodo] = useState('ano');   // mes|trimestre|semestre|ano
-  const [filtroMes, setFiltroMes]         = useState(new Date().getMonth());        // 0-11
-  const [filtroTrimestre, setFiltroTrimestre] = useState(Math.floor(new Date().getMonth() / 3)); // 0-3
-  const [filtroSemestre, setFiltroSemestre]   = useState(new Date().getMonth() < 6 ? 0 : 1);
-  const [filtroAno, setFiltroAno]         = useState(new Date().getFullYear());
+  const [filtroAno, setFiltroAno]       = useState(new Date().getFullYear());
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [modalRelatorio, setModalRelatorio]   = useState(false);
+  const [relAno, setRelAno]             = useState(new Date().getFullYear());
+  const [relPeriodo, setRelPeriodo]     = useState('ano');   // mes|trimestre|semestre|ano
+  const [relMes, setRelMes]             = useState(new Date().getMonth());
+  const [relTrimestre, setRelTrimestre] = useState(Math.floor(new Date().getMonth() / 3));
+  const [relSemestre, setRelSemestre]   = useState(new Date().getMonth() < 6 ? 0 : 1);
   const [editando, setEditando] = useState(null);
   
   // Múltiplos equipamentos
@@ -55,7 +58,16 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         .order('created_at', { ascending: false });
 
       if (empError) throw empError;
-      setEmprestimos(empData || []);
+      const dados = empData || [];
+      setEmprestimos(dados);
+      // Anos disponíveis — extraídos dos empréstimos carregados
+      const anos = [...new Set(dados
+        .map(e => e.data_emprestimo ? new Date(e.data_emprestimo + 'T00:00:00').getFullYear() : null)
+        .filter(Boolean)
+      )].sort((a, b) => b - a);
+      setAnosDisponiveis(anos);
+      if (anos.length > 0 && !anos.includes(filtroAno)) setFiltroAno(anos[0]);
+      if (anos.length > 0 && !anos.includes(relAno)) setRelAno(anos[0]);
 
       // Equipamentos disponíveis
       const { data: eqData, error: eqError } = await supabase
@@ -624,7 +636,23 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     try {
       showSuccess('Gerando relatório...');
 
-      const anoAtual = filtroAno;
+      const anoAtual = relAno;
+
+      // Filtro de período para o relatório
+      const dentroDoperiodo = (emp) => {
+        const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
+        if (!dt || dt.getFullYear() !== anoAtual) return false;
+        if (relPeriodo === 'mes')       return dt.getMonth() === relMes;
+        if (relPeriodo === 'trimestre') return Math.floor(dt.getMonth() / 3) === relTrimestre;
+        if (relPeriodo === 'semestre')  return (dt.getMonth() < 6 ? 0 : 1) === relSemestre;
+        return true; // ano todo
+      };
+
+      const MESES_NOMES_REL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const labelPeriodo = relPeriodo === 'mes'       ? MESES_NOMES_REL[relMes]
+                         : relPeriodo === 'trimestre' ? `${relTrimestre + 1}º Trimestre`
+                         : relPeriodo === 'semestre'  ? `${relSemestre + 1}º Semestre`
+                         : 'Ano todo';
 
       // Buscar empréstimos do ano (ativos + devolvidos)
       const { data: dadosLoja } = await supabase
@@ -642,11 +670,13 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             equipamentos (numero_patrimonio, tipos_equipamentos (nome))
           )
         `)
-        .or(`data_emprestimo.gte.${anoAtual}-01-01,data_devolucao_real.gte.${anoAtual}-01-01`)
+        .gte('data_emprestimo', `${anoAtual}-01-01`)
+        .lte('data_emprestimo', `${anoAtual}-12-31`)
         .in('status', ['ativo', 'devolvido'])
         .order('data_emprestimo', { ascending: false });
 
       if (error) throw error;
+      const listaPeriodo = (lista || []).filter(dentroDoperiodo);
 
       const jsPDFModule = await import('jspdf');
       const jsPDF = jsPDFModule.default;
@@ -668,27 +698,27 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       doc.setFont('helvetica', 'bold');
       doc.text('ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
       doc.setFontSize(12);
-      doc.text(`Relatório de Empréstimos — ${anoAtual}`, pW / 2, 21, { align: 'center' });
+      doc.text(`Relatorio de Emprestimos — ${labelPeriodo} ${anoAtual}`, pW / 2, 21, { align: 'center' });
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
 
       // ── Totalizadores ───────────────────────────────────────────────────────
       const hoje = new Date(); hoje.setHours(0,0,0,0);
-      const ativos    = lista.filter(e => e.status === 'ativo');
-      const devolvidos = lista.filter(e => e.status === 'devolvido');
+      const ativos    = listaPeriodo.filter(e => e.status === 'ativo');
+      const devolvidos = listaPeriodo.filter(e => e.status === 'devolvido');
       const vencidos  = ativos.filter(e => {
         if (!e.data_devolucao_prevista) return false;
         return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
       });
-      const totalItens = lista.reduce((s, e) => s + (e.itens?.length || 0), 0);
+      const totalItens = listaPeriodo.reduce((s, e) => s + (e.itens?.length || 0), 0);
 
       doc.setTextColor(30, 58, 95);
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
 
       const stats = [
-        { label: 'Total de Empréstimos', val: lista.length },
+        { label: 'Total de Emprestimos', val: listaPeriodo.length },
         { label: 'Ativos',               val: ativos.length },
         { label: 'Devolvidos',           val: devolvidos.length },
         { label: 'Vencidos',             val: vencidos.length },
@@ -850,7 +880,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         );
       }
 
-      doc.save(`Relatorio_Emprestimos_${anoAtual}.pdf`);
+      doc.save(`Relatorio_Emprestimos_${anoAtual}_${relPeriodo}.pdf`);
       showSuccess('Relatório gerado!');
     } catch (err) {
       console.error(err);
@@ -896,22 +926,10 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   };
 
   const emprestimosFiltrados = emprestimos.filter(emp => {
-    // Filtro status
     if (filtroStatus !== 'todos' && emp.status !== filtroStatus) return false;
-
-    // Filtro de período — usa data_emprestimo como referência
     const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
     if (!dt) return false;
     if (dt.getFullYear() !== filtroAno) return false;
-
-    if (filtroPeriodo === 'mes') {
-      if (dt.getMonth() !== filtroMes) return false;
-    } else if (filtroPeriodo === 'trimestre') {
-      if (Math.floor(dt.getMonth() / 3) !== filtroTrimestre) return false;
-    } else if (filtroPeriodo === 'semestre') {
-      if ((dt.getMonth() < 6 ? 0 : 1) !== filtroSemestre) return false;
-    }
-    // 'ano' não aplica filtro de sub-período
     return true;
   }).sort((a, b) => {
     const aVenc = isVencido(a) ? 0 : 1;
@@ -945,7 +963,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
-              onClick={gerarRelatorio}
+              onClick={() => setModalRelatorio(true)}
               style={{
                 padding: '0.5rem 1rem',
                 background: 'var(--color-surface-2)',
@@ -957,7 +975,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                 display: 'flex', alignItems: 'center', gap: '0.4rem'
               }}
             >
-              📊 Relatório Anual
+              📊 Relatório
             </button>
             {permissoes?.pode_editar_comodatos && (
             <button
@@ -980,86 +998,24 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       </div>
 
       {/* FILTROS */}
-      <div className="card" style={{ padding: '1rem', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
 
         {/* Ano */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ano</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ano</label>
           <select value={filtroAno} onChange={e => setFiltroAno(parseInt(e.target.value))}
-            style={{ padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(a => (
-              <option key={a} value={a}>{a}</option>
-            ))}
+            style={{ padding: '0.45rem 0.7rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
+            {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
 
-        {/* Período */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Período</label>
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
-            {[
-              { id: 'mes', label: 'Mês' },
-              { id: 'trimestre', label: 'Trimestre' },
-              { id: 'semestre', label: 'Semestre' },
-              { id: 'ano', label: 'Ano todo' },
-            ].map(p => (
-              <button key={p.id} onClick={() => setFiltroPeriodo(p.id)}
-                style={{ padding: '0.4rem 0.75rem', background: filtroPeriodo === p.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroPeriodo === p.id ? 'white' : 'var(--color-text)', border: filtroPeriodo === p.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
-                {p.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Sub-período */}
-        {filtroPeriodo === 'mes' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Mês</label>
-            <select value={filtroMes} onChange={e => setFiltroMes(parseInt(e.target.value))}
-              style={{ padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
-              {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
-                <option key={i} value={i}>{m}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        {filtroPeriodo === 'trimestre' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Trimestre</label>
-            <div style={{ display: 'flex', gap: '0.35rem' }}>
-              {['1º Tri (Jan–Mar)','2º Tri (Abr–Jun)','3º Tri (Jul–Set)','4º Tri (Out–Dez)'].map((t, i) => (
-                <button key={i} onClick={() => setFiltroTrimestre(i)}
-                  style={{ padding: '0.4rem 0.65rem', background: filtroTrimestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroTrimestre === i ? 'white' : 'var(--color-text)', border: filtroTrimestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.75rem' }}>
-                  {t}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {filtroPeriodo === 'semestre' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Semestre</label>
-            <div style={{ display: 'flex', gap: '0.35rem' }}>
-              {['1º Semestre (Jan–Jun)','2º Semestre (Jul–Dez)'].map((s, i) => (
-                <button key={i} onClick={() => setFiltroSemestre(i)}
-                  style={{ padding: '0.4rem 0.75rem', background: filtroSemestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroSemestre === i ? 'white' : 'var(--color-text)', border: filtroSemestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Divisor */}
-        <div style={{ width: '1px', height: '2rem', background: 'var(--color-border)', alignSelf: 'center' }} />
-
         {/* Status */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Situação</label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Situação</label>
           <div style={{ display: 'flex', gap: '0.35rem' }}>
             {[{ id: 'ativo', label: 'Ativos' }, { id: 'devolvido', label: 'Devolvidos' }, { id: 'todos', label: 'Todos' }].map(s => (
               <button key={s.id} onClick={() => setFiltroStatus(s.id)}
-                style={{ padding: '0.4rem 0.75rem', background: filtroStatus === s.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroStatus === s.id ? 'white' : 'var(--color-text)', border: filtroStatus === s.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                style={{ padding: '0.45rem 0.9rem', background: filtroStatus === s.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtroStatus === s.id ? 'white' : 'var(--color-text)', border: filtroStatus === s.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
                 {s.label}
               </button>
             ))}
@@ -1067,16 +1023,14 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         </div>
 
         {/* Contador */}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-            {emprestimosFiltrados.length} empréstimo(s)
-            {emprestimosFiltrados.filter(isVencido).length > 0 && (
-              <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontWeight: '700' }}>
-                · {emprestimosFiltrados.filter(isVencido).length} vencido(s)
-              </span>
-            )}
-          </span>
-        </div>
+        <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: 'var(--color-text-muted)', alignSelf: 'flex-end', paddingBottom: '0.1rem' }}>
+          {emprestimosFiltrados.length} empréstimo(s)
+          {emprestimosFiltrados.filter(isVencido).length > 0 && (
+            <span style={{ marginLeft: '0.5rem', color: '#ef4444', fontWeight: '700' }}>
+              · {emprestimosFiltrados.filter(isVencido).length} vencido(s)
+            </span>
+          )}
+        </span>
       </div>
 
       {/* LISTA DE EMPRÉSTIMOS */}
@@ -1252,6 +1206,94 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           </div>
         )}
       </div>
+
+
+      {/* MODAL RELATÓRIO */}
+      {modalRelatorio && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div className="card" style={{ maxWidth: '420px', width: '100%', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <h3 style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '1.1rem' }}>📊 Gerar Relatório</h3>
+              <button onClick={() => setModalRelatorio(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--color-text-muted)', fontSize: '1.25rem', cursor: 'pointer' }}>✕</button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Ano */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Ano</label>
+                <select value={relAno} onChange={e => setRelAno(parseInt(e.target.value))}
+                  style={{ width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
+                  {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </div>
+
+              {/* Período */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Período</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {[{ id: 'mes', label: 'Mês' }, { id: 'trimestre', label: 'Trimestre' }, { id: 'semestre', label: 'Semestre' }, { id: 'ano', label: 'Ano todo' }].map(p => (
+                    <button key={p.id} onClick={() => setRelPeriodo(p.id)}
+                      style={{ padding: '0.4rem 0.9rem', background: relPeriodo === p.id ? 'var(--color-accent)' : 'var(--color-surface-2)', color: relPeriodo === p.id ? 'white' : 'var(--color-text)', border: relPeriodo === p.id ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-período */}
+              {relPeriodo === 'mes' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Mês</label>
+                  <select value={relMes} onChange={e => setRelMes(parseInt(e.target.value))}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', fontSize: '0.875rem' }}>
+                    {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => <option key={i} value={i}>{m}</option>)}
+                  </select>
+                </div>
+              )}
+              {relPeriodo === 'trimestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Trimestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    {['1º (Jan–Mar)', '2º (Abr–Jun)', '3º (Jul–Set)', '4º (Out–Dez)'].map((t, i) => (
+                      <button key={i} onClick={() => setRelTrimestre(i)}
+                        style={{ padding: '0.4rem 0.7rem', background: relTrimestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: relTrimestre === i ? 'white' : 'var(--color-text)', border: relTrimestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.78rem' }}>
+                        {t}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {relPeriodo === 'semestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>Semestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {['1º (Jan–Jun)', '2º (Jul–Dez)'].map((s, i) => (
+                      <button key={i} onClick={() => setRelSemestre(i)}
+                        style={{ padding: '0.4rem 0.9rem', background: relSemestre === i ? 'var(--color-accent)' : 'var(--color-surface-2)', color: relSemestre === i ? 'white' : 'var(--color-text)', border: relSemestre === i ? 'none' : '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem' }}>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button onClick={() => setModalRelatorio(false)}
+                  style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={() => { setModalRelatorio(false); gerarRelatorio(); }}
+                  style={{ flex: 2, padding: '0.6rem', background: 'var(--color-accent)', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}>
+                  📊 Gerar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL NOVO EMPRÉSTIMO */}
       {modalAberto && (
