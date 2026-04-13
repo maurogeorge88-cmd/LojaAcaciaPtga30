@@ -531,16 +531,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
             );
           })}
 
-          {/* Instruções pg_cron */}
-          <div style={sCard}>
-            <p style={{ fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.75rem' }}>📌 Como ativar o envio automático</p>
-            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-              Após configurar, execute no SQL Editor do Supabase para cada tipo ativo:
-            </p>
-            <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.75rem', fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--color-text)', overflowX: 'auto', border: '1px solid var(--color-border)' }}>
-              {`-- Exemplo: envio mensal todo dia 1 às 8h\nSELECT cron.schedule(\n  'email-irmao-mensal',\n  '0 8 1 * *',\n  $$\n  SELECT net.http_post(\n    url := 'SUA_SUPABASE_URL/functions/v1/enviar-email-irmao',\n    headers := '{"Content-Type":"application/json","Authorization":"Bearer SUA_ANON_KEY"}'::jsonb,\n    body := '{"acao":"resumo_individual","irmaos_ids":[],"opcoes":{"financeiro":true,"presenca":true,"comissoes":true,"eventos":true}}'::jsonb\n  );\n  $$\n);`}
-            </div>
-          </div>
+
         </div>
       )}
 
