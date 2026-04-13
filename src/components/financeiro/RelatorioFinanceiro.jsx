@@ -46,8 +46,81 @@ export default function RelatorioFinanceiro({ showError }) {
       });
       setConf(mapa);
       confRef.current = mapa;
+
+      // ── Migração automática do localStorage ──────────────────────────────
+      // Roda apenas se a tabela estiver vazia e houver dados no localStorage
+      if ((data || []).length === 0) {
+        await migrarLocalStorage();
+      }
     } catch (e) {
       console.error('Erro ao carregar conferências:', e.message);
+    }
+  };
+
+  const migrarLocalStorage = async () => {
+    try {
+      const fontes = [
+        'relatorio_financeiro_conf_v2',
+        'relatorio_financeiro_conf_v1',
+        'relatorio_financeiro_conf',
+      ];
+
+      // Coletar todas as entradas de todas as versões
+      const encontrados = {}; // { id: { status, obs } }
+
+      fontes.forEach(fonte => {
+        try {
+          const raw = localStorage.getItem(fonte);
+          if (!raw) return;
+          const dados = JSON.parse(raw);
+          Object.entries(dados).forEach(([k, v]) => {
+            if (!v || !v.status) return;
+            // Extrair ID numérico da chave (ex: "lrc_12345" → 12345)
+            const base = k.replace('lrc_', '').split('|')[0];
+            const idNum = parseInt(base, 10);
+            if (!isNaN(idNum) && !encontrados[idNum]) {
+              encontrados[idNum] = { status: v.status, obs: v.obs || '' };
+            }
+          });
+        } catch {}
+      });
+
+      const registros = Object.entries(encontrados);
+      if (registros.length === 0) return;
+
+      // Verificar quais IDs existem de fato na tabela lancamentos_loja
+      const ids = registros.map(([id]) => Number(id));
+      const { data: validos } = await supabase
+        .from('lancamentos_loja')
+        .select('id')
+        .in('id', ids);
+
+      const idsValidos = new Set((validos || []).map(l => l.id));
+
+      // Inserir apenas os válidos
+      const upserts = registros
+        .filter(([id]) => idsValidos.has(Number(id)))
+        .map(([id, v]) => ({
+          lancamento_id: Number(id),
+          status_conf: v.status,
+          observacao: v.obs || null,
+        }));
+
+      if (upserts.length === 0) return;
+
+      const { error } = await supabase
+        .from('relatorio_financeiro_conferencia')
+        .upsert(upserts, { onConflict: 'lancamento_id' });
+
+      if (!error) {
+        console.log(`✅ Migrados ${upserts.length} registro(s) do localStorage para o Supabase`);
+        // Limpar localStorage após migração bem-sucedida
+        fontes.forEach(f => { try { localStorage.removeItem(f); } catch {} });
+        // Recarregar conf do banco
+        await carregarConf();
+      }
+    } catch (e) {
+      console.error('Erro na migração:', e.message);
     }
   };
 
