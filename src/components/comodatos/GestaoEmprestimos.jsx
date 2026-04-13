@@ -8,11 +8,11 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [beneficiarios, setBeneficiarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState('ativo');
-  const [filtroAno, setFiltroAno]       = useState(new Date().getFullYear());
+  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroAno, setFiltroAno]       = useState('todos');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [modalRelatorio, setModalRelatorio]   = useState(false);
-  const [relAno, setRelAno]             = useState(new Date().getFullYear());
+  const [relAno, setRelAno]             = useState('todos');
   const [relPeriodo, setRelPeriodo]     = useState('ano');   // mes|trimestre|semestre|ano
   const [relMes, setRelMes]             = useState(new Date().getMonth());
   const [relTrimestre, setRelTrimestre] = useState(Math.floor(new Date().getMonth() / 3));
@@ -66,8 +66,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         .filter(Boolean)
       )].sort((a, b) => b - a);
       setAnosDisponiveis(anos);
-      if (anos.length > 0 && !anos.includes(filtroAno)) setFiltroAno(anos[0]);
-      if (anos.length > 0 && !anos.includes(relAno)) setRelAno(anos[0]);
+      // anos disponíveis carregados — 'todos' é sempre válido
 
       // Equipamentos disponíveis
       const { data: eqData, error: eqError } = await supabase
@@ -636,23 +635,27 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     try {
       showSuccess('Gerando relatório...');
 
-      const anoAtual = relAno;
+      const anoAtual = relAno; // pode ser número ou 'todos'
 
       // Filtro de período para o relatório
       const dentroDoperiodo = (emp) => {
         const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
-        if (!dt || dt.getFullYear() !== anoAtual) return false;
+        if (!dt) return false;
+        if (anoAtual !== 'todos' && dt.getFullYear() !== anoAtual) return false;
+        if (anoAtual === 'todos') return true; // sem filtro de sub-período quando todos os anos
         if (relPeriodo === 'mes')       return dt.getMonth() === relMes;
         if (relPeriodo === 'trimestre') return Math.floor(dt.getMonth() / 3) === relTrimestre;
         if (relPeriodo === 'semestre')  return (dt.getMonth() < 6 ? 0 : 1) === relSemestre;
-        return true; // ano todo
+        return true;
       };
 
       const MESES_NOMES_REL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-      const labelPeriodo = relPeriodo === 'mes'       ? MESES_NOMES_REL[relMes]
-                         : relPeriodo === 'trimestre' ? `${relTrimestre + 1}º Trimestre`
-                         : relPeriodo === 'semestre'  ? `${relSemestre + 1}º Semestre`
-                         : 'Ano todo';
+      const labelAno = anoAtual === 'todos' ? 'Todos os Anos' : String(anoAtual);
+      const labelPeriodo = anoAtual === 'todos' ? 'Todos os Anos'
+                         : relPeriodo === 'mes'       ? `${MESES_NOMES_REL[relMes]} ${anoAtual}`
+                         : relPeriodo === 'trimestre' ? `${relTrimestre + 1}º Trimestre ${anoAtual}`
+                         : relPeriodo === 'semestre'  ? `${relSemestre + 1}º Semestre ${anoAtual}`
+                         : `Ano ${anoAtual}`;
 
       // Buscar empréstimos do ano (ativos + devolvidos)
       const { data: dadosLoja } = await supabase
@@ -670,8 +673,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             equipamentos (numero_patrimonio, tipos_equipamentos (nome))
           )
         `)
-        .gte('data_emprestimo', `${anoAtual}-01-01`)
-        .lte('data_emprestimo', `${anoAtual}-12-31`)
+        ...(anoAtual !== 'todos' ? { gte: `${anoAtual}-01-01`, lte: `${anoAtual}-12-31` } : {})
         .in('status', ['ativo', 'devolvido'])
         .order('data_emprestimo', { ascending: false });
 
@@ -698,7 +700,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       doc.setFont('helvetica', 'bold');
       doc.text('ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
       doc.setFontSize(12);
-      doc.text(`Relatorio de Emprestimos — ${labelPeriodo} ${anoAtual}`, pW / 2, 21, { align: 'center' });
+      doc.text(`Relatorio de Emprestimos — ${labelPeriodo}`, pW / 2, 21, { align: 'center' });
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
@@ -881,7 +883,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         );
       }
 
-      doc.save(`Relatorio_Emprestimos_${anoAtual}_${relPeriodo}.pdf`);
+      doc.save(`Relatorio_Emprestimos_${labelAno}_${relPeriodo}.pdf`);
       showSuccess('Relatório gerado!');
     } catch (err) {
       console.error(err);
@@ -930,7 +932,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     if (filtroStatus !== 'todos' && emp.status !== filtroStatus) return false;
     const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
     if (!dt) return false;
-    if (dt.getFullYear() !== filtroAno) return false;
+    if (filtroAno !== 'todos' && dt.getFullYear() !== filtroAno) return false;
     return true;
   }).sort((a, b) => {
     const aVenc = isVencido(a) ? 0 : 1;
@@ -1004,8 +1006,9 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         {/* Ano */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
           <label style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>Ano</label>
-          <select value={filtroAno} onChange={e => setFiltroAno(parseInt(e.target.value))}
+          <select value={filtroAno} onChange={e => setFiltroAno(e.target.value === 'todos' ? 'todos' : parseInt(e.target.value))}
             style={{ padding: '0.45rem 0.7rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}>
+            <option value="todos">Todos os anos</option>
             {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </div>
