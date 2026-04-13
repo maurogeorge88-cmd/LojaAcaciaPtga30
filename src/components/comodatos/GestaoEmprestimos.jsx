@@ -706,75 +706,129 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         doc.text(s.label, x + boxW / 2, y + 13, { align: 'center' });
       });
 
-      // ── Tabela ──────────────────────────────────────────────────────────────
-      const rows = [];
-      lista.forEach(emp => {
-        const benNome = emp.beneficiarios?.nome || '—';
-        const benCpf  = emp.beneficiarios?.cpf  || '—';
-        const dtEmp   = emp.data_emprestimo
-          ? new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-        const dtPrev  = emp.data_devolucao_prevista
-          ? new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-        const dtReal  = emp.data_devolucao_real
-          ? new Date(emp.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
+      // ── Helpers de linha ────────────────────────────────────────────────────
+      const buildRows = (empLista) => {
+        const rows = [];
+        empLista.forEach(emp => {
+          const benNome = emp.beneficiarios?.nome || '—';
+          const benCpf  = emp.beneficiarios?.cpf  || '—';
+          const dtEmp   = emp.data_emprestimo
+            ? new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+          const dtPrev  = emp.data_devolucao_prevista
+            ? new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
 
-        const eVencido = emp.status === 'ativo' && emp.data_devolucao_prevista
-          && new Date(emp.data_devolucao_prevista + 'T00:00:00') < hoje;
+          // Vencido: ativo E data_devolucao_prevista < hoje (mesmo critério do frontend)
+          const eVencido = emp.status === 'ativo'
+            && !!emp.data_devolucao_prevista
+            && new Date(emp.data_devolucao_prevista + 'T00:00:00') < hoje;
 
-        (emp.itens || []).forEach(item => {
-          const tipo = item.equipamentos?.tipos_equipamentos?.nome || '—';
-          const patr = item.equipamentos?.numero_patrimonio || '—';
-          const itemStatus = item.status === 'devolvido' ? 'Devolvido' : (eVencido ? 'Vencido' : 'Ativo');
-          const dtDevItem = item.data_devolucao_real
-            ? new Date(item.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
+          (emp.itens || []).forEach(item => {
+            const tipo = item.equipamentos?.tipos_equipamentos?.nome || '—';
+            const patr = item.equipamentos?.numero_patrimonio || '—';
+            // Item vencido: o empréstimo está vencido E o item ainda não foi devolvido
+            const itemVencido = eVencido && item.status !== 'devolvido';
+            const itemStatus  = item.status === 'devolvido' ? 'Devolvido' : (itemVencido ? 'Vencido' : 'Ativo');
+            const dtDev = item.data_devolucao_real
+              ? new Date(item.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
 
-          rows.push({
-            benNome, benCpf, tipo, patr, dtEmp, dtPrev,
-            devolvido: item.status === 'devolvido' ? dtDevItem : dtReal,
-            status: itemStatus,
-            eVencido: eVencido && item.status !== 'devolvido',
+            rows.push({ benNome, benCpf, tipo, patr, dtEmp, dtPrev, dtDev, status: itemStatus, itemVencido });
           });
         });
-      });
+        return rows;
+      };
 
-      doc.autoTable({
-        startY: y + boxH + 6,
-        head: [['Beneficiário', 'CPF', 'Tipo de Equip.', 'Patrimônio', 'Dt. Empréstimo', 'Prev. Devolução', 'Dt. Devolução', 'Situação']],
-        body: rows.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.devolvido, r.status]),
-        styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
-        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold', halign: 'center' },
-        columnStyles: {
-          0: { halign: 'left', cellWidth: 48 },
-          1: { cellWidth: 30 },
-          2: { halign: 'left', cellWidth: 40 },
-          3: { cellWidth: 24 },
-          4: { cellWidth: 26 },
-          5: { cellWidth: 26 },
-          6: { cellWidth: 26 },
-          7: { cellWidth: 22 },
-        },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        didParseCell: (data) => {
-          if (data.section === 'body') {
-            const row = rows[data.row.index];
-            if (row?.eVencido) {
-              data.cell.styles.textColor = [185, 28, 28];
-              data.cell.styles.fontStyle = 'bold';
-            }
-            if (data.column.index === 7) {
-              if (data.cell.text[0] === 'Vencido') {
-                data.cell.styles.textColor = [185, 28, 28];
-                data.cell.styles.fontStyle = 'bold';
-              } else if (data.cell.text[0] === 'Devolvido') {
-                data.cell.styles.textColor = [22, 101, 52];
-              } else {
-                data.cell.styles.textColor = [30, 58, 95];
-              }
-            }
-          }
-        },
-        margin: { left: 10, right: 10 },
-      });
+      const colStyles = {
+        0: { halign: 'left', cellWidth: 50 },
+        1: { cellWidth: 30 },
+        2: { halign: 'left', cellWidth: 42 },
+        3: { cellWidth: 24 },
+        4: { cellWidth: 26 },
+        5: { cellWidth: 26 },
+        6: { cellWidth: 26 },
+        7: { cellWidth: 22 },
+      };
+      const HEAD = [['Beneficiário', 'CPF', 'Tipo de Equipamento', 'Patrimônio', 'Dt. Empréstimo', 'Prev. Devolução', 'Dt. Devolução', 'Situação']];
+
+      const makeDidParseCell = (rows) => (data) => {
+        if (data.section !== 'body') return;
+        const row = rows[data.row.index];
+        if (!row) return;
+        if (row.itemVencido) {
+          data.cell.styles.fillColor = [255, 245, 245];
+          data.cell.styles.textColor = [185, 28, 28];
+          data.cell.styles.fontStyle = 'bold';
+        }
+        if (data.column.index === 7) {
+          if (row.status === 'Vencido')    { data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = 'bold'; }
+          else if (row.status === 'Devolvido') { data.cell.styles.textColor = [22, 101, 52]; }
+          else                              { data.cell.styles.textColor = [30, 58, 95]; }
+        }
+      };
+
+      // ── Seção 1: Ativos (incluindo vencidos) ────────────────────────────────
+      const rowsAtivos = buildRows(ativos);
+      let nextY = y + boxH + 4;
+
+      // Cabeçalho seção Ativos
+      doc.setFillColor(30, 58, 95);
+      doc.roundedRect(10, nextY, pW - 20, 8, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`📋  EMPRÉSTIMOS ATIVOS — ${ativos.length} registro(s)   |   Vencidos: ${vencidos.length}`, 14, nextY + 5.5);
+      nextY += 9;
+
+      if (rowsAtivos.length > 0) {
+        doc.autoTable({
+          startY: nextY,
+          head: HEAD,
+          body: rowsAtivos.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
+          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [51, 65, 85], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: colStyles,
+          alternateRowStyles: { fillColor: [248, 250, 252] },
+          didParseCell: makeDidParseCell(rowsAtivos),
+          margin: { left: 10, right: 10 },
+        });
+        nextY = doc.lastAutoTable.finalY + 8;
+      } else {
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Nenhum empréstimo ativo.', 14, nextY + 6);
+        nextY += 14;
+      }
+
+      // ── Seção 2: Devolvidos ─────────────────────────────────────────────────
+      const rowsDev = buildRows(devolvidos);
+
+      // Cabeçalho seção Devolvidos
+      doc.setFillColor(22, 101, 52);
+      doc.roundedRect(10, nextY, pW - 20, 8, 2, 2, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`✅  EMPRÉSTIMOS DEVOLVIDOS — ${devolvidos.length} registro(s)`, 14, nextY + 5.5);
+      nextY += 9;
+
+      if (rowsDev.length > 0) {
+        doc.autoTable({
+          startY: nextY,
+          head: HEAD,
+          body: rowsDev.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
+          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [21, 128, 61], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: colStyles,
+          alternateRowStyles: { fillColor: [240, 253, 244] },
+          didParseCell: makeDidParseCell(rowsDev),
+          margin: { left: 10, right: 10 },
+        });
+      } else {
+        doc.setTextColor(100, 116, 139);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Nenhum empréstimo devolvido.', 14, nextY + 6);
+      }
 
       // ── Rodapé ──────────────────────────────────────────────────────────────
       const totalPages = doc.internal.getNumberOfPages();
