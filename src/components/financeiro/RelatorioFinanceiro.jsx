@@ -249,9 +249,25 @@ export default function RelatorioFinanceiro({ showError }) {
 
   const totalReceitas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor||0), 0);
   const totalDespesas = lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor||0), 0);
-  // Contar apenas os marcados que estão na lista visível atual
-  const totalOk  = lancamentos.filter(l => getConf(l.id).status === 'ok').length;
-  const totalVer = lancamentos.filter(l => getConf(l.id).status === 'ver').length;
+
+  // Conferidos (OK)
+  const lancamentosOk  = lancamentos.filter(l => getConf(l.id).status === 'ok');
+  const lancamentosVer = lancamentos.filter(l => getConf(l.id).status === 'ver');
+  const totalOk  = lancamentosOk.length;
+  const totalVer = lancamentosVer.length;
+
+  // Valores conferidos (OK)
+  const receitasOk  = lancamentosOk.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor||0), 0);
+  const despesasOk  = lancamentosOk.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor||0), 0);
+  const saldoOk     = receitasOk - despesasOk;
+
+  // Diferença: total - conferido
+  const diffReceitas = totalReceitas - receitasOk;
+  const diffDespesas = totalDespesas - despesasOk;
+  const diffSaldo    = (totalReceitas - totalDespesas) - saldoOk;
+
+  const totalConferido = lancamentosOk.length + lancamentosVer.length;
+  const pctConferido   = lancamentos.length > 0 ? Math.round((totalConferido / lancamentos.length) * 100) : 0;
 
   const imprimir = () => {
     const titulo = `Relatório Financeiro — ${meses[filtros.mes-1]}/${filtros.ano}`;
@@ -341,20 +357,80 @@ export default function RelatorioFinanceiro({ showError }) {
       </div>
 
       {carregou && (<>
-        <div style={{display:'grid', gridTemplateColumns:'repeat(6,1fr)', gap:'0.75rem', marginBottom:'1rem'}}>
-          {[
-            { label:'Registros',     valor:lancamentos.length,          cor:'var(--color-accent)',                                          bg:'rgba(59,130,246,0.1)',  brd:'rgba(59,130,246,0.3)',  vFmt:v=>v },
-            { label:'Receitas',      valor:totalReceitas,               cor:'#10b981',                                                     bg:'rgba(16,185,129,0.1)',  brd:'rgba(16,185,129,0.3)',  vFmt:v=>`R$ ${fmt(v)}` },
-            { label:'Despesas',      valor:totalDespesas,               cor:'#ef4444',                                                     bg:'rgba(239,68,68,0.1)',   brd:'rgba(239,68,68,0.3)',   vFmt:v=>`R$ ${fmt(v)}` },
-            { label:'Saldo',         valor:totalReceitas-totalDespesas, cor:totalReceitas-totalDespesas>=0?'#10b981':'#ef4444',            bg:totalReceitas-totalDespesas>=0?'rgba(16,185,129,0.1)':'rgba(239,68,68,0.1)', brd:totalReceitas-totalDespesas>=0?'rgba(16,185,129,0.3)':'rgba(239,68,68,0.3)', vFmt:v=>`R$ ${fmt(v)}` },
-            { label:'✓ OK',          valor:totalOk,                     cor:'#10b981',                                                     bg:'rgba(16,185,129,0.1)',  brd:'rgba(16,185,129,0.3)',  vFmt:v=>`${v}/${lancamentos.length}` },
-            { label:'! A Verificar', valor:totalVer,                    cor:'#ef4444',                                                     bg:'rgba(239,68,68,0.1)',   brd:'rgba(239,68,68,0.3)',   vFmt:v=>v },
-          ].map(t=>(
-            <div key={t.label} style={{background:t.bg,border:`1px solid ${t.brd}`,borderLeft:`4px solid ${t.cor}`,borderRadius:'var(--radius-lg)',padding:'0.8rem 1rem'}}>
-              <div style={{fontSize:'0.68rem',fontWeight:'700',color:t.cor,textTransform:'uppercase',marginBottom:'0.2rem'}}>{t.label}</div>
-              <div style={{fontSize:'1.2rem',fontWeight:'800',color:'var(--color-text)'}}>{t.vFmt(t.valor)}</div>
+        {/* ── Painel de totalizadores ── */}
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0.75rem', marginBottom:'1rem'}}>
+
+          {/* Coluna 1: Total do filtro */}
+          <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
+            <div style={{background:'var(--color-accent)', padding:'0.5rem 0.9rem'}}>
+              <span style={{fontSize:'0.72rem', fontWeight:'700', color:'#fff', textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                📋 Total do Período — {lancamentos.length} registro(s)
+              </span>
             </div>
-          ))}
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0', borderTop:'1px solid var(--color-border)'}}>
+              {[
+                { label:'Receitas',  val:totalReceitas,               cor:'#10b981' },
+                { label:'Despesas',  val:totalDespesas,               cor:'#ef4444' },
+                { label:'Saldo',     val:totalReceitas-totalDespesas, cor:totalReceitas-totalDespesas>=0?'#10b981':'#ef4444' },
+              ].map((c,i) => (
+                <div key={c.label} style={{padding:'0.65rem 0.75rem', borderRight: i<2?'1px solid var(--color-border)':'none'}}>
+                  <div style={{fontSize:'0.65rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.15rem'}}>{c.label}</div>
+                  <div style={{fontSize:'0.95rem', fontWeight:'800', color:c.cor}}>R$ {fmt(c.val)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Coluna 2: Conferido (OK) */}
+          <div style={{background:'var(--color-surface)', border:'1px solid rgba(16,185,129,0.4)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
+            <div style={{background:'#10b981', padding:'0.5rem 0.9rem', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+              <span style={{fontSize:'0.72rem', fontWeight:'700', color:'#fff', textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                ✓ Conferido — {totalOk} registro(s)
+              </span>
+              <span style={{fontSize:'0.72rem', fontWeight:'800', color:'#fff', background:'rgba(255,255,255,0.25)', borderRadius:'999px', padding:'0.1rem 0.5rem'}}>
+                {pctConferido}%
+              </span>
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0', borderTop:'1px solid rgba(16,185,129,0.2)'}}>
+              {[
+                { label:'Receitas', val:receitasOk, cor:'#10b981' },
+                { label:'Despesas', val:despesasOk, cor:'#ef4444' },
+                { label:'Saldo',    val:saldoOk,    cor:saldoOk>=0?'#10b981':'#ef4444' },
+              ].map((c,i) => (
+                <div key={c.label} style={{padding:'0.65rem 0.75rem', borderRight: i<2?'1px solid var(--color-border)':'none'}}>
+                  <div style={{fontSize:'0.65rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.15rem'}}>{c.label}</div>
+                  <div style={{fontSize:'0.95rem', fontWeight:'800', color:c.cor}}>R$ {fmt(c.val)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Coluna 3: Diferença (ainda não conferido) */}
+          <div style={{background:'var(--color-surface)', border:`1px solid ${diffSaldo!==0?'rgba(245,158,11,0.4)':'rgba(16,185,129,0.3)'}`, borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
+            <div style={{background: diffSaldo!==0?'#f59e0b':'#10b981', padding:'0.5rem 0.9rem', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+              <span style={{fontSize:'0.72rem', fontWeight:'700', color:'#fff', textTransform:'uppercase', letterSpacing:'0.05em'}}>
+                {diffSaldo!==0?'⏳ Pendente conferência':'✅ Tudo conferido'}
+              </span>
+              {totalVer > 0 && (
+                <span style={{fontSize:'0.72rem', fontWeight:'800', color:'#fff', background:'rgba(239,68,68,0.4)', borderRadius:'999px', padding:'0.1rem 0.5rem'}}>
+                  ! {totalVer} a verificar
+                </span>
+              )}
+            </div>
+            <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0', borderTop:'1px solid var(--color-border)'}}>
+              {[
+                { label:'Receitas', val:diffReceitas, cor: diffReceitas>0?'#f59e0b':'#10b981' },
+                { label:'Despesas', val:diffDespesas, cor: diffDespesas>0?'#f59e0b':'#10b981' },
+                { label:'Diferença',val:diffSaldo,    cor: diffSaldo!==0?'#f59e0b':'#10b981'  },
+              ].map((c,i) => (
+                <div key={c.label} style={{padding:'0.65rem 0.75rem', borderRight: i<2?'1px solid var(--color-border)':'none'}}>
+                  <div style={{fontSize:'0.65rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.15rem'}}>{c.label}</div>
+                  <div style={{fontSize:'0.95rem', fontWeight:'800', color:c.cor}}>R$ {fmt(c.val)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
 
         <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
