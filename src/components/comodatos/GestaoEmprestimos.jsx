@@ -12,7 +12,8 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [filtroAno, setFiltroAno]       = useState('todos');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [modalRelatorio, setModalRelatorio]   = useState(false);
-  const [relAno, setRelAno]             = useState('todos');
+  const [relAno, setRelAno]             = useState(new Date().getFullYear());
+  const [relIncluirOutrosAnos, setRelIncluirOutrosAnos] = useState(false);
   const [relPeriodo, setRelPeriodo]     = useState('ano');   // mes|trimestre|semestre|ano
   const [relMes, setRelMes]             = useState(new Date().getMonth());
   const [relTrimestre, setRelTrimestre] = useState(Math.floor(new Date().getMonth() / 3));
@@ -66,7 +67,10 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         .filter(Boolean)
       )].sort((a, b) => b - a);
       setAnosDisponiveis(anos);
-      // anos disponíveis carregados — 'todos' é sempre válido
+      // Inicializar relAno com ano atual se disponível, senão o primeiro
+      const anoAtualNum = new Date().getFullYear();
+      if (anos.includes(anoAtualNum)) setRelAno(anoAtualNum);
+      else if (anos.length > 0) setRelAno(anos[0]);
 
       // Equipamentos disponíveis
       const { data: eqData, error: eqError } = await supabase
@@ -635,14 +639,12 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     try {
       showSuccess('Gerando relatório...');
 
-      const anoAtual = relAno; // pode ser número ou 'todos'
+      const anoAtual = relAno; // número
 
       // Filtro de período para o relatório
       const dentroDoperiodo = (emp) => {
         const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
-        if (!dt) return false;
-        if (anoAtual !== 'todos' && dt.getFullYear() !== anoAtual) return false;
-        if (anoAtual === 'todos') return true; // sem filtro de sub-período quando todos os anos
+        if (!dt || dt.getFullYear() !== anoAtual) return false;
         if (relPeriodo === 'mes')       return dt.getMonth() === relMes;
         if (relPeriodo === 'trimestre') return Math.floor(dt.getMonth() / 3) === relTrimestre;
         if (relPeriodo === 'semestre')  return (dt.getMonth() < 6 ? 0 : 1) === relSemestre;
@@ -650,9 +652,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       };
 
       const MESES_NOMES_REL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-      const labelAno = anoAtual === 'todos' ? 'Todos os Anos' : String(anoAtual);
-      const labelPeriodo = anoAtual === 'todos' ? 'Todos os Anos'
-                         : relPeriodo === 'mes'       ? `${MESES_NOMES_REL[relMes]} ${anoAtual}`
+      const labelAno = String(anoAtual);
+      const labelPeriodo = relPeriodo === 'mes'       ? `${MESES_NOMES_REL[relMes]} ${anoAtual}`
                          : relPeriodo === 'trimestre' ? `${relTrimestre + 1}º Trimestre ${anoAtual}`
                          : relPeriodo === 'semestre'  ? `${relSemestre + 1}º Semestre ${anoAtual}`
                          : `Ano ${anoAtual}`;
@@ -663,7 +664,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         .select('*')
         .single();
 
-      let qRel = supabase
+      // Buscar empréstimos do ano selecionado
+      const { data: lista, error } = await supabase
         .from('comodatos')
         .select(`
           *,
@@ -673,12 +675,29 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             equipamentos (numero_patrimonio, tipos_equipamentos (nome))
           )
         `)
+        .gte('data_emprestimo', `${anoAtual}-01-01`)
+        .lte('data_emprestimo', `${anoAtual}-12-31`)
         .in('status', ['ativo', 'devolvido'])
         .order('data_emprestimo', { ascending: false });
-      if (anoAtual !== 'todos') {
-        qRel = qRel.gte('data_emprestimo', `${anoAtual}-01-01`).lte('data_emprestimo', `${anoAtual}-12-31`);
+
+      // Buscar ativos/vencidos de outros anos (se checkbox marcado)
+      let listaOutrosAnos = [];
+      if (relIncluirOutrosAnos) {
+        const { data: outrosData } = await supabase
+          .from('comodatos')
+          .select(`
+            *,
+            beneficiarios (nome, cpf),
+            itens:comodato_itens (
+              id, status, data_devolucao_real,
+              equipamentos (numero_patrimonio, tipos_equipamentos (nome))
+            )
+          `)
+          .lt('data_emprestimo', `${anoAtual}-01-01`)
+          .eq('status', 'ativo')
+          .order('data_emprestimo', { ascending: false });
+        listaOutrosAnos = outrosData || [];
       }
-      const { data: lista, error } = await qRel;
 
       if (error) throw error;
       const listaPeriodo = (lista || []).filter(dentroDoperiodo);
@@ -884,6 +903,40 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           `Página ${i} de ${totalPages} — Relatório gerado automaticamente pelo sistema`,
           pW / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' }
         );
+      }
+
+      // ── Seção 3: Ativos/Vencidos de outros anos (se solicitado) ────────────
+      if (relIncluirOutrosAnos && listaOutrosAnos.length > 0) {
+        const hojeOutros = new Date(); hojeOutros.setHours(0,0,0,0);
+        const rowsOutros = buildRows(listaOutrosAnos);
+
+        // Agrupar por ano para mostrar de qual ano cada empréstimo vem
+        const outrosVencidos = listaOutrosAnos.filter(e => {
+          if (!e.data_devolucao_prevista) return false;
+          return new Date(e.data_devolucao_prevista + 'T00:00:00') < hojeOutros;
+        });
+
+        let yOutros = doc.lastAutoTable ? doc.lastAutoTable.finalY + 8 : nextY + 8;
+
+        doc.setFillColor(120, 53, 15);
+        doc.roundedRect(10, yOutros, pW - 20, 8, 2, 2, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`ATIVOS DE ANOS ANTERIORES A ${anoAtual}  —  ${listaOutrosAnos.length} registro(s)   |   Vencidos: ${outrosVencidos.length}`, 14, yOutros + 5.5);
+        yOutros += 9;
+
+        doc.autoTable({
+          startY: yOutros,
+          head: HEAD,
+          body: rowsOutros.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.dtDev, r.status]),
+          styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+          headStyles: { fillColor: [120, 53, 15], textColor: 255, fontStyle: 'bold', halign: 'center' },
+          columnStyles: colStyles,
+          alternateRowStyles: { fillColor: [255, 247, 237] },
+          didParseCell: makeDidParseCell(rowsOutros),
+          margin: { left: 10, right: 10 },
+        });
       }
 
       doc.save(`Relatorio_Emprestimos_${labelAno}_${relPeriodo}.pdf`);
