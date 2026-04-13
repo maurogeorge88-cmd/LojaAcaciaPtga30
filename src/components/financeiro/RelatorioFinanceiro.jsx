@@ -112,11 +112,11 @@ export default function RelatorioFinanceiro({ showError }) {
       const ult  = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
 
       // IDs marcados no conf — sempre incluir independente do filtro de período
+      // IDs podem ser UUID (string) ou numérico — aceitar qualquer um que não seja 'idx_'
       const idsMarcados = Object.keys(confRef.current)
         .filter(k => confRef.current[k]?.status)
         .map(k => k.replace('lrc_', ''))
-        .filter(id => !id.startsWith('idx_') && !isNaN(Number(id)))
-        .map(Number);
+        .filter(id => id && !id.startsWith('idx_'));
 
       // Query principal: lançamentos do período
       let query = supabase
