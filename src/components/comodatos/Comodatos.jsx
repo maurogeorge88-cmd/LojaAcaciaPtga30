@@ -202,7 +202,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { emoji: '✅', label: 'Disponíveis',  sub: 'Prontos para uso',   val: s.equip_disponiveis, bg: 'var(--color-accent)' },
-                { emoji: '🔄', label: 'Emprestados',  sub: 'Em uso atualmente',  val: s.equip_emprestados, bg: 'var(--color-accent)' },
+                { emoji: '🔄', label: 'Emprestados',  sub: 'Equipamentos emprestados',  val: s.equip_emprestados, bg: 'var(--color-accent)' },
                 { emoji: '🔧', label: 'Manutenção',   sub: 'Em reparo',          val: s.equip_manutencao,  bg: '#f59e0b' },
                 { emoji: '🗑️', label: 'Descartados',  sub: 'Fora de uso',        val: s.equip_descartados, bg: '#64748b' },
               ].map(c => (
@@ -218,7 +218,7 @@ export default function Comodatos({ permissoes, showSuccess, showError }) {
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
-                { emoji: '📋', label: 'Total',       sub: `Empréstimos em ${labelFiltro}`, val: s.emp_total,     bg: 'var(--color-accent)' },
+                { emoji: '📋', label: 'Total',       sub: 'Registros efetuados', val: s.emp_total,     bg: 'var(--color-accent)' },
                 { emoji: '🔵', label: 'Ativos',      sub: 'Em andamento',                  val: s.emp_ativos,    bg: '#3b82f6' },
                 { emoji: '✔️', label: 'Devolvidos',  sub: 'Finalizados',                   val: s.emp_devolvidos,bg: '#10b981' },
                 { emoji: '👥', label: 'Beneficiários',sub: 'Total cadastrado',              val: s.total_beneficiarios, bg: 'var(--color-accent)' },
