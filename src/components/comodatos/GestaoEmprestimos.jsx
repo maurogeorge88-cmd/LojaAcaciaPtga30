@@ -614,6 +614,188 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     }
   };
 
+
+  const gerarRelatorio = async () => {
+    try {
+      showSuccess('Gerando relatório...');
+
+      const anoAtual = new Date().getFullYear();
+
+      // Buscar empréstimos do ano (ativos + devolvidos)
+      const { data: dadosLoja } = await supabase
+        .from('dados_loja')
+        .select('*')
+        .single();
+
+      const { data: lista, error } = await supabase
+        .from('comodatos')
+        .select(`
+          *,
+          beneficiarios (nome, cpf),
+          itens:comodato_itens (
+            id, status, data_devolucao_real,
+            equipamentos (numero_patrimonio, tipos_equipamentos (nome))
+          )
+        `)
+        .or(`data_emprestimo.gte.${anoAtual}-01-01,data_devolucao_real.gte.${anoAtual}-01-01`)
+        .in('status', ['ativo', 'devolvido'])
+        .order('data_emprestimo', { ascending: false });
+
+      if (error) throw error;
+
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      await import('jspdf-autotable');
+
+      const doc = new jsPDF('landscape');
+      const pW = doc.internal.pageSize.getWidth();
+
+      // ── Cabeçalho ──────────────────────────────────────────────────────────
+      doc.setFillColor(30, 58, 95);
+      doc.rect(0, 0, pW, 32, 'F');
+
+      if (dadosLoja?.logo_url) {
+        try { doc.addImage(dadosLoja.logo_url, 'PNG', pW - 36, 4, 24, 24); } catch {}
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text(`Relatório de Empréstimos — ${anoAtual}`, pW / 2, 21, { align: 'center' });
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
+
+      // ── Totalizadores ───────────────────────────────────────────────────────
+      const hoje = new Date(); hoje.setHours(0,0,0,0);
+      const ativos    = lista.filter(e => e.status === 'ativo');
+      const devolvidos = lista.filter(e => e.status === 'devolvido');
+      const vencidos  = ativos.filter(e => {
+        if (!e.data_devolucao_prevista) return false;
+        return new Date(e.data_devolucao_prevista + 'T00:00:00') < hoje;
+      });
+      const totalItens = lista.reduce((s, e) => s + (e.itens?.length || 0), 0);
+
+      doc.setTextColor(30, 58, 95);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+
+      const stats = [
+        { label: 'Total de Empréstimos', val: lista.length },
+        { label: 'Ativos',               val: ativos.length },
+        { label: 'Devolvidos',           val: devolvidos.length },
+        { label: 'Vencidos',             val: vencidos.length },
+        { label: 'Itens Emprestados',    val: totalItens },
+      ];
+      const boxW = 48, boxH = 16, startX = 10, y = 36;
+      stats.forEach((s, i) => {
+        const x = startX + i * (boxW + 4);
+        const isCrit = s.label === 'Vencidos' && s.val > 0;
+        doc.setFillColor(isCrit ? 254 : 248, isCrit ? 242 : 250, isCrit ? 242 : 252);
+        doc.setDrawColor(isCrit ? 239 : 226, isCrit ? 68 : 232, isCrit ? 68 : 240);
+        doc.roundedRect(x, y, boxW, boxH, 3, 3, 'FD');
+        doc.setTextColor(isCrit ? 185 : 30, isCrit ? 28 : 58, isCrit ? 28 : 95);
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text(String(s.val), x + boxW / 2, y + 8, { align: 'center' });
+        doc.setFontSize(7);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(100, 116, 139);
+        doc.text(s.label, x + boxW / 2, y + 13, { align: 'center' });
+      });
+
+      // ── Tabela ──────────────────────────────────────────────────────────────
+      const rows = [];
+      lista.forEach(emp => {
+        const benNome = emp.beneficiarios?.nome || '—';
+        const benCpf  = emp.beneficiarios?.cpf  || '—';
+        const dtEmp   = emp.data_emprestimo
+          ? new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+        const dtPrev  = emp.data_devolucao_prevista
+          ? new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+        const dtReal  = emp.data_devolucao_real
+          ? new Date(emp.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
+
+        const eVencido = emp.status === 'ativo' && emp.data_devolucao_prevista
+          && new Date(emp.data_devolucao_prevista + 'T00:00:00') < hoje;
+
+        (emp.itens || []).forEach(item => {
+          const tipo = item.equipamentos?.tipos_equipamentos?.nome || '—';
+          const patr = item.equipamentos?.numero_patrimonio || '—';
+          const itemStatus = item.status === 'devolvido' ? 'Devolvido' : (eVencido ? 'Vencido' : 'Ativo');
+          const dtDevItem = item.data_devolucao_real
+            ? new Date(item.data_devolucao_real).toLocaleDateString('pt-BR') : '—';
+
+          rows.push({
+            benNome, benCpf, tipo, patr, dtEmp, dtPrev,
+            devolvido: item.status === 'devolvido' ? dtDevItem : dtReal,
+            status: itemStatus,
+            eVencido: eVencido && item.status !== 'devolvido',
+          });
+        });
+      });
+
+      doc.autoTable({
+        startY: y + boxH + 6,
+        head: [['Beneficiário', 'CPF', 'Tipo de Equip.', 'Patrimônio', 'Dt. Empréstimo', 'Prev. Devolução', 'Dt. Devolução', 'Situação']],
+        body: rows.map(r => [r.benNome, r.benCpf, r.tipo, r.patr, r.dtEmp, r.dtPrev, r.devolvido, r.status]),
+        styles: { fontSize: 8, cellPadding: 3, halign: 'center' },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+          0: { halign: 'left', cellWidth: 48 },
+          1: { cellWidth: 30 },
+          2: { halign: 'left', cellWidth: 40 },
+          3: { cellWidth: 24 },
+          4: { cellWidth: 26 },
+          5: { cellWidth: 26 },
+          6: { cellWidth: 26 },
+          7: { cellWidth: 22 },
+        },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        didParseCell: (data) => {
+          if (data.section === 'body') {
+            const row = rows[data.row.index];
+            if (row?.eVencido) {
+              data.cell.styles.textColor = [185, 28, 28];
+              data.cell.styles.fontStyle = 'bold';
+            }
+            if (data.column.index === 7) {
+              if (data.cell.text[0] === 'Vencido') {
+                data.cell.styles.textColor = [185, 28, 28];
+                data.cell.styles.fontStyle = 'bold';
+              } else if (data.cell.text[0] === 'Devolvido') {
+                data.cell.styles.textColor = [22, 101, 52];
+              } else {
+                data.cell.styles.textColor = [30, 58, 95];
+              }
+            }
+          }
+        },
+        margin: { left: 10, right: 10 },
+      });
+
+      // ── Rodapé ──────────────────────────────────────────────────────────────
+      const totalPages = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(148, 163, 184);
+        doc.text(
+          `Página ${i} de ${totalPages} — Relatório gerado automaticamente pelo sistema`,
+          pW / 2, doc.internal.pageSize.getHeight() - 6, { align: 'center' }
+        );
+      }
+
+      doc.save(`Relatorio_Emprestimos_${anoAtual}.pdf`);
+      showSuccess('Relatório gerado!');
+    } catch (err) {
+      console.error(err);
+      showError('Erro ao gerar relatório: ' + err.message);
+    }
+  };
+
   const toggleEquipamento = (eqId) => {
     setEquipamentosSelecionados(prev =>
       prev.includes(eqId)
@@ -685,7 +867,23 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
               </span>
             )}
           </div>
-          {permissoes?.pode_editar_comodatos && (
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={gerarRelatorio}
+              style={{
+                padding: '0.5rem 1rem',
+                background: 'var(--color-surface-2)',
+                color: 'var(--color-text)',
+                border: '1px solid var(--color-border)',
+                borderRadius: '0.5rem',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '0.4rem'
+              }}
+            >
+              📊 Relatório Anual
+            </button>
+            {permissoes?.pode_editar_comodatos && (
             <button
               onClick={() => setModalAberto(true)}
               style={{
@@ -700,7 +898,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             >
               ➕ Novo Empréstimo
             </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
