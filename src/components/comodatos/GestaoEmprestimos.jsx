@@ -663,7 +663,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         .select('*')
         .single();
 
-      const { data: lista, error } = await supabase
+      let qRel = supabase
         .from('comodatos')
         .select(`
           *,
@@ -673,9 +673,12 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             equipamentos (numero_patrimonio, tipos_equipamentos (nome))
           )
         `)
-        ...(anoAtual !== 'todos' ? { gte: `${anoAtual}-01-01`, lte: `${anoAtual}-12-31` } : {})
         .in('status', ['ativo', 'devolvido'])
         .order('data_emprestimo', { ascending: false });
+      if (anoAtual !== 'todos') {
+        qRel = qRel.gte('data_emprestimo', `${anoAtual}-01-01`).lte('data_emprestimo', `${anoAtual}-12-31`);
+      }
+      const { data: lista, error } = await qRel;
 
       if (error) throw error;
       const listaPeriodo = (lista || []).filter(dentroDoperiodo);
