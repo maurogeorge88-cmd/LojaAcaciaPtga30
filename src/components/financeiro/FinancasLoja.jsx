@@ -3766,17 +3766,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     </div>
                     {/* Status + Parcela empilhados */}
                     <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.2rem'}}>
-                      <span style={{...badge.style,padding:'0.2rem 0.5rem',borderRadius:'999px',fontSize:'0.68rem',fontWeight:'700',whiteSpace:'nowrap',textAlign:'center'}}>
+                      <span style={{fontSize:'0.62rem',color:'var(--color-text-muted)',fontWeight:'600',whiteSpace:'nowrap'}}>
                         {badge.icone} {badge.texto}
                       </span>
                       {lanc.eh_parcelado && (
-                        <span style={{fontSize:'0.65rem',padding:'0.1rem 0.45rem',borderRadius:'999px',fontWeight:'700',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
+                        <span style={{fontSize:'0.62rem',padding:'0.1rem 0.4rem',borderRadius:'999px',fontWeight:'700',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
                           {lanc.parcela_numero}/{lanc.parcela_total}
                         </span>
                       )}
                     </div>
-                    {/* Ações */}
-                    <div style={{display:'flex',gap:'0.3rem',alignItems:'center',justifyContent:'flex-end'}}>
+                    {/* Ações — ícones menores e compactos */}
+                    <div style={{display:'flex',gap:'0.2rem',alignItems:'center',justifyContent:'flex-end'}}>
                         {/* Botão Parcelar */}
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
@@ -3795,7 +3795,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                               setModalParcelamentoAberto(true);
                             }}
                             disabled={lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)}
-                            className={`text-lg ${
+                            style={{fontSize:'0.85rem'}} className={`${
                               lancamentos.some(l => l.lancamento_principal_id === lanc.id && l.eh_pagamento_parcial)
                                 ? ' cursor-not-allowed'
                                 : 'color-indigo-placeholder'
@@ -3814,7 +3814,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalPagamentoParcial(lanc)}
-                            className="hover: text-lg"
+                            style={{fontSize:'0.85rem',background:'none',border:'none',cursor:'pointer'}}
                             title="Fazer pagamento parcial"
                           >
                             💰
@@ -3825,7 +3825,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         {lanc.status === 'pendente' && !lanc.eh_pagamento_parcial && (
                           <button
                             onClick={() => abrirModalQuitacao(lanc)}
-                            style={{color:"#10b981",background:"none",border:"none",cursor:"pointer",fontSize:"1.1rem"}}
+                            style={{color:"#10b981",background:"none",border:"none",cursor:"pointer",fontSize:"0.85rem"}}
                             title="Quitar"
                           >
                             ✅
@@ -3835,7 +3835,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <button
                           onClick={() => editarLancamento(lanc)}
                           disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"1.1rem"}}
+                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
                           title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Editar'}
                         >
                           ✏️
@@ -3843,7 +3843,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
                           disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"1.1rem"}}
+                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
                           title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Excluir'}
                         >
                           🗑️
