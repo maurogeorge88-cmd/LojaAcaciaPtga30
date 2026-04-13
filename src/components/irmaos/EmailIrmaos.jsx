@@ -18,10 +18,11 @@ const FREQ = [
 const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 
 const OPCOES_CONTEUDO = [
-  { id: 'financeiro', label: '💰 Financeiro' },
-  { id: 'presenca',   label: '📊 Presença' },
-  { id: 'comissoes',  label: '👥 Comissões' },
-  { id: 'eventos',    label: '🎉 Eventos do mês' },
+  { id: 'financeiro',  label: '💰 Financeiro' },
+  { id: 'presenca',    label: '📊 Presença' },
+  { id: 'comissoes',   label: '👥 Comissões' },
+  { id: 'eventos',     label: '🎉 Eventos do mês' },
+  { id: 'cronograma',  label: '📅 Cronograma do mês' },
 ];
 
 const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -37,7 +38,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [irmaos, setIrmaos] = useState([]);
   const [irmaosSelec, setIrmaosSelec] = useState([]);
   const [tipoSelec, setTipoSelec] = useState('resumo_individual');
-  const [opcoesConteudo, setOpcoesConteudo] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true });
+  const [opcoesConteudo, setOpcoesConteudo] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
   const [enviando, setEnviando] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [configs, setConfigs] = useState([]);
@@ -47,7 +48,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [modalConfig, setModalConfig] = useState(null);
   const [formConfig, setFormConfig] = useState({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
-  const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true });
+  const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
 
@@ -230,11 +231,11 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     if (existente) {
       setFormConfig({ ativo: existente.ativo, frequencia: existente.frequencia || 'mensal', dia_semana: existente.dia_semana || 1, dia_mes: existente.dia_mes || 1, hora: existente.hora ?? 8 });
       setIrmaosConfigSelec(existente.irmaos_ids || []);
-      setOpcoesConfig(existente.opcoes_conteudo || { financeiro: true, presenca: true, comissoes: true, eventos: true });
+      setOpcoesConfig(existente.opcoes_conteudo || { financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
       setIrmaosConfigSelec([]);
-      setOpcoesConfig({ financeiro: true, presenca: true, comissoes: true, eventos: true });
+      setOpcoesConfig({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
     }
     setFiltroBuscaConfig('');
     setModalConfig(tipo);
