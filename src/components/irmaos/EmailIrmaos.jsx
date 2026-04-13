@@ -86,6 +86,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
       .select('id, nome, email, situacao, cim')
       .not('email', 'is', null)
       .neq('email', '')
+      .in('situacao', ['regular', 'licenciado'])
       .order('nome');
     setIrmaos(data || []);
   };
