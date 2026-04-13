@@ -26,6 +26,12 @@ const OPCOES_CONTEUDO = [
 
 const MESES_NOMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
+const GRAU_LABEL = { 1: 'Aprendiz', 2: 'Companheiro', 3: 'Mestre', 4: 'Evento Loja' };
+const TIPO_LABEL = { sessao: 'Sessão', trabalho_irmao: 'Trabalho', instrucao: 'Instrução',
+  sessao_magna: 'Sessão Magna', sessao_posse: 'Sessão de Posse', sessao_instalacao: 'Instalação',
+  evento_externo: 'Evento Externo', outro: 'Outro' };
+const MESES_ABR_FE = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
 export default function EmailIrmaos({ showSuccess, showError }) {
   const [aba, setAba] = useState('manual');
   const [irmaos, setIrmaos] = useState([]);
@@ -49,6 +55,8 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [mesesComRegistros, setMesesComRegistros] = useState([]); // [{ valor: '2026-04', label: 'Abril 2026' }]
   const [mesCronograma, setMesCronograma] = useState('');         // '2026-04'
   const [loadingMeses, setLoadingMeses] = useState(false);
+  const [eventosCronograma, setEventosCronograma] = useState([]);
+  const [eventosDestaque, setEventosDestaque] = useState([]);
 
   // ── Carregar dados ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -60,6 +68,10 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   useEffect(() => {
     if (tipoSelec === 'cronograma_mes') carregarMesesCronograma();
   }, [tipoSelec]);
+
+  useEffect(() => {
+    if (mesCronograma && tipoSelec === 'cronograma_mes') carregarEventosCronograma(mesCronograma);
+  }, [mesCronograma]);
 
   const carregarIrmaos = async () => {
     const { data } = await supabase
@@ -96,8 +108,25 @@ export default function EmailIrmaos({ showSuccess, showError }) {
       const chaveProximo = `${proximoAno}-${proximoMes}`;
       const encontrado = lista.find(l => l.valor === chaveProximo);
       setMesCronograma(encontrado ? chaveProximo : lista[0].valor);
+    } else if (lista.length > 0 && mesCronograma) {
+      // Mês já selecionado, só recarrega eventos
+      carregarEventosCronograma(mesCronograma);
     }
     setLoadingMeses(false);
+  };
+
+  const carregarEventosCronograma = async (mes) => {
+    if (!mes) return;
+    const [ano, m] = mes.split('-');
+    const ultimoDia = new Date(parseInt(ano), parseInt(m), 0).getDate();
+    const { data } = await supabase
+      .from('cronograma')
+      .select('id, titulo, tipo, data_evento, hora_inicio, grau_sessao_id')
+      .gte('data_evento', `${mes}-01`)
+      .lte('data_evento', `${mes}-${String(ultimoDia).padStart(2,'0')}`)
+      .order('data_evento', { ascending: true });
+    setEventosCronograma(data || []);
+    setEventosDestaque([]); // limpar destaques ao trocar mês
   };
 
   const carregarConfigs = async () => {
@@ -150,7 +179,8 @@ export default function EmailIrmaos({ showSuccess, showError }) {
           acao: tipoSelec,
           irmaos_ids: irmaosSelec,
           opcoes: opcoesConteudo,
-          mes_cronograma: mesCronograma, // ex: '2026-05'
+          mes_cronograma: mesCronograma,
+          destaques_ids: eventosDestaque,
         },
       });
       if (fnError) throw fnError;
@@ -282,38 +312,86 @@ export default function EmailIrmaos({ showSuccess, showError }) {
 
             {/* Seletor de mês — cronograma */}
             {tipoSelec === 'cronograma_mes' && (
-              <div style={sCard}>
-                <p style={{ fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>2. Mês do cronograma</p>
-                {loadingMeses ? (
-                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Carregando meses...</p>
-                ) : mesesComRegistros.length === 0 ? (
-                  <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
-                    ⚠️ Nenhum evento cadastrado no cronograma para o ano atual.
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                    {mesesComRegistros.map(m => (
-                      <div key={m.valor} onClick={() => setMesCronograma(m.valor)}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem', borderRadius: 'var(--radius-md)', cursor: 'pointer',
-                          background: mesCronograma === m.valor ? 'var(--color-accent-bg)' : 'var(--color-surface-2)',
-                          border: '1px solid ' + (mesCronograma === m.valor ? 'var(--color-accent)' : 'var(--color-border)') }}>
-                        <span style={{ fontSize: '1.1rem' }}>📅</span>
-                        <span style={{ fontWeight: '600', fontSize: '0.875rem', color: mesCronograma === m.valor ? 'var(--color-accent)' : 'var(--color-text)' }}>
-                          {m.label}
-                        </span>
-                        {mesCronograma === m.valor && (
-                          <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-accent)' }}>✓ Selecionado</span>
+              <>
+                <div style={sCard}>
+                  <p style={{ fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>2. Mês do cronograma</p>
+                  {loadingMeses ? (
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Carregando meses...</p>
+                  ) : mesesComRegistros.length === 0 ? (
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>
+                      ⚠️ Nenhum evento cadastrado no cronograma para o ano atual.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                      {mesesComRegistros.map(m => (
+                        <div key={m.valor} onClick={() => setMesCronograma(m.valor)}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.9rem', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                            background: mesCronograma === m.valor ? 'var(--color-accent-bg)' : 'var(--color-surface-2)',
+                            border: '1px solid ' + (mesCronograma === m.valor ? 'var(--color-accent)' : 'var(--color-border)') }}>
+                          <span style={{ fontSize: '1.1rem' }}>📅</span>
+                          <span style={{ fontWeight: '600', fontSize: '0.875rem', color: mesCronograma === m.valor ? 'var(--color-accent)' : 'var(--color-text)' }}>
+                            {m.label}
+                          </span>
+                          {mesCronograma === m.valor && (
+                            <span style={{ marginLeft: 'auto', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-accent)' }}>✓ Selecionado</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Seletor de destaques */}
+                {eventosCronograma.length > 0 && (
+                  <div style={sCard}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <p style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '0.95rem' }}>
+                        3. Eventos em destaque
+                        {eventosDestaque.length > 0 && (
+                          <span style={{ marginLeft: '0.5rem', background: '#f59e0b', color: '#fff', borderRadius: '999px', padding: '1px 8px', fontSize: '0.7rem', fontWeight: '700' }}>
+                            {eventosDestaque.length} ⭐
+                          </span>
                         )}
-                      </div>
-                    ))}
+                      </p>
+                      {eventosDestaque.length > 0 && (
+                        <button onClick={() => setEventosDestaque([])}
+                          style={{ padding: '0.2rem 0.6rem', background: 'transparent', color: 'var(--color-text-muted)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.72rem', cursor: 'pointer' }}>
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', margin: '0 0 0.6rem' }}>
+                      Eventos marcados aparecem em destaque no topo do e-mail.
+                    </p>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      {eventosCronograma.map(ev => {
+                        const sel = eventosDestaque.includes(ev.id);
+                        const [,eMes,eDia] = ev.data_evento.split('-');
+                        const mesAbr = MESES_ABR_FE[parseInt(eMes)-1];
+                        const grauLabel = GRAU_LABEL[ev.grau_sessao_id];
+                        const tipoLabel = TIPO_LABEL[ev.tipo] || ev.tipo;
+                        return (
+                          <div key={ev.id} onClick={() => setEventosDestaque(p => p.includes(ev.id) ? p.filter(x => x !== ev.id) : [...p, ev.id])}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.5rem 0.7rem', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                              background: sel ? 'rgba(245,158,11,0.12)' : 'var(--color-surface-2)',
+                              border: '1px solid ' + (sel ? '#f59e0b' : 'var(--color-border)'),
+                              transition: 'all 0.15s' }}>
+                            <span style={{ fontSize: '1.1rem', flexShrink: 0 }}>{sel ? '⭐' : '☆'}</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <p style={{ margin: 0, fontWeight: '600', fontSize: '0.8rem', color: sel ? '#92400e' : 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {ev.titulo}
+                              </p>
+                              <p style={{ margin: 0, fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>
+                                {eDia}/{mesAbr} · {tipoLabel}{grauLabel ? ` · ${grauLabel}` : ''}{ev.hora_inicio ? ` · ${ev.hora_inicio.substring(0,5)}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
-                {mesCronograma && (
-                  <p style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                    Os eventos de <strong>{labelMesSel}</strong> serão incluídos no e-mail.
-                  </p>
-                )}
-              </div>
+              </>
             )}
 
             {/* Info para aniversariantes */}
