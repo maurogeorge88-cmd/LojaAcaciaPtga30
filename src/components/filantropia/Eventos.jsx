@@ -371,7 +371,7 @@ export default function Eventos({ userPermissions, userData }) {
                  onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
                  onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
             >
-              <div style={{padding:"1.5rem",background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
+              <div style={{padding:"1rem"}}>
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
