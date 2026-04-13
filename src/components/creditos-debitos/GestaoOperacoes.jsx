@@ -442,7 +442,17 @@ export default function GestaoOperacoes({ tipo, showSuccess, showError }) {
               : 0;
 
             return (
-              <div key={operacao.id} className="rounded-xl hover: transition-all">
+              <div key={operacao.id} style={{
+                background: 'var(--color-surface)',
+                border: '1px solid var(--color-border)',
+                borderLeft: `4px solid ${tipo === 'credito' ? '#10b981' : '#ef4444'}`,
+                borderRadius: 'var(--radius-xl)',
+                boxShadow: 'var(--shadow-md)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-2px)'; e.currentTarget.style.boxShadow='0 6px 20px rgba(0,0,0,0.15)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.boxShadow='var(--shadow-md)'; }}
+              >
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     {/* Informações */}
