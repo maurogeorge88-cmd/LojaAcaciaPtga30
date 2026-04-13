@@ -634,9 +634,31 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     });
   };
 
+  // ── Helpers de vencimento ────────────────────────────────────────────────────
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+
+  const isVencido = (emp) => {
+    if (emp.status !== 'ativo') return false;
+    if (!emp.data_devolucao_prevista) return false;
+    const prev = new Date(emp.data_devolucao_prevista + 'T00:00:00');
+    return prev < hoje;
+  };
+
+  const diasVencido = (emp) => {
+    if (!emp.data_devolucao_prevista) return 0;
+    const prev = new Date(emp.data_devolucao_prevista + 'T00:00:00');
+    return Math.floor((hoje - prev) / (1000 * 60 * 60 * 24));
+  };
+
   const emprestimosFiltrados = emprestimos.filter(emp => {
     if (filtroStatus === 'todos') return true;
     return emp.status === filtroStatus;
+  }).sort((a, b) => {
+    // Vencidos primeiro
+    const aVenc = isVencido(a) ? 0 : 1;
+    const bVenc = isVencido(b) ? 0 : 1;
+    return aVenc - bVenc;
   });
 
   if (loading) {
@@ -648,9 +670,21 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       {/* HEADER */}
       <div className="card">
         <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-            📦 Empréstimos
-          </h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h2 className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
+              📦 Empréstimos
+            </h2>
+            {emprestimos.filter(isVencido).length > 0 && (
+              <span style={{
+                background: '#ef4444', color: '#fff',
+                borderRadius: '999px', padding: '0.2rem 0.65rem',
+                fontSize: '0.8rem', fontWeight: '800',
+                animation: 'pulse 2s infinite'
+              }}>
+                ⚠️ {emprestimos.filter(isVencido).length} vencido{emprestimos.filter(isVencido).length > 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
           {permissoes?.pode_editar_comodatos && (
             <button
               onClick={() => setModalAberto(true)}
@@ -693,11 +727,32 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
       {/* LISTA DE EMPRÉSTIMOS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {emprestimosFiltrados.map(emp => (
-          <div key={emp.id} className="card" style={{ borderLeft: '4px solid var(--color-accent)' }}>
+        {emprestimosFiltrados.map(emp => {
+          const vencido = isVencido(emp);
+          const dias = vencido ? diasVencido(emp) : 0;
+          return (
+          <div key={emp.id} className="card" style={{
+            borderLeft: `4px solid ${vencido ? '#ef4444' : 'var(--color-accent)'}`,
+            background: vencido ? 'rgba(239,68,68,0.04)' : 'var(--color-surface)',
+            boxShadow: vencido ? '0 0 0 1px rgba(239,68,68,0.2), 0 2px 8px rgba(239,68,68,0.1)' : undefined,
+            position: 'relative'
+          }}>
+            {/* Banner de vencido */}
+            {vencido && (
+              <div style={{
+                position: 'absolute', top: 0, right: 0,
+                background: '#ef4444', color: '#fff',
+                fontSize: '0.65rem', fontWeight: '800',
+                padding: '0.2rem 0.6rem',
+                borderRadius: '0 var(--radius-lg) 0 0.4rem',
+                letterSpacing: '0.05em'
+              }}>
+                ⚠️ VENCIDO
+              </div>
+            )}
             <div className="flex flex-col gap-2 mb-3">
-              <div className="flex justify-between items-start">
-                <h3 className="font-bold text-base" style={{ color: 'var(--color-text)' }}>
+              <div className="flex justify-between items-start" style={{ paddingRight: vencido ? '5rem' : 0 }}>
+                <h3 className="font-bold text-base" style={{ color: vencido ? '#b91c1c' : 'var(--color-text)' }}>
                   {emp.beneficiarios?.nome}
                 </h3>
                 <span style={{
@@ -705,8 +760,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                   borderRadius: '9999px',
                   fontSize: '0.75rem',
                   fontWeight: '700',
-                  background: emp.status === 'ativo' ? 'var(--color-success-bg)' : 'var(--color-surface-2)',
-                  color: emp.status === 'ativo' ? 'var(--color-success)' : 'var(--color-text-secondary)'
+                  background: emp.status === 'ativo' ? (vencido ? 'rgba(239,68,68,0.15)' : 'var(--color-success-bg)') : 'var(--color-surface-2)',
+                  color: emp.status === 'ativo' ? (vencido ? '#b91c1c' : 'var(--color-success)') : 'var(--color-text-secondary)'
                 }}>
                   {emp.status?.toUpperCase()}
                 </span>
@@ -715,8 +770,15 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                 CPF: {emp.beneficiarios?.cpf}
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
-                Empréstimo: {new Date(emp.data_emprestimo).toLocaleDateString()}
+                Empréstimo: {new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR')}
               </p>
+              {emp.data_devolucao_prevista && (
+                <p className="text-xs" style={{ color: vencido ? '#ef4444' : 'var(--color-text-secondary)', fontWeight: vencido ? '700' : '400' }}>
+                  {vencido
+                    ? `⏰ Venceu há ${dias} dia${dias !== 1 ? 's' : ''} — ${new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}`
+                    : `Devolução prevista: ${new Date(emp.data_devolucao_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}`}
+                </p>
+              )}
               {permissoes?.pode_editar_comodatos && (
                 <div className="flex gap-1 mt-2">
                   <button
@@ -827,7 +889,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
               ))}
             </div>
           </div>
-        ))}
+        );
+        })}
 
         {emprestimosFiltrados.length === 0 && (
           <div className="text-center py-8 text-gray-500">
