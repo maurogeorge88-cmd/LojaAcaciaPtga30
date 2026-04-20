@@ -8,7 +8,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [beneficiarios, setBeneficiarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalAberto, setModalAberto] = useState(false);
-  const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroStatus, setFiltroStatus] = useState('ativo');
   const [filtroAno, setFiltroAno]       = useState('todos');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [modalRelatorio, setModalRelatorio]   = useState(false);
@@ -985,7 +985,13 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   };
 
   const emprestimosFiltrados = emprestimos.filter(emp => {
-    if (filtroStatus !== 'todos' && emp.status !== filtroStatus) return false;
+    // Filtro de status: 'ativo' inclui ativos e vencidos (vencido = ativo com prazo expirado)
+    if (filtroStatus === 'ativo') {
+      if (emp.status !== 'ativo') return false;
+    } else if (filtroStatus !== 'todos') {
+      if (emp.status !== filtroStatus) return false;
+    }
+    // Filtro de ano
     const dt = emp.data_emprestimo ? new Date(emp.data_emprestimo + 'T00:00:00') : null;
     if (!dt) return false;
     if (filtroAno !== 'todos' && dt.getFullYear() !== filtroAno) return false;
