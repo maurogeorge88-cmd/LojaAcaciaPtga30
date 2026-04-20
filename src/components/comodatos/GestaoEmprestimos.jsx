@@ -305,17 +305,19 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
 
       // Gerar PDF
       const doc = new jsPDF();
-      let yPos = 5; // Topo mais comprimido
+      let yPos = 8;
 
       // ── CABEÇALHO ──
-      // Logo centralizada, mais acima e menor
       if (dadosLoja?.logo_url) {
         try {
           doc.addImage(dadosLoja.logo_url, 'PNG', 91, yPos, 28, 28);
-          yPos += 30; // espaço menor após logo
+          yPos += 32; // espaço suficiente para o texto não sobrepor a logo
         } catch (e) {
           console.log('Logo não disponível');
+          yPos += 2;
         }
+      } else {
+        yPos += 2;
       }
 
       // Nome da Loja
@@ -435,19 +437,24 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       }
 
       // ========================================
-      // EQUIPAMENTOS
-      // ========================================
+      // EQUIPAMENTOS em 2 colunas
       doc.setFont('helvetica', 'bold');
       doc.text('Equipamento(s):', 15, yPos);
       yPos += 5;
       doc.setFont('helvetica', 'normal');
-      
-      emprestimoCompleto.itens?.forEach((item) => {
-        const nomeEquip = item.equipamentos?.tipos_equipamentos?.nome || 'Equipamento';
-        const patrimonio = item.equipamentos?.numero_patrimonio || 'S/N';
-        doc.text(`${nomeEquip} - Patrimônio: ${patrimonio}`, 15, yPos);
+
+      const itensEquip = emprestimoCompleto.itens || [];
+      for (let ei = 0; ei < itensEquip.length; ei += 2) {
+        const iA = itensEquip[ei];
+        const nA = (iA?.equipamentos?.tipos_equipamentos?.nome || 'Equipamento') + ' - Patrimônio: ' + (iA?.equipamentos?.numero_patrimonio || 'S/N');
+        doc.text(nA, 15, yPos);
+        if (itensEquip[ei + 1]) {
+          const iB = itensEquip[ei + 1];
+          const nB = (iB?.equipamentos?.tipos_equipamentos?.nome || 'Equipamento') + ' - Patrimônio: ' + (iB?.equipamentos?.numero_patrimonio || 'S/N');
+          doc.text(nB, 108, yPos);
+        }
         yPos += 5;
-      });
+      }
       yPos += 2;
 
       // ========================================
@@ -504,21 +511,21 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.text(dataExtenso, 105, yPos, { align: 'center' });
-      yPos += 18; // 1.5 linha de espaço antes da assinatura do comodante
+      yPos += 14; // espaço antes da linha de assinatura
 
       // ── Assinatura Comodante (centro) ──
       doc.line(60, yPos, 150, yPos);
-      yPos += 7; // 1.5 linha
+      yPos += 4; // espaço simples linha → texto
       doc.setFontSize(9);
       doc.text(`${nomeLoja}`, 105, yPos, { align: 'center' });
-      yPos += 6; // 1.5 linha
+      yPos += 4; // espaço simples entre textos
       doc.text('Comodante', 105, yPos, { align: 'center' });
-      yPos += 18; // 1.5 linha antes das assinaturas finais
+      yPos += 14; // espaço antes das assinaturas finais
 
       // ── Assinaturas Beneficiário + Responsável ──
       doc.line(15, yPos, 95, yPos);
       doc.line(115, yPos, 195, yPos);
-      yPos += 7; // 1.5 linha
+      yPos += 4; // espaço simples linha → texto
       doc.setFontSize(9);
       doc.text('Comodatário - Beneficiário', 55, yPos, { align: 'center' });
       doc.text('Comodatário - Responsável', 155, yPos, { align: 'center' });
