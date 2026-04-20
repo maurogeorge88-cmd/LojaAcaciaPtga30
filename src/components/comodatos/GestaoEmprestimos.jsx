@@ -305,17 +305,14 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
 
       // Gerar PDF
       const doc = new jsPDF();
-      let yPos = 10; // Menos espaço do topo
+      let yPos = 5; // Topo mais comprimido
 
-      // ========================================
-      // CABEÇALHO CENTRALIZADO
-      // ========================================
-      
-      // Logo (se houver) - mais próximo do topo
+      // ── CABEÇALHO ──
+      // Logo centralizada, mais acima e menor
       if (dadosLoja?.logo_url) {
         try {
-          doc.addImage(dadosLoja.logo_url, 'PNG', 90, yPos, 30, 30);
-          yPos += 37;
+          doc.addImage(dadosLoja.logo_url, 'PNG', 91, yPos, 28, 28);
+          yPos += 30; // espaço menor após logo
         } catch (e) {
           console.log('Logo não disponível');
         }
@@ -326,7 +323,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       doc.setFont('helvetica', 'bold');
       const nomeLoja = `${dadosLoja?.nome_loja || 'Loja Maçônica'} nº ${dadosLoja?.numero_loja || '30'}`;
       doc.text(nomeLoja, 105, yPos, { align: 'center' });
-      yPos += 6;
+      yPos += 5;
 
       // Endereço
       doc.setFontSize(10);
@@ -344,13 +341,13 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         yPos += 4;
       }
 
-      yPos += 3; // Espaço reduzido
+      yPos += 2;
 
       // Linha separadora
       doc.setDrawColor(0);
       doc.setLineWidth(0.5);
       doc.line(15, yPos, 195, yPos);
-      yPos += 8; // Espaço reduzido
+      yPos += 5;
 
       // ========================================
       // TÍTULO
@@ -358,7 +355,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text('TERMO DE COMODATO', 105, yPos, { align: 'center' });
-      yPos += 10; // Espaço reduzido
+      yPos += 7;
 
       // ========================================
       // COMODANTE - NOME EM NEGRITO NA MESMA LINHA
@@ -366,8 +363,8 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.text('Comodante: ', 15, yPos);
-      doc.text(nomeLoja, 42, yPos); // Nome em negrito
-      yPos += 8; // Espaço reduzido entre comodante e comodatário
+      doc.text(nomeLoja, 42, yPos);
+      yPos += 6;
 
       // ========================================
       // COMODATÁRIO - NOME EM NEGRITO NA MESMA LINHA, QUALIFICAÇÃO ABAIXO
@@ -403,7 +400,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
         yPos += 5;
       });
-      yPos += 3; // Espaço reduzido
+      yPos += 2;
 
       // ========================================
       // RESPONSÁVEL (se houver) - MESMO PADRÃO DO BENEFICIÁRIO
@@ -434,7 +431,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
           doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
           yPos += 5;
         });
-        yPos += 3; // Espaço reduzido
+        yPos += 2;
       }
 
       // ========================================
@@ -451,7 +448,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         doc.text(`${nomeEquip} - Patrimônio: ${patrimonio}`, 15, yPos);
         yPos += 5;
       });
-      yPos += 3; // Espaço reduzido
+      yPos += 2;
 
       // ========================================
       // PRAZO DE UTILIZAÇÃO
@@ -466,7 +463,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       } else {
         doc.text('Por prazo indeterminado', 56, yPos);
       }
-      yPos += 8; // Espaço antes do texto do comodato
+      yPos += 5;
 
       // ========================================
       // TEXTO DO COMODATO (da imagem)
@@ -483,56 +480,46 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
       const linhasTexto = doc.splitTextToSize(textoComodato, 180);
       linhasTexto.forEach(linha => {
-        if (yPos > 270) {
+        if (yPos > 265) {
           doc.addPage();
-          yPos = 20;
+          yPos = 15;
         }
         doc.text(linha, 15, yPos, { align: 'justify', maxWidth: 180 });
-        yPos += 5;
+        yPos += 4.5;
       });
-      yPos += 10;
+      yPos += 6;
 
       // ========================================
       // LOCAL E DATA
       // ========================================
-      if (yPos > 230) {
+      if (yPos > 240) {
         doc.addPage();
-        yPos = 40;
+        yPos = 20;
       }
 
       const hoje = new Date();
       const meses = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
       const dataExtenso = `${dadosLoja?.cidade || 'Paranatinga-MT'}, ${hoje.getDate()} de ${meses[hoje.getMonth()]} de ${hoje.getFullYear()}.`;
-      
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
       doc.text(dataExtenso, 105, yPos, { align: 'center' });
-      yPos += 15;
+      yPos += 18; // 1.5 linha de espaço antes da assinatura do comodante
 
-      // ========================================
-      // LINHA DE ASSINATURA (conforme imagem)
-      // ========================================
-      
-      // Linha única longa
+      // ── Assinatura Comodante (centro) ──
       doc.line(60, yPos, 150, yPos);
-      yPos += 5;
-
-      // Texto centralizado
+      yPos += 7; // 1.5 linha
       doc.setFontSize(9);
       doc.text(`${nomeLoja}`, 105, yPos, { align: 'center' });
-      yPos += 4;
+      yPos += 6; // 1.5 linha
       doc.text('Comodante', 105, yPos, { align: 'center' });
-      yPos += 15;
+      yPos += 18; // 1.5 linha antes das assinaturas finais
 
-      // ========================================
-      // DUAS LINHAS DE ASSINATURA (conforme imagem)
-      // ========================================
-      
-      // Linha esquerda
+      // ── Assinaturas Beneficiário + Responsável ──
       doc.line(15, yPos, 95, yPos);
-      // Linha direita
       doc.line(115, yPos, 195, yPos);
-      yPos += 5;
-
-      // Textos
+      yPos += 7; // 1.5 linha
+      doc.setFontSize(9);
       doc.text('Comodatário - Beneficiário', 55, yPos, { align: 'center' });
       doc.text('Comodatário - Responsável', 155, yPos, { align: 'center' });
 
