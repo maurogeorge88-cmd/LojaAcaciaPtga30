@@ -182,6 +182,31 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     return !temDesligamentoPermanente;
   };
 
+  // ── Mapa de licenças: { irmaoId: Set<sessaoIndex> } ──────────────────────────
+  const mapaLicencas = {};
+  irmaos.forEach(irmao => {
+    const licencas = historicoSituacoes?.filter(sit => {
+      if (sit.membro_id !== irmao.id) return false;
+      const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return tipo.includes('licen');
+    }) || [];
+    if (licencas.length === 0) return;
+
+    const indices = new Set();
+    sessoes.forEach((sessao, idx) => {
+      const ds = new Date(sessao.data_sessao + 'T00:00:00');
+      licencas.forEach(lic => {
+        const di = new Date(lic.data_inicio + 'T00:00:00');
+        const df = lic.data_fim ? new Date(lic.data_fim + 'T00:00:00') : null;
+        if (ds >= di && (!df || ds <= df)) indices.add(idx);
+      });
+    });
+    if (indices.size > 0) mapaLicencas[irmao.id] = indices;
+  });
+
+  // Índice de linha por irmão (para usar no didDrawCell)
+  const rowIrmaoIds = [];
+
   // Preparar dados dos irmãos (filtrados)
   const rows = irmaos
     .filter(irmao => deveAparecerNoRelatorio(irmao))
@@ -316,6 +341,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       }
     });
 
+    rowIrmaoIds.push(irmao.id);
     row.total = `${presencas}/${sessoesElegiveis}`;
     row.percentual = sessoesElegiveis > 0 
       ? `${Math.round((presencas / sessoesElegiveis) * 100)}%` 
@@ -389,6 +415,11 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       if (data.column.index >= headers.length - 2) {
         data.cell.styles.fillColor = [220, 240, 255];
         data.cell.styles.fontStyle = 'bold';
+        // Cabeçalho: texto preto (fundo claro, texto branco padrão não aparece)
+        if (data.section === 'head') {
+          data.cell.styles.textColor = [0, 0, 0];
+          data.cell.styles.fillColor = [180, 215, 255];
+        }
       }
       
       // Células com P em verde
@@ -407,6 +438,30 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         data.cell.styles.textColor = [200, 100, 0];
       }
     },
+    didDrawCell: function(data) {
+      if (data.section !== 'body') return;
+      const rowIdx = data.row.index;
+      if (rowIdx >= rowIrmaoIds.length) return; // linha de total
+      const irmaoId = rowIrmaoIds[rowIdx];
+      if (!mapaLicencas[irmaoId]) return;
+
+      // Verificar se esta coluna é uma sessão dentro do período de licença
+      const sessaoIdx = data.column.index - 2; // offset: col 0=nome, 1=grau
+      if (sessaoIdx < 0 || !mapaLicencas[irmaoId].has(sessaoIdx)) return;
+
+      // Desenhar "Lic." no canto inferior esquerdo da célula
+      doc.setFontSize(4.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(10, 36, 99); // azul escuro
+      const x = data.cell.x + 0.8;
+      const y = data.cell.y + data.cell.height - 1.2;
+      doc.text('Lic.', x, y);
+      // Restaurar
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(0);
+    },
+
     didDrawPage: function(data) {
       // Rodapé
       const pageCount = doc.internal.getNumberOfPages();
