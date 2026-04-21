@@ -1,496 +1,301 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-// Função auxiliar para calcular idade
 const calcularIdade = (dataNascimento) => {
   if (!dataNascimento) return null;
   const hoje = new Date();
   const nascimento = new Date(dataNascimento);
   let idade = hoje.getFullYear() - nascimento.getFullYear();
   const mes = hoje.getMonth() - nascimento.getMonth();
-  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) {
-    idade--;
-  }
+  if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) idade--;
   return idade;
 };
 
+const GRAU_COR = {
+  'Aprendiz':         { bg: 'rgba(139,92,246,0.15)', color: '#7c3aed', border: 'rgba(139,92,246,0.3)' },
+  'Companheiro':      { bg: 'rgba(6,182,212,0.15)',  color: '#0891b2', border: 'rgba(6,182,212,0.3)'  },
+  'Mestre':           { bg: 'rgba(245,158,11,0.15)', color: '#b45309', border: 'rgba(245,158,11,0.3)' },
+  'Mestre Instalado': { bg: 'rgba(16,185,129,0.15)', color: '#065f46', border: 'rgba(16,185,129,0.3)' },
+};
+
 export default function ModalVisualizarPresenca({ sessaoId, onFechar, onEditar }) {
-  const [loading, setLoading] = useState(true);
-  const [sessao, setSessao] = useState(null);
-  const [presencas, setPresencas] = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [sessao, setSessao]         = useState(null);
+  const [presencas, setPresencas]   = useState([]);
   const [visitantes, setVisitantes] = useState([]);
   const [visitanteForm, setVisitanteForm] = useState({ nome_visitante: '', nome_loja: '', cidade: '' });
 
-  useEffect(() => {
-    if (sessaoId) {
-      carregarDados();
-    }
-  }, [sessaoId]);
+  useEffect(() => { if (sessaoId) carregarDados(); }, [sessaoId]);
 
   const carregarDados = async () => {
     try {
       setLoading(true);
-
-      // Buscar dados da sessão
       const { data: sessaoData, error: sessaoError } = await supabase
         .from('sessoes_presenca')
-        .select(`
-          *,
-          graus_sessao:grau_sessao_id (
-            nome,
-            grau_minimo_requerido
-          ),
-          classificacoes_sessao:classificacao_id (
-            nome
-          )
-        `)
-        .eq('id', sessaoId)
-        .single();
-
+        .select('*, graus_sessao:grau_sessao_id(nome,grau_minimo_requerido), classificacoes_sessao:classificacao_id(nome)')
+        .eq('id', sessaoId).single();
       if (sessaoError) throw sessaoError;
       setSessao(sessaoData);
 
-      // Buscar histórico de situações
       const { data: historicoSituacoes } = await supabase
-        .from('historico_situacoes')
-        .select('*')
-        .eq('status', 'ativa');
+        .from('historico_situacoes').select('*').eq('status', 'ativa');
 
-      // Buscar TODOS os irmãos ativos (SEM filtro de grau na query)
-      const grauMinimoRaw = sessaoData?.graus_sessao?.grau_minimo_requerido;
-      const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : null;
-      
-      
-      const { data: todosIrmaos, error: irmaosError } = await supabase
+      const grauMinimo = sessaoData?.graus_sessao?.grau_minimo_requerido
+        ? parseInt(sessaoData.graus_sessao.grau_minimo_requerido) : null;
+
+      const { data: todosIrmaos } = await supabase
         .from('irmaos')
-        .select('id, nome, foto_url, data_nascimento, situacao, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento')
-        .eq('status', 'ativo')
-        .order('nome');
+        .select('id,nome,foto_url,data_nascimento,situacao,data_iniciacao,data_ingresso_loja,data_elevacao,data_exaltacao,mestre_instalado,data_instalacao,data_falecimento')
+        .eq('status', 'ativo').order('nome');
 
-      if (irmaosError) throw irmaosError;
+      const { data: registrosPresenca } = await supabase
+        .from('registros_presenca').select('membro_id,presente,justificativa').eq('sessao_id', sessaoId);
 
-      // Buscar registros de presença existentes
-      const { data: registrosPresenca, error: registrosError } = await supabase
-        .from('registros_presenca')
-        .select('membro_id, presente, justificativa')
-        .eq('sessao_id', sessaoId);
+      const { data: visitantesData } = await supabase
+        .from('visitantes_sessao').select('*').eq('sessao_id', sessaoId).order('created_at', { ascending: false });
+      setVisitantes(visitantesData || []);
 
-      if (registrosError) throw registrosError;
-
-      // Criar um Map para acesso rápido aos registros
       const registrosMap = new Map();
-      registrosPresenca?.forEach(reg => {
-        registrosMap.set(reg.membro_id, reg);
+      registrosPresenca?.forEach(r => registrosMap.set(r.membro_id, r));
+
+      const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
+
+      const presencasComGrau = (todosIrmaos || []).filter(irmao => {
+        if (!irmao) return false;
+        const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+          if (sit.membro_id !== irmao.id) return false;
+          const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          if (!['desligado','desligamento','irregular','suspenso','excluido','ex-oficio'].includes(tipo)) return false;
+          const di = new Date(sit.data_inicio + 'T00:00:00');
+          if (dataSessao < di) return false;
+          if (sit.data_fim) { const df = new Date(sit.data_fim + 'T00:00:00'); return dataSessao >= di && dataSessao <= df; }
+          return dataSessao >= di;
+        });
+        if (situacaoBloqueadora) return false;
+        const dataIngresso = irmao.data_ingresso_loja
+          ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
+          : irmao.data_iniciacao ? new Date(irmao.data_iniciacao + 'T00:00:00') : null;
+        if (!dataIngresso || dataSessao < dataIngresso) return false;
+        if (irmao.data_falecimento && dataSessao > new Date(irmao.data_falecimento + 'T00:00:00')) return false;
+        if (grauMinimo === 2) { if (!irmao.data_elevacao) return false; return dataSessao >= new Date(irmao.data_elevacao + 'T00:00:00'); }
+        if (grauMinimo === 3) { if (!irmao.data_exaltacao) return false; return dataSessao >= new Date(irmao.data_exaltacao + 'T00:00:00'); }
+        return true;
+      }).map(irmao => {
+        let grau = 'Sem Grau';
+        if (irmao.data_exaltacao && dataSessao >= new Date(irmao.data_exaltacao + 'T00:00:00')) {
+          if (irmao.mestre_instalado) {
+            grau = (irmao.data_instalacao && dataSessao >= new Date(irmao.data_instalacao + 'T00:00:00')) ? 'Mestre Instalado' : 'Mestre';
+          } else { grau = 'Mestre'; }
+        } else if (irmao.data_elevacao && dataSessao >= new Date(irmao.data_elevacao + 'T00:00:00')) {
+          grau = 'Companheiro';
+        } else if (irmao.data_iniciacao) { grau = 'Aprendiz'; }
+
+        const idade = calcularIdade(irmao.data_nascimento);
+        const registro = registrosMap.get(irmao.id) || { presente: false, justificativa: null };
+        return { id: `presenca-${irmao.id}`, membro_id: irmao.id, irmaos: irmao, presente: registro.presente, justificativa: registro.justificativa, grau, tem_prerrogativa: idade >= 70 };
       });
 
-      // Buscar visitantes
-      const { data: visitantesData, error: visitantesError } = await supabase
-        .from('visitantes_sessao')
-        .select('*')
-        .eq('sessao_id', sessaoId)
-        .order('created_at', { ascending: false });
-
-      if (!visitantesError) {
-        setVisitantes(visitantesData || []);
-      }
-
-      // Filtrar e adicionar grau calculado NA DATA DA SESSÃO
-      const dataSessao = new Date(sessaoData.data_sessao + 'T00:00:00');
-      
-      
-      const presencasComGrau = todosIrmaos
-        .filter(irmao => {
-          if (!irmao) return false;
-          
-          const nome = irmao.nome;
-          
-          // Filtro 0: Histórico de situações - verificar se estava em situação bloqueadora na data
-          // APENAS: desligamento, irregular, suspenso, excluído (NÃO licença)
-          const situacaoBloqueadora = historicoSituacoes?.find(sit => {
-            if (sit.membro_id !== irmao.id) return false;
-            
-            // Verificar se é situação bloqueadora
-            const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-            const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
-            
-            if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
-            
-            const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
-            
-            // Sessão antes da situação começar - está OK
-            if (dataSessao < dataInicio) return false;
-            
-            // Se tem data_fim, verificar se sessão está dentro do período
-            if (sit.data_fim) {
-              const dataFim = new Date(sit.data_fim + 'T00:00:00');
-              return dataSessao >= dataInicio && dataSessao <= dataFim;
-            }
-            
-            // Sem data_fim (indefinida) - se já começou, bloqueia
-            return dataSessao >= dataInicio;
-          });
-          
-          if (situacaoBloqueadora) {
-            return false;
-          }
-          
-          // Filtro 1: Data de ingresso - só aparece se já estava na loja
-          const dataIngresso = irmao.data_ingresso_loja 
-            ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
-            : irmao.data_iniciacao 
-            ? new Date(irmao.data_iniciacao + 'T00:00:00')
-            : null;
-          
-          if (!dataIngresso) {
-            return false;
-          }
-          if (dataSessao < dataIngresso) {
-            return false;
-          }
-          
-          // Filtro 2: Falecimento
-          if (irmao.data_falecimento) {
-            const dataFalecimento = new Date(irmao.data_falecimento + 'T00:00:00');
-            if (dataSessao > dataFalecimento) {
-              return false;
-            }
-          }
-          
-          // Filtro 3: Grau mínimo NA DATA DA SESSÃO (igual RegistroPresenca)
-          if (grauMinimo === 2) {
-            if (!irmao.data_elevacao) {
-              return false;
-            }
-            const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            const passou = dataSessao >= dataElevacao;
-            console.log(`${passou ? '✅' : '❌'} ${nome} - Sessão Comp, elevação:`, irmao.data_elevacao, 'passou:', passou);
-            return passou;
-          } else if (grauMinimo === 3) {
-            if (!irmao.data_exaltacao) {
-              return false;
-            }
-            const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            const passou = dataSessao >= dataExaltacao;
-            console.log(`${passou ? '✅' : '❌'} ${nome} - Sessão Mestre, exaltação:`, irmao.data_exaltacao, 'passou:', passou);
-            return passou;
-          }
-          
-          return true;
-        })
-        .map(irmao => {
-          let grau = 'Sem Grau';
-          
-          // Calcular grau que o irmão tinha NA DATA DA SESSÃO
-          if (irmao.data_exaltacao) {
-            const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
-            if (dataSessao >= dataExaltacao) {
-              // Era Mestre na data da sessão
-              if (irmao.mestre_instalado) {
-                // Se tem data de instalação, verifica se já era instalado na data
-                if (irmao.data_instalacao) {
-                  const dataInstalacao = new Date(irmao.data_instalacao + 'T00:00:00');
-                  grau = dataSessao >= dataInstalacao ? 'Mestre Instalado' : 'Mestre';
-                } else {
-                  // Sem data de instalação, considera Mestre Instalado
-                  grau = 'Mestre Instalado';
-                }
-              } else {
-                grau = 'Mestre';
-              }
-            } else if (irmao.data_elevacao) {
-              const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-              grau = dataSessao >= dataElevacao ? 'Companheiro' : 'Aprendiz';
-            } else {
-              grau = 'Aprendiz';
-            }
-          } else if (irmao.data_elevacao) {
-            const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
-            grau = dataSessao >= dataElevacao ? 'Companheiro' : 'Aprendiz';
-          } else if (irmao.data_iniciacao) {
-            grau = 'Aprendiz';
-          }
-
-          const idade = irmao.data_nascimento ? calcularIdade(irmao.data_nascimento) : null;
-          const tem_prerrogativa = idade >= 70;
-
-          // Buscar registro de presença (se existir)
-          const registro = registrosMap.get(irmao.id) || { presente: false, justificativa: null };
-
-          return {
-            id: `presenca-${irmao.id}`,
-            membro_id: irmao.id,
-            irmaos: irmao,
-            presente: registro.presente,
-            justificativa: registro.justificativa,
-            grau,
-            tem_prerrogativa
-          };
-        });
-
       setPresencas(presencasComGrau);
-
-    } catch (error) {
-      console.error('Erro ao carregar presença:', error);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error('Erro ao carregar presença:', e); }
+    finally { setLoading(false); }
   };
 
-  const formatarData = (data) => {
-    if (!data) return '-';
-    return new Date(data + 'T00:00:00').toLocaleDateString('pt-BR');
-  };
+  const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '-';
 
   const adicionarVisitante = async () => {
     if (!visitanteForm.nome_visitante || !visitanteForm.nome_loja || !visitanteForm.cidade) return;
-    
-    const { error } = await supabase
-      .from('visitantes_sessao')
-      .insert([{ sessao_id: sessaoId, ...visitanteForm }]);
-    
-    if (!error) {
-      carregarDados();
-      setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' });
-    }
+    const { error } = await supabase.from('visitantes_sessao').insert([{ sessao_id: sessaoId, ...visitanteForm }]);
+    if (!error) { carregarDados(); setVisitanteForm({ nome_visitante: '', nome_loja: '', cidade: '' }); }
   };
 
   const excluirVisitante = async (id) => {
-    const { error } = await supabase
-      .from('visitantes_sessao')
-      .delete()
-      .eq('id', id);
-    
+    const { error } = await supabase.from('visitantes_sessao').delete().eq('id', id);
     if (!error) carregarDados();
   };
 
-  const estatisticas = {
-    total: presencas.length,
-    presentes: presencas.filter(p => p.presente).length,
-    licenciados: presencas.filter(p => !p.presente && p.irmaos?.situacao?.toLowerCase() === 'licenciado').length,
-    ausentesJustificados: presencas.filter(p => !p.presente && p.justificativa && p.irmaos?.situacao?.toLowerCase() !== 'licenciado').length,
-    ausentesInjustificados: presencas.filter(p => !p.presente && !p.justificativa && p.irmaos?.situacao?.toLowerCase() !== 'licenciado').length
+  const est = {
+    total:    presencas.length,
+    pres:     presencas.filter(p => p.presente).length,
+    lic:      presencas.filter(p => !p.presente && p.irmaos?.situacao?.toLowerCase() === 'licenciado').length,
+    just:     presencas.filter(p => !p.presente && p.justificativa && p.irmaos?.situacao?.toLowerCase() !== 'licenciado').length,
+    injust:   presencas.filter(p => !p.presente && !p.justificativa && p.irmaos?.situacao?.toLowerCase() !== 'licenciado').length,
   };
+  const pct = est.total > 0 ? Math.round((est.pres / est.total) * 100) : 0;
 
-  const percentualPresenca = estatisticas.total > 0 
-    ? Math.round((estatisticas.presentes / estatisticas.total) * 100) 
-    : 0;
+  const sInput = { background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.4rem 0.6rem', fontSize: '0.82rem', flex: 1 };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Cabeçalho */}
-        <div className="bg-blue-600 text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Visualizar Presença</h2>
-              {sessao && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-blue-100">
-                    {sessao.graus_sessao?.nome}
-                    {sessao.classificacoes_sessao && ` - ${sessao.classificacoes_sessao.nome}`}
-                  </p>
-                  <p className="text-sm text-blue-200">
-                    Data: {formatarData(sessao.data_sessao)}
-                  </p>
-                </div>
-              )}
-            </div>
-            <button
-              onClick={onFechar}
-              className="text-white hover:bg-blue-700 rounded-full p-2 transition"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem' }}>
+      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '56rem', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-xl)' }}>
+
+        {/* ── Cabeçalho ── */}
+        <div style={{ background: 'var(--color-accent)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff', margin: 0 }}>Visualizar Presença</h2>
+            {sessao && (
+              <div style={{ marginTop: '0.35rem' }}>
+                <p style={{ color: 'rgba(255,255,255,0.9)', margin: 0, fontSize: '0.9rem', fontWeight: '600' }}>
+                  {sessao.graus_sessao?.nome}{sessao.classificacoes_sessao ? ` - ${sessao.classificacoes_sessao.nome}` : ''}
+                </p>
+                <p style={{ color: 'rgba(255,255,255,0.75)', margin: '0.1rem 0 0', fontSize: '0.8rem' }}>
+                  Data: {fmtData(sessao.data_sessao)}
+                </p>
+              </div>
+            )}
           </div>
+          <button onClick={onFechar} style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', fontWeight: '700', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
         </div>
 
-        {/* Estatísticas */}
+        {/* ── Estatísticas ── */}
         {!loading && (
-          <div className="grid grid-cols-5 gap-4 p-6 bg-gray-50 border-b">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Total</p>
-              <p className="text-2xl font-bold text-gray-800">{estatisticas.total}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-green-600">Presentes</p>
-              <p className="text-2xl font-bold text-green-700">{estatisticas.presentes}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-orange-600">Licenciados</p>
-              <p className="text-2xl font-bold text-orange-700">{estatisticas.licenciados}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-yellow-600">Justificados</p>
-              <p className="text-2xl font-bold text-yellow-700">{estatisticas.ausentesJustificados}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-red-600">Injustificados</p>
-              <p className="text-2xl font-bold text-red-700">{estatisticas.ausentesInjustificados}</p>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', flexShrink: 0 }}>
+            {[
+              { label: 'Total',         val: est.total,  cor: 'var(--color-text)' },
+              { label: 'Presentes',     val: est.pres,   cor: '#10b981' },
+              { label: 'Licenciados',   val: est.lic,    cor: '#f59e0b' },
+              { label: 'Justificados',  val: est.just,   cor: '#f59e0b' },
+              { label: 'Injustificados',val: est.injust, cor: '#ef4444' },
+            ].map((s, i) => (
+              <div key={s.label} style={{ textAlign: 'center', padding: '0.9rem 0.5rem', borderRight: i < 4 ? '1px solid var(--color-border)' : 'none' }}>
+                <p style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--color-text-muted)', margin: '0 0 0.2rem', textTransform: 'uppercase' }}>{s.label}</p>
+                <p style={{ fontSize: '1.6rem', fontWeight: '800', color: s.cor, margin: 0 }}>{s.val}</p>
+              </div>
+            ))}
           </div>
         )}
 
-        {/* Conteúdo */}
-        <div className="flex-1 overflow-y-auto p-6">
+        {/* ── Tabela de presenças ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-4 text-gray-600">Carregando presenças...</p>
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem', gap: '0.75rem' }}>
+              <div style={{ width: '2.5rem', height: '2.5rem', border: '3px solid var(--color-border)', borderTopColor: 'var(--color-accent)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', margin: 0 }}>Carregando presenças...</p>
             </div>
           ) : presencas.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              Nenhuma presença registrada nesta sessão.
-            </div>
+            <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', padding: '3rem' }}>Nenhuma presença registrada nesta sessão.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Irmão
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Grau
-                    </th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Presença
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Justificativa
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {presencas.map((registro) => (
-                    <tr key={registro.id} className={
-                      registro.presente 
-                        ? 'bg-green-50 hover:bg-green-100' 
-                        : registro.justificativa 
-                          ? 'bg-yellow-50 hover:bg-yellow-100'
-                          : 'bg-red-50 hover:bg-red-100'
-                    }>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          {registro.irmaos.foto_url && (
-                            <img
-                              src={registro.irmaos.foto_url}
-                              alt={registro.irmaos.nome}
-                              className="h-10 w-10 rounded-full mr-3 object-cover"
-                            />
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--color-surface-2)' }}>
+                  {['Irmão', 'Grau', 'Presença', 'Justificativa'].map((h, i) => (
+                    <th key={h} style={{ padding: '0.5rem 0.75rem', textAlign: i === 0 ? 'left' : 'center', fontSize: '0.65rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '2px solid var(--color-border)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {presencas.map((reg, idx) => {
+                  const ehLic  = reg.irmaos?.situacao?.toLowerCase() === 'licenciado';
+                  const bgRow  = reg.presente
+                    ? idx % 2 === 0 ? 'rgba(16,185,129,0.06)' : 'rgba(16,185,129,0.1)'
+                    : reg.justificativa
+                      ? idx % 2 === 0 ? 'rgba(245,158,11,0.06)' : 'rgba(245,158,11,0.1)'
+                      : idx % 2 === 0 ? 'rgba(239,68,68,0.04)' : 'rgba(239,68,68,0.08)';
+                  const grauCor = GRAU_COR[reg.grau] || { bg: 'var(--color-surface-2)', color: 'var(--color-text-muted)', border: 'var(--color-border)' };
+                  return (
+                    <tr key={reg.id} style={{ background: bgRow, borderBottom: '1px solid var(--color-border)' }}>
+                      {/* Irmão */}
+                      <td style={{ padding: '0.55rem 0.75rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          {reg.irmaos.foto_url && (
+                            <img src={reg.irmaos.foto_url} alt={reg.irmaos.nome} style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                           )}
                           <div>
-                            <div className="text-sm font-medium text-gray-900">
-                              {registro.irmaos.nome}
-                            </div>
-                            <div className="flex gap-2 mt-1">
-                              {registro.irmaos.situacao && registro.irmaos.situacao.toLowerCase() === 'licenciado' && (
-                                <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-orange-100 text-orange-800">
-                                  Licenciado
-                                </span>
+                            <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: '600', color: 'var(--color-text)' }}>{reg.irmaos.nome}</p>
+                            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.15rem', flexWrap: 'wrap' }}>
+                              {ehLic && (
+                                <span style={{ fontSize: '0.62rem', fontWeight: '700', padding: '0.1rem 0.4rem', borderRadius: '999px', background: 'rgba(245,158,11,0.15)', color: '#b45309', border: '1px solid rgba(245,158,11,0.3)' }}>Licenciado</span>
                               )}
-                              {registro.tem_prerrogativa && (
-                                <span className="inline-block px-2 py-0.5 text-xs font-semibold rounded bg-purple-100 text-purple-800">
-                                  Com Prerrogativa
-                                </span>
+                              {reg.tem_prerrogativa && (
+                                <span style={{ fontSize: '0.62rem', fontWeight: '700', padding: '0.1rem 0.4rem', borderRadius: '999px', background: 'rgba(139,92,246,0.15)', color: '#7c3aed', border: '1px solid rgba(139,92,246,0.3)' }}>Prerrogativa</span>
                               )}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {registro.grau}
+                      {/* Grau */}
+                      <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.2rem 0.6rem', borderRadius: '999px', background: grauCor.bg, color: grauCor.color, border: `1px solid ${grauCor.border}` }}>
+                          {reg.grau}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-center">
-                        {registro.presente ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                            ✓ Presente
-                          </span>
-                        ) : registro.irmaos.situacao && registro.irmaos.situacao.toLowerCase() === 'licenciado' ? (
-                          <span className="text-sm text-gray-400 font-medium">-</span>
-                        ) : registro.justificativa ? (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                            J Justificado
-                          </span>
+                      {/* Presença */}
+                      <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>
+                        {reg.presente ? (
+                          <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '0.2rem 0.65rem', borderRadius: '999px', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>✓ Presente</span>
+                        ) : ehLic ? (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>—</span>
+                        ) : reg.justificativa ? (
+                          <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '0.2rem 0.65rem', borderRadius: '999px', background: 'rgba(245,158,11,0.15)', color: '#b45309', border: '1px solid rgba(245,158,11,0.3)' }}>J Justificado</span>
                         ) : (
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                            ✗ Ausente
-                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '0.2rem 0.65rem', borderRadius: '999px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>✗ Ausente</span>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        {registro.justificativa ? (
-                          <div className="text-sm text-gray-700 bg-yellow-100 px-3 py-2 rounded">
-                            {registro.justificativa}
-                          </div>
+                      {/* Justificativa */}
+                      <td style={{ padding: '0.55rem 0.75rem', textAlign: 'center' }}>
+                        {reg.justificativa ? (
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text)', background: 'rgba(245,158,11,0.1)', padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-md)', display: 'inline-block' }}>{reg.justificativa}</span>
                         ) : (
-                          <span className="text-sm text-gray-400">-</span>
+                          <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>—</span>
                         )}
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
 
-        {/* Seção de Visitantes - Altura limitada - SOMENTE VISUALIZAÇÃO */}
-        <div className="px-6 py-4 border-t bg-gray-50">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">👥 Visitantes</h3>
-
-          {/* Tabela com altura máxima de ~5cm (200px) e scroll vertical */}
-          {visitantes.length > 0 ? (
-            <div className="max-h-[200px] overflow-y-auto border border-gray-300 rounded">
-              <table className="w-full text-sm">
-                <thead className="sticky top-0 bg-gray-200 z-10">
-                  <tr>
-                    <th className="px-3 py-2 text-left">Nome</th>
-                    <th className="px-3 py-2 text-left">Loja</th>
-                    <th className="px-3 py-2 text-left">Cidade</th>
+        {/* ── Visitantes ── */}
+        <div style={{ padding: '0.75rem 1rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface-2)', flexShrink: 0 }}>
+          <h3 style={{ fontSize: '0.9rem', fontWeight: '700', color: 'var(--color-text)', margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            👥 Visitantes {visitantes.length > 0 && <span style={{ fontSize: '0.72rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', borderRadius: '999px', padding: '0.1rem 0.5rem', fontWeight: '700' }}>{visitantes.length}</span>}
+          </h3>
+          {visitantes.length === 0 ? (
+            <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: 0 }}>Nenhum visitante registrado.</p>
+          ) : (
+            <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+                <thead>
+                  <tr style={{ background: 'var(--color-surface-3)' }}>
+                    {['Nome', 'Loja', 'Cidade'].map(h => (
+                      <th key={h} style={{ padding: '0.35rem 0.6rem', textAlign: 'left', fontWeight: '700', color: 'var(--color-text-muted)', fontSize: '0.65rem', textTransform: 'uppercase' }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="bg-white">
-                  {visitantes.map((v) => (
-                    <tr key={v.id} className="border-b hover:bg-gray-50">
-                      <td className="px-3 py-2">{v.nome_visitante}</td>
-                      <td className="px-3 py-2">{v.nome_loja}</td>
-                      <td className="px-3 py-2">{v.cidade}</td>
+                <tbody>
+                  {visitantes.map((v, i) => (
+                    <tr key={v.id} style={{ background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderTop: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text)' }}>{v.nome_visitante}</td>
+                      <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text-muted)' }}>{v.nome_loja}</td>
+                      <td style={{ padding: '0.35rem 0.6rem', color: 'var(--color-text-muted)' }}>{v.cidade}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-          ) : (
-            <p className="text-gray-500 text-sm text-center py-3">Nenhum visitante registrado</p>
           )}
         </div>
 
-        {/* Rodapé */}
-        <div className="bg-gray-50 px-6 py-4 border-t flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            Taxa de Presença: <span className="font-bold text-lg">{percentualPresenca}%</span>
+        {/* ── Rodapé ── */}
+        <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--color-border)', background: 'var(--color-surface)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>Taxa de Presença:</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: '800', color: pct >= 70 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444' }}>{pct}%</span>
+            <div style={{ width: '80px', height: '6px', background: 'var(--color-surface-2)', borderRadius: '999px', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${pct}%`, background: pct >= 70 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444', borderRadius: '999px', transition: 'width 0.3s' }} />
+            </div>
           </div>
-          <div className="flex gap-3">
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
-              onClick={() => {
-                onFechar();
-                if (onEditar) {
-                  onEditar(sessaoId);
-                }
-              }}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition"
+              onClick={() => { onFechar(); if (onEditar) onEditar(sessaoId); }}
+              style={{ padding: '0.5rem 1.1rem', background: '#10b981', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: 'pointer', fontSize: '0.875rem' }}
             >
               ✏️ Editar Presenças
             </button>
             <button
               onClick={onFechar}
-              className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition"
+              style={{ padding: '0.5rem 1.1rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer', fontSize: '0.875rem' }}
             >
               Fechar
             </button>
