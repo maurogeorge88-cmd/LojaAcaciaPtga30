@@ -1,4 +1,4 @@
-import jsPDF from 'jspdf';import jsPDF from 'jspdf';
+import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja) => {
