@@ -186,8 +186,41 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
   const rows = irmaos
     .filter(irmao => deveAparecerNoRelatorio(irmao))
     .map(irmao => {
+    // ── Rótulo sob o nome ──────────────────────────────────────────
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    let labelNome = '';
+
+    // Prerrogativa por idade (data_prerrogativa <= hoje)
+    if (irmao.data_prerrogativa) {
+      const dataPrer = new Date(irmao.data_prerrogativa);
+      if (hoje >= dataPrer) labelNome = 'Prerrogativa';
+    }
+
+    // Licença vigente — verificar no histórico (tipo=licenca, inicio<=hoje, fim ausente ou >=hoje)
+    if (!labelNome) {
+      const licencaVigente = historicoSituacoes?.find(sit => {
+        if (sit.membro_id !== irmao.id) return false;
+        const tipo = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        if (!tipo.includes('licen')) return false;
+        const di = new Date(sit.data_inicio + 'T00:00:00');
+        if (hoje < di) return false;
+        if (sit.data_fim) {
+          const df = new Date(sit.data_fim + 'T00:00:00');
+          return hoje <= df; // vigente: ainda não venceu
+        }
+        return true; // sem data_fim = licença indefinida
+      });
+      if (licencaVigente) labelNome = 'Licença';
+    }
+
+    // Também verificar campo direto situacao='licenciado' (sem histórico)
+    if (!labelNome && irmao.situacao?.toLowerCase() === 'licenciado') {
+      labelNome = 'Licença';
+    }
+
     const row = {
-      nome: formatarNome(irmao.nome),
+      nome: labelNome ? `${formatarNome(irmao.nome)}
+${labelNome}` : formatarNome(irmao.nome),
       grau: obterGrauIrmao(irmao)
     };
 
@@ -342,6 +375,16 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
       if (data.row.index === rows.length - 1) {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.fillColor = [230, 230, 230];
+      }
+
+      // Coluna nome: se tem label (Prerrogativa/Licença), estilizar célula
+      if (data.column.index === 0 && data.section === 'body' && data.row.index < rows.length - 1) {
+        const raw = data.cell.raw || '';
+        if (raw.includes('
+Prerrogativa') || raw.includes('
+Licença')) {
+          data.cell.styles.fontSize = 6.5;
+        }
       }
       
       // Colunas Total e %
