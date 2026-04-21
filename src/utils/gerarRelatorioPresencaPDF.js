@@ -219,8 +219,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     }
 
     const row = {
-      nome: labelNome ? `${formatarNome(irmao.nome)}
-${labelNome}` : formatarNome(irmao.nome),
+      nome: labelNome ? (formatarNome(irmao.nome) + '\n' + labelNome) : formatarNome(irmao.nome),
       grau: obterGrauIrmao(irmao)
     };
 
@@ -379,10 +378,8 @@ ${labelNome}` : formatarNome(irmao.nome),
 
       // Coluna nome: se tem label (Prerrogativa/Licença), estilizar célula
       if (data.column.index === 0 && data.section === 'body' && data.row.index < rows.length - 1) {
-        const raw = data.cell.raw || '';
-        if (raw.includes('
-Prerrogativa') || raw.includes('
-Licença')) {
+        const raw = String(data.cell.raw || '');
+        if (raw.includes('Prerrogativa') || raw.includes('Licen')) {
           data.cell.styles.fontSize = 6.5;
         }
       }
