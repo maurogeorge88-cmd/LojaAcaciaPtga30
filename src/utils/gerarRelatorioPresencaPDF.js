@@ -219,7 +219,7 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
     }
 
     const row = {
-      nome: labelNome ? (formatarNome(irmao.nome) + '\n' + labelNome) : formatarNome(irmao.nome),
+      nome: labelNome ? (formatarNome(irmao.nome) + ' (' + labelNome + ')') : formatarNome(irmao.nome),
       grau: obterGrauIrmao(irmao)
     };
 
@@ -376,17 +376,11 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         data.cell.styles.fillColor = [230, 230, 230];
       }
 
-      // Coluna nome: colorir label Prerrogativa/Licença em azul escuro
+      // Coluna nome: fonte menor para caber em uma linha quando tem label
       if (data.column.index === 0 && data.section === 'body' && data.row.index < rows.length - 1) {
         const raw = String(data.cell.raw || '');
         if (raw.includes('Prerrogativa') || raw.includes('Licen')) {
-          data.cell.styles.fontSize = 6.5;
-          // Renderizar com cor — substituir texto simples por array de partes coloridas
-          const linhas = raw.split('\n');
-          if (linhas.length > 1) {
-            data.cell.text = [linhas[0]]; // jsPDF-autotable aceita array de linhas
-            // A cor do label é aplicada via didDrawCell abaixo
-          }
+          data.cell.styles.fontSize = 5.5;
         }
       }
       
@@ -412,29 +406,6 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         data.cell.styles.textColor = [200, 100, 0];
       }
     },
-    didDrawCell: function(data) {
-      // Desenhar segunda linha (Prerrogativa / Licença) em azul escuro
-      if (data.column.index === 0 && data.section === 'body' && data.row.index < rows.length - 1) {
-        const raw = String(data.cell.raw || '');
-        const linhas = raw.split('\n');
-        if (linhas.length > 1) {
-          const label = linhas[1];
-          // Calcular posição Y da segunda linha dentro da célula
-          const fontSize = 6;
-          doc.setFontSize(fontSize);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(10, 36, 99); // azul escuro
-          const x = data.cell.x + data.cell.padding('left');
-          const y = data.cell.y + data.cell.padding('top') + (fontSize * 0.352) + 3.5;
-          doc.text(label, x, y);
-          // Restaurar cor padrão
-          doc.setTextColor(0);
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(7);
-        }
-      }
-    },
-
     didDrawPage: function(data) {
       // Rodapé
       const pageCount = doc.internal.getNumberOfPages();
