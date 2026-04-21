@@ -221,11 +221,26 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         }
       }
 
-      // Verificar situação (irregular, suspenso, licença)
+      // Verificar prerrogativa por idade (≥70 anos na data da sessão)
+      if (irmao.data_prerrogativa) {
+        const dataPrer = new Date(irmao.data_prerrogativa);
+        if (dataSessao >= dataPrer) {
+          row[`sessao_${index}`] = '-';
+          return; // não computa como elegível
+        }
+      }
+
+      // Verificar situação via histórico (irregular, suspenso, licença)
       const situacao = verificarSituacaoNaData(irmao.id, dataSessao);
       if (situacao) {
         row[`sessao_${index}`] = '-';
-        return;
+        return; // não computa como elegível
+      }
+
+      // Verificar situação atual do campo direto (licenciado)
+      if (irmao.situacao?.toLowerCase() === 'licenciado') {
+        row[`sessao_${index}`] = '-';
+        return; // licenciado não computa falta
       }
 
       // Verificar grau
