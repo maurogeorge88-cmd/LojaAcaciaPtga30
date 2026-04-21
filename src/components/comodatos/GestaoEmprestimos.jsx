@@ -12,6 +12,9 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [filtroAno, setFiltroAno]       = useState('todos');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [modalRelatorio, setModalRelatorio]   = useState(false);
+  const [modalSubst, setModalSubst]           = useState(null);
+  // modalSubst: { empId, item: {id, equipamento_id, ...}, equipDisp: [] }
+  const [substSelecionado, setSubstSelecionado] = useState(''); // id do equipamento substituto
   const [relAno, setRelAno]             = useState(new Date().getFullYear());
   const [relIncluirOutrosAnos, setRelIncluirOutrosAnos] = useState(false);
   const [relPeriodo, setRelPeriodo]     = useState('ano');   // mes|trimestre|semestre|ano
@@ -629,6 +632,40 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   };
 
 
+  const abrirSubstituicao = async (emp, item) => {
+    // Buscar equipamentos disponíveis do mesmo tipo preferencialmente
+    const { data: disponiveis } = await supabase
+      .from('equipamentos')
+      .select('id, numero_patrimonio, tipos_equipamentos(nome)')
+      .eq('status', 'disponivel')
+      .order('numero_patrimonio');
+    setSubstSelecionado('');
+    setModalSubst({ empId: emp.id, item, equipDisp: disponiveis || [] });
+  };
+
+  const realizarSubstituicao = async () => {
+    if (!substSelecionado || !modalSubst) return;
+    const { empId, item } = modalSubst;
+    try {
+      // 1. Liberar equipamento antigo → disponivel
+      await supabase.from('equipamentos').update({ status: 'disponivel' }).eq('id', item.equipamento_id);
+
+      // 2. Atualizar item do comodato para o novo equipamento
+      await supabase.from('comodato_itens')
+        .update({ equipamento_id: parseInt(substSelecionado) })
+        .eq('id', item.id);
+
+      // 3. Marcar novo equipamento como emprestado
+      await supabase.from('equipamentos').update({ status: 'emprestado' }).eq('id', parseInt(substSelecionado));
+
+      showSuccess('Equipamento substituído com sucesso!');
+      setModalSubst(null);
+      carregarDados();
+    } catch (e) {
+      showError('Erro ao substituir: ' + e.message);
+    }
+  };
+
   const gerarRelatorio = async () => {
     try {
       showSuccess('Gerando relatório...');
@@ -1236,22 +1273,21 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                     </p>
                   )}
                   {item.status === 'emprestado' && permissoes?.pode_editar_comodatos && (
-                    <button
-                      onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
-                      style={{
-                        width: '100%',
-                        marginTop: '0.25rem',
-                        padding: '0.25rem 0.5rem',
-                        background: 'var(--color-info)',
-                        color: 'white',
-                        fontSize: '0.75rem',
-                        border: 'none',
-                        borderRadius: '0.25rem',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Devolver
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.25rem' }}>
+                      <button
+                        onClick={() => devolverItem(emp.id, item.id, item.equipamento_id)}
+                        style={{ flex: 1, padding: '0.25rem 0.5rem', background: 'var(--color-info)', color: 'white', fontSize: '0.75rem', border: 'none', borderRadius: '0.25rem', cursor: 'pointer' }}
+                      >
+                        Devolver
+                      </button>
+                      <button
+                        onClick={() => abrirSubstituicao(emp, item)}
+                        style={{ flex: 1, padding: '0.25rem 0.5rem', background: '#f59e0b', color: 'white', fontSize: '0.75rem', border: 'none', borderRadius: '0.25rem', cursor: 'pointer' }}
+                        title="Substituir equipamento"
+                      >
+                        🔁 Substituir
+                      </button>
+                    </div>
                   )}
                 </div>
               ))}
@@ -1367,6 +1403,96 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                   📊 Gerar PDF
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SUBSTITUIÇÃO DE EQUIPAMENTO */}
+      {modalSubst && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '480px', overflow: 'hidden', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}>
+
+            {/* Header */}
+            <div style={{ background: '#f59e0b', padding: '1rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ fontWeight: '800', color: '#fff', margin: 0, fontSize: '1rem' }}>🔁 Substituir Equipamento</h3>
+                <p style={{ color: 'rgba(255,255,255,0.85)', margin: '0.2rem 0 0', fontSize: '0.78rem' }}>
+                  O equipamento antigo será liberado e o substituto marcado como emprestado
+                </p>
+              </div>
+              <button onClick={() => setModalSubst(null)}
+                style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', fontSize: '1rem', fontWeight: '700' }}>
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
+              {/* Equipamento sendo substituído */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Equipamento a ser substituído
+                </label>
+                <div style={{ padding: '0.75rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <span style={{ fontSize: '1.25rem' }}>📦</span>
+                  <div>
+                    <p style={{ margin: 0, fontWeight: '700', fontSize: '0.9rem', color: 'var(--color-text)' }}>
+                      {modalSubst.item.equipamentos?.numero_patrimonio} — {modalSubst.item.equipamentos?.tipos_equipamentos?.nome}
+                    </p>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#ef4444', fontWeight: '600' }}>Será liberado (disponível)</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Equipamento substituto */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Equipamento substituto — disponíveis ({modalSubst.equipDisp.length})
+                </label>
+                {modalSubst.equipDisp.length === 0 ? (
+                  <p style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>
+                    ⚠️ Nenhum equipamento disponível no momento.
+                  </p>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', maxHeight: '220px', overflowY: 'auto' }}>
+                    {modalSubst.equipDisp.map(eq => {
+                      const sel = substSelecionado === String(eq.id);
+                      return (
+                        <div key={eq.id}
+                          onClick={() => setSubstSelecionado(String(eq.id))}
+                          style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', cursor: 'pointer',
+                            background: sel ? 'rgba(16,185,129,0.12)' : 'var(--color-surface-2)',
+                            border: `1px solid ${sel ? '#10b981' : 'var(--color-border)'}`,
+                            transition: 'all 0.15s' }}>
+                          <span style={{ fontSize: '1rem', flexShrink: 0 }}>{sel ? '✅' : '⬜'}</span>
+                          <div>
+                            <p style={{ margin: 0, fontWeight: '600', fontSize: '0.85rem', color: sel ? '#10b981' : 'var(--color-text)' }}>
+                              {eq.numero_patrimonio}
+                            </p>
+                            <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>
+                              {eq.tipos_equipamentos?.nome}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Botões */}
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setModalSubst(null)}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={realizarSubstituicao} disabled={!substSelecionado}
+                style={{ flex: 2, padding: '0.6rem', background: substSelecionado ? '#10b981' : 'var(--color-surface-3)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: substSelecionado ? 'pointer' : 'not-allowed', opacity: substSelecionado ? 1 : 0.6 }}>
+                🔁 Confirmar Substituição
+              </button>
             </div>
           </div>
         </div>
