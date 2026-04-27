@@ -24,6 +24,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
   });
   const [modoEdicaoLivro, setModoEdicaoLivro] = useState(false);
   const [livroEditando, setLivroEditando] = useState(null);
+  const [modalLivroAberto, setModalLivroAberto] = useState(false);
 
   // Estados de empréstimos
   const [emprestimoForm, setEmprestimoForm] = useState({
@@ -79,6 +80,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       }
 
       limparFormularioLivro();
+      setModalLivroAberto(false);
       onUpdate();
 
     } catch (error) {
@@ -101,7 +103,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       quantidade_total: livro.quantidade_total,
       quantidade_disponivel: livro.quantidade_disponivel
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setModalLivroAberto(true);
   };
 
   // Excluir livro
