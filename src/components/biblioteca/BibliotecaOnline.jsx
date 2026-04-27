@@ -130,7 +130,11 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
       if (filePdf) {
         setUploadProgress('Enviando PDF...');
         const ext = filePdf.name.split('.').pop();
-        const path = `${Date.now()}_${form.titulo.replace(/\s+/g, '_').substring(0, 30)}.${ext}`;
+        const tituloSanitizado = form.titulo
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove acentos
+          .replace(/[^a-zA-Z0-9_\-]/g, '_')                 // só ASCII seguro
+          .substring(0, 40);
+        const path = `${Date.now()}_${tituloSanitizado}.${ext}`;
         const { error: upErr } = await supabase.storage.from('biblioteca-pdf').upload(path, filePdf, { upsert: false });
         if (upErr) throw new Error('Erro no upload do PDF: ' + upErr.message);
         const { data: urlData } = supabase.storage.from('biblioteca-pdf').getPublicUrl(path);
@@ -146,7 +150,7 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
       // Upload Capa
       if (fileCapa) {
         setUploadProgress('Enviando capa...');
-        const ext = fileCapa.name.split('.').pop();
+        const ext = fileCapa.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '');
         const path = `capa_${Date.now()}.${ext}`;
         const { error: upErr } = await supabase.storage.from('biblioteca-capas').upload(path, fileCapa, { upsert: false });
         if (upErr) throw new Error('Erro no upload da capa: ' + upErr.message);
