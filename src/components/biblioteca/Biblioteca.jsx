@@ -436,7 +436,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 ➕ Cadastrar Novo Livro
               </button>
             </div>
-          )}          )}
+          )}
 
           {/* FILTROS */}
           <div className="rounded-xl p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
