@@ -340,6 +340,23 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
               onMouseEnter={e => { if (pode) { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.15)'; }}}
               onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}>
 
+                {/* ── Cabeçalho do card: grau + botões admin ── */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem 0.6rem', background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', gap: '0.4rem' }}>
+                  <span style={{ padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.65rem', fontWeight: '800', background: gs.bg, color: gs.cor, border: `1px solid ${gs.brd}` }}>
+                    {livro.grau}
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.3rem', marginLeft: 'auto' }}>
+                    {permissoes?.pode_editar_biblioteca && (
+                      <>
+                        <button onClick={() => abrirCadastro(livro)}
+                          style={{ padding: '0.2rem 0.45rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: `1px solid var(--color-accent)`, borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', cursor: 'pointer' }}>✏️</button>
+                        <button onClick={() => excluir(livro)}
+                          style={{ padding: '0.2rem 0.45rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', cursor: 'pointer' }}>🗑️</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 {/* Capa */}
                 <div style={{ position: 'relative', paddingTop: '133%', background: 'var(--color-surface-2)', overflow: 'hidden' }}>
                   {livro.capa_url ? (
@@ -351,23 +368,10 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
                       <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', textAlign: 'center', padding: '0 0.5rem' }}>Sem capa</span>
                     </div>
                   )}
-                  {/* Badge de grau */}
-                  <span style={{ position: 'absolute', top: '0.4rem', left: '0.4rem', padding: '0.15rem 0.5rem', borderRadius: '999px', fontSize: '0.62rem', fontWeight: '800', background: gs.bg, color: gs.cor, border: `1px solid ${gs.brd}`, backdropFilter: 'blur(4px)' }}>
-                    {livro.grau}
-                  </span>
                   {/* Lock se não pode baixar */}
                   {!pode && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <span style={{ fontSize: '2rem' }}>🔒</span>
-                    </div>
-                  )}
-                  {/* Botões admin */}
-                  {permissoes?.pode_editar_biblioteca && (
-                    <div style={{ position: 'absolute', top: '0.4rem', right: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      <button onClick={() => abrirCadastro(livro)}
-                        style={{ padding: '0.25rem 0.4rem', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', cursor: 'pointer' }}>✏️</button>
-                      <button onClick={() => excluir(livro)}
-                        style={{ padding: '0.25rem 0.4rem', background: 'rgba(239,68,68,0.8)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', cursor: 'pointer' }}>🗑️</button>
                     </div>
                   )}
                 </div>
