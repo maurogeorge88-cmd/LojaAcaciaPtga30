@@ -426,115 +426,17 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
       {/* ABA LIVROS */}
       {abaAtiva === 'livros' && (
         <div className="space-y-6">
-          {/* FORMULÁRIO CADASTRO/EDIÇÃO */}
+          {/* BOTÃO CADASTRAR */}
           {permissoes?.pode_editar_biblioteca && (
-            <div className="rounded-xl overflow-hidden">
-              <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem"}}>
-                <h3 style={{color:"#fff",fontWeight:"700",fontSize:"1.1rem",margin:0}}>
-                  {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
-                </h3>
-              </div>
-
-              <div className="p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Título *</label>
-                    <input
-                      type="text"
-                      value={livroForm.titulo}
-                      onChange={(e) => setLivroForm({ ...livroForm, titulo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                      placeholder="Ex: Ritual do Aprendiz Maçom"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Autor</label>
-                    <input
-                      type="text"
-                      value={livroForm.autor}
-                      onChange={(e) => setLivroForm({ ...livroForm, autor: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                      placeholder="Ex: Rizzardo da Camino"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Categoria</label>
-                    <select
-                      value={livroForm.categoria}
-                      onChange={(e) => setLivroForm({ ...livroForm, categoria: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                    >
-                      <option value="Ritualística">Ritualística</option>
-                      <option value="Filosofia">Filosofia</option>
-                      <option value="História">História</option>
-                      <option value="Simbolismo">Simbolismo</option>
-                      <option value="Outros">Outros</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Grau</label>
-                    <select
-                      value={livroForm.grau}
-                      onChange={(e) => setLivroForm({ ...livroForm, grau: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                    >
-                      <option value="Aprendiz">Aprendiz</option>
-                      <option value="Companheiro">Companheiro</option>
-                      <option value="Mestre">Mestre</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Localização</label>
-                    <input
-                      type="text"
-                      value={livroForm.localizacao}
-                      onChange={(e) => setLivroForm({ ...livroForm, localizacao: e.target.value })}
-                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                      placeholder="Ex: Estante 2 - Prateleira B"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Quantidade Total</label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={livroForm.quantidade_total}
-                      onChange={(e) => setLivroForm({ 
-                        ...livroForm, 
-                        quantidade_total: parseInt(e.target.value) || 1,
-                        quantidade_disponivel: parseInt(e.target.value) || 1
-                      })}
-                      className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={salvarLivro}
-                    disabled={loading}
-                    className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold disabled:opacity-50"
-                  >
-                    {loading ? 'Salvando...' : (modoEdicaoLivro ? '💾 Salvar Alterações' : '➕ Cadastrar Livro')}
-                  </button>
-
-                  {modoEdicaoLivro && (
-                    <button
-                      onClick={limparFormularioLivro}
-                      className="px-6 py-2 rounded-lg font-semibold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                    >
-                      ❌ Cancelar
-                    </button>
-                  )}
-                </div>
-              </div>
+            <div style={{display:'flex',justifyContent:'flex-end'}}>
+              <button
+                onClick={() => { limparFormularioLivro(); setModalLivroAberto(true); }}
+                style={{padding:'0.55rem 1.25rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer',fontSize:'0.875rem'}}
+              >
+                ➕ Cadastrar Novo Livro
+              </button>
             </div>
-          )}
+          )}          )}
 
           {/* FILTROS */}
           <div className="rounded-xl p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
@@ -1001,5 +903,72 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
     </div>
   );
 };
+
+      {/* MODAL CADASTRO/EDIÇÃO DE LIVRO */}
+      {modalLivroAberto && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}>
+          <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'560px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.3)'}}>
+            {/* Header */}
+            <div style={{background:'var(--color-accent)',padding:'1rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+              <h3 style={{color:'#fff',fontWeight:'800',margin:0,fontSize:'1.05rem'}}>
+                {modoEdicaoLivro ? '✏️ Editar Livro' : '➕ Cadastrar Novo Livro'}
+              </h3>
+              <button onClick={() => { limparFormularioLivro(); setModalLivroAberto(false); }}
+                style={{background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',borderRadius:'50%',width:'2rem',height:'2rem',cursor:'pointer',fontWeight:'700',fontSize:'1.1rem'}}>×</button>
+            </div>
+            {/* Body */}
+            <div style={{overflowY:'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                <div style={{gridColumn:'1 / -1'}}>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Título *</label>
+                  <input type="text" value={livroForm.titulo} onChange={(e) => setLivroForm({...livroForm,titulo:e.target.value})} placeholder="Ex: Ritual do Aprendiz Maçom" style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Autor</label>
+                  <input type="text" value={livroForm.autor} onChange={(e) => setLivroForm({...livroForm,autor:e.target.value})} placeholder="Ex: Rizzardo da Camino" style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Categoria</label>
+                  <select value={livroForm.categoria} onChange={(e) => setLivroForm({...livroForm,categoria:e.target.value})} style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}}>
+                    <option value="Ritualística">Ritualística</option>
+                    <option value="Filosofia">Filosofia</option>
+                    <option value="História">História</option>
+                    <option value="Simbolismo">Simbolismo</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Grau</label>
+                  <select value={livroForm.grau} onChange={(e) => setLivroForm({...livroForm,grau:e.target.value})} style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}}>
+                    <option value="Aprendiz">Aprendiz</option>
+                    <option value="Companheiro">Companheiro</option>
+                    <option value="Mestre">Mestre</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Localização</label>
+                  <input type="text" value={livroForm.localizacao} onChange={(e) => setLivroForm({...livroForm,localizacao:e.target.value})} placeholder="Ex: Estante 2 - Prateleira B" style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Quantidade Total</label>
+                  <input type="number" min="1" value={livroForm.quantidade_total} onChange={(e) => setLivroForm({...livroForm,quantidade_total:parseInt(e.target.value)||1,quantidade_disponivel:parseInt(e.target.value)||1})} style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                </div>
+              </div>
+            </div>
+            {/* Footer */}
+            <div style={{padding:'1rem 1.25rem',borderTop:'1px solid var(--color-border)',display:'flex',gap:'0.5rem',flexShrink:0}}>
+              <button onClick={() => { limparFormularioLivro(); setModalLivroAberto(false); }}
+                style={{flex:1,padding:'0.6rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer'}}>
+                Cancelar
+              </button>
+              <button onClick={salvarLivro} disabled={loading}
+                style={{flex:2,padding:'0.6rem',background:loading?'var(--color-surface-3)':'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:loading?'not-allowed':'pointer'}}>
+                {loading ? 'Salvando...' : (modoEdicaoLivro ? '💾 Salvar Alterações' : '➕ Cadastrar Livro')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
 
 export default Biblioteca;
