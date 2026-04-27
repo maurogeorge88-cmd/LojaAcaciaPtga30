@@ -24,6 +24,7 @@ import Pranchas from './components/pranchas/Pranchas';
 import Comissoes from './components/comissoes/Comissoes';
 import Projetos from './components/projetos/Projetos';
 import Biblioteca from './components/biblioteca/Biblioteca';
+import BibliotecaOnline from './components/biblioteca/BibliotecaOnline';
 import Cronograma from './components/cronograma/Cronograma';
 import FinancasLoja from './components/financeiro/FinancasLoja';
 import LancamentosLote from './components/financeiro/LancamentosLote';
@@ -1713,6 +1714,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('biblioteca-online')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'biblioteca-online'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Biblioteca Online"
+                >
+                  <span className="text-base">📖</span>
+                  {menuAberto && <span className="font-semibold">Biblioteca Online</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('cronograma')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'cronograma'
@@ -2208,6 +2222,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('biblioteca-online')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'biblioteca-online'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Biblioteca Online"
+                >
+                  <span className="text-base">📖</span>
+                  {menuAberto && <span className="font-semibold">Biblioteca Online</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('cronograma')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'cronograma'
@@ -2519,6 +2546,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'projetos' && '📊 Projetos'}
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
+                  {currentPage === 'biblioteca-online' && '📖 Biblioteca Online'}
                   {currentPage === 'cronograma' && '📅 Cronograma Anual'}
                   {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
@@ -2800,6 +2828,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showSuccess={showSuccess}
             showError={showError}
             permissoes={permissoes}
+          />
+        )}
+
+        {currentPage === 'biblioteca-online' && (
+          <BibliotecaOnline
+            permissoes={permissoes}
+            grauUsuario={grauUsuarioLogado}
+            irmaoLogadoId={irmaoLogadoId}
+            showSuccess={showSuccess}
+            showError={showError}
           />
         )}
 
