@@ -900,11 +900,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
           </div>
         </div>
       )}
-    </div>
-  );
-};
-
-      {/* MODAL CADASTRO/EDIÇÃO DE LIVRO */}
+{/* MODAL CADASTRO/EDIÇÃO DE LIVRO */}
       {modalLivroAberto && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}>
           <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'560px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.3)'}}>
@@ -970,5 +966,8 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
         </div>
       )}
 
+    </div>
+  );
+};
 
 export default Biblioteca;
