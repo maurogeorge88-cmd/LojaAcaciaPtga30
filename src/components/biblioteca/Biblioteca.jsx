@@ -921,15 +921,15 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div style={{gridColumn:'1 / -1'}}>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Título *</label>
-                  <input type="text" value={livroForm.titulo} onChange={(e) => setLivroForm({...livroForm,titulo:e.target.value})} placeholder="Ex: Ritual do Aprendiz Maçom" style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                  <input type="text" value={livroForm.titulo} onChange={(e) => setLivroForm({...livroForm,titulo:e.target.value})} placeholder="Ex: Ritual do Aprendiz Maçom" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
                 </div>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Autor</label>
-                  <input type="text" value={livroForm.autor} onChange={(e) => setLivroForm({...livroForm,autor:e.target.value})} placeholder="Ex: Rizzardo da Camino" style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                  <input type="text" value={livroForm.autor} onChange={(e) => setLivroForm({...livroForm,autor:e.target.value})} placeholder="Ex: Rizzardo da Camino" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
                 </div>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Categoria</label>
-                  <select value={livroForm.categoria} onChange={(e) => setLivroForm({...livroForm,categoria:e.target.value})} style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}}>
+                  <select value={livroForm.categoria} onChange={(e) => setLivroForm({...livroForm,categoria:e.target.value})} style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
                     <option value="Ritualística">Ritualística</option>
                     <option value="Filosofia">Filosofia</option>
                     <option value="História">História</option>
@@ -939,7 +939,7 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 </div>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Grau</label>
-                  <select value={livroForm.grau} onChange={(e) => setLivroForm({...livroForm,grau:e.target.value})} style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}}>
+                  <select value={livroForm.grau} onChange={(e) => setLivroForm({...livroForm,grau:e.target.value})} style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
                     <option value="Aprendiz">Aprendiz</option>
                     <option value="Companheiro">Companheiro</option>
                     <option value="Mestre">Mestre</option>
@@ -947,11 +947,11 @@ const Biblioteca = ({ livros, emprestimos, irmaos, onUpdate, showSuccess, showEr
                 </div>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Localização</label>
-                  <input type="text" value={livroForm.localizacao} onChange={(e) => setLivroForm({...livroForm,localizacao:e.target.value})} placeholder="Ex: Estante 2 - Prateleira B" style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                  <input type="text" value={livroForm.localizacao} onChange={(e) => setLivroForm({...livroForm,localizacao:e.target.value})} placeholder="Ex: Estante 2 - Prateleira B" style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
                 </div>
                 <div>
                   <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Quantidade Total</label>
-                  <input type="number" min="1" value={livroForm.quantidade_total} onChange={(e) => setLivroForm({...livroForm,quantidade_total:parseInt(e.target.value)||1,quantidade_disponivel:parseInt(e.target.value)||1})} style={{{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}} />
+                  <input type="number" min="1" value={livroForm.quantidade_total} onChange={(e) => setLivroForm({...livroForm,quantidade_total:parseInt(e.target.value)||1,quantidade_disponivel:parseInt(e.target.value)||1})} style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
                 </div>
               </div>
             </div>
