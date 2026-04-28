@@ -347,29 +347,24 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
           </p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Agrupar por categoria */}
-          {(() => {
-            const cats = [...new Set(livrosFiltrados.map(l => l.categoria))].sort();
-            return cats.map(cat => {
-              const livrosCat = livrosFiltrados.filter(l => l.categoria === cat);
-              const emoji = CAT_EMOJI[cat] || '📁';
-              return (
-                <div key={cat}>
-                  {/* Faixa de categoria */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--color-accent)', borderRadius: 'var(--radius-lg)' }}>
-                      <span style={{ fontSize: '1rem' }}>{emoji}</span>
-                      <span style={{ fontWeight: '800', color: '#fff', fontSize: '0.9rem' }}>{cat}</span>
-                      <span style={{ background: 'rgba(255,255,255,0.25)', color: '#fff', borderRadius: '999px', padding: '0.05rem 0.5rem', fontSize: '0.72rem', fontWeight: '700' }}>
-                        {livrosCat.length}
-                      </span>
-                    </div>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          {[...new Set(livrosFiltrados.map(l => l.categoria))].sort().map(cat => {
+            const livrosCat = livrosFiltrados.filter(l => l.categoria === cat);
+            const emoji = CAT_EMOJI[cat] || '📁';
+            return (
+              <div key={cat}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--color-accent)', borderRadius: 'var(--radius-lg)' }}>
+                    <span style={{ fontSize: '1rem' }}>{emoji}</span>
+                    <span style={{ fontWeight: '800', color: '#fff', fontSize: '0.9rem' }}>{cat}</span>
+                    <span style={{ background: 'rgba(255,255,255,0.25)', color: '#fff', borderRadius: '999px', padding: '0.05rem 0.5rem', fontSize: '0.72rem', fontWeight: '700' }}>
+                      {livrosCat.length}
+                    </span>
                   </div>
-                  {/* Grid de livros da categoria */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
-                    {livrosCat.map(livro => {
+                  <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                  {livrosCat.map(livro => {
             const gs = GRAU_STYLE[livro.grau] || GRAU_STYLE['Mestre'];
             const pode = podeBaixar(livro.grau);
             return (
@@ -461,9 +456,10 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
           })}
           </div>
         </div>
-      );
-    })()}
-    </div>
+          );
+        })}
+        </div>
+        </div>
       )}
 
       {/* ── Modal de Cadastro ── */}
