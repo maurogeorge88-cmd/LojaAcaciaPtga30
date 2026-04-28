@@ -4,7 +4,30 @@ import { supabase } from '../../supabaseClient';
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const GRAUS = ['Aprendiz', 'Companheiro', 'Mestre'];
 const GRAU_ORDEM = { 'Aprendiz': 1, 'Companheiro': 2, 'Mestre': 3, 'Mestre Instalado': 3 };
-const CATEGORIAS = ['Ritualística', 'Filosofia', 'História', 'Simbolismo', 'Esoterismo', 'Outros'];
+const CATEGORIAS = [
+  'Ritualística', 'Filosofia Maçônica', 'História da Maçonaria',
+  'Simbolismo', 'Esoterismo', 'Religião e Espiritualidade',
+  'Ciências e Tecnologia', 'Literatura', 'Direito', 'Administração',
+  'Saúde', 'Educação', 'Outros',
+];
+
+const CAT_EMOJI = {
+  'Ritualística':              '📜',
+  'Filosofia Maçônica':        '🔮',
+  'História da Maçonaria':     '🏛️',
+  'Simbolismo':                '⚖️',
+  'Esoterismo':                '✨',
+  'Religião e Espiritualidade':'🙏',
+  'Ciências e Tecnologia':     '🔬',
+  'Literatura':                '📚',
+  'Direito':                   '⚖️',
+  'Administração':             '📊',
+  'Saúde':                     '🏥',
+  'Educação':                  '🎓',
+  'Outros':                    '📁',
+  'Filosofia':                 '🔮', // compatibilidade
+  'História':                  '🏛️', // compatibilidade
+};
 
 const GRAU_STYLE = {
   'Aprendiz':    { bg: 'rgba(16,185,129,0.15)',  cor: '#059669', brd: 'rgba(16,185,129,0.4)' },
@@ -324,8 +347,29 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-          {livrosFiltrados.map(livro => {
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* Agrupar por categoria */}
+          {(() => {
+            const cats = [...new Set(livrosFiltrados.map(l => l.categoria))].sort();
+            return cats.map(cat => {
+              const livrosCat = livrosFiltrados.filter(l => l.categoria === cat);
+              const emoji = CAT_EMOJI[cat] || '📁';
+              return (
+                <div key={cat}>
+                  {/* Faixa de categoria */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 1rem', background: 'var(--color-accent)', borderRadius: 'var(--radius-lg)' }}>
+                      <span style={{ fontSize: '1rem' }}>{emoji}</span>
+                      <span style={{ fontWeight: '800', color: '#fff', fontSize: '0.9rem' }}>{cat}</span>
+                      <span style={{ background: 'rgba(255,255,255,0.25)', color: '#fff', borderRadius: '999px', padding: '0.05rem 0.5rem', fontSize: '0.72rem', fontWeight: '700' }}>
+                        {livrosCat.length}
+                      </span>
+                    </div>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--color-border)' }} />
+                  </div>
+                  {/* Grid de livros da categoria */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                    {livrosCat.map(livro => {
             const gs = GRAU_STYLE[livro.grau] || GRAU_STYLE['Mestre'];
             const pode = podeBaixar(livro.grau);
             return (
@@ -413,8 +457,12 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
                   </button>
                 </div>
               </div>
+                    );
+                  })}
+                </div>
+              </div>
             );
-          })}
+          })()}
         </div>
       )}
 
