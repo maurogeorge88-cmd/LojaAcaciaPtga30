@@ -121,7 +121,7 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
       if (filePdf) {
         setUploadProgress('Enviando PDF...');
         const ext = filePdf.name.split('.').pop();
-        const san = form.titulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 40);
+        const san = form.titulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 40);
         const path = Date.now() + '_' + san + '.' + ext;
         const { error: e1 } = await supabase.storage.from('biblioteca-pdf').upload(path, filePdf, { upsert: false });
         if (e1) throw new Error('Upload PDF: ' + e1.message);
