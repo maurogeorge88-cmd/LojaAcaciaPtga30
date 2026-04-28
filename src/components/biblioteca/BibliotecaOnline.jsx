@@ -456,11 +456,11 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
                     {baixando[livro.id] ? '⏳ Baixando...' : pode ? '⬇️ Baixar PDF' : `🔒 Grau ${livro.grau}`}
                   </button>
                 </div>
-              </div>  {/* fim card livro */}
+              </div>
             );
           })}
-          </div>  {/* fim grid categoria */}
-        </div>  {/* fim bloco categoria */}
+          </div>
+        </div>
       );
     })()}
     </div>
