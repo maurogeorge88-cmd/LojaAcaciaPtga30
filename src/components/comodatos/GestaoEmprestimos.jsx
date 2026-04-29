@@ -30,8 +30,10 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
     beneficiario_id: '',
     data_emprestimo: new Date().toISOString().split('T')[0],
     data_devolucao_prevista: '',
-    observacoes_entrega: ''
+    observacoes_entrega: '',
+    irmao_responsavel_id: ''
   });
+  const [irmaos, setIrmaos] = useState([]);
 
   useEffect(() => {
     carregarDados();
@@ -47,6 +49,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         .select(`
           *,
           beneficiarios (id, nome, cpf),
+          irmao_responsavel:irmao_responsavel_id (id, nome),
           itens:comodato_itens (
             id,
             equipamento_id,
@@ -64,6 +67,14 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
       if (empError) throw empError;
       const dados = empData || [];
       setEmprestimos(dados);
+
+      // Carregar irmãos para o select de responsável
+      const { data: irmaosData } = await supabase
+        .from('irmaos')
+        .select('id, nome')
+        .in('situacao', ['regular', 'licenciado'])
+        .order('nome');
+      setIrmaos(irmaosData || []);
       // Anos disponíveis — extraídos dos empréstimos carregados
       const anos = [...new Set(dados
         .map(e => e.data_emprestimo ? new Date(e.data_emprestimo + 'T00:00:00').getFullYear() : null)
@@ -130,7 +141,8 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
             beneficiario_id: form.beneficiario_id,
             data_emprestimo: form.data_emprestimo,
             data_devolucao_prevista: form.data_devolucao_prevista || null,
-            observacoes_entrega: form.observacoes_entrega || null
+            observacoes_entrega: form.observacoes_entrega || null,
+            irmao_responsavel_id: form.irmao_responsavel_id || null
           })
           .eq('id', editando.id);
 
@@ -190,6 +202,7 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
             data_emprestimo: form.data_emprestimo,
             data_devolucao_prevista: form.data_devolucao_prevista || null,
             observacoes_entrega: form.observacoes_entrega || null,
+            irmao_responsavel_id: form.irmao_responsavel_id || null,
             status: 'ativo'
           }])
           .select()
@@ -459,6 +472,15 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
         yPos += 5;
       }
       yPos += 2;
+
+      // ── Irmão Responsável ──────────────────────────────────────────────────
+      if (emprestimoCompleto.irmao_responsavel?.nome) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Acompanhamento do Irmão:', 15, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(emprestimoCompleto.irmao_responsavel.nome, 73, yPos);
+        yPos += 7;
+      }
 
       // ========================================
       // PRAZO DE UTILIZAÇÃO
@@ -994,7 +1016,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       beneficiario_id: '',
       data_emprestimo: new Date().toISOString().split('T')[0],
       data_devolucao_prevista: '',
-      observacoes_entrega: ''
+      observacoes_entrega: '',
+      irmao_responsavel_id: ''
     });
   };
 
@@ -1174,6 +1197,11 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
               <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
                 CPF: {emp.beneficiarios?.cpf}
               </p>
+              {emp.irmao_responsavel?.nome && (
+                <p className="text-xs" style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
+                  👤 Resp.: {emp.irmao_responsavel.nome}
+                </p>
+              )}
               <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
                 Empréstimo: {new Date(emp.data_emprestimo + 'T00:00:00').toLocaleDateString('pt-BR')}
               </p>
@@ -1614,6 +1642,22 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
                     ))
                   )}
                 </div>
+              </div>
+
+              {/* Irmão Responsável */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label className="form-label">👤 Irmão Responsável (indicou/acompanhou)</label>
+                <select
+                  value={form.irmao_responsavel_id}
+                  onChange={(e) => setForm({...form, irmao_responsavel_id: e.target.value})}
+                  className="form-input"
+                  style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', width: '100%', fontSize: '0.875rem' }}
+                >
+                  <option value="">-- Nenhum --</option>
+                  {irmaos.map(i => (
+                    <option key={i.id} value={String(i.id)}>{i.nome}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Observações */}
