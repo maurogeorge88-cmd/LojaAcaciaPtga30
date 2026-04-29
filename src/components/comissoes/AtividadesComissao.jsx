@@ -112,7 +112,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '1rem', overflowY: 'auto' }}>
-      <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-xl)', width: '100%', maxWidth: '56rem', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', border: '1px solid var(--color-border)' }}>
+      <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-xl)', width: '100%', maxWidth: '56rem', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--color-border)' }}>
 
         {/* Header */}
         <div style={{ background: 'var(--color-accent)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexShrink: 0 }}>
@@ -124,11 +124,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
         </div>
 
         {/* Body */}
-        <div style={{ overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', minHeight: 0 }}>
 
           {/* Formulário */}
           {podeEditar && (
-            <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', border: '2px solid var(--color-border)' }}>
+            <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', border: '2px solid var(--color-border)', flexShrink: 0 }}>
               <h3 style={{ fontWeight: '700', color: 'var(--color-text)', fontSize: '1rem', margin: '0 0 1rem' }}>
                 {modoEdicao ? '✏️ Editar Atividade' : '➕ Nova Atividade'}
               </h3>
@@ -194,7 +194,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
           )}
 
           {/* Lista de atividades */}
-          <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
+          <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', overflow: 'hidden', flexShrink: 0 }}>
             <div style={{ background: 'var(--color-surface-3)', padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
               <h3 style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '0.95rem' }}>
                 📚 Histórico de Atividades ({atividades.length})
