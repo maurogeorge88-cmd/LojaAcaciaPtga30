@@ -375,7 +375,7 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         console.log(`👪 ${irmao.nome} tem ${irmao.pais.length} pai/mãe`);
         irmao.pais.forEach(pai => {
           // Não mostrar pais falecidos
-          if (pai.falecido === true) return;
+          if (pai.falecido === true || pai.data_obito) return;
           
           const tipoPai = pai.tipo === 'pai' ? 'Pai' : 'Mãe';
           verificarAniversario(pai, tipoPai, irmao.nome);
@@ -386,8 +386,8 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
       if (irmao.filhos && Array.isArray(irmao.filhos)) {
         console.log(`👶 ${irmao.nome} tem ${irmao.filhos.length} filho(s)`);
         irmao.filhos.forEach(filho => {
-          // Não mostrar filhos falecidos
-          if (filho.falecido === true) return;
+          // Não mostrar filhos falecidos (campo 'vivo' ou 'data_obito')
+          if (filho.vivo === false || filho.falecido === true || filho.data_obito) return;
           
           verificarAniversario(filho, 'Filho(a)', irmao.nome);
         });
