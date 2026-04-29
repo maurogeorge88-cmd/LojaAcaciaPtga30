@@ -1199,7 +1199,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
               </p>
               {emp.irmao_responsavel?.nome && (
                 <p className="text-xs" style={{ color: 'var(--color-text-secondary)', marginTop: '0.15rem' }}>
-                  👤 Resp.: {emp.irmao_responsavel.nome}
+                  👤 Indicado pelo Ir.'.: {emp.irmao_responsavel.nome}
                 </p>
               )}
               <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>
