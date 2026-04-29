@@ -773,11 +773,11 @@ export default function Aniversariantes() {
       // FILHOS VIVOS de irmãos vivos (vivo = true ou null)
       let { data: filhosVivos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, situacao)')
+        .select('nome, data_nascimento, irmao_id, vivo, data_obito, tipo_vinculo, sexo, irmaos(nome, situacao)')
         .in('irmao_id', irmaoVivosIds);
       
-      // Filtrar apenas os vivos (vivo = true ou null)
-      filhosVivos = filhosVivos?.filter(f => f.vivo !== false) || [];
+      // Filtrar apenas os vivos: vivo deve ser true ou null E sem data_obito
+      filhosVivos = filhosVivos?.filter(f => f.vivo !== false && !f.data_obito) || [];
 
       console.log('✅ Filhos vivos:', filhosVivos?.length);
 
