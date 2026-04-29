@@ -100,7 +100,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
   const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '';
 
   const sInput = {
-    background: 'var(--color-surface-2)',
+    background: 'var(--color-surface)',
     color: 'var(--color-text)',
     border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-md)',
@@ -124,11 +124,11 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
         </div>
 
         {/* Body */}
-        <div style={{ overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', flex: 1 }}>
+        <div style={{ overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
           {/* Formulário */}
           {podeEditar && (
-            <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', border: '1px solid var(--color-border)' }}>
+            <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', border: '2px solid var(--color-border)' }}>
               <h3 style={{ fontWeight: '700', color: 'var(--color-text)', fontSize: '1rem', margin: '0 0 1rem' }}>
                 {modoEdicao ? '✏️ Editar Atividade' : '➕ Nova Atividade'}
               </h3>
@@ -195,7 +195,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
 
           {/* Lista de atividades */}
           <div style={{ background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)', border: '1px solid var(--color-border)', overflow: 'hidden' }}>
-            <div style={{ background: 'var(--color-surface-2)', padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
+            <div style={{ background: 'var(--color-surface-3)', padding: '0.75rem 1.25rem', borderBottom: '1px solid var(--color-border)' }}>
               <h3 style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '0.95rem' }}>
                 📚 Histórico de Atividades ({atividades.length})
               </h3>
@@ -207,7 +207,7 @@ const AtividadesComissao = ({ comissao, onClose, showSuccess, showError, permiss
                   <p style={{ fontSize: '0.875rem', margin: 0 }}>Cadastre a primeira atividade desta comissão!</p>
                 </div>
               ) : atividades.map(a => (
-                <div key={a.id} style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', padding: '1rem', background: 'var(--color-surface-2)' }}>
+                <div key={a.id} style={{ border: '1px solid var(--color-border)', borderLeft: '4px solid var(--color-accent)', borderRadius: 'var(--radius-lg)', padding: '1rem', background: 'var(--color-surface-2)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
