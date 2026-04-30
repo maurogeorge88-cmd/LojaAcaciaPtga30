@@ -83,6 +83,26 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   // Estados para filtros e navegação
   const [abaAtiva, setAbaAtiva] = useState('interna'); // 'interna' ou 'externa'
   const [anoFiltro, setAnoFiltro] = useState(0); // 0 = Todos
+
+  // Contagem de atividades por comissão { [comissao_id]: count }
+  const [contagemAtividades, setContagemAtividades] = useState({});
+
+  useEffect(() => {
+    const buscarContagem = async () => {
+      try {
+        const { data } = await supabase
+          .from('atividades_comissoes')
+          .select('comissao_id');
+        if (!data) return;
+        const mapa = {};
+        data.forEach(a => {
+          mapa[a.comissao_id] = (mapa[a.comissao_id] || 0) + 1;
+        });
+        setContagemAtividades(mapa);
+      } catch {}
+    };
+    buscarContagem();
+  }, []);
   
   // Obter anos com cadastros
   const anosDisponiveis = [...new Set(
@@ -631,8 +651,15 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     {emAndamento.map((comissao, ci) => (
                       <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-accent)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem"}}>
                         <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-bold text-lg">{comissao.nome}</h4>
+                          <div className="flex-1" style={{position:'relative'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                              <h4 className="font-bold text-lg">{comissao.nome}</h4>
+                              {contagemAtividades[comissao.id] > 0 && (
+                                <span style={{padding:'0.1rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'800',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
+                                  📋 {contagemAtividades[comissao.id]} ativ.
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
                             <div className="flex gap-4 mt-2 text-sm">
                               <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",fontWeight:"600",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
@@ -696,8 +723,15 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                     {encerradas.map((comissao, ci) => (
                       <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-text-faint)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem",opacity:0.8}}>
                         <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-bold text-lg">{comissao.nome}</h4>
+                          <div className="flex-1" style={{position:'relative'}}>
+                            <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
+                              <h4 className="font-bold text-lg">{comissao.nome}</h4>
+                              {contagemAtividades[comissao.id] > 0 && (
+                                <span style={{padding:'0.1rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'800',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
+                                  📋 {contagemAtividades[comissao.id]} ativ.
+                                </span>
+                              )}
+                            </div>
                             <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
                             <div className="flex gap-4 mt-2 text-sm">
                               <span className="px-2 py-1 rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)"}}>
