@@ -652,19 +652,17 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
                       <div key={comissao.id} className="rounded-lg border-l-4" style={{borderLeftColor:"var(--color-accent)",background:ci%2===0?"var(--color-surface)":"var(--color-surface-2)",padding:"1rem",marginBottom:"0.5rem"}}>
                         <div className="flex justify-between items-start">
                           <div className="flex-1" style={{position:'relative'}}>
-                            <div style={{display:'flex',alignItems:'center',gap:'0.5rem'}}>
-                              <h4 className="font-bold text-lg">{comissao.nome}</h4>
+                            <h4 className="font-bold text-lg">{comissao.nome}</h4>
+                            <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
+                            <div className="flex gap-4 mt-2 text-sm" style={{flexWrap:'wrap',alignItems:'center'}}>
+                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",fontWeight:"600",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
+                                Em Andamento
+                              </span>
                               {contagemAtividades[comissao.id] > 0 && (
                                 <span style={{padding:'0.1rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'800',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)',whiteSpace:'nowrap'}}>
                                   📋 {contagemAtividades[comissao.id]} ativ.
                                 </span>
                               )}
-                            </div>
-                            <p className="text-sm mt-1" style={{color:"var(--color-text-muted)"}}>{comissao.objetivo}</p>
-                            <div className="flex gap-4 mt-2 text-sm">
-                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.72rem",fontWeight:"600",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
-                                Em Andamento
-                              </span>
                               <span>
                                 📅 {formatarData(comissao.data_inicio)} 
                                 {comissao.data_fim && ` - ${formatarData(comissao.data_fim)}`}
