@@ -327,65 +327,62 @@ export const FinanceiroCunhadas=({userData})=>{
     try{
       const diaVenc=parseInt(config.dia_vencimento||'10');
       const valorMens=parseFloat(config.valor_mensalidade||'50');
-      const dataHoje=HOJE.toISOString().slice(0,10);
+
+      // Data de hoje sem problema de fuso — usar local string
+      const agora=new Date();
+      const dataHoje=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
 
       // Buscar categoria "Mensalidade" para o lançamento
       const{data:catMens}=await supabase
         .from('categorias_financeiras_cunhadas')
-        .select('id')
-        .ilike('nome','%mensalid%')
-        .eq('tipo','receita')
-        .limit(1)
-        .maybeSingle();
+        .select('id').ilike('nome','%mensalid%').eq('tipo','receita').limit(1).maybeSingle();
       const categId=catMens?.id||null;
 
       for(const mes of pgAdiantForm.meses){
-        const m=parseInt(mes);const a=parseInt(pgAdiantForm.ano);
+        const m=parseInt(mes);
+        const a=parseInt(pgAdiantForm.ano);
         const ultimoDia=new Date(a,m,0).getDate();
         const dia=Math.min(diaVenc,ultimoDia);
         const dataVenc=`${a}-${String(m).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
+        // data_lancamento = dia 1 do mês adiantado (para aparecer no mês correto nos totais)
         const dataLanc=`${a}-${String(m).padStart(2,'0')}-01`;
 
-        // 1. Upsert na tabela de mensalidades (controle de situação)
+        // 1. Upsert mensalidades_cunhadas (situação)
         await supabase.from('mensalidades_cunhadas').upsert({
           cunhada_id:pgAdiantForm.cunhada_id,
-          mes:m,ano:a,valor:valorMens,
-          pago:true,
-          data_pagamento:dataHoje,
-          data_vencimento:dataVenc,
+          mes:m,ano:a,valor:valorMens,pago:true,
+          data_pagamento:dataHoje,data_vencimento:dataVenc,
         },{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
 
-        // 2. Criar lançamento em financeiro_cunhadas para aparecer nos totais e extrato
-        const descricao=`Mensalidade ${String(m).padStart(2,'0')}/${a} (adiantado)`;
-        // Verificar se já existe lançamento para este mês/cunhada
+        // 2. Lançamento em financeiro_cunhadas — verificar se já existe no mês
         const{data:lancExist}=await supabase
-          .from('financeiro_cunhadas')
-          .select('id')
+          .from('financeiro_cunhadas').select('id')
           .eq('cunhada_id',pgAdiantForm.cunhada_id)
-          .eq('tipo','receita')
-          .gte('data_lancamento',`${a}-${String(m).padStart(2,'0')}-01`)
-          .lte('data_lancamento',`${a}-${String(m).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`)
+          .eq('tipo','receita').eq('pago',true)
+          .gte('data_lancamento',dataLanc)
+          .lte('data_lancamento',dataVenc)
           .maybeSingle();
 
         if(!lancExist){
-          await supabase.from('financeiro_cunhadas').insert([{
+          const{error:eLanc}=await supabase.from('financeiro_cunhadas').insert([{
             cunhada_id:pgAdiantForm.cunhada_id,
             tipo:'receita',
             categoria_id:categId,
-            descricao,
+            descricao:`Mensalidade ${String(m).padStart(2,'0')}/${a} (adiantado)`,
             valor:valorMens,
-            data_lancamento:dataHoje,
+            data_lancamento:dataLanc,  // dia 1 do mês → aparece no mês correto
             data_vencimento:dataVenc,
             pago:true,
             forma_pagamento:'pix',
-            observacoes:`Pagamento adiantado referente a ${String(m).padStart(2,'0')}/${a}`,
+            observacoes:`Adiantamento pago em ${dataHoje}`,
           }]);
+          if(eLanc)console.error('Erro lancamento adiant:',eLanc.message);
         }
       }
 
       showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
       setMPgAdiant(false);
-      setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
+      setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear()});
       carregarTudo();
     }catch(e){showMsg('erro','Erro: '+e.message);}
     finally{setSalvPgAdiant(false);}
