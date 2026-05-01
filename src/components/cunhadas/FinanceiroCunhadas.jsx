@@ -1475,24 +1475,43 @@ export const FinanceiroCunhadas=({userData})=>{
                       String(m.cunhada_id)===String(pgAdiantForm.cunhada_id)&&
                       parseInt(m.mes)===parseInt(mes)&&parseInt(m.ano)===parseInt(pgAdiantForm.ano)&&m.pago
                     );
+                    const estornarMes=async()=>{
+                      const reg=mensalidades.find(m=>
+                        String(m.cunhada_id)===String(pgAdiantForm.cunhada_id)&&
+                        parseInt(m.mes)===parseInt(mes)&&parseInt(m.ano)===parseInt(pgAdiantForm.ano)&&m.pago
+                      );
+                      if(!reg)return;
+                      if(!window.confirm('Estornar o pagamento de '+nm+'/'+pgAdiantForm.ano+'?'))return;
+                      const{error}=await supabase.from('mensalidades_cunhadas').update({pago:false}).eq('id',reg.id);
+                      if(error)showMsg('erro','Erro: '+error.message);
+                      else{showMsg('sucesso','Estornado!');carregarTudo();}
+                    };
                     return(
-                      <button key={mes} type="button"
-                        onClick={()=>!jaPago&&togMesPgAdiant(mes)}
-                        style={{
-                          padding:'0.5rem 0.25rem',
-                          borderRadius:'var(--radius-md)',
-                          border:'2px solid',
-                          borderColor:jaPago?'#10b981':sel?'var(--color-accent)':'var(--color-border)',
-                          background:jaPago?'rgba(16,185,129,0.1)':sel?'var(--color-accent-bg)':'var(--color-surface-2)',
-                          color:jaPago?'#10b981':sel?'var(--color-accent)':'var(--color-text)',
-                          fontWeight:sel||jaPago?'700':'400',
-                          fontSize:'0.78rem',
-                          cursor:jaPago?'not-allowed':'pointer',
-                          position:'relative',
-                        }}>
-                        {jaPago&&<span style={{position:'absolute',top:'2px',right:'3px',fontSize:'0.55rem'}}>✓</span>}
-                        {nm.slice(0,3)}
-                      </button>
+                      <div key={mes} style={{display:'flex',flexDirection:'column',gap:'0.2rem'}}>
+                        <button type="button"
+                          onClick={()=>!jaPago&&togMesPgAdiant(mes)}
+                          style={{
+                            padding:'0.5rem 0.25rem',
+                            borderRadius:'var(--radius-md)',
+                            border:'2px solid',
+                            borderColor:jaPago?'#10b981':sel?'var(--color-accent)':'var(--color-border)',
+                            background:jaPago?'rgba(16,185,129,0.1)':sel?'var(--color-accent-bg)':'var(--color-surface-2)',
+                            color:jaPago?'#10b981':sel?'var(--color-accent)':'var(--color-text)',
+                            fontWeight:sel||jaPago?'700':'400',
+                            fontSize:'0.78rem',
+                            cursor:jaPago?'default':'pointer',
+                            position:'relative',
+                          }}>
+                          {jaPago&&<span style={{position:'absolute',top:'2px',right:'3px',fontSize:'0.55rem'}}>✓</span>}
+                          {nm.slice(0,3)}
+                        </button>
+                        {jaPago&&(
+                          <button type="button" onClick={estornarMes}
+                            style={{padding:'0.15rem',fontSize:'0.55rem',fontWeight:'700',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-sm)',cursor:'pointer',lineHeight:1}}>
+                            ↩
+                          </button>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
