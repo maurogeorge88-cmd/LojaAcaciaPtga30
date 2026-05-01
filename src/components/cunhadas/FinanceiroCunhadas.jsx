@@ -89,7 +89,7 @@ export const FinanceiroCunhadas=({userData})=>{
 
   // ── pagamento adiantado ────────────────────────────────────────────────────
   const[mPgAdiant,setMPgAdiant]=useState(false);
-  const[pgAdiantForm,setPgAdiantForm]=useState({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
+  const[pgAdiantForm,setPgAdiantForm]=useState({cunhada_id:'',meses:[],ano:HOJE.getFullYear(),valor:''});
   const[salvPgAdiant,setSalvPgAdiant]=useState(false);
 
   // ── matrix ────────────────────────────────────────────────────────────────
@@ -326,7 +326,7 @@ export const FinanceiroCunhadas=({userData})=>{
     setSalvPgAdiant(true);
     try{
       const diaVenc=parseInt(config.dia_vencimento||'10');
-      const valorMens=parseFloat(config.valor_mensalidade||'50');
+      const valorMens=pgAdiantForm.valor&&!isNaN(parseFloat(pgAdiantForm.valor))?parseFloat(pgAdiantForm.valor):parseFloat(config.valor_mensalidade||'50');
 
       // Data de hoje sem problema de fuso — usar local string
       const agora=new Date();
@@ -354,35 +354,35 @@ export const FinanceiroCunhadas=({userData})=>{
           data_pagamento:dataHoje,data_vencimento:dataVenc,
         },{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
 
-        // 2. Lançamento em financeiro_cunhadas — verificar se já existe no mês
-        const{data:lancExist}=await supabase
+        // 2. Lançamento em financeiro_cunhadas — 1 por mês adiantado
+        // Verificar se já existe lançamento de adiantamento neste mês para esta cunhada
+        const{data:lancExistList}=await supabase
           .from('financeiro_cunhadas').select('id')
           .eq('cunhada_id',pgAdiantForm.cunhada_id)
-          .eq('tipo','receita').eq('pago',true)
-          .gte('data_lancamento',dataLanc)
-          .lte('data_lancamento',dataVenc)
-          .maybeSingle();
+          .eq('tipo','receita')
+          .eq('data_lancamento',dataLanc);  // busca exata no dia 1 do mês
 
-        if(!lancExist){
+        const jaTemLanc=lancExistList&&lancExistList.length>0;
+        if(!jaTemLanc){
           const{error:eLanc}=await supabase.from('financeiro_cunhadas').insert([{
             cunhada_id:pgAdiantForm.cunhada_id,
             tipo:'receita',
             categoria_id:categId,
             descricao:`Mensalidade ${String(m).padStart(2,'0')}/${a} (adiantado)`,
             valor:valorMens,
-            data_lancamento:dataLanc,  // dia 1 do mês → aparece no mês correto
+            data_lancamento:dataLanc,  // dia 1 do mês adiantado
             data_vencimento:dataVenc,
             pago:true,
             forma_pagamento:'pix',
             observacoes:`Adiantamento pago em ${dataHoje}`,
           }]);
-          if(eLanc)console.error('Erro lancamento adiant:',eLanc.message);
+          if(eLanc)console.error('Erro lancamento adiant mes '+m+':',eLanc.message);
         }
       }
 
       showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
       setMPgAdiant(false);
-      setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear()});
+      setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear(),valor:''});
       carregarTudo();
     }catch(e){showMsg('erro','Erro: '+e.message);}
     finally{setSalvPgAdiant(false);}
@@ -912,7 +912,7 @@ export const FinanceiroCunhadas=({userData})=>{
           <button style={s.ab} onClick={()=>{let m=mesMens+1,a=anoMens;if(m>12){m=1;a++;}setMesMens(m);setAnoMens(a);}}>›</button>
         </div>
         <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap'}}>
-          <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
+          <button style={s.bp('#a855f7')} onClick={()=>{setPgAdiantForm({cunhada_id:'',meses:[],ano:anoMens,valor:''});setMPgAdiant(true);}}>📅 Pagamento Adiantado</button>
           <button style={s.bp('#10b981')} onClick={()=>setMRelat(true)}>📊 Situação</button>
           <button style={s.bp('var(--color-accent)')} onClick={()=>{setFechForm({mes:mesMens,ano:anoMens});setMFech(true);}}>📄 Fechamento</button>
         </div>
@@ -1550,11 +1550,28 @@ export const FinanceiroCunhadas=({userData})=>{
                 </p>
               </div>
 
+              {/* Valor */}
+              <div style={{marginBottom:'0.75rem'}}>
+                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>
+                  Valor por mês (R$) — deixe vazio para usar o padrão ({config.valor_mensalidade})
+                </label>
+                <input
+                  type="number" step="0.01" min="0"
+                  placeholder={config.valor_mensalidade||'50.00'}
+                  value={pgAdiantForm.valor}
+                  onChange={e=>setPgAdiantForm({...pgAdiantForm,valor:e.target.value})}
+                  style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',width:'100%',fontSize:'0.875rem'}}
+                />
+              </div>
+
               {/* Preview */}
               {pgAdiantForm.meses.length>0&&(
                 <div style={{...s.ib}}>
                   <p style={{margin:0,fontSize:'0.85rem',color:'var(--color-accent)',fontWeight:'600'}}>
                     Será marcado como pago: {pgAdiantForm.meses.map(m=>MESES[m-1].slice(0,3)).join(', ')} / {pgAdiantForm.ano}
+                  </p>
+                  <p style={{margin:'0.2rem 0 0',fontSize:'0.78rem',color:'var(--color-text-muted)'}}>
+                    Valor total: R$ {((pgAdiantForm.valor&&!isNaN(parseFloat(pgAdiantForm.valor))?parseFloat(pgAdiantForm.valor):parseFloat(config.valor_mensalidade||'50'))*pgAdiantForm.meses.length).toFixed(2)} ({pgAdiantForm.meses.length}x R$ {pgAdiantForm.valor||config.valor_mensalidade||'50.00'})
                   </p>
                   {pgAdiantForm.cunhada_id&&(
                     <p style={{margin:'0.25rem 0 0',fontSize:'0.78rem',color:'var(--color-text-muted)'}}>
