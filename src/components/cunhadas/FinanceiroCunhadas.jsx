@@ -575,6 +575,8 @@ export const FinanceiroCunhadas=({userData})=>{
         doc.setPage(p);
         setStyle(7,false,[160]);
         txt(`Página ${p} de ${totalPg}`,105,292,{align:'center'});
+        setStyle(6,false,[180]);
+        txt('SysMaçom-MG - Desenvolvedor: Mauro George',10,292);
       }
 
       doc.save(`Fechamento_${nomeGrupo.replace(/\s+/g,'_')}_${String(parseInt(mes)).padStart(2,'0')}_${ano}.pdf`);
