@@ -424,6 +424,13 @@ export const FinanceiroCunhadas=({userData})=>{
         return parseInt(lm)===parseInt(mes)&&parseInt(ly)===parseInt(ano)&&l.pago;
       });
 
+      // Calcular saldo anterior (tudo pago antes deste mês)
+      const limAnt=`${ano}-${String(parseInt(mes)).padStart(2,'0')}-01`;
+      const lancAnt=todos.filter(l=>l.pago&&l.data_lancamento<limAnt);
+      const recAnt=lancAnt.filter(l=>l.tipo==='receita').reduce((s,l)=>s+Number(l.valor),0);
+      const despAnt=lancAnt.filter(l=>l.tipo==='despesa').reduce((s,l)=>s+Number(l.valor),0);
+      const saldoAnterior=recAnt-despAnt;
+
       // ── DESPESAS ─────────────────────────────────────────────────────────
       setStyle(10,true,[239,68,68]);txt('DESPESAS',10,y);y+=2;
       y=linhaSim(doc,y,[239,68,68]);y+=4;
@@ -518,24 +525,49 @@ export const FinanceiroCunhadas=({userData})=>{
       y+=12;
 
       // ── RESUMO FINAL ──────────────────────────────────────────────────────
-      if(y>250){doc.addPage();y=14;}
-      const saldo=totalRec-totalDesp;
-      const boxW=80;const boxX=105+5;
-      // Fundo do box
+      if(y>240){doc.addPage();y=14;}
+      const saldoMes=totalRec-totalDesp;
+      const saldoFinal=saldoAnterior+saldoMes;
+      const boxW=90;const boxX=200-boxW-10;
+      // Fundo do box — altura maior para incluir saldo anterior e final
       doc.setFillColor(245,245,252);doc.setDrawColor(180);doc.setLineWidth(0.5);
-      doc.roundedRect(boxX,y-2,boxW,30,2,2,'FD');
+      doc.roundedRect(boxX,y-2,boxW,46,2,2,'FD');
       setStyle(9,true,[40]);txt('RESUMO DO MÊS',boxX+boxW/2,y+3,{align:'center'});
-      y+=8;
-      setStyle(8,false,[239,68,68]);txt('Total Despesas',boxX+4,y);
+      y+=9;
+
+      // Saldo anterior
+      const corAnt=saldoAnterior>=0?[80,80,160]:[180,40,40];
+      setStyle(8,false,[80,80,160]);txt('Saldo Anterior',boxX+4,y);
+      setStyle(8,true,corAnt);txt(fmtM(saldoAnterior),boxX+boxW-4,y,{align:'right'});
+      y+=6;
+
+      // Linha fina
+      doc.setDrawColor(200);doc.setLineWidth(0.2);doc.line(boxX+4,y,boxX+boxW-4,y);y+=4;
+
+      setStyle(8,false,[239,68,68]);txt('(-) Total Despesas',boxX+4,y);
       setStyle(8,true,[239,68,68]);txt(fmtM(totalDesp),boxX+boxW-4,y,{align:'right'});
       y+=6;
-      setStyle(8,false,[16,120,60]);txt('Total Receitas',boxX+4,y);
+      setStyle(8,false,[16,120,60]);txt('(+) Total Receitas',boxX+4,y);
       setStyle(8,true,[16,120,60]);txt(fmtM(totalRec),boxX+boxW-4,y,{align:'right'});
-      // Linha separadora
-      y+=3;doc.setDrawColor(120);doc.line(boxX+4,y,boxX+boxW-4,y);y+=4;
-      const corSaldo=saldo>=0?[16,120,60]:[200,30,30];
-      setStyle(10,true,corSaldo);txt('Saldo',boxX+4,y);
-      txt(fmtM(saldo),boxX+boxW-4,y,{align:'right'});
+      y+=6;
+
+      // Resultado do mês
+      const corMes=saldoMes>=0?[16,120,60]:[200,30,30];
+      setStyle(8,false,[60,60,60]);txt('Resultado do Mês',boxX+4,y);
+      setStyle(8,true,corMes);txt(fmtM(saldoMes),boxX+boxW-4,y,{align:'right'});
+      y+=3;
+
+      // Linha dupla separadora antes do saldo final
+      doc.setDrawColor(100);doc.setLineWidth(0.6);doc.line(boxX+4,y,boxX+boxW-4,y);
+      doc.setLineWidth(0.2);doc.line(boxX+4,y+1.2,boxX+boxW-4,y+1.2);
+      y+=6;
+
+      // Saldo final
+      const corFinal=saldoFinal>=0?[16,100,50]:[180,20,20];
+      doc.setFillColor(...(saldoFinal>=0?[220,250,235]:[255,230,230]));
+      doc.rect(boxX+2,y-4,boxW-4,8,'F');
+      setStyle(9,true,corFinal);txt('SALDO DA CONTA',boxX+4,y);
+      txt(fmtM(saldoFinal),boxX+boxW-4,y,{align:'right'});
 
       // Rodapé
       const totalPg=doc.getNumberOfPages();
