@@ -939,16 +939,25 @@ export const FinanceiroCunhadas=({userData})=>{
               .sort((a,b)=>a-b);
             const temAdiant=adiantados.length>1||(adiantados.length===1&&adiantados[0]!==mesMens);
             const nomeAbrev=abreviaNome(m.cunhada?.nome||'');
-            // Valor pago: usa o valor do próprio registro de mensalidade (cobre adiantamentos com valor diferente)
-            // + soma lançamentos avulsos de receita pagos no mês por esta cunhada
+            // Valor a exibir no card:
+            // Se tem adiantamento, buscar o lançamento de adiantamento (descrição contém "Adiantada")
+            // e mostrar o valor total em todos os meses adiantados
+            const lancAdiant=temAdiant
+              ? todos.filter(l=>
+                  l.cunhada_id===m.cunhada_id&&l.tipo==='receita'&&l.pago&&
+                  (l.descricao||'').includes('Adiantada')
+                ).sort((a,b)=>b.valor-a.valor)[0] // maior valor = mais recente adiantamento
+              : null;
+
             const valorLanc=todos
               .filter(l=>l.cunhada_id===m.cunhada_id&&l.tipo==='receita'&&l.pago)
               .reduce((s,l)=>{
                 const[y,mo]=l.data_lancamento.split('-');
                 return parseInt(mo)===mesMens&&parseInt(y)===anoMens?s+Number(l.valor):s;
               },0);
-            // Prioridade: se há lançamento avulso usa ele; senão usa o valor do registro de mensalidade
-            const valorPago=valorLanc>0?valorLanc:Number(m.valor||0);
+
+            // Prioridade: adiantamento total > lançamento do mês > valor unitário
+            const valorPago=lancAdiant?Number(lancAdiant.valor):valorLanc>0?valorLanc:Number(m.valor||0);
             return(
             <div key={m.id} style={{...s.csm,borderTop:`3px solid ${m.pago?'#10b981':'#f59e0b'}`}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.5rem'}}>
