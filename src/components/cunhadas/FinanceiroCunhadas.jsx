@@ -119,6 +119,9 @@ export const FinanceiroCunhadas=({userData})=>{
   const[salvCfg,setSalvCfg]=useState(false);
   // modal excluir
   const[mExcl,setMExcl]=useState(null);
+  // modal editar/excluir mensalidade
+  const[mEditMens,setMEditMens]=useState(null); // { id, cunhada_id, mes, ano, valor, pago }
+  const[mExclMens,setMExclMens]=useState(null); // mensalidade a excluir
   // modal categoria
   const[mCat,setMCat]=useState(false);
   const[catF,setCatF]=useState({nome:'',tipo:'receita',categoria_pai_id:null,ordem:0});
@@ -239,6 +242,22 @@ export const FinanceiroCunhadas=({userData})=>{
   const excluir=async()=>{
     const{error}=await supabase.from('financeiro_cunhadas').delete().eq('id',mExcl.id);
     if(error)showMsg('erro','Erro');else{showMsg('sucesso','Excluído.');setMExcl(null);carregarTudo();}
+  };
+
+  const salvarEditMens=async()=>{
+    if(!mEditMens)return;
+    const{error}=await supabase.from('mensalidades_cunhadas')
+      .update({valor:parseFloat(mEditMens.valor),mes:parseInt(mEditMens.mes),ano:parseInt(mEditMens.ano),pago:mEditMens.pago})
+      .eq('id',mEditMens.id);
+    if(error)showMsg('erro','Erro ao salvar: '+error.message);
+    else{showMsg('sucesso','Mensalidade atualizada!');setMEditMens(null);carregarTudo();}
+  };
+
+  const excluirMens=async()=>{
+    if(!mExclMens)return;
+    const{error}=await supabase.from('mensalidades_cunhadas').delete().eq('id',mExclMens.id);
+    if(error)showMsg('erro','Erro ao excluir: '+error.message);
+    else{showMsg('sucesso','Excluído!');setMExclMens(null);carregarTudo();}
   };
 
   const toggleMens=async(m)=>{
@@ -918,9 +937,13 @@ export const FinanceiroCunhadas=({userData})=>{
                   Meses: <span style={{fontWeight:'600',color:'#a855f7'}}>{adiantados.join(', ')}</span>
                 </p>
               )}
-              <button onClick={()=>toggleMens(m)} style={{width:'100%',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'none',background:m.pago?'rgba(245,158,11,0.12)':'rgba(16,185,129,0.12)',color:m.pago?'#f59e0b':'#10b981',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer'}}>
+              <button onClick={()=>toggleMens(m)} style={{width:'100%',padding:'0.4rem',borderRadius:'var(--radius-md)',border:'none',background:m.pago?'rgba(245,158,11,0.12)':'rgba(16,185,129,0.12)',color:m.pago?'#f59e0b':'#10b981',fontWeight:'600',fontSize:'0.78rem',cursor:'pointer',marginBottom:'0.4rem'}}>
                 {m.pago?'↩ Desfazer':'✓ Marcar paga'}
               </button>
+              <div style={{display:'flex',gap:'0.3rem'}}>
+                <button onClick={()=>setMEditMens({id:m.id,cunhada_nome:m.cunhada?.nome||'',cunhada_id:m.cunhada_id,mes:m.mes,ano:m.ano,valor:String(m.valor),pago:m.pago})} style={{flex:1,padding:'0.3rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',cursor:'pointer',fontSize:'0.72rem',fontWeight:'600'}}>✏️ Editar</button>
+                <button onClick={()=>setMExclMens(m)} style={{flex:1,padding:'0.3rem',background:'rgba(239,68,68,0.1)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',cursor:'pointer',fontSize:'0.72rem',fontWeight:'600'}}>🗑 Excluir</button>
+              </div>
             </div>
             );
           })}
@@ -1519,6 +1542,55 @@ export const FinanceiroCunhadas=({userData})=>{
       )}
 
       {/* MODAL EXCLUIR */}
+      {/* Modal editar mensalidade */}
+      {mEditMens&&(
+        <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMEditMens(null)}>
+          <div style={s.mc}>
+            <div style={s.mh}><h2 style={{margin:0,fontSize:'1.05rem',fontWeight:'700',color:'var(--color-text)'}}>✏️ Editar Mensalidade</h2><button onClick={()=>setMEditMens(null)} style={{background:'none',border:'none',color:'var(--color-text-muted)',fontSize:'1.5rem',cursor:'pointer'}}>×</button></div>
+            <div style={s.mb}>
+              <p style={{fontWeight:'700',color:'var(--color-text)',marginBottom:'1rem'}}>{mEditMens.cunhada_nome}</p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem',marginBottom:'0.75rem'}}>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Mês</label>
+                  <select value={mEditMens.mes} onChange={e=>setMEditMens(p=>({...p,mes:e.target.value}))} style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem',width:'100%',fontSize:'0.875rem'}}>
+                    {MESES.map((nm,i)=><option key={i+1} value={i+1}>{nm}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Ano</label>
+                  <input type="number" value={mEditMens.ano} onChange={e=>setMEditMens(p=>({...p,ano:e.target.value}))} style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem',width:'100%',fontSize:'0.875rem'}} />
+                </div>
+              </div>
+              <div style={{marginBottom:'0.75rem'}}>
+                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Valor (R$)</label>
+                <input type="number" step="0.01" value={mEditMens.valor} onChange={e=>setMEditMens(p=>({...p,valor:e.target.value}))} style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem',width:'100%',fontSize:'0.875rem'}} />
+              </div>
+              <label style={{display:'flex',alignItems:'center',gap:'0.5rem',cursor:'pointer'}}>
+                <input type="checkbox" checked={mEditMens.pago} onChange={e=>setMEditMens(p=>({...p,pago:e.target.checked}))} style={{accentColor:'var(--color-accent)',width:'16px',height:'16px'}} />
+                <span style={{fontSize:'0.875rem',color:'var(--color-text)',fontWeight:'600'}}>Pago</span>
+              </label>
+            </div>
+            <div style={s.mf}><button style={s.bs} onClick={()=>setMEditMens(null)}>Cancelar</button><button style={s.bp('var(--color-accent)')} onClick={salvarEditMens}>💾 Salvar</button></div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal excluir mensalidade */}
+      {mExclMens&&(
+        <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMExclMens(null)}>
+          <div style={s.mc}>
+            <div style={s.mh}><h2 style={{margin:0,fontSize:'1.05rem',fontWeight:'700',color:'#ef4444'}}>⚠️ Excluir Mensalidade</h2><button onClick={()=>setMExclMens(null)} style={{background:'none',border:'none',color:'var(--color-text-muted)',fontSize:'1.5rem',cursor:'pointer'}}>×</button></div>
+            <div style={{...s.mb,textAlign:'center'}}>
+              <div style={{fontSize:'3rem',marginBottom:'0.75rem'}}>🗑️</div>
+              <p style={{color:'var(--color-text)',marginBottom:'0.5rem'}}>Excluir mensalidade de:</p>
+              <p style={{fontWeight:'700',color:'#ef4444'}}>{mExclMens.cunhada?.nome} — {MESES[(mExclMens.mes||1)-1]}/{mExclMens.ano}</p>
+              <p style={{fontSize:'0.8rem',color:'var(--color-text-muted)',marginTop:'0.5rem'}}>Esta ação não pode ser desfeita.</p>
+            </div>
+            <div style={s.mf}><button style={s.bs} onClick={()=>setMExclMens(null)}>Cancelar</button><button style={s.bp('#ef4444')} onClick={excluirMens}>Excluir</button></div>
+          </div>
+        </div>
+      )}
+
       {mExcl&&(
         <div style={s.ov} onClick={e=>e.target===e.currentTarget&&setMExcl(null)}>
           <div style={{...s.mo,maxWidth:'400px'}}>
