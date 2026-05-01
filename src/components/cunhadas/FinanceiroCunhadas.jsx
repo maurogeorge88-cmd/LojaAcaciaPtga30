@@ -326,33 +326,63 @@ export const FinanceiroCunhadas=({userData})=>{
     setSalvPgAdiant(true);
     try{
       const diaVenc=parseInt(config.dia_vencimento||'10');
-      const registros=pgAdiantForm.meses.map(mes=>{
+      const valorMens=parseFloat(config.valor_mensalidade||'50');
+      const dataHoje=HOJE.toISOString().slice(0,10);
+
+      // Buscar categoria "Mensalidade" para o lançamento
+      const{data:catMens}=await supabase
+        .from('categorias_financeiras_cunhadas')
+        .select('id')
+        .ilike('nome','%mensalid%')
+        .eq('tipo','receita')
+        .limit(1)
+        .maybeSingle();
+      const categId=catMens?.id||null;
+
+      for(const mes of pgAdiantForm.meses){
         const m=parseInt(mes);const a=parseInt(pgAdiantForm.ano);
         const ultimoDia=new Date(a,m,0).getDate();
         const dia=Math.min(diaVenc,ultimoDia);
         const dataVenc=`${a}-${String(m).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-        return{
+        const dataLanc=`${a}-${String(m).padStart(2,'0')}-01`;
+
+        // 1. Upsert na tabela de mensalidades (controle de situação)
+        await supabase.from('mensalidades_cunhadas').upsert({
           cunhada_id:pgAdiantForm.cunhada_id,
-          mes:m,
-          ano:a,
-          valor:parseFloat(config.valor_mensalidade||'50'),
+          mes:m,ano:a,valor:valorMens,
           pago:true,
-          data_pagamento:HOJE.toISOString().slice(0,10),
+          data_pagamento:dataHoje,
           data_vencimento:dataVenc,
-        };
-      });
-      const{error:errUpsert}=await supabase
-        .from('mensalidades_cunhadas')
-        .upsert(registros,{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
-      if(errUpsert){
-        // upsert falhou — tentar insert simples um por um ignorando duplicatas
-        let salvos=0;
-        for(const r of registros){
-          const{error:e}=await supabase.from('mensalidades_cunhadas').insert([r]);
-          if(!e)salvos++;
+        },{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
+
+        // 2. Criar lançamento em financeiro_cunhadas para aparecer nos totais e extrato
+        const descricao=`Mensalidade ${String(m).padStart(2,'0')}/${a} (adiantado)`;
+        // Verificar se já existe lançamento para este mês/cunhada
+        const{data:lancExist}=await supabase
+          .from('financeiro_cunhadas')
+          .select('id')
+          .eq('cunhada_id',pgAdiantForm.cunhada_id)
+          .eq('tipo','receita')
+          .gte('data_lancamento',`${a}-${String(m).padStart(2,'0')}-01`)
+          .lte('data_lancamento',`${a}-${String(m).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`)
+          .maybeSingle();
+
+        if(!lancExist){
+          await supabase.from('financeiro_cunhadas').insert([{
+            cunhada_id:pgAdiantForm.cunhada_id,
+            tipo:'receita',
+            categoria_id:categId,
+            descricao,
+            valor:valorMens,
+            data_lancamento:dataHoje,
+            data_vencimento:dataVenc,
+            pago:true,
+            forma_pagamento:'pix',
+            observacoes:`Pagamento adiantado referente a ${String(m).padStart(2,'0')}/${a}`,
+          }]);
         }
-        if(salvos===0)throw new Error(errUpsert.message);
       }
+
       showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
       setMPgAdiant(false);
       setPgAdiantForm({cunhada_id:'',meses:[],ano:HOJE.getFullYear()});
