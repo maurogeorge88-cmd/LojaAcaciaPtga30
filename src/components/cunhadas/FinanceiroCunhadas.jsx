@@ -326,64 +326,62 @@ export const FinanceiroCunhadas=({userData})=>{
     setSalvPgAdiant(true);
     try{
       const diaVenc=parseInt(config.dia_vencimento||'10');
-      const valorMens=pgAdiantForm.valor&&!isNaN(parseFloat(pgAdiantForm.valor))?parseFloat(pgAdiantForm.valor):parseFloat(config.valor_mensalidade||'50');
+      const valorUnit=pgAdiantForm.valor&&!isNaN(parseFloat(pgAdiantForm.valor))
+        ?parseFloat(pgAdiantForm.valor)
+        :parseFloat(config.valor_mensalidade||'50');
+      const valorTotal=valorUnit*pgAdiantForm.meses.length;
 
-      // Data de hoje sem problema de fuso — usar local string
+      // Data de hoje sem fuso — usar getFullYear/getMonth/getDate
       const agora=new Date();
       const dataHoje=`${agora.getFullYear()}-${String(agora.getMonth()+1).padStart(2,'0')}-${String(agora.getDate()).padStart(2,'0')}`;
 
-      // Buscar categoria "Mensalidade" para o lançamento
+      // Buscar categoria "Mensalidade"
       const{data:catMens}=await supabase
         .from('categorias_financeiras_cunhadas')
         .select('id').ilike('nome','%mensalid%').eq('tipo','receita').limit(1).maybeSingle();
       const categId=catMens?.id||null;
 
+      // 1. Upsert em mensalidades_cunhadas para cada mês (controle de situação)
       for(const mes of pgAdiantForm.meses){
         const m=parseInt(mes);
         const a=parseInt(pgAdiantForm.ano);
         const ultimoDia=new Date(a,m,0).getDate();
         const dia=Math.min(diaVenc,ultimoDia);
         const dataVenc=`${a}-${String(m).padStart(2,'0')}-${String(dia).padStart(2,'0')}`;
-        // data_lancamento = dia 1 do mês adiantado (para aparecer no mês correto nos totais)
-        const dataLanc=`${a}-${String(m).padStart(2,'0')}-01`;
-
-        // 1. Upsert mensalidades_cunhadas (situação)
         await supabase.from('mensalidades_cunhadas').upsert({
           cunhada_id:pgAdiantForm.cunhada_id,
-          mes:m,ano:a,valor:valorMens,pago:true,
+          mes:m,ano:a,valor:valorUnit,pago:true,
           data_pagamento:dataHoje,data_vencimento:dataVenc,
         },{onConflict:'cunhada_id,mes,ano',ignoreDuplicates:false});
-
-        // 2. Lançamento em financeiro_cunhadas — 1 por mês adiantado
-        // Verificar se já existe lançamento de adiantamento neste mês para esta cunhada
-        const{data:lancExistList}=await supabase
-          .from('financeiro_cunhadas').select('id')
-          .eq('cunhada_id',pgAdiantForm.cunhada_id)
-          .eq('tipo','receita')
-          .eq('data_lancamento',dataLanc);  // busca exata no dia 1 do mês
-
-        const jaTemLanc=lancExistList&&lancExistList.length>0;
-        if(!jaTemLanc){
-          const{error:eLanc}=await supabase.from('financeiro_cunhadas').insert([{
-            cunhada_id:pgAdiantForm.cunhada_id,
-            tipo:'receita',
-            categoria_id:categId,
-            descricao:`Mensalidade ${String(m).padStart(2,'0')}/${a} (adiantado)`,
-            valor:valorMens,
-            data_lancamento:dataLanc,  // dia 1 do mês adiantado
-            data_vencimento:dataVenc,
-            pago:true,
-            forma_pagamento:'pix',
-            observacoes:`Adiantamento pago em ${dataHoje}`,
-          }]);
-          if(eLanc)console.error('Erro lancamento adiant mes '+m+':',eLanc.message);
-        }
       }
 
-      showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)!`);
-      setMPgAdiant(false);
-      setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear(),valor:''});
-      carregarTudo();
+      // 2. UM único lançamento em financeiro_cunhadas com valor total
+      // Lançado na data de hoje (mês em que o dinheiro entrou)
+      const qtdMeses=pgAdiantForm.meses.length;
+      const mesesLabel=pgAdiantForm.meses
+        .map(m=>MESES[parseInt(m)-1].slice(0,3))
+        .join(', ');
+      const a=parseInt(pgAdiantForm.ano);
+      const descricao=`Mensalidade Adiantada - ${qtdMeses}`;
+
+      const{error:eLanc}=await supabase.from('financeiro_cunhadas').insert([{
+        cunhada_id:pgAdiantForm.cunhada_id,
+        tipo:'receita',
+        categoria_id:categId,
+        descricao,
+        valor:valorTotal,
+        data_lancamento:dataHoje,
+        pago:true,
+        forma_pagamento:'pix',
+        observacoes:`${qtdMeses} meses adiantados: ${mesesLabel}/${a}`,
+      }]);
+      if(eLanc)showMsg('erro','Erro no lançamento: '+eLanc.message);
+      else{
+        showMsg('sucesso',`${pgAdiantForm.meses.length} mês(es) registrado(s)! Lançamento de R$ ${valorTotal.toFixed(2)} criado.`);
+        setMPgAdiant(false);
+        setPgAdiantForm({cunhada_id:'',meses:[],ano:agora.getFullYear(),valor:''});
+        carregarTudo();
+      }
     }catch(e){showMsg('erro','Erro: '+e.message);}
     finally{setSalvPgAdiant(false);}
   };
