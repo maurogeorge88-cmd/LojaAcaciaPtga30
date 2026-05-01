@@ -914,13 +914,16 @@ export const FinanceiroCunhadas=({userData})=>{
               .sort((a,b)=>a-b);
             const temAdiant=adiantados.length>1||(adiantados.length===1&&adiantados[0]!==mesMens);
             const nomeAbrev=abreviaNome(m.cunhada?.nome||'');
-            // Valor total pago: soma dos lançamentos de receita pagos no mês atual por esta cunhada
-            const valorPago=todos
+            // Valor pago: usa o valor do próprio registro de mensalidade (cobre adiantamentos com valor diferente)
+            // + soma lançamentos avulsos de receita pagos no mês por esta cunhada
+            const valorLanc=todos
               .filter(l=>l.cunhada_id===m.cunhada_id&&l.tipo==='receita'&&l.pago)
               .reduce((s,l)=>{
                 const[y,mo]=l.data_lancamento.split('-');
                 return parseInt(mo)===mesMens&&parseInt(y)===anoMens?s+Number(l.valor):s;
               },0);
+            // Prioridade: se há lançamento avulso usa ele; senão usa o valor do registro de mensalidade
+            const valorPago=valorLanc>0?valorLanc:Number(m.valor||0);
             return(
             <div key={m.id} style={{...s.csm,borderTop:`3px solid ${m.pago?'#10b981':'#f59e0b'}`}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.5rem'}}>
