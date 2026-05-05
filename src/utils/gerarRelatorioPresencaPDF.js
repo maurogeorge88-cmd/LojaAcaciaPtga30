@@ -294,11 +294,9 @@ export const gerarRelatorioPresencaPDF = (sessoes, irmaos, grade, historicoSitua
         return; // não computa como elegível
       }
 
-      // Verificar situação atual do campo direto (licenciado)
-      if (irmao.situacao?.toLowerCase() === 'licenciado') {
-        row[`sessao_${index}`] = '-';
-        return; // licenciado não computa falta
-      }
+      // NOTA: NÃO verificar campo direto situacao='licenciado' aqui
+      // porque ignora a data de início da licença.
+      // A licença com data é tratada corretamente via verificarSituacaoNaData acima.
 
       // Verificar grau
       const dataExaltacao = irmao.data_exaltacao ? new Date(irmao.data_exaltacao + 'T00:00:00') : null;
