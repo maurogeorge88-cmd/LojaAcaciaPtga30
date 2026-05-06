@@ -10,6 +10,8 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
   const [editandoResponsavel, setEditandoResponsavel] = useState(null); // NOVO
   const [beneficiarioSelecionado, setBeneficiarioSelecionado] = useState(null);
   const [busca, setBusca] = useState('');
+  const [irmaos, setIrmaos] = useState([]);
+  const [irmaoSelecionadoId, setIrmaoSelecionadoId] = useState('');
 
   const [form, setForm] = useState({
     nome: '',
@@ -44,7 +46,40 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
 
   useEffect(() => {
     carregarBeneficiarios();
+    carregarIrmaos();
   }, []);
+
+  const carregarIrmaos = async () => {
+    const { data } = await supabase
+      .from('irmaos')
+      .select('id, nome, cpf, rg, data_nascimento, telefone, celular, email, endereco, numero, complemento, bairro, cidade, estado')
+      .in('situacao', ['regular', 'licenciado'])
+      .order('nome');
+    setIrmaos(data || []);
+  };
+
+  const preencherDeIrmao = (irmaoId) => {
+    setIrmaoSelecionadoId(irmaoId);
+    if (!irmaoId) return;
+    const irmao = irmaos.find(i => String(i.id) === String(irmaoId));
+    if (!irmao) return;
+    setForm(prev => ({
+      ...prev,
+      nome:            irmao.nome || '',
+      cpf:             irmao.cpf || '',
+      rg:              irmao.rg || '',
+      data_nascimento: irmao.data_nascimento || '',
+      telefone:        irmao.telefone || '',
+      celular:         irmao.celular || '',
+      email:           irmao.email || '',
+      endereco:        irmao.endereco || '',
+      numero:          irmao.numero || '',
+      complemento:     irmao.complemento || '',
+      bairro:          irmao.bairro || '',
+      cidade:          irmao.cidade || '',
+      estado:          irmao.estado || 'MT',
+    }));
+  };
 
   const carregarBeneficiarios = async () => {
     try {
@@ -101,6 +136,7 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
       });
     } else {
       setEditando(null);
+      setIrmaoSelecionadoId('');
       setForm({
         nome: '',
         cpf: '',
@@ -460,6 +496,31 @@ export default function GestaoBeneficiarios({ showSuccess, showError, permissoes
               flex: 1,
               overflowY: 'auto'
             }}>
+
+              {/* Preencher a partir de irmão — só no cadastro novo */}
+              {!editando && (
+                <div style={{background:'var(--color-accent-bg)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-lg)',padding:'1rem',marginBottom:'1.5rem'}}>
+                  <label style={{display:'block',fontSize:'0.8rem',fontWeight:'700',color:'var(--color-accent)',marginBottom:'0.5rem'}}>
+                    👤 Preencher a partir de um Irmão da Loja (opcional)
+                  </label>
+                  <select
+                    value={irmaoSelecionadoId}
+                    onChange={e => preencherDeIrmao(e.target.value)}
+                    style={{width:'100%',background:'var(--color-surface)',color:'var(--color-text)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}
+                  >
+                    <option value="">-- Selecionar irmão para preencher automaticamente --</option>
+                    {irmaos.map(i => (
+                      <option key={i.id} value={i.id}>{i.nome}{i.cpf ? ` — ${i.cpf}` : ''}</option>
+                    ))}
+                  </select>
+                  {irmaoSelecionadoId && (
+                    <p style={{margin:'0.4rem 0 0',fontSize:'0.72rem',color:'var(--color-accent)'}}>
+                      ✅ Campos preenchidos automaticamente. Você pode editar antes de salvar.
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="form-label">
