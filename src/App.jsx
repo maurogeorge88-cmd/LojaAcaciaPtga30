@@ -29,6 +29,7 @@ import Cronograma from './components/cronograma/Cronograma';
 import FinancasLoja from './components/financeiro/FinancasLoja';
 import LancamentosLote from './components/financeiro/LancamentosLote';
 import CategoriasFinanceiras from './components/financeiro/CategoriasFinanceiras';
+import EventosArrecadacao from './components/financeiro/EventosArrecadacao';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
@@ -2087,6 +2088,18 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         </button>
 
                         <button
+                          onClick={() => setCurrentPage('eventos-arrecadacao')}
+                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
+                            currentPage === 'eventos-arrecadacao'
+                              ? 'bg-primary-700 border-l-4 border-white'
+                              : 'hover:bg-primary-800'
+                          }`}
+                        >
+                          <span>🎪</span>
+                          <span>Eventos</span>
+                        </button>
+
+                        <button
                           onClick={() => setCurrentPage('email-irmaos')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'email-irmaos'
@@ -2552,6 +2565,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
+                  {currentPage === 'eventos-arrecadacao' && '🎪 Eventos de Arrecadação'}
                   {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'relatorio-financeiro' && '📊 Relatório Financeiro'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
@@ -2881,6 +2895,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CATEGORIAS FINANCEIRAS */}
         {currentPage === 'categorias-financeiras' && (
           <CategoriasFinanceiras
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {currentPage === 'eventos-arrecadacao' && (
+          <EventosArrecadacao
+            permissoes={permissoes}
             showSuccess={showSuccess}
             showError={showError}
           />
