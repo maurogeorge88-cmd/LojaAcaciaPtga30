@@ -56,7 +56,8 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
   const pdfRef  = useRef();
   const capaRef = useRef();
 
-  const grauOrd = GRAU_ORDEM[grauUsuario] || 3;
+  // grauOrd: 0 = sem grau (bloqueia tudo), 1=Aprendiz, 2=Companheiro, 3=Mestre
+  const grauOrd = grauUsuario ? (GRAU_ORDEM[grauUsuario] || 0) : 0;
 
   useEffect(() => { load(); }, []);
 
@@ -79,7 +80,10 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
     return true;
   });
 
-  function podeBaixar(grauLivro) { return grauOrd >= (GRAU_ORDEM[grauLivro] || 1); }
+  function podeBaixar(grauLivro) {
+    const grauLivroOrd = GRAU_ORDEM[grauLivro] || 1;
+    return grauOrd >= grauLivroOrd;
+  }
 
   function abrirModal(livro) {
     if (livro) {
@@ -190,7 +194,13 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
   }
 
   async function baixar(livro) {
-    if (!podeBaixar(livro.grau)) { showError('Acesso restrito: ' + livro.grau); return; }
+    if (!podeBaixar(livro.grau)) {
+      showError(
+        'Este livro é restrito ao grau ' + livro.grau + '. ' +
+        'Seu grau atual (' + (grauUsuario || 'não definido') + ') não permite o download.'
+      );
+      return;
+    }
     setBaixando(b => ({ ...b, [livro.id]: true }));
     try {
       await supabase.from('biblioteca_online_downloads').insert([{ livro_id: livro.id, irmao_id: irmaoLogadoId }]);
@@ -309,8 +319,11 @@ export default function BibliotecaOnline({ permissoes, grauUsuario, irmaoLogadoI
                           {livro.total_downloads > 0 && <p style={{ margin: '0.1rem 0 0', fontSize: '0.62rem', color: 'var(--color-text-muted)' }}>{livro.total_downloads} download(s)</p>}
                         </div>
                         <div style={{ padding: '0 0.75rem 0.75rem' }}>
-                          <button onClick={() => pode ? baixar(livro) : showError('Acesso restrito: ' + livro.grau)} disabled={!pode || baixando[livro.id]} style={{ width: '100%', padding: '0.55rem', fontWeight: '700', fontSize: '0.8rem', border: 'none', borderRadius: 'var(--radius-lg)', cursor: pode ? 'pointer' : 'not-allowed', background: pode ? 'var(--color-accent)' : 'var(--color-surface-3)', color: pode ? '#fff' : 'var(--color-text-muted)' }}>
-                            {baixando[livro.id] ? 'Baixando...' : pode ? 'Baixar PDF' : 'Grau ' + livro.grau}
+                          <button onClick={() => pode ? baixar(livro) : showError(
+  'Livro restrito ao grau ' + livro.grau + '. ' +
+  'Seu grau (' + (grauUsuario || 'não definido') + ') não tem acesso a este conteúdo.'
+)} disabled={!pode || baixando[livro.id]} style={{ width: '100%', padding: '0.55rem', fontWeight: '700', fontSize: '0.8rem', border: 'none', borderRadius: 'var(--radius-lg)', cursor: pode ? 'pointer' : 'not-allowed', background: pode ? 'var(--color-accent)' : 'var(--color-surface-3)', color: pode ? '#fff' : 'var(--color-text-muted)' }}>
+                            {baixando[livro.id] ? 'Baixando...' : pode ? 'Baixar PDF' : '🔒 ' + livro.grau + ' apenas'}
                           </button>
                         </div>
                       </div>
