@@ -223,7 +223,7 @@ export const gerarRelatorioIndividualPDF = (
         txt(nomeSessao.substring(0, 35), M + 28, y + 1);
 
         // Situação colorida
-        doc.setFont('helvetica', 'bold'); doc.setTextColor(...corSit);
+        doc.setFont('helvetica', 'bold'); doc.setTextColor(corSit[0], corSit[1], corSit[2]);
         txt(situacaoLabel, M + 90, y + 1);
 
         // Justificativa
@@ -285,7 +285,7 @@ export const gerarRelatorioIndividualPDF = (
   txt(`Sessões elegíveis: ${totalEleg}`, M + 6, y + 9);
   txt(`Sessões no período: ${sessoesPeriodo.length}`, M + 6, y + 14);
 
-  doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corGeral);
+  doc.setFontSize(18); doc.setFont('helvetica', 'bold'); doc.setTextColor(corGeral[0], corGeral[1], corGeral[2]);
   txt(`${pctGeral}%`, W - M - 6, y + 10, { align: 'right' });
 
   doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
