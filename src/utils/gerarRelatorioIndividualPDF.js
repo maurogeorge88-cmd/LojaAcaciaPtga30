@@ -248,7 +248,9 @@ export const gerarRelatorioIndividualPDF = (
       doc.setFillColor(239, 246, 255);
       doc.rect(M, y - 2, W - M * 2, 8, 'F');
       doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-      doc.setTextColor(pctMes >= 70 ? [5, 150, 105] : pctMes >= 50 ? [217, 119, 6] : [220, 38, 38]);
+      if (pctMes >= 70) doc.setTextColor(5, 150, 105);
+      else if (pctMes >= 50) doc.setTextColor(217, 119, 6);
+      else doc.setTextColor(220, 38, 38);
       txt(`Total ${MESES_NOMES[parseInt(mes)]}: ${presMes} presença(s) de ${elegMes} sessão(ões) elegíveis — ${pctMes}%`, M + 4, y + 3);
       doc.setTextColor(0);
       y += 10;
