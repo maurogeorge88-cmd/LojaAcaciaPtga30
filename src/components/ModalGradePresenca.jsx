@@ -93,7 +93,7 @@ export default function ModalGradePresenca({ onFechar }) {
       // 1. Buscar sessões do período
       const { data: sessoesData } = await supabase
         .from('sessoes_presenca')
-        .select('id, data_sessao, grau_sessao_id')
+        .select('id, data_sessao, grau_sessao_id, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
         .gte('data_sessao', dataInicio)
         .lte('data_sessao', dataFim)
         .order('data_sessao');
