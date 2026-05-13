@@ -41,7 +41,7 @@ export const gerarRelatorioIndividualPDF = (
 ) => {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const W = 210, M = 15;
-  let y = 15;
+  let y = 5;
 
   // ── Helpers de desenho ──────────────────────────────────────────────────────
   const txt = (text, x, yy, opts = {}) => doc.text(String(text), x, yy, opts);
