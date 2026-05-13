@@ -72,9 +72,12 @@ export const gerarRelatorioIndividualPDF = (
   // ── CABEÇALHO ───────────────────────────────────────────────────────────────
   const nomeLoja = dadosLoja?.nome || 'ARLS Acácia de Paranatinga nº 30';
 
-  // Logo da loja — lado esquerdo
+  // Logo centralizada no topo
   if (dadosLoja?.logo_url) {
-    try { doc.addImage(dadosLoja.logo_url, 'PNG', M, y - 4, 25, 25); } catch(e) {}
+    try {
+      doc.addImage(dadosLoja.logo_url, 'PNG', (W - 28) / 2, y, 28, 28);
+      y += 31;
+    } catch(e) { y += 2; }
   }
 
   doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(30);
