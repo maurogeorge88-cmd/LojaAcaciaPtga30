@@ -883,5 +883,3 @@ export default function ModalGradePresenca({ onFechar }) {
     </div>
   );
 }
-
-export default ModalGradePresenca;
