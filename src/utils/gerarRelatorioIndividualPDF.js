@@ -170,8 +170,8 @@ export const gerarRelatorioIndividualPDF = (
       doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(80);
       txt('Data', M + 4, y + 2);
       txt('Sessão', M + 28, y + 2);
-      txt('Situação', M + 90, y + 2);
-      txt('Obs.', M + 125, y + 2);
+      txt('Situação', M + 100, y + 2);
+      txt('Obs.', M + 142, y + 2);
       linha(y + 4);
       y += 6;
 
@@ -249,17 +249,17 @@ export const gerarRelatorioIndividualPDF = (
         const nomeClassif = s.classificacoes_sessao?.nome || '';
         const nomeSessao = [nomeGrau, nomeClassif].filter(Boolean).join(' - ');
         doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(40);
-        txt(nomeSessao.substring(0, 32), M + 28, y + 1);
+        txt(nomeSessao.substring(0, 42), M + 28, y + 1);
 
         // Situação colorida
         doc.setFont('helvetica', 'bold'); doc.setTextColor(corSit[0], corSit[1], corSit[2]);
-        txt(situacaoLabel, M + 90, y + 1);
+        txt(situacaoLabel, M + 100, y + 1);
 
         // Justificativa
         if (reg?.justificativa) {
           doc.setFont('helvetica', 'normal'); doc.setTextColor(100);
           doc.setFontSize(7);
-          txt(String(reg.justificativa).substring(0, 40), M + 125, y + 1);
+          txt(String(reg.justificativa).substring(0, 30), M + 142, y + 1);
         }
 
         doc.setTextColor(0);
