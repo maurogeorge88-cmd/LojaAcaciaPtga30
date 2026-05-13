@@ -515,9 +515,28 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
         </div>
         
         <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
-          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.75rem"}}>Total Geral</h3>
-          <p style={{fontSize:"3rem",fontWeight:"800",color:"var(--color-text)",marginBottom:"0.5rem"}}>{totalIrmaos}</p>
-          <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>Todas as situações</p>
+          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.25rem"}}>Total Geral</h3>
+          <div style={{display:"flex",alignItems:"baseline",gap:"0.5rem",marginBottom:"0.75rem"}}>
+            <p style={{fontSize:"3rem",fontWeight:"800",color:"var(--color-text)",margin:0}}>{totalIrmaos}</p>
+            <span style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>irmãos</span>
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:"0.3rem"}}>
+            {[
+              {label:"✅ Regulares",    val:irmaosRegulares.length,   cor:"#10b981"},
+              {label:"🎫 Licenciados",  val:irmaosLicenciados.length, cor:"#6366f1"},
+              {label:"⚠️ Irregulares",  val:irmaosIrregulares.length, cor:"#f59e0b"},
+              {label:"🚫 Suspensos",    val:irmaosSuspensos.length,   cor:"#ef4444"},
+              {label:"🚪 Desligados",   val:irmaosDesligados.length,  cor:"#94a3b8"},
+              {label:"❌ Excluídos",    val:irmaosExcluidos.length,   cor:"#94a3b8"},
+              {label:"🕊️ Falecidos",    val:irmaosFalecidos.length,   cor:"#94a3b8"},
+              {label:"📋 Ex-Ofício",    val:irmaosExOficio.length,    cor:"#94a3b8"},
+            ].filter(s => s.val > 0).map(s => (
+              <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"0.78rem"}}>
+                <span style={{color:"var(--color-text-muted)"}}>{s.label}</span>
+                <span style={{fontWeight:"700",color:s.cor,minWidth:"1.5rem",textAlign:"right"}}>{s.val}</span>
+              </div>
+            ))}
+          </div>
         </div>
         
         <div style={{background:"#8b5cf6",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff",position:"relative"}}>
