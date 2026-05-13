@@ -76,7 +76,7 @@ export const gerarRelatorioIndividualPDF = (
   if (dadosLoja?.logo_url) {
     try {
       doc.addImage(dadosLoja.logo_url, 'PNG', (W - 28) / 2, y, 28, 28);
-      y += 31;
+      y += 35;
     } catch(e) { y += 2; }
   }
 
