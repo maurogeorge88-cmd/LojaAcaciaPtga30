@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import { gerarRelatorioPresencaPDF } from '../utils/gerarRelatorioPresencaPDF';
+import { gerarRelatorioIndividualPDF } from '../utils/gerarRelatorioIndividualPDF';
 
 export default function ModalGradePresenca({ onFechar }) {
   const [loading, setLoading] = useState(true);
@@ -9,6 +10,10 @@ export default function ModalGradePresenca({ onFechar }) {
   const [historicoSituacoes, setHistoricoSituacoes] = useState([]);
   const [grade, setGrade] = useState({});
   const [busca, setBusca] = useState('');
+  const [modalIndividual, setModalIndividual] = useState(false);
+  const [periodoInicio, setPeriodoInicio] = useState(`${new Date().getFullYear()}-01-01`);
+  const [periodoFim, setPeriodoFim]     = useState(new Date().toISOString().split('T')[0]);
+  const [irmaoIndividual, setIrmaoIndividual] = useState(null);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const anoAtual = new Date().getFullYear();
   const [anoSelecionado, setAnoSelecionado] = useState(anoAtual);
@@ -493,7 +498,7 @@ export default function ModalGradePresenca({ onFechar }) {
               <option value={12}>Dezembro</option>
             </select>
             
-            {/* Botão Gerar PDF */}
+            {/* Botão Gerar PDF Geral */}
             <button
               onClick={() => {
                 if (sessoes.length === 0) {
@@ -503,12 +508,27 @@ export default function ModalGradePresenca({ onFechar }) {
                 gerarRelatorioPresencaPDF(sessoes, irmaos, grade, historicoSituacoes, anoSelecionado, mesSelecionado, dadosLoja);
               }}
               className="ml-auto px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-semibold flex items-center gap-2 transition"
-              title="Gerar relatório em PDF"
+              title="Gerar relatório geral em PDF"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
               </svg>
               Gerar PDF
+            </button>
+
+            {/* Botão Relatório Individual */}
+            <button
+              onClick={() => {
+                const irmaoBusca = busca.trim()
+                  ? irmaos.find(i => i.nome.toLowerCase().includes(busca.toLowerCase()))
+                  : null;
+                setIrmaoIndividual(irmaoBusca || null);
+                setModalIndividual(true);
+              }}
+              style={{marginLeft:'0.5rem',padding:'0.5rem 1rem',background:'#6366f1',color:'#fff',borderRadius:'0.375rem',fontWeight:'600',cursor:'pointer',border:'none',display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.875rem'}}
+              title="Gerar relatório individual de um irmão"
+            >
+              📄 Individual
             </button>
           </div>
 
@@ -792,6 +812,76 @@ export default function ModalGradePresenca({ onFechar }) {
           </button>
         </div>
       </div>
+
+      {/* ── Modal Relatório Individual ── */}
+      {modalIndividual && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}>
+          <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'460px',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.4)'}}>
+            <div style={{background:'#6366f1',padding:'1rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>
+                <h3 style={{color:'#fff',fontWeight:'800',margin:0,fontSize:'1.05rem'}}>📄 Relatório Individual</h3>
+                <p style={{color:'rgba(255,255,255,0.8)',margin:'0.2rem 0 0',fontSize:'0.78rem'}}>Selecione o irmão e o período</p>
+              </div>
+              <button onClick={() => setModalIndividual(false)} style={{background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',borderRadius:'50%',width:'2rem',height:'2rem',cursor:'pointer',fontWeight:'700',fontSize:'1.1rem'}}>×</button>
+            </div>
+            <div style={{padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+              <div>
+                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Irmão *</label>
+                <select
+                  value={irmaoIndividual?.id || ''}
+                  onChange={e => setIrmaoIndividual(irmaos.find(i => String(i.id) === e.target.value) || null)}
+                  style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}
+                >
+                  <option value="">-- Selecionar irmão --</option>
+                  {[...irmaos].sort((a,b) => a.nome.localeCompare(b.nome)).map(i => (
+                    <option key={i.id} value={i.id}>{i.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Início *</label>
+                  <input type="date" value={periodoInicio} onChange={e => setPeriodoInicio(e.target.value)}
+                    style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Fim *</label>
+                  <input type="date" value={periodoFim} onChange={e => setPeriodoFim(e.target.value)}
+                    style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
+                </div>
+              </div>
+              {irmaoIndividual && (
+                <div style={{background:'rgba(99,102,241,0.1)',border:'1px solid rgba(99,102,241,0.3)',borderRadius:'var(--radius-md)',padding:'0.6rem 0.75rem',fontSize:'0.8rem',color:'#6366f1',fontWeight:'600'}}>
+                  {irmaoIndividual.nome}{irmaoIndividual.cim ? ` — CIM: ${irmaoIndividual.cim}` : ''}
+                </div>
+              )}
+            </div>
+            <div style={{padding:'1rem 1.25rem',borderTop:'1px solid var(--color-border)',display:'flex',gap:'0.5rem'}}>
+              <button onClick={() => setModalIndividual(false)}
+                style={{flex:1,padding:'0.6rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer'}}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  if (!irmaoIndividual) { alert('Selecione um irmão.'); return; }
+                  if (!periodoInicio || !periodoFim) { alert('Selecione o período.'); return; }
+                  if (periodoInicio > periodoFim) { alert('Data início deve ser anterior ao fim.'); return; }
+                  gerarRelatorioIndividualPDF(
+                    irmaoIndividual, sessoes, grade, historicoSituacoes,
+                    dadosLoja, periodoInicio, periodoFim
+                  );
+                  setModalIndividual(false);
+                }}
+                style={{flex:2,padding:'0.6rem',background:'#6366f1',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
+                📄 Gerar Relatório
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
+export default ModalGradePresenca;
