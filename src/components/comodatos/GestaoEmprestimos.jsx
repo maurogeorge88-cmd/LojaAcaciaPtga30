@@ -12,6 +12,11 @@ export default function GestaoEmprestimos({ showSuccess, showError, permissoes }
   const [filtroAno, setFiltroAno]       = useState('todos');
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
   const [modalRelatorio, setModalRelatorio]   = useState(false);
+  const [modalRelGeral, setModalRelGeral]     = useState(false);
+  const [relGeralPeriodo, setRelGeralPeriodo] = useState('todos'); // todos | ano | trimestre | semestre
+  const [relGeralAno, setRelGeralAno]         = useState(new Date().getFullYear());
+  const [relGeralTri, setRelGeralTri]         = useState(0);
+  const [relGeralSem, setRelGeralSem]         = useState(0);
   const [modalSubst, setModalSubst]           = useState(null);
   // modalSubst: { empId, item: {id, equipamento_id, ...}, equipDisp: [] }
   const [substSelecionado, setSubstSelecionado] = useState(''); // id do equipamento substituto
@@ -692,10 +697,10 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     try {
       showSuccess('Gerando relatório geral...');
 
-      // Buscar TODOS os empréstimos (todos os anos, todos os status)
       const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
 
-      const { data: todosEmp } = await supabase
+      // Montar query com filtro de período
+      let query = supabase
         .from('comodatos')
         .select(`
           id, status, data_emprestimo, data_devolucao_prevista,
@@ -704,7 +709,36 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         `)
         .order('data_emprestimo', { ascending: false });
 
+      if (relGeralPeriodo !== 'todos') {
+        const anoStr = String(relGeralAno);
+        if (relGeralPeriodo === 'ano') {
+          query = query.gte('data_emprestimo', `${anoStr}-01-01`).lte('data_emprestimo', `${anoStr}-12-31`);
+        } else if (relGeralPeriodo === 'trimestre') {
+          const mesIni = relGeralTri * 3 + 1;
+          const mesFim = mesIni + 2;
+          const ultimoDia = new Date(relGeralAno, mesFim, 0).getDate();
+          query = query
+            .gte('data_emprestimo', `${anoStr}-${String(mesIni).padStart(2,'0')}-01`)
+            .lte('data_emprestimo', `${anoStr}-${String(mesFim).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`);
+        } else if (relGeralPeriodo === 'semestre') {
+          const mesIni = relGeralSem === 0 ? 1 : 7;
+          const mesFim = relGeralSem === 0 ? 6 : 12;
+          const ultimoDia = new Date(relGeralAno, mesFim, 0).getDate();
+          query = query
+            .gte('data_emprestimo', `${anoStr}-${String(mesIni).padStart(2,'0')}-01`)
+            .lte('data_emprestimo', `${anoStr}-${String(mesFim).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`);
+        }
+      }
+
+      const { data: todosEmp } = await query;
       const lista = todosEmp || [];
+
+      // Label do período
+      const MESES_NOMES_G = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const labelPeriodoGeral = relGeralPeriodo === 'todos'      ? 'Todos os Períodos'
+        : relGeralPeriodo === 'ano'        ? `Ano ${relGeralAno}`
+        : relGeralPeriodo === 'trimestre'  ? `${relGeralTri+1}º Trimestre ${relGeralAno}`
+        : `${relGeralSem+1}º Semestre ${relGeralAno}`;
 
       // ── Cálculos globais ──────────────────────────────────────────────────
       // Total de empréstimos (cada comodato conta como 1)
@@ -755,9 +789,10 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       lista.forEach(e => {
         if (!e.data_emprestimo) return;
         const ano = e.data_emprestimo.substring(0, 4);
-        if (!porAno[ano]) porAno[ano] = { emp: 0, dev: 0, itens: 0 };
+        if (!porAno[ano]) porAno[ano] = { emp: 0, dev: 0, itens: 0, itensDevolvidos: 0 };
         porAno[ano].emp++;
         porAno[ano].itens += (e.itens || []).length;
+        porAno[ano].itensDevolvidos += (e.itens || []).filter(i => i.status === 'devolvido').length;
         if (e.status === 'devolvido') porAno[ano].dev++;
       });
 
@@ -794,7 +829,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
       doc.setFontSize(15); doc.setFont('helvetica', 'bold');
       doc.text(dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
       doc.setFontSize(11);
-      doc.text('Relatório Geral de Comodatos — Todos os Períodos', pW / 2, 21, { align: 'center' });
+      doc.text(`Relatório Geral de Comodatos — ${labelPeriodoGeral}`, pW / 2, 21, { align: 'center' });
       doc.setFontSize(9); doc.setFont('helvetica', 'normal');
       doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
 
@@ -838,18 +873,14 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
       doc.autoTable({
         startY: y,
-        head: [['Ano', 'Empréstimos', 'Devolvidos', 'Em Aberto', 'Itens']],
+        head: [['Ano', 'Empréstimos', 'Encerrados', 'Em Aberto', 'Itens Emprestados', 'Itens Devolvidos']],
         body: Object.entries(porAno).sort(([a],[b]) => b.localeCompare(a)).map(([ano, v]) => [
-          ano,
-          v.emp,
-          v.dev,
-          v.emp - v.dev,
-          v.itens,
+          ano, v.emp, v.dev, v.emp - v.dev, v.itens, v.itensDevolvidos,
         ]),
         styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: { 0: { fontStyle: 'bold' } },
+        columnStyles: { 0: { fontStyle: 'bold' }, 1:{halign:'center'}, 2:{halign:'center'}, 3:{halign:'center'}, 4:{halign:'center'}, 5:{halign:'center'} },
         margin: { left: 10, right: 10 },
       });
 
@@ -1291,7 +1322,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
-              onClick={() => gerarRelatorioGeral()}
+              onClick={() => setModalRelGeral(true)}
               style={{ padding: '0.5rem 1rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
             >
               📈 Relatório Geral
@@ -1548,6 +1579,87 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
 
       {/* MODAL RELATÓRIO */}
+      {/* Modal Relatório Geral */}
+      {modalRelGeral && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
+          <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '440px', overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.3)' }}>
+            <div style={{ background: '#6366f1', padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ color: '#fff', fontWeight: '800', margin: 0, fontSize: '1.05rem' }}>📈 Relatório Geral de Comodatos</h3>
+              <button onClick={() => setModalRelGeral(false)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '2rem', height: '2rem', cursor: 'pointer', fontWeight: '700', fontSize: '1.1rem' }}>×</button>
+            </div>
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+              {/* Período */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Período</label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {[['todos','Todos os Anos'],['ano','Ano'],['trimestre','Trimestre'],['semestre','Semestre']].map(([val, lbl]) => (
+                    <button key={val} onClick={() => setRelGeralPeriodo(val)}
+                      style={{ padding: '0.35rem 0.8rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer', background: relGeralPeriodo === val ? '#6366f1' : 'var(--color-surface-2)', color: relGeralPeriodo === val ? '#fff' : 'var(--color-text)', borderColor: relGeralPeriodo === val ? '#6366f1' : 'var(--color-border)' }}>
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Ano */}
+              {relGeralPeriodo !== 'todos' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Ano</label>
+                  <select value={relGeralAno} onChange={e => setRelGeralAno(parseInt(e.target.value))}
+                    style={{ background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.5rem 0.75rem', fontSize: '0.875rem', width: '100%' }}>
+                    {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map(a => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Trimestre */}
+              {relGeralPeriodo === 'trimestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Trimestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {[0,1,2,3].map(t => (
+                      <button key={t} onClick={() => setRelGeralTri(t)}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer', background: relGeralTri === t ? '#6366f1' : 'var(--color-surface-2)', color: relGeralTri === t ? '#fff' : 'var(--color-text)', borderColor: relGeralTri === t ? '#6366f1' : 'var(--color-border)' }}>
+                        {t+1}º Tri
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Semestre */}
+              {relGeralPeriodo === 'semestre' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Semestre</label>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {[0,1].map(s => (
+                      <button key={s} onClick={() => setRelGeralSem(s)}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer', background: relGeralSem === s ? '#6366f1' : 'var(--color-surface-2)', color: relGeralSem === s ? '#fff' : 'var(--color-text)', borderColor: relGeralSem === s ? '#6366f1' : 'var(--color-border)' }}>
+                        {s+1}º Semestre
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.5rem' }}>
+              <button onClick={() => setModalRelGeral(false)}
+                style={{ flex: 1, padding: '0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button onClick={() => { setModalRelGeral(false); gerarRelatorioGeral(); }}
+                style={{ flex: 2, padding: '0.6rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: 'pointer' }}>
+                📈 Gerar Relatório
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {modalRelatorio && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
           <div className="card" style={{ maxWidth: '420px', width: '100%', padding: '1.5rem' }}>
