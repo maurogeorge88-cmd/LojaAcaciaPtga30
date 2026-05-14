@@ -688,6 +688,215 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
     }
   };
 
+  const gerarRelatorioGeral = async () => {
+    try {
+      showSuccess('Gerando relatório geral...');
+
+      // Buscar TODOS os empréstimos (todos os anos, todos os status)
+      const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
+
+      const { data: todosEmp } = await supabase
+        .from('comodatos')
+        .select(`
+          id, status, data_emprestimo, data_devolucao_prevista,
+          beneficiarios (id, nome, cpf),
+          itens:comodato_itens (id, status, data_devolucao_real, equipamentos (numero_patrimonio, tipos_equipamentos (nome)))
+        `)
+        .order('data_emprestimo', { ascending: false });
+
+      const lista = todosEmp || [];
+
+      // ── Cálculos globais ──────────────────────────────────────────────────
+      // Total de empréstimos (cada comodato conta como 1)
+      const totalEmprestimos = lista.length;
+
+      // Total de itens emprestados (todos os itens de todos os comodatos)
+      const todosItens = lista.flatMap(e => e.itens || []);
+      const totalItensEmprestados = todosItens.length;
+
+      // Total de itens devolvidos (itens com status='devolvido')
+      const totalItensDevolvidos = todosItens.filter(i => i.status === 'devolvido').length;
+
+      // Itens ainda ativos
+      const totalItensAtivos = todosItens.filter(i => i.status === 'emprestado').length;
+
+      // Pessoas beneficiadas (beneficiários únicos)
+      const benefIds = new Set(lista.map(e => e.beneficiarios?.id).filter(Boolean));
+      const totalBeneficiados = benefIds.size;
+
+      // Comodatos ativos vs encerrados
+      const comodatosAtivos    = lista.filter(e => e.status === 'ativo').length;
+      const comodatosDevolvidos = lista.filter(e => e.status === 'devolvido').length;
+
+      // Equipamentos mais emprestados
+      const contagemEquip = {};
+      todosItens.forEach(i => {
+        const nome = i.equipamentos?.tipos_equipamentos?.nome || 'Desconhecido';
+        const pat  = i.equipamentos?.numero_patrimonio || '';
+        const key  = `${nome} (${pat})`;
+        contagemEquip[key] = (contagemEquip[key] || 0) + 1;
+      });
+      const rankEquip = Object.entries(contagemEquip)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 10);
+
+      // Beneficiários com mais empréstimos
+      const contagemBenef = {};
+      lista.forEach(e => {
+        const nome = e.beneficiarios?.nome || 'Desconhecido';
+        contagemBenef[nome] = (contagemBenef[nome] || 0) + 1;
+      });
+      const rankBenef = Object.entries(contagemBenef)
+        .sort(([,a],[,b]) => b - a)
+        .slice(0, 10);
+
+      // Por ano
+      const porAno = {};
+      lista.forEach(e => {
+        if (!e.data_emprestimo) return;
+        const ano = e.data_emprestimo.substring(0, 4);
+        if (!porAno[ano]) porAno[ano] = { emp: 0, dev: 0, itens: 0 };
+        porAno[ano].emp++;
+        porAno[ano].itens += (e.itens || []).length;
+        if (e.status === 'devolvido') porAno[ano].dev++;
+      });
+
+      // ── PDF ──────────────────────────────────────────────────────────────
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      await import('jspdf-autotable');
+
+      const doc = new jsPDF();
+      const pW = doc.internal.pageSize.getWidth();
+      let y = 0;
+
+      const rodape = () => {
+        const total = doc.getNumberOfPages();
+        for (let p = 1; p <= total; p++) {
+          doc.setPage(p);
+          doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150);
+          doc.text(`Página ${p} de ${total}`, pW / 2, 290, { align: 'center' });
+          doc.text('SysMaçom-MG - Desenvolvedor: Mauro George', 10, 290);
+          doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`, pW - 10, 290, { align: 'right' });
+          doc.setTextColor(0);
+        }
+      };
+
+      // ── Cabeçalho (mesmo padrão do relatório existente) ────────────────
+      doc.setFillColor(30, 58, 95);
+      doc.rect(0, 0, pW, 32, 'F');
+
+      if (dadosLoja?.logo_url) {
+        try { doc.addImage(dadosLoja.logo_url, 'PNG', pW - 36, 4, 24, 24); } catch {}
+      }
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(15); doc.setFont('helvetica', 'bold');
+      doc.text(dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga Nº 30', pW / 2, 12, { align: 'center' });
+      doc.setFontSize(11);
+      doc.text('Relatório Geral de Comodatos — Todos os Períodos', pW / 2, 21, { align: 'center' });
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      doc.text(`Emitido em ${new Date().toLocaleDateString('pt-BR')}`, pW / 2, 28, { align: 'center' });
+
+      y = 38;
+
+      // ── Cards de totais ────────────────────────────────────────────────
+      const cards = [
+        { label: 'Total Empréstimos',    val: totalEmprestimos,      cor: [30,58,95] },
+        { label: 'Ativos',               val: comodatosAtivos,       cor: [245,158,11] },
+        { label: 'Encerrados',           val: comodatosDevolvidos,   cor: [16,185,129] },
+        { label: 'Itens Emprestados',    val: totalItensEmprestados, cor: [99,102,241] },
+        { label: 'Itens Devolvidos',     val: totalItensDevolvidos,  cor: [16,185,129] },
+        { label: 'Itens em Uso',         val: totalItensAtivos,      cor: [245,158,11] },
+        { label: 'Pessoas Beneficiadas', val: totalBeneficiados,     cor: [236,72,153] },
+      ];
+
+      const cols = 4;
+      const boxW = (pW - 20 - 3 * (cols - 1)) / cols;
+      const boxH = 18;
+      cards.forEach((c, i) => {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = 10 + col * (boxW + 3);
+        const yy = y + row * (boxH + 3);
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(x, yy, boxW, boxH, 3, 3, 'FD');
+        doc.setTextColor(...c.cor);
+        doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+        doc.text(String(c.val), x + boxW / 2, yy + 9, { align: 'center' });
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(100, 116, 139);
+        doc.text(c.label, x + boxW / 2, yy + 14, { align: 'center' });
+      });
+
+      const rowsCards = Math.ceil(cards.length / cols);
+      y += rowsCards * (boxH + 3) + 6;
+
+      // ── Histórico por Ano ─────────────────────────────────────────────
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
+      doc.text('Histórico por Ano', 10, y); y += 4;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Ano', 'Empréstimos', 'Devolvidos', 'Em Aberto', 'Itens']],
+        body: Object.entries(porAno).sort(([a],[b]) => b.localeCompare(a)).map(([ano, v]) => [
+          ano,
+          v.emp,
+          v.dev,
+          v.emp - v.dev,
+          v.itens,
+        ]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [30, 58, 95], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 0: { fontStyle: 'bold' } },
+        margin: { left: 10, right: 10 },
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      // ── Equipamentos mais emprestados ─────────────────────────────────
+      if (y > 230) { doc.addPage(); y = 15; }
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
+      doc.text('Equipamentos Mais Emprestados', 10, y); y += 4;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Equipamento', 'Qtd. Empréstimos']],
+        body: rankEquip.map(([nome, qtd]) => [nome, qtd]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [99, 102, 241], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } },
+        margin: { left: 10, right: 10 },
+      });
+
+      y = doc.lastAutoTable.finalY + 8;
+
+      // ── Pessoas mais beneficiadas ─────────────────────────────────────
+      if (y > 230) { doc.addPage(); y = 15; }
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
+      doc.text('Pessoas Mais Beneficiadas', 10, y); y += 4;
+
+      doc.autoTable({
+        startY: y,
+        head: [['Beneficiário', 'Qtd. Empréstimos']],
+        body: rankBenef.map(([nome, qtd]) => [nome, qtd]),
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [236, 72, 153], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } },
+        margin: { left: 10, right: 10 },
+      });
+
+      rodape();
+      doc.save('Relatorio_Geral_Comodatos.pdf');
+      showSuccess('Relatório Geral gerado!');
+    } catch (e) {
+      showError('Erro ao gerar relatório geral: ' + e.message);
+    }
+  };
+
   const gerarRelatorio = async () => {
     try {
       showSuccess('Gerando relatório...');
@@ -1081,6 +1290,12 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
             )}
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => gerarRelatorioGeral()}
+              style={{ padding: '0.5rem 1rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            >
+              📈 Relatório Geral
+            </button>
             <button
               onClick={() => setModalRelatorio(true)}
               style={{
