@@ -905,22 +905,6 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
 
       y = doc.lastAutoTable.finalY + 8;
 
-      // ── Pessoas mais beneficiadas ─────────────────────────────────────
-      if (y > 230) { doc.addPage(); y = 15; }
-      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
-      doc.text('Pessoas Mais Beneficiadas', 10, y); y += 4;
-
-      doc.autoTable({
-        startY: y,
-        head: [['Beneficiário', 'Qtd. Empréstimos']],
-        body: rankBenef.map(([nome, qtd]) => [nome, qtd]),
-        styles: { fontSize: 8, cellPadding: 3 },
-        headStyles: { fillColor: [236, 72, 153], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [248, 250, 252] },
-        columnStyles: { 1: { halign: 'center', fontStyle: 'bold' } },
-        margin: { left: 10, right: 10 },
-      });
-
       rodape();
       doc.save('Relatorio_Geral_Comodatos.pdf');
       showSuccess('Relatório Geral gerado!');
