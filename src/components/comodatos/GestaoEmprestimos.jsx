@@ -843,7 +843,7 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
         { label: 'Itens Emprestados',    val: totalItensEmprestados, cor: [99,102,241] },
         { label: 'Itens Devolvidos',     val: totalItensDevolvidos,  cor: [16,185,129] },
         { label: 'Itens em Uso',         val: totalItensAtivos,      cor: [245,158,11] },
-        { label: 'Pessoas Beneficiadas', val: totalBeneficiados,     cor: [236,72,153] },
+
       ];
 
       const cols = 4;
