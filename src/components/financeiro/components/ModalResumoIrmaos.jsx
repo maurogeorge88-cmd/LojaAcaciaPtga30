@@ -5,6 +5,7 @@ const fmtR = (v) => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFrac
 
 export default function ModalResumoIrmaos({ isOpen, onClose, resumoIrmaos }) {
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [ordem, setOrdem] = useState('alfa'); // 'alfa' | 'valor'
 
   if (!isOpen) return null;
 
@@ -55,7 +56,14 @@ export default function ModalResumoIrmaos({ isOpen, onClose, resumoIrmaos }) {
                 </button>
               );
             })}
-            <div style={{ marginLeft: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginLeft: 'auto' }}>
+              <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', fontWeight: '600' }}>Ordenar:</span>
+              {[['alfa','A→Z'],['valor','Maior Débito']].map(([val, lbl]) => (
+                <button key={val} onClick={() => setOrdem(val)}
+                  style={{ padding: '0.35rem 0.7rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontWeight: '600', fontSize: '0.75rem', cursor: 'pointer', background: ordem === val ? 'var(--color-accent)' : 'var(--color-surface-2)', color: ordem === val ? '#fff' : 'var(--color-text)' }}>
+                  {lbl}
+                </button>
+              ))}
               <RelatorioIrmaosPendencias resumoIrmaos={resumoIrmaos} />
             </div>
           </div>
@@ -110,7 +118,10 @@ export default function ModalResumoIrmaos({ isOpen, onClose, resumoIrmaos }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {irmaosExibir.sort((a, b) => a.nomeIrmao.localeCompare(b.nomeIrmao)).map((irmao, idx) => {
+                  {irmaosExibir.sort((a, b) => {
+                      if (ordem === 'valor') return (b.receitasPendentes || 0) - (a.receitasPendentes || 0);
+                      return a.nomeIrmao.localeCompare(b.nomeIrmao);
+                    }).map((irmao, idx) => {
                     const despPagas = (irmao.totalDespesas || 0) - (irmao.despesasPendentes || 0); // loja já pagou ao irmão
                     const lojaDeve  = irmao.despesasPendentes || 0;                                          // loja ainda deve ao irmão
                     const recPagas  = (irmao.totalReceitas || 0) - (irmao.receitasPendentes || 0);           // irmão já pagou à loja
