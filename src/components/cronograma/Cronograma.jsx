@@ -1207,22 +1207,41 @@ export default function Cronograma({ showSuccess, showError, userEmail, permisso
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm mb-1">📅 Data</p>
-                  <p className="font-semibold">{eventoVisualizar.data_evento}</p>
+                  <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>📅 Data</p>
+                  <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.data_evento}</p>
                 </div>
                 {eventoVisualizar.hora_inicio && (
                   <div>
-                    <p className="text-sm mb-1">🕐 Início</p>
-                    <p className="font-semibold">{eventoVisualizar.hora_inicio}</p>
+                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>🕐 Início</p>
+                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.hora_inicio}</p>
+                  </div>
+                )}
+                {eventoVisualizar.hora_fim && (
+                  <div>
+                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>🕑 Término</p>
+                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.hora_fim}</p>
                   </div>
                 )}
                 {eventoVisualizar.local && (
                   <div className="col-span-2">
-                    <p className="text-sm mb-1">📍 Local</p>
-                    <p className="font-semibold">{eventoVisualizar.local}</p>
+                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>📍 Local</p>
+                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.local}</p>
+                  </div>
+                )}
+                {eventoVisualizar.responsavel && (
+                  <div className="col-span-2">
+                    <p className="text-sm mb-1" style={{color:"var(--color-text-muted)"}}>👤 Responsável</p>
+                    <p className="font-semibold" style={{color:"var(--color-text)"}}>{eventoVisualizar.responsavel}</p>
                   </div>
                 )}
               </div>
+
+              {eventoVisualizar.observacoes && (
+                <div className="rounded-lg p-4" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                  <p className="text-sm font-semibold mb-1" style={{color:"var(--color-text-muted)"}}>💬 Observações</p>
+                  <p style={{color:"var(--color-text)",whiteSpace:"pre-wrap"}}>{eventoVisualizar.observacoes}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
