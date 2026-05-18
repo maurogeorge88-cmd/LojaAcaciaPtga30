@@ -412,7 +412,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // Executar com paginação para buscar todos os registros
-      let allData: any[] = [];
+      let allData = [];
       let pageStart = 0;
       const pageSize = 1000;
       let hasMore = true;
