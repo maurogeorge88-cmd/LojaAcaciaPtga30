@@ -188,9 +188,24 @@ export default function RelatorioFinanceiro({ showError }) {
       const prim = `${ano}-${String(mes).padStart(2,'0')}-01`;
       const ult  = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
 
-      // IDs marcados — são UUIDs diretos do lancamento_id
-      const idsMarcados = Object.keys(confRef.current)
-        .filter(k => confRef.current[k]?.status);
+      // IDs marcados do período atual apenas — não trazer marcados de outros meses
+      // Primeiro buscar os lançamentos marcados para verificar se pertencem ao período
+      const todosMarcados = Object.keys(confRef.current).filter(k => confRef.current[k]?.status);
+
+      // Buscar datas dos marcados para filtrar só os do período
+      let idsMarcadosPeriodo = [];
+      if (todosMarcados.length > 0) {
+        const { data: marcadosData } = await supabase
+          .from('lancamentos_loja')
+          .select('id, data_pagamento, data_vencimento, status')
+          .in('id', todosMarcados);
+        idsMarcadosPeriodo = (marcadosData || [])
+          .filter(l => {
+            const dataRef = l.status === 'pago' ? l.data_pagamento : l.data_vencimento;
+            return dataRef >= prim && dataRef <= ult;
+          })
+          .map(l => l.id);
+      }
 
       // Query principal: lançamentos do período
       let query = supabase
@@ -198,19 +213,13 @@ export default function RelatorioFinanceiro({ showError }) {
         .select('id, data_pagamento, data_vencimento, status, valor, descricao, categoria_id, categorias_financeiras(nome, tipo), irmaos(nome), origem_tipo')
         .limit(1000);
 
-      if (idsMarcados.length > 0) {
-        // Incluir: registros do período OU registros marcados
-        query = query.or(
-          `and(status.eq.pago,data_pagamento.gte.${prim},data_pagamento.lte.${ult}),` +
-          `and(status.eq.pendente,data_vencimento.gte.${prim},data_vencimento.lte.${ult}),` +
-          `id.in.(${idsMarcados.join(',')})`
-        );
-      } else {
-        query = query.or(
-          `and(status.eq.pago,data_pagamento.gte.${prim},data_pagamento.lte.${ult}),` +
-          `and(status.eq.pendente,data_vencimento.gte.${prim},data_vencimento.lte.${ult})`
-        );
-      }
+      // Sem OR com marcados de outros meses — apenas filtro de período
+      query = query.or(
+        `and(status.eq.pago,data_pagamento.gte.${prim},data_pagamento.lte.${ult}),` +
+        `and(status.eq.pendente,data_vencimento.gte.${prim},data_vencimento.lte.${ult})`
+      );
+
+      const idsMarcados = idsMarcadosPeriodo;
 
       if (tipo) {
         const { data: cats } = await supabase.from('categorias_financeiras').select('id').eq('tipo', tipo);
