@@ -8,23 +8,25 @@ export default function ModalResumoIrmaos({ isOpen, onClose, resumoIrmaos }) {
 
   if (!isOpen) return null;
 
-  // Devedor = tem despesas pendentes (irmão deve para a loja)
-  const irmaosDevendo = resumoIrmaos.filter(i => (i.despesasPendentes || 0) > 0);
-  const irmaosEmDia   = resumoIrmaos.filter(i => (i.despesasPendentes || 0) === 0);
+  // Devedor = tem receitasPendentes (irmão deve para a loja)
+  const irmaosDevendo = resumoIrmaos.filter(i => (i.receitasPendentes || 0) > 0);
+  const irmaosEmDia   = resumoIrmaos.filter(i => (i.receitasPendentes || 0) === 0);
 
   const irmaosExibir = filtroStatus === 'devendo' ? irmaosDevendo
     : filtroStatus === 'em-dia' ? irmaosEmDia
     : resumoIrmaos;
 
-  // Mapeamento correto:
-  // totalReceitas = loja deve ao irmão (tipo receita = crédito do irmão)
-  // receitasPendentes = loja ainda deve (pendente)
-  // totalDespesas = irmão deve à loja (tipo despesa)
-  // despesasPendentes = irmão ainda deve (Valor Devido)
-  const totLojaPg    = irmaosExibir.reduce((s, i) => s + ((i.totalReceitas || 0) - (i.receitasPendentes || 0)), 0); // loja já pagou ao irmão
-  const totLojaDev   = irmaosExibir.reduce((s, i) => s + (i.receitasPendentes || 0), 0);                             // loja ainda deve ao irmão
-  const totRecPagas  = irmaosExibir.reduce((s, i) => s + ((i.totalDespesas || 0) - (i.despesasPendentes || 0)), 0);  // irmão já pagou à loja
-  const totValDevido = irmaosExibir.reduce((s, i) => s + (i.despesasPendentes || 0), 0);                             // irmão ainda deve à loja
+  // Mapeamento CORRETO (confirmado no código fonte):
+  // tipo 'despesa' = LOJA paga ao IRMÃO (Loja→Irmão)
+  //   totalDespesas    = total Loja→Irmão (pagas + pendentes)
+  //   despesasPendentes = Loja ainda DEVE ao irmão (pendente)
+  // tipo 'receita' = IRMÃO paga à LOJA (Irmão→Loja)
+  //   totalReceitas    = total Irmão→Loja (pagas + pendentes)
+  //   receitasPendentes = Irmão ainda DEVE à loja (Valor Devido)
+  const totLojaPg    = irmaosExibir.reduce((s, i) => s + ((i.totalDespesas || 0) - (i.despesasPendentes || 0)), 0);  // loja já pagou ao irmão
+  const totLojaDev   = irmaosExibir.reduce((s, i) => s + (i.despesasPendentes || 0), 0);                              // loja ainda deve ao irmão
+  const totRecPagas  = irmaosExibir.reduce((s, i) => s + ((i.totalReceitas || 0) - (i.receitasPendentes || 0)), 0);   // irmão já pagou à loja
+  const totValDevido = irmaosExibir.reduce((s, i) => s + (i.receitasPendentes || 0), 0);                              // irmão ainda deve à loja (Valor Devido)
 
   const sTh = { border: '1px solid var(--color-border)', padding: '0.6rem 0.75rem', fontWeight: '700', fontSize: '0.75rem', textTransform: 'uppercase', color: 'var(--color-text-muted)', background: 'var(--color-surface-2)', textAlign: 'right' };
   const sTd = { border: '1px solid var(--color-border)', padding: '0.55rem 0.75rem', textAlign: 'right', fontSize: '0.85rem' };
@@ -109,11 +111,11 @@ export default function ModalResumoIrmaos({ isOpen, onClose, resumoIrmaos }) {
                 </thead>
                 <tbody>
                   {irmaosExibir.sort((a, b) => a.nomeIrmao.localeCompare(b.nomeIrmao)).map((irmao, idx) => {
-                    const despPagas = (irmao.totalReceitas || 0) - (irmao.receitasPendentes || 0); // loja já pagou ao irmão
-                    const lojaDeve  = irmao.receitasPendentes || 0;                                         // loja ainda deve ao irmão
-                    const recPagas  = (irmao.totalDespesas || 0) - (irmao.despesasPendentes || 0);          // irmão já pagou à loja
-                    const valDevido = irmao.despesasPendentes || 0;                                         // irmão ainda deve à loja
-                    const devedor   = valDevido > 0;
+                    const despPagas = (irmao.totalDespesas || 0) - (irmao.despesasPendentes || 0); // loja já pagou ao irmão
+                    const lojaDeve  = irmao.despesasPendentes || 0;                                          // loja ainda deve ao irmão
+                    const recPagas  = (irmao.totalReceitas || 0) - (irmao.receitasPendentes || 0);           // irmão já pagou à loja
+                    const valDevido = irmao.receitasPendentes || 0;                                          // irmão ainda deve à loja
+                    const devedor   = valDevido > 0; // receitasPendentes > 0
                     return (
                       <tr key={idx} style={{ background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
                         <td style={{ ...sTd, textAlign: 'left' }}>
