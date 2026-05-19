@@ -18,6 +18,7 @@ export default function RelatorioFinanceiro({ showError }) {
   const mesAtual = new Date().getMonth() + 1;
 
   const [filtros, setFiltros]         = useState({ mes: mesAtual, ano: anoAtual, tipo: '', status: '' });
+  const [filtroIrmao, setFiltroIrmao] = useState('');
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading]         = useState(false);
   const [carregou, setCarregou]       = useState(false);
@@ -245,7 +246,12 @@ export default function RelatorioFinanceiro({ showError }) {
       const sorted = resultado.sort((a, b) => {
         const da = a.status === 'pago' ? a.data_pagamento : a.data_vencimento;
         const db = b.status === 'pago' ? b.data_pagamento : b.data_vencimento;
-        return (da || '').localeCompare(db || '');
+        // Ordenar por data primeiro, depois por nome do irmão
+        const dataCmp = (da || '').localeCompare(db || '');
+        if (dataCmp !== 0) return dataCmp;
+        const nomeA = a.irmaos?.nome || '';
+        const nomeB = b.irmaos?.nome || '';
+        return nomeA.localeCompare(nomeB);
       });
       setLancamentos(sorted);
       setCarregou(true);
@@ -333,6 +339,14 @@ export default function RelatorioFinanceiro({ showError }) {
   };
 
   const sInput = { background:'var(--color-surface-2)', color:'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.45rem 0.75rem', fontSize:'0.875rem' };
+
+  // Filtro por nome de irmão aplicado na exibição
+  const lancamentosFiltrados = filtroIrmao
+    ? lancamentos.filter(l => (l.irmaos?.nome || '').toLowerCase().includes(filtroIrmao.toLowerCase()))
+    : lancamentos;
+
+  // Lista de irmãos únicos para o datalist
+  const irmaosUnicos = [...new Set(lancamentos.map(l => l.irmaos?.nome).filter(Boolean))].sort();
   const GRID   = '92px 78px 145px 1fr 115px 98px 42px 95px';
 
   return (
@@ -346,12 +360,13 @@ export default function RelatorioFinanceiro({ showError }) {
       </div>
 
       <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.25rem', marginBottom:'1rem'}}>
-        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr auto', gap:'0.75rem', alignItems:'flex-end'}}>
+        <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr 1.5fr auto', gap:'0.75rem', alignItems:'flex-end'}}>
           {[
             { label:'Mês',    el:<select value={filtros.mes}    onChange={e=>setFiltros(f=>({...f,mes:+e.target.value}))}    style={{...sInput,width:'100%'}}>{meses.map((m,i)=><option key={i+1} value={i+1}>{m}</option>)}</select> },
             { label:'Ano',    el:<select value={filtros.ano}    onChange={e=>setFiltros(f=>({...f,ano:+e.target.value}))}    style={{...sInput,width:'100%'}}>{anos.map(a=><option key={a} value={a}>{a}</option>)}</select> },
             { label:'Tipo',   el:<select value={filtros.tipo}   onChange={e=>setFiltros(f=>({...f,tipo:e.target.value}))}   style={{...sInput,width:'100%'}}><option value=''>Todos</option><option value='receita'>Receitas</option><option value='despesa'>Despesas</option></select> },
             { label:'Status', el:<select value={filtros.status} onChange={e=>setFiltros(f=>({...f,status:e.target.value}))} style={{...sInput,width:'100%'}}><option value=''>Todos</option><option value='pago'>Pagos</option><option value='pendente'>Pendentes</option></select> },
+            { label:'Irmão', el:<><input list="irmaos-list" value={filtroIrmao} onChange={e=>setFiltroIrmao(e.target.value)} placeholder="Filtrar por irmão..." style={{...sInput,width:'100%'}} /><datalist id="irmaos-list">{irmaosUnicos.map(n=><option key={n} value={n}/>)}</datalist></> },
           ].map(({label,el}) => (
             <div key={label}>
               <label style={{display:'block', fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', marginBottom:'0.3rem', textTransform:'uppercase'}}>{label}</label>
@@ -373,7 +388,7 @@ export default function RelatorioFinanceiro({ showError }) {
           <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
             <div style={{background:'var(--color-accent)', padding:'0.5rem 0.9rem'}}>
               <span style={{fontSize:'0.72rem', fontWeight:'700', color:'#fff', textTransform:'uppercase', letterSpacing:'0.05em'}}>
-                📋 Total do Período — {lancamentos.length} registro(s)
+                📋 Total do Período — {lancamentosFiltrados.length} de {lancamentos.length} registro(s)
               </span>
             </div>
             <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0', borderTop:'1px solid var(--color-border)'}}>
@@ -460,9 +475,9 @@ export default function RelatorioFinanceiro({ showError }) {
             ))}
           </div>
 
-          {lancamentos.length === 0 ? (
+          {lancamentosFiltrados.length === 0 ? (
             <div style={{padding:'3rem', textAlign:'center', color:'var(--color-text-muted)'}}>Nenhum lançamento encontrado.</div>
-          ) : lancamentos.map((l, idx) => {
+          ) : lancamentosFiltrados.map((l, idx) => {
             const ehReceita = l.categorias_financeiras?.tipo === 'receita';
             const dtRef     = l.status === 'pago' ? l.data_pagamento : l.data_vencimento;
             const irmao     = l.origem_tipo !== 'Loja' ? nomeAb(l.irmaos?.nome) : '—';
