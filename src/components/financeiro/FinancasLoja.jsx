@@ -3901,13 +3901,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Receitas pendentes (irmão deve) e Despesas pendentes (loja deve)</p>
             </div>
             {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length > 0 && (
-              <div className="flex gap-2">
+              <div style={{display:'flex',gap:'0.5rem',alignItems:'center',flexWrap:'wrap'}}>
                 <button
                   onClick={() => gerarRelatorioDeTodos()}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
                 >
                   📄 Gerar PDFs de Todos
                 </button>
+                <label style={{display:'flex',alignItems:'center',gap:'0.4rem',fontSize:'0.82rem',color:'var(--color-text)',cursor:'pointer',padding:'0.4rem 0.75rem',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)'}}>
+                  <input type="checkbox" checked={inclPresenca} onChange={e=>setInclPresenca(e.target.checked)} style={{accentColor:'var(--color-accent)',width:'14px',height:'14px'}} />
+                  Incluir presença
+                </label>
                 <button
                   onClick={() => setMostrarModalQuitacaoLote(true)}
                   className="px-4 py-2 text-white rounded-lg hover: font-medium"
