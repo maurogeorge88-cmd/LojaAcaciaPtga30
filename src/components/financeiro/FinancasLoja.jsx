@@ -4149,7 +4149,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 {/* Cabeçalho das colunas */}
                 <div style={{
                   display:'grid',
-                  gridTemplateColumns:'90px 90px 90px 1fr 1fr 130px 80px 80px 100px',
+                  gridTemplateColumns:'90px 90px 80px 0.7fr 0.9fr 110px 90px 80px 100px',
                   gap:'0.5rem',
                   padding:'0.3rem 0.9rem 0.3rem 1.3rem',
                   borderBottom:'2px solid var(--color-border)',
@@ -4183,7 +4183,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     borderLeftColor: corBorda,
                     padding:'0.6rem 0.9rem',
                     display:'grid',
-                    gridTemplateColumns:'90px 90px 90px 1fr 1fr 130px 80px 80px 100px',
+                    gridTemplateColumns:'90px 90px 80px 0.7fr 0.9fr 110px 90px 80px 100px',
                     alignItems:'center',
                     gap:'0.5rem',
                     minWidth:0,
