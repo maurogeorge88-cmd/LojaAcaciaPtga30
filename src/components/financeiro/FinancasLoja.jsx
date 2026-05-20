@@ -12,6 +12,7 @@ import {
 } from './utils/helpers';
 import ModalLancamento from './components/ModalLancamento';
 import ModalResumoIrmaos from './components/ModalResumoIrmaos';
+import ArcoReal from './ArcoReal';
 import FinancasLojaTV from './FinancasLojaTV';
 
 // 💰 COMPONENTE: Finanças da Loja
@@ -79,7 +80,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
-  const [modalMovAberto, setModalMovAberto] = useState(false);
+  const [modalMovAberto, setModalMovAberto]     = useState(false);
+  const [modalArcoRealAberto, setModalArcoRealAberto] = useState(false);
   const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
   const [movForm, setMovForm] = useState({ irmaoId: '', dataInicio: '', dataFim: '' });
 
@@ -3060,6 +3062,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               >
                 📂 Movimentação do Irmão
               </button>
+              <div style={{borderTop:"1px solid var(--color-border)",margin:"0.25rem 0"}} />
+              <button
+                onClick={() => {
+                  setMenuRelatoriosAberto(false);
+                  setModalArcoRealAberto(true);
+                }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"#2d6a9f",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
+              >
+                🔺 Arco Real
+              </button>
             </div>
           )}
         </div>
@@ -4724,6 +4736,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         isOpen={modalResumoAberto}
         onClose={() => setModalResumoAberto(false)}
         resumoIrmaos={resumoIrmaos}
+      />
+
+      {/* Modal Arco Real */}
+      <ArcoReal
+        isOpen={modalArcoRealAberto}
+        onClose={() => setModalArcoRealAberto(false)}
+        showSuccess={showSuccess}
+        showError={showError}
       />
 
       {/* Modal Relatório Movimentação do Irmão */}
