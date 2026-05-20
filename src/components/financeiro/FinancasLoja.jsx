@@ -1668,14 +1668,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const { data: irmaoData } = await supabase
         .from('irmaos').select('nome, cpf, cim').eq('id', irmaoId).single();
 
-      // ── Buscar lançamentos ANTERIORES ao período (saldo anterior) ────────
-      const { data: lancsAnt } = await supabase
+      // ── Buscar lançamentos com vencimento ANTERIOR ao período ─────────────
+      // Pendentes: formam o saldo devedor anterior
+      const { data: lancsAntPend } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(nome, tipo)')
         .eq('origem_irmao_id', irmaoId)
         .eq('status', 'pendente')
         .lt('data_vencimento', dataInicio)
         .order('data_vencimento');
+
+      // Para exibir no bloco de saldo anterior
+      const lancsAnt = lancsAntPend || [];
 
       // ── Buscar lançamentos DO período ────────────────────────────────────
       const { data: lancsPeriodo } = await supabase
@@ -1693,8 +1697,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const soma = (arr) => arr.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
 
       // Saldo anterior: pendentes de receita (irmão devia) - pendentes de despesa (loja devia)
-      const antDesp = (lancsAnt || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
-      const antRec  = (lancsAnt || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      const antDesp = lancsAnt.filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const antRec  = lancsAnt.filter(l => l.categorias_financeiras?.tipo === 'despesa');
       const saldoAntDesp = soma(antDesp);  // irmão devia antes
       const saldoAntRec  = soma(antRec);   // loja devia antes
       const saldoAnt = saldoAntDesp - saldoAntRec; // + = irmão deve, - = loja deve
@@ -1766,7 +1770,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         if (!lancs.length) return 0;
         checkPage(20);
 
-        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corTitulo);
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corTitulo);
         doc.text(titulo, 15, y); y += 3;
         doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
 
@@ -1818,8 +1822,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       // ── Saldo Anterior ────────────────────────────────────────────────────
       if (lancsAnt && lancsAnt.length > 0) {
         checkPage(20);
-        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 40, 150);
-        doc.text('Saldo Anterior (pendências antes de ' + fmtData(dataInicio) + ')', 15, y); y += 3;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 40, 150);
+        doc.text('Saldo Anterior - Pendencias antes de ' + fmtData(dataInicio), 15, y); y += 3;
         doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
 
         doc.setFillColor(230, 230, 240); doc.rect(15, y, 180, 6, 'F');
@@ -1855,10 +1859,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // ── Blocos do período ──────────────────────────────────────────────────
-      renderBloco('Despesas Pagas (Irmão → Loja)', despPagas, [160, 0, 0], [200, 0, 0], true);
-      renderBloco('Despesas Pendentes (Irmão → Loja)', despPend, [200, 60, 0], [220, 60, 0], true);
-      renderBloco('Receitas Pagas (Loja → Irmão)', recPagas, [0, 80, 180], [0, 100, 200], true);
-      renderBloco('Receitas Pendentes (Loja → Irmão)', recPend, [80, 0, 180], [100, 0, 200], true);
+      renderBloco('Despesas Pagas (Irmao com a Loja)', despPagas, [160, 0, 0], [200, 0, 0], true);
+      renderBloco('Despesas Pendentes (Irmao com a Loja)', despPend, [200, 60, 0], [220, 60, 0], true);
+      renderBloco('Receitas Pagas (Loja com o Irmao)', recPagas, [0, 80, 180], [0, 100, 200], true);
+      renderBloco('Receitas Pendentes (Loja com o Irmao)', recPend, [80, 0, 180], [100, 0, 200], true);
 
       // ── Resumo Geral ───────────────────────────────────────────────────────
       checkPage(55);
