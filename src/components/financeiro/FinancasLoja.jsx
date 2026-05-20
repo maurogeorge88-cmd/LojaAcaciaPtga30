@@ -4149,7 +4149,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 {/* Cabeçalho das colunas */}
                 <div style={{
                   display:'grid',
-                  gridTemplateColumns:'90px 90px 80px 0.7fr 0.9fr 110px 90px 80px 100px',
+                  gridTemplateColumns:'90px 90px 80px 0.5fr 1.1fr 120px 90px 80px 100px',
                   gap:'0.5rem',
                   padding:'0.3rem 0.9rem 0.3rem 1.3rem',
                   borderBottom:'2px solid var(--color-border)',
@@ -4183,7 +4183,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     borderLeftColor: corBorda,
                     padding:'0.6rem 0.9rem',
                     display:'grid',
-                    gridTemplateColumns:'90px 90px 80px 0.7fr 0.9fr 110px 90px 80px 100px',
+                    gridTemplateColumns:'90px 90px 80px 0.5fr 1.1fr 120px 90px 80px 100px',
                     alignItems:'center',
                     gap:'0.5rem',
                     minWidth:0,
@@ -4221,7 +4221,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <div style={{display:'flex',alignItems:'center',gap:'0.25rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',minWidth:0}}>
                       {lanc.origem_tipo==='Loja'
                         ? <><span style={{color:'var(--color-accent)'}}>🏛️</span><span>Loja</span></>
-                        : <><span style={{color:'#8b5cf6',flexShrink:0}}>👤</span><span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{nomeIrmao}</span></>}
+                        : <><span style={{color:'#8b5cf6',flexShrink:0}}>👤</span><span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{(nomeIrmao||'').split(' ').slice(0,2).join(' ')}</span></>}
                     </div>
                     {/* Valor */}
                     <div style={{textAlign:'right',minWidth:'80px'}}>
