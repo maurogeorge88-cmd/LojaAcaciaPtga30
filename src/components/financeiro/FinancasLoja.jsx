@@ -1681,6 +1681,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       // Para exibir no bloco de saldo anterior
       const lancsAnt = lancsAntPend || [];
 
+      // ── Buscar parcelas futuras (pendentes após o período) ──────────────
+      const { data: lancsFuturos } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('status', 'pendente')
+        .gt('data_vencimento', dataFim)
+        .order('data_vencimento');
+
       // ── Buscar lançamentos DO período ────────────────────────────────────
       const { data: lancsPeriodo } = await supabase
         .from('lancamentos_loja')
@@ -1709,6 +1718,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const despPend     = periodo.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente');
       const recPagas     = periodo.filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago');
       const recPend      = periodo.filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente');
+
+      // Parcelas futuras — só irmão→loja (receita) para exibição informativa
+      const parcFuturas = (lancsFuturos || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
 
       const totDespPagas = soma(despPagas);
       const totDespPend  = soma(despPend);
@@ -1810,7 +1822,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
         doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
         doc.text('Sub Total ' + titulo + ':', 140, y, { align: 'right' });
-        doc.setTextColor(...corValor);
+        // Subtotal azul para blocos pagos, mantém cor original para pendentes
+        doc.setTextColor(...(isPagos ? [0, 80, 180] : corValor));
         doc.text(fmtR(subtotal), 192, y, { align: 'right' });
         y += 2;
         doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
@@ -1859,8 +1872,50 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // ── Blocos do período ──────────────────────────────────────────────────
-      renderBloco('Despesas Pagas (Irmao com a Loja)', despPagas, [0, 80, 180], [0, 100, 200], true, true);
+      renderBloco('Despesas Pagas (Irmao com a Loja)', despPagas, [0, 80, 180], [200, 0, 0], true, true);
       renderBloco('Despesas Pendentes (Irmao com a Loja)', despPend, [200, 60, 0], [220, 60, 0], true, false);
+      // Parcelas futuras — apenas informativo, sem subtotal no resumo
+      if (parcFuturas.length > 0) {
+        checkPage(20);
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+        doc.text('Parcelas Futuras - Irmao com a Loja (informativo)', 15, y); y += 3;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
+
+        doc.setFillColor(240, 240, 240); doc.rect(15, y, 180, 6, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('DtVenc', 17, y + 4);
+        doc.text('Descricao', 50, y + 4);
+        doc.text('Parcela', 148, y + 4);
+        doc.text('Valor', 192, y + 4, { align: 'right' });
+        y += 11;
+
+        let totFut = 0;
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+        parcFuturas.forEach(lanc => {
+          checkPage(8);
+          const parc = lanc.numero_parcela && lanc.total_parcelas
+            ? lanc.numero_parcela + '/' + lanc.total_parcelas : '—';
+          totFut += parseFloat(lanc.valor || 0);
+          doc.setTextColor(0);
+          doc.text(fmtData(lanc.data_vencimento), 17, y);
+          doc.text((lanc.descricao || '').substring(0, 50), 50, y);
+          doc.setTextColor(100, 100, 100); doc.text(parc, 148, y);
+          doc.setTextColor(150, 0, 0); doc.text(fmtR(totFut - (totFut - parseFloat(lanc.valor || 0))), 192, y, { align: 'right' });
+          doc.setTextColor(0);
+          y += 5;
+        });
+
+        y += 1;
+        doc.setDrawColor(100); doc.setLineWidth(0.4); doc.line(15, y, 195, y); y += 5;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold');
+        doc.setTextColor(100, 100, 100);
+        doc.text('Total Parcelas Futuras (informativo):', 140, y, { align: 'right' });
+        doc.text(fmtR(totFut), 192, y, { align: 'right' });
+        y += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
+        y += 14; doc.setTextColor(0);
+      }
+
       renderBloco('Receitas Pagas (Loja com o Irmao)', recPagas, [0, 80, 180], [0, 100, 200], true, true);
       renderBloco('Receitas Pendentes (Loja com o Irmao)', recPend, [80, 0, 180], [100, 0, 200], true, false);
 
