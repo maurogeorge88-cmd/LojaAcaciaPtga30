@@ -79,6 +79,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
+  const [modalMovAberto, setModalMovAberto] = useState(false);
+  const [movForm, setMovForm] = useState({ irmaoId: '', dataInicio: '', dataFim: '' });
 
   // Controle de fechamento de mês
   const [mesesFechados, setMesesFechados] = useState([]);
@@ -1653,6 +1655,196 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   // 📊 RELATÓRIO INDIVIDUAL DE IRMÃO
+  const gerarRelatorioMovimentacao = async () => {
+    const { irmaoId, dataInicio, dataFim } = movForm;
+    if (!irmaoId) { showError('Selecione um irmão.'); return; }
+    if (!dataInicio || !dataFim) { showError('Informe o período.'); return; }
+    if (dataInicio > dataFim) { showError('Data início deve ser anterior ao fim.'); return; }
+    setModalMovAberto(false);
+    try {
+      showSuccess('Gerando relatório de movimentação...');
+
+      const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
+      const { data: irmaoData } = await supabase
+        .from('irmaos').select('nome, cpf, cim').eq('id', irmaoId).single();
+
+      // Buscar todos os lançamentos do irmão no período (pagos e pendentes)
+      const { data: lancsData } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .or(
+          `and(status.eq.pago,data_pagamento.gte.${dataInicio},data_pagamento.lte.${dataFim}),` +
+          `and(status.eq.pendente,data_vencimento.gte.${dataInicio},data_vencimento.lte.${dataFim})`
+        )
+        .order('data_vencimento');
+
+      if (!lancsData || lancsData.length === 0) {
+        showError('Nenhum lançamento encontrado no período!'); return;
+      }
+
+      const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+      const fmtR = (v) => 'R$ ' + parseFloat(v || 0).toFixed(2);
+
+      // Separar por tipo e status
+      const despesas = lancsData.filter(l => l.categorias_financeiras?.tipo === 'receita'); // irmão deve
+      const receitas = lancsData.filter(l => l.categorias_financeiras?.tipo === 'despesa'); // loja pagou
+
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.default;
+      const doc = new jsPDF();
+      let y = 10;
+
+      const checkPage = (esp = 15) => { if (y + esp > 275) { doc.addPage(); y = 15; } };
+
+      const rodape = () => {
+        const tot = doc.getNumberOfPages();
+        for (let p = 1; p <= tot; p++) {
+          doc.setPage(p);
+          doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(150);
+          doc.text('SysMaçom-MG — Desenvolvedor: Mauro George', 15, 290);
+          doc.text('Página ' + p + ' de ' + tot, 105, 290, { align: 'center' });
+          doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR'), 195, 290, { align: 'right' });
+          doc.setTextColor(0);
+        }
+      };
+
+      // ── Logo ──────────────────────────────────────────────────────────────
+      if (dadosLoja?.logo_url) {
+        try { doc.addImage(dadosLoja.logo_url, 'PNG', 88, y, 30, 30); y += 35; } catch {}
+      }
+
+      // ── Cabeçalho ────────────────────────────────────────────────────────
+      const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga') + ' Nº ' + (dadosLoja?.numero_loja || '30');
+      doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+      doc.text(nomeLoja, 105, y, { align: 'center' }); y += 6;
+      doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+      doc.text('Jurisdicionada a Grande Loja Maçônica do Estado de Mato Grosso', 105, y, { align: 'center' }); y += 7;
+      doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+      doc.text('Extrato de Movimentação Financeira', 105, y, { align: 'center' }); y += 10;
+
+      // ── Dados do irmão ───────────────────────────────────────────────────
+      doc.setFillColor(240, 240, 240); doc.rect(15, y, 180, 22, 'F');
+      y += 5;
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      doc.text('Irmão:', 18, y); doc.setFont('helvetica', 'bold'); doc.text(irmaoData.nome, 35, y); y += 5;
+      doc.setFont('helvetica', 'normal');
+      doc.text('CIM: ' + (irmaoData.cim || '—'), 18, y);
+      doc.text('CPF: ' + (irmaoData.cpf || '—'), 60, y);
+      doc.text('Período: ' + fmtData(dataInicio) + ' a ' + fmtData(dataFim), 120, y); y += 12;
+
+      // ── Função de bloco ─────────────────────────────────────────────────
+      const renderBloco = (titulo, lancs, corTitulo, corValor) => {
+        if (!lancs.length) return 0;
+        checkPage(20);
+
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corTitulo);
+        doc.text(titulo, 15, y); y += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
+
+        // Cabeçalho
+        doc.setFillColor(230, 230, 230); doc.rect(15, y, 180, 6, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('DtLanc', 17, y + 4);
+        doc.text('DtVenc', 43, y + 4);
+        doc.text('Descrição', 69, y + 4);
+        doc.text('Status', 148, y + 4);
+        doc.text('Valor', 192, y + 4, { align: 'right' });
+        y += 11;
+
+        let subtotal = 0;
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+
+        lancs.forEach(lanc => {
+          checkPage(8);
+          const dataLanc = fmtData(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento);
+          const dataVenc = fmtData(lanc.data_vencimento);
+          const desc = (lanc.descricao || '').substring(0, 38);
+          const valor = parseFloat(lanc.valor || 0);
+          const isPago = lanc.status === 'pago';
+          subtotal += valor;
+
+          doc.setTextColor(0);
+          doc.text(dataLanc, 17, y);
+          doc.text(dataVenc, 43, y);
+          doc.text(desc, 69, y);
+
+          // Status badge
+          if (isPago) { doc.setTextColor(16, 120, 60); doc.text('Pago', 148, y); }
+          else { doc.setTextColor(200, 80, 0); doc.text('Pendente', 148, y); }
+
+          doc.setTextColor(...corValor);
+          doc.text(fmtR(valor), 192, y, { align: 'right' });
+          doc.setTextColor(0);
+          y += 5;
+        });
+
+        y += 1;
+        doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('Sub Total ' + titulo + ':', 140, y, { align: 'right' });
+        doc.setTextColor(...corValor);
+        doc.text(fmtR(subtotal), 192, y, { align: 'right' });
+        y += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
+        y += 14;
+        doc.setTextColor(0);
+        return subtotal;
+      };
+
+      const totDesp = renderBloco('Despesa', despesas, [180, 0, 0], [200, 0, 0]);
+      const totRec  = renderBloco('Receita', receitas, [0, 80, 180], [0, 80, 180]);
+
+      // ── Resumo Geral ────────────────────────────────────────────────────
+      checkPage(40);
+      const saldo = totDesp - totRec;
+
+      // Dados bancários (esquerda)
+      const yBanco = y;
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+      doc.text('Dados Bancários', 45, y, { align: 'center' }); y += 5;
+      doc.setFontSize(9); doc.setTextColor(0, 100, 180); doc.setFont('helvetica', 'bold');
+      doc.text('Cooperativa de Crédito Sicredi', 45, y, { align: 'center' }); y += 4;
+      doc.setTextColor(0); doc.setFont('helvetica', 'normal');
+      doc.text('Ag.: 0802 - C.C.: 86.913-9', 45, y, { align: 'center' }); y += 4;
+      doc.text('PIX.: 03.250.704/0001-00', 45, y, { align: 'center' }); y += 4;
+      doc.setFontSize(8); doc.text('CNPJ: 03.250.704/0001-00', 45, y, { align: 'center' }); y += 4;
+      doc.text('Fav.: ARLSACACIA PARANATINGA 30', 45, y, { align: 'center' });
+
+      // Resumo (direita)
+      let yr = yBanco;
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+      doc.text('Resumo Geral:', 192, yr, { align: 'right' }); yr += 7;
+      doc.setFontSize(10);
+      doc.text('Despesa Total:', 155, yr, { align: 'right' });
+      doc.setTextColor(200, 0, 0); doc.text(fmtR(totDesp), 192, yr, { align: 'right' }); yr += 5;
+      doc.setTextColor(0); doc.text('Receita Total:', 155, yr, { align: 'right' });
+      doc.setTextColor(0, 80, 180); doc.text(fmtR(totRec), 192, yr, { align: 'right' }); yr += 3;
+      doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(115, yr, 195, yr); yr += 5;
+
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      if (saldo > 0) {
+        doc.setTextColor(200, 0, 0);
+        doc.text('Valor a Pagar:', 155, yr, { align: 'right' });
+        doc.text(fmtR(saldo), 192, yr, { align: 'right' });
+      } else if (saldo < 0) {
+        doc.setTextColor(0, 80, 180);
+        doc.text('Valor a Receber:', 155, yr, { align: 'right' });
+        doc.text(fmtR(Math.abs(saldo)), 192, yr, { align: 'right' });
+      } else {
+        doc.setTextColor(0, 150, 80);
+        doc.text('Situação: Em Dia', 155, yr, { align: 'right' });
+      }
+      doc.setTextColor(0);
+
+      rodape();
+      doc.save('Movimentacao_' + irmaoData.nome.replace(/\s+/g, '_') + '.pdf');
+      showSuccess('Relatório gerado!');
+    } catch (e) {
+      showError('Erro: ' + e.message);
+    }
+  };
+
   const gerarRelatorioIndividual = async (irmaoId) => {
     try {
       showSuccess('Gerando relatório individual...');
@@ -2563,9 +2755,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   gerarPDFResumido();
                   setMenuRelatoriosAberto(false);
                 }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
               >
                 📋 Fechamento Mensal
+              </button>
+              <button
+                onClick={() => {
+                  setMenuRelatoriosAberto(false);
+                  setModalMovAberto(true);
+                }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
+              >
+                📂 Movimentação do Irmão
               </button>
             </div>
           )}
@@ -4228,6 +4429,53 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         onClose={() => setModalResumoAberto(false)}
         resumoIrmaos={resumoIrmaos}
       />
+
+      {/* Modal Relatório Movimentação do Irmão */}
+      {modalMovAberto && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}>
+          <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'480px',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'var(--color-accent)',padding:'1rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <h3 style={{color:'#fff',fontWeight:'800',margin:0,fontSize:'1.05rem'}}>📂 Movimentação do Irmão</h3>
+              <button onClick={()=>setModalMovAberto(false)} style={{background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',borderRadius:'50%',width:'2rem',height:'2rem',cursor:'pointer',fontWeight:'700',fontSize:'1.1rem'}}>×</button>
+            </div>
+            <div style={{padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
+              <div>
+                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Irmão *</label>
+                <select value={movForm.irmaoId} onChange={e=>setMovForm(f=>({...f,irmaoId:e.target.value}))}
+                  style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
+                  <option value="">-- Selecionar irmão --</option>
+                  {irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
+                    <option key={i.id} value={i.id}>{i.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Início *</label>
+                  <input type="date" value={movForm.dataInicio} onChange={e=>setMovForm(f=>({...f,dataInicio:e.target.value}))}
+                    style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Data Fim *</label>
+                  <input type="date" value={movForm.dataFim} onChange={e=>setMovForm(f=>({...f,dataFim:e.target.value}))}
+                    style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}} />
+                </div>
+              </div>
+            </div>
+            <div style={{padding:'1rem 1.25rem',borderTop:'1px solid var(--color-border)',display:'flex',gap:'0.5rem'}}>
+              <button onClick={()=>setModalMovAberto(false)}
+                style={{flex:1,padding:'0.6rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer'}}>
+                Cancelar
+              </button>
+              <button onClick={gerarRelatorioMovimentacao}
+                style={{flex:2,padding:'0.6rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
+                📂 Gerar Relatório
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
