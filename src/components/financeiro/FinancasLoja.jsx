@@ -2086,50 +2086,41 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.text(nomeLoja, 105, yPos, { align: 'center' });
       yPos += 6;
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      if (dadosLoja?.grande_loja) {
-        doc.text('Jurisdicionada a', 105, yPos, { align: 'center' });
-        yPos += 5;
-        doc.setFont('helvetica', 'bold');
-        doc.text(dadosLoja.grande_loja, 105, yPos, { align: 'center' });
-        yPos += 10;
-      } else {
-        doc.text('Jurisdicionada a', 105, yPos, { align: 'center' });
-        yPos += 5;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Grande Loja Maçônica do Estado de Mato Grosso', 105, yPos, { align: 'center' });
-        yPos += 10;
-      }
-
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.text('Relatório de Despesas Pendentes', 105, yPos, { align: 'center' });
-      yPos += 12;
+      yPos += 10;
 
-      // Dados do Irmão em um box
+      // Dados do Irmão — nome + CPF + CIM na mesma linha se couber
       doc.setFillColor(240, 240, 240);
-      doc.rect(15, yPos, 180, 18, 'F');
-      yPos += 5;
+      doc.rect(15, yPos, 180, 12, 'F');
+      yPos += 7;
+      doc.setFontSize(9);
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Nome', 20, yPos);
-      doc.setFont('helvetica', 'bold');
-      doc.text(irmaoData.nome, 40, yPos);
-      yPos += 5;
+      // Nome
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
+      doc.text('Nome:', 18, yPos);
+      doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+      doc.text(irmaoData.nome, 31, yPos);
 
-      doc.setFont('helvetica', 'normal');
-      doc.text('CPF', 20, yPos);
-      doc.setFont('helvetica', 'bold');
-      doc.text(irmaoData.cpf || 'Não informado', 40, yPos);
-      yPos += 5;
+      // CPF após nome
+      const xCpf = 31 + doc.getTextWidth(irmaoData.nome) + 8;
+      const cpfTxt = 'CPF: ' + (irmaoData.cpf || '—');
+      const xCim = xCpf + doc.getTextWidth(cpfTxt) + 8;
+      const cimTxt = 'CIM: ' + (irmaoData.cim || '—');
 
-      doc.setFont('helvetica', 'normal');
-      doc.text('CIM', 20, yPos);
-      doc.setFont('helvetica', 'bold');
-      doc.text(irmaoData.cim || 'Não informado', 40, yPos);
-      yPos += 12;
+      doc.setFont('helvetica', 'normal'); doc.setTextColor(80);
+      if (xCim + doc.getTextWidth(cimTxt) < 195) {
+        doc.text(cpfTxt, xCpf, yPos);
+        doc.text(cimTxt, xCim, yPos);
+      } else if (xCpf + doc.getTextWidth(cpfTxt) < 195) {
+        doc.text(cpfTxt, xCpf, yPos);
+        yPos += 5; doc.text(cimTxt, 31, yPos);
+      } else {
+        yPos += 5; doc.text(cpfTxt + '   ' + cimTxt, 18, yPos);
+      }
+      doc.setTextColor(0);
+      yPos += 8;
 
       // Totalizadores
       let totalGeralDespesa = 0;
