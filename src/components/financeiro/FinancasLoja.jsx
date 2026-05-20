@@ -2135,17 +2135,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let totalGeralDespesa = 0;
       let totalGeralCredito = 0;
 
-      // Saldo anterior: pendentes com vencimento ANTES de hoje (já vencidos e não pagos)
-      const lancsAntInd  = lancsDataFiltrado.filter(l => l.data_vencimento < hojeStr);
-      const lancsPendHoje = lancsDataFiltrado.filter(l => l.data_vencimento >= hojeStr);
+      // Determinar o último mês de despesas pendentes (tipo receita = irmão deve)
+      const todasDesp = lancsDataFiltrado.filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const ultimoMesDesp = todasDesp.length > 0
+        ? todasDesp.map(l => l.data_vencimento.substring(0,7)).sort().pop() // 'YYYY-MM' mais recente
+        : null;
 
-      const lancsReceita = lancsPendHoje.filter(l => l.categorias_financeiras?.tipo === 'receita');
-      const lancsDespesa = lancsPendHoje.filter(l => l.categorias_financeiras?.tipo === 'despesa');
-      const antDespInd   = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'receita');
-      const antRecInd    = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      // Saldo Anterior: despesas de meses ANTES do último mês
+      const lancsAntInd   = ultimoMesDesp
+        ? todasDesp.filter(l => l.data_vencimento.substring(0,7) < ultimoMesDesp)
+        : [];
+      // Despesas do último mês (quadro isolado)
+      const lancsUltMes   = ultimoMesDesp
+        ? todasDesp.filter(l => l.data_vencimento.substring(0,7) === ultimoMesDesp)
+        : todasDesp;
+
+      // Receitas pendentes (loja deve ao irmão) — sem separação
+      const lancsDespesa = lancsDataFiltrado.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+
+      // Manter lancsReceita apontando para despesas do último mês (usado no renderBloco Despesa)
+      const lancsReceita = lancsUltMes;
+
+      const antDespInd   = lancsAntInd;
+      const antRecInd    = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'despesa'); // vazio, por precaução
       const somaAntDesp  = antDespInd.reduce((s,l) => s + parseFloat(l.valor||0), 0);
       const somaAntRec   = antRecInd.reduce((s,l) => s + parseFloat(l.valor||0), 0);
       const saldoAntInd  = somaAntDesp - somaAntRec;
+
+      // Label do último mês
+      const nomeMesesInd = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+      const labelUltMes  = ultimoMesDesp
+        ? nomeMesesInd[parseInt(ultimoMesDesp.substring(5,7))-1] + '/' + ultimoMesDesp.substring(0,4)
+        : 'Mês Atual';
 
       // ── Função auxiliar para renderizar bloco de lançamentos ──────────────
       const renderBloco = (titulo, lancamentos, corTitulo, corValor) => {
@@ -2259,7 +2280,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // Renderizar blocos
-      totalGeralDespesa = renderBloco('Despesa', lancsReceita, [180, 0, 0], [200, 0, 0]);
+      totalGeralDespesa = renderBloco('Despesa - ' + labelUltMes, lancsReceita, [180, 0, 0], [200, 0, 0]);
 
       // ── Parcelas Futuras ─────────────────────────────────────────────────
       if (parcFuturasInd.length > 0) {
@@ -2316,7 +2337,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       // ── Resumo Geral ──────────────────────────────────────────────────────
       if (yPos > 230) { doc.addPage(); yPos = 20; }
 
-      // Incluir saldo anterior devedor no total de despesas
+      // Incluir saldo anterior no total geral
       totalGeralDespesa += somaAntDesp;
       totalGeralCredito += somaAntRec;
       const saldoFinal = totalGeralDespesa - totalGeralCredito;
