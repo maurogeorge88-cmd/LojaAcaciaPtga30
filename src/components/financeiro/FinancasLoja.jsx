@@ -463,7 +463,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       lancamentosFiltrados.sort((a, b) => {
         const dataA = a.status === 'pago' ? a.data_pagamento : a.data_vencimento;
         const dataB = b.status === 'pago' ? b.data_pagamento : b.data_vencimento;
-        return new Date(dataB) - new Date(dataA); // Mais recente primeiro
+        // Ordenar por data (mais recente primeiro), depois por nome do irmão
+        const dataCmp = new Date(dataB) - new Date(dataA);
+        if (dataCmp !== 0) return dataCmp;
+        const nomeA = (a.irmaos?.nome || '').toLowerCase();
+        const nomeB = (b.irmaos?.nome || '').toLowerCase();
+        return nomeA.localeCompare(nomeB);
       });
 
       setLancamentos(lancamentosFiltrados);
