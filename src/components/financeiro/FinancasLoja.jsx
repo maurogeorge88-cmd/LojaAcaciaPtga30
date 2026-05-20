@@ -1668,27 +1668,54 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const { data: irmaoData } = await supabase
         .from('irmaos').select('nome, cpf, cim').eq('id', irmaoId).single();
 
-      // Buscar todos os lançamentos do irmão no período (pagos e pendentes)
-      const { data: lancsData } = await supabase
+      // ── Buscar lançamentos ANTERIORES ao período (saldo anterior) ────────
+      const { data: lancsAnt } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('status', 'pendente')
+        .lt('data_vencimento', dataInicio)
+        .order('data_vencimento');
+
+      // ── Buscar lançamentos DO período ────────────────────────────────────
+      const { data: lancsPeriodo } = await supabase
         .from('lancamentos_loja')
         .select('*, categorias_financeiras(nome, tipo)')
         .eq('origem_irmao_id', irmaoId)
         .or(
-          `and(status.eq.pago,data_pagamento.gte.${dataInicio},data_pagamento.lte.${dataFim}),` +
-          `and(status.eq.pendente,data_vencimento.gte.${dataInicio},data_vencimento.lte.${dataFim})`
+          'and(status.eq.pago,data_pagamento.gte.' + dataInicio + ',data_pagamento.lte.' + dataFim + '),' +
+          'and(status.eq.pendente,data_vencimento.gte.' + dataInicio + ',data_vencimento.lte.' + dataFim + ')'
         )
         .order('data_vencimento');
 
-      if (!lancsData || lancsData.length === 0) {
-        showError('Nenhum lançamento encontrado no período!'); return;
-      }
-
       const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-      const fmtR = (v) => 'R$ ' + parseFloat(v || 0).toFixed(2);
+      const fmtR = (v) => 'R$ ' + Math.abs(parseFloat(v || 0)).toFixed(2);
+      const soma = (arr) => arr.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
 
-      // Separar por tipo e status
-      const despesas = lancsData.filter(l => l.categorias_financeiras?.tipo === 'receita'); // irmão deve
-      const receitas = lancsData.filter(l => l.categorias_financeiras?.tipo === 'despesa'); // loja pagou
+      // Saldo anterior: pendentes de receita (irmão devia) - pendentes de despesa (loja devia)
+      const antDesp = (lancsAnt || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const antRec  = (lancsAnt || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      const saldoAntDesp = soma(antDesp);  // irmão devia antes
+      const saldoAntRec  = soma(antRec);   // loja devia antes
+      const saldoAnt = saldoAntDesp - saldoAntRec; // + = irmão deve, - = loja deve
+
+      // Período: separar por tipo e status
+      const periodo = lancsPeriodo || [];
+      const despPagas    = periodo.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pago');
+      const despPend     = periodo.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente');
+      const recPagas     = periodo.filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pago');
+      const recPend      = periodo.filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.status === 'pendente');
+
+      const totDespPagas = soma(despPagas);
+      const totDespPend  = soma(despPend);
+      const totRecPagas  = soma(recPagas);
+      const totRecPend   = soma(recPend);
+
+      // Resultado final: o que irmão deve AGORA
+      // = saldo anterior (devedor) + pendentes do período (irmão → loja) - receitas pendentes (loja → irmão)
+      const valorAPagar   = (saldoAnt > 0 ? saldoAnt : 0) + totDespPend;
+      const valorAReceber = (saldoAnt < 0 ? Math.abs(saldoAnt) : 0) + totRecPend;
+      const resultadoFinal = valorAPagar - valorAReceber;
 
       const jsPDFModule = await import('jspdf');
       const jsPDF = jsPDFModule.default;
@@ -1714,7 +1741,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         try { doc.addImage(dadosLoja.logo_url, 'PNG', 88, y, 30, 30); y += 35; } catch {}
       }
 
-      // ── Cabeçalho ────────────────────────────────────────────────────────
+      // ── Cabeçalho ─────────────────────────────────────────────────────────
       const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga') + ' Nº ' + (dadosLoja?.numero_loja || '30');
       doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
       doc.text(nomeLoja, 105, y, { align: 'center' }); y += 6;
@@ -1723,7 +1750,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
       doc.text('Extrato de Movimentação Financeira', 105, y, { align: 'center' }); y += 10;
 
-      // ── Dados do irmão ───────────────────────────────────────────────────
+      // ── Dados do irmão ────────────────────────────────────────────────────
       doc.setFillColor(240, 240, 240); doc.rect(15, y, 180, 22, 'F');
       y += 5;
       doc.setFontSize(9); doc.setFont('helvetica', 'normal');
@@ -1731,48 +1758,44 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       doc.setFont('helvetica', 'normal');
       doc.text('CIM: ' + (irmaoData.cim || '—'), 18, y);
       doc.text('CPF: ' + (irmaoData.cpf || '—'), 60, y);
-      doc.text('Período: ' + fmtData(dataInicio) + ' a ' + fmtData(dataFim), 120, y); y += 12;
+      doc.text('Período: ' + fmtData(dataInicio) + ' a ' + fmtData(dataFim), 115, y);
+      y += 16;
 
-      // ── Função de bloco ─────────────────────────────────────────────────
-      const renderBloco = (titulo, lancs, corTitulo, corValor) => {
+      // ── Função renderBloco ────────────────────────────────────────────────
+      const renderBloco = (titulo, lancs, corTitulo, corValor, semStatus) => {
         if (!lancs.length) return 0;
         checkPage(20);
 
         doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corTitulo);
-        doc.text(titulo, 15, y); y += 2;
+        doc.text(titulo, 15, y); y += 3;
         doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
 
-        // Cabeçalho
         doc.setFillColor(230, 230, 230); doc.rect(15, y, 180, 6, 'F');
         doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
         doc.text('DtLanc', 17, y + 4);
         doc.text('DtVenc', 43, y + 4);
         doc.text('Descrição', 69, y + 4);
-        doc.text('Status', 148, y + 4);
+        if (!semStatus) doc.text('Status', 148, y + 4);
         doc.text('Valor', 192, y + 4, { align: 'right' });
         y += 11;
 
         let subtotal = 0;
         doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
-
         lancs.forEach(lanc => {
           checkPage(8);
           const dataLanc = fmtData(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento);
           const dataVenc = fmtData(lanc.data_vencimento);
           const desc = (lanc.descricao || '').substring(0, 38);
           const valor = parseFloat(lanc.valor || 0);
-          const isPago = lanc.status === 'pago';
           subtotal += valor;
-
           doc.setTextColor(0);
           doc.text(dataLanc, 17, y);
           doc.text(dataVenc, 43, y);
           doc.text(desc, 69, y);
-
-          // Status badge
-          if (isPago) { doc.setTextColor(16, 120, 60); doc.text('Pago', 148, y); }
-          else { doc.setTextColor(200, 80, 0); doc.text('Pendente', 148, y); }
-
+          if (!semStatus) {
+            if (lanc.status === 'pago') { doc.setTextColor(16, 120, 60); doc.text('Pago', 148, y); }
+            else { doc.setTextColor(200, 80, 0); doc.text('Pendente', 148, y); }
+          }
           doc.setTextColor(...corValor);
           doc.text(fmtR(valor), 192, y, { align: 'right' });
           doc.setTextColor(0);
@@ -1792,15 +1815,56 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         return subtotal;
       };
 
-      const totDesp = renderBloco('Despesa', despesas, [180, 0, 0], [200, 0, 0]);
-      const totRec  = renderBloco('Receita', receitas, [0, 80, 180], [0, 80, 180]);
+      // ── Saldo Anterior ────────────────────────────────────────────────────
+      if (lancsAnt && lancsAnt.length > 0) {
+        checkPage(20);
+        doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 40, 150);
+        doc.text('Saldo Anterior (pendências antes de ' + fmtData(dataInicio) + ')', 15, y); y += 3;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
 
-      // ── Resumo Geral ────────────────────────────────────────────────────
-      checkPage(40);
-      const saldo = totDesp - totRec;
+        doc.setFillColor(230, 230, 240); doc.rect(15, y, 180, 6, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('DtVenc', 17, y + 4); doc.text('Descrição', 50, y + 4); doc.text('Tipo', 148, y + 4);
+        doc.text('Valor', 192, y + 4, { align: 'right' });
+        y += 11;
+
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+        lancsAnt.forEach(lanc => {
+          checkPage(8);
+          const tipo = lanc.categorias_financeiras?.tipo === 'receita' ? 'Deve' : 'A Receber';
+          const cor = lanc.categorias_financeiras?.tipo === 'receita' ? [200, 0, 0] : [0, 80, 180];
+          doc.setTextColor(0);
+          doc.text(fmtData(lanc.data_vencimento), 17, y);
+          doc.text((lanc.descricao || '').substring(0, 50), 50, y);
+          doc.setTextColor(...cor); doc.text(tipo, 148, y);
+          doc.text(fmtR(lanc.valor), 192, y, { align: 'right' });
+          doc.setTextColor(0);
+          y += 5;
+        });
+
+        y += 1;
+        doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('Saldo Anterior:', 140, y, { align: 'right' });
+        if (saldoAnt > 0) { doc.setTextColor(200, 0, 0); doc.text('Deve ' + fmtR(saldoAnt), 192, y, { align: 'right' }); }
+        else if (saldoAnt < 0) { doc.setTextColor(0, 80, 180); doc.text('A Receber ' + fmtR(saldoAnt), 192, y, { align: 'right' }); }
+        else { doc.setTextColor(0, 150, 80); doc.text('Em Dia', 192, y, { align: 'right' }); }
+        y += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
+        y += 14; doc.setTextColor(0);
+      }
+
+      // ── Blocos do período ──────────────────────────────────────────────────
+      renderBloco('Despesas Pagas (Irmão → Loja)', despPagas, [160, 0, 0], [200, 0, 0], true);
+      renderBloco('Despesas Pendentes (Irmão → Loja)', despPend, [200, 60, 0], [220, 60, 0], true);
+      renderBloco('Receitas Pagas (Loja → Irmão)', recPagas, [0, 80, 180], [0, 100, 200], true);
+      renderBloco('Receitas Pendentes (Loja → Irmão)', recPend, [80, 0, 180], [100, 0, 200], true);
+
+      // ── Resumo Geral ───────────────────────────────────────────────────────
+      checkPage(55);
+      const yBanco = y;
 
       // Dados bancários (esquerda)
-      const yBanco = y;
       doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
       doc.text('Dados Bancários', 45, y, { align: 'center' }); y += 5;
       doc.setFontSize(9); doc.setTextColor(0, 100, 180); doc.setFont('helvetica', 'bold');
@@ -1815,22 +1879,34 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let yr = yBanco;
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
       doc.text('Resumo Geral:', 192, yr, { align: 'right' }); yr += 7;
-      doc.setFontSize(10);
-      doc.text('Despesa Total:', 155, yr, { align: 'right' });
-      doc.setTextColor(200, 0, 0); doc.text(fmtR(totDesp), 192, yr, { align: 'right' }); yr += 5;
-      doc.setTextColor(0); doc.text('Receita Total:', 155, yr, { align: 'right' });
-      doc.setTextColor(0, 80, 180); doc.text(fmtR(totRec), 192, yr, { align: 'right' }); yr += 3;
-      doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(115, yr, 195, yr); yr += 5;
+
+      doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+      if (saldoAnt !== 0) {
+        if (saldoAnt > 0) { doc.setTextColor(200, 0, 0); doc.text('(+) Saldo Anterior (deve):', 155, yr, { align: 'right' }); doc.text(fmtR(saldoAnt), 192, yr, { align: 'right' }); }
+        else { doc.setTextColor(0, 80, 180); doc.text('(-) Saldo Anterior (a receber):', 155, yr, { align: 'right' }); doc.text(fmtR(saldoAnt), 192, yr, { align: 'right' }); }
+        yr += 5;
+      }
+      doc.setTextColor(160, 0, 0);
+      doc.text('(+) Desp. Pendentes:', 155, yr, { align: 'right' }); doc.text(fmtR(totDespPend), 192, yr, { align: 'right' }); yr += 5;
+      doc.setTextColor(0, 80, 180);
+      doc.text('(-) Rec. Pendentes:', 155, yr, { align: 'right' }); doc.text(fmtR(totRecPend), 192, yr, { align: 'right' }); yr += 5;
+
+      // Informativos (não entram no cálculo)
+      doc.setTextColor(120);
+      doc.text('Desp. Pagas (info):', 155, yr, { align: 'right' }); doc.text(fmtR(totDespPagas), 192, yr, { align: 'right' }); yr += 5;
+      doc.text('Rec. Pagas (info):', 155, yr, { align: 'right' }); doc.text(fmtR(totRecPagas), 192, yr, { align: 'right' }); yr += 3;
+
+      doc.setTextColor(0); doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(115, yr, 195, yr); yr += 6;
 
       doc.setFontSize(11); doc.setFont('helvetica', 'bold');
-      if (saldo > 0) {
+      if (resultadoFinal > 0) {
         doc.setTextColor(200, 0, 0);
         doc.text('Valor a Pagar:', 155, yr, { align: 'right' });
-        doc.text(fmtR(saldo), 192, yr, { align: 'right' });
-      } else if (saldo < 0) {
+        doc.text(fmtR(resultadoFinal), 192, yr, { align: 'right' });
+      } else if (resultadoFinal < 0) {
         doc.setTextColor(0, 80, 180);
         doc.text('Valor a Receber:', 155, yr, { align: 'right' });
-        doc.text(fmtR(Math.abs(saldo)), 192, yr, { align: 'right' });
+        doc.text(fmtR(resultadoFinal), 192, yr, { align: 'right' });
       } else {
         doc.setTextColor(0, 150, 80);
         doc.text('Situação: Em Dia', 155, yr, { align: 'right' });
