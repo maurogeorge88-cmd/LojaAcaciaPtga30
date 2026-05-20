@@ -2008,21 +2008,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .eq('status', 'pendente')
         .order('data_vencimento');
 
-      // Buscar parcelas futuras (pendentes após hoje)
-      const hoje = new Date().toISOString().split('T')[0];
-      const { data: lancsFutInd } = await supabase
-        .from('lancamentos_loja')
-        .select('*, categorias_financeiras(nome, tipo)')
-        .eq('origem_irmao_id', irmaoId)
-        .eq('status', 'pendente')
-        .gt('data_vencimento', hoje)
-        .order('data_vencimento');
-      const parcFuturasInd = (lancsFutInd || []).filter(l => l.categorias_financeiras?.tipo === 'receita')
-        .filter(l => !(lancsData || []).some(x => x.id === l.id)); // evitar duplicatas
+      // Separar: lançamentos com vencimento hoje ou antes = pendentes normais
+      //           lançamentos com vencimento futuro = parcelas futuras (bloco separado)
+      const hojeDt = new Date();
+      const hojeStr = hojeDt.getFullYear() + '-' + String(hojeDt.getMonth()+1).padStart(2,'0') + '-' + String(hojeDt.getDate()).padStart(2,'0');
+      const parcFuturasInd = (lancsData || []).filter(l =>
+        l.categorias_financeiras?.tipo === 'receita' && l.data_vencimento > hojeStr
+      );
+      // Remover parcelas futuras do lancsData para não aparecerem no bloco Despesa
+      const lancsDataFiltrado = (lancsData || []).filter(l => l.data_vencimento <= hojeStr);
 
       if (lancsError) throw lancsError;
 
-      if (!lancsData || lancsData.length === 0) {
+      if ((!lancsData || lancsData.length === 0)) {
         showError('Este irmão não possui lançamentos pendentes!');
         return;
       }
@@ -2044,9 +2042,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .eq('membro_id', irmaoId)
         .in('sessao_id', ultimasSessoes?.map(s => s.id) || []);
 
-      // Organizar por mês/ano
+      // Organizar por mês/ano (apenas pendentes com vencimento até hoje)
       const lancsPorMes = {};
-      lancsData.forEach(lanc => {
+      lancsDataFiltrado.forEach(lanc => {
         const data = new Date(lanc.data_vencimento + 'T00:00:00');
         const mesAno = `${data.getMonth() + 1}/${data.getFullYear()}`;
         const mesNome = meses[data.getMonth()];
