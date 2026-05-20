@@ -80,6 +80,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
   const [modalMovAberto, setModalMovAberto] = useState(false);
+  const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
   const [movForm, setMovForm] = useState({ irmaoId: '', dataInicio: '', dataFim: '' });
 
   // Controle de fechamento de mês
@@ -1980,7 +1981,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
-  const gerarRelatorioIndividual = async (irmaoId) => {
+  const gerarRelatorioIndividual = async (irmaoId, comPresenca = false) => {
     try {
       showSuccess('Gerando relatório individual...');
       
@@ -2395,7 +2396,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
       doc.setTextColor(0, 0, 0);
       yPos = Math.max(yPos, yr) + 15;
-      
+
+      // ── Bloco de presença condicional ───────────────────────────────────
+      if (!comPresenca) {
+        rodape();
+        const mesAtualSave = new Date().getMonth() + 1;
+        const anoAtualSave = new Date().getFullYear();
+        const nomeCompletoSave = irmaoData.nome.trim();
+        const primNomesSave = nomeCompletoSave.split(' ').slice(0, 2).join('_');
+        doc.save(`Rel_Financas_${primNomesSave}_${mesAtualSave}_${anoAtualSave}.pdf`);
+        showSuccess('Relatório gerado com sucesso!');
+        return;
+      }
+
       // Mensagem da Tesouraria
       if (yPos > 250) {
         doc.addPage();
@@ -2851,7 +2864,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       for (const irmaoId of irmaoIds) {
         try {
-          await gerarRelatorioIndividual(parseInt(irmaoId));
+          await gerarRelatorioIndividual(parseInt(irmaoId), inclPresenca);
           sucessos++;
           // Pequeno delay entre PDFs para não sobrecarregar
           await new Promise(resolve => setTimeout(resolve, 500));
@@ -4062,7 +4075,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
                       {/* RODAPÉ */}
                       <div style={{padding:'0.75rem 1rem',borderTop:'1px solid var(--color-border)',display:'flex',justifyContent:'flex-end'}}>
-                        <button onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId)}
+                        <button onClick={() => gerarRelatorioIndividual(irmaoData.irmaoId, inclPresenca)}
                           style={{padding:'0.4rem 1rem',background:'var(--color-accent)',color:'#fff',
                             border:'none',borderRadius:'var(--radius-md)',fontSize:'0.82rem',fontWeight:'600',cursor:'pointer'}}>
                           📄 Gerar PDF Individual
