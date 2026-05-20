@@ -2208,6 +2208,49 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         return subtotal;
       };
 
+      // ── Saldo Anterior ────────────────────────────────────────────────────
+      if (lancsAntInd.length > 0) {
+        if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(80, 40, 150);
+        doc.text('Saldo Anterior - Pendencias de meses anteriores', 15, yPos); yPos += 3;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, yPos, 195, yPos); yPos += 4;
+
+        doc.setFillColor(230, 225, 245); doc.rect(15, yPos, 180, 6, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('DtVenc', 17, yPos + 4);
+        doc.text('Descricao', 50, yPos + 4);
+        doc.text('Tipo', 155, yPos + 4);
+        doc.text('Valor', 192, yPos + 4, { align: 'right' });
+        yPos += 11;
+
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+        lancsAntInd.forEach(lanc => {
+          if (yPos > 275) { doc.addPage(); yPos = 20; }
+          const tipo  = lanc.categorias_financeiras?.tipo === 'receita' ? 'Deve' : 'A Receber';
+          const cor   = lanc.categorias_financeiras?.tipo === 'receita' ? [200, 0, 0] : [0, 80, 180];
+          const fmtDtInd = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+          doc.setTextColor(0);
+          doc.text(fmtDtInd(lanc.data_vencimento), 17, yPos);
+          doc.text((lanc.descricao || '').substring(0, 50), 50, yPos);
+          doc.setTextColor(...cor); doc.text(tipo, 155, yPos);
+          doc.setTextColor(200, 0, 0); doc.text('R$ ' + parseFloat(lanc.valor||0).toFixed(2), 192, yPos, { align: 'right' });
+          doc.setTextColor(0);
+          yPos += 5;
+        });
+
+        yPos += 1;
+        doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, yPos, 195, yPos); yPos += 5;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('Saldo Anterior:', 140, yPos, { align: 'right' });
+        if (saldoAntInd > 0) { doc.setTextColor(200, 0, 0); doc.text('Deve R$ ' + saldoAntInd.toFixed(2), 192, yPos, { align: 'right' }); }
+        else if (saldoAntInd < 0) { doc.setTextColor(0, 80, 180); doc.text('A Receber R$ ' + Math.abs(saldoAntInd).toFixed(2), 192, yPos, { align: 'right' }); }
+        else { doc.setTextColor(0, 150, 80); doc.text('Em Dia', 192, yPos, { align: 'right' }); }
+        yPos += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, yPos, 195, yPos);
+        yPos += 12; doc.setTextColor(0);
+      }
+
       // Renderizar blocos
       totalGeralDespesa = renderBloco('Despesa', lancsReceita, [180, 0, 0], [200, 0, 0]);
 
@@ -2266,6 +2309,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       // ── Resumo Geral ──────────────────────────────────────────────────────
       if (yPos > 230) { doc.addPage(); yPos = 20; }
 
+      // Incluir saldo anterior devedor no total de despesas
+      totalGeralDespesa += somaAntDesp;
+      totalGeralCredito += somaAntRec;
       const saldoFinal = totalGeralDespesa - totalGeralCredito;
 
       // Dados bancários (lado esquerdo)
