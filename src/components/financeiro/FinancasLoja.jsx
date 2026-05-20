@@ -2008,6 +2008,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .eq('status', 'pendente')
         .order('data_vencimento');
 
+      // Buscar parcelas futuras (pendentes após hoje)
+      const hoje = new Date().toISOString().split('T')[0];
+      const { data: lancsFutInd } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(nome, tipo)')
+        .eq('origem_irmao_id', irmaoId)
+        .eq('status', 'pendente')
+        .gt('data_vencimento', hoje)
+        .order('data_vencimento');
+      const parcFuturasInd = (lancsFutInd || []).filter(l => l.categorias_financeiras?.tipo === 'receita')
+        .filter(l => !(lancsData || []).some(x => x.id === l.id)); // evitar duplicatas
+
       if (lancsError) throw lancsError;
 
       if (!lancsData || lancsData.length === 0) {
@@ -2200,6 +2212,57 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       // Renderizar blocos
       totalGeralDespesa = renderBloco('Despesa', lancsReceita, [180, 0, 0], [200, 0, 0]);
+
+      // ── Parcelas Futuras ─────────────────────────────────────────────────
+      if (parcFuturasInd.length > 0) {
+        if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+        // Título com "INFORMATIVO" destacado
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+        doc.text('Parcelas Futuras - Irmao com a Loja  ', 15, yPos);
+        const largTitulo = doc.getTextWidth('Parcelas Futuras - Irmao com a Loja  ');
+        doc.setTextColor(200, 100, 0);
+        doc.text('[ INFORMATIVO ]', 15 + largTitulo, yPos);
+        yPos += 3;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, yPos, 195, yPos); yPos += 4;
+
+        doc.setFillColor(245, 240, 225); doc.rect(15, yPos, 180, 6, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+        doc.text('DtVenc', 17, yPos + 4);
+        doc.text('Descricao', 50, yPos + 4);
+        doc.text('Parcela', 155, yPos + 4);
+        doc.text('Valor', 192, yPos + 4, { align: 'right' });
+        yPos += 11;
+
+        let totFutInd = 0;
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+        parcFuturasInd.forEach(lanc => {
+          if (yPos > 275) { doc.addPage(); yPos = 20; }
+          const parc = lanc.numero_parcela && lanc.total_parcelas
+            ? lanc.numero_parcela + '/' + lanc.total_parcelas : '—';
+          const valor = parseFloat(lanc.valor || 0);
+          totFutInd += valor;
+          doc.setTextColor(0);
+          doc.text(new Date(lanc.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR'), 17, yPos);
+          doc.text((lanc.descricao || '').substring(0, 52), 50, yPos);
+          doc.setTextColor(100, 100, 100); doc.text(parc, 155, yPos);
+          doc.setTextColor(150, 80, 0); doc.text('R$ ' + valor.toFixed(2), 192, yPos, { align: 'right' });
+          doc.setTextColor(0);
+          yPos += 5;
+        });
+
+        yPos += 1;
+        doc.setDrawColor(120); doc.setLineWidth(0.4); doc.line(15, yPos, 195, yPos); yPos += 5;
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+        doc.text('Total Parcelas Futuras', 140, yPos, { align: 'right' });
+        doc.setTextColor(200, 100, 0); doc.setFont('helvetica', 'bold');
+        doc.text('[ INFORMATIVO ]', 141, yPos);
+        doc.text('R$ ' + totFutInd.toFixed(2), 192, yPos, { align: 'right' });
+        yPos += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, yPos, 195, yPos);
+        yPos += 12; doc.setTextColor(0);
+      }
+
       totalGeralCredito = renderBloco('Receita', lancsDespesa, [0, 80, 180], [0, 80, 180]);
 
       // ── Resumo Geral ──────────────────────────────────────────────────────
