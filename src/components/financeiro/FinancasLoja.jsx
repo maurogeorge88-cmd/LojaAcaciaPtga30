@@ -350,7 +350,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           *,
           categorias_financeiras(nome, tipo),
           irmaos(nome)
-        `);
+        `)
+        .limit(500); // ⚡ PERFORMANCE: Limita a 500 registros
 
       // - PAGOS: Filtrar por data_pagamento (quando foi efetivamente pago)
       // - PENDENTES: Filtrar por data_vencimento (quando deve ser pago)
@@ -411,23 +412,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         query = query.eq('origem_irmao_id', parseInt(origem_irmao_id));
       }
 
-      // Executar com paginação para buscar todos os registros
-      let allData = [];
-      let pageStart = 0;
-      const pageSize = 1000;
-      let hasMore = true;
-
-      while (hasMore) {
-        const { data: pageData, error: pageError } = await query.range(pageStart, pageStart + pageSize - 1);
-        if (pageError) throw pageError;
-        if (!pageData || pageData.length === 0) break;
-        allData = [...allData, ...pageData];
-        hasMore = pageData.length === pageSize;
-        pageStart += pageSize;
-      }
-
-      const data = allData;
-      const error = null;
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -1813,178 +1798,150 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let totalGeralDespesa = 0;
       let totalGeralCredito = 0;
 
-      // Para cada mês
-      const mesesOrdenados = Object.keys(lancsPorMes).sort((a, b) => {
-        const [mesA, anoA] = a.split('/').map(Number);
-        const [mesB, anoB] = b.split('/').map(Number);
-        return anoA !== anoB ? anoA - anoB : mesA - mesB;
-      });
+      // Separar lançamentos por tipo: receita = irmão deve, despesa = loja deve
+      const todosLancs = lancsData;
+      const lancsReceita = todosLancs.filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const lancsDespesa = todosLancs.filter(l => l.categorias_financeiras?.tipo === 'despesa');
 
-      mesesOrdenados.forEach(mesAno => {
-        const mesInfo = lancsPorMes[mesAno];
-        
-        if (yPos > 240) {
-          doc.addPage();
-          yPos = 20;
-        }
+      // ── Função auxiliar para renderizar bloco de lançamentos ──────────────
+      const renderBloco = (titulo, lancamentos, corTitulo, corValor) => {
+        if (lancamentos.length === 0) return 0;
+        if (yPos > 220) { doc.addPage(); yPos = 20; }
 
-        // Título do Mês
-        doc.setFillColor(173, 216, 230);
-        doc.rect(15, yPos, 180, 7, 'F');
-        doc.setFontSize(10);
+        // Título em negrito
+        doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text(mesInfo.mesNome, 17, yPos + 5);
-        yPos += 10; // 3mm de espaço após o mês
+        doc.setTextColor(...corTitulo);
+        doc.text(titulo, 15, yPos);
+        yPos += 2;
 
-        // Cabeçalho das colunas com faixa azul clara
-        doc.setFillColor(200, 230, 245); // Azul mais claro (tom sobre tom)
-        doc.rect(15, yPos, 180, 6, 'F');
-        doc.setFontSize(9); // Aumentado de 8 para 9
-        doc.setTextColor(0, 0, 0);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DtLanc', 17, yPos + 4);
-        doc.text('Descrição', 40, yPos + 4);
-        doc.text('Despesa', 120, yPos + 4, { align: 'right' });
-        doc.text('Crédito', 150, yPos + 4, { align: 'right' });
-        doc.text('Saldo', 190, yPos + 4, { align: 'right' });
-        yPos += 11; // 5mm de espaço total após o cabeçalho (2mm anterior + 3mm adicional)
-
-        // Lançamentos
-        let subtotalDespesa = 0;  // O que o irmão DEVE
-        let subtotalCredito = 0;  // O que o irmão TEM A RECEBER
-        doc.setFontSize(9); // Aumentado de 8 para 9
-        doc.setFont('helvetica', 'normal');
-        
-        mesInfo.lancamentos.forEach(lanc => {
-          if (yPos > 275) {
-            doc.addPage();
-            yPos = 20;
-          }
-
-          const dataLanc = formatarDataBR(lanc.data_vencimento);
-          const descricao = lanc.descricao?.substring(0, 40) || '';
-          const valor = parseFloat(lanc.valor);
-          const tipo = lanc.categorias_financeiras?.tipo;
-
-          let valorDespesa = 0;
-          let valorCredito = 0;
-
-          // LÓGICA CORRETA:
-          // - Se é RECEITA (ex: mensalidade) → Irmão DEVE (coluna Despesa)
-          // - Se é DESPESA (ex: irmão pagou água) → Irmão TEM CRÉDITO (coluna Crédito)
-          if (tipo === 'receita') {
-            valorDespesa = valor;
-            subtotalDespesa += valor;
-          } else if (tipo === 'despesa') {
-            valorCredito = valor;
-            subtotalCredito += valor;
-          }
-
-          doc.setTextColor(0, 0, 0);
-          doc.text(dataLanc, 15, yPos);
-          doc.text(descricao, 40, yPos);
-          
-          // Despesa em VERMELHO
-          if (valorDespesa > 0) {
-            doc.setTextColor(255, 0, 0);
-            doc.text(`R$ ${valorDespesa.toFixed(2)}`, 120, yPos, { align: 'right' });
-            doc.setTextColor(0, 0, 0);
-          }
-          
-          // Crédito em AZUL
-          if (valorCredito > 0) {
-            doc.setTextColor(0, 100, 255);
-            doc.text(`R$ ${valorCredito.toFixed(2)}`, 150, yPos, { align: 'right' });
-            doc.setTextColor(0, 0, 0);
-          }
-          
-          // Saldo parcial em VERMELHO
-          const saldoParcial = subtotalDespesa - subtotalCredito;
-          doc.setTextColor(255, 0, 0);
-          doc.text(`R$ ${Math.abs(saldoParcial).toFixed(2)}`, 190, yPos, { align: 'right' });
-          doc.setTextColor(0, 0, 0);
-          
-          yPos += 5;
-        });
-
-        // Linha preta separadora ANTES do subtotal
-        yPos += 1;
-        doc.setDrawColor(0, 0, 0); // Preto
-        doc.setLineWidth(0.5);
+        // Linha separadora abaixo do título
+        doc.setDrawColor(150); doc.setLineWidth(0.3);
         doc.line(15, yPos, 195, yPos);
         yPos += 4;
 
-        // Subtotal do mês - alinhado com coluna Crédito
-        const saldoMes = subtotalDespesa - subtotalCredito;
-        doc.setFontSize(11); // Aumentado para 11 (2 a mais que 9 dos lançamentos)
-        doc.setFont('helvetica', 'bold');
+        // Cabeçalho colunas
+        doc.setFillColor(230, 230, 230);
+        doc.rect(15, yPos, 180, 6, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
+        doc.text('DtLanc', 17, yPos + 4);
+        doc.text('DtVenc', 42, yPos + 4);
+        doc.text('Descrição', 67, yPos + 4);
+        doc.text('Valor', 190, yPos + 4, { align: 'right' });
+        yPos += 8;
+
+        let subtotal = 0;
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+
+        lancamentos.forEach(lanc => {
+          if (yPos > 275) { doc.addPage(); yPos = 20; }
+          const dataLanc = formatarDataBR(lanc.data_lancamento || lanc.data_vencimento);
+          const dataVenc = formatarDataBR(lanc.data_vencimento);
+          const desc = (lanc.descricao || '').substring(0, 42);
+          const valor = parseFloat(lanc.valor || 0);
+          subtotal += valor;
+
+          doc.setTextColor(0, 0, 0);
+          doc.text(dataLanc, 17, yPos);
+          doc.text(dataVenc, 42, yPos);
+          doc.text(desc, 67, yPos);
+          doc.setTextColor(...corValor);
+          doc.text('R$ ' + valor.toFixed(2), 190, yPos, { align: 'right' });
+          doc.setTextColor(0, 0, 0);
+          yPos += 5;
+        });
+
+        // Linha separadora + subtotal
+        yPos += 1;
+        doc.setDrawColor(0); doc.setLineWidth(0.5);
+        doc.line(15, yPos, 195, yPos);
+        yPos += 5;
+
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
+        doc.text('Sub Total ' + titulo + ':', 130, yPos, { align: 'right' });
+        doc.setTextColor(...corValor);
+        doc.text('R$ ' + subtotal.toFixed(2), 190, yPos, { align: 'right' });
         doc.setTextColor(0, 0, 0);
-        doc.text('Sub Total', 150, yPos, { align: 'right' });
-        doc.setTextColor(255, 0, 0);
-        doc.text(`R$ ${Math.abs(saldoMes).toFixed(2)}`, 190, yPos, { align: 'right' });
-        doc.setTextColor(0, 0, 0);
-        
-        totalGeralDespesa += subtotalDespesa;
-        totalGeralCredito += subtotalCredito;
-        yPos += 10;
-      });
 
-      // Total Final
-      if (yPos > 220) {
-        doc.addPage();
-        yPos = 20;
-      }
+        yPos += 2;
+        doc.setDrawColor(150); doc.setLineWidth(0.3);
+        doc.line(15, yPos, 195, yPos);
+        yPos += 8;
 
-      // Dados Bancários (sem fundo cinza) - deslocado mais para esquerda
+        return subtotal;
+      };
+
+      // Renderizar blocos
+      totalGeralDespesa = renderBloco('Despesa', lancsReceita, [180, 0, 0], [200, 0, 0]);
+      totalGeralCredito = renderBloco('Receita', lancsDespesa, [0, 80, 180], [0, 80, 180]);
+
+      // ── Resumo Geral ──────────────────────────────────────────────────────
+      if (yPos > 230) { doc.addPage(); yPos = 20; }
+
+      const saldoFinal = totalGeralDespesa - totalGeralCredito;
+
+      // Dados bancários (lado esquerdo)
+      const ybanco = yPos;
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0, 0, 0);
+      doc.text('Dados Bancários', 45, yPos, { align: 'center' });
       yPos += 5;
-
-      doc.setFontSize(10); // Aumentado de 9 para 10
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(0, 0, 0);
-      doc.text('Dados Bancários', 45, yPos, { align: 'center' }); // Mudado de 57.5 para 45
-      yPos += 5;
-
-      doc.setFontSize(9); // Aumentado de 8 para 9
-      doc.setTextColor(0, 100, 180);
-      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9); doc.setTextColor(0, 100, 180); doc.setFont('helvetica', 'bold');
       doc.text('Cooperativa de Crédito Sicredi', 45, yPos, { align: 'center' });
       yPos += 4;
-
-      doc.setTextColor(0, 0, 0); // Preto
-      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0, 0, 0); doc.setFont('helvetica', 'normal');
       doc.text('Ag.: 0802 - C.C.: 86.913-9', 45, yPos, { align: 'center' });
       yPos += 4;
       doc.text('PIX.: 03.250.704/0001-00', 45, yPos, { align: 'center' });
       yPos += 4;
-      doc.setFontSize(8); // Aumentado de 7 para 8
+      doc.setFontSize(8);
       doc.text('CNPJ: 03.250.704/0001-00', 45, yPos, { align: 'center' });
       yPos += 4;
       doc.text('Fav.: ARLSACACIA PARANATINGA 30', 45, yPos, { align: 'center' });
 
-      // Total (lado direito)
-      yPos -= 21;
-      const saldoFinal = totalGeralDespesa - totalGeralCredito;
-      
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Total Despesa', 140, yPos, { align: 'right' });
-      doc.setTextColor(255, 0, 0);
-      doc.text(`R$ ${totalGeralDespesa.toFixed(2)}`, 190, yPos, { align: 'right' });
-      doc.setTextColor(0, 0, 0);
-      yPos += 7;
+      // Resumo geral (lado direito)
+      let yr = ybanco;
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
 
-      doc.text('Total Crédito', 140, yPos, { align: 'right' });
-      doc.setTextColor(0, 100, 255);
-      doc.text(`R$ ${totalGeralCredito.toFixed(2)}`, 190, yPos, { align: 'right' });
+      // Título Resumo Geral
       doc.setTextColor(0, 0, 0);
-      yPos += 7;
+      doc.text('Resumo Geral:', 190, yr, { align: 'right' });
+      yr += 6;
 
-      doc.text('Saldo', 140, yPos, { align: 'right' });
-      doc.setTextColor(255, 0, 0);
-      doc.text(`R$ ${Math.abs(saldoFinal).toFixed(2)}`, 190, yPos, { align: 'right' });
+      doc.setFontSize(10);
+      doc.text('Despesa Total:', 155, yr, { align: 'right' });
+      doc.setTextColor(200, 0, 0);
+      doc.text('R$ ' + totalGeralDespesa.toFixed(2), 190, yr, { align: 'right' });
+      yr += 5;
+
       doc.setTextColor(0, 0, 0);
-      
-      yPos += 35; // Espaço de 2cm (~20mm = 35 pontos)
+      doc.text('Receita Total:', 155, yr, { align: 'right' });
+      doc.setTextColor(0, 80, 180);
+      doc.text('R$ ' + totalGeralCredito.toFixed(2), 190, yr, { align: 'right' });
+      yr += 2;
+
+      // Linha separadora antes do saldo final
+      doc.setDrawColor(0); doc.setLineWidth(0.5);
+      doc.line(115, yr, 195, yr);
+      yr += 5;
+
+      // Valor a Pagar ou Valor a Receber
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold');
+      if (saldoFinal > 0) {
+        // Irmão deve para a loja
+        doc.setTextColor(200, 0, 0);
+        doc.text('Valor a Pagar:', 155, yr, { align: 'right' });
+        doc.text('R$ ' + saldoFinal.toFixed(2), 190, yr, { align: 'right' });
+      } else if (saldoFinal < 0) {
+        // Loja deve para o irmão
+        doc.setTextColor(0, 80, 180);
+        doc.text('Valor a Receber:', 155, yr, { align: 'right' });
+        doc.text('R$ ' + Math.abs(saldoFinal).toFixed(2), 190, yr, { align: 'right' });
+      } else {
+        doc.setTextColor(0, 150, 80);
+        doc.text('Situação: Em Dia', 155, yr, { align: 'right' });
+      }
+      doc.setTextColor(0, 0, 0);
+      yPos = Math.max(yPos, yr) + 15;
       
       // Mensagem da Tesouraria
       if (yPos > 250) {
