@@ -2135,13 +2135,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let totalGeralDespesa = 0;
       let totalGeralCredito = 0;
 
-      // Separar saldo anterior (meses anteriores) dos pendentes do mês atual
-      const primeiroDiaMes = hojeStr.substring(0,7) + '-01';
-      const lancsAntInd  = lancsDataFiltrado.filter(l => l.data_vencimento < primeiroDiaMes);
-      const lancsPendInd = lancsDataFiltrado.filter(l => l.data_vencimento >= primeiroDiaMes);
+      // Saldo anterior: pendentes com vencimento ANTES de hoje (já vencidos e não pagos)
+      const lancsAntInd  = lancsDataFiltrado.filter(l => l.data_vencimento < hojeStr);
+      const lancsPendHoje = lancsDataFiltrado.filter(l => l.data_vencimento >= hojeStr);
 
-      const lancsReceita = lancsPendInd.filter(l => l.categorias_financeiras?.tipo === 'receita');
-      const lancsDespesa = lancsPendInd.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      const lancsReceita = lancsPendHoje.filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const lancsDespesa = lancsPendHoje.filter(l => l.categorias_financeiras?.tipo === 'despesa');
       const antDespInd   = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'receita');
       const antRecInd    = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'despesa');
       const somaAntDesp  = antDespInd.reduce((s,l) => s + parseFloat(l.valor||0), 0);
