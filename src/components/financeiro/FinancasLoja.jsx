@@ -2068,6 +2068,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const doc = new jsPDF();
       let yPos = 10;
 
+      // Rodapé local para este relatório
+      const rodape = () => {
+        const tot = doc.getNumberOfPages();
+        for (let p = 1; p <= tot; p++) {
+          doc.setPage(p);
+          doc.setFontSize(7); doc.setFont('helvetica','normal'); doc.setTextColor(150);
+          doc.text('SysMaçom-MG - Desenvolvedor: Mauro George', 15, 290);
+          doc.text('Página ' + p + ' de ' + tot, 105, 290, { align: 'center' });
+          doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR'), 195, 290, { align: 'right' });
+          doc.setTextColor(0);
+        }
+      };
+
       // ========================================
       // LOGO
       // ========================================
