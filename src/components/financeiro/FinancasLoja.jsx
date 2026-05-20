@@ -1766,7 +1766,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       y += 16;
 
       // ── Função renderBloco ────────────────────────────────────────────────
-      const renderBloco = (titulo, lancs, corTitulo, corValor, semStatus) => {
+      const renderBloco = (titulo, lancs, corTitulo, corValor, semStatus, isPagos) => {
         if (!lancs.length) return 0;
         checkPage(20);
 
@@ -1776,9 +1776,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         doc.setFillColor(230, 230, 230); doc.rect(15, y, 180, 6, 'F');
         doc.setFontSize(8.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-        doc.text('DtLanc', 17, y + 4);
+        doc.text(isPagos ? 'DtPag' : 'DtLanc', 17, y + 4);
         doc.text('DtVenc', 43, y + 4);
-        doc.text('Descrição', 69, y + 4);
+        doc.text('Descricao', 69, y + 4);
         if (!semStatus) doc.text('Status', 148, y + 4);
         doc.text('Valor', 192, y + 4, { align: 'right' });
         y += 11;
@@ -1859,10 +1859,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
 
       // ── Blocos do período ──────────────────────────────────────────────────
-      renderBloco('Despesas Pagas (Irmao com a Loja)', despPagas, [160, 0, 0], [200, 0, 0], true);
-      renderBloco('Despesas Pendentes (Irmao com a Loja)', despPend, [200, 60, 0], [220, 60, 0], true);
-      renderBloco('Receitas Pagas (Loja com o Irmao)', recPagas, [0, 80, 180], [0, 100, 200], true);
-      renderBloco('Receitas Pendentes (Loja com o Irmao)', recPend, [80, 0, 180], [100, 0, 200], true);
+      renderBloco('Despesas Pagas (Irmao com a Loja)', despPagas, [0, 80, 180], [0, 100, 200], true, true);
+      renderBloco('Despesas Pendentes (Irmao com a Loja)', despPend, [200, 60, 0], [220, 60, 0], true, false);
+      renderBloco('Receitas Pagas (Loja com o Irmao)', recPagas, [0, 80, 180], [0, 100, 200], true, true);
+      renderBloco('Receitas Pendentes (Loja com o Irmao)', recPend, [80, 0, 180], [100, 0, 200], true, false);
 
       // ── Resumo Geral ───────────────────────────────────────────────────────
       checkPage(55);
