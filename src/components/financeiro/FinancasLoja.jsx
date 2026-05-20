@@ -1828,7 +1828,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         doc.text('DtVenc', 42, yPos + 4);
         doc.text('Descrição', 67, yPos + 4);
         doc.text('Valor', 190, yPos + 4, { align: 'right' });
-        yPos += 8;
+        yPos += 11;
 
         let subtotal = 0;
         doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
@@ -1866,7 +1866,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         yPos += 2;
         doc.setDrawColor(150); doc.setLineWidth(0.3);
         doc.line(15, yPos, 195, yPos);
-        yPos += 8;
+        yPos += 14;
 
         return subtotal;
       };
