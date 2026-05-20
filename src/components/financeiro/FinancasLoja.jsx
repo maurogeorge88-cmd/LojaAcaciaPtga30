@@ -4218,10 +4218,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       {lanc.descricao}
                     </div>
                     {/* Origem */}
-                    <div style={{display:'flex',alignItems:'center',gap:'0.25rem',fontSize:'0.82rem',color:'var(--color-text)',whiteSpace:'nowrap'}}>
+                    <div style={{display:'flex',alignItems:'center',gap:'0.25rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',minWidth:0}}>
                       {lanc.origem_tipo==='Loja'
                         ? <><span style={{color:'var(--color-accent)'}}>🏛️</span><span>Loja</span></>
-                        : <><span style={{color:'#8b5cf6'}}>👤</span><span>{nomeIrmao}</span></>}
+                        : <><span style={{color:'#8b5cf6',flexShrink:0}}>👤</span><span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{nomeIrmao}</span></>}
                     </div>
                     {/* Valor */}
                     <div style={{textAlign:'right',minWidth:'80px'}}>
