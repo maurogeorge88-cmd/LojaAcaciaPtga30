@@ -2135,10 +2135,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let totalGeralDespesa = 0;
       let totalGeralCredito = 0;
 
-      // Separar lançamentos por tipo: receita = irmão deve, despesa = loja deve
-      const todosLancs = lancsData;
-      const lancsReceita = todosLancs.filter(l => l.categorias_financeiras?.tipo === 'receita');
-      const lancsDespesa = todosLancs.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      // Separar saldo anterior (meses anteriores) dos pendentes do mês atual
+      const primeiroDiaMes = hojeStr.substring(0,7) + '-01';
+      const lancsAntInd  = lancsDataFiltrado.filter(l => l.data_vencimento < primeiroDiaMes);
+      const lancsPendInd = lancsDataFiltrado.filter(l => l.data_vencimento >= primeiroDiaMes);
+
+      const lancsReceita = lancsPendInd.filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const lancsDespesa = lancsPendInd.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      const antDespInd   = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'receita');
+      const antRecInd    = lancsAntInd.filter(l => l.categorias_financeiras?.tipo === 'despesa');
+      const somaAntDesp  = antDespInd.reduce((s,l) => s + parseFloat(l.valor||0), 0);
+      const somaAntRec   = antRecInd.reduce((s,l) => s + parseFloat(l.valor||0), 0);
+      const saldoAntInd  = somaAntDesp - somaAntRec;
 
       // ── Função auxiliar para renderizar bloco de lançamentos ──────────────
       const renderBloco = (titulo, lancamentos, corTitulo, corValor) => {
