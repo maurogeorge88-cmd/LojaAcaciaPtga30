@@ -3779,8 +3779,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'440px',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.4)'}}>
             <div style={{background:'var(--color-accent)',padding:'1rem 1.5rem'}}>
               <h3 style={{color:'#fff',fontWeight:'800',fontSize:'1.1rem',margin:0}}>💰 Quitar Lançamento</h3>
-            
-            <form onSubmit={handleQuitacao} className="p-6 space-y-4">
+            </div>
+
+            <form onSubmit={handleQuitacao} style={{padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
               <div>
                 <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
                   Data de Pagamento *
