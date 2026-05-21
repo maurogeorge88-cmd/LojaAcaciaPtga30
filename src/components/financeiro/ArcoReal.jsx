@@ -113,16 +113,25 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         : filtro === 'ano' ? 'Ano ' + ano : 'Todos os Períodos';
       doc.text('Extrato de Movimentação — ' + labelFiltro, 105, y, { align: 'center' }); y += 10;
 
-      // Cards resumo
-      doc.setFillColor(240,240,240); doc.rect(15, y, 180, 18, 'F');
-      y += 5;
-      doc.setFontSize(9); doc.setFont('helvetica','bold');
-      doc.setTextColor(16,120,60);  doc.text('Total Recebido:', 20, y); doc.text(fmtR(totRec), 65, y);
-      doc.setTextColor(200,0,0);    doc.text('Total Repassado:', 90, y); doc.text(fmtR(totDesp), 135, y);
-      const corSaldo = saldo >= 0 ? [200,100,0] : [0,80,180];
-      doc.setTextColor(...corSaldo);
-      doc.text('Saldo a Repassar:', 155, y); y += 6;
-      doc.text(fmtR(saldo), 155, y + 2); y += 9;
+      // Tabela de resumo
+      doc.setFontSize(9); doc.setFont('helvetica','normal');
+      const linhasResumo = [
+        { label: 'Total Recebido', val: fmtR(totRec), cor: [16,120,60] },
+        { label: 'Total Repassado', val: fmtR(totDesp), cor: [200,0,0] },
+        { label: saldo >= 0 ? 'Saldo a Repassar' : 'Saldo a Receber', val: fmtR(saldo), cor: saldo >= 0 ? [200,100,0] : [0,80,180] },
+      ];
+      linhasResumo.forEach((lr, i) => {
+        const bg = i % 2 === 0 ? [245,245,245] : [255,255,255];
+        doc.setFillColor(...bg); doc.rect(15, y, 180, 7, 'F');
+        doc.setDrawColor(200); doc.setLineWidth(0.2);
+        doc.rect(15, y, 180, 7, 'S');
+        doc.setFont('helvetica','bold'); doc.setTextColor(60);
+        doc.text(lr.label, 20, y + 4.5);
+        doc.setTextColor(...lr.cor);
+        doc.text(lr.val, 192, y + 4.5, { align: 'right' });
+        y += 7;
+      });
+      y += 8;
 
       // Função bloco
       const renderBloco = (titulo, lancs, corTit, corVal) => {
