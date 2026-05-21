@@ -45,10 +45,9 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
         .select('*, categorias_financeiras(nome, tipo)')
         .eq('origem_irmao_id', irmaoId)
         .eq('status', 'pendente')
-        .eq('categorias_financeiras.tipo', 'receita') // irmão deve à loja
         .order('data_vencimento');
 
-      // Filtrar apenas receitas (irmão deve)
+      // Filtrar apenas receitas em JS (irmão deve à loja)
       const apenasDeve = (data || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
       setPendentes(apenasDeve);
       // Marcar todos por padrão
@@ -109,24 +108,33 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
     if (!parcelas.length) { showError('Configure as parcelas corretamente.'); return; }
     setSalvando(true);
     try {
-      // 1. Buscar ou criar categoria/subcategoria "Renegociação"
-      let { data: catExist } = await supabase
+      // 1. Buscar subcategoria "Renegociação" nas categorias existentes
+      // Estrutura esperada: categoria pai (Mensalidade/Agape/Peculio) > subcategoria "Renegociação"
+      const { data: todasCats } = await supabase
         .from('categorias_financeiras')
-        .select('id')
-        .eq('tipo', 'receita')
-        .ilike('nome', 'renegociação')
-        .maybeSingle();
+        .select('id, nome, tipo, categoria_pai_id')
+        .eq('tipo', 'receita');
 
-      let catId = catExist?.id;
+      // Procurar subcategoria chamada "Renegociação" (qualquer variação)
+      const subReneg = (todasCats || []).find(c =>
+        c.nome.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes('renegociacao') ||
+        c.nome.toLowerCase().includes('renegoci')
+      );
+
+      let catId = subReneg?.id;
+
+      // Se não encontrou, criar como subcategoria da primeira categoria pai de receita disponível
       if (!catId) {
-        const { data: catNova } = await supabase
+        const catPai = (todasCats || []).find(c => !c.categoria_pai_id && c.tipo === 'receita');
+        const { data: catNova, error: errCat } = await supabase
           .from('categorias_financeiras')
-          .insert({ nome: 'Renegociação', tipo: 'receita' })
+          .insert({ nome: 'Renegociação', tipo: 'receita', categoria_pai_id: catPai?.id || null })
           .select('id')
           .single();
+        if (errCat) throw new Error('Não foi possível criar a subcategoria Renegociação: ' + errCat.message);
         catId = catNova?.id;
       }
-      if (!catId) throw new Error('Não foi possível criar a categoria Renegociação.');
+      if (!catId) throw new Error('Não foi possível localizar ou criar a categoria Renegociação.');
 
       // 2. Excluir lançamentos selecionados
       const ids = lancSelecionados.map(l => l.id);
