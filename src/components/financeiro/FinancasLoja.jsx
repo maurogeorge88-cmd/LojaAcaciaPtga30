@@ -4641,8 +4641,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 </div>
               </div>
 
-              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Valor *</label><input type="number" step="0.01" value={formSangria.valor} onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} className="w-full px-4 py-2 border rounded-lg" placeholder="0.00" /></div>
-              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data *</label><input type="date" value={formSangria.data} onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} className="w-full px-4 py-2 border rounded-lg" /></div>
+              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Valor *</label><input type="number" step="0.01" value={formSangria.valor} onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}} placeholder="0.00" /></div>
+              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data *</label><input type="date" value={formSangria.data} onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}} /></div>
 
               {/* Campos específicos de despesa */}
               {formSangria.finalidade === 'despesa' && (
@@ -4660,12 +4660,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <div>
                     <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
                     <input type="text" value={formSangria.descricao_despesa} onChange={e => setFormSangria({...formSangria, descricao_despesa: e.target.value})}
-                      className="w-full px-4 py-2 border rounded-lg" placeholder="Ex: Compra de material de escritório" />
+                      style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}} placeholder="Ex: Compra de material de escritório" />
                   </div>
                 </>
               )}
 
-              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Obs</label><textarea value={formSangria.observacao} onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} className="w-full px-4 py-2 border rounded-lg" rows="2" /></div>
+              <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Obs</label><textarea value={formSangria.observacao} onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}} rows="2" /></div>
             </div>
             <div className="flex gap-3 mt-6">
               <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '', finalidade: 'deposito', categoria_despesa_id: '', descricao_despesa: '' }); }} className="flex-1 px-4 py-3 rounded-lg font-medium">Cancelar</button>
