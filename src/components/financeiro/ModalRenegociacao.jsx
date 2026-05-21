@@ -144,16 +144,23 @@ export default function ModalRenegociacao({ isOpen, onClose, irmaos, showSuccess
         .in('id', ids);
       if (errDel) throw errDel;
 
-      // 3. Inserir parcelas
+      // 3. Inserir parcelas com todos os campos obrigatórios
+      const hoje2 = new Date();
+      const hojeISO = hoje2.getFullYear() + '-' + String(hoje2.getMonth()+1).padStart(2,'0') + '-' + String(hoje2.getDate()).padStart(2,'0');
       const inserts = parcelas.map(p => ({
+        tipo:            'receita',
         categoria_id:    catId,
         origem_irmao_id: parseInt(irmaoId),
         origem_tipo:     'Irmao',
-        descricao:       `Renegociação - Parcela ${p.num}/${p.total}`,
+        descricao:       'Renegociação - Parcela ' + p.num + '/' + p.total,
         valor:           p.val,
         status:          'pendente',
-        data_lancamento: new Date().toISOString().split('T')[0],
+        data_lancamento: hojeISO,
         data_vencimento: p.dtVenc,
+        tipo_pagamento:  'pix',
+        eh_parcelado:    true,
+        parcela_numero:  p.num,
+        parcela_total:   p.total,
       }));
       const { error: errIns } = await supabase.from('lancamentos_loja').insert(inserts);
       if (errIns) throw errIns;
