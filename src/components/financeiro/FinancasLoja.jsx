@@ -1323,21 +1323,33 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
     const receitas = receitasBancarias + receitasDinheiro;
 
-    const despesas = lancamentos
+    // Despesas bancárias (pix, transferência, cartão) — saem do saldo bancário
+    const despesasBancarias = lancamentos
       .filter(l => {
         const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
         const isDinheiro = l.tipo_pagamento === 'dinheiro';
-        
-        // TRONCO DINHEIRO (incluindo sangrias): NÃO conta nas despesas da loja
         if (isTronco && isDinheiro) return false;
-        
-        // Demais despesas normais (TRONCO PIX/TRANSFERÊNCIA entra aqui)
-        return l.categorias_financeiras?.tipo === 'despesa' && 
+        return l.categorias_financeiras?.tipo === 'despesa' &&
           l.status === 'pago' &&
           l.tipo_pagamento !== 'compensacao' &&
+          l.tipo_pagamento !== 'dinheiro' &&
           !l.eh_transferencia_interna;
       })
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    // Despesas em dinheiro — saem do caixa físico, NÃO do banco
+    const despesasDinheiroResumo = lancamentos
+      .filter(l => {
+        const isTronco = l.categorias_financeiras?.nome?.toLowerCase().includes('tronco');
+        return l.categorias_financeiras?.tipo === 'despesa' &&
+          l.status === 'pago' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          l.eh_transferencia_interna === false &&
+          !isTronco;
+      })
+      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+    const despesas = despesasBancarias + despesasDinheiroResumo;
 
     const receitasPendentes = lancamentos
       .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.status === 'pendente' && !l.eh_transferencia_interna)
@@ -1349,7 +1361,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     
     const saldoPeriodo = receitas - despesas;
     
-    const saldoBancario = saldoAnterior + receitasBancarias + depositos - despesas;
+    const saldoBancario = saldoAnterior + receitasBancarias + depositos - despesasBancarias;
     
     const caixaFisico = caixaFisicoTotal;
     
@@ -1509,15 +1521,26 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
+      // Sangrias de depósito (transferência interna)
       const sangriasFeitas = (data || [])
         .filter(l => 
           l.eh_transferencia_interna === true && 
           l.categorias_financeiras?.tipo === 'despesa' &&
-          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') // EXCLUIR TRONCO
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco')
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      setCaixaFisicoTotal(dinheiroRecebido - sangriasFeitas);
+      // Despesas pagas em dinheiro (saídas diretas do caixa físico)
+      const despesasDinheiro = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          l.eh_transferencia_interna === false &&
+          !l.categorias_financeiras?.nome?.toLowerCase().includes('tronco')
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+
+      setCaixaFisicoTotal(dinheiroRecebido - sangriasFeitas - despesasDinheiro);
 
     } catch (error) {
       console.error('Erro ao calcular caixa físico:', error);
