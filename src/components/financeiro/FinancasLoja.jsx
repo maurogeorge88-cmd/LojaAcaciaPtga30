@@ -848,8 +848,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const editarLancamento = (lancamento) => {
+    console.log('editarLancamento chamado:', lancamento.id, 'origem_irmao_id:', lancamento.origem_irmao_id);
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
-    if (dataRef && verificarMesBloqueado(dataRef)) {
+    const bloqueado = dataRef && verificarMesBloqueado(dataRef);
+    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado);
+    if (bloqueado) {
       const data = new Date(dataRef + 'T00:00:00');
       showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
       return;
