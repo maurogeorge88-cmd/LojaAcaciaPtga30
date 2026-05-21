@@ -843,7 +843,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     const bloqueado = dataRef && verificarMesBloqueado(dataRef);
     console.log('dataRef:', dataRef, 'bloqueado:', bloqueado);
-    if (bloqueado) {
+    // Verificar se irmão é inativo — se sim, ignorar bloqueio de mês para permitir gestão da dívida
+    const irmaoInativo = lancamento.origem_irmao_id &&
+      !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id));
+    if (bloqueado && !irmaoInativo) {
       const data = new Date(dataRef + 'T00:00:00');
       showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
       return;
