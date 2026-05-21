@@ -21,8 +21,8 @@ import FinancasLojaTV from './FinancasLojaTV';
 // Lançamentos pagos: filtrados por data_pagamento | Pendentes: filtrados por data_vencimento
 
 // ⚙️ Configuração de status permitidos
-const STATUS_PERMITIDOS = ['Regular', 'Licenciado'];
-const STATUS_BLOQUEADOS = ['Irregular', 'Suspenso', 'Desligado', 'Excluído', 'Falecido', 'Ex-Ofício'];
+const STATUS_PERMITIDOS = ['regular', 'Regular', 'licenciado', 'Licenciado'];
+const STATUS_BLOQUEADOS = ['irregular', 'Irregular', 'suspenso', 'Suspenso', 'desligado', 'Desligado', 'excluído', 'Excluído', 'falecido', 'Falecido', 'ex-ofício', 'Ex-Ofício'];
 
 export default function FinancasLoja({ showSuccess, showError, userEmail, userData }) {
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
