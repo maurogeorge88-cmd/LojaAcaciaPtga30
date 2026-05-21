@@ -3775,11 +3775,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
       {/* MODAL QUITAÇÃO INDIVIDUAL */}
       {mostrarModalQuitacao && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-lg max-w-md w-full">
-            <div className="text-white px-6 py-4 rounded-t-lg">
-              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitar Lançamento</h3>
-            </div>
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem'}}>
+          <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'440px',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.4)'}}>
+            <div style={{background:'var(--color-accent)',padding:'1rem 1.5rem'}}>
+              <h3 style={{color:'#fff',fontWeight:'800',fontSize:'1.1rem',margin:0}}>💰 Quitar Lançamento</h3>
             
             <form onSubmit={handleQuitacao} className="p-6 space-y-4">
               <div>
