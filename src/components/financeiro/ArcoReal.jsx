@@ -70,9 +70,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
     }
   };
 
-  const totRec  = receitas.reduce((s, l) => s + Number(l.valor || 0), 0);
-  const totDesp = despesas.reduce((s, l) => s + Number(l.valor || 0), 0);
-  const saldo   = totRec - totDesp;
+  const recPagas  = receitas.filter(l => l.status === 'pago');
+  const recPend   = receitas.filter(l => l.status === 'pendente');
+  const totRec    = recPagas.reduce((s, l) => s + Number(l.valor || 0), 0);   // só pagos
+  const totPend   = recPend.reduce((s, l) => s + Number(l.valor || 0), 0);    // pendentes
+  const totDesp   = despesas.reduce((s, l) => s + Number(l.valor || 0), 0);   // repasses
+  const saldo     = totRec - totDesp;  // recebido pago - repassado
 
   const gerarPDF = async () => {
     try {
@@ -116,9 +119,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       // Tabela de resumo
       doc.setFontSize(9); doc.setFont('helvetica','normal');
       const linhasResumo = [
-        { label: 'Total Recebido', val: fmtR(totRec), cor: [16,120,60] },
-        { label: 'Total Repassado', val: fmtR(totDesp), cor: [200,0,0] },
-        { label: saldo >= 0 ? 'Saldo a Repassar' : 'Saldo a Receber', val: fmtR(saldo), cor: saldo >= 0 ? [200,100,0] : [0,80,180] },
+        { label: 'Recebido (Pago)', val: fmtR(totRec), cor: [16,120,60] },
+        { label: 'Pendente (não recebido)', val: fmtR(totPend), cor: [200,130,0] },
+        { label: 'Repassado ao Arco Real', val: fmtR(totDesp), cor: [200,0,0] },
+        { label: saldo >= 0 ? 'Saldo a Repassar' : 'Saldo a Receber', val: fmtR(saldo), cor: saldo >= 0 ? [37,99,235] : [16,120,60] },
       ];
       linhasResumo.forEach((lr, i) => {
         const bg = i % 2 === 0 ? [245,245,245] : [255,255,255];
@@ -179,8 +183,16 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         return sub;
       };
 
-      renderBloco('Receitas (Recebido para o Arco Real)', receitas, [16,120,60], [16,120,60]);
-      renderBloco('Repasses (Enviado ao Arco Real)', despesas, [200,0,0], [200,0,0]);
+      // Separar por status para o PDF
+      const recPagasPDF  = receitas.filter(l => l.status === 'pago');
+      const recPendPDF   = receitas.filter(l => l.status === 'pendente');
+      const despPagasPDF = despesas.filter(l => l.status === 'pago');
+      const despPendPDF  = despesas.filter(l => l.status === 'pendente');
+
+      renderBloco('Recebido (Pago) — Arco Real', recPagasPDF, [16,120,60], [16,120,60]);
+      renderBloco('Pendente (Nao Recebido) — Arco Real', recPendPDF, [200,130,0], [200,130,0]);
+      renderBloco('Repassado ao Arco Real', despPagasPDF, [200,0,0], [200,0,0]);
+      renderBloco('Repasse Pendente', despPendPDF, [150,50,0], [150,50,0]);
 
       // Resumo final
       if (y > 240) { doc.addPage(); y = 15; }
@@ -188,18 +200,22 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0);
       doc.text('Resumo Geral:', 192, y, { align: 'right' }); y += 7;
       doc.setFontSize(10);
-      doc.setTextColor(16,120,60); doc.text('Total Recebido:', 155, y, { align: 'right' }); doc.text(fmtR(totRec), 192, y, { align: 'right' }); y += 5;
-      doc.setTextColor(200,0,0);   doc.text('Total Repassado:', 155, y, { align: 'right' }); doc.text(fmtR(totDesp), 192, y, { align: 'right' }); y += 3;
+      doc.setTextColor(16,120,60);
+      doc.text('Recebido (Pago):', 155, y, { align: 'right' }); doc.text(fmtR(totRec), 192, y, { align: 'right' }); y += 5;
+      doc.setTextColor(200,130,0);
+      doc.text('Pendente (nao recebido):', 155, y, { align: 'right' }); doc.text(fmtR(totPend), 192, y, { align: 'right' }); y += 5;
+      doc.setTextColor(200,0,0);
+      doc.text('Repassado:', 155, y, { align: 'right' }); doc.text(fmtR(totDesp), 192, y, { align: 'right' }); y += 3;
       doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(115, y, 195, y); y += 5;
       doc.setFontSize(11); doc.setFont('helvetica','bold');
       if (saldo > 0) {
-        doc.setTextColor(200,100,0);
+        doc.setTextColor(37,99,235);
         doc.text('Saldo a Repassar:', 155, y, { align: 'right' });
         doc.text(fmtR(saldo), 192, y, { align: 'right' });
       } else if (saldo < 0) {
-        doc.setTextColor(0,80,180);
+        doc.setTextColor(16,120,60);
         doc.text('Saldo a Receber:', 155, y, { align: 'right' });
-        doc.text(fmtR(saldo), 192, y, { align: 'right' });
+        doc.text(fmtR(Math.abs(saldo)), 192, y, { align: 'right' });
       } else {
         doc.setTextColor(0,150,80);
         doc.text('Zerado', 155, y, { align: 'right' });
@@ -269,11 +285,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
                 {[
-                  { label: 'Total Recebido', val: totRec, sub: receitas.length + ' lançamento(s)', cor: '#16a34a', bg: 'rgba(22,163,74,0.08)', brd: 'rgba(22,163,74,0.3)' },
-                  { label: 'Total Repassado', val: totDesp, sub: despesas.length + ' lançamento(s)', cor: '#dc2626', bg: 'rgba(220,38,38,0.08)', brd: 'rgba(220,38,38,0.3)' },
-                  { label: 'Saldo a Repassar', val: saldo, sub: saldo >= 0 ? 'A repassar ao Arco Real' : 'Arco Real a repassar à Loja', cor: saldo >= 0 ? '#d97706' : '#2563eb', bg: saldo >= 0 ? 'rgba(217,119,6,0.08)' : 'rgba(37,99,235,0.08)', brd: saldo >= 0 ? 'rgba(217,119,6,0.3)' : 'rgba(37,99,235,0.3)' },
+                  { label: 'Recebido (Pago)', val: totRec, sub: recPagas.length + ' lançamento(s)', cor: '#16a34a', bg: 'rgba(22,163,74,0.08)', brd: 'rgba(22,163,74,0.3)' },
+                  { label: 'Pendente', val: totPend, sub: recPend.length + ' lançamento(s)', cor: '#d97706', bg: 'rgba(217,119,6,0.08)', brd: 'rgba(217,119,6,0.3)' },
+                  { label: 'Repassado', val: totDesp, sub: despesas.length + ' lançamento(s)', cor: '#dc2626', bg: 'rgba(220,38,38,0.08)', brd: 'rgba(220,38,38,0.3)' },
+                  { label: 'Saldo a Repassar', val: saldo, sub: 'Recebido - Repassado', cor: saldo >= 0 ? '#2563eb' : '#16a34a', bg: saldo >= 0 ? 'rgba(37,99,235,0.08)' : 'rgba(22,163,74,0.08)', brd: saldo >= 0 ? 'rgba(37,99,235,0.3)' : 'rgba(22,163,74,0.3)' },
                 ].map((c, i) => (
                   <div key={i} style={{ background: c.bg, border: '1px solid ' + c.brd, borderLeft: '4px solid ' + c.cor, borderRadius: 'var(--radius-lg)', padding: '1rem' }}>
                     <p style={{ margin: '0 0 0.25rem', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{c.label}</p>
