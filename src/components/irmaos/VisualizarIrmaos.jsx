@@ -51,13 +51,13 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
       regular:    {background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)'},
       irregular:  {background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)'},
       licenciado: {background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)'},
-      suspenso: 'bg-orange-100 text-orange-800 border-orange-300',
-      desligado: '  ',
-      excluido: 'bg-red-100 text-red-800 border-red-300',
-      falecido: 'bg-purple-100 text-purple-800 border-purple-300',
-      ex_oficio: 'bg-indigo-100 text-indigo-800 border-indigo-300'
+      suspenso:   {background:'rgba(249,115,22,0.15)',color:'#f97316',border:'1px solid rgba(249,115,22,0.3)'},
+      desligado:  {background:'rgba(100,116,139,0.15)',color:'#64748b',border:'1px solid rgba(100,116,139,0.3)'},
+      excluido:   {background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'},
+      falecido:   {background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)'},
+      ex_oficio:  {background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)'},
     };
-    return cores[situacao] || '  ';
+    return cores[(situacao||'').toLowerCase().replace('-','_').replace(' ','_')] || {background:'rgba(100,116,139,0.15)',color:'#64748b',border:'1px solid rgba(100,116,139,0.3)'};
   };
 
   // Função para obter cor do grau
