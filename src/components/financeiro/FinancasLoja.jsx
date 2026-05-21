@@ -1153,7 +1153,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }]);
       if (errorDeposito) throw errorDeposito;
       showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada!`);
-      setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' });
+      setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '', finalidade: 'deposito', categoria_despesa_id: '', descricao_despesa: '' });
       setModalSangriaAberto(false);
       recarregarDados();
       calcularCaixaFisicoTotal();
