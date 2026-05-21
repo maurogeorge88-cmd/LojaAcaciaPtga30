@@ -849,13 +849,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       return;
     }
     // Se irmão não está na lista ativa (ex: desligado), usa dados já carregados no lançamento
-    if (lancamento.origem_irmao_id && !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id))) {
-      setIrmaoEditando({
+    const irmaoNaLista = irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id));
+    console.log('irmao na lista:', irmaoNaLista, 'origem_irmao_id:', lancamento.origem_irmao_id, 'irmaos.length:', irmaos.length);
+    if (lancamento.origem_irmao_id && !irmaoNaLista) {
+      const extra = {
         id: lancamento.origem_irmao_id,
         nome: lancamento.irmaos?.nome || 'Irmão ' + lancamento.origem_irmao_id,
         situacao: 'desligado',
         periodicidade_pagamento: null
-      });
+      };
+      console.log('setIrmaoEditando:', extra);
+      setIrmaoEditando(extra);
     } else {
       setIrmaoEditando(null);
     }
