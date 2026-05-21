@@ -31,6 +31,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
+  const [irmaoEditando, setIrmaoEditando] = useState(null); // irmão extra para edição (ex: desligado)
   const [tipoLancamento, setTipoLancamento] = useState('receita');
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
@@ -837,12 +838,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
-  const editarLancamento = (lancamento) => {
+  const editarLancamento = async (lancamento) => {
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     if (dataRef && verificarMesBloqueado(dataRef)) {
       const data = new Date(dataRef + 'T00:00:00');
       showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
       return;
+    }
+    // Se irmão não está na lista ativa (ex: desligado), busca separado como irmaoEditando
+    if (lancamento.origem_irmao_id && !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id))) {
+      const { data: irmaoExtra } = await supabase
+        .from('irmaos')
+        .select('id, nome, situacao, periodicidade_pagamento')
+        .eq('id', lancamento.origem_irmao_id)
+        .maybeSingle();
+      setIrmaoEditando(irmaoExtra || null);
+    } else {
+      setIrmaoEditando(null);
     }
     setTipoLancamento(lancamento.tipo); // Define o tipo para o modal
     setFormLancamento({
@@ -3543,7 +3555,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         formData={formLancamento}
         setFormData={setFormLancamento}
         categorias={categorias}
-        irmaos={irmaos}
+        irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
         editando={editando}
       />
 
