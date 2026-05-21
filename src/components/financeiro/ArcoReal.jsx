@@ -213,8 +213,8 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         doc.text('Saldo a Repassar:', 155, y, { align: 'right' });
         doc.text(fmtR(saldo), 192, y, { align: 'right' });
       } else if (saldo < 0) {
-        doc.setTextColor(16,120,60);
-        doc.text('Saldo a Receber:', 155, y, { align: 'right' });
+        doc.setTextColor(220,38,38);
+        doc.text('Repassado a Mais:', 155, y, { align: 'right' });
         doc.text(fmtR(Math.abs(saldo)), 192, y, { align: 'right' });
       } else {
         doc.setTextColor(0,150,80);
