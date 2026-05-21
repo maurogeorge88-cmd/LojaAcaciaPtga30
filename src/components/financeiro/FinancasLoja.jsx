@@ -93,7 +93,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [formSangria, setFormSangria] = useState({
     valor: '',
     data: new Date().toISOString().split('T')[0],
-    observacao: ''
+    observacao: '',
+    finalidade: 'deposito',   // 'deposito' | 'despesa'
+    categoria_despesa_id: '',
+    descricao_despesa: ''
   });
 
   const [formLancamento, setFormLancamento] = useState({
@@ -1091,7 +1094,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const fazerSangria = async () => {
     try {
-      const { valor, data, observacao } = formSangria;
+      const { valor, data, observacao, finalidade, categoria_despesa_id, descricao_despesa } = formSangria;
       if (!valor || parseFloat(valor) <= 0) {
         showError('Informe um valor válido');
         return;
@@ -4614,19 +4617,58 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <div className="rounded-xl max-w-md w-full p-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Sangria</h3>
-              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="hover: text-2xl font-bold">×</button>
+              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '', finalidade: 'deposito', categoria_despesa_id: '', descricao_despesa: '' }); }} className="hover: text-2xl font-bold">×</button>
             </div>
             <div className="border-2 border-emerald-300 rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p className="text-sm text-emerald-700 font-semibold mb-1">💵 Disponível</p>
               <p className="text-3xl font-bold text-emerald-800">{formatarMoeda(resumo.caixaFisico)}</p>
             </div>
             <div className="space-y-4">
+
+              {/* Finalidade */}
+              <div>
+                <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Finalidade *</label>
+                <div style={{display:'flex',gap:'0.5rem'}}>
+                  {[['deposito','🏦 Depósito Bancário'],['despesa','💸 Despesa em Dinheiro']].map(([v,l]) => (
+                    <button key={v} onClick={() => setFormSangria({...formSangria, finalidade: v})}
+                      style={{flex:1,padding:'0.5rem',borderRadius:'var(--radius-md)',border:'1px solid',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',
+                        background: formSangria.finalidade === v ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                        color: formSangria.finalidade === v ? '#fff' : 'var(--color-text)',
+                        borderColor: formSangria.finalidade === v ? 'var(--color-accent)' : 'var(--color-border)'}}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Valor *</label><input type="number" step="0.01" value={formSangria.valor} onChange={(e) => setFormSangria({ ...formSangria, valor: e.target.value })} className="w-full px-4 py-2 border rounded-lg" placeholder="0.00" /></div>
               <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data *</label><input type="date" value={formSangria.data} onChange={(e) => setFormSangria({ ...formSangria, data: e.target.value })} className="w-full px-4 py-2 border rounded-lg" /></div>
+
+              {/* Campos específicos de despesa */}
+              {formSangria.finalidade === 'despesa' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Categoria da Despesa *</label>
+                    <select value={formSangria.categoria_despesa_id} onChange={e => setFormSangria({...formSangria, categoria_despesa_id: e.target.value})}
+                      style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}>
+                      <option value="">-- Selecionar categoria --</option>
+                      {categorias.filter(c => c.tipo === 'despesa').map(c => (
+                        <option key={c.id} value={c.id}>{c.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
+                    <input type="text" value={formSangria.descricao_despesa} onChange={e => setFormSangria({...formSangria, descricao_despesa: e.target.value})}
+                      className="w-full px-4 py-2 border rounded-lg" placeholder="Ex: Compra de material de escritório" />
+                  </div>
+                </>
+              )}
+
               <div><label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Obs</label><textarea value={formSangria.observacao} onChange={(e) => setFormSangria({ ...formSangria, observacao: e.target.value })} className="w-full px-4 py-2 border rounded-lg" rows="2" /></div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '' }); }} className="flex-1 px-4 py-3 rounded-lg font-medium">Cancelar</button>
+              <button onClick={() => { setModalSangriaAberto(false); setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '', finalidade: 'deposito', categoria_despesa_id: '', descricao_despesa: '' }); }} className="flex-1 px-4 py-3 rounded-lg font-medium">Cancelar</button>
               <button onClick={fazerSangria} disabled={!formSangria.valor || parseFloat(formSangria.valor) <= 0} className="flex-1 px-4 py-3 bg-emerald-600 text-white rounded-lg font-medium disabled:opacity-50">Confirmar</button>
             </div>
           </div>
