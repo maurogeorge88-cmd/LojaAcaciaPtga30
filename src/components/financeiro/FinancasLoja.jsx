@@ -360,8 +360,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           *,
           categorias_financeiras(nome, tipo),
           irmaos(nome)
-        `)
-        .limit(500); // ⚡ PERFORMANCE: Limita a 500 registros
+        `);
 
       // - PAGOS: Filtrar por data_pagamento (quando foi efetivamente pago)
       // - PENDENTES: Filtrar por data_vencimento (quando deve ser pago)
@@ -422,7 +421,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         query = query.eq('origem_irmao_id', parseInt(origem_irmao_id));
       }
 
-      const { data, error } = await query;
+      // Paginação automática — buscar todos sem limite
+      let allData = [];
+      let pageStart = 0;
+      const pageSize = 1000;
+      let hasMore = true;
+      while (hasMore) {
+        const { data: pageData, error: pageError } = await query.range(pageStart, pageStart + pageSize - 1);
+        if (pageError) throw pageError;
+        if (!pageData || pageData.length === 0) break;
+        allData = [...allData, ...pageData];
+        hasMore = pageData.length === pageSize;
+        pageStart += pageSize;
+      }
+      const data = allData;
+      const error = null;
 
       if (error) throw error;
 
