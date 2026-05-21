@@ -1102,22 +1102,46 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       const valorSangria = parseFloat(valor);
       const resumoAtual = calcularResumo();
       if (valorSangria > resumoAtual.caixaFisico) {
-        showError(`Valor maior que o disponível`);
+        showError('Valor maior que o disponível');
         return;
       }
       setLoading(true);
+      const formReset = { valor: '', data: new Date().toISOString().split('T')[0], observacao: '', finalidade: 'deposito', categoria_despesa_id: '', descricao_despesa: '' };
+
+      if (finalidade === 'despesa') {
+        // ── Saída por despesa paga em dinheiro — SEM depósito ──────────────
+        if (!categoria_despesa_id) { showError('Selecione a categoria da despesa.'); setLoading(false); return; }
+        if (!descricao_despesa?.trim()) { showError('Informe a descrição da despesa.'); setLoading(false); return; }
+        const { error: errDesp } = await supabase.from('lancamentos_loja').insert([{
+          tipo: 'despesa',
+          categoria_id: parseInt(categoria_despesa_id),
+          descricao: descricao_despesa.trim(),
+          valor: valorSangria,
+          data_lancamento: data,
+          data_vencimento: data,
+          data_pagamento: data,
+          tipo_pagamento: 'dinheiro',
+          status: 'pago',
+          eh_transferencia_interna: false,
+          origem_tipo: 'Loja',
+          origem_irmao_id: null,
+          observacoes: observacao || ''
+        }]);
+        if (errDesp) throw errDesp;
+        showSuccess('✅ Saída de dinheiro registrada!');
+        setFormSangria(formReset);
+        setModalSangriaAberto(false);
+        recarregarDados();
+        calcularCaixaFisicoTotal();
+        return;
+      }
+
+      // ── Sangria para depósito bancário ─────────────────────────────────
       const categoriaSangria = categorias.find(c => c.nome.toLowerCase().includes('sangria') && c.tipo === 'despesa');
-      if (!categoriaSangria) {
-        showError('Categoria Sangria não encontrada. Execute o SQL primeiro!');
-        setLoading(false);
-        return;
-      }
+      if (!categoriaSangria) { showError('Categoria Sangria não encontrada.'); setLoading(false); return; }
       const categoriaDeposito = categorias.find(c => c.nome.toLowerCase().includes('depósito') && c.tipo === 'receita');
-      if (!categoriaDeposito) {
-        showError('Categoria Depósito não encontrada. Execute o SQL primeiro!');
-        setLoading(false);
-        return;
-      }
+      if (!categoriaDeposito) { showError('Categoria Depósito não encontrada.'); setLoading(false); return; }
+
       const { error: errorSangria } = await supabase.from('lancamentos_loja').insert([{
         tipo: 'despesa',
         categoria_id: categoriaSangria.id,
@@ -1153,7 +1177,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }]);
       if (errorDeposito) throw errorDeposito;
       showSuccess(`✅ Sangria de ${formatarMoeda(valorSangria)} realizada!`);
-      setFormSangria({ valor: '', data: new Date().toISOString().split('T')[0], observacao: '', finalidade: 'deposito', categoria_despesa_id: '', descricao_despesa: '' });
+      setFormSangria(formReset);
       setModalSangriaAberto(false);
       recarregarDados();
       calcularCaixaFisicoTotal();
