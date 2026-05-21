@@ -4166,12 +4166,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                 <p style={{fontSize:'1.25rem',fontWeight:'800',color: ehReceita ? '#ef4444' : '#3b82f6',margin:'0 0 0.4rem'}}>
                                   {formatarMoeda(parseFloat(lanc.valor))}
                                 </p>
-                                <button onClick={() => abrirModalQuitacao(lanc)}
-                                  style={{padding:'0.35rem 0.9rem',background:'rgba(16,185,129,0.15)',color:'#10b981',
-                                    border:'1px solid rgba(16,185,129,0.4)',borderRadius:'var(--radius-md)',
-                                    fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
-                                  💰 Quitar
-                                </button>
+                                <div style={{display:'flex',gap:'0.35rem',flexWrap:'wrap',justifyContent:'flex-end'}}>
+                                  <button onClick={() => abrirModalQuitacao(lanc)}
+                                    style={{padding:'0.35rem 0.7rem',background:'rgba(16,185,129,0.15)',color:'#10b981',
+                                      border:'1px solid rgba(16,185,129,0.4)',borderRadius:'var(--radius-md)',
+                                      fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
+                                    💰 Quitar
+                                  </button>
+                                  <button onClick={() => editarLancamento(lanc)}
+                                    style={{padding:'0.35rem 0.7rem',background:'rgba(99,102,241,0.15)',color:'#6366f1',
+                                      border:'1px solid rgba(99,102,241,0.4)',borderRadius:'var(--radius-md)',
+                                      fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
+                                    ✏️
+                                  </button>
+                                  <button onClick={() => {
+                                      if (window.confirm('Excluir este lançamento permanentemente?')) excluirLancamento(lanc.id);
+                                    }}
+                                    style={{padding:'0.35rem 0.7rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',
+                                      border:'1px solid rgba(239,68,68,0.4)',borderRadius:'var(--radius-md)',
+                                      fontSize:'0.8rem',fontWeight:'700',cursor:'pointer'}}>
+                                    🗑
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           );
