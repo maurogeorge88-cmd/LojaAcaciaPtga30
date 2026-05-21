@@ -31,7 +31,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
-  const [irmaoEditando, setIrmaoEditando] = useState(null); // irmão extra para edição (ex: desligado)
+  const [irmaoEditando, setIrmaoEditando]       = useState(null); // irmão extra para edição (ex: desligado)
+  const [pendingOpenModal, setPendingOpenModal] = useState(false); // flag para abrir modal após state atualizar
   const [tipoLancamento, setTipoLancamento] = useState('receita');
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
   const [mostrarModalQuitacao, setMostrarModalQuitacao] = useState(false);
@@ -164,6 +165,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     if (mes === 0) return `${ano}`;
     return `${mes.toString().padStart(2, '0')}/${ano}`;
   };
+
+  // Abrir modal de edição após irmaoEditando ser atualizado no state
+  useEffect(() => {
+    if (pendingOpenModal) {
+      setModalLancamentoAberto(true);
+      setPendingOpenModal(false);
+    }
+  }, [pendingOpenModal]);
 
   useEffect(() => {
     carregarDados();
@@ -873,7 +882,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       origem_irmao_id: lancamento.origem_irmao_id || '' 
     });
     setEditando(lancamento.id);
-    setModalLancamentoAberto(true);
+    setPendingOpenModal(true); // abre após irmaoEditando ser atualizado
   };
 
   const recarregarDados = async () => {
