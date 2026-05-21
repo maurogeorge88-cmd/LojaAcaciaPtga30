@@ -13,6 +13,7 @@ import {
 import ModalLancamento from './components/ModalLancamento';
 import ModalResumoIrmaos from './components/ModalResumoIrmaos';
 import ArcoReal from './ArcoReal';
+import ModalRenegociacao from './ModalRenegociacao';
 import FinancasLojaTV from './FinancasLojaTV';
 
 // 💰 COMPONENTE: Finanças da Loja
@@ -81,7 +82,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
   const [modalMovAberto, setModalMovAberto]     = useState(false);
-  const [modalArcoRealAberto, setModalArcoRealAberto] = useState(false);
+  const [modalArcoRealAberto, setModalArcoRealAberto]   = useState(false);
+  const [modalRenegocAberto, setModalRenegocAberto]     = useState(false);
   const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
   const [movForm, setMovForm] = useState({ irmaoId: '', dataInicio: '', dataFim: '' });
 
@@ -3935,6 +3937,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 >
                   💰 Quitar em Lote
                 </button>
+                <button
+                  onClick={() => setModalRenegocAberto(true)}
+                  style={{padding:'0.5rem 1rem',background:'#7c3aed',color:'#fff',border:'none',borderRadius:'var(--radius-md)',fontWeight:'700',fontSize:'0.85rem',cursor:'pointer'}}
+                >
+                  🔄 Renegociar Dívida
+                </button>
               </div>
             )}
           </div>
@@ -4736,6 +4744,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         isOpen={modalResumoAberto}
         onClose={() => setModalResumoAberto(false)}
         resumoIrmaos={resumoIrmaos}
+      />
+
+      {/* Modal Renegociação */}
+      <ModalRenegociacao
+        isOpen={modalRenegocAberto}
+        onClose={() => setModalRenegocAberto(false)}
+        irmaos={irmaos}
+        showSuccess={showSuccess}
+        showError={showError}
+        onConcluido={() => carregarLancamentos()}
       />
 
       {/* Modal Arco Real */}
