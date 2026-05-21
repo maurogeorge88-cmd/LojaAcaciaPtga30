@@ -3790,7 +3790,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   type="date"
                   value={quitacaoForm.data_pagamento}
                   onChange={(e) => setQuitacaoForm({ ...quitacaoForm, data_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                  style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}
                   required
                 />
               </div>
@@ -3802,7 +3802,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <select
                   value={quitacaoForm.tipo_pagamento}
                   onChange={(e) => setQuitacaoForm({ ...quitacaoForm, tipo_pagamento: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                  style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}
                 >
                   {tiposPagamento.map(tipo => (
                     <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -3817,7 +3817,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 <textarea
                   value={quitacaoForm.observacoes}
                   onChange={(e) => setQuitacaoForm({ ...quitacaoForm, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                  style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}
                   rows="3"
                   placeholder="Observações sobre o pagamento (opcional)"
                 />
