@@ -847,21 +847,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
-  const editarLancamento = async (lancamento) => {
+  const editarLancamento = (lancamento) => {
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     if (dataRef && verificarMesBloqueado(dataRef)) {
       const data = new Date(dataRef + 'T00:00:00');
       showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
       return;
     }
-    // Se irmão não está na lista ativa (ex: desligado), busca separado como irmaoEditando
+    // Se irmão não está na lista ativa (ex: desligado), usa dados já carregados no lançamento
     if (lancamento.origem_irmao_id && !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id))) {
-      const { data: irmaoExtra } = await supabase
-        .from('irmaos')
-        .select('id, nome, situacao, periodicidade_pagamento')
-        .eq('id', lancamento.origem_irmao_id)
-        .maybeSingle();
-      setIrmaoEditando(irmaoExtra || null);
+      setIrmaoEditando({
+        id: lancamento.origem_irmao_id,
+        nome: lancamento.irmaos?.nome || 'Irmão ' + lancamento.origem_irmao_id,
+        situacao: 'desligado',
+        periodicidade_pagamento: null
+      });
     } else {
       setIrmaoEditando(null);
     }
