@@ -16,9 +16,65 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const [receitas, setReceitas]     = useState([]);
   const [despesas, setDespesas]     = useState([]);
   const [loading, setLoading]       = useState(false);
-  const [verLancs, setVerLancs]     = useState(false); // expandir lista
+  const [verLancs, setVerLancs]     = useState(false);
+  const [showForm, setShowForm]     = useState(false);
+  const [salvando, setSalvando]     = useState(false);
+  const [form, setForm]             = useState({
+    tipo: 'receita',
+    descricao: '',
+    valor: '',
+    data_vencimento: new Date().toISOString().split('T')[0],
+    status: 'pago',
+  });
 
   useEffect(() => { if (isOpen) carregar(); }, [isOpen, filtro, mes, ano]);
+
+  const salvarLancamento = async () => {
+    if (!form.descricao.trim()) { showError('Informe a descrição.'); return; }
+    if (!form.valor || parseFloat(form.valor) <= 0) { showError('Informe um valor válido.'); return; }
+    setSalvando(true);
+    try {
+      // Buscar categoria Arco Real pelo tipo
+      const { data: cats } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo')
+        .ilike('nome', '%arco real%')
+        .eq('tipo', form.tipo);
+
+      const cat = (cats || [])[0];
+      if (!cat) { showError('Categoria Arco Real não encontrada para o tipo ' + form.tipo); setSalvando(false); return; }
+
+      const hoje = new Date();
+      const hojeStr = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+
+      const insert = {
+        tipo: form.tipo,
+        categoria_id: cat.id,
+        descricao: form.descricao.trim(),
+        valor: parseFloat(form.valor),
+        data_lancamento: hojeStr,
+        data_vencimento: form.data_vencimento,
+        data_pagamento: form.status === 'pago' ? form.data_vencimento : null,
+        status: form.status,
+        tipo_pagamento: form.status === 'pago' ? 'transferencia' : null,
+        origem_tipo: 'Loja',
+        origem_irmao_id: null,
+        eh_transferencia_interna: false,
+      };
+
+      const { error } = await supabase.from('lancamentos_loja').insert([insert]);
+      if (error) throw error;
+
+      showSuccess('✅ Lançamento registrado!');
+      setForm({ tipo: 'receita', descricao: '', valor: '', data_vencimento: new Date().toISOString().split('T')[0], status: 'pago' });
+      setShowForm(false);
+      carregar();
+    } catch(e) {
+      showError('Erro: ' + e.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
 
   const carregar = async () => {
     setLoading(true);
@@ -281,6 +337,64 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
           </div>
 
           {/* Cards resumo */}
+          {/* Formulário de novo lançamento */}
+          {showForm && (
+            <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <p style={{ margin: 0, fontWeight: '700', color: 'var(--color-text)', fontSize: '0.9rem' }}>+ Novo Lançamento</p>
+
+              {/* Tipo */}
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {[['receita','✅ Receita (Entrada)'],['despesa','🔺 Repasse (Saída)']].map(([v,l]) => (
+                  <button key={v} onClick={() => setForm(f => ({...f, tipo: v}))}
+                    style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer',
+                      background: form.tipo === v ? (v === 'receita' ? '#16a34a' : '#dc2626') : 'var(--color-surface)',
+                      color: form.tipo === v ? '#fff' : 'var(--color-text)',
+                      borderColor: form.tipo === v ? (v === 'receita' ? '#16a34a' : '#dc2626') : 'var(--color-border)' }}>
+                    {l}
+                  </button>
+                ))}
+              </div>
+
+              {/* Campos */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Descrição *</label>
+                  <input value={form.descricao} onChange={e => setForm(f => ({...f, descricao: e.target.value}))} placeholder="Ex: Doação Acácia ao Arco Real"
+                    style={{ width: '100%', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Valor *</label>
+                  <input type="number" step="0.01" value={form.valor} onChange={e => setForm(f => ({...f, valor: e.target.value}))} placeholder="0,00"
+                    style={{ width: '100%', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Data</label>
+                  <input type="date" value={form.data_vencimento} onChange={e => setForm(f => ({...f, data_vencimento: e.target.value}))}
+                    style={{ width: '100%', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.75rem', fontSize: '0.875rem' }} />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Status</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {[['pago','✓ Pago/Realizado'],['pendente','⏳ Pendente']].map(([v,l]) => (
+                      <button key={v} onClick={() => setForm(f => ({...f, status: v}))}
+                        style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer',
+                          background: form.status === v ? (v === 'pago' ? '#16a34a' : '#d97706') : 'var(--color-surface)',
+                          color: form.status === v ? '#fff' : 'var(--color-text)',
+                          borderColor: form.status === v ? (v === 'pago' ? '#16a34a' : '#d97706') : 'var(--color-border)' }}>
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <button onClick={salvarLancamento} disabled={salvando}
+                style={{ padding: '0.6rem', background: form.tipo === 'receita' ? '#16a34a' : '#dc2626', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}>
+                {salvando ? 'Salvando...' : '💾 Salvar Lançamento'}
+              </button>
+            </div>
+          )}
+
           {loading ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
