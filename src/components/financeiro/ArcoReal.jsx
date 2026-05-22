@@ -161,7 +161,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
           doc.setTextColor(0);
           doc.text(fmtD(l.data_vencimento), 17, y);
           doc.text((l.descricao||'').substring(0,50), 43, y);
-          doc.setTextColor(l.origem==='manual'?[99,102,241]:[100,100,100]);
+          if (l.origem==='manual') doc.setTextColor(99,102,241); else doc.setTextColor(100,100,100);
           doc.text(l.origem==='manual'?'Manual':'Loja', 140, y);
           doc.setTextColor(corVal[0], corVal[1], corVal[2]); doc.text(fmtR(val), 192, y, { align:'right' });
           doc.setTextColor(0); y += 5;
