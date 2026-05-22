@@ -3869,9 +3869,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {mostrarModalQuitacaoLote && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            <div className="text-white px-6 py-4 rounded-t-lg">
-              <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>💰 Quitação em Lote</h3>
-              <p style={{fontSize:"0.85rem",color:"rgba(255,255,255,0.85)",marginTop:"0.25rem"}}>
+            <div style={{background:'var(--color-accent)',padding:'1rem 1.5rem',borderRadius:'var(--radius-xl) var(--radius-xl) 0 0'}}>
+              <h3 style={{color:'#fff',fontWeight:'800',fontSize:'1.1rem',margin:0}}>💰 Quitação em Lote</h3>
+              <p style={{fontSize:'0.82rem',color:'rgba(255,255,255,0.8)',marginTop:'0.2rem',marginBottom:0}}>
                 {quitacaoLote.lancamentos_selecionados.length} lançamentos selecionados
               </p>
             </div>
@@ -3886,7 +3886,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     type="date"
                     value={quitacaoLote.data_pagamento}
                     onChange={(e) => setQuitacaoLote({ ...quitacaoLote, data_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                    style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}
                     required
                   />
                 </div>
@@ -3898,7 +3898,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <select
                     value={quitacaoLote.tipo_pagamento}
                     onChange={(e) => setQuitacaoLote({ ...quitacaoLote, tipo_pagamento: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg focus:ring-green-500"
+                    style={{width:'100%',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem'}}
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
@@ -3936,7 +3936,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       .map(lanc => (
                         <label 
                           key={lanc.id} 
-                          className="flex items-start cursor-pointer hover: p-3 rounded border"
+                          style={{display:'flex',alignItems:'flex-start',cursor:'pointer',padding:'0.6rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',background:'var(--color-surface-2)'}}
                         >
                           <input
                             type="checkbox"
