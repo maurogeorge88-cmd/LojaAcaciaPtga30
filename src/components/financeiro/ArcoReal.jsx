@@ -3,56 +3,82 @@ import { supabase } from '../../supabaseClient';
 
 const fmtR = (v) => 'R$ ' + Math.abs(Number(v || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
 const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
-const hoje = new Date();
-const mesAtual = hoje.getMonth() + 1;
-const anoAtual = hoje.getFullYear();
-
+const hojeStr = () => { const h = new Date(); return h.getFullYear() + '-' + String(h.getMonth()+1).padStart(2,'0') + '-' + String(h.getDate()).padStart(2,'0'); };
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
-  const [filtro, setFiltro]         = useState('mes'); // mes | ano | geral
-  const [mes, setMes]               = useState(mesAtual);
-  const [ano, setAno]               = useState(anoAtual);
-  const [receitas, setReceitas]     = useState([]);
-  const [despesas, setDespesas]     = useState([]);
-  const [loading, setLoading]       = useState(false);
-  const [verLancs, setVerLancs]     = useState(false);
-  const [showForm, setShowForm]     = useState(false);
-  const [salvando, setSalvando]     = useState(false);
-  const [form, setForm]             = useState({
-    tipo: 'receita',
-    descricao: '',
-    valor: '',
-    data_vencimento: new Date().toISOString().split('T')[0],
-    status: 'pago',
-  });
+  const hoje = new Date();
+  const [filtro, setFiltro] = useState('mes');
+  const [mes, setMes]       = useState(hoje.getMonth() + 1);
+  const [ano, setAno]       = useState(hoje.getFullYear());
+  const [receitas, setReceitas] = useState([]);
+  const [despesas, setDespesas] = useState([]);
+  const [loading, setLoading]   = useState(false);
+  const [verLancs, setVerLancs] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [salvando, setSalvando] = useState(false);
+  const [form, setForm] = useState({ tipo: 'receita', descricao: '', valor: '', data_vencimento: hojeStr(), status: 'pago' });
 
   useEffect(() => { if (isOpen) carregar(); }, [isOpen, filtro, mes, ano]);
+
+  const carregar = async () => {
+    setLoading(true);
+    try {
+      const { data: cats } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo')
+        .ilike('nome', '%arco real%');
+
+      const idsRec  = (cats || []).filter(c => c.tipo === 'receita').map(c => c.id);
+      const idsDesp = (cats || []).filter(c => c.tipo === 'despesa').map(c => c.id);
+
+      const buscar = async (ids) => {
+        if (!ids.length) return [];
+        let q = supabase
+          .from('lancamentos_loja')
+          .select('*, categorias_financeiras(nome, tipo), irmaos(nome)')
+          .in('categoria_id', ids)
+          .order('data_vencimento');
+        if (filtro === 'mes') {
+          const ini = `${ano}-${String(mes).padStart(2,'0')}-01`;
+          const fim = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
+          q = q.gte('data_vencimento', ini).lte('data_vencimento', fim);
+        } else if (filtro === 'ano') {
+          q = q.gte('data_vencimento', `${ano}-01-01`).lte('data_vencimento', `${ano}-12-31`);
+        }
+        const { data } = await q;
+        return data || [];
+      };
+
+      const [r, d] = await Promise.all([buscar(idsRec), buscar(idsDesp)]);
+      setReceitas(r);
+      setDespesas(d);
+    } catch(e) {
+      showError('Erro ao carregar: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const salvarLancamento = async () => {
     if (!form.descricao.trim()) { showError('Informe a descrição.'); return; }
     if (!form.valor || parseFloat(form.valor) <= 0) { showError('Informe um valor válido.'); return; }
     setSalvando(true);
     try {
-      // Buscar categoria Arco Real pelo tipo
       const { data: cats } = await supabase
         .from('categorias_financeiras')
         .select('id, nome, tipo')
         .ilike('nome', '%arco real%')
         .eq('tipo', form.tipo);
-
       const cat = (cats || [])[0];
-      if (!cat) { showError('Categoria Arco Real não encontrada para o tipo ' + form.tipo); setSalvando(false); return; }
+      if (!cat) { showError('Categoria Arco Real não encontrada para ' + form.tipo); setSalvando(false); return; }
 
-      const hoje = new Date();
-      const hojeStr = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
-
-      const insert = {
+      const { error } = await supabase.from('lancamentos_loja').insert([{
         tipo: form.tipo,
         categoria_id: cat.id,
         descricao: form.descricao.trim(),
         valor: parseFloat(form.valor),
-        data_lancamento: hojeStr,
+        data_lancamento: hojeStr(),
         data_vencimento: form.data_vencimento,
         data_pagamento: form.status === 'pago' ? form.data_vencimento : null,
         status: form.status,
@@ -60,13 +86,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         origem_tipo: 'Loja',
         origem_irmao_id: null,
         eh_transferencia_interna: false,
-      };
-
-      const { error } = await supabase.from('lancamentos_loja').insert([insert]);
+      }]);
       if (error) throw error;
-
       showSuccess('✅ Lançamento registrado!');
-      setForm({ tipo: 'receita', descricao: '', valor: '', data_vencimento: new Date().toISOString().split('T')[0], status: 'pago' });
+      setForm({ tipo: 'receita', descricao: '', valor: '', data_vencimento: hojeStr(), status: 'pago' });
       setShowForm(false);
       carregar();
     } catch(e) {
@@ -76,68 +99,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
     }
   };
 
-  const carregar = async () => {
-    setLoading(true);
-    try {
-      // Buscar IDs das categorias Arco Real
-      const { data: cats } = await supabase
-        .from('categorias_financeiras')
-        .select('id, nome, tipo')
-        .ilike('nome', '%arco real%');
-
-      const idsRec  = (cats || []).filter(c => c.tipo === 'receita').map(c => c.id);
-      const idsDesp = (cats || []).filter(c => c.tipo === 'despesa').map(c => c.id);
-
-      const buildFiltroData = (campo) => {
-        if (filtro === 'mes') {
-          const ini = `${ano}-${String(mes).padStart(2,'0')}-01`;
-          const fim = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
-          return { gte: ini, lte: fim, campo };
-        } else if (filtro === 'ano') {
-          return { gte: `${ano}-01-01`, lte: `${ano}-12-31`, campo };
-        }
-        return null;
-      };
-
-      const buscar = async (ids, tipo) => {
-        if (!ids.length) return [];
-        let q = supabase
-          .from('lancamentos_loja')
-          .select('*, categorias_financeiras(nome, tipo), irmaos(nome)')
-          .in('categoria_id', ids)
-          .order('data_vencimento');
-
-        if (filtro !== 'geral') {
-          const campoData = tipo === 'receita' ? 'data_pagamento' : 'data_vencimento';
-          const fd = buildFiltroData(campoData);
-          q = q.gte('data_vencimento', fd.gte).lte('data_vencimento', fd.lte);
-        }
-        const { data } = await q;
-        return data || [];
-      };
-
-      const [r, d] = await Promise.all([buscar(idsRec, 'receita'), buscar(idsDesp, 'despesa')]);
-      setReceitas(r);
-      setDespesas(d);
-    } catch (e) {
-      showError('Erro: ' + e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const recPagas  = receitas.filter(l => l.status === 'pago');
-  const recPend   = receitas.filter(l => l.status === 'pendente');
-  const totRec    = recPagas.reduce((s, l) => s + Number(l.valor || 0), 0);   // só pagos
-  const totPend   = recPend.reduce((s, l) => s + Number(l.valor || 0), 0);    // pendentes
-  const totDesp   = despesas.reduce((s, l) => s + Number(l.valor || 0), 0);   // repasses
-  const saldo     = totRec - totDesp;  // recebido pago - repassado
-
   const gerarPDF = async () => {
     try {
       showSuccess('Gerando PDF...');
       const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
-
       const jsPDFModule = await import('jspdf');
       const jsPDF = jsPDFModule.default;
       const doc = new jsPDF();
@@ -155,25 +120,28 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         }
       };
 
-      // Logo
       if (dadosLoja?.logo_url) {
         try { doc.addImage(dadosLoja.logo_url, 'PNG', 88, y, 28, 28); y += 33; } catch {}
       }
 
-      // Cabeçalho
       const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga') + ' Nº ' + (dadosLoja?.numero_loja || '30');
       doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.setTextColor(0);
       doc.text(nomeLoja, 105, y, { align: 'center' }); y += 6;
       doc.setFontSize(9); doc.setFont('helvetica','normal'); doc.setTextColor(80);
       doc.text('Arco Real - Controle Financeiro', 105, y, { align: 'center' }); y += 5;
       doc.setFontSize(12); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-
-      const labelFiltro = filtro === 'mes' ? MESES[mes-1] + '/' + ano
-        : filtro === 'ano' ? 'Ano ' + ano : 'Todos os Períodos';
+      const labelFiltro = filtro === 'mes' ? MESES[mes-1] + '/' + ano : filtro === 'ano' ? 'Ano ' + ano : 'Todos os Períodos';
       doc.text('Extrato de Movimentação — ' + labelFiltro, 105, y, { align: 'center' }); y += 10;
 
-      // Tabela de resumo
-      doc.setFontSize(9); doc.setFont('helvetica','normal');
+      // Calcular totais
+      const recPagas = receitas.filter(l => l.status === 'pago');
+      const recPend  = receitas.filter(l => l.status === 'pendente');
+      const totRec   = recPagas.reduce((s,l) => s + Number(l.valor||0), 0);
+      const totPend  = recPend.reduce((s,l) => s + Number(l.valor||0), 0);
+      const totDesp  = despesas.reduce((s,l) => s + Number(l.valor||0), 0);
+      const saldo    = totRec - totDesp;
+
+      // Tabela resumo
       const linhasResumo = [
         { label: 'Recebido (Pago)', val: fmtR(totRec), cor: [16,120,60] },
         { label: 'Pendente (não recebido)', val: fmtR(totPend), cor: [200,130,0] },
@@ -183,299 +151,223 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       linhasResumo.forEach((lr, i) => {
         const bg = i % 2 === 0 ? [245,245,245] : [255,255,255];
         doc.setFillColor(...bg); doc.rect(15, y, 180, 7, 'F');
-        doc.setDrawColor(200); doc.setLineWidth(0.2);
-        doc.rect(15, y, 180, 7, 'S');
-        doc.setFont('helvetica','bold'); doc.setTextColor(60);
+        doc.setDrawColor(200); doc.setLineWidth(0.2); doc.rect(15, y, 180, 7, 'S');
+        doc.setFont('helvetica','bold'); doc.setTextColor(60); doc.setFontSize(9);
         doc.text(lr.label, 20, y + 4.5);
-        doc.setTextColor(...lr.cor);
-        doc.text(lr.val, 192, y + 4.5, { align: 'right' });
+        doc.setTextColor(...lr.cor); doc.text(lr.val, 192, y + 4.5, { align: 'right' });
         y += 7;
       });
       y += 8;
 
-      // Função bloco
       const renderBloco = (titulo, lancs, corTit, corVal) => {
-        if (!lancs.length) return 0;
+        if (!lancs.length) return;
         if (y > 240) { doc.addPage(); y = 15; }
-
         doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...corTit);
         doc.text(titulo, 15, y); y += 3;
         doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
-
         doc.setFillColor(230,230,230); doc.rect(15, y, 180, 6, 'F');
         doc.setFontSize(8); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-        doc.text('Data', 17, y+4); doc.text('Vencimento', 43, y+4); doc.text('Descrição', 75, y+4);
-        doc.text('Irmão', 140, y+4); doc.text('Valor', 192, y+4, { align: 'right' });
+        doc.text('Data', 17, y+4); doc.text('Descrição', 43, y+4); doc.text('Status', 148, y+4); doc.text('Valor', 192, y+4, { align: 'right' });
         y += 11;
-
         let sub = 0;
         doc.setFontSize(8); doc.setFont('helvetica','normal');
         lancs.forEach(l => {
           if (y > 275) { doc.addPage(); y = 15; }
-          const dataL = fmtData(l.data_pagamento || l.data_lancamento || l.data_vencimento);
-          const dataV = fmtData(l.data_vencimento);
-          const desc  = (l.descricao || '').substring(0, 35);
-          const irmao = (l.irmaos?.nome || 'Loja').split(' ').slice(0,2).join(' ');
-          const val   = Number(l.valor || 0);
-          sub += val;
-
+          const val = Number(l.valor||0); sub += val;
           doc.setTextColor(0);
-          doc.text(dataL, 17, y); doc.text(dataV, 43, y); doc.text(desc, 75, y);
-          doc.text(irmao, 140, y);
-          doc.setTextColor(...corVal);
-          doc.text(fmtR(val), 192, y, { align: 'right' });
-          doc.setTextColor(0);
-          y += 5;
+          doc.text(fmtData(l.data_vencimento), 17, y);
+          doc.text((l.descricao||'').substring(0,50), 43, y);
+          if (l.status === 'pago') { doc.setTextColor(16,120,60); doc.text('Pago', 148, y); }
+          else { doc.setTextColor(200,130,0); doc.text('Pendente', 148, y); }
+          doc.setTextColor(...corVal); doc.text(fmtR(val), 192, y, { align: 'right' });
+          doc.setTextColor(0); y += 5;
         });
-
         y += 1;
         doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
         doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
         doc.text('Sub Total:', 140, y, { align: 'right' });
         doc.setTextColor(...corVal); doc.text(fmtR(sub), 192, y, { align: 'right' });
-        y += 2;
-        doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y);
-        y += 12; doc.setTextColor(0);
-        return sub;
+        y += 2; doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 12; doc.setTextColor(0);
       };
 
-      // Separar por status para o PDF
-      const recPagasPDF  = receitas.filter(l => l.status === 'pago');
-      const recPendPDF   = receitas.filter(l => l.status === 'pendente');
-      const despPagasPDF = despesas.filter(l => l.status === 'pago');
-      const despPendPDF  = despesas.filter(l => l.status === 'pendente');
-
-      renderBloco('Recebido (Pago) — Arco Real', recPagasPDF, [16,120,60], [16,120,60]);
-      renderBloco('Pendente (Nao Recebido) — Arco Real', recPendPDF, [200,130,0], [200,130,0]);
-      renderBloco('Repassado ao Arco Real', despPagasPDF, [200,0,0], [200,0,0]);
-      renderBloco('Repasse Pendente', despPendPDF, [150,50,0], [150,50,0]);
-
-      // Resumo final
-      if (y > 240) { doc.addPage(); y = 15; }
-      y += 5;
-      doc.setFontSize(11); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-      doc.text('Resumo Geral:', 192, y, { align: 'right' }); y += 7;
-      doc.setFontSize(10);
-      doc.setTextColor(16,120,60);
-      doc.text('Recebido (Pago):', 155, y, { align: 'right' }); doc.text(fmtR(totRec), 192, y, { align: 'right' }); y += 5;
-      doc.setTextColor(200,130,0);
-      doc.text('Pendente (nao recebido):', 155, y, { align: 'right' }); doc.text(fmtR(totPend), 192, y, { align: 'right' }); y += 5;
-      doc.setTextColor(200,0,0);
-      doc.text('Repassado:', 155, y, { align: 'right' }); doc.text(fmtR(totDesp), 192, y, { align: 'right' }); y += 3;
-      doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(115, y, 195, y); y += 5;
-      doc.setFontSize(11); doc.setFont('helvetica','bold');
-      if (saldo > 0) {
-        doc.setTextColor(37,99,235);
-        doc.text('Saldo a Repassar:', 155, y, { align: 'right' });
-        doc.text(fmtR(saldo), 192, y, { align: 'right' });
-      } else if (saldo < 0) {
-        doc.setTextColor(220,38,38);
-        doc.text('Repassado a Mais:', 155, y, { align: 'right' });
-        doc.text(fmtR(Math.abs(saldo)), 192, y, { align: 'right' });
-      } else {
-        doc.setTextColor(0,150,80);
-        doc.text('Zerado', 155, y, { align: 'right' });
-      }
+      renderBloco('Recebido (Pago) — Arco Real', recPagas, [16,120,60], [16,120,60]);
+      renderBloco('Pendente (Nao Recebido) — Arco Real', recPend, [200,130,0], [200,130,0]);
+      renderBloco('Repassado ao Arco Real', despesas.filter(l=>l.status==='pago'), [200,0,0], [200,0,0]);
+      renderBloco('Repasse Pendente', despesas.filter(l=>l.status==='pendente'), [150,50,0], [150,50,0]);
 
       rodape();
       doc.save('ArcoReal_' + labelFiltro.replace(/\//g,'_').replace(/ /g,'_') + '.pdf');
       showSuccess('PDF gerado!');
-    } catch (e) {
+    } catch(e) {
       showError('Erro ao gerar PDF: ' + e.message);
     }
   };
 
   if (!isOpen) return null;
 
-  const sInp = { background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.4rem 0.6rem', fontSize: '0.85rem' };
+  const recPagas = receitas.filter(l => l.status === 'pago');
+  const recPend  = receitas.filter(l => l.status === 'pendente');
+  const totRec   = recPagas.reduce((s,l) => s + Number(l.valor||0), 0);
+  const totPend  = recPend.reduce((s,l) => s + Number(l.valor||0), 0);
+  const totDesp  = despesas.reduce((s,l) => s + Number(l.valor||0), 0);
+  const saldo    = totRec - totDesp;
+  const sInp = { background:'var(--color-surface)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.45rem 0.75rem',fontSize:'0.875rem',width:'100%' };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '1rem' }}>
-      <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '860px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 64px rgba(0,0,0,0.4)' }}>
+    <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:9999,padding:'1rem' }}>
+      <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'860px',maxHeight:'90vh',overflow:'hidden',display:'flex',flexDirection:'column',boxShadow:'0 24px 64px rgba(0,0,0,0.4)' }}>
 
         {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg, #1e3a5f, #2d6a9f)', padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background:'linear-gradient(135deg,#1e3a5f,#2d6a9f)',padding:'1.25rem 1.5rem',display:'flex',justifyContent:'space-between',alignItems:'center' }}>
           <div>
-            <h2 style={{ color: '#fff', fontWeight: '800', fontSize: '1.2rem', margin: 0 }}>🔺 Arco Real — Controle Financeiro</h2>
-            <p style={{ color: 'rgba(255,255,255,0.75)', margin: '0.2rem 0 0', fontSize: '0.82rem' }}>Movimentação de receitas e repasses</p>
+            <h2 style={{ color:'#fff',fontWeight:'800',fontSize:'1.2rem',margin:0 }}>🔺 Arco Real — Controle Financeiro</h2>
+            <p style={{ color:'rgba(255,255,255,0.75)',margin:'0.2rem 0 0',fontSize:'0.82rem' }}>Movimentação de receitas e repasses</p>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: '50%', width: '2.25rem', height: '2.25rem', fontSize: '1.3rem', fontWeight: '700', cursor: 'pointer' }}>×</button>
+          <button onClick={onClose} style={{ background:'rgba(255,255,255,0.15)',border:'none',color:'#fff',borderRadius:'50%',width:'2.25rem',height:'2.25rem',fontSize:'1.3rem',fontWeight:'700',cursor:'pointer' }}>×</button>
         </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div style={{ flex:1,overflowY:'auto',padding:'1.25rem',display:'flex',flexDirection:'column',gap:'1rem' }}>
 
           {/* Filtros */}
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', background: 'var(--color-surface-2)', padding: '0.75rem 1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)' }}>
+          <div style={{ display:'flex',gap:'0.5rem',alignItems:'center',flexWrap:'wrap',background:'var(--color-surface-2)',padding:'0.75rem 1rem',borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)' }}>
             {[['mes','Mês'],['ano','Ano'],['geral','Geral']].map(([v,l]) => (
               <button key={v} onClick={() => setFiltro(v)}
-                style={{ padding: '0.35rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', background: filtro === v ? '#2d6a9f' : 'var(--color-surface)', color: filtro === v ? '#fff' : 'var(--color-text)', borderColor: filtro === v ? '#2d6a9f' : 'var(--color-border)' }}>
+                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:filtro===v?'#2d6a9f':'var(--color-surface)',color:filtro===v?'#fff':'var(--color-text)',borderColor:filtro===v?'#2d6a9f':'var(--color-border)' }}>
                 {l}
               </button>
             ))}
-            {filtro !== 'geral' && (
-              <>
-                {filtro === 'mes' && (
-                  <select value={mes} onChange={e => setMes(parseInt(e.target.value))} style={sInp}>
-                    {MESES.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
-                  </select>
-                )}
-                <select value={ano} onChange={e => setAno(parseInt(e.target.value))} style={sInp}>
-                  {[2024,2025,2026,2027].map(a => <option key={a} value={a}>{a}</option>)}
-                </select>
-              </>
-            )}
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+            {filtro !== 'geral' && <>
+              {filtro === 'mes' && <select value={mes} onChange={e=>setMes(parseInt(e.target.value))} style={{...sInp,width:'auto'}}>
+                {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
+              </select>}
+              <select value={ano} onChange={e=>setAno(parseInt(e.target.value))} style={{...sInp,width:'auto'}}>
+                {[2024,2025,2026,2027].map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </>}
+            <div style={{ marginLeft:'auto',display:'flex',gap:'0.5rem' }}>
+              <button onClick={() => setShowForm(v => !v)}
+                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:showForm?'#16a34a':'var(--color-surface-2)',color:showForm?'#fff':'var(--color-text)' }}>
+                {showForm ? '✕ Cancelar' : '+ Novo Lançamento'}
+              </button>
               <button onClick={() => setVerLancs(v => !v)}
-                style={{ padding: '0.35rem 0.9rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontWeight: '600', fontSize: '0.82rem', cursor: 'pointer', background: verLancs ? 'var(--color-accent-bg)' : 'var(--color-surface-2)', color: verLancs ? 'var(--color-accent)' : 'var(--color-text)' }}>
-                {verLancs ? '📋 Ocultar lançamentos' : '📋 Ver lançamentos'}
+                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',fontWeight:'600',fontSize:'0.82rem',cursor:'pointer',background:verLancs?'var(--color-accent-bg)':'var(--color-surface-2)',color:verLancs?'var(--color-accent)':'var(--color-text)' }}>
+                {verLancs ? '📋 Ocultar' : '📋 Ver Lançamentos'}
               </button>
               <button onClick={gerarPDF}
-                style={{ padding: '0.35rem 0.9rem', borderRadius: 'var(--radius-md)', border: 'none', fontWeight: '700', fontSize: '0.82rem', cursor: 'pointer', background: '#1e3a5f', color: '#fff' }}>
-                📄 Gerar PDF
+                style={{ padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'none',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',background:'#1e3a5f',color:'#fff' }}>
+                📄 PDF
               </button>
             </div>
           </div>
 
-          {/* Cards resumo */}
-          {/* Formulário de novo lançamento */}
+          {/* Formulário novo lançamento */}
           {showForm && (
-            <div style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <p style={{ margin: 0, fontWeight: '700', color: 'var(--color-text)', fontSize: '0.9rem' }}>+ Novo Lançamento</p>
-
-              {/* Tipo */}
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
+              <p style={{ margin:0,fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>+ Novo Lançamento</p>
+              <div style={{ display:'flex',gap:'0.5rem' }}>
                 {[['receita','✅ Receita (Entrada)'],['despesa','🔺 Repasse (Saída)']].map(([v,l]) => (
-                  <button key={v} onClick={() => setForm(f => ({...f, tipo: v}))}
-                    style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer',
-                      background: form.tipo === v ? (v === 'receita' ? '#16a34a' : '#dc2626') : 'var(--color-surface)',
-                      color: form.tipo === v ? '#fff' : 'var(--color-text)',
-                      borderColor: form.tipo === v ? (v === 'receita' ? '#16a34a' : '#dc2626') : 'var(--color-border)' }}>
+                  <button key={v} onClick={() => setForm(f=>({...f,tipo:v}))}
+                    style={{ flex:1,padding:'0.4rem',borderRadius:'var(--radius-md)',border:'1px solid',fontWeight:'600',fontSize:'0.8rem',cursor:'pointer',
+                      background:form.tipo===v?(v==='receita'?'#16a34a':'#dc2626'):'var(--color-surface)',
+                      color:form.tipo===v?'#fff':'var(--color-text)',
+                      borderColor:form.tipo===v?(v==='receita'?'#16a34a':'#dc2626'):'var(--color-border)' }}>
                     {l}
                   </button>
                 ))}
               </div>
-
-              {/* Campos */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Descrição *</label>
-                  <input value={form.descricao} onChange={e => setForm(f => ({...f, descricao: e.target.value}))} placeholder="Ex: Doação Acácia ao Arco Real"
-                    style={{ width: '100%', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.75rem', fontSize: '0.875rem' }} />
+              <div style={{ display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.5rem' }}>
+                <div style={{ gridColumn:'1 / -1' }}>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Descrição *</label>
+                  <input value={form.descricao} onChange={e=>setForm(f=>({...f,descricao:e.target.value}))} placeholder="Ex: Doação Acácia ao Arco Real" style={sInp} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Valor *</label>
-                  <input type="number" step="0.01" value={form.valor} onChange={e => setForm(f => ({...f, valor: e.target.value}))} placeholder="0,00"
-                    style={{ width: '100%', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.75rem', fontSize: '0.875rem' }} />
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Valor *</label>
+                  <input type="number" step="0.01" value={form.valor} onChange={e=>setForm(f=>({...f,valor:e.target.value}))} placeholder="0,00" style={sInp} />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Data</label>
-                  <input type="date" value={form.data_vencimento} onChange={e => setForm(f => ({...f, data_vencimento: e.target.value}))}
-                    style={{ width: '100%', background: 'var(--color-surface)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.45rem 0.75rem', fontSize: '0.875rem' }} />
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Data</label>
+                  <input type="date" value={form.data_vencimento} onChange={e=>setForm(f=>({...f,data_vencimento:e.target.value}))} style={sInp} />
                 </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>Status</label>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ gridColumn:'1 / -1' }}>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Status</label>
+                  <div style={{ display:'flex',gap:'0.5rem' }}>
                     {[['pago','✓ Pago/Realizado'],['pendente','⏳ Pendente']].map(([v,l]) => (
-                      <button key={v} onClick={() => setForm(f => ({...f, status: v}))}
-                        style={{ flex: 1, padding: '0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid', fontWeight: '600', fontSize: '0.8rem', cursor: 'pointer',
-                          background: form.status === v ? (v === 'pago' ? '#16a34a' : '#d97706') : 'var(--color-surface)',
-                          color: form.status === v ? '#fff' : 'var(--color-text)',
-                          borderColor: form.status === v ? (v === 'pago' ? '#16a34a' : '#d97706') : 'var(--color-border)' }}>
+                      <button key={v} onClick={() => setForm(f=>({...f,status:v}))}
+                        style={{ flex:1,padding:'0.4rem',borderRadius:'var(--radius-md)',border:'1px solid',fontWeight:'600',fontSize:'0.8rem',cursor:'pointer',
+                          background:form.status===v?(v==='pago'?'#16a34a':'#d97706'):'var(--color-surface)',
+                          color:form.status===v?'#fff':'var(--color-text)',
+                          borderColor:form.status===v?(v==='pago'?'#16a34a':'#d97706'):'var(--color-border)' }}>
                         {l}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-
               <button onClick={salvarLancamento} disabled={salvando}
-                style={{ padding: '0.6rem', background: form.tipo === 'receita' ? '#16a34a' : '#dc2626', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', cursor: salvando ? 'not-allowed' : 'pointer', opacity: salvando ? 0.7 : 1 }}>
+                style={{ padding:'0.6rem',background:form.tipo==='receita'?'#16a34a':'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:salvando?'not-allowed':'pointer',opacity:salvando?0.7:1 }}>
                 {salvando ? 'Salvando...' : '💾 Salvar Lançamento'}
               </button>
             </div>
           )}
 
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--color-text-muted)' }}>Carregando...</div>
+            <div style={{ textAlign:'center',padding:'2rem',color:'var(--color-text-muted)' }}>Carregando...</div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+              {/* Cards */}
+              <div style={{ display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'0.75rem' }}>
                 {[
-                  { label: 'Recebido (Pago)', val: totRec, sub: recPagas.length + ' lançamento(s)', cor: '#16a34a', bg: 'rgba(22,163,74,0.08)', brd: 'rgba(22,163,74,0.3)' },
-                  { label: 'Pendente', val: totPend, sub: recPend.length + ' lançamento(s)', cor: '#d97706', bg: 'rgba(217,119,6,0.08)', brd: 'rgba(217,119,6,0.3)' },
-                  { label: 'Repassado', val: totDesp, sub: despesas.length + ' lançamento(s)', cor: '#dc2626', bg: 'rgba(220,38,38,0.08)', brd: 'rgba(220,38,38,0.3)' },
-                  {
-                    label: saldo > 0 ? 'Saldo a Repassar' : saldo < 0 ? 'Repassado a Mais' : 'Zerado',
-                    val: saldo,
-                    sub: saldo > 0 ? 'Loja deve repassar ao Arco Real' : saldo < 0 ? 'Loja repassou mais do que recebeu' : 'Em dia',
-                    cor: saldo > 0 ? '#2563eb' : saldo < 0 ? '#dc2626' : '#16a34a',
-                    bg: saldo > 0 ? 'rgba(37,99,235,0.08)' : saldo < 0 ? 'rgba(220,38,38,0.08)' : 'rgba(22,163,74,0.08)',
-                    brd: saldo > 0 ? 'rgba(37,99,235,0.3)' : saldo < 0 ? 'rgba(220,38,38,0.3)' : 'rgba(22,163,74,0.3)'
-                  },
-                ].map((c, i) => (
-                  <div key={i} style={{ background: c.bg, border: '1px solid ' + c.brd, borderLeft: '4px solid ' + c.cor, borderRadius: 'var(--radius-lg)', padding: '1rem' }}>
-                    <p style={{ margin: '0 0 0.25rem', fontSize: '0.72rem', fontWeight: '700', color: 'var(--color-text-muted)', textTransform: 'uppercase' }}>{c.label}</p>
-                    <p style={{ margin: '0 0 0.25rem', fontSize: '1.5rem', fontWeight: '800', color: c.cor }}>{fmtR(c.val)}</p>
-                    <p style={{ margin: 0, fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{c.sub}</p>
+                  { label:'Recebido (Pago)',    val:totRec,  sub:recPagas.length+' lançamento(s)', cor:'#16a34a', bg:'rgba(22,163,74,0.08)',  brd:'rgba(22,163,74,0.3)' },
+                  { label:'Pendente',           val:totPend, sub:recPend.length+' lançamento(s)',  cor:'#d97706', bg:'rgba(217,119,6,0.08)',   brd:'rgba(217,119,6,0.3)' },
+                  { label:'Repassado',          val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626', bg:'rgba(220,38,38,0.08)',   brd:'rgba(220,38,38,0.3)' },
+                  { label: saldo>0?'Saldo a Repassar':saldo<0?'Repassado a Mais':'Zerado',
+                    val:saldo,
+                    sub: saldo>0?'Loja deve repassar':saldo<0?'Loja repassou a mais':'Em dia',
+                    cor: saldo>0?'#2563eb':saldo<0?'#dc2626':'#16a34a',
+                    bg:  saldo>0?'rgba(37,99,235,0.08)':saldo<0?'rgba(220,38,38,0.08)':'rgba(22,163,74,0.08)',
+                    brd: saldo>0?'rgba(37,99,235,0.3)':saldo<0?'rgba(220,38,38,0.3)':'rgba(22,163,74,0.3)' },
+                ].map((c,i) => (
+                  <div key={i} style={{ background:c.bg,border:'1px solid '+c.brd,borderLeft:'4px solid '+c.cor,borderRadius:'var(--radius-lg)',padding:'1rem' }}>
+                    <p style={{ margin:'0 0 0.25rem',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase' }}>{c.label}</p>
+                    <p style={{ margin:'0 0 0.25rem',fontSize:'1.5rem',fontWeight:'800',color:c.cor }}>{fmtR(c.val)}</p>
+                    <p style={{ margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)' }}>{c.sub}</p>
                   </div>
                 ))}
               </div>
 
-              {/* Lançamentos expandidos */}
+              {/* Lançamentos */}
               {verLancs && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-
-                  {/* Receitas */}
-                  <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-                    <div style={{ background: 'rgba(22,163,74,0.1)', padding: '0.6rem 1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '700', color: '#16a34a', fontSize: '0.9rem' }}>✅ Receitas — Recebido para o Arco Real</span>
-                      <span style={{ fontWeight: '800', color: '#16a34a' }}>{fmtR(totRec)}</span>
-                    </div>
-                    {receitas.length === 0 ? (
-                      <p style={{ padding: '1rem', color: 'var(--color-text-muted)', textAlign: 'center', margin: 0 }}>Nenhuma receita no período</p>
-                    ) : receitas.map((l, i) => (
-                      <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '90px 90px 1fr 120px 90px 70px', gap: '0.5rem', padding: '0.5rem 1rem', borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', fontSize: '0.8rem', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>{fmtData(l.data_pagamento || l.data_vencimento)}</span>
-                        <span style={{ color: 'var(--color-text-muted)' }}>{fmtData(l.data_vencimento)}</span>
-                        <span style={{ color: 'var(--color-text)', fontWeight: '600' }}>{l.descricao}</span>
-                        <span style={{ color: '#8b5cf6' }}>👤 {(l.irmaos?.nome || 'Loja').split(' ').slice(0,2).join(' ')}</span>
-                        <span style={{ fontWeight: '700', color: '#16a34a', textAlign: 'right' }}>{fmtR(l.valor)}</span>
-                        <span style={{ fontSize: '0.68rem', color: l.status === 'pago' ? '#16a34a' : '#d97706', textAlign: 'center', fontWeight: '600' }}>{l.status === 'pago' ? '✓ Pago' : '⏳ Pend.'}</span>
+                <div style={{ display:'flex',flexDirection:'column',gap:'0.75rem' }}>
+                  {[
+                    { titulo:'✅ Receitas (Recebido — Pago)', lancs: recPagas, cor:'#16a34a', tot: totRec },
+                    { titulo:'⏳ Receitas (Pendente)', lancs: recPend, cor:'#d97706', tot: totPend },
+                    { titulo:'🔺 Repasses (Enviado)', lancs: despesas.filter(l=>l.status==='pago'), cor:'#dc2626', tot: despesas.filter(l=>l.status==='pago').reduce((s,l)=>s+Number(l.valor||0),0) },
+                    { titulo:'⏳ Repasses (Pendente)', lancs: despesas.filter(l=>l.status==='pendente'), cor:'#b45309', tot: despesas.filter(l=>l.status==='pendente').reduce((s,l)=>s+Number(l.valor||0),0) },
+                  ].filter(b => b.lancs.length > 0).map((bloco, bi) => (
+                    <div key={bi} style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',overflow:'hidden' }}>
+                      <div style={{ padding:'0.6rem 1rem',borderBottom:'1px solid var(--color-border)',display:'flex',justifyContent:'space-between',alignItems:'center',background:`rgba(0,0,0,0.03)` }}>
+                        <span style={{ fontWeight:'700',color:bloco.cor,fontSize:'0.9rem' }}>{bloco.titulo}</span>
+                        <span style={{ fontWeight:'800',color:bloco.cor }}>{fmtR(bloco.tot)}</span>
                       </div>
-                    ))}
-                  </div>
-
-                  {/* Despesas / Repasses */}
-                  <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
-                    <div style={{ background: 'rgba(220,38,38,0.1)', padding: '0.6rem 1rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: '700', color: '#dc2626', fontSize: '0.9rem' }}>🔺 Repasses — Enviado ao Arco Real</span>
-                      <span style={{ fontWeight: '800', color: '#dc2626' }}>{fmtR(totDesp)}</span>
+                      {bloco.lancs.map((l,i) => (
+                        <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 100px 80px',gap:'0.5rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+                          <span style={{ color:'var(--color-text-muted)' }}>{fmtData(l.data_vencimento)}</span>
+                          <span style={{ color:'var(--color-text)',fontWeight:'600' }}>{l.descricao}</span>
+                          <span style={{ fontWeight:'700',color:bloco.cor,textAlign:'right' }}>{fmtR(l.valor)}</span>
+                          <span style={{ fontSize:'0.68rem',color:l.status==='pago'?'#16a34a':'#d97706',textAlign:'center',fontWeight:'600' }}>{l.status==='pago'?'✓ Pago':'⏳ Pend.'}</span>
+                        </div>
+                      ))}
                     </div>
-                    {despesas.length === 0 ? (
-                      <p style={{ padding: '1rem', color: 'var(--color-text-muted)', textAlign: 'center', margin: 0 }}>Nenhum repasse no período</p>
-                    ) : despesas.map((l, i) => (
-                      <div key={l.id} style={{ display: 'grid', gridTemplateColumns: '90px 90px 1fr 120px 90px 70px', gap: '0.5rem', padding: '0.5rem 1rem', borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', fontSize: '0.8rem', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--color-text-muted)' }}>{fmtData(l.data_pagamento || l.data_vencimento)}</span>
-                        <span style={{ color: 'var(--color-text-muted)' }}>{fmtData(l.data_vencimento)}</span>
-                        <span style={{ color: 'var(--color-text)', fontWeight: '600' }}>{l.descricao}</span>
-                        <span style={{ color: '#8b5cf6' }}>👤 {(l.irmaos?.nome || 'Loja').split(' ').slice(0,2).join(' ')}</span>
-                        <span style={{ fontWeight: '700', color: '#dc2626', textAlign: 'right' }}>{fmtR(l.valor)}</span>
-                        <span style={{ fontSize: '0.68rem', color: l.status === 'pago' ? '#16a34a' : '#d97706', textAlign: 'center', fontWeight: '600' }}>{l.status === 'pago' ? '✓ Pago' : '⏳ Pend.'}</span>
-                      </div>
-                    ))}
-                  </div>
-
+                  ))}
                 </div>
               )}
             </>
           )}
         </div>
 
-        {/* Footer */}
-        <div style={{ padding: '0.75rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1.5rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', fontWeight: '600', cursor: 'pointer' }}>Fechar</button>
+        <div style={{ padding:'0.75rem 1.5rem',borderTop:'1px solid var(--color-border)',display:'flex',justifyContent:'flex-end' }}>
+          <button onClick={onClose} style={{ padding:'0.5rem 1.5rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>Fechar</button>
         </div>
-
       </div>
     </div>
   );
