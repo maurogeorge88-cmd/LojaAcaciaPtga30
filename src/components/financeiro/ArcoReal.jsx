@@ -129,8 +129,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         { label:'Recebido (Pago)',       val: totRec,  cor:[16,120,60] },
         { label:'Pendente (nao recebido)',val: totPend, cor:[200,130,0] },
         { label:'Repassado ao Arco Real', val: totDesp, cor:[200,0,0] },
-        { label: saldo>0?'Saldo a Repassar':saldo<0?'Repassado a Mais':'Zerado',
-          val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
+        { label: 'Saldo', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
       ].forEach((lr, i) => {
         const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
         doc.rect(15, y, 180, 7, 'F');
@@ -319,9 +318,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                   { label:'Recebido (Pago)',  val:totRec,  sub:recPagas.length+' lançamento(s)', cor:'#16a34a',bg:'rgba(22,163,74,0.08)', brd:'rgba(22,163,74,0.3)' },
                   { label:'Pendente',          val:totPend, sub:recPend.length+' lançamento(s)',  cor:'#d97706',bg:'rgba(217,119,6,0.08)',  brd:'rgba(217,119,6,0.3)' },
                   { label:'Repassado',         val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626',bg:'rgba(220,38,38,0.08)',  brd:'rgba(220,38,38,0.3)' },
-                  { label: saldo>0?'Saldo a Repassar':saldo<0?'Repassado a Mais':'Zerado',
+                  { label: 'Saldo',
                     val:saldo,
-                    sub: saldo>0?'Loja deve ao Arco Real':saldo<0?'Loja repassou a mais':'Em dia',
+                    sub: saldo>0?'Positivo':saldo<0?'Negativo':'Zerado',
                     cor: saldo>0?'#2563eb':saldo<0?'#dc2626':'#16a34a',
                     bg:  saldo>0?'rgba(37,99,235,0.08)':saldo<0?'rgba(220,38,38,0.08)':'rgba(22,163,74,0.08)',
                     brd: saldo>0?'rgba(37,99,235,0.3)':saldo<0?'rgba(220,38,38,0.3)':'rgba(22,163,74,0.3)' },
