@@ -126,9 +126,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
 
       // Tabela resumo
       [
-        { label:'Recebido (Pago)',       val: totRec,  cor:[16,120,60] },
-        { label:'Pendente (nao recebido)',val: totPend, cor:[200,130,0] },
-        { label:'Repassado ao Arco Real', val: totDesp, cor:[200,0,0] },
+        { label:'Receitas Arco Real - Pg', val: totRec,  cor:[16,120,60] },
+        { label:'Receitas Arco Real - Pend.', val: totPend, cor:[200,130,0] },
+        { label:'Despesas Arco Real - Pg', val: totDesp, cor:[200,0,0] },
         { label: 'Saldo', val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
       ].forEach((lr, i) => {
         const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
@@ -174,10 +174,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         doc.setTextColor(0);
       };
 
-      renderBloco('Recebido (Pago)', recPagas, [16,120,60], [16,120,60]);
-      renderBloco('Pendente (Nao Recebido)', recPend, [200,130,0], [200,130,0]);
-      renderBloco('Repassado (Pago)', despesas.filter(l=>l.status==='pago'), [200,0,0], [200,0,0]);
-      renderBloco('Repasse Pendente', despesas.filter(l=>l.status==='pendente'), [150,50,0], [150,50,0]);
+      renderBloco('Receitas Arco Real - Pg', recPagas, [16,120,60], [16,120,60]);
+      renderBloco('Receitas Arco Real - Pend.', recPend, [200,130,0], [200,130,0]);
+      renderBloco('Despesas Arco Real - Pg', despesas.filter(l=>l.status==='pago'), [200,0,0], [200,0,0]);
+      renderBloco('Despesas Arco Real - Pend.', despesas.filter(l=>l.status==='pendente'), [150,50,0], [150,50,0]);
 
       rodape();
       doc.save('ArcoReal_' + labelFiltro.replace(/\//g,'_').replace(/ /g,'_') + '.pdf');
@@ -317,7 +317,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                 {[
                   { label:'Recebido (Pago)',  val:totRec,  sub:recPagas.length+' lançamento(s)', cor:'#16a34a',bg:'rgba(22,163,74,0.08)', brd:'rgba(22,163,74,0.3)' },
                   { label:'Pendente',          val:totPend, sub:recPend.length+' lançamento(s)',  cor:'#d97706',bg:'rgba(217,119,6,0.08)',  brd:'rgba(217,119,6,0.3)' },
-                  { label:'Repassado',         val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626',bg:'rgba(220,38,38,0.08)',  brd:'rgba(220,38,38,0.3)' },
+                  { label:'Despesas Arco Real', val:totDesp, sub:despesas.length+' lançamento(s)', cor:'#dc2626',bg:'rgba(220,38,38,0.08)',  brd:'rgba(220,38,38,0.3)' },
                   { label: 'Saldo',
                     val:saldo,
                     sub: saldo>0?'Positivo':saldo<0?'Negativo':'Zerado',
