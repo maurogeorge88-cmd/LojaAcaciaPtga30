@@ -132,12 +132,12 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
         { label: saldo>0?'Saldo a Repassar':saldo<0?'Repassado a Mais':'Zerado',
           val: saldo, cor: saldo>0?[37,99,235]:saldo<0?[220,38,38]:[16,120,60] },
       ].forEach((lr, i) => {
-        doc.setFillColor(...(i%2===0?[245,245,245]:[255,255,255]));
+        const bg = i%2===0?[245,245,245]:[255,255,255]; doc.setFillColor(bg[0], bg[1], bg[2]);
         doc.rect(15, y, 180, 7, 'F');
         doc.setDrawColor(200); doc.setLineWidth(0.2); doc.rect(15, y, 180, 7, 'S');
         doc.setFont('helvetica','bold'); doc.setTextColor(60); doc.setFontSize(9);
         doc.text(lr.label, 20, y+4.5);
-        doc.setTextColor(...lr.cor); doc.text(fmtR(lr.val), 192, y+4.5, { align:'right' });
+        doc.setTextColor(lr.cor[0], lr.cor[1], lr.cor[2]); doc.text(fmtR(lr.val), 192, y+4.5, { align:'right' });
         y += 7;
       });
       y += 8;
@@ -145,7 +145,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       const renderBloco = (titulo, lista, corTit, corVal) => {
         if (!lista.length) return;
         if (y > 240) { doc.addPage(); y = 15; }
-        doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(...corTit);
+        doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(corTit[0], corTit[1], corTit[2]);
         doc.text(titulo, 15, y); y += 3;
         doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
         doc.setFillColor(230,230,230); doc.rect(15, y, 180, 6, 'F');
@@ -163,14 +163,14 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
           doc.text((l.descricao||'').substring(0,50), 43, y);
           doc.setTextColor(l.origem==='manual'?[99,102,241]:[100,100,100]);
           doc.text(l.origem==='manual'?'Manual':'Loja', 140, y);
-          doc.setTextColor(...corVal); doc.text(fmtR(val), 192, y, { align:'right' });
+          doc.setTextColor(corVal[0], corVal[1], corVal[2]); doc.text(fmtR(val), 192, y, { align:'right' });
           doc.setTextColor(0); y += 5;
         });
         y += 1;
         doc.setDrawColor(0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
         doc.setFontSize(10); doc.setFont('helvetica','bold'); doc.setTextColor(0);
         doc.text('Sub Total:', 140, y, { align:'right' });
-        doc.setTextColor(...corVal); doc.text(fmtR(sub), 192, y, { align:'right' });
+        doc.setTextColor(corVal[0], corVal[1], corVal[2]); doc.text(fmtR(sub), 192, y, { align:'right' });
         y += 2; doc.setDrawColor(150); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 12;
         doc.setTextColor(0);
       };
