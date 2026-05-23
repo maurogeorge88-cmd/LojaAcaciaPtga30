@@ -230,6 +230,7 @@ export default function ModalLancamento({
               <option value="dinheiro">💵 Dinheiro</option>
               <option value="pix">📱 PIX</option>
               <option value="transferencia">🏦 Transferência</option>
+              <option value="deposito">🏧 Depósito</option>
               <option value="debito">💳 Débito</option>
               <option value="credito">💳 Crédito</option>
               <option value="cheque">📝 Cheque</option>
