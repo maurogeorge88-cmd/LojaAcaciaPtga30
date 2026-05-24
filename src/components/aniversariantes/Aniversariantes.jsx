@@ -1188,7 +1188,7 @@ export default function Aniversariantes() {
   // ── helpers de estilo ──────────────────────────────────────────
   const inputStyle = {
     width: '100%', padding: '0.6rem 0.85rem', fontSize: '0.875rem',
-    background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+    background: 'var(--color-bg)', border: '1px solid var(--color-border)',
     borderRadius: 'var(--radius-md)', color: 'var(--color-text)', outline: 'none',
     boxSizing: 'border-box',
   };
