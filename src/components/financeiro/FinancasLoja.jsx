@@ -249,11 +249,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       });
       
       const conta = receitasPagas
-        .filter(l => ['pix', 'transferencia', 'debito', 'credito', 'cheque'].includes(l.tipo_pagamento))
+        .filter(l =>
+          l.tipo_pagamento !== 'dinheiro' &&
+          l.tipo_pagamento !== 'compensacao' &&
+          !l.eh_transferencia_interna
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
         
       const dinheiro = receitasPagas
-        .filter(l => l.tipo_pagamento === 'dinheiro')
+        .filter(l =>
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
         .reduce((sum, l) => sum + parseFloat(l.valor || 0), 0);
       
       setDetalhesReceitasPagas({ conta, dinheiro });
