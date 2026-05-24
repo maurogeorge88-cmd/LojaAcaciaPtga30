@@ -1185,496 +1185,381 @@ export default function Aniversariantes() {
     }
   };
 
+  // ── helpers de estilo ──────────────────────────────────────────
+  const inputStyle = {
+    width: '100%', padding: '0.6rem 0.85rem', fontSize: '0.875rem',
+    background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+    borderRadius: 'var(--radius-md)', color: 'var(--color-text)', outline: 'none',
+    boxSizing: 'border-box',
+  };
+  const labelStyle = {
+    display: 'block', fontSize: '0.75rem', fontWeight: 600,
+    color: 'var(--color-text-muted)', marginBottom: '0.3rem',
+    textTransform: 'uppercase', letterSpacing: '0.04em',
+  };
+
+  // ── cores por nível ────────────────────────────────────────────
+  const nivelConfig = {
+    1: { cor: 'var(--color-accent)', corHex: '#c9a84c', label: 'Irmãos',                   icone: '👤' },
+    2: { cor: '#10b981',             corHex: '#10b981', label: 'Familiares',                icone: '👨‍👩‍👧‍👦' },
+    4: { cor: '#8b5cf6',             corHex: '#8b5cf6', label: 'Eventos Maçônicos e Cívicos', icone: '🔷' },
+    3: { cor: 'var(--color-text-muted)', corHex: '#888', label: 'In Memoriam',             icone: '🕊️' },
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '16rem' }}>
+        <div style={{
+          width: '3rem', height: '3rem', borderRadius: '50%',
+          border: '3px solid var(--color-border)',
+          borderTopColor: 'var(--color-accent)',
+          animation: 'spin 0.8s linear infinite',
+        }} />
       </div>
     );
   }
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-800">📅 Datas Comemorativas</h2>
-          
-          <div className="flex gap-2">
-            {/* Botão de Gerenciar Eventos */}
-            <button
-              onClick={() => setModalEventos(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition flex items-center gap-2"
-            >
-              <span>⚙️</span>
-              <span>Gerenciar Eventos</span>
-            </button>
-            
-            {/* Botão de Gerar Relatório */}
-            <button
-              onClick={gerarRelatorioPDF}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition flex items-center gap-2"
-              disabled={loading}
-            >
-              <span>📄</span>
-              <span>Gerar Relatório PDF</span>
-            </button>
-          </div>
-        </div>
-        
-        {/* Botões de filtro */}
-        <div className="flex gap-2 mb-6 flex-wrap">
-          <button 
-            onClick={() => setFiltro('hoje')} 
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filtro === 'hoje' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            📅 Hoje
-          </button>
-          <button 
-            onClick={() => setFiltro('semana')} 
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filtro === 'semana' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            📆 Próximos 7 Dias
-          </button>
-          <button 
-            onClick={() => setFiltro('mes')} 
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filtro === 'mes' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            📊 Este Mês
-          </button>
-          <button 
-            onClick={() => setFiltro('todos')} 
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filtro === 'todos' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-            }`}
-          >
-            📋 Todos
-          </button>
-        </div>
+  const renderCard = (aniv, index, prefixo) => {
+    const hoje = new Date();
+    const ehHoje = aniv.proximo_aniversario.toDateString() === hoje.toDateString();
+    const cfg = nivelConfig[aniv.nivel] || nivelConfig[1];
+    const isInMemoriam = aniv.nivel === 3;
 
-        {/* Lista de aniversariantes */}
-        {aniversariantes.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🎂</div>
-            <p className="text-gray-600 text-lg font-medium">Nenhum aniversariante encontrado</p>
-            <p className="text-gray-500 text-sm mt-2">Tente outro filtro</p>
-          </div>
-        ) : (
-          <div className="space-y-8">
-            {/* NÍVEL 1: IRMÃOS */}
-            {aniversariantes.filter(a => a.nivel === 1).length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-blue-700 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">👤</span>
-                  <span>Irmãos ({aniversariantes.filter(a => a.nivel === 1).length})</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {aniversariantes.filter(a => a.nivel === 1).map((aniv, index) => {
-                    const ehHoje = aniv.proximo_aniversario.toDateString() === new Date().toDateString();
-                    
-                    return (
-                      <div 
-                        key={`nivel1-${index}`} 
-                        className={`rounded-lg p-4 border-l-4 ${
-                          ehHoje 
-                            ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400' 
-                            : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-500'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {aniv.foto_url ? (
-                            <img 
-                              src={aniv.foto_url} 
-                              alt={aniv.nome} 
-                              className="w-16 h-16 rounded-full object-cover border-2 border-white shadow"
-                            />
-                          ) : (
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
-                              ehHoje ? 'bg-yellow-200' : 'bg-blue-200'
-                            }`}>
-                              👤
-                            </div>
-                          )}
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
-                              {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 font-medium">{aniv.tipo} - {aniv.idade} anos</p>
-                            
-                            {aniv.cim && (
-                              <p className="text-xs text-gray-500">🔹 CIM: {aniv.cim}</p>
-                            )}
-                            
-                            {aniv.cargo && (
-                              <p className="text-xs text-blue-600 font-medium">👔 {aniv.cargo}</p>
-                            )}
-                            
-                            <p className="text-xs text-gray-600 mt-1 font-medium">
-                              📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* NÍVEL 2: FAMILIARES */}
-            {aniversariantes.filter(a => a.nivel === 2).length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-green-700 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">👨‍👩‍👧‍👦</span>
-                  <span>Familiares ({aniversariantes.filter(a => a.nivel === 2).length})</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {aniversariantes.filter(a => a.nivel === 2).map((aniv, index) => {
-                    const ehHoje = aniv.proximo_aniversario.toDateString() === new Date().toDateString();
-                    
-                    return (
-                      <div 
-                        key={`nivel2-${index}`} 
-                        className={`rounded-lg p-4 border-l-4 ${
-                          ehHoje 
-                            ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400' 
-                            : 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-500'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
-                            ehHoje ? 'bg-yellow-200' : 'bg-green-200'
-                          }`}>
-                            {aniv.tipo === 'Bodas' ? '💑' : obterEmojiPessoa(aniv.idade, aniv.sexo, aniv.tipo.toLowerCase())}
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
-                              {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 font-medium">
-                              {aniv.tipo === 'Bodas' ? `${aniv.tipo} - ${aniv.idade} anos de união` : `${aniv.tipo} - ${aniv.idade} anos`}
-                            </p>
-                            
-                            {/* Exibir vínculos múltiplos se existirem */}
-                            {aniv.vinculos && aniv.vinculos.length > 1 ? (
-                              <div className="text-xs text-gray-500 mt-1 space-y-0.5">
-                                {aniv.vinculos.map((vinculo, idx) => (
-                                  <p key={idx}>
-                                    • {vinculo.tipo} do Irmão {vinculo.irmao}
-                                  </p>
-                                ))}
-                              </div>
-                            ) : aniv.irmao_responsavel && (
-                              <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
-                            )}
-                            
-                            <p className="text-xs text-gray-600 mt-1 font-medium">
-                              📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* NÍVEL 4: EVENTOS MAÇÔNICOS E CÍVICOS */}
-            {aniversariantes.filter(a => a.nivel === 4).length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-purple-700 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🔷</span>
-                  <span>Eventos Maçônicos e Cívicos ({aniversariantes.filter(a => a.nivel === 4).length})</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {aniversariantes.filter(a => a.nivel === 4).map((aniv, index) => {
-                    const ehHoje = aniv.proximo_aniversario.toDateString() === new Date().toDateString();
-                    
-                    return (
-                      <div 
-                        key={`nivel4-${index}`} 
-                        className={`rounded-lg p-4 border-l-4 ${
-                          ehHoje 
-                            ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400' 
-                            : 'bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-500'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
-                            ehHoje ? 'bg-yellow-200' : 'bg-purple-200'
-                          }`}>
-                            {aniv.icone || '📅'}
-                          </div>
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg text-gray-900">{aniv.nome}</h3>
-                              {ehHoje && <span className="text-2xl animate-bounce">🎉</span>}
-                            </div>
-                            
-                            <p className="text-sm text-purple-700 font-medium">{aniv.tipo}</p>
-                            
-                            {aniv.descricao && (
-                              <p className="text-xs text-gray-600 mt-1">{aniv.descricao}</p>
-                            )}
-                            
-                            <p className="text-xs text-gray-600 mt-1 font-medium">
-                              📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* NÍVEL 3: IN MEMORIAM */}
-            {aniversariantes.filter(a => a.nivel === 3).length > 0 && (
-              <div>
-                <h3 className="text-xl font-bold text-gray-600 mb-4 flex items-center gap-2">
-                  <span className="text-2xl">🕊️</span>
-                  <span>In Memoriam ({aniversariantes.filter(a => a.nivel === 3).length})</span>
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {aniversariantes.filter(a => a.nivel === 3).map((aniv, index) => {
-                    const ehHoje = aniv.proximo_aniversario.toDateString() === new Date().toDateString();
-                    
-                    return (
-                      <div 
-                        key={`nivel3-${index}`} 
-                        className={`rounded-lg p-4 border-l-4 ${
-                          ehHoje 
-                            ? 'bg-gradient-to-br from-yellow-50 to-orange-50 border-yellow-400' 
-                            : 'bg-gradient-to-br from-gray-50 to-slate-50 border-gray-400'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {aniv.foto_url ? (
-                            <div className="relative">
-                              <img 
-                                src={aniv.foto_url} 
-                                alt={aniv.nome} 
-                                className="w-16 h-16 rounded-full object-cover border-2 border-white shadow grayscale"
-                              />
-                              <span className="absolute -top-1 -right-1 text-lg">🕊️</span>
-                            </div>
-                          ) : (
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center text-3xl border-2 border-white shadow ${
-                              ehHoje ? 'bg-yellow-200' : 'bg-gray-200'
-                            }`}>
-                              🕊️
-                            </div>
-                          )}
-                          
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <h3 className="font-bold text-lg text-gray-700">{aniv.nome}</h3>
-                              {ehHoje && <span className="text-2xl animate-bounce">🙏</span>}
-                            </div>
-                            
-                            <p className="text-sm text-gray-600 font-medium">{aniv.tipo} - {aniv.idade} anos</p>
-                            
-                            {aniv.cim && (
-                              <p className="text-xs text-gray-500">🔹 CIM: {aniv.cim}</p>
-                            )}
-                            
-                            {aniv.irmao_responsavel && (
-                              <p className="text-xs text-gray-500">👤 Irmão: {aniv.irmao_responsavel}</p>
-                            )}
-                            
-                            <p className="text-xs text-gray-600 mt-1 font-medium">
-                              📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      
-      {/* Modal de Gerenciar Eventos */}
-      {modalEventos && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Cabeçalho */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-t-lg">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold">⚙️ Gerenciar Eventos e Datas Especiais</h3>
-                <button
-                  onClick={() => setModalEventos(false)}
-                  className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
-                >
-                  ×
-                </button>
-              </div>
+    return (
+      <div key={`${prefixo}-${index}`} style={{
+        background: 'var(--color-surface)',
+        border: `1px solid ${ehHoje ? cfg.corHex : 'var(--color-border)'}`,
+        borderLeft: `4px solid ${ehHoje ? '#f59e0b' : cfg.corHex}`,
+        borderRadius: 'var(--radius-lg)',
+        padding: '1rem',
+        boxShadow: ehHoje ? `0 0 12px rgba(245,158,11,0.15)` : 'none',
+        transition: 'border-color 0.15s',
+        opacity: isInMemoriam ? 0.85 : 1,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {/* Avatar */}
+          {aniv.foto_url ? (
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <img
+                src={aniv.foto_url}
+                alt={aniv.nome}
+                style={{
+                  width: '52px', height: '52px', borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: `2px solid ${cfg.corHex}`,
+                  filter: isInMemoriam ? 'grayscale(80%)' : 'none',
+                }}
+              />
+              {isInMemoriam && (
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', fontSize: '0.9rem' }}>🕊️</span>
+              )}
             </div>
-            
-            <div className="p-6 space-y-6">
-              {/* Formulário de Novo Evento */}
-              <div className="border-l-4 border-green-500 bg-green-50 p-4 rounded-r-lg">
-                <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <span>➕</span>
-                  <span>Cadastrar Novo Evento</span>
+          ) : (
+            <div style={{
+              width: '52px', height: '52px', borderRadius: '50%', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem',
+              background: ehHoje ? 'rgba(245,158,11,0.15)' : `rgba(${cfg.corHex === '#10b981' ? '16,185,129' : cfg.corHex === '#8b5cf6' ? '139,92,246' : cfg.corHex === '#c9a84c' ? '201,168,76' : '136,136,136'},0.12)`,
+              border: `2px solid ${ehHoje ? '#f59e0b' : cfg.corHex}`,
+            }}>
+              {isInMemoriam ? '🕊️' : aniv.tipo === 'Bodas' ? '💑' : aniv.nivel === 4 ? (aniv.icone || '📅') : obterEmojiPessoa(aniv.idade, aniv.sexo, aniv.tipo?.toLowerCase())}
+            </div>
+          )}
+
+          {/* Dados */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <span style={{
+                fontSize: '0.9rem', fontWeight: 700,
+                color: isInMemoriam ? 'var(--color-text-muted)' : 'var(--color-text)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {aniv.nome}
+              </span>
+              {ehHoje && <span style={{ fontSize: '1.1rem' }}>{isInMemoriam ? '🙏' : '🎉'}</span>}
+            </div>
+
+            <div style={{ fontSize: '0.775rem', color: cfg.corHex, fontWeight: 600, marginTop: '0.1rem' }}>
+              {aniv.tipo === 'Bodas'
+                ? `${aniv.tipo} · ${aniv.idade} anos de união`
+                : aniv.nivel === 4
+                  ? aniv.tipo
+                  : `${aniv.tipo} · ${aniv.idade} anos`}
+            </div>
+
+            {aniv.cim && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
+                CIM: {aniv.cim}
+              </div>
+            )}
+
+            {aniv.cargo && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--color-accent)', marginTop: '0.1rem' }}>
+                {aniv.cargo}
+              </div>
+            )}
+
+            {aniv.vinculos && aniv.vinculos.length > 1 ? (
+              <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.15rem' }}>
+                {aniv.vinculos.map((v, i) => <span key={i}>• {v.tipo} do Ir∴ {v.irmao} </span>)}
+              </div>
+            ) : aniv.irmao_responsavel && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
+                Ir∴ {aniv.irmao_responsavel}
+              </div>
+            )}
+
+            {aniv.descricao && (
+              <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>
+                {aniv.descricao}
+              </div>
+            )}
+
+            <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem', fontWeight: 500 }}>
+              📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
+
+      {/* ── Cabeçalho ─────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+        borderRadius: 'var(--radius-xl)', padding: '1.5rem', marginBottom: '1.25rem',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+          <div>
+            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.15rem' }}>
+              📅 Datas Comemorativas
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+              {aniversariantes.length} data{aniversariantes.length !== 1 ? 's' : ''} encontrada{aniversariantes.length !== 1 ? 's' : ''}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <button onClick={() => setModalEventos(true)} style={{
+              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.55rem 1rem', borderRadius: 'var(--radius-md)',
+              background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)',
+              color: '#8b5cf6', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+            }}>
+              ⚙️ Gerenciar Eventos
+            </button>
+            <button onClick={gerarRelatorioPDF} disabled={loading} style={{
+              display: 'flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.55rem 1rem', borderRadius: 'var(--radius-md)',
+              background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.35)',
+              color: 'var(--color-accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer',
+            }}>
+              📄 Gerar PDF
+            </button>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+          {[
+            { id: 'hoje',   label: '📅 Hoje' },
+            { id: 'semana', label: '📆 7 Dias' },
+            { id: 'mes',    label: '📊 Este Mês' },
+            { id: 'todos',  label: '📋 Todos' },
+          ].map(({ id, label }) => (
+            <button key={id} onClick={() => setFiltro(id)} style={{
+              padding: '0.45rem 1rem', borderRadius: 'var(--radius-md)',
+              border: filtro === id ? '1px solid rgba(201,168,76,0.4)' : '1px solid var(--color-border)',
+              background: filtro === id ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+              color: filtro === id ? 'var(--color-accent)' : 'var(--color-text-muted)',
+              fontSize: '0.85rem', fontWeight: filtro === id ? 600 : 500, cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Vazio ─────────────────────────────────────────────── */}
+      {aniversariantes.length === 0 && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          minHeight: '240px', gap: '0.75rem',
+          background: 'var(--color-surface)', border: '1px dashed var(--color-border)',
+          borderRadius: 'var(--radius-xl)', padding: '2rem',
+        }}>
+          <div style={{ fontSize: '2.5rem' }}>🎂</div>
+          <p style={{ fontWeight: 600, color: 'var(--color-text)' }}>Nenhuma data encontrada</p>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Tente outro filtro</p>
+        </div>
+      )}
+
+      {/* ── Grupos por nível ──────────────────────────────────── */}
+      {aniversariantes.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {[1, 2, 4, 3].map(nivel => {
+            const grupo = aniversariantes.filter(a => a.nivel === nivel);
+            if (!grupo.length) return null;
+            const cfg = nivelConfig[nivel];
+            return (
+              <div key={nivel}>
+                {/* Título do grupo */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  marginBottom: '0.85rem', paddingBottom: '0.6rem',
+                  borderBottom: `1px solid var(--color-border)`,
+                }}>
+                  <span style={{ fontSize: '1.2rem' }}>{cfg.icone}</span>
+                  <span style={{ fontSize: '1rem', fontWeight: 700, color: cfg.corHex }}>
+                    {cfg.label}
+                  </span>
+                  <span style={{
+                    padding: '0.1rem 0.55rem', borderRadius: '999px', fontSize: '0.75rem',
+                    fontWeight: 600, background: 'var(--color-surface-2)',
+                    border: '1px solid var(--color-border)', color: 'var(--color-text-muted)',
+                  }}>
+                    {grupo.length}
+                  </span>
+                </div>
+
+                {/* Grid de cards */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                  gap: '0.75rem',
+                }}>
+                  {grupo.map((aniv, i) => renderCard(aniv, i, `n${nivel}`))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Modal Gerenciar Eventos ───────────────────────────── */}
+      {modalEventos && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
+          padding: '1.5rem', overflowY: 'auto',
+        }} onClick={e => e.target === e.currentTarget && setModalEventos(false)}>
+          <div style={{
+            background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '860px',
+            boxShadow: 'var(--shadow-xl)',
+          }}>
+            {/* Header */}
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '1.25rem 1.5rem',
+              borderBottom: '1px solid var(--color-border)',
+              background: 'var(--color-surface-2)',
+              borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
+            }}>
+              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--color-text)' }}>
+                ⚙️ Gerenciar Eventos e Datas Especiais
+              </h3>
+              <button onClick={() => setModalEventos(false)} style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'var(--color-text-muted)', fontSize: '1.5rem', lineHeight: 1,
+              }}>×</button>
+            </div>
+
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+              {/* Formulário novo evento */}
+              <div style={{
+                background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+                borderRadius: 'var(--radius-lg)', padding: '1.25rem',
+              }}>
+                <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '1rem' }}>
+                  ➕ Cadastrar Novo Evento
                 </h4>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nome do Evento *
-                    </label>
-                    <input
-                      type="text"
-                      value={novoEvento.nome}
-                      onChange={(e) => setNovoEvento({...novoEvento, nome: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Ex: Aniversário da Loja"
-                    />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={labelStyle}>Nome do Evento *</label>
+                    <input style={inputStyle} type="text" value={novoEvento.nome}
+                      onChange={e => setNovoEvento({...novoEvento, nome: e.target.value})}
+                      placeholder="Ex: Aniversário da Loja" />
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Tipo *
-                    </label>
-                    <select
-                      value={novoEvento.tipo}
-                      onChange={(e) => setNovoEvento({...novoEvento, tipo: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
+                    <label style={labelStyle}>Tipo *</label>
+                    <select style={inputStyle} value={novoEvento.tipo}
+                      onChange={e => setNovoEvento({...novoEvento, tipo: e.target.value})}>
                       <option value="Maçônico">Maçônico</option>
                       <option value="Cívico">Cívico</option>
                       <option value="Loja">Loja</option>
                       <option value="Outro">Outro</option>
                     </select>
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dia *
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      value={novoEvento.dia}
-                      onChange={(e) => setNovoEvento({...novoEvento, dia: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="1-31"
-                    />
+                    <label style={labelStyle}>Dia *</label>
+                    <input style={inputStyle} type="number" min="1" max="31" value={novoEvento.dia}
+                      onChange={e => setNovoEvento({...novoEvento, dia: e.target.value})} placeholder="1–31" />
                   </div>
-                  
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Mês *
-                    </label>
-                    <select
-                      value={novoEvento.mes}
-                      onChange={(e) => setNovoEvento({...novoEvento, mes: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
+                    <label style={labelStyle}>Mês *</label>
+                    <select style={inputStyle} value={novoEvento.mes}
+                      onChange={e => setNovoEvento({...novoEvento, mes: e.target.value})}>
                       <option value="">Selecione...</option>
-                      <option value="1">Janeiro</option>
-                      <option value="2">Fevereiro</option>
-                      <option value="3">Março</option>
-                      <option value="4">Abril</option>
-                      <option value="5">Maio</option>
-                      <option value="6">Junho</option>
-                      <option value="7">Julho</option>
-                      <option value="8">Agosto</option>
-                      <option value="9">Setembro</option>
-                      <option value="10">Outubro</option>
-                      <option value="11">Novembro</option>
-                      <option value="12">Dezembro</option>
+                      {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                        <option key={i+1} value={i+1}>{m}</option>
+                      ))}
                     </select>
                   </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Descrição
-                    </label>
-                    <input
-                      type="text"
-                      value={novoEvento.descricao}
-                      onChange={(e) => setNovoEvento({...novoEvento, descricao: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="Descrição opcional do evento"
-                    />
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <label style={labelStyle}>Descrição</label>
+                    <input style={inputStyle} type="text" value={novoEvento.descricao}
+                      onChange={e => setNovoEvento({...novoEvento, descricao: e.target.value})}
+                      placeholder="Descrição opcional" />
                   </div>
                 </div>
-                
-                <button
-                  onClick={salvarEvento}
-                  disabled={salvandoEvento}
-                  className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition disabled:opacity-50"
-                >
+                <button onClick={salvarEvento} disabled={salvandoEvento} style={{
+                  marginTop: '1rem', padding: '0.6rem 1.25rem',
+                  borderRadius: 'var(--radius-md)', fontWeight: 600, fontSize: '0.875rem',
+                  background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.4)',
+                  color: '#10b981', cursor: salvandoEvento ? 'wait' : 'pointer',
+                }}>
                   {salvandoEvento ? 'Salvando...' : '💾 Salvar Evento'}
                 </button>
               </div>
 
-              {/* Eventos Cadastrados */}
+              {/* Tabela de eventos cadastrados */}
               {eventosCustomizados.length > 0 ? (
                 <div>
-                  <h4 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    <span>📅</span>
-                    <span>Eventos Cadastrados ({eventosCustomizados.length})</span>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.75rem' }}>
+                    📅 Eventos Cadastrados ({eventosCustomizados.length})
                   </h4>
-                  <div className="border rounded-lg overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-gray-100">
-                        <tr>
-                          <th className="p-3 text-left font-semibold text-gray-700">Evento</th>
-                          <th className="p-3 text-center font-semibold text-gray-700">Data</th>
-                          <th className="p-3 text-center font-semibold text-gray-700">Tipo</th>
-                          <th className="p-3 text-center font-semibold text-gray-700">Ações</th>
+                  <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                      <thead>
+                        <tr style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
+                          {['Evento', 'Data', 'Tipo', 'Ações'].map(h => (
+                            <th key={h} style={{ padding: '0.65rem 0.85rem', textAlign: h === 'Evento' ? 'left' : 'center', fontWeight: 600, fontSize: '0.78rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                          ))}
                         </tr>
                       </thead>
-                      <tbody className="divide-y">
-                        {eventosCustomizados.map((evento) => (
-                          <tr key={evento.id} className="hover:bg-gray-50">
-                            <td className="p-3">
-                              <div className="font-medium">{evento.nome}</div>
-                              {evento.descricao && (
-                                <div className="text-xs text-gray-500">{evento.descricao}</div>
-                              )}
+                      <tbody>
+                        {eventosCustomizados.map((evento, idx) => (
+                          <tr key={evento.id} style={{ borderBottom: '1px solid var(--color-border)', background: idx % 2 === 0 ? 'transparent' : 'var(--color-surface-2)' }}>
+                            <td style={{ padding: '0.65rem 0.85rem' }}>
+                              <div style={{ fontWeight: 600, color: 'var(--color-text)' }}>{evento.nome}</div>
+                              {evento.descricao && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>{evento.descricao}</div>}
                             </td>
-                            <td className="p-3 text-center font-medium">{evento.dia}/{evento.mes}</td>
-                            <td className="p-3 text-center">
-                              <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center', fontWeight: 600, color: 'var(--color-text)' }}>{evento.dia}/{evento.mes}</td>
+                            <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>
+                              <span style={{ padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, background: 'rgba(139,92,246,0.12)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.3)' }}>
                                 {evento.tipo || 'Evento'}
                               </span>
                             </td>
-                            <td className="p-3 text-center">
-                              <div className="flex items-center justify-center gap-2">
-                                <button
-                                  onClick={() => editarEvento(evento)}
-                                  className="text-blue-600 hover:text-blue-800 font-medium text-xs bg-blue-50 px-3 py-1 rounded hover:bg-blue-100 transition"
-                                >
-                                  ✏️ Editar
-                                </button>
-                                <button
-                                  onClick={() => excluirEvento(evento.id)}
-                                  className="text-red-600 hover:text-red-800 font-medium text-xs bg-red-50 px-3 py-1 rounded hover:bg-red-100 transition"
-                                >
-                                  🗑️ Excluir
-                                </button>
+                            <td style={{ padding: '0.65rem 0.85rem', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+                                <button onClick={() => editarEvento(evento)} style={{ padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 600, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-accent)', cursor: 'pointer' }}>✏️ Editar</button>
+                                <button onClick={() => excluirEvento(evento.id)} style={{ padding: '0.25rem 0.6rem', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 600, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-danger)', cursor: 'pointer' }}>🗑️ Excluir</button>
                               </div>
                             </td>
                           </tr>
@@ -1684,142 +1569,87 @@ export default function Aniversariantes() {
                   </div>
                 </div>
               ) : (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                  <div className="text-gray-400 text-5xl mb-3">📅</div>
-                  <h4 className="text-lg font-semibold text-gray-600 mb-2">
-                    Nenhum evento cadastrado
-                  </h4>
-                  <p className="text-sm text-gray-500">
-                    Use o formulário acima para cadastrar seus eventos personalizados
-                  </p>
+                <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-lg)', color: 'var(--color-text-muted)' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📅</div>
+                  <p style={{ fontWeight: 600, color: 'var(--color-text)', marginBottom: '0.25rem' }}>Nenhum evento cadastrado</p>
+                  <p style={{ fontSize: '0.85rem' }}>Use o formulário acima para adicionar</p>
                 </div>
               )}
-              
-              {/* Modal de Edição de Evento */}
-              {eventoEditando && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                  <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 rounded-t-lg">
-                      <div className="flex justify-between items-center">
-                        <h3 className="text-xl font-bold">✏️ Editar Evento</h3>
-                        <button
-                          onClick={cancelarEdicao}
-                          className="text-white hover:text-gray-200 text-3xl font-bold leading-none"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="p-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Nome do Evento *
-                          </label>
-                          <input
-                            type="text"
-                            value={eventoEditando.nome}
-                            onChange={(e) => setEventoEditando({...eventoEditando, nome: e.target.value})}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Tipo *
-                          </label>
-                          <select
-                            value={eventoEditando.tipo}
-                            onChange={(e) => setEventoEditando({...eventoEditando, tipo: e.target.value})}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          >
-                            <option value="Maçônico">Maçônico</option>
-                            <option value="Cívico">Cívico</option>
-                            <option value="Loja">Loja</option>
-                            <option value="Outro">Outro</option>
-                          </select>
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Dia *
-                          </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="31"
-                            value={eventoEditando.dia}
-                            onChange={(e) => setEventoEditando({...eventoEditando, dia: e.target.value})}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Mês *
-                          </label>
-                          <select
-                            value={eventoEditando.mes}
-                            onChange={(e) => setEventoEditando({...eventoEditando, mes: e.target.value})}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          >
-                            <option value="">Selecione...</option>
-                            <option value="1">Janeiro</option>
-                            <option value="2">Fevereiro</option>
-                            <option value="3">Março</option>
-                            <option value="4">Abril</option>
-                            <option value="5">Maio</option>
-                            <option value="6">Junho</option>
-                            <option value="7">Julho</option>
-                            <option value="8">Agosto</option>
-                            <option value="9">Setembro</option>
-                            <option value="10">Outubro</option>
-                            <option value="11">Novembro</option>
-                            <option value="12">Dezembro</option>
-                          </select>
-                        </div>
-                        
-                        <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Descrição
-                          </label>
-                          <input
-                            type="text"
-                            value={eventoEditando.descricao}
-                            onChange={(e) => setEventoEditando({...eventoEditando, descricao: e.target.value})}
-                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          />
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6 flex justify-end gap-2">
-                        <button
-                          onClick={cancelarEdicao}
-                          className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 font-medium transition"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={atualizarEvento}
-                          disabled={salvandoEvento}
-                          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition disabled:opacity-50"
-                        >
-                          {salvandoEvento ? 'Salvando...' : '💾 Salvar Alterações'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* Botão de fechar */}
-              <div className="flex justify-end pt-4 border-t">
-                <button
-                  onClick={() => setModalEventos(false)}
-                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium transition"
-                >
+
+              {/* Botão fechar */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)' }}>
+                <button onClick={() => setModalEventos(false)} style={{ padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-md)', fontWeight: 500, background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
                   Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Editar Evento ───────────────────────────────── */}
+      {eventoEditando && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1100,
+          background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+            borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '520px',
+            boxShadow: 'var(--shadow-xl)',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)',
+              background: 'var(--color-surface-2)',
+              borderRadius: 'var(--radius-xl) var(--radius-xl) 0 0',
+            }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)' }}>✏️ Editar Evento</h3>
+              <button onClick={cancelarEdicao} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.5rem', lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ padding: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle}>Nome do Evento *</label>
+                <input style={inputStyle} type="text" value={eventoEditando.nome}
+                  onChange={e => setEventoEditando({...eventoEditando, nome: e.target.value})} />
+              </div>
+              <div>
+                <label style={labelStyle}>Tipo *</label>
+                <select style={inputStyle} value={eventoEditando.tipo}
+                  onChange={e => setEventoEditando({...eventoEditando, tipo: e.target.value})}>
+                  <option value="Maçônico">Maçônico</option>
+                  <option value="Cívico">Cívico</option>
+                  <option value="Loja">Loja</option>
+                  <option value="Outro">Outro</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Dia *</label>
+                <input style={inputStyle} type="number" min="1" max="31" value={eventoEditando.dia}
+                  onChange={e => setEventoEditando({...eventoEditando, dia: e.target.value})} />
+              </div>
+              <div>
+                <label style={labelStyle}>Mês *</label>
+                <select style={inputStyle} value={eventoEditando.mes}
+                  onChange={e => setEventoEditando({...eventoEditando, mes: e.target.value})}>
+                  <option value="">Selecione...</option>
+                  {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                    <option key={i+1} value={i+1}>{m}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={labelStyle}>Descrição</label>
+                <input style={inputStyle} type="text" value={eventoEditando.descricao}
+                  onChange={e => setEventoEditando({...eventoEditando, descricao: e.target.value})} />
+              </div>
+              <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button onClick={cancelarEdicao} style={{ padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-md)', fontWeight: 500, background: 'transparent', border: '1px solid var(--color-border)', color: 'var(--color-text-muted)', cursor: 'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={atualizarEvento} disabled={salvandoEvento} style={{ padding: '0.6rem 1.25rem', borderRadius: 'var(--radius-md)', fontWeight: 600, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', color: 'var(--color-accent)', cursor: salvandoEvento ? 'wait' : 'pointer' }}>
+                  {salvandoEvento ? 'Salvando...' : '💾 Salvar Alterações'}
                 </button>
               </div>
             </div>
