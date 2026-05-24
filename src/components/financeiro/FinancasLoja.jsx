@@ -4493,18 +4493,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       {/* Modal Despesas Pendentes */}
       {/* MODAL DETALHES RECEITAS PAGAS */}
       {modalReceitasPagasAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-lg max-w-2xl w-full">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{background:"rgba(0,0,0,0.7)"}}>
+          <div className="rounded-lg max-w-2xl w-full" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header */}
-            <div className="text-white px-6 py-4 rounded-t-lg">
+            <div className="px-6 py-4 rounded-t-lg" style={{background:"var(--color-surface-2)",borderBottom:"1px solid var(--color-border)"}}>
               <div className="flex justify-between items-center">
                 <div>
                   <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💵 Receitas Pagas - Detalhamento</h3>
-                  <p className="text-sm text-green-100">Distribuição por forma de pagamento</p>
+                  <p style={{fontSize:"0.875rem",color:"var(--color-text-muted)"}}>Distribuição por forma de pagamento</p>
                 </div>
                 <button
                   onClick={() => setModalReceitasPagasAberto(false)}
-                  className="text-white hover:opacity-80 text-4xl leading-none"
+                  style={{background:"none",border:"none",cursor:"pointer",color:"var(--color-text-muted)",fontSize:"1.75rem",lineHeight:1}}
                 >
                   ×
                 </button>
@@ -4513,29 +4513,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
             {/* Corpo */}
             <div className="p-6 space-y-4">
-              <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <p className="text-xl mb-2">🏦 Recebido em Conta</p>
+              <div className="p-6 rounded-xl" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                <p style={{fontSize:"1.1rem",marginBottom:"0.5rem",color:"var(--color-text)"}}>🏦 Recebido em Conta</p>
                 <p style={{fontSize:"2.25rem",fontWeight:"800",color:"var(--color-accent)"}}>{formatarMoeda(detalhesReceitasPagas.conta)}</p>
-                <p className="text-sm mt-1">PIX, Transferência, Cartão</p>
+                <p style={{fontSize:"0.875rem",marginTop:"0.25rem",color:"var(--color-text-muted)"}}>PIX, Transferência, Depósito, Cartão</p>
               </div>
-              
-              <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <p className="text-xl mb-2">💵 Recebido em Dinheiro</p>
+
+              <div className="p-6 rounded-xl" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                <p style={{fontSize:"1.1rem",marginBottom:"0.5rem",color:"var(--color-text)"}}>💵 Recebido em Dinheiro</p>
                 <p style={{fontSize:"2.25rem",fontWeight:"800",color:"#10b981"}}>{formatarMoeda(detalhesReceitasPagas.dinheiro)}</p>
-                <p className="text-sm mt-1">Dinheiro físico</p>
+                <p style={{fontSize:"0.875rem",marginTop:"0.25rem",color:"var(--color-text-muted)"}}>Dinheiro físico</p>
               </div>
-              
-              <div className="p-6 rounded-xl border-2" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                <p className="text-xl mb-2">💰 Total Recebido</p>
+
+              <div className="p-6 rounded-xl" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
+                <p style={{fontSize:"1.1rem",marginBottom:"0.5rem",color:"var(--color-text)"}}>💰 Total Recebido</p>
                 <p style={{fontSize:"2.25rem",fontWeight:"800",color:"#8b5cf6"}}>
                   {formatarMoeda(detalhesReceitasPagas.conta + detalhesReceitasPagas.dinheiro)}
                 </p>
-                <p className="text-sm mt-1">Soma de todas as receitas pagas</p>
+                <p style={{fontSize:"0.875rem",marginTop:"0.25rem",color:"var(--color-text-muted)"}}>Soma de todas as receitas pagas</p>
               </div>
 
               <button
                 onClick={() => setModalReceitasPagasAberto(false)}
-                className="w-full bg-gray-600 text-white py-3 rounded-lg text-lg font-bold"
+                style={{width:"100%",padding:"0.75rem",borderRadius:"var(--radius-md)",fontWeight:"600",fontSize:"1rem",background:"var(--color-surface-2)",border:"1px solid var(--color-border)",color:"var(--color-text-muted)",cursor:"pointer"}}
               >
                 Fechar
               </button>
