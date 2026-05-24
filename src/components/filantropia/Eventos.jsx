@@ -9,32 +9,27 @@ export default function Eventos({ userPermissions, userData }) {
   const [eventoSelecionado, setEventoSelecionado] = useState(null);
   const [modoEdicao, setModoEdicao] = useState(false);
 
-  // Verificar se tem permissão de edição
-  // Admin pode editar eventos
   const podeEditar = Boolean(
     userPermissions?.pode_gerenciar_usuarios || 
     userPermissions?.canManageUsers
   );
 
   const [formData, setFormData] = useState({
-    tipo_evento: 'externo', // externo ou interno
+    tipo_evento: 'externo',
     nome_evento: '',
     idealizador: '',
     local_evento: '',
     data_aviso: '',
     data_prevista: '',
     descricao: '',
-    status: 'planejamento' // planejamento, em_andamento, concluido
+    status: 'planejamento'
   });
 
   const [itensEvento, setItensEvento] = useState([]);
   const [novoItem, setNovoItem] = useState({ descricao: '', quantidade: '', valor: '' });
   const [itemEditando, setItemEditando] = useState(null);
-  
   const [participantes, setParticipantes] = useState([]);
   const [novoParticipante, setNovoParticipante] = useState('');
-  
-  // Estados para armazenar itens e participantes de TODOS os eventos
   const [todosItens, setTodosItens] = useState([]);
   const [todosParticipantes, setTodosParticipantes] = useState([]);
 
@@ -46,23 +41,13 @@ export default function Eventos({ userPermissions, userData }) {
   }, []);
 
   const carregarTodosItens = async () => {
-    const { data, error } = await supabase
-      .from('eventos_itens')
-      .select('*');
-    
-    if (!error) {
-      setTodosItens(data || []);
-    }
+    const { data, error } = await supabase.from('eventos_itens').select('*');
+    if (!error) setTodosItens(data || []);
   };
 
   const carregarTodosParticipantes = async () => {
-    const { data, error } = await supabase
-      .from('eventos_participantes')
-      .select('*');
-    
-    if (!error) {
-      setTodosParticipantes(data || []);
-    }
+    const { data, error } = await supabase.from('eventos_participantes').select('*');
+    if (!error) setTodosParticipantes(data || []);
   };
 
   const carregarEventos = async () => {
@@ -70,31 +55,20 @@ export default function Eventos({ userPermissions, userData }) {
       .from('eventos_loja')
       .select('*')
       .order('data_prevista', { ascending: false })
-      .limit(100); // ⚡ PERFORMANCE: Limita a 100 eventos
-    
-    if (error) {
-      console.error('Erro ao carregar eventos:', error);
-    } else {
-      setEventos(data || []);
-    }
+      .limit(100);
+    if (error) console.error('Erro ao carregar eventos:', error);
+    else setEventos(data || []);
   };
 
   const carregarIrmaos = async () => {
-    const { data, error } = await supabase
-      .from('irmaos')
-      .select('id, nome, situacao')
-      .order('nome');
-    
-    if (error) {
-      console.error('Erro ao carregar irmãos:', error);
-    } else {
-      // Filtrar apenas regulares e licenciados
-      const irmaosFiltrados = (data || []).filter(irmao => {
-        const situacao = (irmao.situacao || 'regular').toLowerCase();
-        return situacao === 'regular' || situacao === 'licenciado';
+    const { data, error } = await supabase.from('irmaos').select('id, nome, situacao').order('nome');
+    if (error) console.error('Erro ao carregar irmãos:', error);
+    else {
+      const filtrados = (data || []).filter(i => {
+        const s = (i.situacao || 'regular').toLowerCase();
+        return s === 'regular' || s === 'licenciado';
       });
-      console.log('Irmãos carregados:', irmaosFiltrados);
-      setIrmaos(irmaosFiltrados);
+      setIrmaos(filtrados);
     }
   };
 
@@ -116,16 +90,7 @@ export default function Eventos({ userPermissions, userData }) {
       setModoEdicao(true);
     } else {
       setEventoSelecionado(null);
-      setFormData({
-        tipo_evento: 'externo',
-        nome_evento: '',
-        idealizador: '',
-        local_evento: '',
-        data_aviso: '',
-        data_prevista: '',
-        descricao: '',
-        status: 'planejamento'
-      });
+      setFormData({ tipo_evento: 'externo', nome_evento: '', idealizador: '', local_evento: '', data_aviso: '', data_prevista: '', descricao: '', status: 'planejamento' });
       setItensEvento([]);
       setParticipantes([]);
       setModoEdicao(false);
@@ -148,160 +113,69 @@ export default function Eventos({ userPermissions, userData }) {
   };
 
   const carregarItensEvento = async (eventoId) => {
-    const { data, error } = await supabase
-      .from('eventos_itens')
-      .select('*')
-      .eq('evento_id', eventoId)
-      .order('created_at');
-    
-    if (!error) {
-      setItensEvento(data || []);
-    }
+    const { data, error } = await supabase.from('eventos_itens').select('*').eq('evento_id', eventoId).order('created_at');
+    if (!error) setItensEvento(data || []);
   };
 
   const carregarParticipantes = async (eventoId) => {
     const { data, error } = await supabase
       .from('eventos_participantes')
-      .select(`
-        id,
-        irmao_id,
-        irmaos (nome)
-      `)
+      .select('id, irmao_id, irmaos (nome)')
       .eq('evento_id', eventoId);
-    
-    if (!error) {
-      setParticipantes(data || []);
-    }
+    if (!error) setParticipantes(data || []);
   };
 
   const salvarEvento = async () => {
-    if (!formData.nome_evento || !formData.data_prevista) {
-      alert('Preencha os campos obrigatórios!');
-      return;
-    }
-
+    if (!formData.nome_evento || !formData.data_prevista) { alert('Preencha os campos obrigatórios!'); return; }
     if (modoEdicao && eventoSelecionado) {
-      // Atualizar evento
-      const { error } = await supabase
-        .from('eventos_loja')
-        .update(formData)
-        .eq('id', eventoSelecionado.id);
-      
-      if (error) {
-        console.error('Erro ao atualizar evento:', error);
-        alert('Erro ao atualizar evento!');
-      } else {
-        await salvarItens(eventoSelecionado.id);
-        carregarEventos();
-        carregarTodosItens();
-        carregarTodosParticipantes();
-        fecharModal();
-      }
+      const { error } = await supabase.from('eventos_loja').update(formData).eq('id', eventoSelecionado.id);
+      if (error) { alert('Erro ao atualizar evento!'); return; }
+      await salvarItens(eventoSelecionado.id);
     } else {
-      // Criar novo evento
-      const { data, error } = await supabase
-        .from('eventos_loja')
-        .insert([formData])
-        .select();
-      
-      if (error) {
-        console.error('Erro ao criar evento:', error);
-        alert('Erro ao criar evento!');
-      } else if (data && data[0]) {
-        await salvarItens(data[0].id);
-        carregarEventos();
-        carregarTodosItens();
-        carregarTodosParticipantes();
-        fecharModal();
-      }
+      const { data, error } = await supabase.from('eventos_loja').insert([formData]).select();
+      if (error) { alert('Erro ao criar evento!'); return; }
+      if (data?.[0]) await salvarItens(data[0].id);
     }
+    carregarEventos(); carregarTodosItens(); carregarTodosParticipantes(); fecharModal();
   };
 
   const salvarItens = async (eventoId) => {
-    // Salvar novos itens
     for (const item of itensEvento) {
-      if (!item.id) {
-        await supabase
-          .from('eventos_itens')
-          .insert([{ 
-            evento_id: eventoId,
-            descricao: item.descricao,
-            quantidade: item.quantidade,
-            valor: item.valor
-          }]);
-      }
+      if (!item.id) await supabase.from('eventos_itens').insert([{ evento_id: eventoId, descricao: item.descricao, quantidade: item.quantidade, valor: item.valor }]);
     }
-
-    // Salvar novos participantes
-    for (const participante of participantes) {
-      if (!participante.id) {
-        await supabase
-          .from('eventos_participantes')
-          .insert([{
-            evento_id: eventoId,
-            irmao_id: participante.irmao_id
-          }]);
-      }
+    for (const part of participantes) {
+      if (!part.id) await supabase.from('eventos_participantes').insert([{ evento_id: eventoId, irmao_id: part.irmao_id }]);
     }
   };
 
   const excluirEvento = async (id) => {
     if (!confirm('Deseja realmente excluir este evento?')) return;
-
-    // Excluir itens e participantes primeiro
     await supabase.from('eventos_itens').delete().eq('evento_id', id);
     await supabase.from('eventos_participantes').delete().eq('evento_id', id);
-    
-    // Excluir evento
-    const { error } = await supabase
-      .from('eventos_loja')
-      .delete()
-      .eq('id', id);
-    
-    if (error) {
-      console.error('Erro ao excluir evento:', error);
-      alert('Erro ao excluir evento!');
-    } else {
-      carregarEventos();
-    }
+    const { error } = await supabase.from('eventos_loja').delete().eq('id', id);
+    if (error) alert('Erro ao excluir evento!');
+    else carregarEventos();
   };
 
   const adicionarItem = () => {
     if (!novoItem.descricao) return;
-    
     if (itemEditando !== null) {
-      // Editando item existente
-      const novosItens = [...itensEvento];
-      novosItens[itemEditando] = { ...novoItem };
-      setItensEvento(novosItens);
-      setItemEditando(null);
+      const novos = [...itensEvento]; novos[itemEditando] = { ...novoItem }; setItensEvento(novos); setItemEditando(null);
     } else {
-      // Novo item
       setItensEvento([...itensEvento, { ...novoItem }]);
     }
     setNovoItem({ descricao: '', quantidade: '', valor: '' });
   };
 
-  const editarItem = (index) => {
-    setNovoItem(itensEvento[index]);
-    setItemEditando(index);
-  };
-
-  const cancelarEdicaoItem = () => {
-    setNovoItem({ descricao: '', quantidade: '', valor: '' });
-    setItemEditando(null);
-  };
-
+  const editarItem = (i) => { setNovoItem(itensEvento[i]); setItemEditando(i); };
+  const cancelarEdicaoItem = () => { setNovoItem({ descricao: '', quantidade: '', valor: '' }); setItemEditando(null); };
   const removerItem = async (index, itemId) => {
-    if (itemId) {
-      await supabase.from('eventos_itens').delete().eq('id', itemId);
-    }
+    if (itemId) await supabase.from('eventos_itens').delete().eq('id', itemId);
     setItensEvento(itensEvento.filter((_, i) => i !== index));
   };
 
   const adicionarParticipante = () => {
     if (!novoParticipante) return;
-    
     const irmao = irmaos.find(i => i.id === parseInt(novoParticipante));
     if (irmao && !participantes.find(p => p.irmao_id === irmao.id)) {
       setParticipantes([...participantes, { irmao_id: irmao.id, irmaos: { nome: irmao.nome } }]);
@@ -309,179 +183,134 @@ export default function Eventos({ userPermissions, userData }) {
     }
   };
 
-  const removerParticipante = async (index, participanteId) => {
-    if (participanteId) {
-      await supabase.from('eventos_participantes').delete().eq('id', participanteId);
-    }
+  const removerParticipante = async (index, partId) => {
+    if (partId) await supabase.from('eventos_participantes').delete().eq('id', partId);
     setParticipantes(participantes.filter((_, i) => i !== index));
   };
 
-  const totalCusto = itensEvento.reduce((sum, item) => {
-    const valor = parseFloat(item.valor) || 0;
-    const qtd = parseFloat(item.quantidade) || 1;
-    return sum + (valor * qtd);
-  }, 0);
+  const totalCusto = itensEvento.reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0);
+
+  // ── Estilos reutilizáveis ──────────────────────────────────────
+  const inputSt = {
+    width: '100%', background: 'var(--color-surface-2)', color: 'var(--color-text)',
+    border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
+    padding: '0.55rem 0.75rem', outline: 'none', fontSize: '0.875rem', boxSizing: 'border-box',
+  };
+  const labelSt = {
+    display: 'block', fontSize: '0.75rem', fontWeight: 600,
+    color: 'var(--color-text-muted)', marginBottom: '0.3rem',
+    textTransform: 'uppercase', letterSpacing: '0.04em',
+  };
+  const badgeSt = (bg, cor) => ({
+    background: bg, color: cor, padding: '0.25rem 0.7rem',
+    borderRadius: '9999px', fontSize: '0.78rem', fontWeight: 600,
+    whiteSpace: 'nowrap',
+  });
+
+  const statusLabel = (s) => s === 'planejamento' ? '📋 Planejamento' : s === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído';
+  const statusBg    = (s) => s === 'planejamento' ? 'rgba(245,158,11,0.15)' : s === 'em_andamento' ? 'rgba(59,130,246,0.15)' : 'var(--color-surface-2)';
+  const statusCor   = (s) => s === 'planejamento' ? '#f59e0b' : s === 'em_andamento' ? '#3b82f6' : 'var(--color-text-muted)';
 
   return (
-    <div style={{padding:"1.5rem",background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
-      <div className="flex justify-between items-center mb-6">
-        <h1 style={{fontSize:"1.5rem",fontWeight:"700",color:"var(--color-text)"}}>📅 Eventos da Loja</h1>
+    <div style={{padding:"1rem",background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
+
+      {/* ── Cabeçalho ────────────────────────────────────────── */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",gap:"0.5rem"}}>
+        <h1 style={{fontSize:"1.15rem",fontWeight:"700",color:"var(--color-text)"}}>📅 Eventos da Loja</h1>
         {podeEditar && (
-          <button
-            onClick={() => abrirModal()}
-            style={{display:"flex",alignItems:"center",gap:"0.5rem",background:"var(--color-accent)",color:"#fff",padding:"0.5rem 1rem",borderRadius:"var(--radius-md)",border:"none",cursor:"pointer",fontWeight:"600"}}
-          >
-            <span>➕</span>
-            Novo Evento
+          <button onClick={() => abrirModal()} style={{
+            display:"flex",alignItems:"center",gap:"0.4rem",
+            background:"var(--color-accent)",color:"#fff",
+            padding:"0.5rem 0.9rem",borderRadius:"var(--radius-md)",
+            border:"none",cursor:"pointer",fontWeight:"600",fontSize:"0.85rem",
+          }}>
+            ➕ Novo Evento
           </button>
         )}
       </div>
 
-      {/* Aviso para irmãos sem permissão */}
+      {/* ── Aviso sem permissão ───────────────────────────────── */}
       {!podeEditar && (
-        <div style={{background:"var(--color-accent-bg)",borderLeft:"4px solid var(--color-accent)",padding:"1rem",borderRadius:"0 var(--radius-md) var(--radius-md) 0",marginBottom:"1.5rem"}}>
-          <div className="flex items-center gap-2">
-            <span style={{fontSize:"1.1rem"}}>ℹ️</span>
-            <p style={{fontSize:"0.875rem",color:"var(--color-text)"}}>
-              <strong>Visualização:</strong> Você pode visualizar os eventos da loja. 
-              Para criar ou editar eventos, entre em contato com a administração.
-            </p>
-          </div>
+        <div style={{background:"var(--color-accent-bg)",borderLeft:"4px solid var(--color-accent)",padding:"0.75rem 1rem",borderRadius:"0 var(--radius-md) var(--radius-md) 0",marginBottom:"1rem",fontSize:"0.85rem",color:"var(--color-text)"}}>
+          ℹ️ <strong>Visualização:</strong> Para criar ou editar eventos, fale com a administração.
         </div>
       )}
 
-      {/* Lista de Eventos */}
-      <div className="grid gap-4">
+      {/* ── Lista de eventos ──────────────────────────────────── */}
+      <div style={{display:"flex",flexDirection:"column",gap:"0.85rem"}}>
         {eventos.map(evento => {
           const custoTotal = todosItens
-            .filter(item => item.evento_id === evento.id)
-            .reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0);
-          
-          const numParticipantes = todosParticipantes.filter(p => p.evento_id === evento.id).length;
+            .filter(i => i.evento_id === evento.id)
+            .reduce((sum, i) => sum + (parseFloat(i.valor || 0) * parseFloat(i.quantidade || 1)), 0);
+          const numPart = todosParticipantes.filter(p => p.evento_id === evento.id).length;
+          const isExterno = evento.tipo_evento === 'externo';
 
           return (
-            <div key={evento.id} className="overflow-hidden border-l-4" 
-                 style={{
-                   background: 'var(--color-surface)',
-                   borderRadius: 'var(--radius-lg)',
-                   borderLeftColor: evento.tipo_evento === 'externo' ? 'var(--color-accent)' : '#10b981',
-                   boxShadow: 'var(--shadow-md)',
-                   transition: 'all 0.3s ease'
-                 }}
-                 onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                 onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-            >
-              <div style={{padding:"1rem"}}>
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-3">
-                      <span style={{
-                        background: evento.tipo_evento === 'externo' ? 'var(--color-accent-bg)' : 'rgba(16,185,129,0.12)',
-                        color: evento.tipo_evento === 'externo' ? 'var(--color-accent)' : '#10b981',
-                        padding: '0.375rem 1rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.875rem',
-                        fontWeight: '600'
-                      }}>
-                        {evento.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}
-                      </span>
-                      <span style={{
-                        background: evento.status === 'planejamento' ? 'rgba(245,158,11,0.12)' :
-                                  evento.status === 'em_andamento' ? 'rgba(59,130,246,0.12)' : 'var(--color-surface-2)',
-                        color: evento.status === 'planejamento' ? '#f59e0b' :
-                               evento.status === 'em_andamento' ? '#3b82f6' : 'var(--color-text-muted)',
-                        padding: '0.375rem 1rem',
-                        borderRadius: '9999px',
-                        fontSize: '0.875rem',
-                        fontWeight: '600'
-                      }}>
-                        {evento.status === 'planejamento' ? '📋 Planejamento' :
-                         evento.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
-                      </span>
-                    </div>
-                    <h3 style={{ 
-                      fontSize: '1.25rem', 
-                      fontWeight: '700', 
-                      color: 'var(--color-text)', 
-                      marginBottom: '0.5rem' 
-                    }}>
-                      {evento.nome_evento}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-3" style={{ fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontWeight: '600' }}>👤 Idealizador:</span>
-                        <span>{evento.idealizador || 'Não informado'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontWeight: '600' }}>📍 Local:</span>
-                        <span>{evento.local_evento || 'Não informado'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontWeight: '600' }}>📅 Aviso:</span>
-                        <span>{evento.data_aviso ? new Date(evento.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontWeight: '600' }}>🎯 Evento:</span>
-                        <span>{new Date(evento.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
-                      </div>
-                    </div>
-                    {evento.descricao && (
-                      <p style={{ 
-                        marginTop: '0.75rem', 
-                        fontSize: '0.875rem', 
-                        color: 'var(--color-text-muted)', 
-                        background: 'var(--color-surface-2)', 
-                        padding: '0.75rem', 
-                        borderRadius: 'var(--radius-lg)' 
-                      }}>
-                        {evento.descricao}
-                      </p>
-                    )}
+            <div key={evento.id} style={{
+              background:"var(--color-surface)",
+              borderRadius:"var(--radius-lg)",
+              borderLeft:`4px solid ${isExterno ? 'var(--color-accent)' : '#10b981'}`,
+              border:`1px solid var(--color-border)`,
+              borderLeftWidth:"4px",
+              overflow:"hidden",
+            }}>
+              <div style={{padding:"0.9rem"}}>
+
+                {/* Linha 1: badges + botões editar */}
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:"0.5rem",marginBottom:"0.6rem",flexWrap:"wrap"}}>
+                  <div style={{display:"flex",gap:"0.4rem",flexWrap:"wrap"}}>
+                    <span style={badgeSt(isExterno ? 'var(--color-accent-bg)' : 'rgba(16,185,129,0.15)', isExterno ? 'var(--color-accent)' : '#10b981')}>
+                      {isExterno ? '🌍 Externo' : '🏛️ Interno'}
+                    </span>
+                    <span style={badgeSt(statusBg(evento.status), statusCor(evento.status))}>
+                      {statusLabel(evento.status)}
+                    </span>
                   </div>
                   {podeEditar && (
-                    <div className="flex gap-2 ml-4">
-                      <button
-                        onClick={() => abrirModal(evento)}
-                        style={{padding:"0.35rem 0.65rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.9rem"}}
-                        title="Editar"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => excluirEvento(evento.id)}
-                        style={{padding:"0.35rem 0.65rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.9rem"}}
-                        title="Excluir"
-                      >
-                        🗑️
-                      </button>
+                    <div style={{display:"flex",gap:"0.35rem"}}>
+                      <button onClick={() => abrirModal(evento)}
+                        style={{padding:"0.3rem 0.6rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.85rem"}}
+                        title="Editar">✏️</button>
+                      <button onClick={() => excluirEvento(evento.id)}
+                        style={{padding:"0.3rem 0.6rem",background:"rgba(239,68,68,0.12)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.85rem"}}
+                        title="Excluir">🗑️</button>
                     </div>
                   )}
                 </div>
 
-                {/* Informações adicionais em cards */}
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <div style={{ background: 'rgba(59,130,246,0.12)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#3b82f6', marginBottom: '0.25rem' }}>
-                      💰 Custo Total
-                    </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#3b82f6' }}>
-                      R$ {custoTotal.toFixed(2)}
-                    </div>
+                {/* Nome do evento */}
+                <h3 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.6rem",lineHeight:1.3}}>
+                  {evento.nome_evento}
+                </h3>
+
+                {/* Infos em coluna única no mobile */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.3rem 0.75rem",fontSize:"0.8rem",color:"var(--color-text-muted)",marginBottom:"0.75rem"}}>
+                  <div><span style={{fontWeight:600}}>👤 </span>{evento.idealizador || 'Não informado'}</div>
+                  <div><span style={{fontWeight:600}}>📍 </span>{evento.local_evento || 'Não informado'}</div>
+                  <div><span style={{fontWeight:600}}>📅 Aviso: </span>{evento.data_aviso ? new Date(evento.data_aviso+'T00:00:00').toLocaleDateString('pt-BR') : '-'}</div>
+                  <div><span style={{fontWeight:600}}>🎯 Evento: </span>{new Date(evento.data_prevista+'T00:00:00').toLocaleDateString('pt-BR')}</div>
+                </div>
+
+                {/* Descrição */}
+                {evento.descricao && (
+                  <p style={{fontSize:"0.82rem",color:"var(--color-text-muted)",background:"var(--color-surface-2)",padding:"0.6rem 0.75rem",borderRadius:"var(--radius-md)",marginBottom:"0.75rem",lineHeight:1.5}}>
+                    {evento.descricao}
+                  </p>
+                )}
+
+                {/* Cards custo / participantes / detalhes */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+                  <div style={{background:"rgba(59,130,246,0.1)",padding:"0.65rem 0.75rem",borderRadius:"var(--radius-md)"}}>
+                    <div style={{fontSize:"0.75rem",fontWeight:600,color:"#3b82f6",marginBottom:"0.2rem"}}>💰 Custo Total</div>
+                    <div style={{fontSize:"1.05rem",fontWeight:"700",color:"#3b82f6"}}>R$ {custoTotal.toFixed(2)}</div>
                   </div>
-                  <div style={{ background: 'rgba(16,185,129,0.12)', padding: '1rem', borderRadius: 'var(--radius-lg)' }}>
-                    <div style={{ fontSize: '0.875rem', fontWeight: '600', color: '#10b981', marginBottom: '0.25rem' }}>
-                      👥 Participantes
-                    </div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#10b981' }}>
-                      {numParticipantes} irmãos
-                    </div>
+                  <div style={{background:"rgba(16,185,129,0.1)",padding:"0.65rem 0.75rem",borderRadius:"var(--radius-md)"}}>
+                    <div style={{fontSize:"0.75rem",fontWeight:600,color:"#10b981",marginBottom:"0.2rem"}}>👥 Participantes</div>
+                    <div style={{fontSize:"1.05rem",fontWeight:"700",color:"#10b981"}}>{numPart} irmãos</div>
                   </div>
-                  <div style={{ background: 'var(--color-accent-bg)', padding: '1rem', borderRadius: 'var(--radius-lg)' }} className="flex items-center justify-center">
-                    <button
-                      onClick={() => abrirVisualizacao(evento)}
-                      style={{background:"none",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"0.875rem",textDecoration:"underline"}}
-                      style={{ color: 'var(--color-accent)' }}
-                    >
+                  <div style={{gridColumn:"1 / -1",background:"var(--color-accent-bg)",padding:"0.6rem",borderRadius:"var(--radius-md)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <button onClick={() => abrirVisualizacao(evento)}
+                      style={{background:"none",border:"none",cursor:"pointer",fontWeight:600,fontSize:"0.875rem",color:"var(--color-accent)"}}>
                       👁️ Ver Detalhes
                     </button>
                   </div>
@@ -492,39 +321,31 @@ export default function Eventos({ userPermissions, userData }) {
         })}
       </div>
 
-      {/* Modal */}
+      {/* ── Modal Editar/Criar ────────────────────────────────── */}
       {modalAberto && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"56rem",maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{position:"sticky",top:0,background:"var(--color-accent)",padding:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10}}>
-              <h2 style={{fontSize:"1.1rem",fontWeight:"700",color:"#fff",margin:0}}>{modoEdicao ? 'Editar Evento' : 'Novo Evento'}</h2>
-              <button onClick={fecharModal} style={{color:"#fff",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}>
-                ✖️
-              </button>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:50,padding:"0.5rem",overflowY:"auto"}}>
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"52rem",marginTop:"0.5rem"}}>
+
+            {/* Header */}
+            <div style={{position:"sticky",top:0,background:"var(--color-surface-2)",borderBottom:"1px solid var(--color-border)",padding:"0.85rem 1rem",display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10,borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
+              <h2 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",margin:0}}>{modoEdicao ? '✏️ Editar Evento' : '➕ Novo Evento'}</h2>
+              <button onClick={fecharModal} style={{color:"var(--color-text-muted)",background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1rem"}}>×</button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Informações Básicas */}
-              <div className="grid grid-cols-2 gap-4">
+            <div style={{padding:"1rem",display:"flex",flexDirection:"column",gap:"0.85rem"}}>
+
+              {/* Tipo + Status */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem"}}>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Tipo de Evento *</label>
-                  <select
-                    value={formData.tipo_evento}
-                    onChange={(e) => setFormData({...formData, tipo_evento: e.target.value})}
-                    style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                  >
+                  <label style={labelSt}>Tipo *</label>
+                  <select value={formData.tipo_evento} onChange={e => setFormData({...formData,tipo_evento:e.target.value})} style={inputSt}>
                     <option value="externo">Externo</option>
                     <option value="interno">Interno</option>
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
-                    style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                  >
+                  <label style={labelSt}>Status</label>
+                  <select value={formData.status} onChange={e => setFormData({...formData,status:e.target.value})} style={inputSt}>
                     <option value="planejamento">Planejamento</option>
                     <option value="em_andamento">Em Andamento</option>
                     <option value="concluido">Concluído</option>
@@ -532,217 +353,109 @@ export default function Eventos({ userPermissions, userData }) {
                 </div>
               </div>
 
+              {/* Nome */}
               <div>
-                <label className="block text-sm font-medium mb-1">Nome do Evento *</label>
-                <input
-                  type="text"
-                  value={formData.nome_evento}
-                  onChange={(e) => setFormData({...formData, nome_evento: e.target.value})}
-                  style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                  placeholder="Ex: Festa Junina na Escola Municipal"
-                />
+                <label style={labelSt}>Nome do Evento *</label>
+                <input type="text" value={formData.nome_evento} onChange={e => setFormData({...formData,nome_evento:e.target.value})} style={inputSt} placeholder="Ex: Festa Junina na Escola Municipal" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Idealizador + Local */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem"}}>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Idealizador</label>
-                  <input
-                    type="text"
-                    value={formData.idealizador}
-                    onChange={(e) => setFormData({...formData, idealizador: e.target.value})}
-                    style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                    placeholder="Quem está organizando"
-                  />
+                  <label style={labelSt}>Idealizador</label>
+                  <input type="text" value={formData.idealizador} onChange={e => setFormData({...formData,idealizador:e.target.value})} style={inputSt} placeholder="Quem organiza" />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium mb-1">Local do Evento</label>
-                  <input
-                    type="text"
-                    value={formData.local_evento}
-                    onChange={(e) => setFormData({...formData, local_evento: e.target.value})}
-                    style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                    placeholder="Onde será realizado"
-                  />
+                  <label style={labelSt}>Local</label>
+                  <input type="text" value={formData.local_evento} onChange={e => setFormData({...formData,local_evento:e.target.value})} style={inputSt} placeholder="Onde será" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {/* Datas */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem"}}>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Data do Aviso</label>
-                  <input
-                    type="date"
-                    value={formData.data_aviso}
-                    onChange={(e) => setFormData({...formData, data_aviso: e.target.value})}
-                    style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                  />
+                  <label style={labelSt}>Data do Aviso</label>
+                  <input type="date" value={formData.data_aviso} onChange={e => setFormData({...formData,data_aviso:e.target.value})} style={{...inputSt,colorScheme:"dark"}} />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium mb-1">Data Prevista do Evento *</label>
-                  <input
-                    type="date"
-                    value={formData.data_prevista}
-                    onChange={(e) => setFormData({...formData, data_prevista: e.target.value})}
-                    style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                  />
+                  <label style={labelSt}>Data do Evento *</label>
+                  <input type="date" value={formData.data_prevista} onChange={e => setFormData({...formData,data_prevista:e.target.value})} style={{...inputSt,colorScheme:"dark"}} />
                 </div>
               </div>
 
+              {/* Descrição */}
               <div>
-                <label className="block text-sm font-medium mb-1">Descrição</label>
-                <textarea
-                  value={formData.descricao}
-                  onChange={(e) => setFormData({...formData, descricao: e.target.value})}
-                  style={{width:"100%",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",padding:"0.5rem 0.75rem",outline:"none"}}
-                  rows="3"
-                  placeholder="Detalhes sobre o evento..."
-                />
+                <label style={labelSt}>Descrição</label>
+                <textarea value={formData.descricao} onChange={e => setFormData({...formData,descricao:e.target.value})} style={{...inputSt,resize:"vertical"}} rows="3" placeholder="Detalhes sobre o evento..." />
               </div>
 
               {/* Itens/Custos */}
-              <div className="border-t pt-6">
-                <h3 className="font-bold mb-4 text-lg">💰 Itens e Custos</h3>
-                
-                <div className="grid grid-cols-12 gap-2 mb-3">
-                  <input
-                    type="text"
-                    placeholder="Descrição do item"
-                    value={novoItem.descricao}
-                    onChange={(e) => setNovoItem({...novoItem, descricao: e.target.value})}
-                    className="col-span-5 border rounded px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Qtd"
-                    value={novoItem.quantidade}
-                    onChange={(e) => setNovoItem({...novoItem, quantidade: e.target.value})}
-                    className="col-span-2 border rounded px-3 py-2 text-sm"
-                  />
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Valor R$"
-                    value={novoItem.valor}
-                    onChange={(e) => setNovoItem({...novoItem, valor: e.target.value})}
-                    className="col-span-3 border rounded px-3 py-2 text-sm"
-                  />
-                  {itemEditando !== null ? (
-                    <>
-                      <button
-                        onClick={adicionarItem}
-                        style={{background:"#10b981",color:"#fff",borderRadius:"var(--radius-md)",border:"none",padding:"0.5rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
-                        title="Salvar edição"
-                      >
-                        💾
-                      </button>
-                      <button
-                        onClick={cancelarEdicaoItem}
-                        style={{background:"var(--color-surface-2)",color:"var(--color-text)",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)",padding:"0.5rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}
-                        title="Cancelar"
-                      >
-                        ✖️
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={adicionarItem}
-                      style={{gridColumn:"span 2",background:"#10b981",color:"#fff",borderRadius:"var(--radius-md)",border:"none",padding:"0.5rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:"0.25rem"}}
-                    >
-                      ➕ Adicionar
+              <div style={{borderTop:"1px solid var(--color-border)",paddingTop:"0.85rem"}}>
+                <h3 style={{fontWeight:"700",fontSize:"0.95rem",color:"var(--color-text)",marginBottom:"0.75rem"}}>💰 Itens e Custos</h3>
+
+                {/* Linha de adicionar item — empilhada no mobile */}
+                <div style={{display:"flex",flexDirection:"column",gap:"0.5rem",marginBottom:"0.75rem"}}>
+                  <input type="text" placeholder="Descrição do item" value={novoItem.descricao}
+                    onChange={e => setNovoItem({...novoItem,descricao:e.target.value})} style={inputSt} />
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
+                    <input type="number" placeholder="Qtd" value={novoItem.quantidade}
+                      onChange={e => setNovoItem({...novoItem,quantidade:e.target.value})} style={inputSt} />
+                    <input type="number" step="0.01" placeholder="Valor R$" value={novoItem.valor}
+                      onChange={e => setNovoItem({...novoItem,valor:e.target.value})} style={inputSt} />
+                  </div>
+                  <div style={{display:"flex",gap:"0.5rem"}}>
+                    <button onClick={adicionarItem} style={{flex:1,padding:"0.55rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.4)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:600,fontSize:"0.875rem"}}>
+                      {itemEditando !== null ? '💾 Salvar' : '➕ Adicionar'}
                     </button>
-                  )}
+                    {itemEditando !== null && (
+                      <button onClick={cancelarEdicaoItem} style={{padding:"0.55rem 0.85rem",background:"var(--color-surface-2)",color:"var(--color-text-muted)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer"}}>✖</button>
+                    )}
+                  </div>
                 </div>
 
+                {/* Lista de itens */}
                 {itensEvento.length > 0 && (
-                  <div className="space-y-2">
-                    <div style={{display:"grid",gridTemplateColumns:"repeat(12,minmax(0,1fr))",gap:"0.5rem",fontSize:"0.72rem",fontWeight:"700",color:"var(--color-text-muted)",padding:"0 0.5rem"}}>
-                      <div className="col-span-5">Descrição</div>
-                      <div className="col-span-2 text-center">Qtd</div>
-                      <div className="col-span-2 text-right">Valor Unit.</div>
-                      <div className="col-span-2 text-right">Total</div>
-                      <div className="col-span-1"></div>
-                    </div>
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.4rem"}}>
                     {itensEvento.map((item, index) => (
-                      <div key={index} style={{display:"grid",gridTemplateColumns:"repeat(12,minmax(0,1fr))",gap:"0.5rem",alignItems:"center",background:"var(--color-surface-2)",padding:"0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)"}}>
-                        <span className="col-span-5 font-medium text-sm">{item.descricao}</span>
-                        <span className="col-span-2 text-center text-sm">{item.quantidade}x</span>
-                        <span className="col-span-2 text-right text-sm">R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
-                        <span style={{gridColumn:"span 2",textAlign:"right",fontWeight:"700",fontSize:"0.875rem",color:"var(--color-accent)"}}>
-                          R$ {(parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)).toFixed(2)}
-                        </span>
-                        <div className="col-span-1 flex gap-1 justify-end">
-                          <button
-                            onClick={() => editarItem(index)}
-                            style={{color:"var(--color-accent)",background:"none",border:"none",padding:"0.35rem",borderRadius:"var(--radius-sm)",cursor:"pointer"}}
-                            title="Editar"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => removerItem(index, item.id)}
-                            style={{color:"#ef4444",background:"none",border:"none",padding:"0.35rem",borderRadius:"var(--radius-sm)",cursor:"pointer"}}
-                            title="Remover"
-                          >
-                            🗑️
-                          </button>
+                      <div key={index} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--color-surface-2)",padding:"0.6rem 0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)",gap:"0.5rem"}}>
+                        <div style={{flex:1,minWidth:0}}>
+                          <div style={{fontSize:"0.875rem",fontWeight:600,color:"var(--color-text)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.descricao}</div>
+                          <div style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>
+                            {item.quantidade}x · R$ {parseFloat(item.valor||0).toFixed(2)} = <span style={{color:"var(--color-accent)",fontWeight:700}}>R$ {(parseFloat(item.valor||0)*parseFloat(item.quantidade||1)).toFixed(2)}</span>
+                          </div>
+                        </div>
+                        <div style={{display:"flex",gap:"0.25rem",flexShrink:0}}>
+                          <button onClick={() => editarItem(index)} style={{padding:"0.3rem",background:"none",border:"none",cursor:"pointer",color:"var(--color-accent)",fontSize:"0.85rem"}}>✏️</button>
+                          <button onClick={() => removerItem(index, item.id)} style={{padding:"0.3rem",background:"none",border:"none",cursor:"pointer",color:"#ef4444",fontSize:"0.85rem"}}>🗑️</button>
                         </div>
                       </div>
                     ))}
-                    
-                    {/* Total Geral */}
-                    <div style={{background:"var(--color-accent-bg)",padding:"1rem",borderRadius:"var(--radius-lg)",border:"1px solid var(--color-accent)",marginTop:"1rem"}}>
-                      <div className="flex justify-between items-center">
-                        <span style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)"}}>💰 Custo Total do Evento</span>
-                        <span style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)"}}>
-                          R$ {totalCusto.toFixed(2)}
-                        </span>
-                      </div>
+                    <div style={{background:"var(--color-accent-bg)",padding:"0.75rem 1rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-accent)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontWeight:700,color:"var(--color-text)",fontSize:"0.875rem"}}>💰 Total</span>
+                      <span style={{fontSize:"1.1rem",fontWeight:"800",color:"var(--color-accent)"}}>R$ {totalCusto.toFixed(2)}</span>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Participantes */}
-              <div className="border-t pt-6">
-                <h3 className="font-bold mb-4 text-lg">👥 Irmãos Participantes</h3>
-                
-                <div className="flex gap-2 mb-3">
-                  <select
-                    value={novoParticipante}
-                    onChange={(e) => setNovoParticipante(e.target.value)}
-                    className="flex-1 border rounded px-3 py-2"
-                  >
+              <div style={{borderTop:"1px solid var(--color-border)",paddingTop:"0.85rem"}}>
+                <h3 style={{fontWeight:"700",fontSize:"0.95rem",color:"var(--color-text)",marginBottom:"0.75rem"}}>👥 Irmãos Participantes</h3>
+                <div style={{display:"flex",gap:"0.5rem",marginBottom:"0.6rem"}}>
+                  <select value={novoParticipante} onChange={e => setNovoParticipante(e.target.value)} style={{...inputSt,flex:1}}>
                     <option value="">Selecione um irmão...</option>
-                    {irmaos.map(irmao => (
-                      <option key={irmao.id} value={irmao.id}>
-                        {irmao.nome}
-                      </option>
-                    ))}
+                    {irmaos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
                   </select>
-                  <button
-                    onClick={adicionarParticipante}
-                    className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 flex items-center gap-2"
-                  >
-                    ➕ Adicionar
+                  <button onClick={adicionarParticipante} style={{padding:"0.55rem 0.85rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.4)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:600,fontSize:"0.85rem",whiteSpace:"nowrap"}}>
+                    ➕
                   </button>
                 </div>
-
                 {participantes.length > 0 && (
-                  <div className="grid gap-2">
-                    {participantes.map((part, index) => (
-                      <div key={index} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--color-surface-2)",padding:"0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)"}}>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">👤</span>
-                          <span className="font-medium">{part.irmaos?.nome || 'Nome não encontrado'}</span>
-                        </div>
-                        <button
-                          onClick={() => removerParticipante(index, part.id)}
-                          style={{color:"#ef4444",background:"none",border:"none",padding:"0.5rem",borderRadius:"var(--radius-sm)",cursor:"pointer"}}
-                          title="Remover"
-                        >
-                          🗑️
-                        </button>
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>
+                    {participantes.map((p, i) => (
+                      <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",background:"var(--color-surface-2)",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)"}}>
+                        <span style={{fontSize:"0.875rem",color:"var(--color-text)"}}>👤 {p.irmaos?.nome || 'Não encontrado'}</span>
+                        <button onClick={() => removerParticipante(i, p.id)} style={{padding:"0.25rem",background:"none",border:"none",cursor:"pointer",color:"#ef4444",fontSize:"0.85rem"}}>🗑️</button>
                       </div>
                     ))}
                   </div>
@@ -750,99 +463,68 @@ export default function Eventos({ userPermissions, userData }) {
               </div>
             </div>
 
-            <div style={{position:"sticky",bottom:0,background:"var(--color-surface)",borderTop:"1px solid var(--color-border)",padding:"1rem",display:"flex",justifyContent:"flex-end",gap:"0.5rem"}}>
-              <button
-                onClick={fecharModal}
-                style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer"}}
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={salvarEvento}
-                style={{display:"flex",alignItems:"center",gap:"0.5rem",background:"var(--color-accent)",color:"#fff",padding:"0.5rem 1rem",borderRadius:"var(--radius-md)",border:"none",cursor:"pointer",fontWeight:"600"}}
-              >
-                💾
-                Salvar
-              </button>
+            {/* Footer */}
+            <div style={{position:"sticky",bottom:0,background:"var(--color-surface)",borderTop:"1px solid var(--color-border)",padding:"0.85rem 1rem",display:"flex",justifyContent:"flex-end",gap:"0.5rem",borderRadius:"0 0 var(--radius-xl) var(--radius-xl)"}}>
+              <button onClick={fecharModal} style={{padding:"0.55rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontSize:"0.875rem"}}>Cancelar</button>
+              <button onClick={salvarEvento} style={{display:"flex",alignItems:"center",gap:"0.4rem",background:"var(--color-accent)",color:"#fff",padding:"0.55rem 1.1rem",borderRadius:"var(--radius-md)",border:"none",cursor:"pointer",fontWeight:"600",fontSize:"0.875rem"}}>💾 Salvar</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal de Visualização */}
+      {/* ── Modal Visualização ────────────────────────────────── */}
       {modalVisualizacao && eventoSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"56rem",maxHeight:"90vh",overflowY:"auto"}}>
-            <div style={{position:"sticky",top:0,background:"var(--color-accent)",padding:"1rem",display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10}}>
-              <h2 className="text-xl font-bold">{eventoSelecionado.nome_evento}</h2>
-              <button onClick={fecharModal} style={{color:"#fff",background:"rgba(255,255,255,0.15)",border:"1px solid rgba(255,255,255,0.3)",borderRadius:"50%",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",fontSize:"1.1rem",fontWeight:"700"}}>
-                ✖️
-              </button>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"flex-start",justifyContent:"center",zIndex:50,padding:"0.5rem",overflowY:"auto"}}>
+          <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-xl)",width:"100%",maxWidth:"52rem",marginTop:"0.5rem"}}>
+
+            {/* Header */}
+            <div style={{position:"sticky",top:0,background:"var(--color-surface-2)",borderBottom:"1px solid var(--color-border)",padding:"0.85rem 1rem",display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:10,borderRadius:"var(--radius-xl) var(--radius-xl) 0 0"}}>
+              <h2 style={{fontSize:"0.95rem",fontWeight:"700",color:"var(--color-text)",margin:0,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:"calc(100% - 3rem)"}}>{eventoSelecionado.nome_evento}</h2>
+              <button onClick={fecharModal} style={{color:"var(--color-text-muted)",background:"var(--color-surface)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",width:"2rem",height:"2rem",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0}}>×</button>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* Informações Básicas */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Tipo:</span>
-                  <p className="text-lg">{eventoSelecionado.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'}</p>
-                </div>
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Status:</span>
-                  <p className="text-lg">
-                    {eventoSelecionado.status === 'planejamento' ? '📋 Planejamento' :
-                     eventoSelecionado.status === 'em_andamento' ? '⚙️ Em Andamento' : '✅ Concluído'}
-                  </p>
-                </div>
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Idealizador:</span>
-                  <p className="text-lg">{eventoSelecionado.idealizador || 'Não informado'}</p>
-                </div>
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Local:</span>
-                  <p className="text-lg">{eventoSelecionado.local_evento || 'Não informado'}</p>
-                </div>
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Data do Aviso:</span>
-                  <p className="text-lg">{eventoSelecionado.data_aviso ? new Date(eventoSelecionado.data_aviso + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}</p>
-                </div>
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Data do Evento:</span>
-                  <p className="text-lg">{new Date(eventoSelecionado.data_prevista + 'T00:00:00').toLocaleDateString('pt-BR')}</p>
-                </div>
+            <div style={{padding:"1rem",display:"flex",flexDirection:"column",gap:"0.85rem"}}>
+
+              {/* Info grid */}
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.6rem"}}>
+                {[
+                  ['Tipo', eventoSelecionado.tipo_evento === 'externo' ? '🌍 Externo' : '🏛️ Interno'],
+                  ['Status', statusLabel(eventoSelecionado.status)],
+                  ['Idealizador', eventoSelecionado.idealizador || 'Não informado'],
+                  ['Local', eventoSelecionado.local_evento || 'Não informado'],
+                  ['Data do Aviso', eventoSelecionado.data_aviso ? new Date(eventoSelecionado.data_aviso+'T00:00:00').toLocaleDateString('pt-BR') : '-'],
+                  ['Data do Evento', new Date(eventoSelecionado.data_prevista+'T00:00:00').toLocaleDateString('pt-BR')],
+                ].map(([k, v]) => (
+                  <div key={k} style={{background:"var(--color-surface-2)",padding:"0.6rem 0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)"}}>
+                    <div style={{fontSize:"0.7rem",fontWeight:600,color:"var(--color-text-muted)",textTransform:"uppercase",marginBottom:"0.2rem"}}>{k}</div>
+                    <div style={{fontSize:"0.875rem",color:"var(--color-text)",fontWeight:500}}>{v}</div>
+                  </div>
+                ))}
               </div>
 
               {eventoSelecionado.descricao && (
-                <div>
-                  <span style={{fontSize:"0.82rem",fontWeight:"600",color:"var(--color-text-muted)"}}>Descrição:</span>
-                  <p style={{color:"var(--color-text)",marginTop:"0.25rem"}}>{eventoSelecionado.descricao}</p>
+                <div style={{background:"var(--color-surface-2)",padding:"0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)",fontSize:"0.875rem",color:"var(--color-text-muted)",lineHeight:1.5}}>
+                  {eventoSelecionado.descricao}
                 </div>
               )}
 
               {/* Itens */}
               {itensEvento.length > 0 && (
-                <div className="border-t pt-4">
-                  <h3 className="font-bold mb-3 text-lg">💰 Itens e Custos</h3>
-                  <div className="space-y-2">
-                    {itensEvento.map((item, index) => (
-                      <div key={index} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"var(--color-surface-2)",padding:"0.75rem",borderRadius:"var(--radius-md)"}}>
-                        <span className="font-medium">{item.descricao}</span>
-                        <div className="flex gap-4 text-sm">
+                <div style={{borderTop:"1px solid var(--color-border)",paddingTop:"0.75rem"}}>
+                  <h3 style={{fontWeight:700,fontSize:"0.9rem",color:"var(--color-text)",marginBottom:"0.6rem"}}>💰 Itens e Custos</h3>
+                  <div style={{display:"flex",flexDirection:"column",gap:"0.35rem"}}>
+                    {itensEvento.map((item, i) => (
+                      <div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",background:"var(--color-surface-2)",padding:"0.6rem 0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-border)",gap:"0.5rem"}}>
+                        <span style={{fontSize:"0.875rem",color:"var(--color-text)",fontWeight:500,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{item.descricao}</span>
+                        <div style={{display:"flex",gap:"0.6rem",fontSize:"0.8rem",color:"var(--color-text-muted)",flexShrink:0}}>
                           <span>{item.quantidade}x</span>
-                          <span>R$ {parseFloat(item.valor || 0).toFixed(2)}</span>
-                          <span style={{fontWeight:"700",color:"var(--color-accent)"}}>
-                            R$ {(parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)).toFixed(2)}
-                          </span>
+                          <span style={{color:"var(--color-accent)",fontWeight:700}}>R$ {(parseFloat(item.valor||0)*parseFloat(item.quantidade||1)).toFixed(2)}</span>
                         </div>
                       </div>
                     ))}
-                    <div style={{background:"var(--color-accent-bg)",padding:"1rem",borderRadius:"var(--radius-lg)",border:"1px solid var(--color-accent)"}}>
-                      <div className="flex justify-between items-center">
-                        <span style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)"}}>Total</span>
-                        <span style={{fontSize:"1.5rem",fontWeight:"800",color:"var(--color-accent)"}}>
-                          R$ {itensEvento.reduce((sum, item) => sum + (parseFloat(item.valor || 0) * parseFloat(item.quantidade || 1)), 0).toFixed(2)}
-                        </span>
-                      </div>
+                    <div style={{background:"var(--color-accent-bg)",padding:"0.75rem",borderRadius:"var(--radius-md)",border:"1px solid var(--color-accent)",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                      <span style={{fontWeight:700,color:"var(--color-text)",fontSize:"0.875rem"}}>Total</span>
+                      <span style={{fontSize:"1.1rem",fontWeight:"800",color:"var(--color-accent)"}}>R$ {itensEvento.reduce((s,i)=>s+(parseFloat(i.valor||0)*parseFloat(i.quantidade||1)),0).toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -850,12 +532,12 @@ export default function Eventos({ userPermissions, userData }) {
 
               {/* Participantes */}
               {participantes.length > 0 && (
-                <div className="border-t pt-4">
-                  <h3 className="font-bold mb-3 text-lg">👥 Irmãos Participantes ({participantes.length})</h3>
-                  <div className="grid grid-cols-4 gap-2">
-                    {participantes.map((part, index) => (
-                      <div key={index} style={{background:"var(--color-surface-2)",padding:"0.5rem",borderRadius:"var(--radius-md)",fontSize:"0.875rem",textAlign:"center",border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
-                        {part.irmaos?.nome || 'Nome não encontrado'}
+                <div style={{borderTop:"1px solid var(--color-border)",paddingTop:"0.75rem"}}>
+                  <h3 style={{fontWeight:700,fontSize:"0.9rem",color:"var(--color-text)",marginBottom:"0.6rem"}}>👥 Participantes ({participantes.length})</h3>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.4rem"}}>
+                    {participantes.map((p, i) => (
+                      <div key={i} style={{background:"var(--color-surface-2)",padding:"0.5rem 0.65rem",borderRadius:"var(--radius-md)",fontSize:"0.8rem",color:"var(--color-text)",border:"1px solid var(--color-border)",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                        {p.irmaos?.nome || 'Não encontrado'}
                       </div>
                     ))}
                   </div>
@@ -863,13 +545,8 @@ export default function Eventos({ userPermissions, userData }) {
               )}
             </div>
 
-            <div style={{position:"sticky",bottom:0,background:"var(--color-surface)",borderTop:"1px solid var(--color-border)",padding:"1rem",display:"flex",justifyContent:"flex-end"}}>
-              <button
-                onClick={fecharModal}
-                style={{padding:"0.5rem 1.5rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
-              >
-                Fechar
-              </button>
+            <div style={{position:"sticky",bottom:0,background:"var(--color-surface)",borderTop:"1px solid var(--color-border)",padding:"0.85rem 1rem",display:"flex",justifyContent:"flex-end",borderRadius:"0 0 var(--radius-xl) var(--radius-xl)"}}>
+              <button onClick={fecharModal} style={{padding:"0.55rem 1.25rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:600,fontSize:"0.875rem"}}>Fechar</button>
             </div>
           </div>
         </div>
