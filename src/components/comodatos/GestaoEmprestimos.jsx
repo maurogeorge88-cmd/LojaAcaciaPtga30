@@ -694,6 +694,8 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   };
 
   const gerarRelatorioGeral = async () => {
+    // Renovar sessão antes das queries para evitar JWT expired
+    await supabase.auth.refreshSession();
     try {
       showSuccess('Gerando relatório geral...');
 
@@ -916,6 +918,9 @@ Caso  os  dados  de  endereço  ou de contato houver alterações,  solicitamos 
   const gerarRelatorio = async () => {
     try {
       showSuccess('Gerando relatório...');
+
+      // Renovar sessão antes das queries para evitar JWT expired
+      await supabase.auth.refreshSession();
 
       const anoAtual = relAno; // número
 
