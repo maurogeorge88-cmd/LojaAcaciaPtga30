@@ -402,6 +402,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
   const [filtroSitLocal, setFiltroSitLocal] = useState('todos');
 
   const carregarCandidatos = async () => {
+    await supabase.auth.refreshSession();
     const { data } = await supabase
       .from('sindicancia_candidatos')
       .select('*')
@@ -416,6 +417,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
   const showMsg = (m) => { setMsg(m); setTimeout(() => setMsg(''), 3000); };
 
   const handleSalvarCandidato = async (form) => {
+    await supabase.auth.refreshSession();
     const payload = {
       processo_id: processo.id,
       nome: form.nome.trim(),
@@ -943,6 +945,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
 
   const carregarProcessos = async () => {
     setCarregando(true);
+    await supabase.auth.refreshSession();
     const { data } = await supabase
       .from('sindicancia_processos')
       .select('*')
@@ -960,6 +963,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
   const buscarGlobal = async (termo) => {
     if (!termo.trim()) { setResultadosBusca([]); return; }
     setBuscando(true);
+    await supabase.auth.refreshSession();
     const { data } = await supabase
       .from('sindicancia_candidatos')
       .select(`
@@ -1003,6 +1007,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
   }
 
   const handleCriarProcesso = async (form) => {
+    await supabase.auth.refreshSession();
     const { data, error } = await supabase.from('sindicancia_processos').insert({
       numero: form.numero,
       ano: form.ano,
