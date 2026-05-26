@@ -622,7 +622,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, onProcessoAtu
           <button onClick={gerarPDF} style={{ ...btnPrimary, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#3b82f6' }}>
             📄 PDF
           </button>
-          {!encerrado && (
+          {podeEditar && !encerrado && (
             <>
               <button onClick={() => { setCandEditando(null); setModalCand(true); }} style={btnPrimary}>
                 ➕ Candidato
@@ -687,7 +687,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, onProcessoAtu
         <div style={{ ...card, textAlign: 'center', padding: '3rem', border: '1px dashed var(--color-border)' }}>
           <div style={{ fontSize: '2rem', marginBottom: '0.75rem' }}>🔍</div>
           <p style={{ fontWeight: 600, color: 'var(--color-text)', marginBottom: '0.25rem' }}>Nenhum candidato cadastrado</p>
-          {!encerrado && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Clique em "➕ Candidato" para começar.</p>}
+          {podeEditar && !encerrado && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Clique em "➕ Candidato" para começar.</p>}
         </div>
       ) : (() => {
         // Ordem de exibição dos grupos
@@ -733,7 +733,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, onProcessoAtu
                     </div>
                   )}
                 </div>
-                {!encerrado && (
+                {podeEditar && !encerrado && (
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
                     <button onClick={() => { setCandEditando(c); setModalCand(true); }} style={btnEdit} title="Editar">✏️</button>
                     <button onClick={() => setConfirmExcluir(c)} style={btnDanger} title="Excluir">🗑️</button>
