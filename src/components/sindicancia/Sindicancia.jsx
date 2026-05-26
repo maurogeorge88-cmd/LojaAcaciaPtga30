@@ -398,6 +398,8 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
   const [modalSituacao, setModalSituacao] = useState(false);
   const [modalEncerrar, setModalEncerrar] = useState(false);
   const [msg, setMsg] = useState('');
+  const [buscaLocal, setBuscaLocal] = useState('');
+  const [filtroSitLocal, setFiltroSitLocal] = useState('todos');
 
   const carregarCandidatos = async () => {
     const { data } = await supabase
@@ -654,6 +656,26 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
         </div>
       )}
 
+      {/* Busca local + filtro situação */}
+      {candidatos.length > 0 && (
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+          <input
+            value={buscaLocal}
+            onChange={e => setBuscaLocal(e.target.value)}
+            placeholder="🔍 Buscar por nome..."
+            style={{ ...inp, flex: '1', minWidth: '180px' }}
+          />
+          <select
+            value={filtroSitLocal}
+            onChange={e => setFiltroSitLocal(e.target.value)}
+            style={{ ...inp, width: 'auto', minWidth: '140px' }}
+          >
+            <option value="todos">Todas as situações</option>
+            {SITUACOES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+        </div>
+      )}
+
       {/* Lista de candidatos */}
       {carregando ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>Carregando...</div>
@@ -663,9 +685,23 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
           <p style={{ fontWeight: 600, color: 'var(--color-text)', marginBottom: '0.25rem' }}>Nenhum candidato cadastrado</p>
           {!encerrado && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Clique em "➕ Candidato" para começar.</p>}
         </div>
-      ) : (
+      ) : (() => {
+        const candidatosFiltrados = candidatos
+          .filter(c => filtroSitLocal === 'todos' || c.situacao === filtroSitLocal)
+          .filter(c => !buscaLocal.trim() || c.nome.toLowerCase().includes(buscaLocal.toLowerCase().trim()));
+        return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          {candidatos.map(c => {
+          {buscaLocal.trim() && (
+            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+              {candidatosFiltrados.length} resultado{candidatosFiltrados.length !== 1 ? 's' : ''} para "{buscaLocal}"
+            </div>
+          )}
+          {candidatosFiltrados.length === 0 && (
+            <div style={{ ...card, textAlign: 'center', padding: '2rem', border: '1px dashed var(--color-border)' }}>
+              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Nenhum candidato encontrado com este filtro.</p>
+            </div>
+          )}
+          {candidatosFiltrados.map(c => {
             const sit = getSit(c.situacao);
             return (
               <div key={c.id} style={{ ...card, borderLeft: `4px solid ${sit.cor}` }}>
@@ -705,8 +741,9 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
               </div>
             );
           })}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* Modais */}
       <ModalCandidato aberto={modalCand} onFechar={() => { setModalCand(false); setCandEditando(null); }}
@@ -793,6 +830,84 @@ const ModalNovoProcesso = ({ aberto, onFechar, onSalvar, proximoNumero }) => {
 };
 
 // ─────────────────────────────────────────────────────────────────
+//  Modal Histórico do Profano (busca global)
+// ─────────────────────────────────────────────────────────────────
+const ModalHistorico = ({ aberto, onFechar, nome, registros }) => {
+  if (!aberto) return null;
+  return (
+    <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onFechar()}>
+      <div style={modalBox('720px')}>
+        <div style={modalHeader}>
+          <div>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
+              📋 Histórico — {nome}
+            </h3>
+            <p style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', margin: '0.2rem 0 0' }}>
+              {registros.length} ocorrência{registros.length !== 1 ? 's' : ''} em processos distintos
+            </p>
+          </div>
+          <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '70vh', overflowY: 'auto' }}>
+          {registros.map((r, i) => {
+            const sit = getSit(r.situacao);
+            const proc = r.sindicancia_processos;
+            const stProc = getStatus(proc?.status || 'em_andamento');
+            return (
+              <div key={r.id} style={{ background: 'var(--color-surface-2)', border: `1px solid var(--color-border)`, borderLeft: `4px solid ${sit.cor}`, borderRadius: 'var(--radius-lg)', padding: '1rem' }}>
+                {/* Cabeçalho: processo + situação */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.6rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text)' }}>
+                      Processo {proc?.numero}/{proc?.ano}
+                    </span>
+                    {proc?.titulo && (
+                      <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>— {proc.titulo}</span>
+                    )}
+                    <span style={{ padding: '0.15rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 600, background: stProc.cor + '22', color: stProc.cor, border: `1px solid ${stProc.cor}44` }}>
+                      {stProc.label}
+                    </span>
+                  </div>
+                  <BadgeSit value={r.situacao} />
+                </div>
+
+                {/* Dados do candidato */}
+                <div style={{ display: 'flex', gap: '0.85rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+                  {r.idade          && <span>👤 {r.idade} anos</span>}
+                  {r.estado_civil   && <span>💍 {r.estado_civil}</span>}
+                  {r.profissao      && <span>💼 {r.profissao}</span>}
+                  {r.local_trabalho && <span>🏢 {r.local_trabalho}</span>}
+                  {r.cidade         && <span>📍 {r.cidade}</span>}
+                  {r.indicado_por_irmao && <span>👤 Ir∴ {r.indicado_por_irmao}</span>}
+                  {r.data_indicacao && <span>📅 Indicado em {new Date(r.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
+                </div>
+
+                {/* Motivo exclusão */}
+                {r.situacao === 'excluido' && r.motivo_exclusao && (
+                  <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '0.45rem 0.75rem', fontSize: '0.8rem', color: '#ef4444', marginBottom: '0.35rem' }}>
+                    ⚠️ <strong>Motivo da exclusão:</strong> {r.motivo_exclusao}
+                  </div>
+                )}
+
+                {/* Observações */}
+                {r.observacoes && (
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                    💬 {r.observacoes}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ padding: '0.85rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
+          <button onClick={onFechar} style={{ padding: '0.6rem 1.25rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.875rem' }}>Fechar</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────
 //  Componente Principal
 // ─────────────────────────────────────────────────────────────────
 const Sindicancia = ({ grauUsuario, userData }) => {
@@ -808,6 +923,11 @@ const Sindicancia = ({ grauUsuario, userData }) => {
   const [irmaos, setIrmaos] = useState([]);
   const [confirmExcluirProc, setConfirmExcluirProc] = useState(null);
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [buscaGlobal, setBuscaGlobal] = useState('');
+  const [resultadosBusca, setResultadosBusca] = useState([]);
+  const [buscando, setBuscando] = useState(false);
+  const [modalHistorico, setModalHistorico] = useState(false);
+  const [historicoSelecionado, setHistoricoSelecionado] = useState({ nome: '', registros: [] });
 
   const carregarProcessos = async () => {
     setCarregando(true);
@@ -823,6 +943,26 @@ const Sindicancia = ({ grauUsuario, userData }) => {
   const carregarIrmaos = async () => {
     const { data } = await supabase.from('irmaos').select('id, nome').order('nome');
     setIrmaos(data || []);
+  };
+
+  const buscarGlobal = async (termo) => {
+    if (!termo.trim()) { setResultadosBusca([]); return; }
+    setBuscando(true);
+    const { data } = await supabase
+      .from('sindicancia_candidatos')
+      .select(`
+        *,
+        sindicancia_processos (numero, ano, titulo, status)
+      `)
+      .ilike('nome', `%${termo.trim()}%`)
+      .order('criado_em', { ascending: false });
+    setResultadosBusca(data || []);
+    setBuscando(false);
+  };
+
+  const abrirHistorico = (nome, registros) => {
+    setHistoricoSelecionado({ nome, registros });
+    setModalHistorico(true);
   };
 
   useEffect(() => {
@@ -923,6 +1063,65 @@ const Sindicancia = ({ grauUsuario, userData }) => {
           </button>
         </div>
 
+        {/* Busca Global */}
+        <div style={{ marginBottom: '1rem', paddingBottom: '1rem', borderBottom: '1px solid var(--color-border)' }}>
+          <label style={{ ...lbl, marginBottom: '0.4rem' }}>🔍 Busca Global — pesquisar em todos os processos</label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              value={buscaGlobal}
+              onChange={e => { setBuscaGlobal(e.target.value); if (!e.target.value.trim()) setResultadosBusca([]); }}
+              onKeyDown={e => e.key === 'Enter' && buscarGlobal(buscaGlobal)}
+              placeholder="Digite o nome do profano e pressione Enter..."
+              style={{ ...inp, flex: 1 }}
+            />
+            <button onClick={() => buscarGlobal(buscaGlobal)} disabled={buscando} style={{ ...btnPrimary, whiteSpace: 'nowrap' }}>
+              {buscando ? 'Buscando...' : '🔍 Buscar'}
+            </button>
+            {resultadosBusca.length > 0 && (
+              <button onClick={() => { setBuscaGlobal(''); setResultadosBusca([]); }} style={{ padding: '0.55rem 0.75rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.85rem' }}>✕</button>
+            )}
+          </div>
+
+          {/* Resultados da busca global */}
+          {resultadosBusca.length > 0 && (() => {
+            // Agrupar por nome normalizado
+            const grupos = {};
+            resultadosBusca.forEach(r => {
+              const chave = r.nome.trim().toLowerCase();
+              if (!grupos[chave]) grupos[chave] = { nome: r.nome, registros: [] };
+              grupos[chave].registros.push(r);
+            });
+            return (
+              <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                  {resultadosBusca.length} ocorrência{resultadosBusca.length !== 1 ? 's' : ''} encontrada{resultadosBusca.length !== 1 ? 's' : ''} em {Object.keys(grupos).length} nome{Object.keys(grupos).length !== 1 ? 's' : ''}
+                </div>
+                {Object.values(grupos).map(g => (
+                  <div key={g.nome} style={{ background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--color-text)', marginBottom: '0.3rem' }}>{g.nome}</div>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {g.registros.map(r => {
+                          const sit = getSit(r.situacao);
+                          const proc = r.sindicancia_processos;
+                          return (
+                            <span key={r.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 600, background: sit.bg, color: sit.cor, border: `1px solid ${sit.cor}44` }}>
+                              {proc?.numero}/{proc?.ano} · {sit.label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <button onClick={() => abrirHistorico(g.nome, g.registros)} style={{ ...btnPrimary, padding: '0.4rem 0.85rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
+                      📋 Ver Histórico
+                    </button>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+
         {/* Filtros */}
         <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
           {[{ value: 'todos', label: `Todos (${processos.length})` }, ...STATUS_PROCESSO.map(s => ({ value: s.value, label: `${s.label} (${processos.filter(p => p.status === s.value).length})` }))].map(f => (
@@ -997,6 +1196,14 @@ const Sindicancia = ({ grauUsuario, userData }) => {
           })}
         </div>
       )}
+
+      {/* Modal Histórico */}
+      <ModalHistorico
+        aberto={modalHistorico}
+        onFechar={() => setModalHistorico(false)}
+        nome={historicoSelecionado.nome}
+        registros={historicoSelecionado.registros}
+      />
 
       {/* Modal novo processo */}
       <ModalNovoProcesso aberto={modalNovo} onFechar={() => setModalNovo(false)}
