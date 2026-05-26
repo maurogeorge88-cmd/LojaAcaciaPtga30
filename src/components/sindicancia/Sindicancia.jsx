@@ -469,6 +469,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
   const gerarPDF = async () => {
     const { jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
+    const sanitize = (str) => { if (!str) return ''; let r = ''; for (const c of str.normalize('NFD')) { if (c.charCodeAt(0) < 128) r += c; } return r; };
     const doc = new jsPDF({ orientation: 'portrait', format: 'a4' });
     const pW = doc.internal.pageSize.getWidth();
 
@@ -497,7 +498,6 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const stProc = getStatus(processo.status);
-    const sanitize = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'?');
     doc.text(`Status: ${sanitize(stProc.label)}  |  Abertura: ${processo.data_abertura ? new Date(processo.data_abertura + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}  |  Candidatos: ${candidatos.length}`, 14, y);
     y += 6;
     if (processo.data_encerramento) {
