@@ -39,6 +39,7 @@ import Caridade from './components/caridade/Caridade';
 import Eventos from './components/filantropia/Eventos';
 import Sobre from './components/Sobre';
 import Aniversariantes from './components/aniversariantes/Aniversariantes';
+import Sindicancia from './components/sindicancia/Sindicancia';
 import Comodatos from './components/comodatos/Comodatos';
 import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
 import CadastroSessao from './components/CadastroSessao';
@@ -171,6 +172,7 @@ function App() {
   const [submenuFinanceiro, setSubmenuFinanceiro] = useState(false);
   const [submenuFilantropia, setSubmenuFilantropia] = useState(false);
   const [submenuGestaoSistema, setSubmenuGestaoSistema] = useState(false);
+  const [submenuSindicancia, setSubmenuSindicancia] = useState(false);
   const [submenuPresenca, setSubmenuPresenca] = useState(false);
 
   // Estados de login
@@ -2427,6 +2429,22 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 )}
 
+                {/* SINDICÂNCIA — acesso restrito a Mestres */}
+                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' || userData?.nivel_acesso === 'admin') && (
+                  <button
+                    onClick={() => setCurrentPage('sindicancia')}
+                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                      currentPage === 'sindicancia'
+                        ? 'bg-primary-700 border-l-4 border-white'
+                        : 'hover:bg-primary-800'
+                    }`}
+                    title="Sindicância"
+                  >
+                    <span className="text-base">🔍</span>
+                    {menuAberto && <span className="font-semibold">Sindicância</span>}
+                  </button>
+                )}
+
                 <button
                   onClick={() => setCurrentPage('corpo-admin')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -2582,6 +2600,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
                   {currentPage === 'dados-loja' && '🏛️ Dados da Loja'}
                   {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
+                  {currentPage === 'sindicancia' && '🔍 Sindicância'}
                 </h2>
               </div>
               <div className="flex items-center gap-4">
@@ -2784,6 +2803,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             showError={showError}
             permissoes={permissoes}
             grauUsuario={grauUsuarioLogado}
+          />
+        )}
+
+        {/* SINDICÂNCIA */}
+        {currentPage === 'sindicancia' && (
+          <Sindicancia
+            grauUsuario={grauUsuarioLogado}
+            userData={userData}
           />
         )}
 
