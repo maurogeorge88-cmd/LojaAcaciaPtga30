@@ -690,61 +690,101 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
           {!encerrado && <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>Clique em "➕ Candidato" para começar.</p>}
         </div>
       ) : (() => {
+        // Ordem de exibição dos grupos
+        const ORDEM = ['indicado', 'em_analise', 'aprovado', 'adiado', 'desistiu', 'excluido'];
+
         const candidatosFiltrados = candidatos
           .filter(c => filtroSitLocal === 'todos' || c.situacao === filtroSitLocal)
           .filter(c => !buscaLocal.trim() || c.nome.toLowerCase().includes(buscaLocal.toLowerCase().trim()));
-        return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          {buscaLocal.trim() && (
-            <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
-              {candidatosFiltrados.length} resultado{candidatosFiltrados.length !== 1 ? 's' : ''} para "{buscaLocal}"
-            </div>
-          )}
-          {candidatosFiltrados.length === 0 && (
-            <div style={{ ...card, textAlign: 'center', padding: '2rem', border: '1px dashed var(--color-border)' }}>
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Nenhum candidato encontrado com este filtro.</p>
-            </div>
-          )}
-          {candidatosFiltrados.map(c => {
-            const sit = getSit(c.situacao);
-            return (
-              <div key={c.id} style={{ ...card, borderLeft: `4px solid ${sit.cor}` }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-text)' }}>{c.nome}</span>
-                      {c.idade && <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{c.idade} anos</span>}
-                      <BadgeSit value={c.situacao} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                      {c.estado_civil    && <span>💍 {c.estado_civil}</span>}
-                      {c.profissao       && <span>💼 {c.profissao}</span>}
-                      {c.local_trabalho  && <span>🏢 {c.local_trabalho}</span>}
-                      {c.cidade          && <span>📍 {c.cidade}</span>}
-                      {c.indicado_por_irmao && <span>👤 Ir∴ {c.indicado_por_irmao}</span>}
-                      {c.data_indicacao  && <span>📅 {new Date(c.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
-                    </div>
-                    {c.situacao === 'excluido' && c.motivo_exclusao && (
-                      <div style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: '#ef4444', background: 'rgba(239,68,68,0.08)', padding: '0.4rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
-                        ⚠️ <strong>Motivo:</strong> {c.motivo_exclusao}
-                      </div>
-                    )}
-                    {c.observacoes && (
-                      <div style={{ marginTop: '0.35rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
-                        💬 {c.observacoes}
-                      </div>
-                    )}
+
+        // Agrupar por situação na ordem definida
+        const grupos = ORDEM.map(sit => ({
+          sit,
+          cfg: getSit(sit),
+          lista: candidatosFiltrados.filter(c => c.situacao === sit),
+        })).filter(g => g.lista.length > 0);
+
+        const renderCard = (c) => {
+          const sit = getSit(c.situacao);
+          return (
+            <div key={c.id} style={{ ...card, borderLeft: `4px solid ${sit.cor}` }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.75rem' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                    <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--color-text)' }}>{c.nome}</span>
+                    {c.idade && <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>{c.idade} anos</span>}
                   </div>
-                  {!encerrado && (
-                    <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
-                      <button onClick={() => { setCandEditando(c); setModalCand(true); }} style={btnEdit} title="Editar">✏️</button>
-                      <button onClick={() => setConfirmExcluir(c)} style={btnDanger} title="Excluir">🗑️</button>
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                    {c.estado_civil    && <span>💍 {c.estado_civil}</span>}
+                    {c.profissao       && <span>💼 {c.profissao}</span>}
+                    {c.local_trabalho  && <span>🏢 {c.local_trabalho}</span>}
+                    {c.cidade          && <span>📍 {c.cidade}</span>}
+                    {c.indicado_por_irmao && <span>👤 Ir∴ {c.indicado_por_irmao}</span>}
+                    {c.data_indicacao  && <span>📅 {new Date(c.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
+                  </div>
+                  {c.situacao === 'excluido' && c.motivo_exclusao && (
+                    <div style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: '#ef4444', background: 'rgba(239,68,68,0.08)', padding: '0.4rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+                      ⚠️ <strong>Motivo:</strong> {c.motivo_exclusao}
+                    </div>
+                  )}
+                  {c.observacoes && (
+                    <div style={{ marginTop: '0.35rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                      💬 {c.observacoes}
                     </div>
                   )}
                 </div>
+                {!encerrado && (
+                  <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                    <button onClick={() => { setCandEditando(c); setModalCand(true); }} style={btnEdit} title="Editar">✏️</button>
+                    <button onClick={() => setConfirmExcluir(c)} style={btnDanger} title="Excluir">🗑️</button>
+                  </div>
+                )}
               </div>
-            );
-          })}
+            </div>
+          );
+        };
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {buscaLocal.trim() && candidatosFiltrados.length > 0 && (
+              <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                {candidatosFiltrados.length} resultado{candidatosFiltrados.length !== 1 ? 's' : ''} para "{buscaLocal}"
+              </div>
+            )}
+            {candidatosFiltrados.length === 0 && (
+              <div style={{ ...card, textAlign: 'center', padding: '2rem', border: '1px dashed var(--color-border)' }}>
+                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem' }}>Nenhum candidato encontrado com este filtro.</p>
+              </div>
+            )}
+            {grupos.map(g => (
+              <div key={g.sit}>
+                {/* Cabeçalho do grupo */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.6rem',
+                  marginBottom: '0.75rem', paddingBottom: '0.5rem',
+                  borderBottom: `2px solid ${g.cfg.cor}33`,
+                }}>
+                  <div style={{
+                    width: '10px', height: '10px', borderRadius: '50%',
+                    background: g.cfg.cor, flexShrink: 0,
+                  }} />
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: g.cfg.cor }}>
+                    {g.cfg.label}
+                  </span>
+                  <span style={{
+                    padding: '0.1rem 0.5rem', borderRadius: '999px', fontSize: '0.72rem',
+                    fontWeight: 600, background: g.cfg.bg,
+                    border: `1px solid ${g.cfg.cor}44`, color: g.cfg.cor,
+                  }}>
+                    {g.lista.length}
+                  </span>
+                </div>
+                {/* Cards do grupo */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {g.lista.map(c => renderCard(c))}
+                </div>
+              </div>
+            ))}
           </div>
         );
       })()}
