@@ -1824,6 +1824,22 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </div>
                 )}
 
+                {/* SINDICÂNCIA — acesso restrito a Mestres */}
+                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' || userData?.nivel_acesso === 'admin') && (
+                  <button
+                    onClick={() => setCurrentPage('sindicancia')}
+                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                      currentPage === 'sindicancia'
+                        ? 'bg-primary-700 border-l-4 border-white'
+                        : 'hover:bg-primary-800'
+                    }`}
+                    title="Sindicância"
+                  >
+                    <span className="text-base">🔍</span>
+                    {menuAberto && <span className="font-semibold">Sindicância</span>}
+                  </button>
+                )}
+
                 <button
                   onClick={() => setCurrentPage('corpo-admin')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
