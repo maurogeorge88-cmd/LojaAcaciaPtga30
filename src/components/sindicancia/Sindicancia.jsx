@@ -862,7 +862,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
       ano: form.ano,
       titulo: form.titulo || null,
       data_abertura: form.data_abertura,
-      aberto_por: userData?.id || null,
+      aberto_por: userData?.nome || userData?.email || null,
       status: 'em_andamento',
     }).select().single();
     if (!error && data) {
