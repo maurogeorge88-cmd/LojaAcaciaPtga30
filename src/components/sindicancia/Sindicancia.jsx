@@ -779,7 +779,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
 // ─────────────────────────────────────────────────────────────────
 //  Modal Novo Processo
 // ─────────────────────────────────────────────────────────────────
-const ModalNovoProcesso = ({ aberto, onFechar, onSalvar, proximoNumero }) => {
+const ModalNovoProcesso = ({ aberto, onFechar, onSalvar, processos }) => {
   const anoAtual = new Date().getFullYear();
   const [form, setForm] = useState({ titulo: '', ano: anoAtual, data_abertura: new Date().toISOString().split('T')[0] });
   const [salvando, setSalvando] = useState(false);
@@ -787,6 +787,18 @@ const ModalNovoProcesso = ({ aberto, onFechar, onSalvar, proximoNumero }) => {
   useEffect(() => {
     if (aberto) setForm({ titulo: '', ano: anoAtual, data_abertura: new Date().toISOString().split('T')[0] });
   }, [aberto]);
+
+  // Recalcula o próximo número sempre que o ano mudar
+  const calcProxNumero = (ano) => {
+    const doAno = (processos || []).filter(p => p.ano === ano);
+    return doAno.length > 0 ? Math.max(...doAno.map(p => p.numero)) + 1 : 1;
+  };
+  const proxNum = calcProxNumero(form.ano);
+
+  const handleChangeAno = (e) => {
+    const ano = parseInt(e.target.value) || anoAtual;
+    setForm(p => ({ ...p, ano }));
+  };
 
   if (!aberto) return null;
   return (
@@ -798,17 +810,17 @@ const ModalNovoProcesso = ({ aberto, onFechar, onSalvar, proximoNumero }) => {
         </div>
         <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           <div style={{ padding: '0.75rem', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', color: '#c9a84c', fontWeight: 600 }}>
-            📋 Processo nº {proximoNumero}/{form.ano}
+            📋 Processo nº {proxNum}/{form.ano}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: '0.75rem' }}>
             <div>
               <label style={lbl}>Título (opcional)</label>
-              <input style={inp} value={form.titulo} onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))} placeholder="Ex: Turma de Candidatos 2026" />
+              <input style={inp} value={form.titulo} onChange={e => setForm(p => ({ ...p, titulo: e.target.value }))} placeholder="Ex: Turma Retroativa 2025" />
             </div>
             <div>
               <label style={lbl}>Ano</label>
               <input style={inp} type="number" min="2000" max="2100" value={form.ano}
-                onChange={e => setForm(p => ({ ...p, ano: parseInt(e.target.value) }))} />
+                onChange={handleChangeAno} />
             </div>
           </div>
           <div>
@@ -818,7 +830,7 @@ const ModalNovoProcesso = ({ aberto, onFechar, onSalvar, proximoNumero }) => {
           </div>
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
             <button onClick={onFechar} style={{ padding: '0.6rem 1.1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer' }}>Cancelar</button>
-            <button onClick={async () => { setSalvando(true); await onSalvar({ ...form, numero: proximoNumero }); setSalvando(false); }}
+            <button onClick={async () => { setSalvando(true); await onSalvar({ ...form, numero: proxNum }); setSalvando(false); }}
               disabled={salvando} style={{ ...btnPrimary, opacity: salvando ? 0.7 : 1 }}>
               {salvando ? 'Criando...' : '📁 Criar Processo'}
             </button>
@@ -989,12 +1001,6 @@ const Sindicancia = ({ grauUsuario, userData }) => {
       </div>
     );
   }
-
-  const proxNumero = () => {
-    const anoAtual = new Date().getFullYear();
-    const deste = processos.filter(p => p.ano === anoAtual);
-    return deste.length > 0 ? Math.max(...deste.map(p => p.numero)) + 1 : 1;
-  };
 
   const handleCriarProcesso = async (form) => {
     const { data, error } = await supabase.from('sindicancia_processos').insert({
@@ -1207,7 +1213,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
 
       {/* Modal novo processo */}
       <ModalNovoProcesso aberto={modalNovo} onFechar={() => setModalNovo(false)}
-        onSalvar={handleCriarProcesso} proximoNumero={proxNumero()} />
+        onSalvar={handleCriarProcesso} processos={processos} />
 
       {/* Confirm excluir processo */}
       {confirmExcluirProc && (
