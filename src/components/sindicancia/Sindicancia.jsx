@@ -389,7 +389,7 @@ const ModalEncerrar = ({ aberto, onFechar, onEncerrar, processo }) => {
 // ─────────────────────────────────────────────────────────────────
 //  Detalhe do Processo (candidatos)
 // ─────────────────────────────────────────────────────────────────
-const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) => {
+const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, onProcessoAtualizado }) => {
   const [candidatos, setCandidatos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalCand, setModalCand] = useState(false);
@@ -972,6 +972,10 @@ const Sindicancia = ({ grauUsuario, userData }) => {
   const isAdmin  = userData?.nivel_acesso === 'admin';
   const temAcesso = isMestre || isAdmin;
 
+  // Cargos que podem criar/editar/encerrar processos e candidatos
+  const CARGOS_EDITORES = ['veneravel', 'Veneravel', 'orador', 'Orador', 'vigilante', 'Vigilante', '1o_vigilante', '2o_vigilante', 'secretario', 'Secretario', 'secretário', 'Secretário'];
+  const podeEditarGlobal = isAdmin || CARGOS_EDITORES.includes(userData?.cargo);
+
   const [processos, setProcessos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [processoAtivo, setProcessoAtivo] = useState(null);
@@ -1083,6 +1087,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
           processo={processoAtivo}
           onVoltar={() => setProcessoAtivo(null)}
           irmaos={irmaos}
+          podeEditar={podeEditarGlobal}
           onProcessoAtualizado={async () => {
             await carregarProcessos();
             // Atualizar processo ativo com dados frescos
@@ -1111,9 +1116,11 @@ const Sindicancia = ({ grauUsuario, userData }) => {
               </p>
             </div>
           </div>
-          <button onClick={() => setModalNovo(true)} style={btnPrimary}>
-            📁 Novo Processo
-          </button>
+          {podeEditarGlobal && (
+            <button onClick={() => setModalNovo(true)} style={btnPrimary}>
+              📁 Novo Processo
+            </button>
+          )}
         </div>
 
         {/* Busca Global */}
@@ -1239,7 +1246,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
                     <button onClick={() => setProcessoAtivo(proc)} style={{ ...btnEdit, padding: '0.4rem 0.75rem' }}>
                       👁️ Abrir
                     </button>
-                    {proc.status !== 'em_andamento' && (
+                    {podeEditarGlobal && proc.status !== 'em_andamento' && (
                       <button onClick={() => setConfirmExcluirProc(proc)} style={{ ...btnDanger, padding: '0.4rem 0.6rem' }}>🗑️</button>
                     )}
                   </div>
