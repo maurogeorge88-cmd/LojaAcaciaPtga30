@@ -478,17 +478,17 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
     doc.setTextColor(201, 168, 76);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('A∴R∴L∴S∴ Acácia de Paranatinga nº 30', pW / 2, 14, { align: 'center' });
+    doc.text('A.R.L.S. Acacia de Paranatinga no 30', pW / 2, 14, { align: 'center' });
     doc.setTextColor(220, 220, 220);
     doc.setFontSize(10);
-    doc.text(`Sindicância — Processo ${processo.numero}/${processo.ano}`, pW / 2, 22, { align: 'center' });
+    doc.text(`Sindicancia - Processo ${processo.numero}/${processo.ano}`, pW / 2, 22, { align: 'center' });
     if (processo.titulo) {
       doc.setFontSize(9);
-      doc.text(processo.titulo, pW / 2, 29, { align: 'center' });
+      doc.text(sanitize(processo.titulo), pW / 2, 29, { align: 'center' });
     }
     doc.setTextColor(150, 150, 150);
     doc.setFontSize(8);
-    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} — DOCUMENTO SIGILOSO`, pW / 2, 36, { align: 'center' });
+    doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} - DOCUMENTO SIGILOSO`, pW / 2, 36, { align: 'center' });
 
     let y = 48;
 
@@ -497,7 +497,8 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     const stProc = getStatus(processo.status);
-    doc.text(`Status: ${stProc.label}  |  Abertura: ${processo.data_abertura ? new Date(processo.data_abertura + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}  |  Candidatos: ${candidatos.length}`, 14, y);
+    const sanitize = (str) => (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'?');
+    doc.text(`Status: ${sanitize(stProc.label)}  |  Abertura: ${processo.data_abertura ? new Date(processo.data_abertura + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}  |  Candidatos: ${candidatos.length}`, 14, y);
     y += 6;
     if (processo.data_encerramento) {
       doc.text(`Encerramento: ${new Date(processo.data_encerramento + 'T00:00:00').toLocaleDateString('pt-BR')}`, 14, y);
@@ -505,7 +506,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
     }
     if (processo.observacao_final) {
       doc.setFont('helvetica', 'italic');
-      const linhas = doc.splitTextToSize(`Observação Final: ${processo.observacao_final}`, pW - 28);
+      const linhas = doc.splitTextToSize(`Observacao Final: ${sanitize(processo.observacao_final)}`, pW - 28);
       doc.text(linhas, 14, y);
       y += linhas.length * 5 + 2;
     }
@@ -515,15 +516,15 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(40, 40, 40);
-    doc.text('Resumo por Situação', 14, y); y += 6;
+    doc.text('Resumo por Situacao', 14, y); y += 6;
 
     const resumoData = SITUACOES.map(s => [
       s.label,
       candidatos.filter(c => c.situacao === s.value).length.toString()
     ]);
     autoTable(doc, {
-      startY: y, head: [['Situação', 'Qtd']],
-      body: resumoData,
+      startY: y, head: [['Situacao', 'Qtd']],
+      body: resumoData.map(r => [r[0].normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'?'), r[1]]),
       styles: { fontSize: 9, cellPadding: 2 },
       headStyles: { fillColor: [40, 40, 40], textColor: 255, fontStyle: 'bold' },
       columnStyles: { 1: { halign: 'center', cellWidth: 20 } },
@@ -540,20 +541,21 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10);
       doc.setTextColor(40, 40, 40);
-      doc.text(`${sit.label} (${grupo.length})`, 14, y); y += 5;
+      const labelSit = sit.label.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\x00-\x7F]/g,'?');
+      doc.text(`${labelSit} (${grupo.length})`, 14, y); y += 5;
 
       const rows = grupo.map(c => [
-        c.nome,
+        sanitize(c.nome),
         c.idade ? `${c.idade} anos` : '-',
-        c.profissao || '-',
-        c.cidade || '-',
-        c.indicado_por_irmao ? `Ir∴ ${c.indicado_por_irmao}` : '-',
-        sit.value === 'excluido' ? (c.motivo_exclusao || '-') : (c.observacoes || '-'),
+        sanitize(c.profissao) || '-',
+        sanitize(c.cidade) || '-',
+        c.indicado_por_irmao ? `Ir. ${sanitize(c.indicado_por_irmao)}` : '-',
+        sit.value === 'excluido' ? sanitize(c.motivo_exclusao || '-') : sanitize(c.observacoes || '-'),
       ]);
 
       autoTable(doc, {
         startY: y,
-        head: [['Nome', 'Idade', 'Profissão', 'Cidade', 'Indicado por', sit.value === 'excluido' ? 'Motivo' : 'Observações']],
+        head: [['Nome', 'Idade', 'Profissao', 'Cidade', 'Indicado por', sit.value === 'excluido' ? 'Motivo' : 'Observacoes']],
         body: rows,
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [55, 55, 55], textColor: 255 },
@@ -577,7 +579,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, onProcessoAtualizado }) =
       doc.setPage(i);
       doc.setFontSize(7);
       doc.setTextColor(180, 180, 180);
-      doc.text('DOCUMENTO SIGILOSO — USO RESTRITO AOS MESTRES DA LOJA', pW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
+      doc.text('DOCUMENTO SIGILOSO - USO RESTRITO AOS MESTRES DA LOJA', pW / 2, doc.internal.pageSize.getHeight() - 8, { align: 'center' });
       doc.text(`Página ${i} de ${total}`, pW - 14, doc.internal.pageSize.getHeight() - 8, { align: 'right' });
     }
 
