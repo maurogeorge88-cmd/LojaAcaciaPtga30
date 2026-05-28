@@ -563,10 +563,18 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
       <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+            <colgroup>
+              <col style={{width:'140px'}} />
+              <col style={{width:'140px'}} />
+              <col style={{width:'120px'}} />
+              <col style={{width:'110px'}} />
+              <col style={{width:'110px'}} />
+              <col style={{width:'280px'}} />
+            </colgroup>
             <thead>
               <tr style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
-                {['Patrimônio', 'Tipo', 'Status', 'Conservação', 'Dt Aquisição', 'Ações'].map(h => (
-                  <th key={h} style={{ padding: '0.75rem 1rem', textAlign: h === 'Ações' ? 'center' : 'left', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                {[['Patrimônio','left'],['Tipo','left'],['Status','left'],['Conservação','left'],['Dt Aquisição','left'],['Ações','center']].map(([h,align]) => (
+                  <th key={h} style={{ padding: '0.65rem 0.75rem', textAlign: align, fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
                     {h}
                   </th>
                 ))}
@@ -578,74 +586,62 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
                 const es = getEstadoStyle(eq.estado_conservacao);
                 return (
                   <tr key={eq.id} style={{ borderBottom: '1px solid var(--color-border)' }}>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ fontWeight: 700, color: 'var(--color-text)', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                    <td style={{ padding: '0.65rem 0.75rem', maxWidth: '140px' }}>
+                      <div style={{ fontWeight: 700, color: 'var(--color-text)', fontFamily: 'monospace', fontSize: '0.875rem' }}>
                         {eq.numero_patrimonio}
                       </div>
-                      {eq.descricao && <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.1rem' }}>{eq.descricao}</div>}
+                      {eq.descricao && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={eq.descricao}>
+                          {eq.descricao}
+                        </div>
+                      )}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)' }}>
+                    <td style={{ padding: '0.65rem 0.75rem', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                       {eq.tipos_equipamentos?.nome}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ padding: '0.2rem 0.65rem', borderRadius: '999px', fontSize: '0.75rem', fontWeight: 600, background: st.bg, color: st.cor, border: `1px solid ${st.cor}44` }}>
+                    <td style={{ padding: '0.65rem 0.75rem' }}>
+                      <span style={{ padding: '0.2rem 0.55rem', borderRadius: '999px', fontSize: '0.72rem', fontWeight: 600, background: st.bg, color: st.cor, border: `1px solid ${st.cor}44`, whiteSpace: 'nowrap' }}>
                         {st.label}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <span style={{ padding: '0.2rem 0.65rem', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', fontWeight: 600, background: es.bg, color: es.cor }}>
+                    <td style={{ padding: '0.65rem 0.75rem' }}>
+                      <span style={{ padding: '0.2rem 0.55rem', borderRadius: 'var(--radius-sm)', fontSize: '0.72rem', fontWeight: 600, background: es.bg, color: es.cor, whiteSpace: 'nowrap' }}>
                         {eq.estado_conservacao}
                       </span>
                     </td>
-                    <td style={{ padding: '0.75rem 1rem', color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>
+                    <td style={{ padding: '0.65rem 0.75rem', color: 'var(--color-text-muted)', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>
                       {eq.data_aquisicao ? new Date(eq.data_aquisicao + 'T00:00:00').toLocaleDateString('pt-BR') : '-'}
                     </td>
-                    <td style={{ padding: '0.75rem 1rem' }}>
-                      <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        {/* Histórico — sempre visível */}
-                        <button
-                          onClick={() => setModalHistorico(eq)}
-                          style={{ padding: '0.25rem 0.55rem', background: 'rgba(59,130,246,0.12)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
-                          title="Ver histórico de patrimônios"
-                        >
-                          📋 Histórico
+                    <td style={{ padding: '0.5rem 0.75rem' }}>
+                      <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end', flexWrap: 'nowrap', alignItems: 'center' }}>
+                        <button onClick={() => setModalHistorico(eq)}
+                          style={{ padding: '0.22rem 0.45rem', background: 'rgba(59,130,246,0.12)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+                          title="Histórico de patrimônios">
+                          📋
                         </button>
-
                         {permissoes?.pode_editar_comodatos && eq.status !== 'descartado' && (
                           <>
-                            {/* Editar */}
-                            <button
-                              onClick={() => abrirModal(eq)}
-                              style={{ padding: '0.25rem 0.55rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
-                              title="Editar"
-                            >
-                              ✏️ Editar
+                            <button onClick={() => abrirModal(eq)}
+                              style={{ padding: '0.22rem 0.45rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid var(--color-accent)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+                              title="Editar">
+                              ✏️
                             </button>
-
-                            {/* Inutilizar patrimônio */}
-                            <button
-                              onClick={() => setModalInutilizar(eq)}
-                              style={{ padding: '0.25rem 0.55rem', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
-                              title="Inutilizar número de patrimônio"
-                            >
-                              ⚠️ Inutilizar Nº
+                            <button onClick={() => setModalInutilizar(eq)}
+                              style={{ padding: '0.22rem 0.45rem', background: 'rgba(245,158,11,0.12)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+                              title="Inutilizar número de patrimônio">
+                              ⚠️ Nº
                             </button>
-
                             {eq.status !== 'emprestado' && (
                               <>
-                                <button
-                                  onClick={() => descartar(eq.id)}
-                                  style={{ padding: '0.25rem 0.55rem', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
-                                  title="Descartar"
-                                >
-                                  🗑️ Descartar
+                                <button onClick={() => descartar(eq.id)}
+                                  style={{ padding: '0.22rem 0.45rem', background: 'rgba(249,115,22,0.12)', color: '#f97316', border: '1px solid rgba(249,115,22,0.35)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+                                  title="Descartar">
+                                  🗑️
                                 </button>
-                                <button
-                                  onClick={() => excluirEquipamento(eq.id)}
-                                  style={{ padding: '0.25rem 0.55rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}
-                                  title="Excluir permanentemente"
-                                >
-                                  ❌ Excluir
+                                <button onClick={() => excluirEquipamento(eq.id)}
+                                  style={{ padding: '0.22rem 0.45rem', background: 'rgba(239,68,68,0.12)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontSize: '0.68rem', fontWeight: 700, whiteSpace: 'nowrap' }}
+                                  title="Excluir permanentemente">
+                                  ❌
                                 </button>
                               </>
                             )}
