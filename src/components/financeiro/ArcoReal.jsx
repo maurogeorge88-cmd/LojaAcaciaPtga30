@@ -32,14 +32,15 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       let q = supabase
         .from('arco_real_lancamentos')
         .select('*')
-        .order('data_vencimento', { ascending: false });
+        .order('data_pagamento', { ascending: false });
 
       if (filtro === 'mes') {
+        // Buscar mais amplo e filtrar no JS pela data efetiva
         const ini = `${ano}-${String(mes).padStart(2,'0')}-01`;
         const fim = `${ano}-${String(mes).padStart(2,'0')}-${new Date(ano, mes, 0).getDate()}`;
-        q = q.gte('data_vencimento', ini).lte('data_vencimento', fim);
+        q = q.or(`and(data_pagamento.gte.${ini},data_pagamento.lte.${fim}),and(data_pagamento.is.null,data_vencimento.gte.${ini},data_vencimento.lte.${fim})`);
       } else if (filtro === 'ano') {
-        q = q.gte('data_vencimento', `${ano}-01-01`).lte('data_vencimento', `${ano}-12-31`);
+        q = q.or(`and(data_pagamento.gte.${ano}-01-01,data_pagamento.lte.${ano}-12-31),and(data_pagamento.is.null,data_vencimento.gte.${ano}-01-01,data_vencimento.lte.${ano}-12-31)`);
       }
 
       const { data, error } = await q;
@@ -218,7 +219,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
           if (y > 275) { doc.addPage(); y = 15; }
           const val = Number(l.valor||0); sub += val;
           doc.setTextColor(0);
-          doc.text(fmtD(l.data_vencimento), 17, y);
+          doc.text(fmtD(l.data_pagamento || l.data_vencimento), 17, y);
           doc.text((l.descricao||'').substring(0,50), 43, y);
           if (l.origem==='manual') doc.setTextColor(99,102,241); else doc.setTextColor(100,100,100);
           doc.text(l.origem==='manual'?'Manual':'Loja', 140, y);
@@ -339,7 +340,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                     placeholder="0,00" style={sInp} />
                 </div>
                 <div>
-                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Data *</label>
+                  <label style={{ display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',marginBottom:'0.25rem' }}>Data de Pagamento *</label>
                   <input type="date" value={form.data_vencimento} onChange={e=>setForm(f=>({...f,data_vencimento:e.target.value}))} style={sInp} />
                 </div>
                 <div style={{ gridColumn:'1 / -1' }}>
@@ -414,7 +415,7 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                       </div>
                       {bloco.lancs.map((l,i) => (
                         <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 60px 90px 60px auto',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
-                          <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_vencimento)}</span>
+                          <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_pagamento || l.data_vencimento)}</span>
                           <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{l.descricao}</span>
                           <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
                             background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
