@@ -15,8 +15,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
   const [loading, setLoading]   = useState(false);
   const [verLancs, setVerLancs] = useState(false);
   const [showForm, setShowForm] = useState(false);
-  const [salvando, setSalvando] = useState(false);
-  const [form, setForm]         = useState({
+  const [salvando, setSalvando]             = useState(false);
+  const [editandoId, setEditandoId]         = useState(null);
+  const [confirmExcluir, setConfirmExcluir] = useState(null);
+  const [form, setForm]                     = useState({
     tipo: 'receita', descricao: '', valor: '',
     data_vencimento: hojeISO(), status: 'pago', observacoes: ''
   });
@@ -72,6 +74,64 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
       showSuccess('✅ Lançamento registrado!');
       setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'' });
       setShowForm(false);
+      carregar();
+    } catch(e) {
+      showError('Erro ao salvar: ' + e.message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  // ── Excluir lançamento ────────────────────────────────────────────────────────
+  const excluirLancamento = async (id) => {
+    try {
+      const { error } = await supabase.from('arco_real_lancamentos').delete().eq('id', id);
+      if (error) throw error;
+      setConfirmExcluir(null);
+      showSuccess('🗑️ Lançamento excluído!');
+      carregar();
+    } catch(e) {
+      showError('Erro ao excluir: ' + e.message);
+    }
+  };
+
+  // ── Abrir edição ───────────────────────────────────────────────────────────
+  const abrirEditar = (l) => {
+    setEditandoId(l.id);
+    setForm({
+      tipo:            l.tipo,
+      descricao:       l.descricao || '',
+      valor:           String(l.valor || ''),
+      data_vencimento: l.data_vencimento || hojeISO(),
+      status:          l.status || 'pago',
+      observacoes:     l.observacoes || '',
+    });
+    setShowForm(true);
+    // Scroll para o form
+    setTimeout(() => document.getElementById('arco-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+  };
+
+  // ── Salvar edição ──────────────────────────────────────────────────────────
+  const salvarEdicao = async () => {
+    if (!form.descricao.trim()) { showError('Informe a descrição.'); return; }
+    if (!form.valor || parseFloat(form.valor) <= 0) { showError('Informe um valor válido.'); return; }
+    if (!form.data_vencimento) { showError('Informe a data.'); return; }
+    setSalvando(true);
+    try {
+      const { error } = await supabase.from('arco_real_lancamentos').update({
+        tipo:            form.tipo,
+        descricao:       form.descricao.trim(),
+        valor:           parseFloat(form.valor),
+        data_vencimento: form.data_vencimento,
+        data_pagamento:  form.status === 'pago' ? form.data_vencimento : null,
+        status:          form.status,
+        observacoes:     form.observacoes.trim() || null,
+      }).eq('id', editandoId);
+      if (error) throw error;
+      showSuccess('✅ Lançamento atualizado!');
+      setEditandoId(null);
+      setShowForm(false);
+      setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'' });
       carregar();
     } catch(e) {
       showError('Erro ao salvar: ' + e.message);
@@ -249,8 +309,10 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
 
           {/* Formulário novo lançamento */}
           {showForm && (
-            <div style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
-              <p style={{ margin:0,fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>+ Novo Lançamento Manual</p>
+            <div id="arco-form" style={{ background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1rem',display:'flex',flexDirection:'column',gap:'0.75rem' }}>
+              <p style={{ margin:0,fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem' }}>
+                {editandoId ? '✏️ Editar Lançamento' : '+ Novo Lançamento Manual'}
+              </p>
 
               {/* Tipo */}
               <div style={{ display:'flex',gap:'0.5rem' }}>
@@ -301,10 +363,18 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                 </div>
               </div>
 
-              <button onClick={salvarLancamento} disabled={salvando}
-                style={{ padding:'0.6rem',background:form.tipo==='receita'?'#16a34a':'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:salvando?'not-allowed':'pointer',opacity:salvando?0.7:1 }}>
-                {salvando ? 'Salvando...' : '💾 Salvar Lançamento'}
-              </button>
+              <div style={{ display:'flex', gap:'0.5rem' }}>
+                <button onClick={editandoId ? salvarEdicao : salvarLancamento} disabled={salvando}
+                  style={{ flex:1,padding:'0.6rem',background:form.tipo==='receita'?'#16a34a':'#dc2626',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:salvando?'not-allowed':'pointer',opacity:salvando?0.7:1 }}>
+                  {salvando ? 'Salvando...' : editandoId ? '💾 Salvar Alterações' : '💾 Salvar Lançamento'}
+                </button>
+                {editandoId && (
+                  <button onClick={() => { setEditandoId(null); setShowForm(false); setForm({ tipo:'receita', descricao:'', valor:'', data_vencimento: hojeISO(), status:'pago', observacoes:'' }); }}
+                    style={{ padding:'0.6rem 1rem',background:'var(--color-surface)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'600',cursor:'pointer' }}>
+                    Cancelar
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
@@ -343,9 +413,9 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                         <span style={{ fontWeight:'800',color:bloco.cor }}>{fmtR(bloco.tot)}</span>
                       </div>
                       {bloco.lancs.map((l,i) => (
-                        <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 70px 90px 70px',gap:'0.5rem',padding:'0.5rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
+                        <div key={l.id} style={{ display:'grid',gridTemplateColumns:'90px 1fr 60px 90px 60px auto',gap:'0.5rem',padding:'0.45rem 1rem',borderBottom:'1px solid var(--color-border)',background:i%2===0?'var(--color-surface)':'var(--color-surface-2)',fontSize:'0.8rem',alignItems:'center' }}>
                           <span style={{ color:'var(--color-text-muted)' }}>{fmtD(l.data_vencimento)}</span>
-                          <span style={{ color:'var(--color-text)',fontWeight:'600' }}>{l.descricao}</span>
+                          <span style={{ color:'var(--color-text)',fontWeight:'600',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap' }}>{l.descricao}</span>
                           <span style={{ fontSize:'0.68rem',padding:'0.15rem 0.4rem',borderRadius:'999px',textAlign:'center',fontWeight:'600',
                             background:l.origem==='manual'?'rgba(99,102,241,0.12)':'rgba(100,116,139,0.12)',
                             color:l.origem==='manual'?'#6366f1':'#64748b' }}>
@@ -355,6 +425,16 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
                           <span style={{ fontSize:'0.68rem',color:l.status==='pago'?'#16a34a':'#d97706',textAlign:'center',fontWeight:'600' }}>
                             {l.status==='pago'?'✓ Pago':'⏳ Pend.'}
                           </span>
+                          <div style={{ display:'flex',gap:'0.25rem',justifyContent:'flex-end' }}>
+                            <button onClick={() => abrirEditar(l)} title="Editar"
+                              style={{ padding:'0.2rem 0.4rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'4px',cursor:'pointer',fontSize:'0.68rem',fontWeight:700 }}>
+                              ✏️
+                            </button>
+                            <button onClick={() => setConfirmExcluir(l)} title="Excluir"
+                              style={{ padding:'0.2rem 0.4rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'4px',cursor:'pointer',fontSize:'0.68rem',fontWeight:700 }}>
+                              🗑️
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -368,6 +448,36 @@ export default function ArcoReal({ isOpen, onClose, showSuccess, showError }) {
             </>
           )}
         </div>
+
+        {/* Confirmar exclusão */}
+        {confirmExcluir && (
+          <div style={{ position:'fixed',inset:0,background:'rgba(0,0,0,0.75)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:10000,padding:'1rem' }}>
+            <div style={{ background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',padding:'1.5rem',maxWidth:'400px',width:'100%' }}>
+              <h3 style={{ fontSize:'1rem',fontWeight:700,color:'var(--color-text)',marginBottom:'0.5rem' }}>Excluir lançamento?</h3>
+              <p style={{ fontSize:'0.875rem',color:'var(--color-text-muted)',marginBottom:'0.4rem' }}>
+                <strong style={{ color:'var(--color-text)' }}>{confirmExcluir.descricao}</strong>
+              </p>
+              <p style={{ fontSize:'0.82rem',color:'var(--color-text-muted)',marginBottom:'1.25rem' }}>
+                {fmtD(confirmExcluir.data_vencimento)} · {fmtR(confirmExcluir.valor)}
+                {confirmExcluir.origem === 'loja' && (
+                  <span style={{ display:'block',marginTop:'0.5rem',color:'#f59e0b',fontWeight:600 }}>
+                    ⚠️ Este registro veio da Loja. Excluir aqui não afeta o lançamento original.
+                  </span>
+                )}
+              </p>
+              <div style={{ display:'flex',gap:'0.75rem',justifyContent:'flex-end' }}>
+                <button onClick={() => setConfirmExcluir(null)}
+                  style={{ padding:'0.55rem 1.1rem',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',background:'transparent',color:'var(--color-text-muted)',cursor:'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={() => excluirLancamento(confirmExcluir.id)}
+                  style={{ padding:'0.55rem 1.25rem',borderRadius:'var(--radius-md)',background:'rgba(239,68,68,0.15)',border:'1px solid rgba(239,68,68,0.4)',color:'#ef4444',fontWeight:600,cursor:'pointer' }}>
+                  Confirmar Exclusão
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div style={{ padding:'0.75rem 1.5rem',borderTop:'1px solid var(--color-border)',display:'flex',justifyContent:'flex-end' }}>
