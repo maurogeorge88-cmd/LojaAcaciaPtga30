@@ -31,6 +31,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
+  const [eventosComemorativos, setEventosComemorativos] = useState([]);
   const [irmaoEditando, setIrmaoEditando]       = useState(null); // irmão extra para edição (ex: desligado)
   const [tipoLancamento, setTipoLancamento] = useState('receita');
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
@@ -112,6 +113,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     status: 'pendente', // CORRIGIDO: usar 'pendente' ou 'pago'
     comprovante_url: '',
     observacoes: '',
+    evento_comemorativo_id: null,
     origem_tipo: 'Loja', 
     origem_irmao_id: '' 
   });
@@ -173,6 +175,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     calcularTroncoTotal();
     buscarTotalRegistros();
     carregarMesesFechados();
+    carregarEventosComemorativos();
   }, [filtros.mes, filtros.ano]);
 
   // Fechar menus dropdown ao clicar fora
@@ -357,6 +360,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     } finally {
       setLoading(false);
     }
+  };
+
+  const carregarEventosComemorativos = async () => {
+    const { data } = await supabase.from('eventos_comemorativos_fin').select('id, nome, ano, status').order('ano', { ascending: false }).order('nome');
+    setEventosComemorativos(data || []);
   };
 
   const carregarLancamentos = async () => {
@@ -3575,6 +3583,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         categorias={categorias}
         irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
         editando={editando}
+        eventosComemorativos={eventosComemorativos}
       />
 
 
