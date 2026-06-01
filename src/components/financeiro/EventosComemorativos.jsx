@@ -74,7 +74,7 @@ const btnEdit = {
 // ─────────────────────────────────────────────
 const EVENTO_VAZIO = {
   nome: '', ano: new Date().getFullYear(), data_evento: '',
-  descricao: '', idade_gratuita: 5, idade_meia: 11, valor_ajustado: '',
+  descricao: '', idade_gratuita: 5, idade_meia: 11, valor_ajustado: '', contribuicao_loja: '',
 };
 
 const ModalEvento = ({ aberto, onFechar, onSalvar, eventoEdit }) => {
@@ -92,6 +92,7 @@ const ModalEvento = ({ aberto, onFechar, onSalvar, eventoEdit }) => {
         idade_gratuita: eventoEdit.idade_gratuita ?? 5,
         idade_meia: eventoEdit.idade_meia ?? 11,
         valor_ajustado: eventoEdit.valor_ajustado || '',
+        contribuicao_loja: eventoEdit.contribuicao_loja || '',
       } : EVENTO_VAZIO);
       setErro('');
     }
@@ -158,6 +159,13 @@ const ModalEvento = ({ aberto, onFechar, onSalvar, eventoEdit }) => {
                 <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Crianças até esta idade = 0,5 cotas</p>
               </div>
             </div>
+          </div>
+
+          {/* Contribuição da Loja */}
+          <div>
+            <label style={lbl}>Contribuição da Loja (R$)</label>
+            <input style={inp} type="number" step="0.01" min="0" value={form.contribuicao_loja} onChange={e => f('contribuicao_loja', e.target.value)} placeholder="Ex: 500.00 — será abatido das despesas antes do rateio" />
+            <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem' }}>Valor que a loja paga — reduz a base do rateio entre os irmãos</p>
           </div>
 
           {/* Valor ajustado */}
@@ -358,10 +366,12 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   useEffect(() => { carregar(); }, [carregar]);
 
   // ── Cálculos ──
-  const totalDespesas = despesas.filter(d => d.tipo === 'despesa' && d.status === 'pago').reduce((s, d) => s + parseFloat(d.valor), 0);
-  const totalCotas    = participantes.reduce((s, p) => s + parseFloat(p.cotas || 0), 0);
-  const valorCalc     = totalCotas > 0 ? totalDespesas / totalCotas : 0;
-  const valorCota     = evento.valor_ajustado ? parseFloat(evento.valor_ajustado) : valorCalc;
+  const totalDespesas    = despesas.filter(d => d.tipo === 'despesa' && d.status === 'pago').reduce((s, d) => s + parseFloat(d.valor), 0);
+  const contribuicaoLoja = evento.contribuicao_loja ? parseFloat(evento.contribuicao_loja) : 0;
+  const baseRateio       = Math.max(0, totalDespesas - contribuicaoLoja);
+  const totalCotas       = participantes.reduce((s, p) => s + parseFloat(p.cotas || 0), 0);
+  const valorCalc        = totalCotas > 0 ? baseRateio / totalCotas : 0;
+  const valorCota        = evento.valor_ajustado ? parseFloat(evento.valor_ajustado) : valorCalc;
 
   // ── Salvar participante ──
   const handleSalvarPart = async (form) => {
@@ -451,6 +461,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       startY: y,
       body: [
         ['Total de Despesas', `R$ ${totalDespesas.toFixed(2).replace('.', ',')}`],
+        ...(contribuicaoLoja > 0 ? [['Contribuicao da Loja', `- R$ ${contribuicaoLoja.toFixed(2).replace('.', ',')}`], ['Base do Rateio', `R$ ${baseRateio.toFixed(2).replace('.', ',')}`]] : []),
         ['Total de Cotas', totalCotas.toFixed(1)],
         ['Valor Calculado por Cota', `R$ ${valorCalc.toFixed(2).replace('.', ',')}`],
         ['Valor Ajustado por Cota', evento.valor_ajustado ? `R$ ${parseFloat(evento.valor_ajustado).toFixed(2).replace('.', ',')}` : 'Nao definido'],
@@ -564,6 +575,10 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: '0.65rem' }}>
             {[
               { label: 'Total Despesas', val: fmtR(totalDespesas), cor: '#ef4444', bg: 'rgba(239,68,68,0.1)' },
+              ...(contribuicaoLoja > 0 ? [
+                { label: 'Contribuição Loja', val: fmtR(contribuicaoLoja), cor: '#8b5cf6', bg: 'rgba(139,92,246,0.1)' },
+                { label: 'Base do Rateio', val: fmtR(baseRateio), cor: '#f97316', bg: 'rgba(249,115,22,0.1)' },
+              ] : []),
               { label: 'Total Cotas', val: totalCotas.toFixed(1), cor: '#3b82f6', bg: 'rgba(59,130,246,0.1)' },
               { label: 'Valor/Cota Calculado', val: fmtR(valorCalc), cor: '#f59e0b', bg: 'rgba(245,158,11,0.1)' },
               { label: 'Valor/Cota Ajustado', val: evento.valor_ajustado ? fmtR(parseFloat(evento.valor_ajustado)) : '—', cor: '#10b981', bg: 'rgba(16,185,129,0.1)' },
@@ -581,6 +596,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
               <div>
                 <p style={{ fontWeight: 700, color: 'var(--color-text)', fontSize: '0.9rem', marginBottom: '0.15rem' }}>🎯 Ajuste do Valor por Cota</p>
                 <p style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                  {contribuicaoLoja > 0 && <>Base do rateio: <strong style={{ color: '#f97316' }}>{fmtR(baseRateio)}</strong> (Loja contribui {fmtR(contribuicaoLoja)}) · </>}
                   Calculado: <strong>{fmtR(valorCalc)}</strong>
                   {evento.valor_ajustado && <> → Ajustado: <strong style={{ color: '#10b981' }}>{fmtR(parseFloat(evento.valor_ajustado))}</strong></>}
                 </p>
@@ -732,6 +748,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
             nome: form.nome, ano: form.ano, data_evento: form.data_evento || null,
             descricao: form.descricao || null, idade_gratuita: form.idade_gratuita,
             idade_meia: form.idade_meia, valor_ajustado: form.valor_ajustado ? parseFloat(form.valor_ajustado) : null,
+            contribuicao_loja: form.contribuicao_loja ? parseFloat(form.contribuicao_loja) : null,
           }).eq('id', evento.id);
           if (error) throw error;
           showSuccess('✅ Evento atualizado!');
@@ -822,6 +839,8 @@ export default function EventosComemorativos({ showSuccess, showError }) {
       idade_gratuita: form.idade_gratuita,
       idade_meia: form.idade_meia,
       valor_ajustado: form.valor_ajustado ? parseFloat(form.valor_ajustado) : null,
+      contribuicao_loja: form.contribuicao_loja ? parseFloat(form.contribuicao_loja) : null,
+      contribuicao_loja: form.contribuicao_loja ? parseFloat(form.contribuicao_loja) : null,
     }).select().single();
     if (error) throw error;
     showSuccess('🎉 Evento criado!');
