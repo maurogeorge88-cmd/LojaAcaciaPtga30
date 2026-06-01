@@ -14,7 +14,8 @@ export default function ModalLancamento({
   setFormData,
   categorias,
   irmaos,
-  editando = false
+  editando = false,
+  eventosComemorativos = []
 }) {
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -230,7 +231,6 @@ export default function ModalLancamento({
               <option value="dinheiro">💵 Dinheiro</option>
               <option value="pix">📱 PIX</option>
               <option value="transferencia">🏦 Transferência</option>
-              <option value="deposito">🏧 Depósito</option>
               <option value="debito">💳 Débito</option>
               <option value="credito">💳 Crédito</option>
               <option value="cheque">📝 Cheque</option>
@@ -253,6 +253,31 @@ export default function ModalLancamento({
             />
           </div>
         )}
+
+        {/* Evento Comemorativo */}
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+            🎉 Evento Comemorativo <span style={{fontSize:"0.75rem",fontWeight:400,color:"var(--color-text-muted)"}}>(opcional)</span>
+          </label>
+          <select
+            value={formData.evento_comemorativo_id || ''}
+            onChange={(e) => setFormData({ ...formData, evento_comemorativo_id: e.target.value || null })}
+            className={`w-full px-3 py-2 border rounded-lg ${cfg.corFoco}`}
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+          >
+            <option value="">— Nenhum —</option>
+            {eventosComemorativos.map(ev => (
+              <option key={ev.id} value={ev.id}>
+                {ev.nome} ({ev.ano}){ev.status === 'encerrado' ? ' ✅' : ''}
+              </option>
+            ))}
+          </select>
+          {formData.evento_comemorativo_id && (
+            <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
+              ✓ Lançamento vinculado ao evento selecionado
+            </p>
+          )}
+        </div>
 
         {/* Observações */}
         <div>
