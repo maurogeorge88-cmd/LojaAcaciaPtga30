@@ -663,9 +663,11 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                       <td colSpan={4} style={{ padding: '0.55rem 0.75rem', fontWeight: 700, color: 'var(--color-text)' }}>TOTAL</td>
                       <td style={{ padding: '0.55rem 0.75rem', textAlign: 'right', fontWeight: 800, color: '#ef4444', fontSize: '0.95rem' }}>{fmtR(totalDespesas)}</td>
                     </tr>
-                  </tbody>
+                  </tfoot>
                 </table>
               </div>
+                );
+              })()}
             )}
           </div>
 
@@ -685,45 +687,100 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                 Nenhum participante cadastrado ainda.
               </p>
             ) : (
-              <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+              {/* ── Tabela de Participantes separada por grupo ── */}
+              {(() => {
+                const irmaos_part  = participantes.filter(p => p.irmao_id);
+                const externos_part = participantes.filter(p => !p.irmao_id);
+
+                const thStyle = (center) => ({ padding: '0.5rem 0.65rem', textAlign: center ? 'center' : 'left', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', whiteSpace: 'nowrap' });
+                const cabecalho = (
                   <thead>
                     <tr style={{ background: 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)' }}>
-                      {['Participante','Tipo','Adultos\n(ele+conv.)','C.Meia','C.Grat.','Cotas','Valor a Pagar',''].map((h, i) => (
-                        <th key={i} style={{ padding: '0.55rem 0.65rem', textAlign: i >= 2 && i <= 6 ? 'center' : i === 7 ? 'right' : 'left', fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', whiteSpace: 'pre-line', lineHeight: 1.2 }}>{h}</th>
-                      ))}
+                      <th style={thStyle(false)}>Participante</th>
+                      <th style={thStyle(true)}>Adultos<br/>(ele+conv.)</th>
+                      <th style={thStyle(true)}>C.Meia</th>
+                      <th style={thStyle(true)}>C.Grat.</th>
+                      <th style={thStyle(true)}>Cotas</th>
+                      <th style={thStyle(true)}>Valor a Pagar</th>
+                      <th style={thStyle(true)}></th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {participantes.map((p, i) => {
-                      const nome = p.irmao_id ? (p.irmaos?.nome || '?') : (p.nome_externo || '?');
-                      return (
-                        <tr key={p.id} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'var(--color-surface-2)' }}>
-                          <td style={{ padding: '0.55rem 0.65rem', fontWeight: 600, color: 'var(--color-text)' }}>{nome}</td>
-                          <td style={{ padding: '0.55rem 0.65rem' }}>
-                            <span style={{ padding: '0.1rem 0.45rem', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 600, background: p.irmao_id ? 'rgba(201,168,76,0.15)' : 'rgba(99,102,241,0.15)', color: p.irmao_id ? '#c9a84c' : '#6366f1' }}>
-                              {p.irmao_id ? 'Irmão' : 'Externo'}
-                            </span>
-                          </td>
-                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>1+{p.adultos_convidados}</td>
-                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{p.criancas_meia}</td>
-                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{p.criancas_gratuitas}</td>
-                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#3b82f6' }}>{parseFloat(p.cotas).toFixed(1)}</td>
-                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#10b981' }}>{valorCota > 0 ? fmtR(parseFloat(p.cotas) * valorCota) : '—'}</td>
-                          {!encerrado && (
-                            <td style={{ padding: '0.55rem 0.65rem', textAlign: 'right' }}>
-                              <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
-                                <button onClick={() => { setPartEdit(p); setModalPart(true); }} style={btnEdit}>✏️</button>
-                                <button onClick={() => setConfirmExcluirPart(p)} style={btnDanger}>🗑️</button>
-                              </div>
-                            </td>
-                          )}
-                          {encerrado && <td />}
-                        </tr>
-                      );
-                    })}
+                );
+
+                const renderLinha = (p, i) => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid var(--color-border)', background: i % 2 === 0 ? 'transparent' : 'rgba(0,0,0,0.06)' }}>
+                    <td style={{ padding: '0.55rem 0.65rem', fontWeight: 600, color: 'var(--color-text)' }}>
+                      {p.irmao_id ? (p.irmaos?.nome || '?') : (p.nome_externo || '?')}
+                    </td>
+                    <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>1+{p.adultos_convidados}</td>
+                    <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{p.criancas_meia}</td>
+                    <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{p.criancas_gratuitas}</td>
+                    <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#3b82f6' }}>{parseFloat(p.cotas).toFixed(1)}</td>
+                    <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#10b981' }}>{valorCota > 0 ? fmtR(parseFloat(p.cotas) * valorCota) : '—'}</td>
+                    {!encerrado ? (
+                      <td style={{ padding: '0.55rem 0.5rem', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
+                          <button onClick={() => { setPartEdit(p); setModalPart(true); }} style={btnEdit}>✏️</button>
+                          <button onClick={() => setConfirmExcluirPart(p)} style={btnDanger}>🗑️</button>
+                        </div>
+                      </td>
+                    ) : <td />}
+                  </tr>
+                );
+
+                const subtotalRow = (lista, cor, label) => {
+                  const cotas = lista.reduce((s, p) => s + parseFloat(p.cotas), 0);
+                  const valor = lista.reduce((s, p) => s + parseFloat(p.cotas) * valorCota, 0);
+                  return (
+                    <tr style={{ background: 'var(--color-surface-2)', borderTop: '1px solid var(--color-border)' }}>
+                      <td style={{ padding: '0.45rem 0.65rem', fontWeight: 700, color, fontSize: '0.78rem' }}>Subtotal {label}</td>
+                      <td colSpan={3} />
+                      <td style={{ padding: '0.45rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#3b82f6', fontSize: '0.85rem' }}>{cotas.toFixed(1)}</td>
+                      <td style={{ padding: '0.45rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#10b981', fontSize: '0.85rem' }}>{valorCota > 0 ? fmtR(valor) : '—'}</td>
+                      <td />
+                    </tr>
+                  );
+                };
+
+                return (
+                  <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                      {/* Grupo Irmãos */}
+                      {irmaos_part.length > 0 && (<>
+                        <thead>
+                          <tr style={{ background: 'rgba(201,168,76,0.12)' }}>
+                            <th colSpan={7} style={{ padding: '0.45rem 0.65rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#c9a84c', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              👤 Irmãos da Loja ({irmaos_part.length})
+                            </th>
+                          </tr>
+                        </thead>
+                        {cabecalho}
+                        <tbody>
+                          {irmaos_part.map((p, i) => renderLinha(p, i))}
+                          {irmaos_part.length > 0 && externos_part.length > 0 && subtotalRow(irmaos_part, '#c9a84c', 'Irmãos')}
+                        </tbody>
+                      </>)}
+
+                      {/* Grupo Externos */}
+                      {externos_part.length > 0 && (<>
+                        <thead>
+                          <tr style={{ background: 'rgba(99,102,241,0.12)', borderTop: irmaos_part.length > 0 ? '2px solid var(--color-border)' : 'none' }}>
+                            <th colSpan={7} style={{ padding: '0.45rem 0.65rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              🌍 Convidados Externos ({externos_part.length})
+                            </th>
+                          </tr>
+                        </thead>
+                        {cabecalho}
+                        <tbody>
+                          {externos_part.map((p, i) => renderLinha(p, i))}
+                          {irmaos_part.length > 0 && externos_part.length > 0 && subtotalRow(externos_part, '#6366f1', 'Externos')}
+                        </tbody>
+                      </>)}
+
+                      {/* Total geral */}
+                      <tfoot>
                     <tr style={{ background: 'var(--color-surface-2)', borderTop: '2px solid var(--color-border)' }}>
-                      <td colSpan={5} style={{ padding: '0.55rem 0.65rem', fontWeight: 700, color: 'var(--color-text)' }}>TOTAL</td>
+                      <td colSpan={4} style={{ padding: '0.55rem 0.65rem', fontWeight: 700, color: 'var(--color-text)' }}>TOTAL GERAL</td>
                       <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 800, color: '#3b82f6' }}>{totalCotas.toFixed(1)}</td>
                       <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 800, color: '#10b981' }}>
                         {valorCota > 0 ? fmtR(participantes.reduce((s, p) => s + parseFloat(p.cotas) * valorCota, 0)) : '—'}
