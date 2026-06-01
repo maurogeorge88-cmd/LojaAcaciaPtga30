@@ -2927,9 +2927,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
-        {currentPage === 'eventos-arrecadacao' && (
-          <EventosArrecadacao
-            permissoes={permissoes}
+        {currentPage === 'eventos-comemorativos' && (
+          <EventosComemorativos
             showSuccess={showSuccess}
             showError={showError}
           />
