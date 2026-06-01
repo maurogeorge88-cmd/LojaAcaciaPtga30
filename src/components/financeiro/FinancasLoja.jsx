@@ -4196,8 +4196,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   )}
                                 </div>
                                 {/* Descrição */}
-                                <p style={{fontWeight:'600',color:'var(--color-text)',margin:'0 0 0.3rem',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                                  {lanc.descricao}
+                                <p style={{fontWeight:'600',color:'var(--color-text)',margin:'0 0 0.3rem',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                                  <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
+                                  {lanc.evento_comemorativo_id && (
+                                    <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.6rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.3rem',lineHeight:'1.5',fontWeight:700}}>🎉</span>
+                                  )}
                                 </p>
                                 {/* Datas */}
                                 <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:0}}>
@@ -4360,8 +4363,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       {lanc.categorias_financeiras?.nome}
                     </div>
                     {/* Descrição */}
-                    <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                      {lanc.descricao}
+                    <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                      <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
+                      {lanc.evento_comemorativo_id && (
+                        <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.65rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.35rem',lineHeight:'1.4',fontWeight:700}}>🎉</span>
+                      )}
                     </div>
                     {/* Origem */}
                     <div style={{display:'flex',alignItems:'center',gap:'0.25rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',minWidth:0}}>
