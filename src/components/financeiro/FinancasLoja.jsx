@@ -619,8 +619,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         status: dados.status,
         comprovante_url: dados.comprovante_url || null,
         observacoes: dados.observacoes || null,
-        origem_tipo: dados.origem_tipo || 'Loja', 
-        origem_irmao_id: dados.origem_irmao_id ? parseInt(dados.origem_irmao_id) : null 
+        origem_tipo: dados.origem_tipo || 'Loja',
+        origem_irmao_id: dados.origem_irmao_id ? parseInt(dados.origem_irmao_id) : null,
+        evento_comemorativo_id: dados.evento_comemorativo_id || null
       };
 
       if (editando) {
@@ -895,8 +896,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       status: lancamento.status,
       comprovante_url: lancamento.comprovante_url || '',
       observacoes: lancamento.observacoes || '',
-      origem_tipo: lancamento.origem_tipo || 'Loja', 
-      origem_irmao_id: lancamento.origem_irmao_id || '' 
+      origem_tipo: lancamento.origem_tipo || 'Loja',
+      origem_irmao_id: lancamento.origem_irmao_id || '',
+      evento_comemorativo_id: lancamento.evento_comemorativo_id || null
     });
     setEditando(lancamento.id);
     setTimeout(() => setModalLancamentoAberto(true), 0); // garante que irmaoEditando já está no state
@@ -989,8 +991,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       status: 'pendente',
       comprovante_url: '',
       observacoes: '',
-      origem_tipo: 'Loja', 
-      origem_irmao_id: '' 
+      origem_tipo: 'Loja',
+      origem_irmao_id: '',
+      evento_comemorativo_id: null,
+      evento_comemorativo_id: null
     });
     setEditando(null);
     setModalLancamentoAberto(false);
@@ -1011,7 +1015,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       comprovante_url: '',
       observacoes: '',
       origem_tipo: 'Loja',
-      origem_irmao_id: ''
+      origem_irmao_id: '',
+      evento_comemorativo_id: null
     });
     setEditando(null);
     setModalLancamentoAberto(true);
