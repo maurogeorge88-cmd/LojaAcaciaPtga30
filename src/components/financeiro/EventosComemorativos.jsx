@@ -104,7 +104,8 @@ const ModalEvento = ({ aberto, onFechar, onSalvar, eventoEdit }) => {
     if (!form.ano) { setErro('Informe o ano.'); return; }
     setSalvando(true); setErro('');
     try { await onSalvar(form); }
-    catch (e) { setErro(e.message); setSalvando(false); }
+    catch (e) { setErro(e.message); }
+    finally { setSalvando(false); }
   };
 
   if (!aberto) return null;
@@ -222,7 +223,8 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
     if (form.tipo === 'externo' && !form.nome_externo.trim()) { setErro('Informe o nome do convidado externo.'); return; }
     setSalvando(true); setErro('');
     try { await onSalvar({ ...form, cotas: cotaCalc }); }
-    catch (e) { setErro(e.message); setSalvando(false); }
+    catch (e) { setErro(e.message); }
+    finally { setSalvando(false); }
   };
 
   if (!aberto) return null;
