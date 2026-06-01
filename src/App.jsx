@@ -29,7 +29,7 @@ import Cronograma from './components/cronograma/Cronograma';
 import FinancasLoja from './components/financeiro/FinancasLoja';
 import LancamentosLote from './components/financeiro/LancamentosLote';
 import CategoriasFinanceiras from './components/financeiro/CategoriasFinanceiras';
-import EventosArrecadacao from './components/financeiro/EventosArrecadacao';
+import EventosComemorativos from './components/financeiro/EventosComemorativos';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
@@ -1824,22 +1824,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </div>
                 )}
 
-                {/* SINDICÂNCIA — acesso restrito a Mestres */}
-                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' || userData?.nivel_acesso === 'admin') && (
-                  <button
-                    onClick={() => setCurrentPage('sindicancia')}
-                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                      currentPage === 'sindicancia'
-                        ? 'bg-primary-700 border-l-4 border-white'
-                        : 'hover:bg-primary-800'
-                    }`}
-                    title="Sindicância"
-                  >
-                    <span className="text-base">🔍</span>
-                    {menuAberto && <span className="font-semibold">Sindicância</span>}
-                  </button>
-                )}
-
                 <button
                   onClick={() => setCurrentPage('corpo-admin')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -2106,14 +2090,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         </button>
 
                         <button
-                          onClick={() => setCurrentPage('eventos-arrecadacao')}
+                          onClick={() => setCurrentPage('eventos-comemorativos')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'eventos-arrecadacao'
+                            currentPage === 'eventos-comemorativos'
                               ? 'bg-primary-700 border-l-4 border-white'
                               : 'hover:bg-primary-800'
                           }`}
                         >
-                          <span>🎪</span>
+                          <span>🎉</span>
                           <span>Eventos</span>
                         </button>
 
@@ -2599,7 +2583,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
-                  {currentPage === 'eventos-arrecadacao' && '🎪 Eventos de Arrecadação'}
+                  {currentPage === 'eventos-comemorativos' && '🎉 Eventos Comemorativos'}
                   {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'relatorio-financeiro' && '📊 Relatório Financeiro'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
