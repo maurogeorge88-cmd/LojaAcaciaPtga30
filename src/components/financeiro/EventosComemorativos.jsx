@@ -374,7 +374,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       criancas_meia: parseInt(form.criancas_meia) || 0,
       criancas_gratuitas: parseInt(form.criancas_gratuitas) || 0,
       cotas,
-      valor_final: valorCota > 0 ? cotas * valorCota : null,
+      valor_final: evento.valor_ajustado ? cotas * parseFloat(evento.valor_ajustado) : null,
     };
     if (partEdit) {
       const { error } = await supabase.from('evento_rateio_participantes').update(payload).eq('id', partEdit.id);
@@ -413,11 +413,11 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 
   // ── Recalcular valores dos participantes ──
   const recalcularParticipantes = async () => {
-    if (valorCota <= 0) { showError('Valor por cota não definido.'); return; }
+    if (valorCota <= 0) { showError('Defina o valor ajustado por cota antes de salvar.'); return; }
     for (const p of participantes) {
       await supabase.from('evento_rateio_participantes').update({ valor_final: parseFloat(p.cotas) * valorCota }).eq('id', p.id);
     }
-    showSuccess('✅ Valores recalculados!');
+    showSuccess('✅ Valores persistidos no banco!');
     carregar();
   };
 
@@ -499,7 +499,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           p.criancas_meia,
           p.criancas_gratuitas,
           parseFloat(p.cotas).toFixed(1),
-          p.valor_final ? `R$ ${parseFloat(p.valor_final).toFixed(2).replace('.', ',')}` : '-',
+          valorCota > 0 ? `R$ ${(parseFloat(p.cotas) * valorCota).toFixed(2).replace('.', ',')}` : '-',
         ]),
         styles: { fontSize: 8, cellPadding: 2 },
         headStyles: { fillColor: [40, 40, 40], textColor: 255 },
@@ -513,7 +513,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       y = doc.lastAutoTable.finalY + 6;
 
       // Total do rateio
-      const totalRateio = participantes.reduce((s, p) => s + parseFloat(p.valor_final || 0), 0);
+      const totalRateio = valorCota > 0 ? participantes.reduce((s, p) => s + parseFloat(p.cotas) * valorCota, 0) : 0;
       doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(40, 40, 40);
       doc.text(`Total do Rateio: R$ ${totalRateio.toFixed(2).replace('.', ',')}`, pW - 14, y, { align: 'right' });
     }
@@ -693,7 +693,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                           <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{p.criancas_meia}</td>
                           <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>{p.criancas_gratuitas}</td>
                           <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#3b82f6' }}>{parseFloat(p.cotas).toFixed(1)}</td>
-                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#10b981' }}>{p.valor_final ? fmtR(p.valor_final) : '—'}</td>
+                          <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 700, color: '#10b981' }}>{valorCota > 0 ? fmtR(parseFloat(p.cotas) * valorCota) : '—'}</td>
                           {!encerrado && (
                             <td style={{ padding: '0.55rem 0.65rem', textAlign: 'right' }}>
                               <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
@@ -710,7 +710,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                       <td colSpan={5} style={{ padding: '0.55rem 0.65rem', fontWeight: 700, color: 'var(--color-text)' }}>TOTAL</td>
                       <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 800, color: '#3b82f6' }}>{totalCotas.toFixed(1)}</td>
                       <td style={{ padding: '0.55rem 0.65rem', textAlign: 'center', fontWeight: 800, color: '#10b981' }}>
-                        {fmtR(participantes.reduce((s, p) => s + parseFloat(p.valor_final || 0), 0))}
+                        {valorCota > 0 ? fmtR(participantes.reduce((s, p) => s + parseFloat(p.cotas) * valorCota, 0)) : '—'}
                       </td>
                       <td />
                     </tr>
