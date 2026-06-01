@@ -596,6 +596,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       dados = formLancamento;
     }
 
+    // Renovar sessão para evitar JWT expired
+    await supabase.auth.refreshSession();
+
     // Verificar se o mês está fechado
     const dataRef = dados.data_pagamento || dados.data_lancamento || dados.data_vencimento;
     if (dataRef && verificarMesBloqueado(dataRef)) {
