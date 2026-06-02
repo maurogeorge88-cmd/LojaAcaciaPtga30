@@ -23,7 +23,11 @@ export default function DadosLoja({ showSuccess, showError }) {
     oriente: '',
     vale: '',
     logo_url: '',
-    simbolo_masonico_url: '' // Símbolo Esquadro e Compasso
+    simbolo_masonico_url: '',
+    // Novos campos
+    cnpj: '',
+    nome_cartorio: 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT – 2º SERVIÇO NOTORIAL E REGISTRAL',
+    numero_registro_cartorio: '04, do Livro A-01',
   });
 
   useEffect(() => {
@@ -37,18 +41,12 @@ export default function DadosLoja({ showSuccess, showError }) {
         .select('*')
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
+      if (error && error.code !== 'PGRST116') throw error;
 
       if (data) {
-        setDadosLoja(data);
-        if (data.logo_url) {
-          setLogoPreview(data.logo_url);
-        }
-        if (data.simbolo_masonico_url) {
-          setSimboloPreview(data.simbolo_masonico_url);
-        }
+        setDadosLoja(prev => ({ ...prev, ...data }));
+        if (data.logo_url) setLogoPreview(data.logo_url);
+        if (data.simbolo_masonico_url) setSimboloPreview(data.simbolo_masonico_url);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -59,113 +57,84 @@ export default function DadosLoja({ showSuccess, showError }) {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setDadosLoja(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setDadosLoja(prev => ({ ...prev, [name]: value }));
   };
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validar tipo de arquivo
-    if (!file.type.startsWith('image/')) {
-      showError('Por favor, selecione uma imagem válida');
-      return;
-    }
-
-    // Validar tamanho (máx 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      showError('A imagem deve ter no máximo 2MB');
-      return;
-    }
-
-    try {
-      // Converter para base64
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result;
-        setLogoPreview(base64String);
-        setDadosLoja(prev => ({
-          ...prev,
-          logo_url: base64String
-        }));
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      showError('Erro ao processar a imagem');
-    }
+    if (!file.type.startsWith('image/')) { showError('Selecione uma imagem válida'); return; }
+    if (file.size > 2 * 1024 * 1024) { showError('A imagem deve ter no máximo 2MB'); return; }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+      setDadosLoja(prev => ({ ...prev, logo_url: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSimboloUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // Validar tipo de arquivo
-    if (!file.type.startsWith('image/')) {
-      showError('Por favor, selecione uma imagem válida');
-      return;
-    }
-
-    // Validar tamanho (máx 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      showError('A imagem deve ter no máximo 2MB');
-      return;
-    }
-
-    try {
-      // Converter para base64
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result;
-        setSimboloPreview(base64String);
-        setDadosLoja(prev => ({
-          ...prev,
-          simbolo_masonico_url: base64String
-        }));
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      showError('Erro ao processar imagem');
-      console.error(error);
-    }
+    if (!file.type.startsWith('image/')) { showError('Selecione uma imagem válida'); return; }
+    if (file.size > 2 * 1024 * 1024) { showError('A imagem deve ter no máximo 2MB'); return; }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSimboloPreview(reader.result);
+      setDadosLoja(prev => ({ ...prev, simbolo_masonico_url: reader.result }));
+    };
+    reader.readAsDataURL(file);
   };
 
   const salvar = async () => {
     try {
-      const { data: existing } = await supabase
-        .from('dados_loja')
-        .select('id')
-        .single();
-
+      const { data: existing } = await supabase.from('dados_loja').select('id').single();
       let error;
-
       if (existing) {
-        // Atualizar
-        const result = await supabase
-          .from('dados_loja')
-          .update(dadosLoja)
-          .eq('id', existing.id);
-        error = result.error;
+        ({ error } = await supabase.from('dados_loja').update(dadosLoja).eq('id', existing.id));
       } else {
-        // Inserir
-        const result = await supabase
-          .from('dados_loja')
-          .insert([dadosLoja]);
-        error = result.error;
+        ({ error } = await supabase.from('dados_loja').insert([dadosLoja]));
       }
-
       if (error) throw error;
-
       showSuccess('Dados da loja salvos com sucesso!');
       setEditando(false);
       carregarDados();
     } catch (error) {
       showError('Erro ao salvar: ' + error.message);
-      console.error(error);
     }
   };
+
+  const btnPrimario = {
+    display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+    padding: '0.75rem 1.5rem', fontSize: '0.875rem', fontWeight: '600',
+    color: 'white', background: 'var(--color-accent)', border: 'none',
+    borderRadius: 'var(--radius-lg)', cursor: 'pointer', transition: 'all 0.2s ease',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+  };
+  const btnSecundario = {
+    ...btnPrimario,
+    color: 'var(--color-text)', background: 'var(--color-surface-2)',
+    border: '2px solid var(--color-border)', boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  };
+  const btnSucesso = {
+    ...btnPrimario,
+    background: 'var(--color-success)', boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+  };
+
+  const secaoTitulo = (emoji, titulo) => (
+    <div style={{
+      gridColumn: '1 / -1',
+      display: 'flex', alignItems: 'center', gap: '0.5rem',
+      paddingBottom: '0.5rem',
+      borderBottom: '2px solid var(--color-accent)',
+      marginTop: '0.5rem',
+    }}>
+      <span>{emoji}</span>
+      <span style={{ fontWeight: '700', fontSize: '0.875rem', color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {titulo}
+      </span>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -180,374 +149,175 @@ export default function DadosLoja({ showSuccess, showError }) {
     <div className="space-y-6 px-8 py-6 min-h-screen" style={{ backgroundColor: 'var(--color-bg)' }}>
       {/* Header */}
       <div className="flex justify-between items-center">
-        <p style={{ color: 'var(--color-text-muted)' }}>Cadastrar Dados da Loja</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>Dados e configurações da Loja</p>
         {!editando ? (
-          <button
-            onClick={() => setEditando(true)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              padding: '0.75rem 1.5rem',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: 'white',
-              background: 'var(--color-accent)',
-              border: 'none',
-              borderRadius: 'var(--radius-lg)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.25)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
-            }}
-          >
-            ✏️ Editar
-          </button>
+          <button style={btnPrimario} onClick={() => setEditando(true)}
+            onMouseEnter={e => { e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 6px 20px rgba(0,0,0,0.25)'; }}
+            onMouseLeave={e => { e.target.style.transform = ''; e.target.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)'; }}
+          >✏️ Editar</button>
         ) : (
           <div className="flex gap-2">
-            <button
-              onClick={() => {
-                setEditando(false);
-                carregarDados();
-              }}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: 'var(--color-text)',
-                background: 'var(--color-surface-2)',
-                border: '2px solid var(--color-border)',
-                borderRadius: 'var(--radius-lg)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'var(--color-surface-3)';
-                e.target.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'var(--color-surface-2)';
-                e.target.style.transform = 'translateY(0)';
-              }}
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={salvar}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.875rem',
-                fontWeight: '600',
-                color: 'white',
-                background: 'var(--color-success)',
-                border: 'none',
-                borderRadius: 'var(--radius-lg)',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = 'var(--color-success-hover)';
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = 'var(--color-success)';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
-              }}
-            >
-              💾 Salvar
-            </button>
+            <button style={btnSecundario} onClick={() => { setEditando(false); carregarDados(); }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--color-surface-3)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--color-surface-2)'}
+            >Cancelar</button>
+            <button style={btnSucesso} onClick={salvar}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(16,185,129,0.4)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16,185,129,0.3)'; }}
+            >💾 Salvar</button>
           </div>
         )}
       </div>
 
-      {/* Conteúdo */}
       <div className="card">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
+
+          {secaoTitulo('🖼️', 'Identidade Visual')}
+
           {/* Logo */}
           <div>
-            <label className="form-label">
-              🖼️ Logo da Loja
-            </label>
+            <label className="form-label">Logo da Loja</label>
             <div className="flex items-center gap-4">
               {logoPreview && (
-                <div className="w-32 h-32 border-2 rounded-lg overflow-hidden flex items-center justify-center" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-2)' }}>
-                  <img 
-                    src={logoPreview} 
-                    alt="Logo" 
-                    className="max-w-full max-h-full object-contain"
-                  />
+                <div className="w-32 h-32 border-2 rounded-lg overflow-hidden flex items-center justify-center"
+                  style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface-2)' }}>
+                  <img src={logoPreview} alt="Logo" className="max-w-full max-h-full object-contain" />
                 </div>
               )}
               {editando && (
                 <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="file-input"
-                  />
-                  <p className="form-hint">PNG, JPG ou GIF (máx. 2MB)</p>
+                  <input type="file" accept="image/*" onChange={handleLogoUpload} className="file-input" />
+                  <p className="form-hint">PNG, JPG (máx. 2MB)</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Símbolo Maçônico */}
+          {/* Símbolo */}
           <div>
-            <label className="form-label">
-              ⚜️ Símbolo Maçônico (Esquadro e Compasso)
-            </label>
+            <label className="form-label">⚜️ Símbolo Maçônico</label>
             <div className="flex items-center gap-4">
               {simboloPreview && (
-                <div className="w-32 h-32 border-2 rounded-lg overflow-hidden flex items-center justify-center" style={{ borderColor: 'var(--color-accent)', backgroundColor: 'var(--color-accent-bg)' }}>
-                  <img 
-                    src={simboloPreview} 
-                    alt="Símbolo Maçônico" 
-                    className="max-w-full max-h-full object-contain"
-                  />
+                <div className="w-32 h-32 border-2 rounded-lg overflow-hidden flex items-center justify-center"
+                  style={{ borderColor: 'var(--color-accent)', backgroundColor: 'var(--color-accent-bg)' }}>
+                  <img src={simboloPreview} alt="Símbolo" className="max-w-full max-h-full object-contain" />
                 </div>
               )}
               {editando && (
                 <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleSimboloUpload}
-                    className="file-input"
-                  />
+                  <input type="file" accept="image/*" onChange={handleSimboloUpload} className="file-input" />
                   <p className="form-hint">PNG com fundo transparente (máx. 2MB)</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Nome da Loja */}
+          <div /> {/* espaço */}
+
+          {secaoTitulo('🏛️', 'Identificação da Loja')}
+
           <div>
-            <label className="form-label">
-              Nome da Loja *
-            </label>
-            <input
-              type="text"
-              name="nome_loja"
-              value={dadosLoja.nome_loja}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: Acácia de Paranatinga"
-            />
+            <label className="form-label">Nome da Loja *</label>
+            <input type="text" name="nome_loja" value={dadosLoja.nome_loja} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: Acácia de Paranatinga" />
           </div>
 
-          {/* Número */}
           <div>
-            <label className="form-label">
-              Número *
-            </label>
-            <input
-              type="text"
-              name="numero_loja"
-              value={dadosLoja.numero_loja}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: 30"
-            />
+            <label className="form-label">Número *</label>
+            <input type="text" name="numero_loja" value={dadosLoja.numero_loja} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: 30" />
           </div>
 
-          {/* Data de Fundação */}
           <div>
-            <label className="form-label">
-              Data de Fundação
-            </label>
-            <input
-              type="date"
-              name="data_fundacao"
-              value={dadosLoja.data_fundacao}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-            />
+            <label className="form-label">CNPJ</label>
+            <input type="text" name="cnpj" value={dadosLoja.cnpj} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="00.000.000/0000-00" />
           </div>
 
-          {/* Potência */}
           <div>
-            <label className="form-label">
-              Potência Maçônica
-            </label>
-            <input
-              type="text"
-              name="potencia"
-              value={dadosLoja.potencia}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: Grande Oriente do Brasil"
-            />
+            <label className="form-label">Data de Fundação</label>
+            <input type="date" name="data_fundacao" value={dadosLoja.data_fundacao} onChange={handleChange}
+              disabled={!editando} className="form-input" />
           </div>
 
-          {/* Grande Loja */}
           <div>
-            <label className="form-label">
-              Grande Loja
-            </label>
-            <input
-              type="text"
-              name="grande_loja"
-              value={dadosLoja.grande_loja}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: Grande Loja Maçônica de Mato Grosso"
-            />
+            <label className="form-label">Potência Maçônica</label>
+            <input type="text" name="potencia" value={dadosLoja.potencia} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: Grande Oriente do Brasil" />
           </div>
 
-          {/* Oriente */}
           <div>
-            <label className="form-label">
-              Oriente
-            </label>
-            <input
-              type="text"
-              name="oriente"
-              value={dadosLoja.oriente}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: Paranatinga"
-            />
+            <label className="form-label">Grande Loja</label>
+            <input type="text" name="grande_loja" value={dadosLoja.grande_loja} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: GLEMT" />
           </div>
 
-          {/* Vale */}
           <div>
-            <label className="form-label">
-              Vale
-            </label>
-            <input
-              type="text"
-              name="vale"
-              value={dadosLoja.vale}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: Cuiabá"
-            />
+            <label className="form-label">Oriente</label>
+            <input type="text" name="oriente" value={dadosLoja.oriente} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: Paranatinga" />
           </div>
 
-          {/* Endereço */}
+          <div>
+            <label className="form-label">Vale</label>
+            <input type="text" name="vale" value={dadosLoja.vale} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: Cuiabá" />
+          </div>
+
+          {secaoTitulo('📍', 'Endereço e Contato')}
+
           <div className="md:col-span-2">
-            <label className="form-label">
-              Endereço
-            </label>
-            <input
-              type="text"
-              name="endereco"
-              value={dadosLoja.endereco}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Rua, número"
-            />
+            <label className="form-label">Endereço</label>
+            <input type="text" name="endereco" value={dadosLoja.endereco} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Avenida, Rua, número, bairro" />
           </div>
 
-          {/* Cidade */}
           <div>
-            <label className="form-label">
-              Cidade
-            </label>
-            <input
-              type="text"
-              name="cidade"
-              value={dadosLoja.cidade}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: Paranatinga"
-            />
+            <label className="form-label">Cidade</label>
+            <input type="text" name="cidade" value={dadosLoja.cidade} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="Ex: Paranatinga" />
           </div>
 
-          {/* Estado */}
           <div>
-            <label className="form-label">
-              Estado
-            </label>
-            <input
-              type="text"
-              name="estado"
-              value={dadosLoja.estado}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="Ex: MT"
-              maxLength={2}
-            />
+            <label className="form-label">Estado</label>
+            <input type="text" name="estado" value={dadosLoja.estado} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="MT" maxLength={2} />
           </div>
 
-          {/* CEP */}
           <div>
-            <label className="form-label">
-              CEP
-            </label>
-            <input
-              type="text"
-              name="cep"
-              value={dadosLoja.cep}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="00000-000"
-            />
+            <label className="form-label">CEP</label>
+            <input type="text" name="cep" value={dadosLoja.cep} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="00000-000" />
           </div>
 
-          {/* Telefone */}
           <div>
-            <label className="form-label">
-              Telefone
-            </label>
-            <input
-              type="text"
-              name="telefone"
-              value={dadosLoja.telefone}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="(00) 00000-0000"
-            />
+            <label className="form-label">Telefone</label>
+            <input type="text" name="telefone" value={dadosLoja.telefone} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="(00) 00000-0000" />
           </div>
 
-          {/* Email */}
           <div>
-            <label className="form-label">
-              E-mail
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={dadosLoja.email}
-              onChange={handleChange}
-              disabled={!editando}
-              className="form-input"
-              placeholder="contato@loja.com.br"
-            />
+            <label className="form-label">E-mail</label>
+            <input type="email" name="email" value={dadosLoja.email} onChange={handleChange}
+              disabled={!editando} className="form-input" placeholder="contato@loja.com.br" />
+          </div>
+
+          {secaoTitulo('🏢', 'Dados para Cartório (Registro de PJ)')}
+
+          <div className="md:col-span-3">
+            <label className="form-label">Nome / Destinatário do Cartório</label>
+            <input type="text" name="nome_cartorio" value={dadosLoja.nome_cartorio} onChange={handleChange}
+              disabled={!editando} className="form-input"
+              placeholder="ILMª. SRª. TABELIÃ DO CARTÓRIO..." />
+            <p className="form-hint">Usado no cabeçalho dos requerimentos</p>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="form-label">Número do Registro no Cartório</label>
+            <input type="text" name="numero_registro_cartorio" value={dadosLoja.numero_registro_cartorio}
+              onChange={handleChange} disabled={!editando} className="form-input"
+              placeholder="Ex: 04, do Livro A-01" />
+            <p className="form-hint">Aparece nos requerimentos de averbação da ata de eleição</p>
           </div>
 
         </div>
