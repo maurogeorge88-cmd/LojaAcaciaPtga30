@@ -3,9 +3,29 @@
  * Sistema A∴R∴L∴S∴ Acácia de Paranatinga nº 30
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
+
+const STATUS_ELEICAO = {
+  rascunho:            { label: 'Em Processo de Eleição', emoji: '📝', cor: '#f59e0b' },
+  eleicao_realizada:   { label: 'Eleita — Aguardando Posse', emoji: '✅', cor: '#3b82f6' },
+  posse_realizada:     { label: 'Empossada', emoji: '🎖️', cor: '#10b981' },
+  registrado_cartorio: { label: 'Registrada em Cartório', emoji: '🏛️', cor: '#d97706' },
+};
+
+const formatarData = (d) => {
+  if (!d) return '';
+  const [ano, mes, dia] = d.split('-');
+  return `${dia}/${mes}/${ano}`;
+};
+
+const ORDEM_CARGOS_ADM = [
+  'Veneravel Mestre','Primeiro Vigilante','Segundo Vigilante','Orador','Secretario',
+  'Tesoureiro','Chanceler','Hospitaleiro','Mestre de Cerimonia','Mestre de Harmonia',
+  'Mestre de Banquetes','Porta Espada','Porta Estandarte','Diácono','Cobridor Externo',
+  'Cobridor Interno','Bibliotecario',
+];
 
 export const CorpoAdmin = ({ 
   corpoAdmin, 
@@ -15,6 +35,37 @@ export const CorpoAdmin = ({
   showSuccess,
   showError 
 }) => {
+  const [eleicaoAtiva, setEleicaoAtiva] = React.useState(null);
+  const [chapasEleicao, setChapasEleicao] = React.useState([]);
+
+  React.useEffect(() => {
+    carregarEleicaoAtiva();
+  }, []);
+
+  const carregarEleicaoAtiva = async () => {
+    try {
+      const { data } = await supabase
+        .from('eleicoes')
+        .select('*')
+        .in('status', ['rascunho','eleicao_realizada','posse_realizada','registrado_cartorio'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (data) {
+        setEleicaoAtiva(data);
+        const { data: chapas } = await supabase
+          .from('eleicao_chapas')
+          .select('*')
+          .eq('eleicao_id', data.id)
+          .eq('eleita', true)
+          .order('ordem');
+        setChapasEleicao(chapas || []);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar eleição ativa:', e);
+    }
+  };
   const [corpoAdminForm, setCorpoAdminForm] = useState({
     irmao_id: '',
     cargo: '',
@@ -116,6 +167,74 @@ export const CorpoAdmin = ({
       background: 'var(--color-bg)', 
       minHeight: '100vh' 
     }}>
+
+      {/* ── BANNER: DIRETORIA ELEITA / EM PROCESSO ── */}
+      {eleicaoAtiva && (
+        <div style={{
+          marginBottom: '1.5rem',
+          background: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-lg)',
+          overflow: 'hidden',
+        }}>
+          {/* Cabeçalho do banner */}
+          <div style={{
+            padding: '1rem 1.5rem',
+            background: 'var(--color-accent)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div>
+              <span style={{ fontWeight: '700', fontSize: '1rem', color: 'white' }}>
+                {STATUS_ELEICAO[eleicaoAtiva.status]?.emoji} Gestão {eleicaoAtiva.gestao}
+              </span>
+              {eleicaoAtiva.data_posse && (
+                <span style={{ marginLeft: '1rem', fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)' }}>
+                  Posse: {formatarData(eleicaoAtiva.data_posse)}
+                </span>
+              )}
+            </div>
+            <span style={{
+              background: 'rgba(255,255,255,0.2)', color: 'white', fontSize: '0.75rem',
+              fontWeight: '700', padding: '0.25rem 0.75rem', borderRadius: '999px',
+            }}>
+              {STATUS_ELEICAO[eleicaoAtiva.status]?.label}
+            </span>
+          </div>
+
+          {/* Grade de cargos eleitos */}
+          {chapasEleicao.length > 0 && (
+            <div style={{ padding: '1rem 1.5rem' }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+                gap: '0.5rem',
+              }}>
+                {chapasEleicao
+                  .sort((a, b) => ORDEM_CARGOS_ADM.indexOf(a.cargo) - ORDEM_CARGOS_ADM.indexOf(b.cargo))
+                  .map(c => {
+                    const irmao = irmaos?.find(i => i.id === c.irmao_id);
+                    return (
+                      <div key={c.id} style={{
+                        display: 'flex', gap: '0.6rem', alignItems: 'center',
+                        padding: '0.4rem 0.75rem',
+                        background: 'var(--color-surface-2)',
+                        borderRadius: 'var(--radius-md)',
+                      }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--color-accent)', minWidth: '140px' }}>
+                          {c.cargo}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--color-text)' }}>
+                          {irmao?.nome || '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* FORMULÁRIO DE CADASTRO - SÓ PARA ADMIN */}
       {permissoes?.pode_editar_corpo_admin && (
         <div className="card">
