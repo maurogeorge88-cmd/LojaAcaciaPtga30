@@ -384,9 +384,22 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     }
     setLoadingAcao(true);
     try {
+      const payload = {
+        ...form,
+        status: 'rascunho',
+        vm_convocante_id:    form.vm_convocante_id    || null,
+        secretario_id:       form.secretario_id       || null,
+        presidente_eleito_id:form.presidente_eleito_id|| null,
+        data_eleicao:        form.data_eleicao        || null,
+        data_edital_eleicao: form.data_edital_eleicao || null,
+        data_posse:          form.data_posse          || null,
+        data_edital_posse:   form.data_edital_posse   || null,
+        hora_eleicao:        form.hora_eleicao        || null,
+        hora_posse:          form.hora_posse          || null,
+      };
       const { data, error } = await supabase
         .from('eleicoes')
-        .insert([{ ...form, status: 'rascunho' }])
+        .insert([payload])
         .select()
         .single();
       if (error) throw error;
@@ -406,10 +419,14 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const atualizarEleicao = async (campos) => {
     if (!eleicaoSelecionada) return;
     setLoadingAcao(true);
+    // Sanitiza strings vazias em campos BIGINT e DATE
+    const camposSanitizados = Object.fromEntries(
+      Object.entries(campos).map(([k, v]) => [k, v === '' ? null : v])
+    );
     try {
       const { data, error } = await supabase
         .from('eleicoes')
-        .update(campos)
+        .update(camposSanitizados)
         .eq('id', eleicaoSelecionada.id)
         .select()
         .single();
