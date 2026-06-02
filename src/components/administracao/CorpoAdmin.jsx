@@ -458,9 +458,12 @@ export const CorpoAdmin = ({
                           if (c.includes('mestre') && c.includes('banquete')) return 'mestre de banquetes';
                           if (c.includes('porta') && c.includes('espada')) return 'porta espada';
                           if (c.includes('porta') && c.includes('estandarte')) return 'porta estandarte';
-                          if (c.includes('diacono') || c.includes('diácono')) return 'diacono';
+                          if (c.includes('1') && (c.includes('diacono') || c.includes('diácono'))) return '1º diacono';
+                          if (c.includes('2') && (c.includes('diacono') || c.includes('diácono'))) return '2º diacono';
+                          if (c.includes('diacono') || c.includes('diácono')) return '1º diacono';
                           if (c.includes('cobridor') && c.includes('externo')) return 'cobridor externo';
-                          if (c.includes('cobridor') && c.includes('interno')) return 'cobridor interno';
+                          if (c.includes('guarda') && c.includes('templo')) return 'guarda do templo';
+                          if (c.includes('cobridor') && c.includes('interno')) return 'guarda do templo';
                           if (c.includes('bibliotecario') || c.includes('bibliotecário')) return 'bibliotecario';
                           
                           return c;
@@ -481,9 +484,10 @@ export const CorpoAdmin = ({
                           'mestre de banquetes',
                           'porta espada',
                           'porta estandarte',
-                          'diacono',
+                          '1º diacono',
+                          '2º diacono',
                           'cobridor externo',
-                          'cobridor interno',
+                          'guarda do templo',
                           'bibliotecario'
                         ];
                         
