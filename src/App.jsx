@@ -53,6 +53,7 @@ import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
+import EleicaoPosse from './components/administracao/EleicaoPosse';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1838,6 +1839,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('eleicao-posse')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'eleicao-posse'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Eleição & Posse"
+                >
+                  <span className="text-base">⚖️</span>
+                  {menuAberto && <span className="font-semibold">Eleição &amp; Posse</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('altos-graus')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'altos-graus'
@@ -2459,6 +2473,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('eleicao-posse')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'eleicao-posse'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Eleição & Posse"
+                >
+                  <span className="text-base">⚖️</span>
+                  {menuAberto && <span className="font-semibold">Eleição &amp; Posse</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'sobre'
@@ -2601,6 +2628,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'dados-loja' && '🏛️ Dados da Loja'}
                   {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
                   {currentPage === 'sindicancia' && '🔍 Sindicância'}
+                  {currentPage === 'eleicao-posse' && '⚖️ Eleição & Posse'}
                 </h2>
               </div>
               <div className="flex items-center gap-4">
@@ -2821,6 +2849,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             permissoes={permissoes}
             onUpdate={loadCorpoAdmin}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {/* ELEIÇÃO & POSSE */}
+        {currentPage === 'eleicao-posse' && (
+          <EleicaoPosse
+            permissoes={permissoes}
+            irmaos={irmaos}
             showSuccess={showSuccess}
             showError={showError}
           />
