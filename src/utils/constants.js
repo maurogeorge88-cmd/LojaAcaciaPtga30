@@ -60,9 +60,10 @@ export const CARGOS_ADMINISTRATIVOS = [
   'Mestre de Banquetes',
   'Porta Espada',
   'Porta Estandarte',
-  'Diácono',
+  '1º Diácono',
+  '2º Diácono',
   'Cobridor Externo',
-  'Cobridor Interno',
+  'Guarda do Templo',
   'Bibliotecario'
 ];
 
