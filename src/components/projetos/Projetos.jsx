@@ -353,7 +353,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <form onSubmit={salvarProjeto} className="rounded-xl p-6 mb-6 border-2 border-indigo-200 mx-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+        <form onSubmit={salvarProjeto} className="rounded-xl p-6 mb-6 border-2 border-indigo-200 mx-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
             {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
           </h3>
@@ -701,7 +701,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Modal de Receitas */}
       {mostrarReceitas && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
             <div style={{background:"#10b981",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
               <div className="flex justify-between items-center">
@@ -725,7 +725,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             <div className="p-6">
               {/* Formulário de Nova Receita */}
               {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <h4 className="font-bold mb-3">➕ Adicionar Receita</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input
@@ -871,7 +871,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Modal de Custos */}
       {mostrarCustos && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
             <div style={{background:"#8b5cf6",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
               <div className="flex justify-between items-center">
@@ -895,7 +895,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             <div className="p-6">
               {/* Formulário de Novo Custo */}
               {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <h4 className="font-bold mb-3">➕ Adicionar Custo</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input
