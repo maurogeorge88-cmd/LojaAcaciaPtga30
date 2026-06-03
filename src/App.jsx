@@ -1670,7 +1670,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       }`}
                     >
                       <span>🎉</span>
-                      <span>Eventos</span>
+                      <span>Eventos Beneficentes</span>
                     </button>
                   </div>
                 )}
@@ -2112,7 +2112,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           }`}
                         >
                           <span>🎉</span>
-                          <span>Eventos</span>
+                          <span>Ágape &amp; Festas</span>
                         </button>
 
                         <button
@@ -2201,7 +2201,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           }`}
                         >
                           <span>🎉</span>
-                          <span>Eventos</span>
+                          <span>Eventos Beneficentes</span>
                         </button>
                       </div>
                     )}
@@ -2610,11 +2610,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
-                  {currentPage === 'eventos-comemorativos' && '🎉 Eventos Comemorativos'}
+                  {currentPage === 'eventos-comemorativos' && '🎉 Ágape & Festas'}
                   {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'relatorio-financeiro' && '📊 Relatório Financeiro'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
-                  {currentPage === 'eventos' && '🎉 Eventos'}
+                  {currentPage === 'eventos' && '🎉 Eventos Beneficentes'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
                   {currentPage === 'dashboard-presenca' && '📊 Dashboard de Presença'}
                   {currentPage === 'cadastro-sessao' && '📋 Cadastro de Sessão'}
