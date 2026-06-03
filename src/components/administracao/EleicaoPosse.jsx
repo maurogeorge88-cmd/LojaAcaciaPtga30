@@ -76,12 +76,12 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       i.nacionalidade || 'brasileiro',
       i.estado_civil  || null,
       i.profissao     || null,
-      i.naturalidade  ?  : null,
-      i.data_nascimento ?  : null,
-      (i.nome_pai && i.nome_mae) ?  : i.nome_mae ?  : null,
-      i.rg  ?  : null,
-      i.cpf ?  : null,
-      i.endereco_completo ?  : null,
+      i.naturalidade  ? `natural de ${i.naturalidade}` : null,
+      i.data_nascimento ? `nascido em ${formatarData(i.data_nascimento)}` : null,
+      (i.nome_pai && i.nome_mae) ? `filho de ${i.nome_pai} e ${i.nome_mae}` : i.nome_mae ? `filho de ${i.nome_mae}` : null,
+      i.rg  ? `portador da Cédula de Identidade RG sob nº ${i.rg}` : null,
+      i.cpf ? `CPF/MF nº ${i.cpf}` : null,
+      i.endereco_completo ? `residente e domiciliado ${i.endereco_completo}` : null,
     ].filter(Boolean).join(', ');
   };
 
