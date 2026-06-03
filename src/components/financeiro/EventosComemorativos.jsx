@@ -886,31 +886,6 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 // ─────────────────────────────────────────────
 //  Componente Principal
 // ─────────────────────────────────────────────
-// ─── MiniCard: indicador compacto nos cards da lista ────────
-function MiniCard({ label, valor, sufixo, cor, flex, fullWidth, center }) {
-  const cores = {
-    default: { bg: 'var(--color-surface-2)', border: 'var(--color-border)',     text: 'var(--color-text)',   label: 'var(--color-text-muted)' },
-    blue:    { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.25)',  text: '#3b82f6',             label: '#3b82f6' },
-    green:   { bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)',  text: '#10b981',             label: '#10b981' },
-    red:     { bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',    text: '#ef4444',             label: '#ef4444' },
-    gold:    { bg: 'var(--color-accent-bg)', border: 'rgba(201,168,76,0.35)', text: 'var(--color-accent)', label: 'var(--color-accent)' },
-  };
-  const t = cores[cor] || cores.default;
-  return (
-    <div style={{
-      background: t.bg, borderRadius: 'var(--radius-md)',
-      padding: '0.35rem 0.6rem', border: `1px solid ${t.border}`,
-      flex: flex || (fullWidth ? '1 1 100%' : undefined),
-      minWidth: 0,
-    }}>
-      <div style={{ fontSize: '0.62rem', fontWeight: 600, color: t.label, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: center ? 'center' : 'left' }}>{label}</div>
-      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: center ? 'center' : 'left' }}>
-        {valor}{sufixo ? <span style={{ fontSize: '0.65rem', fontWeight: 400, marginLeft: '0.2rem', opacity: 0.7 }}>{sufixo}</span> : null}
-      </div>
-    </div>
-  );
-}
-
 export default function EventosComemorativos({ showSuccess, showError }) {
   const [eventos, setEventos] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -923,54 +898,8 @@ export default function EventosComemorativos({ showSuccess, showError }) {
 
   const carregarEventos = async () => {
     setCarregando(true);
-    const [{ data: evs }, { data: parts }, { data: lancs }] = await Promise.all([
-      supabase.from('eventos_comemorativos_fin').select('*').order('ano', { ascending: false }).order('data_evento', { ascending: false }),
-      supabase.from('evento_rateio_participantes').select('evento_id, adultos_convidados, criancas_meia, criancas_gratuitas, irmao_id'),
-      supabase.from('lancamentos_loja').select('evento_comemorativo_id, valor').not('evento_comemorativo_id', 'is', null),
-    ]);
-    // Agrega por evento
-    const partsPorEvento = {};
-    (parts || []).forEach(p => {
-      if (!partsPorEvento[p.evento_id]) partsPorEvento[p.evento_id] = [];
-      partsPorEvento[p.evento_id].push(p);
-    });
-    const lancsPorEvento = {};
-    (lancs || []).forEach(l => {
-      if (!lancsPorEvento[l.evento_comemorativo_id]) lancsPorEvento[l.evento_comemorativo_id] = 0;
-      lancsPorEvento[l.evento_comemorativo_id] += parseFloat(l.valor || 0);
-    });
-    const eventosEnriquecidos = (evs || []).map(ev => {
-      const ps = partsPorEvento[ev.id] || [];
-      // Irmãos = linhas com irmao_id; Externos = linhas com nome_externo
-      const irmaos_ps    = ps.filter(p => p.irmao_id);
-      const externos_ps  = ps.filter(p => !p.irmao_id);
-      const qtdIrmaos    = irmaos_ps.length;
-      const qtdExternos  = externos_ps.length;
-      // Adultos convidados: soma de adultos_convidados de TODOS (irmãos trazem convidados tbm)
-      const qtdAdultosConv = ps.reduce((s, p) => s + (parseInt(p.adultos_convidados) || 0), 0);
-      // Meia e gratuitas: soma geral
-      const qtdMeia      = ps.reduce((s, p) => s + (parseInt(p.criancas_meia) || 0), 0);
-      const qtdGratuitas = ps.reduce((s, p) => s + (parseInt(p.criancas_gratuitas) || 0), 0);
-      const totalDespesas = lancsPorEvento[ev.id] || 0;
-      const contribuicaoLoja = parseFloat(ev.contribuicao_loja || 0);
-      const baseRateio = Math.max(0, totalDespesas - contribuicaoLoja);
-      // Cotas: irmão = 1; cada externo = 1; cada adulto convidado = 1; meia = 0.5; gratuitas = 0
-      const totalCotas = qtdIrmaos + qtdExternos + qtdAdultosConv + (qtdMeia * 0.5);
-      const valorCalc = totalCotas > 0 ? baseRateio / totalCotas : 0;
-      return {
-        ...ev,
-        _qtdIrmaos: qtdIrmaos,
-        _qtdExternos: qtdExternos,
-        _qtdAdultosConv: qtdAdultosConv,
-        _qtdMeia: qtdMeia,
-        _qtdGratuitas: qtdGratuitas,
-        _totalDespesas: totalDespesas,
-        _baseRateio: baseRateio,
-        _totalCotas: totalCotas,
-        _valorCalc: valorCalc,
-      };
-    });
-    setEventos(eventosEnriquecidos);
+    const { data } = await supabase.from('eventos_comemorativos_fin').select('*').order('ano', { ascending: false }).order('data_evento', { ascending: false });
+    setEventos(data || []);
     setCarregando(false);
   };
 
@@ -995,7 +924,6 @@ export default function EventosComemorativos({ showSuccess, showError }) {
       idade_gratuita: form.idade_gratuita,
       idade_meia: form.idade_meia,
       valor_ajustado: form.valor_ajustado ? parseFloat(form.valor_ajustado) : null,
-      contribuicao_loja: form.contribuicao_loja ? parseFloat(form.contribuicao_loja) : null,
       contribuicao_loja: form.contribuicao_loja ? parseFloat(form.contribuicao_loja) : null,
     }).select().single();
     if (error) throw error;
@@ -1090,63 +1018,11 @@ export default function EventosComemorativos({ showSuccess, showError }) {
                         {encerrado ? '✅ Encerrado' : '⚙️ Em Aberto'}
                       </span>
                     </div>
-                    {/* Linha 1: data + descrição */}
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
                       {ev.data_evento && <span>📅 {fmtD(ev.data_evento)}</span>}
+                      {ev.valor_ajustado && <span>💰 Valor/cota: <strong style={{ color: 'var(--color-text)' }}>{fmtR(ev.valor_ajustado)}</strong></span>}
                       {ev.descricao && <span>📝 {ev.descricao}</span>}
                     </div>
-                    {/* Grid hierárquico de indicadores */}
-                    {(() => {
-                      const totalAdultos = (ev._qtdIrmaos||0) + (ev._qtdExternos||0) + (ev._qtdAdultosConv||0);
-                      const totalMeia    = ev._qtdMeia || 0;
-                      const totalGratis  = ev._qtdGratuitas || 0;
-                      const totalGeral   = totalAdultos + totalMeia + totalGratis;
-                      return (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}>
-
-                          {/* LINHA 1 — totalizador geral */}
-                          <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            <MiniCard fullWidth center label="👥 Total de Convidados" valor={totalGeral} sufixo={`pess. (${totalAdultos} adultos · ${totalMeia} meia · ${totalGratis} grátis)`} cor="gold" />
-                          </div>
-
-                          {/* LINHA 2 — dois grupos lado a lado */}
-                          <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            {/* Grupo adultos */}
-                            <div style={{ flex: 3, display: 'flex', flexDirection: 'column', gap: '0.25rem', background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 'var(--radius-md)', padding: '0.4rem' }}>
-                              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
-                                Adultos — {totalAdultos} pess.
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                <MiniCard label="👤 Irmãos"    valor={ev._qtdIrmaos||0}    sufixo="pess." flex={1} />
-                                <MiniCard label="🧑 Ad. Conv." valor={ev._qtdAdultosConv||0} sufixo="pess." flex={1} />
-                                <MiniCard label="🌍 Externos"  valor={ev._qtdExternos||0}   sufixo="pess." flex={1} />
-                              </div>
-                            </div>
-
-                            {/* Grupo meia e grátis */}
-                            <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '0.25rem', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 'var(--radius-md)', padding: '0.4rem' }}>
-                              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
-                                Crianças — {totalMeia + totalGratis} pess.
-                              </div>
-                              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                                <MiniCard label="🧒 Meia (6–11)" valor={totalMeia}    sufixo="pess." cor="blue" flex={1} />
-                                <MiniCard label="👶 Grátis (≤5)" valor={totalGratis}  sufixo="pess." cor="green" flex={1} />
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* LINHA 3 — financeiro */}
-                          <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            <MiniCard label="💰 Despesas"  valor={fmtR(ev._totalDespesas||0)} cor="red"  flex={1} />
-                            <MiniCard label="📊 Vlr/Cota"  valor={fmtR(ev._valorCalc||0)}     cor="blue" flex={1} />
-                            {ev.valor_ajustado && (
-                              <MiniCard label="✅ Ajustado" valor={fmtR(parseFloat(ev.valor_ajustado))} cor="gold" flex={1} />
-                            )}
-                          </div>
-
-                        </div>
-                      );
-                    })()}
                   </div>
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                     <button onClick={() => setEventoAtivo(ev)} style={{ ...btnEdit, padding: '0.4rem 0.75rem' }}>👁️ Abrir</button>
