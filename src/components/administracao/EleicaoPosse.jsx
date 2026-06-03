@@ -8,6 +8,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
+import {
+  Document, Packer, Paragraph, TextRun, ImageRun,
+  AlignmentType, UnderlineType, BorderStyle, WidthType,
+  Table, TableRow, TableCell, ShadingType, VerticalAlign,
+} from 'docx';
 import { CARGOS_ADMINISTRATIVOS } from '../../utils/constants';
 
 // ─── Utilitários ────────────────────────────────────────────────────────────
@@ -50,10 +55,7 @@ const DOC_CFG = {
 };
 
 const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) => {
-  const {
-    Document, Packer, Paragraph, TextRun, ImageRun,
-    AlignmentType, UnderlineType,
-  } = await import('docx');
+  // docx importado estaticamente no topo do arquivo
 
   const chapaEleita = chapas.filter(c => c.eleita);
   const vmConvocante = irmaos.find(i => i.id === eleicao.vm_convocante_id);
@@ -303,7 +305,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
   // ═══════════════════════════════════════════════
   else if (tipo === 'lista_presenca_eleicao' || tipo === 'lista_presenca_posse') {
-    const { Table, TableRow, TableCell, BorderStyle, WidthType, ShadingType, VerticalAlign } = await import('docx');
+    // docx importado estaticamente no topo do arquivo
     const sessaoNome = tipo === 'lista_presenca_eleicao' ? 'Eleição' : 'Posse';
     const dataDoc    = tipo === 'lista_presenca_eleicao' ? eleicao.data_eleicao : eleicao.data_posse;
     const lista      = tipo === 'lista_presenca_eleicao' ? presEleicao : presPosse;
