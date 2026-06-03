@@ -1102,8 +1102,14 @@ export default function EventosComemorativos({ showSuccess, showError }) {
                       {/* Adultos convidados (acompanhantes) */}
                       <MiniCard label="🧑 Ad. Conv." valor={ev._qtdAdultosConv || 0} sufixo="pess." />
 
+                      {/* Total adultos pagantes */}
+                      <MiniCard label="👥 Total Adultos" valor={(ev._qtdIrmaos || 0) + (ev._qtdExternos || 0) + (ev._qtdAdultosConv || 0)} sufixo="pess." cor="gold" />
+
                       {/* Meia cota (6–11 anos) */}
                       <MiniCard label="🧒 Meia (6–11)" valor={ev._qtdMeia || 0} sufixo="pess." cor="blue" />
+
+                      {/* Total meia cota */}
+                      <MiniCard label="➕ Total Meia" valor={ev._qtdMeia || 0} sufixo={`= ${((ev._qtdMeia||0)*0.5).toFixed(1)} cotas`} cor="blue" />
 
                       {/* Gratuito (≤5 anos) */}
                       <MiniCard label="👶 Grátis (≤5)" valor={ev._qtdGratuitas || 0} sufixo="pess." cor="green" />
