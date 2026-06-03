@@ -216,7 +216,7 @@ export default function Eventos({ userPermissions, userData }) {
 
       {/* ── Cabeçalho ────────────────────────────────────────── */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",gap:"0.5rem"}}>
-        <h1 style={{fontSize:"1.15rem",fontWeight:"700",color:"var(--color-text)"}}>📅 Eventos da Loja</h1>
+        <h1 style={{fontSize:"1.15rem",fontWeight:"700",color:"var(--color-text)"}}>🤝 Eventos Beneficentes</h1>
         {podeEditar && (
           <button onClick={() => abrirModal()} style={{
             display:"flex",alignItems:"center",gap:"0.4rem",
