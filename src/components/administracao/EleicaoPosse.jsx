@@ -68,17 +68,32 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const dadoIrmao = (irmaoId) => {
     const i = irmaos.find(x => x.id === irmaoId);
     if (!i) return '[Irmão não encontrado]';
+
+    // Nome do pai e da mãe vêm da relação pais[] com campo tipo='pai'/'mae'
+    const paisArr  = i.pais || [];
+    const nomePai  = paisArr.find(p => p.tipo === 'pai')?.nome || null;
+    const nomeMae  = paisArr.find(p => p.tipo === 'mae')?.nome || null;
+    const filiacao = (nomePai && nomeMae)
+      ? `filho de ${nomePai} e ${nomeMae}`
+      : nomePai ? `filho de ${nomePai}`
+      : nomeMae ? `filho de ${nomeMae}`
+      : null;
+
+    // Endereço: campos separados endereco + cidade + estado
+    const endParts = [i.endereco, i.cidade, i.estado].filter(Boolean);
+    const endereco = endParts.length > 0 ? `residente e domiciliado na ${endParts.join(', ')}` : null;
+
     return [
       i.nome,
       i.nacionalidade || 'brasileiro',
       i.estado_civil  || null,
       i.profissao     || null,
-      i.naturalidade  ? `natural de ${i.naturalidade}` : null,
+      i.cidade        ? `natural de ${i.cidade}` : null,  // naturalidade = cidade de nascimento
       i.data_nascimento ? `nascido em ${formatarData(i.data_nascimento)}` : null,
-      (i.nome_pai && i.nome_mae) ? `filho de ${i.nome_pai} e ${i.nome_mae}` : i.nome_mae ? `filho de ${i.nome_mae}` : null,
+      filiacao,
       i.rg  ? `portador da Cédula de Identidade RG sob nº ${i.rg}` : null,
       i.cpf ? `CPF/MF nº ${i.cpf}` : null,
-      i.endereco_completo ? `residente e domiciliado ${i.endereco_completo}` : null,
+      endereco,
     ].filter(Boolean).join(', ');
   };
 
