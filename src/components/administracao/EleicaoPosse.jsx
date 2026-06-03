@@ -875,7 +875,14 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
               {irmaosAptosParaAto(eleicaoSelecionada.data_eleicao)
-                .filter(i => i.data_exaltacao) // apenas Mestres votam
+                .filter(i => {
+                  // Apenas Mestres: deve ter data_exaltacao anterior ou igual à data do ato
+                  if (!i.data_exaltacao) return false;
+                  if (eleicaoSelecionada.data_eleicao) {
+                    return new Date(i.data_exaltacao + 'T00:00:00') <= new Date(eleicaoSelecionada.data_eleicao + 'T00:00:00');
+                  }
+                  return true;
+                })
                 .map(i => {
                   const marcado = presEleicao.some(p => p.irmao_id === i.id);
                   return (
@@ -928,7 +935,15 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
-              {irmaosAptosParaAto(eleicaoSelecionada.data_posse).map(i => {
+              {irmaosAptosParaAto(eleicaoSelecionada.data_posse)
+                .filter(i => {
+                  if (!i.data_exaltacao) return false;
+                  if (eleicaoSelecionada.data_posse) {
+                    return new Date(i.data_exaltacao + 'T00:00:00') <= new Date(eleicaoSelecionada.data_posse + 'T00:00:00');
+                  }
+                  return true;
+                })
+                .map(i => {
                 const marcado = presPosse.some(p => p.irmao_id === i.id);
                 return (
                   <div key={i.id}
