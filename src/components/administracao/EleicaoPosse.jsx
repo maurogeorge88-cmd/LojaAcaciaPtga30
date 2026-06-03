@@ -344,12 +344,11 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     sections: [{ properties: { page: pageCfg }, children }],
   });
 
-  return Packer.toBuffer(doc);
+  return Packer.toBlob(doc);
 };
 
 // ─── Download helper ──────────────────────────────────────────
-const downloadDocx = (buffer, nomeArquivo) => {
-  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+const downloadDocx = (blob, nomeArquivo) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
