@@ -65,32 +65,44 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   };
 
   const css = `
-    body { font-family: Arial, sans-serif; font-size: 12pt; margin: 3cm 2cm 2cm 3cm; }
-    p { text-align: justify; line-height: 1.5; margin: 6pt 0; text-indent: 1.25cm; }
-    p.center { text-align: center; text-indent: 0; }
-    p.left   { text-align: left;  text-indent: 0; }
-    p.titulo { text-align: center; font-weight: bold; text-transform: uppercase; text-indent: 0; margin: 12pt 0; }
-    p.subtitulo { text-align: center; font-weight: bold; text-indent: 0; margin: 4pt 0; }
-    p.cargo  { text-align: justify; margin: 4pt 0; text-indent: 1.25cm; }
-    p.assinatura { margin-top: 30pt; text-indent: 0; }
-    p.assnom { margin: 2pt 0; text-indent: 0; font-weight: bold; }
-    p.asscargo { margin: 2pt 0 20pt; text-indent: 0; }
-    .linha { border-bottom: 1px solid #000; width: 280pt; display: inline-block; margin-bottom: 2pt; }
+    @page {
+      size: A4;
+      margin: 3cm 2cm 2cm 3cm;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: #000;
+    }
+    p {
+      text-align: justify;
+      margin: 0 0 8pt 0;
+      text-indent: 1.25cm;
+    }
+    p.center    { text-align: center; text-indent: 0; }
+    p.left      { text-align: left;   text-indent: 0; }
+    p.titulo    { text-align: center; font-weight: bold; text-transform: uppercase; text-indent: 0; font-size: 12pt; margin: 14pt 0 10pt 0; }
+    p.cabec     { text-align: center; font-weight: bold; text-indent: 0; margin: 2pt 0; font-size: 12pt; }
+    p.cargo     { text-align: justify; margin: 3pt 0; text-indent: 1.25cm; }
+    p.ass-linha { text-align: left; text-indent: 0; margin: 36pt 0 2pt 0; border-bottom: 1px solid #000; width: 60%; }
+    p.ass-nome  { text-align: left; text-indent: 0; margin: 2pt 0 0 0; font-weight: bold; }
+    p.ass-cargo { text-align: left; text-indent: 0; margin: 0 0 24pt 0; }
     table { border-collapse: collapse; width: 100%; margin: 10pt 0; }
-    th { background: #d9d9d9; font-weight: bold; font-size: 10pt; padding: 5pt 6pt; border: 1px solid #000; }
-    td { font-size: 10pt; padding: 5pt 6pt; border: 1px solid #000; height: 18pt; }
+    th { background: #d9d9d9; font-weight: bold; font-size: 10pt; padding: 4pt 6pt; border: 1px solid #000; text-align: left; }
+    td { font-size: 10pt; padding: 4pt 6pt; border: 1px solid #000; height: 20pt; }
   `;
 
   const cabecalho = () => `
-    <p class="subtitulo">AUG∴ E RESP∴ LOJA SIMB∴ ${nomeLoja}</p>
-    <p class="subtitulo">Fundada em ${dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997'}</p>
-    <p class="subtitulo" style="margin-bottom:18pt;">SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO</p>
+    <p class="cabec">AUG.: E RESP.: LOJA SIMB.: ${nomeLoja}</p>
+    <p class="cabec">Fundada em ${dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997'}</p>
+    <p class="cabec" style="margin-bottom:18pt;">SOB OS AUSPíCIOS DA SERENíSSIMA GRANDE LOJA MA&#199;&#212;NICA DO ESTADO DE MATO GROSSO</p>
   `;
 
   const assinatura = (nome, cargo) => `
-    <p class="assinatura">___________________________________________</p>
-    <p class="assnom">${nome}</p>
-    <p class="asscargo">${cargo}</p>
+    <p class="ass-linha">&nbsp;</p>
+    <p class="ass-nome">${nome}</p>
+    <p class="ass-cargo">${cargo}</p>
   `;
 
   const listaEleitos = () => chapaEleita
@@ -106,7 +118,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       ${cabecalho()}
       <p class="titulo">Edital de Convocação para Eleição</p>
       <p>Na qualidade de Venerável Mestre, Sr. <strong>${vmConvocante?.nome || '[VM]'}</strong>, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica ${nomeLoja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Eleição do Corpo Administrativo da Augusta e Respeitável Loja Simbólica ${nomeLoja} – Gestão ${gestaoSub}, a realizar-se no dia ${formatarData(eleicao.data_eleicao)}, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas nas dependências do nosso Templo, conforme estabelece o Artigo 187 do Regulamento Geral.</p>
-      <p class="left" style="margin-top:20pt;">${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_eleicao)}.</p>
+      <p class="left" style="margin-top:20pt;text-indent:0;">${dadosLoja.cidade || 'Paranatinga'} &#8211; ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_eleicao)}.</p>
       ${assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre')}
     `;
   }
@@ -117,7 +129,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       ${cabecalho()}
       <p class="titulo">Edital de Convocação para Posse</p>
       <p>Na qualidade de Venerável Mestre, Sr. <strong>${vmConvocante?.nome || '[VM]'}</strong>, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica ${nomeLoja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Posse do Corpo Administrativo da Augusta e Respeitável Loja Simbólica ${nomeLoja} – Gestão ${gestaoSub}, a realizar-se no dia ${formatarData(eleicao.data_posse)}, às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas nas dependências do nosso Templo, conforme estabelece o Artigo 187 do Regulamento Geral.</p>
-      <p class="left" style="margin-top:20pt;">${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_posse)}.</p>
+      <p class="left" style="margin-top:20pt;text-indent:0;">${dadosLoja.cidade || 'Paranatinga'} &#8211; ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_posse)}.</p>
       ${assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre')}
     `;
   }
@@ -132,9 +144,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     corpo = `
       <p class="titulo">ATA DA SESSÃO ORDINÁRIA DE ELEIÇÃO DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestaoSub}</p>
-      <p>Aos ${formatarData(eleicao.data_eleicao)} (E.&middot;. V.&middot;.), às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem as eleições para os cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}.</p>
+      <p>Aos ${formatarData(eleicao.data_eleicao)} (E.V.), às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem as eleições para os cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}.</p>
       <p>Presentes os irmãos que preencheram os cargos, estando todos revestidos de suas insígnias, sob a presidência do Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, estando os demais cargos regularmente constituídos.</p>
-      <p>Os trabalhos foram abertos em Grau de Mestre Ma&#231;om com um simples golpe de malhete pelo Venerável Mestre, dispensando-se a Leitura da Ata e Expedientes. Após a abertura dos trabalhos foi determinado ao Irmão Secretário que procedesse a leitura do Edital de Convocação para Eleição, no qual constou a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o Exercício ${gestaoSub}.</p>
+      <p>Os trabalhos foram abertos em Grau de Mestre Ma&#231;&#244;m com um simples golpe de malhete pelo Venerável Mestre, dispensando-se a Leitura da Ata e Expedientes. Após a abertura dos trabalhos foi determinado ao Irmão Secretário que procedesse a leitura do Edital de Convocação para Eleição, no qual constou a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o Exercício ${gestaoSub}.</p>
       <p>Estavam presentes à sessão ${eleicao.num_votantes_eleicao || presencasEleicao.length} membros votantes, conforme a lista de presença, e que foram declarados pelos Irmãos Chanceler e Tesoureiro como aptos ao exercício do voto.</p>
       <p>Então, por ordem do Venerável Mestre (Presidente) e ${trechoVotacao} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa única que ficou composta dos seguintes cargos e seus membros e comissões:</p>
       ${listaEleitos()}
@@ -155,7 +167,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     corpo = `
       <p class="titulo">ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ELEIÇÃO DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestaoSub}</p>
-      <p>Aos ${formatarData(eleicao.data_eleicao)} da era vulgar, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, reuniram-se em Sessão ordinária, para eleição dos cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do Regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico e artigo 3º, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, na sua sede, localizada ${enderecoLoja}cidade de ${cidadeUF}. Preenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Ma&#231;om com um simples golpe de malhete, dispensando-se a Leitura da Ata e Expedientes. Constou-se na ordem do dia a eleição da diretoria da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, bem como o Respeitabilíssimo Mestre determinou ao Irmão Secretário que procedesse a leitura do Edital de Convocação, no qual a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o exercício de ${gestao}. Os trabalhos foram presididos pelo Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, ${trechoMesa} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa que ficou composta dos seguintes cargos e seus membros e comissões:</p>
+      <p>Aos ${formatarData(eleicao.data_eleicao)} da era vulgar, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, reuniram-se em Sessão ordinária, para eleição dos cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do Regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico e artigo 3º, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, na sua sede, localizada ${enderecoLoja}cidade de ${cidadeUF}. Preenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Ma&#231;&#244;m com um simples golpe de malhete, dispensando-se a Leitura da Ata e Expedientes. Constou-se na ordem do dia a eleição da diretoria da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, bem como o Respeitabilíssimo Mestre determinou ao Irmão Secretário que procedesse a leitura do Edital de Convocação, no qual a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o exercício de ${gestao}. Os trabalhos foram presididos pelo Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, ${trechoMesa} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa que ficou composta dos seguintes cargos e seus membros e comissões:</p>
       ${listaEleitos()}
       <p>Esta Ata é o que foi deliberado em Assembleia da Loja, em ${formatarData(eleicao.data_eleicao)}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, ${secretario?.nome || '[Secretário]'} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.</p>
       ${assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre')}
@@ -173,8 +185,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     corpo = `
       <p class="titulo">ATA DA SESSÃO ORDINÁRIA DE POSSE DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestaoSub}</p>
-      <p>Aos ${formatarData(eleicao.data_posse)} (E.&middot;. V.&middot;.), às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo, os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem a POSSE da nova diretoria eleita para a Gestão ${gestaoSub}.</p>
-      <p>Os trabalhos foram abertos em Grau de Mestre Ma&#231;om com um simples golpe de malhete pelo Venerável Mestre ${vmConvocante?.nome || '[VM]'}, dispensando-se a Leitura da Ata e Expedientes. Estavam presentes à sessão ${eleicao.num_votantes_posse || presencasPosse.length} membros, conforme lista de presença.</p>
+      <p>Aos ${formatarData(eleicao.data_posse)} (E.V.), às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo, os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem a POSSE da nova diretoria eleita para a Gestão ${gestaoSub}.</p>
+      <p>Os trabalhos foram abertos em Grau de Mestre Ma&#231;&#244;m com um simples golpe de malhete pelo Venerável Mestre ${vmConvocante?.nome || '[VM]'}, dispensando-se a Leitura da Ata e Expedientes. Estavam presentes à sessão ${eleicao.num_votantes_posse || presencasPosse.length} membros, conforme lista de presença.</p>
       <p>Procedeu-se então à cerimônia de posse e instalação dos novos dirigentes para a Gestão ${gestaoSub}, tomando posse os seguintes membros:</p>
       ${chapaEleita
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
