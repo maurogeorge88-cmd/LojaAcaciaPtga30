@@ -887,7 +887,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 //  Componente Principal
 // ─────────────────────────────────────────────
 // ─── MiniCard: indicador compacto nos cards da lista ────────
-function MiniCard({ label, valor, sufixo, cor, flex, fullWidth }) {
+function MiniCard({ label, valor, sufixo, cor, flex, fullWidth, center }) {
   const cores = {
     default: { bg: 'var(--color-surface-2)', border: 'var(--color-border)',     text: 'var(--color-text)',   label: 'var(--color-text-muted)' },
     blue:    { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.25)',  text: '#3b82f6',             label: '#3b82f6' },
@@ -903,8 +903,8 @@ function MiniCard({ label, valor, sufixo, cor, flex, fullWidth }) {
       flex: flex || (fullWidth ? '1 1 100%' : undefined),
       minWidth: 0,
     }}>
-      <div style={{ fontSize: '0.62rem', fontWeight: 600, color: t.label, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
-      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+      <div style={{ fontSize: '0.62rem', fontWeight: 600, color: t.label, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: center ? 'center' : 'left' }}>{label}</div>
+      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: center ? 'center' : 'left' }}>
         {valor}{sufixo ? <span style={{ fontSize: '0.65rem', fontWeight: 400, marginLeft: '0.2rem', opacity: 0.7 }}>{sufixo}</span> : null}
       </div>
     </div>
@@ -1106,7 +1106,7 @@ export default function EventosComemorativos({ showSuccess, showError }) {
 
                           {/* LINHA 1 — totalizador geral */}
                           <div style={{ display: 'flex', gap: '0.35rem' }}>
-                            <MiniCard fullWidth label="👥 Total de Convidados" valor={totalGeral} sufixo={`pess. (${totalAdultos} adultos · ${totalMeia} meia · ${totalGratis} grátis)`} cor="gold" />
+                            <MiniCard fullWidth center label="👥 Total de Convidados" valor={totalGeral} sufixo={`pess. (${totalAdultos} adultos · ${totalMeia} meia · ${totalGratis} grátis)`} cor="gold" />
                           </div>
 
                           {/* LINHA 2 — dois grupos lado a lado */}
