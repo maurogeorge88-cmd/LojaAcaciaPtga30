@@ -31,6 +31,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
+  const [eventosComemorativos, setEventosComemorativos] = useState([]);
   const [irmaoEditando, setIrmaoEditando]       = useState(null); // irmão extra para edição (ex: desligado)
   const [tipoLancamento, setTipoLancamento] = useState('receita');
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
@@ -112,6 +113,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     status: 'pendente', // CORRIGIDO: usar 'pendente' ou 'pago'
     comprovante_url: '',
     observacoes: '',
+    evento_comemorativo_id: null,
     origem_tipo: 'Loja', 
     origem_irmao_id: '' 
   });
@@ -173,6 +175,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     calcularTroncoTotal();
     buscarTotalRegistros();
     carregarMesesFechados();
+    carregarEventosComemorativos();
   }, [filtros.mes, filtros.ano]);
 
   // Fechar menus dropdown ao clicar fora
@@ -357,6 +360,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     } finally {
       setLoading(false);
     }
+  };
+
+  const carregarEventosComemorativos = async () => {
+    const { data } = await supabase.from('eventos_comemorativos_fin').select('id, nome, ano, status').order('ano', { ascending: false }).order('nome');
+    setEventosComemorativos(data || []);
   };
 
   const carregarLancamentos = async () => {
@@ -588,6 +596,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       dados = formLancamento;
     }
 
+    // Renovar sessão para evitar JWT expired
+    await supabase.auth.refreshSession();
+
     // Verificar se o mês está fechado
     const dataRef = dados.data_pagamento || dados.data_lancamento || dados.data_vencimento;
     if (dataRef && verificarMesBloqueado(dataRef)) {
@@ -611,8 +622,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         status: dados.status,
         comprovante_url: dados.comprovante_url || null,
         observacoes: dados.observacoes || null,
-        origem_tipo: dados.origem_tipo || 'Loja', 
-        origem_irmao_id: dados.origem_irmao_id ? parseInt(dados.origem_irmao_id) : null 
+        origem_tipo: dados.origem_tipo || 'Loja',
+        origem_irmao_id: dados.origem_irmao_id ? parseInt(dados.origem_irmao_id) : null,
+        evento_comemorativo_id: dados.evento_comemorativo_id || null
       };
 
       if (editando) {
@@ -887,8 +899,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       status: lancamento.status,
       comprovante_url: lancamento.comprovante_url || '',
       observacoes: lancamento.observacoes || '',
-      origem_tipo: lancamento.origem_tipo || 'Loja', 
-      origem_irmao_id: lancamento.origem_irmao_id || '' 
+      origem_tipo: lancamento.origem_tipo || 'Loja',
+      origem_irmao_id: lancamento.origem_irmao_id || '',
+      evento_comemorativo_id: lancamento.evento_comemorativo_id || null
     });
     setEditando(lancamento.id);
     setTimeout(() => setModalLancamentoAberto(true), 0); // garante que irmaoEditando já está no state
@@ -981,8 +994,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       status: 'pendente',
       comprovante_url: '',
       observacoes: '',
-      origem_tipo: 'Loja', 
-      origem_irmao_id: '' 
+      origem_tipo: 'Loja',
+      origem_irmao_id: '',
+      evento_comemorativo_id: null,
+      evento_comemorativo_id: null
     });
     setEditando(null);
     setModalLancamentoAberto(false);
@@ -1003,7 +1018,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       comprovante_url: '',
       observacoes: '',
       origem_tipo: 'Loja',
-      origem_irmao_id: ''
+      origem_irmao_id: '',
+      evento_comemorativo_id: null
     });
     setEditando(null);
     setModalLancamentoAberto(true);
@@ -3575,6 +3591,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         categorias={categorias}
         irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
         editando={editando}
+        eventosComemorativos={eventosComemorativos}
       />
 
 
@@ -4179,8 +4196,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   )}
                                 </div>
                                 {/* Descrição */}
-                                <p style={{fontWeight:'600',color:'var(--color-text)',margin:'0 0 0.3rem',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                                  {lanc.descricao}
+                                <p style={{fontWeight:'600',color:'var(--color-text)',margin:'0 0 0.3rem',fontSize:'0.875rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                                  <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
+                                  {lanc.evento_comemorativo_id && (
+                                    <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.6rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.3rem',lineHeight:'1.5',fontWeight:700}}>🎉</span>
+                                  )}
                                 </p>
                                 {/* Datas */}
                                 <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:0}}>
@@ -4343,8 +4363,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       {lanc.categorias_financeiras?.nome}
                     </div>
                     {/* Descrição */}
-                    <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                      {lanc.descricao}
+                    <div style={{fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.3rem'}}>
+                      <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
+                      {lanc.evento_comemorativo_id && (
+                        <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.65rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.35rem',lineHeight:'1.4',fontWeight:700}}>🎉</span>
+                      )}
                     </div>
                     {/* Origem */}
                     <div style={{display:'flex',alignItems:'center',gap:'0.25rem',fontSize:'0.82rem',color:'var(--color-text)',overflow:'hidden',minWidth:0}}>
