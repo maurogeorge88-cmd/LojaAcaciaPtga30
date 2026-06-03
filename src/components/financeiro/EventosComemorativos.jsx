@@ -898,8 +898,47 @@ export default function EventosComemorativos({ showSuccess, showError }) {
 
   const carregarEventos = async () => {
     setCarregando(true);
-    const { data } = await supabase.from('eventos_comemorativos_fin').select('*').order('ano', { ascending: false }).order('data_evento', { ascending: false });
-    setEventos(data || []);
+    const [{ data: evs }, { data: parts }, { data: lancs }] = await Promise.all([
+      supabase.from('eventos_comemorativos_fin').select('*').order('ano', { ascending: false }).order('data_evento', { ascending: false }),
+      supabase.from('evento_rateio_participantes').select('evento_id, adultos_convidados, criancas_meia, criancas_gratuitas, irmao_id'),
+      supabase.from('lancamentos_loja').select('evento_comemorativo_id, valor').not('evento_comemorativo_id', 'is', null),
+    ]);
+    // Agrega por evento
+    const partsPorEvento = {};
+    (parts || []).forEach(p => {
+      if (!partsPorEvento[p.evento_id]) partsPorEvento[p.evento_id] = [];
+      partsPorEvento[p.evento_id].push(p);
+    });
+    const lancsPorEvento = {};
+    (lancs || []).forEach(l => {
+      if (!lancsPorEvento[l.evento_comemorativo_id]) lancsPorEvento[l.evento_comemorativo_id] = 0;
+      lancsPorEvento[l.evento_comemorativo_id] += parseFloat(l.valor || 0);
+    });
+    const eventosEnriquecidos = (evs || []).map(ev => {
+      const ps = partsPorEvento[ev.id] || [];
+      const qtdIrmaos    = ps.length;
+      const qtdAdultos   = ps.reduce((s, p) => s + (parseInt(p.adultos_convidados) || 0), 0);
+      const qtdMeia      = ps.reduce((s, p) => s + (parseInt(p.criancas_meia) || 0), 0);
+      const qtdGratuitas = ps.reduce((s, p) => s + (parseInt(p.criancas_gratuitas) || 0), 0);
+      const totalDespesas = lancsPorEvento[ev.id] || 0;
+      const contribuicaoLoja = parseFloat(ev.contribuicao_loja || 0);
+      const baseRateio = Math.max(0, totalDespesas - contribuicaoLoja);
+      // Cotas: cada irmão = 1 adulto; adultos convidados = 1 cota cada; meia = 0.5; gratuitas = 0
+      const totalCotas = qtdIrmaos + qtdAdultos + (qtdMeia * 0.5);
+      const valorCalc = totalCotas > 0 ? baseRateio / totalCotas : 0;
+      return {
+        ...ev,
+        _qtdIrmaos: qtdIrmaos,
+        _qtdAdultos: qtdAdultos,
+        _qtdMeia: qtdMeia,
+        _qtdGratuitas: qtdGratuitas,
+        _totalDespesas: totalDespesas,
+        _baseRateio: baseRateio,
+        _totalCotas: totalCotas,
+        _valorCalc: valorCalc,
+      };
+    });
+    setEventos(eventosEnriquecidos);
     setCarregando(false);
   };
 
@@ -1019,10 +1058,50 @@ export default function EventosComemorativos({ showSuccess, showError }) {
                         {encerrado ? '✅ Encerrado' : '⚙️ Em Aberto'}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+                    {/* Linha 1: data + descrição */}
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '0.78rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
                       {ev.data_evento && <span>📅 {fmtD(ev.data_evento)}</span>}
-                      {ev.valor_ajustado && <span>💰 Valor/cota: <strong style={{ color: 'var(--color-text)' }}>{fmtR(ev.valor_ajustado)}</strong></span>}
                       {ev.descricao && <span>📝 {ev.descricao}</span>}
+                    </div>
+                    {/* Linha 2: grid de indicadores */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.4rem', marginTop: '0.35rem' }}>
+                      {/* Irmãos */}
+                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Irmãos</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdIrmaos || 0}</div>
+                      </div>
+                      {/* Adultos convidados */}
+                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Adultos Conv.</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdAdultos || 0}</div>
+                      </div>
+                      {/* Meia (6-11) */}
+                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Meia (6–11)</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdMeia || 0}</div>
+                      </div>
+                      {/* Gratuitas (≤5) */}
+                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Grátis (≤5)</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdGratuitas || 0}</div>
+                      </div>
+                      {/* Total despesas */}
+                      <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid rgba(239,68,68,0.2)' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Despesas</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ef4444' }}>{fmtR(ev._totalDespesas || 0)}</div>
+                      </div>
+                      {/* Valor calculado por cota */}
+                      <div style={{ background: 'rgba(59,130,246,0.08)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid rgba(59,130,246,0.2)' }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Valor/Cota Calc.</div>
+                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#3b82f6' }}>{fmtR(ev._valorCalc || 0)}</div>
+                      </div>
+                      {/* Valor ajustado (se houver) */}
+                      {ev.valor_ajustado && (
+                        <div style={{ background: 'var(--color-accent-bg)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid rgba(201,168,76,0.35)' }}>
+                          <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Valor Ajustado</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-accent)' }}>{fmtR(ev.valor_ajustado)}</div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
