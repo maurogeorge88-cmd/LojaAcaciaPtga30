@@ -60,9 +60,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const secretario   = irmaos.find(i => i.id === eleicao.secretario_id);
   const presidente   = irmaos.find(i => i.id === eleicao.presidente_eleito_id);
   const gestao       = eleicao.gestao || '';
-  const nomeLoja     = ;
+  const nomeLoja     = `ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`;
   const enderecoLoja = dadosLoja.endereco || 'Avenida Brasil, nº 2.300, bairro Jardim Panorama';
-  const cidadeUF     = ;
+  const cidadeUF     = `${dadosLoja.cidade || 'Paranatinga'}/${dadosLoja.estado || 'MT'}`;
   const presEleicao  = presencas.filter(p => p.sessao === 'eleicao');
   const presPosse    = presencas.filter(p => p.sessao === 'posse');
 
