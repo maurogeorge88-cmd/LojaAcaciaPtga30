@@ -116,10 +116,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         data: b64ToBuffer(LOGO_LOJA_B64),
         transformation: { width: 108, height: 108 },
         floating: {
-          horizontalPosition: { offset: 457200 },  // ~0.8cm da margem — alinhado à esquerda
-          verticalPosition:   { offset: 180000 },  // desce um pouco para não sobreposição
-          wrap: { type: 'square', side: 'right' }, // texto flui à direita do logo
-          margins: { top: 0, bottom: 0, left: 114300, right: 114300 },
+          horizontalPosition: { offset: 5140827 }, // centralizado na área útil
+          verticalPosition:   { offset: 180000 },
+          wrap: { type: 'none' },
+          behindDocument: false,
         },
       }),
     ],
