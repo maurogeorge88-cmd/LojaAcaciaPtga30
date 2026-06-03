@@ -334,6 +334,32 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   const podeEditar = permissoes?.pode_editar_corpo_admin || false;
   const irmaosAtivos = (irmaos || []).filter(i => i.status === 'ativo');
 
+  // Filtra irmãos aptos para um determinado ato (eleição ou posse)
+  // Regra: situação deve ser regular/licenciado/irregular na data do ato
+  // Exclui: falecido/desligado/excluido/ex_oficio/suspenso
+  // E se tiver data_falecimento ou data_desligamento anterior à data do ato, também exclui
+  const irmaosAptosParaAto = (dataAto) => {
+    const situacoesAptas = ['regular', 'licenciado', 'irregular'];
+    return (irmaos || []).filter(i => {
+      // Situação deve ser apta
+      const sit = (i.situacao || 'regular').toLowerCase();
+      if (!situacoesAptas.includes(sit)) return false;
+      // Se há data do ato, verifica datas de saída
+      if (dataAto) {
+        const dAto = new Date(dataAto + 'T00:00:00');
+        if (i.data_falecimento) {
+          const dFal = new Date(i.data_falecimento + 'T00:00:00');
+          if (dFal <= dAto) return false;
+        }
+        if (i.data_desligamento) {
+          const dDes = new Date(i.data_desligamento + 'T00:00:00');
+          if (dDes <= dAto) return false;
+        }
+      }
+      return true;
+    });
+  };
+
   // ── Carregamento ─────────────────────────────────────────
 
   const carregar = useCallback(async () => {
@@ -848,11 +874,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
-              {irmaosAtivos
-                .filter(i => {
-                  // Apenas Mestres podem votar
-                  return i.data_exaltacao;
-                })
+              {irmaosAptosParaAto(eleicaoSelecionada.data_eleicao)
+                .filter(i => i.data_exaltacao) // apenas Mestres votam
                 .map(i => {
                   const marcado = presEleicao.some(p => p.irmao_id === i.id);
                   return (
@@ -905,7 +928,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               </h3>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '0.4rem' }}>
-              {irmaosAtivos.map(i => {
+              {irmaosAptosParaAto(eleicaoSelecionada.data_posse).map(i => {
                 const marcado = presPosse.some(p => p.irmao_id === i.id);
                 return (
                   <div key={i.id}
