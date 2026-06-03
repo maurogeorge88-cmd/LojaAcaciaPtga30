@@ -132,9 +132,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     corpo = `
       <p class="titulo">ATA DA SESSÃO ORDINÁRIA DE ELEIÇÃO DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestaoSub}</p>
-      <p>Aos ${formatarData(eleicao.data_eleicao)} (E∴ V∴), às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem as eleições para os cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}.</p>
+      <p>Aos ${formatarData(eleicao.data_eleicao)} (E.&middot;. V.&middot;.), às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem as eleições para os cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}.</p>
       <p>Presentes os irmãos que preencheram os cargos, estando todos revestidos de suas insígnias, sob a presidência do Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, estando os demais cargos regularmente constituídos.</p>
-      <p>Os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Venerável Mestre, dispensando-se a Leitura da Ata e Expedientes. Após a abertura dos trabalhos foi determinado ao Irmão Secretário que procedesse a leitura do Edital de Convocação para Eleição, no qual constou a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o Exercício ${gestaoSub}.</p>
+      <p>Os trabalhos foram abertos em Grau de Mestre Ma&#231;om com um simples golpe de malhete pelo Venerável Mestre, dispensando-se a Leitura da Ata e Expedientes. Após a abertura dos trabalhos foi determinado ao Irmão Secretário que procedesse a leitura do Edital de Convocação para Eleição, no qual constou a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o Exercício ${gestaoSub}.</p>
       <p>Estavam presentes à sessão ${eleicao.num_votantes_eleicao || presencasEleicao.length} membros votantes, conforme a lista de presença, e que foram declarados pelos Irmãos Chanceler e Tesoureiro como aptos ao exercício do voto.</p>
       <p>Então, por ordem do Venerável Mestre (Presidente) e ${trechoVotacao} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa única que ficou composta dos seguintes cargos e seus membros e comissões:</p>
       ${listaEleitos()}
@@ -155,7 +155,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     corpo = `
       <p class="titulo">ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ELEIÇÃO DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestaoSub}</p>
-      <p>Aos ${formatarData(eleicao.data_eleicao)} da era vulgar, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, reuniram-se em Sessão ordinária, para eleição dos cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do Regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico e artigo 3º, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, na sua sede, localizada ${enderecoLoja}cidade de ${cidadeUF}. Preenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete, dispensando-se a Leitura da Ata e Expedientes. Constou-se na ordem do dia a eleição da diretoria da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, bem como o Respeitabilíssimo Mestre determinou ao Irmão Secretário que procedesse a leitura do Edital de Convocação, no qual a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o exercício de ${gestao}. Os trabalhos foram presididos pelo Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, ${trechoMesa} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa que ficou composta dos seguintes cargos e seus membros e comissões:</p>
+      <p>Aos ${formatarData(eleicao.data_eleicao)} da era vulgar, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, reuniram-se em Sessão ordinária, para eleição dos cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do Regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico e artigo 3º, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, na sua sede, localizada ${enderecoLoja}cidade de ${cidadeUF}. Preenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Ma&#231;om com um simples golpe de malhete, dispensando-se a Leitura da Ata e Expedientes. Constou-se na ordem do dia a eleição da diretoria da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, bem como o Respeitabilíssimo Mestre determinou ao Irmão Secretário que procedesse a leitura do Edital de Convocação, no qual a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o exercício de ${gestao}. Os trabalhos foram presididos pelo Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, ${trechoMesa} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa que ficou composta dos seguintes cargos e seus membros e comissões:</p>
       ${listaEleitos()}
       <p>Esta Ata é o que foi deliberado em Assembleia da Loja, em ${formatarData(eleicao.data_eleicao)}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, ${secretario?.nome || '[Secretário]'} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.</p>
       ${assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre')}
@@ -173,8 +173,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     corpo = `
       <p class="titulo">ATA DA SESSÃO ORDINÁRIA DE POSSE DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestaoSub}</p>
-      <p>Aos ${formatarData(eleicao.data_posse)} (E∴ V∴), às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo, os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem a POSSE da nova diretoria eleita para a Gestão ${gestaoSub}.</p>
-      <p>Os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Venerável Mestre ${vmConvocante?.nome || '[VM]'}, dispensando-se a Leitura da Ata e Expedientes. Estavam presentes à sessão ${eleicao.num_votantes_posse || presencasPosse.length} membros, conforme lista de presença.</p>
+      <p>Aos ${formatarData(eleicao.data_posse)} (E.&middot;. V.&middot;.), às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, ${enderecoLoja}cidade de ${cidadeUF}, no Templo, os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em <strong>SESSÃO ORDINÁRIA</strong>, para o fim especial de realizarem a POSSE da nova diretoria eleita para a Gestão ${gestaoSub}.</p>
+      <p>Os trabalhos foram abertos em Grau de Mestre Ma&#231;om com um simples golpe de malhete pelo Venerável Mestre ${vmConvocante?.nome || '[VM]'}, dispensando-se a Leitura da Ata e Expedientes. Estavam presentes à sessão ${eleicao.num_votantes_posse || presencasPosse.length} membros, conforme lista de presença.</p>
       <p>Procedeu-se então à cerimônia de posse e instalação dos novos dirigentes para a Gestão ${gestaoSub}, tomando posse os seguintes membros:</p>
       ${chapaEleita
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
@@ -237,28 +237,54 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     `;
   }
 
-  // ─── Montar HTML final ────────────────────────────────
-  return `<html xmlns:o='urn:schemas-microsoft-com:office:office'
-    xmlns:w='urn:schemas-microsoft-com:office:word'
-    xmlns='http://www.w3.org/TR/REC-html40'>
-  <head>
-    <meta charset="utf-8">
-    <style>${css}</style>
-    <!--[if gte mso 9]>
-    <xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml>
-    <![endif]-->
-  </head>
-  <body>${corpo}</body>
-  </html>`;
+  // ─── Montar HTML final no formato MHTML que o Word aceita ──
+  const boundary = '----=_Part_MasonicDoc_001';
+  const htmlDoc = `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta name="ProgId" content="Word.Document"/>
+<meta name="Generator" content="Microsoft Word 15"/>
+<meta name="Originator" content="Microsoft Word 15"/>
+<!--[if gte mso 9]>
+<xml>
+  <w:WordDocument>
+    <w:View>Print</w:View>
+    <w:Zoom>100</w:Zoom>
+    <w:DoNotOptimizeForBrowser/>
+  </w:WordDocument>
+</xml>
+<![endif]-->
+<style>${css}</style>
+</head>
+<body>${corpo}</body>
+</html>`;
+
+  const mhtml = [
+    'MIME-Version: 1.0',
+    'Content-Type: multipart/related; type="text/html"; boundary="' + boundary + '"',
+    '',
+    '--' + boundary,
+    'Content-Type: text/html; charset="utf-8"',
+    'Content-Transfer-Encoding: quoted-printable',
+    '',
+    htmlDoc,
+    '',
+    '--' + boundary + '--',
+  ].join('\r\n');
+
+  return mhtml;
 };
 
 // ─── Download helper ─────────────────────────────────────
-const downloadDocx = (htmlContent, nomeArquivo) => {
-  const blob = new Blob([htmlContent], { type: 'application/msword;charset=utf-8' });
+const downloadDocx = (mhtmlContent, nomeArquivo) => {
+  const blob = new Blob([mhtmlContent], { type: 'message/rfc822' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = nomeArquivo;
+  a.download = nomeArquivo.replace('.docx', '.doc');
   a.click();
   URL.revokeObjectURL(url);
 };
