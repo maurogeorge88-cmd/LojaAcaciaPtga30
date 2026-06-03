@@ -102,12 +102,12 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const prL = (runs, opts = {}) => pr(runs, { ...opts, align: AlignmentType.LEFT });
 
   const assinatura = (nome, cargo) => [
-    prL([ar('___________________________________________')], { before: 500, after: 40 }),
-    prL([ar(nome, { bold: true })], { before: 0, after: 20 }),
-    prL([ar(cargo)], { before: 0, after: 200 }),
+    prC([ar('___________________________________________')], { before: 500, after: 40 }),
+    prC([ar(nome, { bold: true })], { before: 0, after: 20 }),
+    prC([ar(cargo)], { before: 0, after: 200 }),
   ];
 
-  // ─── Logo ─────────────────────────────────────────────────
+  // ─── Cabeçalho ────────────────────────────────────────────
   const logoImg = () => new Paragraph({
     spacing: { before: 0, after: 0 },
     children: [
@@ -116,18 +116,19 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         data: b64ToBuffer(LOGO_LOJA_B64),
         transformation: { width: 108, height: 108 },
         floating: {
-          horizontalPosition: { offset: 840105 },
-          verticalPosition:   { offset: 130810 },
-          wrap: { type: 'none' },
-          behindDocument: true,
+          horizontalPosition: { offset: 457200 },  // ~0.8cm da margem — alinhado à esquerda
+          verticalPosition:   { offset: 180000 },  // desce um pouco para não sobreposição
+          wrap: { type: 'square', side: 'right' }, // texto flui à direita do logo
+          margins: { top: 0, bottom: 0, left: 114300, right: 114300 },
         },
       }),
     ],
   });
 
-  // ─── Cabeçalho ────────────────────────────────────────────
   const cabecalho = () => [
     logoImg(),
+    // Parágrafo vazio pequeno para empurrar o texto abaixo do logo
+    new Paragraph({ spacing: { before: 0, after: 0 }, children: [ar('')] }),
     prC([
       ar('AUG', { bold: true, size: 26 }),
       ar('∴', { size: 26 }),
@@ -136,9 +137,9 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       ar(' LOJA SIMB', { bold: true, size: 26 }),
       ar('∴', { size: 26 }),
       ar(` ${nomeLoja}`, { bold: true, size: 26 }),
-    ], { before: 0, after: 40, line: 276 }),
+    ], { before: 1440, after: 40, line: 276 }),  // before=1440 ≈ 2.5cm — desce abaixo do logo
     prC([ar(`Fundado em ${dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997'}`, { bold: true, size: 22 })], { before: 0, after: 40 }),
-    prC([ar('SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO', { bold: true, size: 22 })], { before: 0, after: 240 }),
+    prC([ar('SOB OS AUSPÍCIOS DA SERENÍSSIMA GRANDE LOJA MAÇÔNICA DO ESTADO DE MATO GROSSO', { bold: true, size: 22 })], { before: 0, after: 280 }),
   ];
 
   // ─── Lista eleitos ─────────────────────────────────────────
@@ -166,7 +167,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         ar(`${vmConvocante?.nome || '[VM]'} `, { bold: true }),
         ar(`, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica ${nomeLoja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Eleição do Corpo Administrativo da Augusta e Respeitável Loja Simbólica ${nomeLoja} – Gestão ${gestao}, a realizar-se no dia ${formatarData(eleicao.data_eleicao)}, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas nas dependências do nosso Templo, conforme estabelece o Artigo 187 do Regulamento Geral.`),
       ], { firstLine: true, before: 0, after: 200 }),
-      prL([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_eleicao)}.`)], { before: 200, after: 0 }),
+      prC([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_eleicao)}.`)], { before: 200, after: 0 }),
       ...assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre'),
     ];
   }
@@ -181,7 +182,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         ar(`${vmConvocante?.nome || '[VM]'} `, { bold: true }),
         ar(`, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica ${nomeLoja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Posse do Corpo Administrativo da Augusta e Respeitável Loja Simbólica ${nomeLoja} – Gestão ${gestao}, a realizar-se no dia ${formatarData(eleicao.data_posse)}, às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas nas dependências do nosso Templo, conforme estabelece o Artigo 187 do Regulamento Geral.`),
       ], { firstLine: true, before: 0, after: 200 }),
-      prL([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_posse)}.`)], { before: 200, after: 0 }),
+      prC([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_posse)}.`)], { before: 200, after: 0 }),
       ...assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre'),
     ];
   }
@@ -333,7 +334,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         ar(`ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ${tipoAta} DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestao}`, { bold: true }),
         ar(trechoReg),
       ], { firstLine: true, before: 0, after: 200 }),
-      prL([ar(`${dadosLoja.cidade || 'Paranatinga'}, ${formatarDataExtenso(dataReq)}.`)], { before: 200, after: 0 }),
+      prC([ar(`${dadosLoja.cidade || 'Paranatinga'}, ${formatarDataExtenso(dataReq)}.`)], { before: 200, after: 0 }),
       ...assinatura(presidente?.nome || '[Presidente]', 'Presidente'),
     ];
   }
