@@ -886,6 +886,26 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 // ─────────────────────────────────────────────
 //  Componente Principal
 // ─────────────────────────────────────────────
+// ─── MiniCard: indicador compacto nos cards da lista ────────
+function MiniCard({ label, valor, sufixo, cor }) {
+  const cores = {
+    default: { bg: 'var(--color-surface-2)', border: 'var(--color-border)',       text: 'var(--color-text)',    label: 'var(--color-text-muted)' },
+    blue:    { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.25)',    text: '#3b82f6',              label: '#3b82f6' },
+    green:   { bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)',    text: '#10b981',              label: '#10b981' },
+    red:     { bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',      text: '#ef4444',              label: '#ef4444' },
+    gold:    { bg: 'var(--color-accent-bg)', border: 'rgba(201,168,76,0.35)',    text: 'var(--color-accent)',  label: 'var(--color-accent)' },
+  };
+  const t = cores[cor] || cores.default;
+  return (
+    <div style={{ background: t.bg, borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: `1px solid ${t.border}` }}>
+      <div style={{ fontSize: '0.62rem', fontWeight: 600, color: t.label, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.1rem' }}>{label}</div>
+      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: t.text }}>
+        {valor}{sufixo ? <span style={{ fontSize: '0.65rem', fontWeight: 400, marginLeft: '0.2rem', opacity: 0.7 }}>{sufixo}</span> : null}
+      </div>
+    </div>
+  );
+}
+
 export default function EventosComemorativos({ showSuccess, showError }) {
   const [eventos, setEventos] = useState([]);
   const [carregando, setCarregando] = useState(true);
@@ -916,20 +936,27 @@ export default function EventosComemorativos({ showSuccess, showError }) {
     });
     const eventosEnriquecidos = (evs || []).map(ev => {
       const ps = partsPorEvento[ev.id] || [];
-      const qtdIrmaos    = ps.length;
-      const qtdAdultos   = ps.reduce((s, p) => s + (parseInt(p.adultos_convidados) || 0), 0);
+      // Irmãos = linhas com irmao_id; Externos = linhas com nome_externo
+      const irmaos_ps    = ps.filter(p => p.irmao_id);
+      const externos_ps  = ps.filter(p => !p.irmao_id);
+      const qtdIrmaos    = irmaos_ps.length;
+      const qtdExternos  = externos_ps.length;
+      // Adultos convidados: soma de adultos_convidados de TODOS (irmãos trazem convidados tbm)
+      const qtdAdultosConv = ps.reduce((s, p) => s + (parseInt(p.adultos_convidados) || 0), 0);
+      // Meia e gratuitas: soma geral
       const qtdMeia      = ps.reduce((s, p) => s + (parseInt(p.criancas_meia) || 0), 0);
       const qtdGratuitas = ps.reduce((s, p) => s + (parseInt(p.criancas_gratuitas) || 0), 0);
       const totalDespesas = lancsPorEvento[ev.id] || 0;
       const contribuicaoLoja = parseFloat(ev.contribuicao_loja || 0);
       const baseRateio = Math.max(0, totalDespesas - contribuicaoLoja);
-      // Cotas: cada irmão = 1 adulto; adultos convidados = 1 cota cada; meia = 0.5; gratuitas = 0
-      const totalCotas = qtdIrmaos + qtdAdultos + (qtdMeia * 0.5);
+      // Cotas: irmão = 1; cada externo = 1; cada adulto convidado = 1; meia = 0.5; gratuitas = 0
+      const totalCotas = qtdIrmaos + qtdExternos + qtdAdultosConv + (qtdMeia * 0.5);
       const valorCalc = totalCotas > 0 ? baseRateio / totalCotas : 0;
       return {
         ...ev,
         _qtdIrmaos: qtdIrmaos,
-        _qtdAdultos: qtdAdultos,
+        _qtdExternos: qtdExternos,
+        _qtdAdultosConv: qtdAdultosConv,
         _qtdMeia: qtdMeia,
         _qtdGratuitas: qtdGratuitas,
         _totalDespesas: totalDespesas,
@@ -1064,43 +1091,32 @@ export default function EventosComemorativos({ showSuccess, showError }) {
                       {ev.descricao && <span>📝 {ev.descricao}</span>}
                     </div>
                     {/* Linha 2: grid de indicadores */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '0.4rem', marginTop: '0.35rem' }}>
-                      {/* Irmãos */}
-                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Irmãos</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdIrmaos || 0}</div>
-                      </div>
-                      {/* Adultos convidados */}
-                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Adultos Conv.</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdAdultos || 0}</div>
-                      </div>
-                      {/* Meia (6-11) */}
-                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Meia (6–11)</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdMeia || 0}</div>
-                      </div>
-                      {/* Gratuitas (≤5) */}
-                      <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid var(--color-border)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Grátis (≤5)</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-text)' }}>{ev._qtdGratuitas || 0}</div>
-                      </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.4rem', marginTop: '0.35rem' }}>
+
+                      {/* Irmãos da loja */}
+                      <MiniCard label="👤 Irmãos" valor={ev._qtdIrmaos || 0} sufixo="pess." />
+
+                      {/* Convidados externos */}
+                      <MiniCard label="🌍 Externos" valor={ev._qtdExternos || 0} sufixo="pess." />
+
+                      {/* Adultos convidados (acompanhantes) */}
+                      <MiniCard label="🧑 Ad. Conv." valor={ev._qtdAdultosConv || 0} sufixo="pess." />
+
+                      {/* Meia cota (6–11 anos) */}
+                      <MiniCard label="🧒 Meia (6–11)" valor={ev._qtdMeia || 0} sufixo="pess." cor="blue" />
+
+                      {/* Gratuito (≤5 anos) */}
+                      <MiniCard label="👶 Grátis (≤5)" valor={ev._qtdGratuitas || 0} sufixo="pess." cor="green" />
+
                       {/* Total despesas */}
-                      <div style={{ background: 'rgba(239,68,68,0.08)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid rgba(239,68,68,0.2)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Despesas</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ef4444' }}>{fmtR(ev._totalDespesas || 0)}</div>
-                      </div>
-                      {/* Valor calculado por cota */}
-                      <div style={{ background: 'rgba(59,130,246,0.08)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid rgba(59,130,246,0.2)' }}>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Valor/Cota Calc.</div>
-                        <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#3b82f6' }}>{fmtR(ev._valorCalc || 0)}</div>
-                      </div>
-                      {/* Valor ajustado (se houver) */}
+                      <MiniCard label="💰 Despesas" valor={fmtR(ev._totalDespesas || 0)} cor="red" />
+
+                      {/* Valor/cota calculado */}
+                      <MiniCard label="📊 Vlr/Cota" valor={fmtR(ev._valorCalc || 0)} cor="blue" />
+
+                      {/* Valor ajustado (só se definido) */}
                       {ev.valor_ajustado && (
-                        <div style={{ background: 'var(--color-accent-bg)', borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: '1px solid rgba(201,168,76,0.35)' }}>
-                          <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Valor Ajustado</div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--color-accent)' }}>{fmtR(ev.valor_ajustado)}</div>
-                        </div>
+                        <MiniCard label="✅ Ajustado" valor={fmtR(parseFloat(ev.valor_ajustado))} cor="gold" />
                       )}
                     </div>
                   </div>
