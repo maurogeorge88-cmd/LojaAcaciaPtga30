@@ -887,19 +887,24 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 //  Componente Principal
 // ─────────────────────────────────────────────
 // ─── MiniCard: indicador compacto nos cards da lista ────────
-function MiniCard({ label, valor, sufixo, cor }) {
+function MiniCard({ label, valor, sufixo, cor, flex, fullWidth }) {
   const cores = {
-    default: { bg: 'var(--color-surface-2)', border: 'var(--color-border)',       text: 'var(--color-text)',    label: 'var(--color-text-muted)' },
-    blue:    { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.25)',    text: '#3b82f6',              label: '#3b82f6' },
-    green:   { bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)',    text: '#10b981',              label: '#10b981' },
-    red:     { bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',      text: '#ef4444',              label: '#ef4444' },
-    gold:    { bg: 'var(--color-accent-bg)', border: 'rgba(201,168,76,0.35)',    text: 'var(--color-accent)',  label: 'var(--color-accent)' },
+    default: { bg: 'var(--color-surface-2)', border: 'var(--color-border)',     text: 'var(--color-text)',   label: 'var(--color-text-muted)' },
+    blue:    { bg: 'rgba(59,130,246,0.08)',  border: 'rgba(59,130,246,0.25)',  text: '#3b82f6',             label: '#3b82f6' },
+    green:   { bg: 'rgba(16,185,129,0.08)',  border: 'rgba(16,185,129,0.25)',  text: '#10b981',             label: '#10b981' },
+    red:     { bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.2)',    text: '#ef4444',             label: '#ef4444' },
+    gold:    { bg: 'var(--color-accent-bg)', border: 'rgba(201,168,76,0.35)', text: 'var(--color-accent)', label: 'var(--color-accent)' },
   };
   const t = cores[cor] || cores.default;
   return (
-    <div style={{ background: t.bg, borderRadius: 'var(--radius-md)', padding: '0.35rem 0.6rem', border: `1px solid ${t.border}` }}>
-      <div style={{ fontSize: '0.62rem', fontWeight: 600, color: t.label, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.1rem' }}>{label}</div>
-      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: t.text }}>
+    <div style={{
+      background: t.bg, borderRadius: 'var(--radius-md)',
+      padding: '0.35rem 0.6rem', border: `1px solid ${t.border}`,
+      flex: flex || (fullWidth ? '1 1 100%' : undefined),
+      minWidth: 0,
+    }}>
+      <div style={{ fontSize: '0.62rem', fontWeight: 600, color: t.label, textTransform: 'uppercase', letterSpacing: '0.03em', marginBottom: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+      <div style={{ fontSize: '0.88rem', fontWeight: 700, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
         {valor}{sufixo ? <span style={{ fontSize: '0.65rem', fontWeight: 400, marginLeft: '0.2rem', opacity: 0.7 }}>{sufixo}</span> : null}
       </div>
     </div>
@@ -1090,41 +1095,58 @@ export default function EventosComemorativos({ showSuccess, showError }) {
                       {ev.data_evento && <span>📅 {fmtD(ev.data_evento)}</span>}
                       {ev.descricao && <span>📝 {ev.descricao}</span>}
                     </div>
-                    {/* Linha 2: grid de indicadores */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '0.4rem', marginTop: '0.35rem' }}>
+                    {/* Grid hierárquico de indicadores */}
+                    {(() => {
+                      const totalAdultos = (ev._qtdIrmaos||0) + (ev._qtdExternos||0) + (ev._qtdAdultosConv||0);
+                      const totalMeia    = ev._qtdMeia || 0;
+                      const totalGratis  = ev._qtdGratuitas || 0;
+                      const totalGeral   = totalAdultos + totalMeia + totalGratis;
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.5rem' }}>
 
-                      {/* Irmãos da loja */}
-                      <MiniCard label="👤 Irmãos" valor={ev._qtdIrmaos || 0} sufixo="pess." />
+                          {/* LINHA 1 — totalizador geral */}
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            <MiniCard fullWidth label="👥 Total de Convidados" valor={totalGeral} sufixo={`pess. (${totalAdultos} adultos · ${totalMeia} meia · ${totalGratis} grátis)`} cor="gold" />
+                          </div>
 
-                      {/* Convidados externos */}
-                      <MiniCard label="🌍 Externos" valor={ev._qtdExternos || 0} sufixo="pess." />
+                          {/* LINHA 2 — dois grupos lado a lado */}
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            {/* Grupo adultos */}
+                            <div style={{ flex: 3, display: 'flex', flexDirection: 'column', gap: '0.25rem', background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 'var(--radius-md)', padding: '0.4rem' }}>
+                              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+                                Adultos — {totalAdultos} pess.
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                <MiniCard label="👤 Irmãos"    valor={ev._qtdIrmaos||0}    sufixo="pess." flex={1} />
+                                <MiniCard label="🧑 Ad. Conv." valor={ev._qtdAdultosConv||0} sufixo="pess." flex={1} />
+                                <MiniCard label="🌍 Externos"  valor={ev._qtdExternos||0}   sufixo="pess." flex={1} />
+                              </div>
+                            </div>
 
-                      {/* Adultos convidados (acompanhantes) */}
-                      <MiniCard label="🧑 Ad. Conv." valor={ev._qtdAdultosConv || 0} sufixo="pess." />
+                            {/* Grupo meia e grátis */}
+                            <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: '0.25rem', background: 'rgba(99,102,241,0.07)', border: '1px solid rgba(99,102,241,0.2)', borderRadius: 'var(--radius-md)', padding: '0.4rem' }}>
+                              <div style={{ fontSize: '0.6rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>
+                                Crianças — {totalMeia + totalGratis} pess.
+                              </div>
+                              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                                <MiniCard label="🧒 Meia (6–11)" valor={totalMeia}    sufixo="pess." cor="blue" flex={1} />
+                                <MiniCard label="👶 Grátis (≤5)" valor={totalGratis}  sufixo="pess." cor="green" flex={1} />
+                              </div>
+                            </div>
+                          </div>
 
-                      {/* Total adultos pagantes */}
-                      <MiniCard label="👥 Total Adultos" valor={(ev._qtdIrmaos || 0) + (ev._qtdExternos || 0) + (ev._qtdAdultosConv || 0)} sufixo="pess." cor="gold" />
+                          {/* LINHA 3 — financeiro */}
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            <MiniCard label="💰 Despesas"  valor={fmtR(ev._totalDespesas||0)} cor="red"  flex={1} />
+                            <MiniCard label="📊 Vlr/Cota"  valor={fmtR(ev._valorCalc||0)}     cor="blue" flex={1} />
+                            {ev.valor_ajustado && (
+                              <MiniCard label="✅ Ajustado" valor={fmtR(parseFloat(ev.valor_ajustado))} cor="gold" flex={1} />
+                            )}
+                          </div>
 
-                      {/* Meia cota (6–11 anos) */}
-                      <MiniCard label="🧒 Meia (6–11)" valor={ev._qtdMeia || 0} sufixo="pess." cor="blue" />
-
-                      {/* Total meia cota */}
-                      <MiniCard label="➕ Total Meia" valor={ev._qtdMeia || 0} sufixo={`= ${((ev._qtdMeia||0)*0.5).toFixed(1)} cotas`} cor="blue" />
-
-                      {/* Gratuito (≤5 anos) */}
-                      <MiniCard label="👶 Grátis (≤5)" valor={ev._qtdGratuitas || 0} sufixo="pess." cor="green" />
-
-                      {/* Total despesas */}
-                      <MiniCard label="💰 Despesas" valor={fmtR(ev._totalDespesas || 0)} cor="red" />
-
-                      {/* Valor/cota calculado */}
-                      <MiniCard label="📊 Vlr/Cota" valor={fmtR(ev._valorCalc || 0)} cor="blue" />
-
-                      {/* Valor ajustado (só se definido) */}
-                      {ev.valor_ajustado && (
-                        <MiniCard label="✅ Ajustado" valor={fmtR(parseFloat(ev.valor_ajustado))} cor="gold" />
-                      )}
-                    </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                     <button onClick={() => setEventoAtivo(ev)} style={{ ...btnEdit, padding: '0.4rem 0.75rem' }}>👁️ Abrir</button>
