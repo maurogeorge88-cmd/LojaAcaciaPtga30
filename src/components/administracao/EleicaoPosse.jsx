@@ -52,7 +52,26 @@ const DOC_CFG = {
   mLeft: 1701, mRight: 863, mTop: 720, mBottom: 720,
 };
 
+// ── Interpolação de variáveis nos modelos ─────────────────────
+const interpolarModelo = (texto, vars) => {
+  if (!texto) return '';
+  return Object.entries(vars).reduce((t, [k, v]) => t.replaceAll(`{${k}}`, v || ''), texto);
+};
+
+// ── Buscar modelos do banco (cache em memória por sessão) ──────
+let _modelosCache = null;
+const buscarModelos = async () => {
+  if (_modelosCache) return _modelosCache;
+  const { data } = await supabase.from('modelos_documentos').select('*');
+  _modelosCache = {};
+  (data || []).forEach(m => { _modelosCache[m.tipo] = m; });
+  return _modelosCache;
+};
+
 const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) => {
+
+  const modelos      = await buscarModelos();
+  const modelo       = modelos[tipo] || {};
 
   const chapaEleita = chapas.filter(c => c.eleita);
   const vmConvocante = irmaos.find(i => i.id === eleicao.vm_convocante_id);
@@ -97,6 +116,44 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     ].filter(Boolean).join(', ');
   };
 
+  // ── Mapa de variáveis para interpolação ─────────────────────
+  const orador_el  = chapaEleita.find(c => c.cargo === 'Orador');
+  const oradorNome = orador_el ? (irmaos.find(i => i.id === orador_el.irmao_id)?.nome || '') : '';
+  const presEleicaoLen = presencas.filter(p => p.sessao === 'eleicao').length;
+  const presePosseLen  = presencas.filter(p => p.sessao === 'posse').length;
+
+  const VARS = {
+    vm_nome:                  vmConvocante?.nome || '',
+    gestao,
+    nome_loja:                nomeLoja,
+    num_loja:                 dadosLoja.numero_loja || '30',
+    data_eleicao:             formatarData(eleicao.data_eleicao),
+    hora_eleicao:             eleicao.hora_eleicao?.substring(0,5) || '20:00',
+    data_edital_eleicao:      formatarDataExtenso(eleicao.data_edital_eleicao),
+    data_posse:               formatarData(eleicao.data_posse),
+    hora_posse:               eleicao.hora_posse?.substring(0,5) || '20:00',
+    data_edital_posse:        formatarDataExtenso(eleicao.data_edital_posse),
+    cidade:                   dadosLoja.cidade || 'Paranatinga',
+    estado:                   dadosLoja.estado || 'MT',
+    endereco_loja:            dadosLoja.endereco || '',
+    data_fundacao:            dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997',
+    orador_nome:              oradorNome,
+    secretario_nome:          secretario?.nome || '',
+    secretario_dados:         secretario ? dadoIrmao(eleicao.secretario_id) : '',
+    num_votantes:             String(eleicao.num_votantes_eleicao || presEleicaoLen),
+    trecho_votacao:           eleicao.tipo_votacao === 'aclamacao'
+                                ? interpolarModelo(modelo.corpo_aclamacao || '', {})
+                                : interpolarModelo(modelo.corpo_disputa || '', {}),
+    cnpj:                     dadosLoja.cnpj || '[CNPJ]',
+    numero_registro_cartorio: dadosLoja.numero_registro_cartorio || '04, do Livro A-01',
+  };
+
+  // Função para interpolar e gerar parágrafo do modelo
+  const prModelo = (texto, opts = {}) => {
+    const interpolado = interpolarModelo(texto, VARS);
+    return pr([ar(interpolado)], opts);
+  };
+
   // ─── Helpers ──────────────────────────────────────────────
   const ar = (txt, opts = {}) => new TextRun({
     text: String(txt ?? ''),
@@ -115,6 +172,21 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
   const prC = (runs, opts = {}) => pr(runs, { ...opts, align: AlignmentType.CENTER });
   const prL = (runs, opts = {}) => pr(runs, { ...opts, align: AlignmentType.LEFT });
+
+  const alignFromStr = (s) => s === 'center' ? AlignmentType.CENTER : s === 'left' ? AlignmentType.LEFT : AlignmentType.JUSTIFIED;
+
+  const tituloModelo = (texto) => {
+    if (!texto) return [];
+    const t = interpolarModelo(texto, VARS);
+    return [pr([ar(t, { bold: true })], { align: alignFromStr(modelo.alinhamento_titulo || 'center'), before: 0, after: 240 })];
+  };
+
+  const rodapeModelo = () => {
+    if (!modelo.rodape) return [];
+    return [prModelo(modelo.rodape, { firstLine: true, before: 160, after: 0 })];
+  };
+
+  const assModelo = (nome, cargo) => cargo ? assinatura(nome, cargo) : [];
 
   const assinatura = (nome, cargo) => [
     prC([ar('___________________________________________')], { before: 500, after: 40 }),
@@ -176,14 +248,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   if (tipo === 'edital_eleicao') {
     children = [
       ...cabecalho(),
-      prC([ar('Edital de Convocação para Eleição', { bold: true })], { before: 0, after: 200 }),
-      pr([
-        ar('Na qualidade de Venerável Mestre, Sr. '),
-        ar(`${vmConvocante?.nome || '[VM]'} `, { bold: true }),
-        ar(`, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica ${nomeLoja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Eleição do Corpo Administrativo da Augusta e Respeitável Loja Simbólica ${nomeLoja} – Gestão ${gestao}, a realizar-se no dia ${formatarData(eleicao.data_eleicao)}, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas nas dependências do nosso Templo, conforme estabelece o Artigo 187 do Regulamento Geral.`),
-      ], { firstLine: true, before: 0, after: 200 }),
-      prC([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_eleicao)}.`)], { before: 200, after: 0 }),
-      ...assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre'),
+      ...tituloModelo(modelo.titulo_doc || 'Edital de Convocação para Eleição'),
+      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
+      prC([ar(`${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_eleicao}.`)], { before: 200, after: 0 }),
+      ...assModelo(vmConvocante?.nome || '[VM]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
     ];
   }
 
@@ -191,106 +259,61 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   else if (tipo === 'edital_posse') {
     children = [
       ...cabecalho(),
-      prC([ar('Edital de Convocação para Posse', { bold: true })], { before: 0, after: 200 }),
-      pr([
-        ar('Na qualidade de Venerável Mestre, Sr. '),
-        ar(`${vmConvocante?.nome || '[VM]'} `, { bold: true }),
-        ar(`, os Mestres Maçons ativos e regulares do Quadro desta Augusta e Respeitável Loja Simbólica ${nomeLoja}, que estejam aptos ao exercício do voto nos termos da Constituição e do Regulamento Geral, estão CONVOCADOS, por este Edital, para a Sessão Ordinária de Posse do Corpo Administrativo da Augusta e Respeitável Loja Simbólica ${nomeLoja} – Gestão ${gestao}, a realizar-se no dia ${formatarData(eleicao.data_posse)}, às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas nas dependências do nosso Templo, conforme estabelece o Artigo 187 do Regulamento Geral.`),
-      ], { firstLine: true, before: 0, after: 200 }),
-      prC([ar(`${dadosLoja.cidade || 'Paranatinga'} – ${dadosLoja.estado || 'MT'}, ${formatarDataExtenso(eleicao.data_edital_posse)}.`)], { before: 200, after: 0 }),
-      ...assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre'),
+      ...tituloModelo(modelo.titulo_doc || 'Edital de Convocação para Posse'),
+      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
+      prC([ar(`${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_posse}.`)], { before: 200, after: 0 }),
+      ...assModelo(vmConvocante?.nome || '[VM]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
     ];
   }
 
   // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_eleicao_loja') {
-    const orador = chapaEleita.find(c => c.cargo === 'Orador');
-    const oradorNome = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
-    const trechoVotacao = eleicao.tipo_votacao === 'aclamacao'
-      ? 'por se tratar de chapa única, não houve composição de mesa eleitoral, motivo pelo qual, a votação foi por aclamação sendo aprovado a chapa única por todos os membros presentes, conforme constam suas assinaturas na folha de votação (anexo), sem nenhuma objeção ou abstenção.'
-      : 'foi constituída mesa eleitoral, procedendo-se à votação por meio de escrutínio secreto, tendo sido eleita a chapa vencedora por maioria dos presentes, conforme constam suas assinaturas na folha de votação (anexo).';
+    const orador     = chapaEleita.find(c => c.cargo === 'Orador');
+    const orNome     = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
     children = [
-      pr([
-        ar('ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ELEIÇÃO', { bold: true }),
-        ar(` DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO `, { bold: true }),
-        ar(gestao, { bold: true }),
-      ], { align: AlignmentType.CENTER, before: 0, after: 240 }),
-      pr([ar(`Aos ${formatarData(eleicao.data_eleicao)} da era vulgar, às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, reuniram-se em Sessão ordinária, para eleição dos cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do Regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico e artigo 3º, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, na sua sede, localizada na ${enderecoLoja}, cidade de ${cidadeUF}. Preenchidos os lugares em Loja, os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete, dispensando-se a Leitura da Ata e Expedientes. Constou-se na ordem do dia a eleição da diretoria da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}, bem como o Respeitabilíssimo Mestre determinou ao Irmão Secretário que procedesse a leitura do Edital de Convocação, no qual a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o exercício de ${eleicao.gestao}. Os trabalhos foram presididos pelo Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, ${trechoVotacao} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa única que ficou composta dos seguintes cargos e seus membros e comissões:`)],
-        { firstLine: true, before: 0, after: 80 }),
+      ...tituloModelo(modelo.titulo_doc),
+      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
-      pr([ar(`Esta Ata é o que foi deliberado em Assembleia da Loja, em ${formatarData(eleicao.data_eleicao)}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, ${secretario?.nome || '[Secretário]'} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.`)],
-        { firstLine: true, before: 160, after: 0 }),
-      ...assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre'),
-      ...assinatura(oradorNome, 'Orador'),
-      ...assinatura(secretario?.nome || '[Secretário]', 'Secretário'),
+      ...rodapeModelo(),
+      ...assModelo(vmConvocante?.nome || '[VM]',   modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      ...assModelo(orNome,                          modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretario?.nome || '[Sec.]',    modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
-  // ══════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_eleicao_cartorio') {
-    const orador = chapaEleita.find(c => c.cargo === 'Orador');
-    const oradorNome = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
-    const trechoMesa = eleicao.tipo_votacao === 'aclamacao'
-      ? `por se tratar de chapa única, não houve composição de mesa eleitoral. Estavam presentes à sessão ${eleicao.num_votantes_eleicao || presEleicao.length} membros votantes, 1/3 do quórum mínimo exigido para aprovação pelo estatuto, declarados pelo Chanceler e Tesoureiro como aptos ao exercício do voto. Então, por ordem do Venerável Mestre (Presidente), foi votado por aclamação sendo aprovado a chapa única por todos os membros presentes, conforme constam suas assinaturas na folha de votação (anexo), sem nenhuma objeção ou abstenção.`
-      : `foi constituída mesa eleitoral para o escrutínio secreto. Estavam presentes à sessão ${eleicao.num_votantes_eleicao || presEleicao.length} membros votantes, declarados pelo Chanceler e Tesoureiro como aptos ao exercício do voto. A votação foi realizada e a chapa vencedora foi eleita por maioria dos presentes.`;
+    const orador  = chapaEleita.find(c => c.cargo === 'Orador');
+    const orNome  = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
     children = [
-      pr([
-        ar('ATA DA SESSÃO ORDINÁRIA DE ELEIÇÃO', { bold: true }),
-        ar(` DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO `, { bold: true }),
-        ar(gestao, { bold: true }),
-      ], { align: AlignmentType.CENTER, before: 0, after: 240 }),
-      pr([ar(`Aos ${formatarData(eleicao.data_eleicao)} (E∴ V∴), às ${eleicao.hora_eleicao?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, na ${enderecoLoja}, cidade de ${cidadeUF}, no Templo os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em SESSÃO ORDINÁRIA, para o fim especial de realizarem as eleições para os cargos de Venerável Mestre (Presidente) e Membros da Diretoria, em cumprimento ao disposto no artigo 187 do regulamento Geral da Ordem e em conformidade com os artigos 37 e 46 do Código Eleitoral Maçônico, e artigos 29, 30, 31, 32, 33, 34 do Estatuto da Augusta e Respeitável Loja Simbólica Acácia de Paranatinga nº ${dadosLoja.numero_loja || '30'}.`)],
-        { firstLine: true, before: 0, after: 80 }),
-      pr([ar(`Presentes os irmãos que preencheram os cargos, estando todos revestidos de suas insígnias, sob a presidência do Venerável Mestre (Presidente) ${vmConvocante?.nome || '[VM]'}, e pelos membros, ${oradorNome} e ${secretario?.nome || '[Secretário]'}, Orador e Secretário, respectivamente, estando os demais cargos regularmente constituídos.`)],
-        { firstLine: true, before: 0, after: 80 }),
-      pr([ar(`Os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Venerável Mestre, dispensando-se a Leitura da Ata e Expedientes. Após a abertura dos trabalhos foi determinado ao Irmão Secretário que procedesse a leitura do Edital de Convocação para Eleição, no qual constou a convocação dos Irmãos Mestres da Loja para eleição da diretoria da Loja para o Exercício ${gestao}.`)],
-        { firstLine: true, before: 0, after: 80 }),
-      pr([ar(`Estavam presentes à sessão ${eleicao.num_votantes_eleicao || presEleicao.length} membros votantes, conforme a lista de presença, e que foram declarados pelos Irmãos Chanceler e Tesoureiro como aptos ao exercício do voto.`)],
-        { firstLine: true, before: 0, after: 80 }),
-      pr([ar(`Então, por ordem do Venerável Mestre (Presidente) e ${trechoMesa} Em seguida o Venerável Mestre (Presidente) anunciou a aprovação da chapa única que ficou composta dos seguintes cargos e seus membros e comissões:`)],
-        { firstLine: true, before: 0, after: 80 }),
+      ...tituloModelo(modelo.titulo_doc),
+      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
-      pr([ar(`Esta Ata é o que foi deliberado em Assembleia da Loja, em ${formatarData(eleicao.data_eleicao)}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, ${secretario?.nome || '[Secretário]'} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.`)],
-        { firstLine: true, before: 160, after: 0 }),
-      ...assinatura(vmConvocante?.nome || '[VM]', 'Venerável Mestre'),
-      ...assinatura(oradorNome, 'Orador'),
-      ...assinatura(secretario?.nome || '[Secretário]', 'Secretário'),
+      ...rodapeModelo(),
+      ...assModelo(vmConvocante?.nome || '[VM]',   modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      ...assModelo(orNome,                          modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretario?.nome || '[Sec.]',    modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
-  // ══════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_posse') {
-    const orador = chapaEleita.find(c => c.cargo === 'Orador');
-    const oradorNome = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
-    const vmEleito = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
+    const vmEleito    = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
     const vmEleitoNome = vmEleito ? (irmaos.find(i => i.id === vmEleito.irmao_id)?.nome || '[VM Eleito]') : '[VM Eleito]';
     children = [
-      pr([
-        ar('ATA DA SESSÃO ORDINÁRIA DE POSSE', { bold: true }),
-        ar(` DA DIRETORIA DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO `, { bold: true }),
-        ar(gestao, { bold: true }),
-      ], { align: AlignmentType.CENTER, before: 0, after: 240 }),
-      pr([ar(`Aos ${formatarData(eleicao.data_posse)} (E∴ V∴), às ${eleicao.hora_posse?.substring(0,5) || '20:00'} horas, atendendo à convocação feita por Edital, reuniram-se no Oriente de ${dadosLoja.cidade || 'Paranatinga'}, Estado de ${dadosLoja.estado || 'Mato Grosso'}, na ${enderecoLoja}, cidade de ${cidadeUF}, no Templo, os Mestres Maçons e membros ativos do Quadro da Augusta e Respeitável Loja Simbólica ${nomeLoja}, sob os auspícios da Sereníssima Grande Loja Maçônica do Estado de Mato Grosso – GLEMT, em SESSÃO ORDINÁRIA, para o fim especial de realizarem a POSSE da nova diretoria eleita para a Gestão ${gestao}.`)],
-        { firstLine: true, before: 0, after: 80 }),
-      pr([ar(`Os trabalhos foram abertos em Grau de Mestre Maçom com um simples golpe de malhete pelo Venerável Mestre ${vmConvocante?.nome || '[VM]'}, dispensando-se a Leitura da Ata e Expedientes. Estavam presentes à sessão ${eleicao.num_votantes_posse || presPosse.length} membros, conforme lista de presença.`)],
-        { firstLine: true, before: 0, after: 80 }),
-      pr([ar(`Procedeu-se então à cerimônia de posse e instalação dos novos dirigentes para a Gestão ${gestao}, tomando posse os seguintes membros:`)],
-        { firstLine: true, before: 0, after: 80 }),
+      ...tituloModelo(modelo.titulo_doc),
+      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...chapaEleita
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
-        .map(c => pr([
-          ar(`${c.cargo}: `, { bold: true }),
-          ar(irmaos.find(i => i.id === c.irmao_id)?.nome || '[Irmão]'),
-        ], { firstLine: true, before: 60, after: 60 })),
-      pr([ar(`Esta Ata é o que foi deliberado em Assembleia da Loja, em ${formatarData(eleicao.data_posse)}, e é de responsabilidade dos dirigentes e de todos os participantes. Nada mais foi tratado. Eu, ${secretario?.nome || '[Secretário]'} (Secretário), lavrei a presente Ata que vai assinada pelo Venerável Mestre, Orador e Secretário. Os trabalhos foram encerrados com um simples golpe de malhete.`)],
-        { firstLine: true, before: 160, after: 0 }),
-      ...assinatura(vmConvocante?.nome || '[VM sainte]', 'Venerável Mestre Instalador'),
-      ...assinatura(vmEleitoNome, 'Venerável Mestre Empossado'),
-      ...assinatura(secretario?.nome || '[Secretário]', 'Secretário'),
+        .map(ch => pr([ar(`${ch.cargo}: `, { bold: true }), ar(irmaos.find(i => i.id === ch.irmao_id)?.nome || '[Irmão]')], { firstLine: true, before: 60, after: 60 })),
+      ...rodapeModelo(),
+      ...assModelo(vmConvocante?.nome || '[VM sainte]', modelo.assinatura_1_cargo || 'Venerável Mestre Instalador'),
+      ...assModelo(vmEleitoNome,                        modelo.assinatura_2_cargo || 'Venerável Mestre Empossado'),
+      ...assModelo(secretario?.nome || '[Sec.]',         modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
-  // ══════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════
   else if (tipo === 'lista_presenca_eleicao' || tipo === 'lista_presenca_posse') {
     const sessaoNome = tipo === 'lista_presenca_eleicao' ? 'Eleição' : 'Posse';
     const dataDoc    = tipo === 'lista_presenca_eleicao' ? eleicao.data_eleicao : eleicao.data_posse;
@@ -301,7 +324,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     const CW         = [500, 4800, 1600, 2442];
     children = [
       ...cabecalho(),
-      prC([ar(`Lista de Presença — Sessão de ${sessaoNome}`, { bold: true })], { before: 0, after: 80 }),
+      prC([ar(interpolarModelo(modelo.titulo_doc || `Lista de Presença — Sessão de ${sessaoNome}`, VARS), { bold: true })], { before: 0, after: 80 }),
       prC([ar(`Gestão: ${gestao}     Data: ${formatarData(dataDoc)}`)], { before: 0, after: 160 }),
       new Table({
         width: { size: DOC_CFG.W - DOC_CFG.mLeft - DOC_CFG.mRight, type: WidthType.DXA },
@@ -330,31 +353,16 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
   // ══════════════════════════════════════════════════════════
   else if (tipo === 'requerimento_eleicao' || tipo === 'requerimento_posse') {
-    const tipoAta  = tipo === 'requerimento_eleicao' ? 'ELEIÇÃO' : 'POSSE DA DIRETORIA';
-    const dataReq  = eleicao.data_posse || eleicao.data_eleicao;
-    const secDados = secretario ? dadoIrmao(eleicao.secretario_id) : '[Secretário]';
-    const trechoReg = tipo === 'requerimento_eleicao'
-      ? ` em Pessoas Jurídicas dessa Serventia, junto ao registro sob nº ${dadosLoja.numero_registro_cartorio || '04, do Livro A-01'}, com base no que expressa o teor do disposto nos Art. 114 a 121 da Lei 6.015/73 que rege os Registros Públicos.`
-      : ` em Pessoas Jurídicas dessa Serventia, com base no que expressa o teor do disposto nos Art. 114 a 121 da Lei 6.015/73 que rege os Registros Públicos.`;
+    const dataReq = eleicao.data_posse || eleicao.data_eleicao;
     children = [
-      prL([ar(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT – 2º SERVIÇO NOTORIAL E REGISTRAL', { bold: true })],
-        { before: 0, after: 200 }),
-      pr([
-        ar(`AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}`, { bold: true }),
-        ar(', pessoa jurídica de direito privado, inscrita no CNPJ/MF '),
-        ar(dadosLoja.cnpj || '[CNPJ]', { bold: true }),
-        ar(`, com sede localizada na ${enderecoLoja}, cidade de ${cidadeUF}, representada pelo seu secretário, Sr. ${secDados}. Vem com o devido respeito à presença de Vossa Senhoria, `),
-        ar('REQUERER', { bold: true }),
-        ar(', que digne em proceder com a averbação da '),
-        ar(`ATA DA ASSEMBLEIA GERAL ORDINÁRIA DE ${tipoAta} DA AUGUSTA E RESPEITÁVEL LOJA SIMBÓLICA ${nomeLoja}, PARA O PERÍODO ${gestao}`, { bold: true }),
-        ar(trechoReg),
-      ], { firstLine: true, before: 0, after: 200 }),
-      prC([ar(`${dadosLoja.cidade || 'Paranatinga'}, ${formatarDataExtenso(dataReq)}.`)], { before: 200, after: 0 }),
-      ...assinatura(presidente?.nome || '[Presidente]', 'Presidente'),
+      prL([ar(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT', { bold: true })], { before: 0, after: 200 }),
+      prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
+      prC([ar(`${VARS.cidade}, ${formatarDataExtenso(dataReq)}.`)], { before: 200, after: 0 }),
+      ...assModelo(presidente?.nome || '[Presidente]', modelo.assinatura_1_cargo || 'Presidente'),
     ];
   }
 
-  // ─── Montar documento ─────────────────────────────────────
+    // ─── Montar documento ─────────────────────────────────────
   const doc = new Document({
     styles: { default: { document: { run: { font: 'Arial', size: 24 } } } },
     sections: [{ properties: { page: pageCfg }, children }],
