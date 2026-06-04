@@ -74,9 +74,22 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const modelo       = modelos[tipo] || {};
 
   const chapaEleita = chapas.filter(c => c.eleita);
-  const vmConvocante = irmaos.find(i => i.id === eleicao.vm_convocante_id);
-  const secretario   = irmaos.find(i => i.id === eleicao.secretario_id);
-  const presidente   = irmaos.find(i => i.id === eleicao.presidente_eleito_id);
+  // Gestão SAINTE — assina Editais de Eleição, Atas de Eleição
+  const vmConvocante    = irmaos.find(i => i.id === eleicao.vm_convocante_id);
+  const oradorSainte    = irmaos.find(i => i.id === eleicao.orador_sainte_id);
+  const secretarioSainte= irmaos.find(i => i.id === eleicao.secretario_sainte_id);
+
+  // Gestão ELEITA — vem da chapa; assina Edital de Posse, Ata de Posse, Requerimentos
+  const vmEleito        = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
+  const vmEleitoNome    = vmEleito ? (irmaos.find(i => i.id === vmEleito.irmao_id)?.nome || '[VM Eleito]') : '[VM Eleito]';
+  const oradorEleito    = chapaEleita.find(c => c.cargo === 'Orador');
+  const oradorEleitoNome= oradorEleito ? (irmaos.find(i => i.id === oradorEleito.irmao_id)?.nome || '[Orador]') : '[Orador]';
+  const secretarioEleito= chapaEleita.find(c => c.cargo === 'Secretario' || c.cargo === 'Secretário');
+  const secretarioEleitoNome = secretarioEleito ? (irmaos.find(i => i.id === secretarioEleito.irmao_id)?.nome || '[Secretário]') : '[Secretário]';
+
+  // Compat: presidente para requerimentos = VM eleito
+  const presidente      = irmaos.find(i => i.id === eleicao.presidente_eleito_id)
+                          || irmaos.find(i => i.id === vmEleito?.irmao_id);
   const gestao       = eleicao.gestao || '';
   const nomeLoja     = `ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`;
   const enderecoLoja = dadosLoja.endereco || 'Avenida Brasil, nº 2.300, bairro Jardim Panorama';
@@ -123,7 +136,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const presePosseLen  = presencas.filter(p => p.sessao === 'posse').length;
 
   const VARS = {
-    vm_nome:                  vmConvocante?.nome || '',
+    vm_nome:                  vmConvocante?.nome || '[VM Sainte]',
     gestao,
     nome_loja:                nomeLoja,
     num_loja:                 dadosLoja.numero_loja || '30',
@@ -137,9 +150,15 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     estado:                   dadosLoja.estado || 'MT',
     endereco_loja:            dadosLoja.endereco || '',
     data_fundacao:            dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997',
-    orador_nome:              oradorNome,
-    secretario_nome:          secretario?.nome || '',
-    secretario_dados:         secretario ? dadoIrmao(eleicao.secretario_id) : '',
+    // Sainte (edital eleição, atas de eleição)
+    orador_nome:              oradorSainte?.nome || oradorNome || '[Orador Sainte]',
+    secretario_nome:          secretarioSainte?.nome || '[Secretário Sainte]',
+    secretario_dados:         secretarioSainte ? dadoIrmao(eleicao.secretario_sainte_id) : '[Secretário]',
+    // Eleito (edital posse, ata posse, requerimentos)
+    vm_eleito_nome:           vmEleitoNome,
+    orador_eleito_nome:       oradorEleitoNome,
+    secretario_eleito_nome:   secretarioEleitoNome,
+    secretario_eleito_dados:  secretarioEleito ? dadoIrmao(secretarioEleito.irmao_id) : '[Secretário Eleito]',
     num_votantes:             String(eleicao.num_votantes_eleicao || presEleicaoLen),
     trecho_votacao:           eleicao.tipo_votacao === 'aclamacao'
                                 ? interpolarModelo(modelo.corpo_aclamacao || '', {})
@@ -251,7 +270,8 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       ...tituloModelo(modelo.titulo_doc || 'Edital de Convocação para Eleição'),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
       prC([ar(`${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_eleicao}.`)], { before: 200, after: 0 }),
-      ...assModelo(vmConvocante?.nome || '[VM]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      // Gestão SAINTE assina o edital de eleição
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
     ];
   }
 
@@ -262,44 +282,41 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       ...tituloModelo(modelo.titulo_doc || 'Edital de Convocação para Posse'),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
       prC([ar(`${VARS.cidade} – ${VARS.estado}, ${VARS.data_edital_posse}.`)], { before: 200, after: 0 }),
-      ...assModelo(vmConvocante?.nome || '[VM]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      // Gestão SAINTE ainda assina o edital de posse (ainda está no cargo)
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]', modelo.assinatura_1_cargo || 'Venerável Mestre'),
     ];
   }
 
   // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_eleicao_loja') {
-    const orador     = chapaEleita.find(c => c.cargo === 'Orador');
-    const orNome     = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
     children = [
       ...tituloModelo(modelo.titulo_doc),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
-      ...assModelo(vmConvocante?.nome || '[VM]',   modelo.assinatura_1_cargo || 'Venerável Mestre'),
-      ...assModelo(orNome,                          modelo.assinatura_2_cargo || 'Orador'),
-      ...assModelo(secretario?.nome || '[Sec.]',    modelo.assinatura_3_cargo || 'Secretário'),
+      // Gestão SAINTE lavra e assina a ata de eleição
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]',           modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      ...assModelo(oradorSainte?.nome || '[Orador Sainte]',       modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretarioSainte?.nome || '[Secretário Sainte]',modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
     // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_eleicao_cartorio') {
-    const orador  = chapaEleita.find(c => c.cargo === 'Orador');
-    const orNome  = orador ? (irmaos.find(i => i.id === orador.irmao_id)?.nome || '[Orador]') : '[Orador]';
     children = [
       ...tituloModelo(modelo.titulo_doc),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
-      ...assModelo(vmConvocante?.nome || '[VM]',   modelo.assinatura_1_cargo || 'Venerável Mestre'),
-      ...assModelo(orNome,                          modelo.assinatura_2_cargo || 'Orador'),
-      ...assModelo(secretario?.nome || '[Sec.]',    modelo.assinatura_3_cargo || 'Secretário'),
+      // Gestão SAINTE lavra e assina a ata de eleição para o cartório
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]',           modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      ...assModelo(oradorSainte?.nome || '[Orador Sainte]',       modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretarioSainte?.nome || '[Secretário Sainte]',modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
     // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_posse') {
-    const vmEleito    = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
-    const vmEleitoNome = vmEleito ? (irmaos.find(i => i.id === vmEleito.irmao_id)?.nome || '[VM Eleito]') : '[VM Eleito]';
     children = [
       ...tituloModelo(modelo.titulo_doc),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
@@ -307,9 +324,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
         .map(ch => pr([ar(`${ch.cargo}: `, { bold: true }), ar(irmaos.find(i => i.id === ch.irmao_id)?.nome || '[Irmão]')], { firstLine: true, before: 60, after: 60 })),
       ...rodapeModelo(),
-      ...assModelo(vmConvocante?.nome || '[VM sainte]', modelo.assinatura_1_cargo || 'Venerável Mestre Instalador'),
-      ...assModelo(vmEleitoNome,                        modelo.assinatura_2_cargo || 'Venerável Mestre Empossado'),
-      ...assModelo(secretario?.nome || '[Sec.]',         modelo.assinatura_3_cargo || 'Secretário'),
+      // Sainte instala + eleitos tomam posse
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]',       modelo.assinatura_1_cargo || 'Venerável Mestre Instalador'),
+      ...assModelo(vmEleitoNome,                               modelo.assinatura_2_cargo || 'Venerável Mestre Empossado'),
+      ...assModelo(secretarioEleitoNome || '[Secretário]',     modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
@@ -354,11 +372,16 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   // ══════════════════════════════════════════════════════════
   else if (tipo === 'requerimento_eleicao' || tipo === 'requerimento_posse') {
     const dataReq = eleicao.data_posse || eleicao.data_eleicao;
+    // Requerimentos: Secretário eleito representa a loja; Presidente eleito (VM eleito) assina
+    // Atualizar VARS.secretario_dados para usar eleito
+    VARS.secretario_dados = secretarioEleitoNome || '[Secretário Eleito]';
+    VARS.secretario_nome  = secretarioEleitoNome || '[Secretário Eleito]';
     children = [
       prL([ar(dadosLoja.nome_cartorio || 'ILMª. SRª. TABELIÃ DO CARTÓRIO DE NOTAS, PROTESTO DE TÍTULOS, REGISTRO CIVIL DAS PESSOAS NATURAIS E JURÍDICAS DE PARANATINGA - MT', { bold: true })], { before: 0, after: 200 }),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 200, align: alignFromStr(modelo.alinhamento_corpo) }),
       prC([ar(`${VARS.cidade}, ${formatarDataExtenso(dataReq)}.`)], { before: 200, after: 0 }),
-      ...assModelo(presidente?.nome || '[Presidente]', modelo.assinatura_1_cargo || 'Presidente'),
+      // Gestão ELEITA assina os requerimentos
+      ...assModelo(vmEleitoNome, modelo.assinatura_1_cargo || 'Presidente'),
     ];
   }
 
@@ -436,7 +459,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     hora_posse: '20:00',
     data_edital_posse: '',
     vm_convocante_id: '',
-    secretario_id: '',
+    orador_sainte_id: '',
+    secretario_sainte_id: '',
     presidente_eleito_id: '',
     observacoes: '',
   });
@@ -529,9 +553,10 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       const payload = {
         ...form,
         status: 'rascunho',
-        vm_convocante_id:    form.vm_convocante_id    || null,
-        secretario_id:       form.secretario_id       || null,
-        presidente_eleito_id:form.presidente_eleito_id|| null,
+        vm_convocante_id:      form.vm_convocante_id      || null,
+        orador_sainte_id:     form.orador_sainte_id     || null,
+        secretario_sainte_id: form.secretario_sainte_id || null,
+        presidente_eleito_id: form.presidente_eleito_id || null,
         data_eleicao:        form.data_eleicao        || null,
         data_edital_eleicao: form.data_edital_eleicao || null,
         data_posse:          form.data_posse          || null,
@@ -547,7 +572,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       if (error) throw error;
       showSuccess('Eleição criada com sucesso!');
       setModalAberto(false);
-      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', secretario_id: '', presidente_eleito_id: '', observacoes: '' });
+      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', presidente_eleito_id: '', observacoes: '' });
       await carregar();
       setEleicaoSelecionada(data);
       setEtapa(1);
@@ -797,19 +822,38 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   <label style={S.label}>Data do Edital de Posse</label>
                   <input type="date" style={S.input} value={form.data_edital_posse} onChange={e => setForm(p => ({ ...p, data_edital_posse: e.target.value }))} />
                 </div>
-                <div style={{ gridColumn: '1/-1' }}>
-                  <label style={S.label}>VM Convocante (quem assina os editais)</label>
-                  <select style={S.select} value={form.vm_convocante_id} onChange={e => setForm(p => ({ ...p, vm_convocante_id: e.target.value }))}>
-                    <option value="">Selecione...</option>
-                    {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-                  </select>
+                {/* Gestão Sainte */}
+                <div style={{ gridColumn: '1/-1', padding: '0.6rem 0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-accent)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                    Gestão Sainte — assina Editais e Atas de Eleição
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={S.label}>VM Sainte</label>
+                      <select style={S.select} value={form.vm_convocante_id} onChange={e => setForm(p => ({ ...p, vm_convocante_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Orador Sainte</label>
+                      <select style={S.select} value={form.orador_sainte_id} onChange={e => setForm(p => ({ ...p, orador_sainte_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Secretário Sainte</label>
+                      <select style={S.select} value={form.secretario_sainte_id} onChange={e => setForm(p => ({ ...p, secretario_sainte_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ gridColumn: '1/-1' }}>
-                  <label style={S.label}>Secretário (quem lavra as atas)</label>
-                  <select style={S.select} value={form.secretario_id} onChange={e => setForm(p => ({ ...p, secretario_id: e.target.value }))}>
-                    <option value="">Selecione...</option>
-                    {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-                  </select>
+                {/* Gestão Eleita — info */}
+                <div style={{ gridColumn: '1/-1', padding: '0.6rem 0.75rem', background: 'rgba(16,185,129,0.08)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-success)', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
+                  <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>Gestão Eleita</span> — VM, Orador e Secretário eleitos são buscados automaticamente da chapa montada na Etapa 1.
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
@@ -905,21 +949,51 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   />
                 </div>
               ))}
-              {[
-                { key: 'vm_convocante_id', label: 'VM Convocante' },
-                { key: 'secretario_id', label: 'Secretário' },
-              ].map(f => (
-                <div key={f.key}>
-                  <label style={S.label}>{f.label}</label>
-                  <select style={S.select} disabled={!podeEditar}
-                    value={eleicaoSelecionada[f.key] || ''}
-                    onChange={e => { setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value })); podeEditar && atualizarEleicao({ [f.key]: e.target.value || null }); }}
-                  >
-                    <option value="">Selecione...</option>
-                    {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
-                  </select>
+              {/* Grupo: Gestão Sainte */}
+              <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-accent)' }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
+                  Gestão Sainte — assina Editais e Atas de Eleição
                 </div>
-              ))}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                  {[
+                    { key: 'vm_convocante_id',    label: 'VM Sainte' },
+                    { key: 'orador_sainte_id',    label: 'Orador Sainte' },
+                    { key: 'secretario_sainte_id',label: 'Secretário Sainte' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={S.label}>{f.label}</label>
+                      <select style={S.select} disabled={!podeEditar}
+                        value={eleicaoSelecionada[f.key] || ''}
+                        onChange={e => { setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value })); podeEditar && atualizarEleicao({ [f.key]: e.target.value || null }); }}
+                      >
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Grupo: Gestão Eleita — automático da chapa */}
+              <div style={{ gridColumn: '1/-1', padding: '0.6rem 0.75rem', background: 'rgba(16,185,129,0.08)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-success)' }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Gestão Eleita — assina Edital de Posse, Ata de Posse e Requerimentos
+                </div>
+                {(() => {
+                  const chapas_el = chapas.filter(c => c.eleita);
+                  const vmEl  = chapas_el.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
+                  const orEl  = chapas_el.find(c => c.cargo === 'Orador');
+                  const secEl = chapas_el.find(c => c.cargo === 'Secretario' || c.cargo === 'Secretário');
+                  const nm = (ch) => ch ? (irmaosAtivos.find(i => i.id === ch.irmao_id)?.nome || '—') : '—';
+                  return (
+                    <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.82rem', flexWrap: 'wrap' }}>
+                      <span><strong>VM:</strong> {nm(vmEl)}</span>
+                      <span><strong>Orador:</strong> {nm(orEl)}</span>
+                      <span><strong>Secretário:</strong> {nm(secEl)}</span>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
 
