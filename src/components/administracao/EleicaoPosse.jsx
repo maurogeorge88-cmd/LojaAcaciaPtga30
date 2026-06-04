@@ -74,22 +74,30 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const modelo       = modelos[tipo] || {};
 
   const chapaEleita = chapas.filter(c => c.eleita);
-  // Gestão SAINTE — assina Editais de Eleição, Atas de Eleição
-  const vmConvocante    = irmaos.find(i => i.id === eleicao.vm_convocante_id);
-  const oradorSainte    = irmaos.find(i => i.id === eleicao.orador_sainte_id);
-  const secretarioSainte= irmaos.find(i => i.id === eleicao.secretario_sainte_id);
+  // ── Gestão SAINTE — assina Editais e Atas de Eleição ────────
+  const vmConvocante     = irmaos.find(i => i.id === eleicao.vm_convocante_id);
+  const oradorSainte     = irmaos.find(i => i.id === eleicao.orador_sainte_id);
+  const secretarioSainte = irmaos.find(i => i.id === eleicao.secretario_sainte_id);
 
-  // Gestão ELEITA — vem da chapa; assina Edital de Posse, Ata de Posse, Requerimentos
-  const vmEleito        = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
-  const vmEleitoNome    = vmEleito ? (irmaos.find(i => i.id === vmEleito.irmao_id)?.nome || '[VM Eleito]') : '[VM Eleito]';
-  const oradorEleito    = chapaEleita.find(c => c.cargo === 'Orador');
-  const oradorEleitoNome= oradorEleito ? (irmaos.find(i => i.id === oradorEleito.irmao_id)?.nome || '[Orador]') : '[Orador]';
-  const secretarioEleito= chapaEleita.find(c => c.cargo === 'Secretario' || c.cargo === 'Secretário');
+  // Substitutos para ata de eleição (quando orador/secretário sainte concorrem)
+  const oradorAta        = irmaos.find(i => i.id === eleicao.orador_substituto_ata_id) || oradorSainte;
+  const secretarioAta    = irmaos.find(i => i.id === eleicao.secretario_substituto_ata_id) || secretarioSainte;
+
+  // ── Instaladores — assinam a Ata de Posse ────────────────────
+  const vmInstalador          = irmaos.find(i => i.id === eleicao.vm_instalador_id)           || vmConvocante;
+  const oradorInstalador      = irmaos.find(i => i.id === eleicao.orador_instalador_id)       || oradorSainte;
+  const secretarioInstalador  = irmaos.find(i => i.id === eleicao.secretario_instalador_id)   || secretarioSainte;
+
+  // ── Gestão ELEITA — vem da chapa; assina Requerimentos ───────
+  const vmEleito             = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
+  const vmEleitoNome         = vmEleito ? (irmaos.find(i => i.id === vmEleito.irmao_id)?.nome || '[VM Eleito]') : '[VM Eleito]';
+  const oradorEleito         = chapaEleita.find(c => c.cargo === 'Orador');
+  const oradorEleitoNome     = oradorEleito ? (irmaos.find(i => i.id === oradorEleito.irmao_id)?.nome || '[Orador]') : '[Orador]';
+  const secretarioEleito     = chapaEleita.find(c => c.cargo === 'Secretario' || c.cargo === 'Secretário');
   const secretarioEleitoNome = secretarioEleito ? (irmaos.find(i => i.id === secretarioEleito.irmao_id)?.nome || '[Secretário]') : '[Secretário]';
 
-  // Compat: presidente para requerimentos = VM eleito
-  const presidente      = irmaos.find(i => i.id === eleicao.presidente_eleito_id)
-                          || irmaos.find(i => i.id === vmEleito?.irmao_id);
+  const presidente = irmaos.find(i => i.id === eleicao.presidente_eleito_id)
+                     || irmaos.find(i => i.id === vmEleito?.irmao_id);
   const gestao       = eleicao.gestao || '';
   const nomeLoja     = `ACÁCIA DE PARANATINGA Nº ${dadosLoja.numero_loja || '30'}`;
   const enderecoLoja = dadosLoja.endereco || 'Avenida Brasil, nº 2.300, bairro Jardim Panorama';
@@ -294,10 +302,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
-      // Gestão SAINTE lavra e assina a ata de eleição
-      ...assModelo(vmConvocante?.nome || '[VM Sainte]',           modelo.assinatura_1_cargo || 'Venerável Mestre'),
-      ...assModelo(oradorSainte?.nome || '[Orador Sainte]',       modelo.assinatura_2_cargo || 'Orador'),
-      ...assModelo(secretarioSainte?.nome || '[Secretário Sainte]',modelo.assinatura_3_cargo || 'Secretário'),
+      // VM Sainte + Orador/Secretário sainte (ou substituto se concorrendo)
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]',       modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      ...assModelo(oradorAta?.nome || '[Orador]',             modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretarioAta?.nome || '[Secretário]',     modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
@@ -308,10 +316,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...listaEleitos(),
       ...rodapeModelo(),
-      // Gestão SAINTE lavra e assina a ata de eleição para o cartório
-      ...assModelo(vmConvocante?.nome || '[VM Sainte]',           modelo.assinatura_1_cargo || 'Venerável Mestre'),
-      ...assModelo(oradorSainte?.nome || '[Orador Sainte]',       modelo.assinatura_2_cargo || 'Orador'),
-      ...assModelo(secretarioSainte?.nome || '[Secretário Sainte]',modelo.assinatura_3_cargo || 'Secretário'),
+      // VM Sainte + Orador/Secretário sainte (ou substituto se concorrendo)
+      ...assModelo(vmConvocante?.nome || '[VM Sainte]',       modelo.assinatura_1_cargo || 'Venerável Mestre'),
+      ...assModelo(oradorAta?.nome || '[Orador]',             modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretarioAta?.nome || '[Secretário]',     modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
@@ -324,10 +332,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
         .map(ch => pr([ar(`${ch.cargo}: `, { bold: true }), ar(irmaos.find(i => i.id === ch.irmao_id)?.nome || '[Irmão]')], { firstLine: true, before: 60, after: 60 })),
       ...rodapeModelo(),
-      // Sainte instala + eleitos tomam posse
-      ...assModelo(vmConvocante?.nome || '[VM Sainte]',       modelo.assinatura_1_cargo || 'Venerável Mestre Instalador'),
-      ...assModelo(vmEleitoNome,                               modelo.assinatura_2_cargo || 'Venerável Mestre Empossado'),
-      ...assModelo(secretarioEleitoNome || '[Secretário]',     modelo.assinatura_3_cargo || 'Secretário'),
+      // VM Instalador + Orador Instalador + Secretário Instalador
+      ...assModelo(vmInstalador?.nome || '[VM Instalador]',         modelo.assinatura_1_cargo || 'Venerável Mestre Instalador'),
+      ...assModelo(oradorInstalador?.nome || '[Orador Instalador]', modelo.assinatura_2_cargo || 'Orador'),
+      ...assModelo(secretarioInstalador?.nome || '[Secretário]',    modelo.assinatura_3_cargo || 'Secretário'),
     ];
   }
 
@@ -461,6 +469,11 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     vm_convocante_id: '',
     orador_sainte_id: '',
     secretario_sainte_id: '',
+    orador_substituto_ata_id: '',
+    secretario_substituto_ata_id: '',
+    vm_instalador_id: '',
+    orador_instalador_id: '',
+    secretario_instalador_id: '',
     presidente_eleito_id: '',
     observacoes: '',
   });
@@ -553,10 +566,15 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       const payload = {
         ...form,
         status: 'rascunho',
-        vm_convocante_id:      form.vm_convocante_id      || null,
-        orador_sainte_id:     form.orador_sainte_id     || null,
-        secretario_sainte_id: form.secretario_sainte_id || null,
-        presidente_eleito_id: form.presidente_eleito_id || null,
+        vm_convocante_id:             form.vm_convocante_id             || null,
+        orador_sainte_id:            form.orador_sainte_id            || null,
+        secretario_sainte_id:        form.secretario_sainte_id        || null,
+        orador_substituto_ata_id:    form.orador_substituto_ata_id    || null,
+        secretario_substituto_ata_id:form.secretario_substituto_ata_id|| null,
+        vm_instalador_id:            form.vm_instalador_id            || null,
+        orador_instalador_id:        form.orador_instalador_id        || null,
+        secretario_instalador_id:    form.secretario_instalador_id    || null,
+        presidente_eleito_id:        form.presidente_eleito_id        || null,
         data_eleicao:        form.data_eleicao        || null,
         data_edital_eleicao: form.data_edital_eleicao || null,
         data_posse:          form.data_posse          || null,
@@ -572,7 +590,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       if (error) throw error;
       showSuccess('Eleição criada com sucesso!');
       setModalAberto(false);
-      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', presidente_eleito_id: '', observacoes: '' });
+      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', orador_substituto_ata_id: '', secretario_substituto_ata_id: '', vm_instalador_id: '', orador_instalador_id: '', secretario_instalador_id: '', presidente_eleito_id: '', observacoes: '' });
       await carregar();
       setEleicaoSelecionada(data);
       setEtapa(1);
@@ -823,11 +841,11 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   <input type="date" style={S.input} value={form.data_edital_posse} onChange={e => setForm(p => ({ ...p, data_edital_posse: e.target.value }))} />
                 </div>
                 {/* Gestão Sainte */}
-                <div style={{ gridColumn: '1/-1', padding: '0.6rem 0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-accent)' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
-                    Gestão Sainte — assina Editais e Atas de Eleição
+                <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-accent)' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                    Gestão Sainte — Editais de Eleição e Atas de Eleição
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
                     <div>
                       <label style={S.label}>VM Sainte</label>
                       <select style={S.select} value={form.vm_convocante_id} onChange={e => setForm(p => ({ ...p, vm_convocante_id: e.target.value }))}>
@@ -850,10 +868,63 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                       </select>
                     </div>
                   </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                    Se o Orador ou Secretário estiverem concorrendo, indique o substituto para assinar a ata:
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={S.label}>Substituto do Orador na Ata <span style={{ fontWeight: 400, textTransform: 'none' }}>(se concorrendo)</span></label>
+                      <select style={S.select} value={form.orador_substituto_ata_id} onChange={e => setForm(p => ({ ...p, orador_substituto_ata_id: e.target.value }))}>
+                        <option value="">Mesmo orador sainte</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Substituto do Secretário na Ata <span style={{ fontWeight: 400, textTransform: 'none' }}>(se concorrendo)</span></label>
+                      <select style={S.select} value={form.secretario_substituto_ata_id} onChange={e => setForm(p => ({ ...p, secretario_substituto_ata_id: e.target.value }))}>
+                        <option value="">Mesmo secretário sainte</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Instaladores — Ata de Posse */}
+                <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'rgba(99,102,241,0.07)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid #6366f1' }}>
+                  <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                    Instaladores — Ata de Posse
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginBottom: '0.6rem' }}>
+                    Se não selecionados, usa automaticamente VM, Orador e Secretário saintes.
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label style={S.label}>VM Instalador</label>
+                      <select style={S.select} value={form.vm_instalador_id} onChange={e => setForm(p => ({ ...p, vm_instalador_id: e.target.value }))}>
+                        <option value="">Mesmo VM Sainte</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Orador Instalador</label>
+                      <select style={S.select} value={form.orador_instalador_id} onChange={e => setForm(p => ({ ...p, orador_instalador_id: e.target.value }))}>
+                        <option value="">Mesmo Orador Sainte</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>Secretário Instalador</label>
+                      <select style={S.select} value={form.secretario_instalador_id} onChange={e => setForm(p => ({ ...p, secretario_instalador_id: e.target.value }))}>
+                        <option value="">Mesmo Secretário Sainte</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Gestão Eleita — info */}
                 <div style={{ gridColumn: '1/-1', padding: '0.6rem 0.75rem', background: 'rgba(16,185,129,0.08)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-success)', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>Gestão Eleita</span> — VM, Orador e Secretário eleitos são buscados automaticamente da chapa montada na Etapa 1.
+                  <span style={{ fontWeight: 700, color: 'var(--color-success)' }}>Gestão Eleita</span> — VM, Orador e Secretário eleitos são buscados automaticamente da chapa (Etapa 1). Assinam os Requerimentos.
                 </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
@@ -952,9 +1023,9 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
               {/* Grupo: Gestão Sainte */}
               <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-accent)' }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-                  Gestão Sainte — assina Editais e Atas de Eleição
+                  Gestão Sainte — Editais de Eleição e Atas de Eleição
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem', marginBottom: '0.75rem' }}>
                   {[
                     { key: 'vm_convocante_id',    label: 'VM Sainte' },
                     { key: 'orador_sainte_id',    label: 'Orador Sainte' },
@@ -972,12 +1043,60 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                     </div>
                   ))}
                 </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                  Se o Orador ou Secretário estiverem concorrendo, indique o substituto para assinar a ata:
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  {[
+                    { key: 'orador_substituto_ata_id',    label: 'Substituto do Orador na Ata', placeholder: 'Mesmo orador sainte' },
+                    { key: 'secretario_substituto_ata_id',label: 'Substituto do Secretário na Ata', placeholder: 'Mesmo secretário sainte' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={S.label}>{f.label}</label>
+                      <select style={S.select} disabled={!podeEditar}
+                        value={eleicaoSelecionada[f.key] || ''}
+                        onChange={e => { setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value })); podeEditar && atualizarEleicao({ [f.key]: e.target.value || null }); }}
+                      >
+                        <option value="">{f.placeholder}</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Grupo: Instaladores — Ata de Posse */}
+              <div style={{ gridColumn: '1/-1', padding: '0.75rem', background: 'rgba(99,102,241,0.07)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid #6366f1' }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                  Instaladores — Ata de Posse
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--color-text-muted)', marginBottom: '0.6rem' }}>
+                  Se não selecionados, usa VM, Orador e Secretário saintes.
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+                  {[
+                    { key: 'vm_instalador_id',          label: 'VM Instalador',          placeholder: 'Mesmo VM Sainte' },
+                    { key: 'orador_instalador_id',       label: 'Orador Instalador',       placeholder: 'Mesmo Orador Sainte' },
+                    { key: 'secretario_instalador_id',   label: 'Secretário Instalador',   placeholder: 'Mesmo Secretário Sainte' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label style={S.label}>{f.label}</label>
+                      <select style={S.select} disabled={!podeEditar}
+                        value={eleicaoSelecionada[f.key] || ''}
+                        onChange={e => { setEleicaoSelecionada(p => ({ ...p, [f.key]: e.target.value })); podeEditar && atualizarEleicao({ [f.key]: e.target.value || null }); }}
+                      >
+                        <option value="">{f.placeholder}</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Grupo: Gestão Eleita — automático da chapa */}
               <div style={{ gridColumn: '1/-1', padding: '0.6rem 0.75rem', background: 'rgba(16,185,129,0.08)', borderRadius: 'var(--radius-md)', borderLeft: '3px solid var(--color-success)' }}>
                 <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-success)', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
-                  Gestão Eleita — assina Edital de Posse, Ata de Posse e Requerimentos
+                  Gestão Eleita — assina Requerimentos (automático da chapa)
                 </div>
                 {(() => {
                   const chapas_el = chapas.filter(c => c.eleita);
@@ -987,7 +1106,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                   const nm = (ch) => ch ? (irmaosAtivos.find(i => i.id === ch.irmao_id)?.nome || '—') : '—';
                   return (
                     <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.82rem', flexWrap: 'wrap' }}>
-                      <span><strong>VM:</strong> {nm(vmEl)}</span>
+                      <span><strong>VM (Presidente):</strong> {nm(vmEl)}</span>
                       <span><strong>Orador:</strong> {nm(orEl)}</span>
                       <span><strong>Secretário:</strong> {nm(secEl)}</span>
                     </div>
