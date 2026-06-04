@@ -54,6 +54,7 @@ import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
 import EleicaoPosse from './components/administracao/EleicaoPosse';
+import ModelosDocumentos from './components/administracao/ModelosDocumentos';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -1852,6 +1853,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('modelos-documentos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'modelos-documentos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Modelos de Documentos"
+                >
+                  <span className="text-base">📋</span>
+                  {menuAberto && <span className="font-semibold">Modelos de Docs</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('altos-graus')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'altos-graus'
@@ -2486,6 +2500,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('modelos-documentos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'modelos-documentos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Modelos de Documentos"
+                >
+                  <span className="text-base">📋</span>
+                  {menuAberto && <span className="font-semibold">Modelos de Docs</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'sobre'
@@ -2629,6 +2656,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
                   {currentPage === 'sindicancia' && '🔍 Sindicância'}
                   {currentPage === 'eleicao-posse' && '⚖️ Eleição & Posse'}
+                  {currentPage === 'modelos-documentos' && '📋 Modelos de Documentos'}
                 </h2>
               </div>
               <div className="flex items-center gap-4">
@@ -2859,6 +2887,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <EleicaoPosse
             permissoes={permissoes}
             irmaos={irmaos}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {/* MODELOS DE DOCUMENTOS */}
+        {currentPage === 'modelos-documentos' && (
+          <ModelosDocumentos
+            permissoes={permissoes}
             showSuccess={showSuccess}
             showError={showError}
           />
