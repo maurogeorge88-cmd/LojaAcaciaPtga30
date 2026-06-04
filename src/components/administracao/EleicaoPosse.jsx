@@ -84,9 +84,11 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
   const secretarioAta    = irmaos.find(i => i.id === eleicao.secretario_substituto_ata_id) || secretarioSainte;
 
   // ── Instaladores — assinam a Ata de Posse ────────────────────
-  const vmInstalador          = irmaos.find(i => i.id === eleicao.vm_instalador_id)           || vmConvocante;
-  const oradorInstalador      = irmaos.find(i => i.id === eleicao.orador_instalador_id)       || oradorSainte;
-  const secretarioInstalador  = irmaos.find(i => i.id === eleicao.secretario_instalador_id)   || secretarioSainte;
+  const vmInstalador               = irmaos.find(i => i.id === eleicao.vm_instalador_id)                    || vmConvocante;
+  const primeiroVigilanteInstalador = irmaos.find(i => i.id === eleicao.primeiro_vigilante_instalador_id) || null;
+  const segundoVigilanteInstalador  = irmaos.find(i => i.id === eleicao.segundo_vigilante_instalador_id)  || null;
+  const oradorInstalador            = irmaos.find(i => i.id === eleicao.orador_instalador_id)             || oradorSainte;
+  const secretarioInstalador        = irmaos.find(i => i.id === eleicao.secretario_instalador_id)         || secretarioSainte;
 
   // ── Gestão ELEITA — vem da chapa; assina Requerimentos ───────
   const vmEleito             = chapaEleita.find(c => c.cargo === 'Veneravel Mestre' || c.cargo === 'Venerável Mestre');
@@ -158,6 +160,10 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
     estado:                   dadosLoja.estado || 'MT',
     endereco_loja:            dadosLoja.endereco || '',
     data_fundacao:            dadosLoja.data_fundacao ? formatarData(dadosLoja.data_fundacao) : '20/12/1997',
+    // Instaladores
+    vm_instalador_nome:                 vmInstalador?.nome || '[VM Instalador]',
+    primeiro_vigilante_instalador_nome: primeiroVigilanteInstalador?.nome || '[1º Vigilante]',
+    segundo_vigilante_instalador_nome:  segundoVigilanteInstalador?.nome  || '[2º Vigilante]',
     // Sainte (edital eleição, atas de eleição)
     orador_nome:              oradorSainte?.nome || oradorNome || '[Orador Sainte]',
     secretario_nome:          secretarioSainte?.nome || '[Secretário Sainte]',
@@ -496,6 +502,8 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     orador_substituto_ata_id: '',
     secretario_substituto_ata_id: '',
     vm_instalador_id: '',
+    primeiro_vigilante_instalador_id: '',
+    segundo_vigilante_instalador_id: '',
     orador_instalador_id: '',
     secretario_instalador_id: '',
     presidente_eleito_id: '',
@@ -595,9 +603,11 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
         secretario_sainte_id:        form.secretario_sainte_id        || null,
         orador_substituto_ata_id:    form.orador_substituto_ata_id    || null,
         secretario_substituto_ata_id:form.secretario_substituto_ata_id|| null,
-        vm_instalador_id:            form.vm_instalador_id            || null,
-        orador_instalador_id:        form.orador_instalador_id        || null,
-        secretario_instalador_id:    form.secretario_instalador_id    || null,
+        vm_instalador_id:                     form.vm_instalador_id                     || null,
+        primeiro_vigilante_instalador_id:    form.primeiro_vigilante_instalador_id    || null,
+        segundo_vigilante_instalador_id:     form.segundo_vigilante_instalador_id     || null,
+        orador_instalador_id:                form.orador_instalador_id                || null,
+        secretario_instalador_id:            form.secretario_instalador_id            || null,
         presidente_eleito_id:        form.presidente_eleito_id        || null,
         data_eleicao:        form.data_eleicao        || null,
         data_edital_eleicao: form.data_edital_eleicao || null,
@@ -614,7 +624,7 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
       if (error) throw error;
       showSuccess('Eleição criada com sucesso!');
       setModalAberto(false);
-      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', orador_substituto_ata_id: '', secretario_substituto_ata_id: '', vm_instalador_id: '', orador_instalador_id: '', secretario_instalador_id: '', presidente_eleito_id: '', observacoes: '' });
+      setForm({ gestao: '', tipo_votacao: 'aclamacao', data_eleicao: '', hora_eleicao: '20:00', data_edital_eleicao: '', data_posse: '', hora_posse: '20:00', data_edital_posse: '', vm_convocante_id: '', orador_sainte_id: '', secretario_sainte_id: '', orador_substituto_ata_id: '', secretario_substituto_ata_id: '', vm_instalador_id: '', primeiro_vigilante_instalador_id: '', segundo_vigilante_instalador_id: '', orador_instalador_id: '', secretario_instalador_id: '', presidente_eleito_id: '', observacoes: '' });
       await carregar();
       setEleicaoSelecionada(data);
       setEtapa(1);
@@ -930,6 +940,20 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                       </select>
                     </div>
                     <div>
+                      <label style={S.label}>1º Vigilante Instalador</label>
+                      <select style={S.select} value={form.primeiro_vigilante_instalador_id} onChange={e => setForm(p => ({ ...p, primeiro_vigilante_instalador_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={S.label}>2º Vigilante Instalador</label>
+                      <select style={S.select} value={form.segundo_vigilante_instalador_id} onChange={e => setForm(p => ({ ...p, segundo_vigilante_instalador_id: e.target.value }))}>
+                        <option value="">Selecione...</option>
+                        {irmaosAtivos.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+                      </select>
+                    </div>
+                    <div>
                       <label style={S.label}>Orador Instalador</label>
                       <select style={S.select} value={form.orador_instalador_id} onChange={e => setForm(p => ({ ...p, orador_instalador_id: e.target.value }))}>
                         <option value="">Mesmo Orador Sainte</option>
@@ -1099,9 +1123,11 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
                   {[
-                    { key: 'vm_instalador_id',          label: 'VM Instalador',          placeholder: 'Mesmo VM Sainte' },
-                    { key: 'orador_instalador_id',       label: 'Orador Instalador',       placeholder: 'Mesmo Orador Sainte' },
-                    { key: 'secretario_instalador_id',   label: 'Secretário Instalador',   placeholder: 'Mesmo Secretário Sainte' },
+                    { key: 'vm_instalador_id',                    label: 'VM Instalador',                    placeholder: 'Mesmo VM Sainte' },
+                    { key: 'primeiro_vigilante_instalador_id',    label: '1º Vigilante Instalador',          placeholder: 'Selecione...' },
+                    { key: 'segundo_vigilante_instalador_id',     label: '2º Vigilante Instalador',          placeholder: 'Selecione...' },
+                    { key: 'orador_instalador_id',                label: 'Orador Instalador',                placeholder: 'Mesmo Orador Sainte' },
+                    { key: 'secretario_instalador_id',            label: 'Secretário Instalador',            placeholder: 'Mesmo Secretário Sainte' },
                   ].map(f => (
                     <div key={f.key}>
                       <label style={S.label}>{f.label}</label>
