@@ -331,7 +331,7 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_posse') {
-    // Cargos que assinam a ata de posse: eleitos até Chanceler
+    // ── Cargos que assinam: eleitos até Chanceler ─────────────
     const CARGOS_ASSINAM_POSSE = [
       'Veneravel Mestre', 'Venerável Mestre',
       'Primeiro Vigilante', '1º Vigilante',
@@ -342,7 +342,6 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       'Chanceler',
     ];
 
-    // Assinaturas dos eleitos empossados (até Chanceler)
     const assinaturasEleitos = chapaEleita
       .filter(ch => CARGOS_ASSINAM_POSSE.includes(ch.cargo))
       .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
@@ -352,19 +351,30 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
       });
 
     children = [
+      // Título via modelo (editável no banco)
       ...tituloModelo(modelo.titulo_doc),
+
+      // Corpo via modelo com todas as variáveis interpoladas (instaladores incluídos)
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
+
+      // "Foram empossados os Irmãos:" — texto fixo introdutório
+      pr([ar('Foram empossados os Irmãos:')], { firstLine: true, before: 80, after: 80 }),
+
+      // Lista dos eleitos com qualificação completa (gerada do banco de dados)
       ...chapaEleita
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
         .map(ch => {
           const irmao = irmaos.find(i => i.id === ch.irmao_id);
           return pr([
             ar(`${ch.cargo}: `, { bold: true }),
-            ar(irmao ? dadoIrmao(ch.irmao_id) : '[Irmão]'),
+            ar(irmao ? dadoIrmao(ch.irmao_id) : '[Irmão não encontrado]'),
           ], { firstLine: true, before: 60, after: 60 });
         }),
+
+      // Rodapé via modelo (editável no banco)
       ...rodapeModelo(),
-      // Assinam os ELEITOS EMPOSSADOS até Chanceler (não os instaladores)
+
+      // Assinaturas dos eleitos empossados até Chanceler
       ...assinaturasEleitos,
     ];
   }
