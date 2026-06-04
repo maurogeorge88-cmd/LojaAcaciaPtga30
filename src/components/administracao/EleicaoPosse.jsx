@@ -325,17 +325,41 @@ const gerarDocx = async (tipo, eleicao, chapas, presencas, dadosLoja, irmaos) =>
 
     // ══════════════════════════════════════════════════════════
   else if (tipo === 'ata_posse') {
+    // Cargos que assinam a ata de posse: eleitos até Chanceler
+    const CARGOS_ASSINAM_POSSE = [
+      'Veneravel Mestre', 'Venerável Mestre',
+      'Primeiro Vigilante', '1º Vigilante',
+      'Segundo Vigilante', '2º Vigilante',
+      'Orador',
+      'Secretario', 'Secretário',
+      'Tesoureiro',
+      'Chanceler',
+    ];
+
+    // Assinaturas dos eleitos empossados (até Chanceler)
+    const assinaturasEleitos = chapaEleita
+      .filter(ch => CARGOS_ASSINAM_POSSE.includes(ch.cargo))
+      .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
+      .flatMap(ch => {
+        const irmao = irmaos.find(i => i.id === ch.irmao_id);
+        return irmao ? assinatura(`Ir.: ${irmao.nome.toUpperCase()}`, ch.cargo) : [];
+      });
+
     children = [
       ...tituloModelo(modelo.titulo_doc),
       prModelo(modelo.corpo, { firstLine: true, before: 0, after: 80, align: alignFromStr(modelo.alinhamento_corpo) }),
       ...chapaEleita
         .sort((a, b) => ORDEM_CARGOS.indexOf(a.cargo) - ORDEM_CARGOS.indexOf(b.cargo))
-        .map(ch => pr([ar(`${ch.cargo}: `, { bold: true }), ar(irmaos.find(i => i.id === ch.irmao_id)?.nome || '[Irmão]')], { firstLine: true, before: 60, after: 60 })),
+        .map(ch => {
+          const irmao = irmaos.find(i => i.id === ch.irmao_id);
+          return pr([
+            ar(`${ch.cargo}: `, { bold: true }),
+            ar(irmao ? dadoIrmao(ch.irmao_id) : '[Irmão]'),
+          ], { firstLine: true, before: 60, after: 60 });
+        }),
       ...rodapeModelo(),
-      // VM Instalador + Orador Instalador + Secretário Instalador
-      ...assModelo(vmInstalador?.nome || '[VM Instalador]',         modelo.assinatura_1_cargo || 'Venerável Mestre Instalador'),
-      ...assModelo(oradorInstalador?.nome || '[Orador Instalador]', modelo.assinatura_2_cargo || 'Orador'),
-      ...assModelo(secretarioInstalador?.nome || '[Secretário]',    modelo.assinatura_3_cargo || 'Secretário'),
+      // Assinam os ELEITOS EMPOSSADOS até Chanceler (não os instaladores)
+      ...assinaturasEleitos,
     ];
   }
 
