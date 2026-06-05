@@ -1781,7 +1781,6 @@ export default function Aniversariantes() {
                 <div style={{ height: '4px', background: 'linear-gradient(135deg,#c9a84c,#e8cc7a,#c9a84c)' }}/>
                 <div style={{ padding: '1.5rem', background: '#fff', textAlign: 'center', color: '#333', lineHeight: '1.7' }}>
                   {dadosLoja.logo_url && <img src={dadosLoja.logo_url} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', display: 'block', margin: '0 auto 10px' }}/>}
-                  <p style={{ margin: '0 0 4px', fontSize: '0.65rem', fontWeight: 600, color: '#c9a84c', letterSpacing: '2px' }}>A∴ U∴ F∴</p>
                   <p style={{ fontWeight: 700, margin: '0 0 10px', fontSize: '0.95rem' }}>Ir∴ {modalEmail.nome.toUpperCase()},</p>
                   <p style={{ margin: '0 0 8px' }}>Parabéns pelos {modalEmail.idade} anos bem vividos.</p>
                   <p style={{ margin: '0 0 8px' }}>Nesta data tão especial, os Irmãos da <strong>{dadosLoja.nome_loja || 'Loja'}</strong> elevam suas preces ao <strong>Grande Arquiteto do Universo</strong> por mais um ano de sua jornada.</p>
