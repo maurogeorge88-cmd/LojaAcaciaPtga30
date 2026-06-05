@@ -67,7 +67,7 @@ const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, m
     },
     body: JSON.stringify({
       modo:    'manual',
-      irmaoId: irmao.id,
+      irmaoId: irmao.irmao_id,
     }),
   });
 
@@ -301,10 +301,10 @@ export default function Aniversariantes() {
   };
 
   const handleEnviarEmail = async (irmao) => {
-    setEnviandoEmail(irmao.id);
+    setEnviandoEmail(irmao.irmao_id);
     try {
       await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', 'manual');
-      setEmailEnviados(prev => ({ ...prev, [irmao.id]: true }));
+      setEmailEnviados(prev => ({ ...prev, [irmao.irmao_id]: true }));
       setModalEmail(null);
       alert(`✅ Email enviado com sucesso para ${irmao.nome}!`);
     } catch (e) {
