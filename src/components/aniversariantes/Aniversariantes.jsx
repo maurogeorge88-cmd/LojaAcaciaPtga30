@@ -297,15 +297,20 @@ export default function Aniversariantes() {
   };
 
   const handleEnviarEmail = async (irmao, modo = 'manual') => {
-    const nomeLoja = dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
-    const nomeChanceler = chanceler || 'Chanceler';
-    const logoUrl = dadosLoja.logo_url || '';
     setEnviandoEmail(irmao.id);
     try {
-      await enviarEmailAniversario(irmao, nomeLoja, nomeChanceler, logoUrl, modo);
+      // Se é reenvio, apaga o registro do banco para liberar o upsert
+      if (irmao.reenvio) {
+        await supabase
+          .from('emails_aniversario')
+          .delete()
+          .eq('irmao_id', irmao.id)
+          .eq('ano', new Date().getFullYear());
+      }
+      await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', modo);
       setEmailEnviados(prev => ({ ...prev, [irmao.id]: true }));
       setModalEmail(null);
-      alert(`✅ Email enviado com sucesso para ${irmao.nome}!`);
+      alert(`✅ Email ${irmao.reenvio ? 'reenviado' : 'enviado'} com sucesso para ${irmao.nome}!`);
     } catch (e) {
       alert(`❌ Erro ao enviar email: ${e.message}`);
     } finally {
@@ -1457,11 +1462,22 @@ export default function Aniversariantes() {
 
             {/* Botão enviar email — só para irmãos com email cadastrado */}
             {aniv.nivel === 1 && aniv.email && (
-              <div style={{ marginTop: '0.6rem' }}>
+              <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {emailEnviados[aniv.irmao_id] ? (
-                  <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
-                    ✅ Email enviado este ano
-                  </span>
+                  <>
+                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                      ✅ Email enviado este ano
+                    </span>
+                    <button
+                      onClick={e => { e.stopPropagation(); setModalEmail({ ...aniv, reenvio: true }); }}
+                      style={{
+                        padding: '0.2rem 0.55rem', fontSize: '0.7rem', fontWeight: 600,
+                        background: 'transparent', border: '1px solid var(--color-border)',
+                        borderRadius: 'var(--radius-md)', color: 'var(--color-text-muted)', cursor: 'pointer',
+                      }}>
+                      🔄 Reenviar
+                    </button>
+                  </>
                 ) : (
                   <button
                     onClick={e => { e.stopPropagation(); setModalEmail(aniv); }}
@@ -1759,7 +1775,9 @@ export default function Aniversariantes() {
           }}>
             {/* Header */}
             <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface-2)' }}>
-              <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)', margin: 0 }}>📧 Enviar Email de Parabéns</h3>
+              <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)', margin: 0 }}>
+                {modalEmail.reenvio ? '🔄 Reenviar Email de Parabéns' : '📧 Enviar Email de Parabéns'}
+              </h3>
               <button onClick={() => setModalEmail(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.5rem', lineHeight: 1 }}>×</button>
             </div>
 
@@ -1787,6 +1805,13 @@ export default function Aniversariantes() {
                 </div>
               </div>
 
+              {/* Aviso de reenvio */}
+              {modalEmail.reenvio && (
+                <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: '#3b82f6' }}>
+                  🔄 Este irmão já recebeu o email este ano. O reenvio irá substituir o registro anterior.
+                </div>
+              )}
+
               {/* Aviso se chanceler não encontrado */}
               {!chanceler && (
                 <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: '#b45309' }}>
@@ -1804,7 +1829,7 @@ export default function Aniversariantes() {
                 onClick={() => handleEnviarEmail(modalEmail, 'manual')}
                 disabled={enviandoEmail === modalEmail.id}
                 style={{ padding: '0.55rem 1.25rem', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--color-accent)', color: 'white', fontWeight: 600, fontSize: '0.875rem', cursor: enviandoEmail ? 'wait' : 'pointer' }}>
-                {enviandoEmail === modalEmail.id ? '📤 Enviando...' : '📧 Confirmar Envio'}
+                {enviandoEmail === modalEmail.id ? '📤 Enviando...' : modalEmail.reenvio ? '🔄 Confirmar Reenvio' : '📧 Confirmar Envio'}
               </button>
             </div>
           </div>
