@@ -69,45 +69,35 @@ const gerarHtmlEmail = (nomeIrmao, idade, nomeLoja, nomeChanceler, logoUrl) => {
 };
 
 const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, modoEnvio = 'manual') => {
-  const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY;
-  const SENDER_EMAIL  = import.meta.env.VITE_SENDER_EMAIL  || 'noreply@acacia30.org.br';
-  const SENDER_NAME   = import.meta.env.VITE_SENDER_NAME   || nomeLoja;
-
   if (!irmao.email) throw new Error('Irmão não possui email cadastrado.');
-  if (!BREVO_API_KEY) throw new Error('Chave da API Brevo não configurada (VITE_BREVO_API_KEY).');
 
-  const hoje = new Date();
-  const dataNasc = irmao.data_nascimento ? new Date(irmao.data_nascimento + 'T00:00:00') : null;
-  const idade = dataNasc ? hoje.getFullYear() - dataNasc.getFullYear() : null;
+  // Chama a Edge Function — a chave Brevo fica segura no servidor
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
 
-  const htmlEmail = gerarHtmlEmail(irmao.nome, idade, nomeLoja, nomeChanceler, logoUrl);
+  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://ypnvzjctyfdrkkrhskzs.supabase.co';
 
-  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/email-aniversario`, {
     method: 'POST',
     headers: {
-      'Accept':       'application/json',
-      'Content-Type': 'application/json',
-      'api-key':       BREVO_API_KEY,
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${token}`,
     },
     body: JSON.stringify({
-      sender:  { name: SENDER_NAME, email: SENDER_EMAIL },
-      to:      [{ email: irmao.email, name: irmao.nome }],
-      subject: `🎉 Feliz Aniversário, Ir∴ ${irmao.nome.split(' ')[0]}!`,
-      htmlContent: htmlEmail,
+      modo:    'manual',
+      irmaoId: irmao.id,
     }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || `Erro HTTP ${res.status}`);
+    throw new Error(err.error || err.message || `Erro HTTP ${res.status}`);
   }
 
-  // Registrar no banco para controle anti-duplicata
-  await supabase.from('emails_aniversario').upsert({
-    irmao_id:  irmao.id,
-    ano:       hoje.getFullYear(),
-    modo:      modoEnvio,
-  }, { onConflict: 'irmao_id,ano' });
+  const resultado = await res.json();
+  if (resultado.enviados === 0 && resultado.erros?.length) {
+    throw new Error(resultado.erros[0].erro);
+  }
 };
 
 // Função para retornar emoji adequado por idade e sexo
