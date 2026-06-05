@@ -1,7 +1,114 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+
+const BALOES_IMG = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgMTgwIiB3aWR0aD0iNjAwIiBoZWlnaHQ9IjE4MCI+CiAgPCEtLSBCYWzDo28gMSAtIGxhcmFuamEgLS0+CiAgPGVsbGlwc2UgY3g9IjgwIiBjeT0iOTAiIHJ4PSIzOCIgcnk9IjUwIiBmaWxsPSIjRkY4QzQyIi8+CiAgPHBhdGggZD0iTTgwIDE0MCBRNzUgMTU1IDgwIDE2NSIgc3Ryb2tlPSIjRkY4QzQyIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIvPgogIDxlbGxpcHNlIGN4PSI4MCIgY3k9IjkwIiByeD0iMTIiIHJ5PSIxOCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjI1KSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTgsLTE1KSIvPgogIDwhLS0gQmFsw6NvIDIgLSBhenVsIC0tPgogIDxlbGxpcHNlIGN4PSIxNzUiIGN5PSI3NSIgcng9IjQyIiByeT0iNTUiIGZpbGw9IiM0QTkwRDkiLz4KICA8cGF0aCBkPSJNMTc1IDEzMCBRMTcwIDE0OCAxNzUgMTYwIiBzdHJva2U9IiM0QTkwRDkiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIi8+CiAgPGVsbGlwc2UgY3g9IjE3NSIgY3k9Ijc1IiByeD0iMTMiIHJ5PSIyMCIgZmlsbD0icmdiYSgyNTUsMjU1LDI1NSwwLjI1KSIgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoLTksLTE2KSIvPgogIDwhLS0gQmFsw6NvIDMgLSB2ZXJkZSAtLT4KICA8ZWxsaXBzZSBjeD0iMjgwIiBjeT0iNjUiIHJ4PSI0NSIgcnk9IjU4IiBmaWxsPSIjNUNCODVDIi8+CiAgPHBhdGggZD0iTTI4MCAxMjMgUTI3NSAxNDIgMjgwIDE1NSIgc3Ryb2tlPSIjNUNCODVDIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsbD0ibm9uZSIvPgogIDxlbGxpcHNlIGN4PSIyODAiIGN5PSI2NSIgcng9IjE0IiByeT0iMjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4yNSkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0xMCwtMTcpIi8+CiAgPCEtLSBCYWzDo28gNCAtIHJvc2EgLS0+CiAgPGVsbGlwc2UgY3g9IjM5MCIgY3k9IjgwIiByeD0iNDAiIHJ5PSI1MiIgZmlsbD0iI0U5MUU4QyIvPgogIDxwYXRoIGQ9Ik0zOTAgMTMyIFEzODUgMTUwIDM5MCAxNjIiIHN0cm9rZT0iI0U5MUU4QyIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICA8ZWxsaXBzZSBjeD0iMzkwIiBjeT0iODAiIHJ4PSIxMiIgcnk9IjE5IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMjUpIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtOCwtMTUpIi8+CiAgPCEtLSBCYWzDo28gNSAtIGFtYXJlbG8gLS0+CiAgPGVsbGlwc2UgY3g9IjQ5MCIgY3k9IjcwIiByeD0iNDMiIHJ5PSI1NiIgZmlsbD0iI0ZGQzEwNyIvPgogIDxwYXRoIGQ9Ik00OTAgMTI2IFE0ODUgMTQ1IDQ5MCAxNTgiIHN0cm9rZT0iI0ZGQzEwNyIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICA8ZWxsaXBzZSBjeD0iNDkwIiBjeT0iNzAiIHJ4PSIxMyIgcnk9IjIwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMjUpIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtOSwtMTYpIi8+CiAgPCEtLSBCYWzDo28gNiAtIHJveG8gLS0+CiAgPGVsbGlwc2UgY3g9IjU3NSIgY3k9IjkwIiByeD0iMzYiIHJ5PSI0OCIgZmlsbD0iIzlDMjdCMCIvPgogIDxwYXRoIGQ9Ik01NzUgMTM4IFE1NzAgMTUzIDU3NSAxNjMiIHN0cm9rZT0iIzlDMjdCMCIgc3Ryb2tlLXdpZHRoPSIxLjUiIGZpbGw9Im5vbmUiLz4KICA8ZWxsaXBzZSBjeD0iNTc1IiBjeT0iOTAiIHJ4PSIxMSIgcnk9IjE3IiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMjUpIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtNywtMTQpIi8+CiAgPCEtLSBFc3RyZWxpbmhhcyAtLT4KICA8ZyBmaWxsPSIjRkZENzAwIiBvcGFjaXR5PSIwLjgiPgogICAgPHBvbHlnb24gcG9pbnRzPSIxMzAsNDAgMTMyLDQ2IDEzOCw0NiAxMzMsNTAgMTM1LDU2IDEzMCw1MiAxMjUsNTYgMTI3LDUwIDEyMiw0NiAxMjgsNDYiIHRyYW5zZm9ybT0ic2NhbGUoMC42KSB0cmFuc2xhdGUoMTAwLDIwKSIvPgogICAgPHBvbHlnb24gcG9pbnRzPSIxMzAsNDAgMTMyLDQ2IDEzOCw0NiAxMzMsNTAgMTM1LDU2IDEzMCw1MiAxMjUsNTYgMTI3LDUwIDEyMiw0NiAxMjgsNDYiIHRyYW5zZm9ybT0ic2NhbGUoMC41KSB0cmFuc2xhdGUoNDUwLDEwKSIvPgogICAgPHBvbHlnb24gcG9pbnRzPSIxMzAsNDAgMTMyLDQ2IDEzOCw0NiAxMzMsNTAgMTM1LDU2IDEzMCw1MiAxMjUsNTYgMTI3LDUwIDEyMiw0NiAxMjgsNDYiIHRyYW5zZm9ybT0ic2NhbGUoMC40KSB0cmFuc2xhdGUoNzAwLDYwKSIvPgogIDwvZz4KPC9zdmc+';
+
+const gerarHtmlEmail = (nomeIrmao, idade, nomeLoja, nomeChanceler, logoUrl) => {
+  const saudacao = `Irmão ${nomeIrmao.toUpperCase()},`;
+  const textoIdade = idade ? `Parabéns pelos ${idade} anos bem vividos.` : 'Parabéns pelo seu aniversário!';
+  const logoHtml = logoUrl
+    ? `<img src="${logoUrl}" alt="Logo" style="width:70px;height:70px;object-fit:contain;margin-bottom:8px;"/><br/>`
+    : '';
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:Georgia,serif;">
+  <div style="max-width:560px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
+    
+    <!-- Balões -->
+    <div style="text-align:center;padding:0;background:#fff;">
+      <img src="${BALOES_IMG}" alt="Balões" style="width:100%;max-width:560px;display:block;"/>
+    </div>
+
+    <!-- Conteúdo -->
+    <div style="padding:32px 40px;text-align:center;">
+      
+      ${logoHtml}
+      
+      <p style="margin:0 0 20px;font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.5;">
+        ${saudacao}
+      </p>
+      
+      <p style="margin:0 0 14px;font-size:15px;color:#333;line-height:1.6;">
+        ${textoIdade}
+      </p>
+      
+      <p style="margin:0 0 14px;font-size:15px;color:#333;line-height:1.6;">
+        A <strong>${nomeLoja}</strong> e todos os Irmãos desejam que você,<br/>
+        curta seu aniversário com alegria e receba mais um ano de vida com gratidão.
+      </p>
+      
+      <p style="margin:0 0 28px;font-size:15px;color:#333;line-height:1.6;">
+        Que o <strong>Grande Arquiteto do Universo</strong> ilumine e proteja você e sua família.
+      </p>
+      
+      <p style="margin:0 0 24px;font-size:15px;color:#555;font-style:italic;">
+        Fraternalmente,
+      </p>
+
+      <!-- Linha divisória dourada -->
+      <div style="width:80px;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:0 auto 20px;"></div>
+
+      <p style="margin:0;font-size:17px;font-weight:700;color:#1a1a1a;">${nomeChanceler}</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#666;letter-spacing:0.5px;">Chanceler</p>
+      <p style="margin:4px 0 0;font-size:13px;color:#666;">${nomeLoja}</p>
+    </div>
+
+    <!-- Rodapé -->
+    <div style="background:#2c2c2c;padding:16px 24px;text-align:center;">
+      <p style="margin:0;font-size:11px;color:#888;">
+        ${nomeLoja} · Paranatinga – MT
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+
+const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, modoEnvio = 'manual') => {
+  const BREVO_API_KEY = import.meta.env.VITE_BREVO_API_KEY;
+  const SENDER_EMAIL  = import.meta.env.VITE_SENDER_EMAIL  || 'noreply@acacia30.org.br';
+  const SENDER_NAME   = import.meta.env.VITE_SENDER_NAME   || nomeLoja;
+
+  if (!irmao.email) throw new Error('Irmão não possui email cadastrado.');
+  if (!BREVO_API_KEY) throw new Error('Chave da API Brevo não configurada (VITE_BREVO_API_KEY).');
+
+  const hoje = new Date();
+  const dataNasc = irmao.data_nascimento ? new Date(irmao.data_nascimento + 'T00:00:00') : null;
+  const idade = dataNasc ? hoje.getFullYear() - dataNasc.getFullYear() : null;
+
+  const htmlEmail = gerarHtmlEmail(irmao.nome, idade, nomeLoja, nomeChanceler, logoUrl);
+
+  const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      'Accept':       'application/json',
+      'Content-Type': 'application/json',
+      'api-key':       BREVO_API_KEY,
+    },
+    body: JSON.stringify({
+      sender:  { name: SENDER_NAME, email: SENDER_EMAIL },
+      to:      [{ email: irmao.email, name: irmao.nome }],
+      subject: `🎉 Feliz Aniversário, Ir∴ ${irmao.nome.split(' ')[0]}!`,
+      htmlContent: htmlEmail,
+    }),
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `Erro HTTP ${res.status}`);
+  }
+
+  // Registrar no banco para controle anti-duplicata
+  await supabase.from('emails_aniversario').upsert({
+    irmao_id:  irmao.id,
+    ano:       hoje.getFullYear(),
+    modo:      modoEnvio,
+  }, { onConflict: 'irmao_id,ano' });
+};
 
 // Função para retornar emoji adequado por idade e sexo
 const obterEmojiPessoa = (idade, sexo, tipo = null) => {
@@ -30,10 +137,50 @@ export default function Aniversariantes() {
   });
   const [eventoEditando, setEventoEditando] = useState(null);
   const [salvandoEvento, setSalvandoEvento] = useState(false);
+  const [enviandoEmail, setEnviandoEmail]   = useState(null); // irmao_id em envio
+  const [emailEnviados, setEmailEnviados]   = useState({});   // { irmao_id: true }
+  const [modalEmail, setModalEmail]         = useState(null); // irmao para preview
+  const [dadosLoja, setDadosLoja]           = useState({});
+  const [chanceler, setChanceler]           = useState('');
 
   useEffect(() => {
     carregarAniversariantes();
   }, [filtro]);
+
+  useEffect(() => {
+    carregarDadosEmail();
+  }, []);
+
+  const carregarDadosEmail = async () => {
+    try {
+      // Dados da loja
+      const { data: loja } = await supabase.from('dados_loja').select('nome_loja, logo_url, cidade, estado, numero_loja').single();
+      if (loja) setDadosLoja(loja);
+
+      // Chanceler do corpo administrativo do ano atual
+      const ano = new Date().getFullYear().toString();
+      const { data: ca } = await supabase
+        .from('corpo_administrativo')
+        .select('cargo, irmaos(nome)')
+        .eq('ano_exercicio', ano)
+        .ilike('cargo', '%hanceler%')
+        .maybeSingle();
+      if (ca?.irmaos?.nome) setChanceler(ca.irmaos.nome);
+
+      // Emails já enviados este ano
+      const { data: enviados } = await supabase
+        .from('emails_aniversario')
+        .select('irmao_id')
+        .eq('ano', new Date().getFullYear());
+      if (enviados) {
+        const mapa = {};
+        enviados.forEach(e => { mapa[e.irmao_id] = true; });
+        setEmailEnviados(mapa);
+      }
+    } catch (e) {
+      console.error('Erro ao carregar dados para email:', e);
+    }
+  };
 
   useEffect(() => {
     if (modalEventos) {
@@ -174,6 +321,23 @@ export default function Aniversariantes() {
     } catch (error) {
       console.error('Erro ao excluir evento:', error);
       alert('Erro ao excluir evento.');
+    }
+  };
+
+  const handleEnviarEmail = async (irmao, modo = 'manual') => {
+    const nomeLoja = dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
+    const nomeChanceler = chanceler || 'Chanceler';
+    const logoUrl = dadosLoja.logo_url || '';
+    setEnviandoEmail(irmao.id);
+    try {
+      await enviarEmailAniversario(irmao, nomeLoja, nomeChanceler, logoUrl, modo);
+      setEmailEnviados(prev => ({ ...prev, [irmao.id]: true }));
+      setModalEmail(null);
+      alert(`✅ Email enviado com sucesso para ${irmao.nome}!`);
+    } catch (e) {
+      alert(`❌ Erro ao enviar email: ${e.message}`);
+    } finally {
+      setEnviandoEmail(null);
     }
   };
 
@@ -609,7 +773,7 @@ export default function Aniversariantes() {
       // ===== NÍVEL 1: IRMÃOS VIVOS =====
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao')
+        .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao, email')
         .neq('situacao', 'falecido')
         .neq('situacao', 'irregular')
         .neq('situacao', 'desligado')
@@ -653,7 +817,8 @@ export default function Aniversariantes() {
               cargo: irmao.cargo,
               foto_url: irmao.foto_url,
               irmao_id: irmao.id,
-              nivel: 1
+              nivel: 1,
+              email: irmao.email || null,
             });
           }
         });
@@ -1317,6 +1482,27 @@ export default function Aniversariantes() {
             <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', marginTop: '0.2rem', fontWeight: 500 }}>
               📅 {aniv.proximo_aniversario.toLocaleDateString('pt-BR')}
             </div>
+
+            {/* Botão enviar email — só para irmãos com email cadastrado */}
+            {aniv.nivel === 1 && aniv.email && (
+              <div style={{ marginTop: '0.6rem' }}>
+                {emailEnviados[aniv.irmao_id] ? (
+                  <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
+                    ✅ Email enviado este ano
+                  </span>
+                ) : (
+                  <button
+                    onClick={e => { e.stopPropagation(); setModalEmail(aniv); }}
+                    style={{
+                      padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                      background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)',
+                      borderRadius: 'var(--radius-md)', color: 'var(--color-accent)', cursor: 'pointer',
+                    }}>
+                    📧 Enviar Parabéns
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1582,6 +1768,73 @@ export default function Aniversariantes() {
                   Fechar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Preview Email ────────────────────────────────── */}
+      {modalEmail && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1200,
+          background: 'rgba(0,0,0,0.75)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+        }}>
+          <div style={{
+            background: 'var(--color-surface)', borderRadius: 'var(--radius-xl)',
+            width: '100%', maxWidth: '520px', boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+            overflow: 'hidden',
+          }}>
+            {/* Header */}
+            <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface-2)' }}>
+              <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)', margin: 0 }}>📧 Enviar Email de Parabéns</h3>
+              <button onClick={() => setModalEmail(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.5rem', lineHeight: 1 }}>×</button>
+            </div>
+
+            {/* Preview */}
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Dados do envio */}
+              <div style={{ background: 'var(--color-surface-2)', borderRadius: 'var(--radius-md)', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                <div><span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Para:</span> <span style={{ color: 'var(--color-text)' }}>{modalEmail.nome} &lt;{modalEmail.email}&gt;</span></div>
+                <div><span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Assunto:</span> <span style={{ color: 'var(--color-text)' }}>🎉 Feliz Aniversário, Ir∴ {modalEmail.nome.split(' ')[0]}!</span></div>
+                <div><span style={{ fontWeight: 600, color: 'var(--color-text-muted)' }}>Assinado por:</span> <span style={{ color: 'var(--color-accent)' }}>{chanceler || 'Chanceler'} · {dadosLoja.nome_loja || 'Loja'}</span></div>
+              </div>
+
+              {/* Mini preview do email */}
+              <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', fontSize: '0.8rem' }}>
+                <div style={{ background: '#fff', padding: '0', textAlign: 'center' }}>
+                  <img src={BALOES_IMG} alt="Balões" style={{ width: '100%', display: 'block' }}/>
+                </div>
+                <div style={{ padding: '1rem', background: '#fff', textAlign: 'center', color: '#333', lineHeight: '1.6' }}>
+                  <p style={{ fontWeight: 700, margin: '0 0 8px' }}>Irmão {modalEmail.nome.toUpperCase()},</p>
+                  <p style={{ margin: '0 0 8px' }}>Parabéns pelos {modalEmail.idade} anos bem vividos.</p>
+                  <p style={{ margin: '0 0 8px' }}>A <strong>{dadosLoja.nome_loja || 'Loja'}</strong> e todos os Irmãos desejam que você curta seu aniversário com alegria e receba mais um ano de vida com gratidão.</p>
+                  <p style={{ margin: '0 0 8px' }}>Que o <strong>Grande Arquiteto do Universo</strong> ilumine e proteja você e sua família.</p>
+                  <p style={{ margin: '0 0 16px', fontStyle: 'italic', color: '#555' }}>Fraternalmente,</p>
+                  <p style={{ fontWeight: 700, margin: '0' }}>{chanceler || 'Chanceler'}</p>
+                  <p style={{ margin: '2px 0 0', color: '#666', fontSize: '0.75rem' }}>Chanceler · {dadosLoja.nome_loja || 'Loja'}</p>
+                </div>
+              </div>
+
+              {/* Aviso se chanceler não encontrado */}
+              {!chanceler && (
+                <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: '#b45309' }}>
+                  ⚠️ Chanceler não encontrado no Corpo Administrativo do ano atual. Cadastre o cargo para aparecer na assinatura.
+                </div>
+              )}
+            </div>
+
+            {/* Botões */}
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--color-border)', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', background: 'var(--color-surface-2)' }}>
+              <button onClick={() => setModalEmail(null)} style={{ padding: '0.55rem 1.1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-muted)', fontSize: '0.875rem', cursor: 'pointer' }}>
+                Cancelar
+              </button>
+              <button
+                onClick={() => handleEnviarEmail(modalEmail, 'manual')}
+                disabled={enviandoEmail === modalEmail.id}
+                style={{ padding: '0.55rem 1.25rem', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--color-accent)', color: 'white', fontWeight: 600, fontSize: '0.875rem', cursor: enviandoEmail ? 'wait' : 'pointer' }}>
+                {enviandoEmail === modalEmail.id ? '📤 Enviando...' : '📧 Confirmar Envio'}
+              </button>
             </div>
           </div>
         </div>
