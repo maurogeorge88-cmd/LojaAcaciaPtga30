@@ -77,7 +77,6 @@ const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, m
   }
 
   const resultado = await res.json();
-  console.log('[Email Aniversário] Resultado:', resultado);
   if (resultado.enviados === 0) {
     const motivo = resultado.erros?.length
       ? resultado.erros[0].erro
@@ -1778,17 +1777,22 @@ export default function Aniversariantes() {
               </div>
 
               {/* Mini preview do email */}
-              <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', fontSize: '0.82rem' }}>
+              <div style={{ border: '1px solid #c9a84c', borderRadius: 'var(--radius-md)', overflow: 'hidden', fontSize: '0.82rem' }}>
+                <div style={{ height: '4px', background: 'linear-gradient(135deg,#c9a84c,#e8cc7a,#c9a84c)' }}/>
                 <div style={{ padding: '1.5rem', background: '#fff', textAlign: 'center', color: '#333', lineHeight: '1.7' }}>
-                  {dadosLoja.logo_url && <img src={dadosLoja.logo_url} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }}/>}
-                  <p style={{ fontWeight: 700, margin: '0 0 10px', fontSize: '0.95rem' }}>Irmão {modalEmail.nome.toUpperCase()},</p>
+                  {dadosLoja.logo_url && <img src={dadosLoja.logo_url} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', display: 'block', margin: '0 auto 10px' }}/>}
+                  <p style={{ margin: '0 0 4px', fontSize: '0.65rem', fontWeight: 600, color: '#c9a84c', letterSpacing: '2px' }}>A∴ U∴ F∴</p>
+                  <p style={{ fontWeight: 700, margin: '0 0 10px', fontSize: '0.95rem' }}>Ir∴ {modalEmail.nome.toUpperCase()},</p>
                   <p style={{ margin: '0 0 8px' }}>Parabéns pelos {modalEmail.idade} anos bem vividos.</p>
-                  <p style={{ margin: '0 0 8px' }}>A <strong>{dadosLoja.nome_loja || 'Loja'}</strong> e todos os Irmãos desejam que você curta seu aniversário com alegria e receba mais um ano de vida com gratidão.</p>
-                  <p style={{ margin: '0 0 14px' }}>Que o <strong>Grande Arquiteto do Universo</strong> ilumine e proteja você e sua família.</p>
-                  <p style={{ margin: '0 0 16px', fontStyle: 'italic', color: '#555' }}>Fraternalmente,</p>
-                  <div style={{ width: '60px', height: '2px', background: 'linear-gradient(90deg,transparent,#c9a84c,transparent)', margin: '0 auto 14px' }}/>
-                  <p style={{ fontWeight: 700, margin: '0', fontSize: '0.95rem' }}>{chanceler || 'Chanceler'}</p>
-                  <p style={{ margin: '4px 0 0', color: '#666', fontSize: '0.8rem' }}>Chanceler · {dadosLoja.nome_loja || 'Loja'}</p>
+                  <p style={{ margin: '0 0 8px' }}>Nesta data tão especial, os Irmãos da <strong>{dadosLoja.nome_loja || 'Loja'}</strong> elevam suas preces ao <strong>Grande Arquiteto do Universo</strong> por mais um ano de sua jornada.</p>
+                  <p style={{ margin: '0 0 8px' }}>Que a <strong>Sabedoria</strong> ilumine, a <strong>Força</strong> sustente e a <strong>Beleza</strong> adorne cada momento da sua vida.</p>
+                  <p style={{ margin: '0 0 14px', fontStyle: 'italic', color: '#888', fontSize: '0.8rem' }}>Saúde, Força e União</p>
+                  <div style={{ width: '60px', height: '2px', background: 'linear-gradient(90deg,transparent,#c9a84c,transparent)', margin: '0 auto 12px' }}/>
+                  <p style={{ fontWeight: 700, margin: '0', fontSize: '0.9rem' }}>Ir∴ {chanceler || 'Chanceler'}</p>
+                  <p style={{ margin: '4px 0 0', color: '#888', fontSize: '0.75rem' }}>Chanceler · {dadosLoja.nome_loja || 'Loja'}</p>
+                </div>
+                <div style={{ background: 'linear-gradient(135deg,#c9a84c,#e8cc7a,#c9a84c)', padding: '10px', textAlign: 'center' }}>
+                  <p style={{ margin: 0, fontSize: '0.7rem', color: '#5a4a1a', fontWeight: 600 }}>{dadosLoja.nome_loja} · Oriente de Paranatinga – MT</p>
                 </div>
               </div>
 
