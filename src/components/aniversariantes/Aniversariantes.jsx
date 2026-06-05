@@ -78,8 +78,12 @@ const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, m
   }
 
   const resultado = await res.json();
-  if (resultado.enviados === 0 && resultado.erros?.length) {
-    throw new Error(resultado.erros[0].erro);
+  console.log('[Email Aniversário] Resultado:', resultado);
+  if (resultado.enviados === 0) {
+    const motivo = resultado.erros?.length
+      ? resultado.erros[0].erro
+      : resultado.msg || 'Email não enviado — verifique os logs da Edge Function no Supabase.';
+    throw new Error(motivo);
   }
 };
 
