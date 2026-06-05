@@ -9,7 +9,7 @@ const gerarHtmlEmail = (nomeIrmao, idade, nomeLoja, nomeChanceler, logoUrl) => {
   const saudacao = `Irmão ${nomeIrmao.toUpperCase()},`;
   const textoIdade = idade ? `Parabéns pelos ${idade} anos bem vividos.` : 'Parabéns pelo seu aniversário!';
   const logoHtml = logoUrl
-    ? `<img src="${logoUrl}" alt="Logo" style="width:70px;height:70px;object-fit:contain;margin-bottom:8px;"/><br/>`
+    ? `<img src="${logoUrl}" alt="Logo" style="width:110px;height:110px;object-fit:contain;margin-bottom:16px;"/><br/>`
     : '';
 
   return `<!DOCTYPE html>
@@ -17,49 +17,31 @@ const gerarHtmlEmail = (nomeIrmao, idade, nomeLoja, nomeChanceler, logoUrl) => {
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
 <body style="margin:0;padding:0;background:#f5f5f5;font-family:Georgia,serif;">
   <div style="max-width:560px;margin:30px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.1);">
-    
-    <!-- Balões -->
-    <div style="text-align:center;padding:0;background:#fff;">
-      <img src="${BALOES_IMG}" alt="Balões" style="width:100%;max-width:560px;display:block;"/>
-    </div>
-
-    <!-- Conteúdo -->
-    <div style="padding:32px 40px;text-align:center;">
-      
+    <div style="padding:40px 48px;text-align:center;">
       ${logoHtml}
-      
-      <p style="margin:0 0 20px;font-size:17px;font-weight:700;color:#1a1a1a;line-height:1.5;">
+      <p style="margin:0 0 22px;font-size:20px;font-weight:700;color:#1a1a1a;line-height:1.5;">
         ${saudacao}
       </p>
-      
-      <p style="margin:0 0 14px;font-size:15px;color:#333;line-height:1.6;">
+      <p style="margin:0 0 16px;font-size:17px;color:#333;line-height:1.7;">
         ${textoIdade}
       </p>
-      
-      <p style="margin:0 0 14px;font-size:15px;color:#333;line-height:1.6;">
+      <p style="margin:0 0 16px;font-size:17px;color:#333;line-height:1.7;">
         A <strong>${nomeLoja}</strong> e todos os Irmãos desejam que você,<br/>
         curta seu aniversário com alegria e receba mais um ano de vida com gratidão.
       </p>
-      
-      <p style="margin:0 0 28px;font-size:15px;color:#333;line-height:1.6;">
+      <p style="margin:0 0 32px;font-size:17px;color:#333;line-height:1.7;">
         Que o <strong>Grande Arquiteto do Universo</strong> ilumine e proteja você e sua família.
       </p>
-      
-      <p style="margin:0 0 24px;font-size:15px;color:#555;font-style:italic;">
+      <p style="margin:0 0 28px;font-size:17px;color:#555;font-style:italic;">
         Fraternalmente,
       </p>
-
-      <!-- Linha divisória dourada -->
-      <div style="width:80px;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:0 auto 20px;"></div>
-
-      <p style="margin:0;font-size:17px;font-weight:700;color:#1a1a1a;">${nomeChanceler}</p>
-      <p style="margin:4px 0 0;font-size:13px;color:#666;letter-spacing:0.5px;">Chanceler</p>
-      <p style="margin:4px 0 0;font-size:13px;color:#666;">${nomeLoja}</p>
+      <div style="width:80px;height:2px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);margin:0 auto 22px;"></div>
+      <p style="margin:0;font-size:20px;font-weight:700;color:#1a1a1a;">${nomeChanceler}</p>
+      <p style="margin:6px 0 0;font-size:15px;color:#666;letter-spacing:0.5px;">Chanceler</p>
+      <p style="margin:6px 0 0;font-size:15px;color:#666;">${nomeLoja}</p>
     </div>
-
-    <!-- Rodapé -->
     <div style="background:#2c2c2c;padding:16px 24px;text-align:center;">
-      <p style="margin:0;font-size:11px;color:#888;">
+      <p style="margin:0;font-size:13px;color:#888;">
         ${nomeLoja} · Paranatinga – MT
       </p>
     </div>
@@ -1791,18 +1773,17 @@ export default function Aniversariantes() {
               </div>
 
               {/* Mini preview do email */}
-              <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', fontSize: '0.8rem' }}>
-                <div style={{ background: '#fff', padding: '0', textAlign: 'center' }}>
-                  <img src={BALOES_IMG} alt="Balões" style={{ width: '100%', display: 'block' }}/>
-                </div>
-                <div style={{ padding: '1rem', background: '#fff', textAlign: 'center', color: '#333', lineHeight: '1.6' }}>
-                  <p style={{ fontWeight: 700, margin: '0 0 8px' }}>Irmão {modalEmail.nome.toUpperCase()},</p>
+              <div style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', overflow: 'hidden', fontSize: '0.82rem' }}>
+                <div style={{ padding: '1.5rem', background: '#fff', textAlign: 'center', color: '#333', lineHeight: '1.7' }}>
+                  {dadosLoja.logo_url && <img src={dadosLoja.logo_url} alt="Logo" style={{ width: '80px', height: '80px', objectFit: 'contain', marginBottom: '12px', display: 'block', margin: '0 auto 12px' }}/>}
+                  <p style={{ fontWeight: 700, margin: '0 0 10px', fontSize: '0.95rem' }}>Irmão {modalEmail.nome.toUpperCase()},</p>
                   <p style={{ margin: '0 0 8px' }}>Parabéns pelos {modalEmail.idade} anos bem vividos.</p>
                   <p style={{ margin: '0 0 8px' }}>A <strong>{dadosLoja.nome_loja || 'Loja'}</strong> e todos os Irmãos desejam que você curta seu aniversário com alegria e receba mais um ano de vida com gratidão.</p>
-                  <p style={{ margin: '0 0 8px' }}>Que o <strong>Grande Arquiteto do Universo</strong> ilumine e proteja você e sua família.</p>
+                  <p style={{ margin: '0 0 14px' }}>Que o <strong>Grande Arquiteto do Universo</strong> ilumine e proteja você e sua família.</p>
                   <p style={{ margin: '0 0 16px', fontStyle: 'italic', color: '#555' }}>Fraternalmente,</p>
-                  <p style={{ fontWeight: 700, margin: '0' }}>{chanceler || 'Chanceler'}</p>
-                  <p style={{ margin: '2px 0 0', color: '#666', fontSize: '0.75rem' }}>Chanceler · {dadosLoja.nome_loja || 'Loja'}</p>
+                  <div style={{ width: '60px', height: '2px', background: 'linear-gradient(90deg,transparent,#c9a84c,transparent)', margin: '0 auto 14px' }}/>
+                  <p style={{ fontWeight: 700, margin: '0', fontSize: '0.95rem' }}>{chanceler || 'Chanceler'}</p>
+                  <p style={{ margin: '4px 0 0', color: '#666', fontSize: '0.8rem' }}>Chanceler · {dadosLoja.nome_loja || 'Loja'}</p>
                 </div>
               </div>
 
