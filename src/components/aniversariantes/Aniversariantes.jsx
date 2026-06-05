@@ -68,7 +68,6 @@ const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, m
     body: JSON.stringify({
       modo:    'manual',
       irmaoId: irmao.id,
-      reenvio: irmao.reenvio || false,
     }),
   });
 
@@ -301,14 +300,13 @@ export default function Aniversariantes() {
     }
   };
 
-  const handleEnviarEmail = async (irmao, modo = 'manual') => {
+  const handleEnviarEmail = async (irmao) => {
     setEnviandoEmail(irmao.id);
     try {
-      // reenvio é tratado na Edge Function (que tem service_role e ignora RLS)
-      await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', modo);
+      await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', 'manual');
       setEmailEnviados(prev => ({ ...prev, [irmao.id]: true }));
       setModalEmail(null);
-      alert(`✅ Email ${irmao.reenvio ? 'reenviado' : 'enviado'} com sucesso para ${irmao.nome}!`);
+      alert(`✅ Email enviado com sucesso para ${irmao.nome}!`);
     } catch (e) {
       alert(`❌ Erro ao enviar email: ${e.message}`);
     } finally {
@@ -1461,32 +1459,23 @@ export default function Aniversariantes() {
             {/* Botão enviar email — só para irmãos com email cadastrado */}
             {aniv.nivel === 1 && aniv.email && (
               <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {emailEnviados[aniv.irmao_id] ? (
-                  <>
-                    <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: 600 }}>
-                      ✅ Email enviado este ano
-                    </span>
-                    <button
-                      onClick={e => { e.stopPropagation(); setModalEmail({ ...aniv, reenvio: true }); }}
-                      style={{
-                        padding: '0.2rem 0.55rem', fontSize: '0.7rem', fontWeight: 600,
-                        background: 'transparent', border: '1px solid var(--color-border)',
-                        borderRadius: 'var(--radius-md)', color: 'var(--color-text-muted)', cursor: 'pointer',
-                      }}>
-                      🔄 Reenviar
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={e => { e.stopPropagation(); setModalEmail(aniv); }}
-                    style={{
-                      padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
-                      background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)',
-                      borderRadius: 'var(--radius-md)', color: 'var(--color-accent)', cursor: 'pointer',
-                    }}>
-                    📧 Enviar Parabéns
-                  </button>
+                {emailEnviados[aniv.irmao_id] && (
+                  <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                    ✅ Já felicitado
+                  </span>
                 )}
+                <button
+                  onClick={e => { e.stopPropagation(); setModalEmail(aniv); }}
+                  style={{
+                    padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                    background: emailEnviados[aniv.irmao_id] ? 'transparent' : 'rgba(201,168,76,0.12)',
+                    border: emailEnviados[aniv.irmao_id] ? '1px solid var(--color-border)' : '1px solid rgba(201,168,76,0.4)',
+                    borderRadius: 'var(--radius-md)',
+                    color: emailEnviados[aniv.irmao_id] ? 'var(--color-text-muted)' : 'var(--color-accent)',
+                    cursor: 'pointer',
+                  }}>
+                  📧 {emailEnviados[aniv.irmao_id] ? 'Enviar novamente' : 'Enviar Parabéns'}
+                </button>
               </div>
             )}
           </div>
@@ -1774,7 +1763,7 @@ export default function Aniversariantes() {
             {/* Header */}
             <div style={{ padding: '1.1rem 1.4rem', borderBottom: '1px solid var(--color-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--color-surface-2)' }}>
               <h3 style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--color-text)', margin: 0 }}>
-                {modalEmail.reenvio ? '🔄 Reenviar Email de Parabéns' : '📧 Enviar Email de Parabéns'}
+                📧 Enviar Email de Parabéns
               </h3>
               <button onClick={() => setModalEmail(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.5rem', lineHeight: 1 }}>×</button>
             </div>
@@ -1803,10 +1792,10 @@ export default function Aniversariantes() {
                 </div>
               </div>
 
-              {/* Aviso de reenvio */}
-              {modalEmail.reenvio && (
-                <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: '#3b82f6' }}>
-                  🔄 Este irmão já recebeu o email este ano. O reenvio irá substituir o registro anterior.
+              {/* Aviso já felicitado */}
+              {emailEnviados[modalEmail.irmao_id] && (
+                <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', color: '#10b981' }}>
+                  ✅ Este irmão já foi felicitado este ano. Você pode enviar novamente sem problema.
                 </div>
               )}
 
@@ -1827,7 +1816,7 @@ export default function Aniversariantes() {
                 onClick={() => handleEnviarEmail(modalEmail, 'manual')}
                 disabled={enviandoEmail === modalEmail.id}
                 style={{ padding: '0.55rem 1.25rem', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--color-accent)', color: 'white', fontWeight: 600, fontSize: '0.875rem', cursor: enviandoEmail ? 'wait' : 'pointer' }}>
-                {enviandoEmail === modalEmail.id ? '📤 Enviando...' : modalEmail.reenvio ? '🔄 Confirmar Reenvio' : '📧 Confirmar Envio'}
+                {enviandoEmail === modalEmail.id ? '📤 Enviando...' : '📧 Confirmar Envio'}
               </button>
             </div>
           </div>
