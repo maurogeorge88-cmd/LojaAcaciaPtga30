@@ -68,6 +68,7 @@ const enviarEmailAniversario = async (irmao, nomeLoja, nomeChanceler, logoUrl, m
     body: JSON.stringify({
       modo:    'manual',
       irmaoId: irmao.id,
+      reenvio: irmao.reenvio || false,
     }),
   });
 
@@ -299,14 +300,7 @@ export default function Aniversariantes() {
   const handleEnviarEmail = async (irmao, modo = 'manual') => {
     setEnviandoEmail(irmao.id);
     try {
-      // Se é reenvio, apaga o registro do banco para liberar o upsert
-      if (irmao.reenvio) {
-        await supabase
-          .from('emails_aniversario')
-          .delete()
-          .eq('irmao_id', irmao.id)
-          .eq('ano', new Date().getFullYear());
-      }
+      // reenvio é tratado na Edge Function (que tem service_role e ignora RLS)
       await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', modo);
       setEmailEnviados(prev => ({ ...prev, [irmao.id]: true }));
       setModalEmail(null);
