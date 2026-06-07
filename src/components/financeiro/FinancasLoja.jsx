@@ -3427,19 +3427,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* Filtro Mês */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Mês</label>
-            <select
-              value={filtros.mes}
-              onChange={(e) => setFiltros({ ...filtros, mes: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              <option value={0}>Todos</option>
-              {meses.map((mes, idx) => (
-                <option key={idx} value={idx + 1}>{mes}</option>
-              ))}
-            </select>
-            {/* Navegação mês */}
-            {filtros.mes > 0 && (
-              <div className="flex gap-1 mt-1">
+            <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+              {filtros.mes > 0 && (
                 <button
                   onClick={() => {
                     if (filtros.mes === 1) {
@@ -3448,9 +3437,21 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       setFiltros({ ...filtros, mes: filtros.mes - 1 });
                     }
                   }}
-                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
+                  style={{padding:'6px 8px',borderRadius:'6px',border:'1px solid var(--color-border)',background:'var(--color-surface-2)',color:'var(--color-text)',fontWeight:'700',cursor:'pointer',flexShrink:0}}
                   title="Mês anterior"
                 >‹</button>
+              )}
+            <select
+              value={filtros.mes}
+              onChange={(e) => setFiltros({ ...filtros, mes: parseInt(e.target.value) })}
+              className="px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",flex:1}}
+            >
+              <option value={0}>Todos</option>
+              {meses.map((mes, idx) => (
+                <option key={idx} value={idx + 1}>{mes}</option>
+              ))}
+            </select>
+              {filtros.mes > 0 && (
                 <button
                   onClick={() => {
                     if (filtros.mes === 12) {
@@ -3459,41 +3460,43 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       setFiltros({ ...filtros, mes: filtros.mes + 1 });
                     }
                   }}
-                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
+                  style={{padding:'6px 8px',borderRadius:'6px',border:'1px solid var(--color-border)',background:'var(--color-surface-2)',color:'var(--color-text)',fontWeight:'700',cursor:'pointer',flexShrink:0}}
                   title="Próximo mês"
                 >›</button>
-              </div>
-            )}
+              )}
+            </div>
+
           </div>
 
           {/* Filtro Ano */}
           <div>
             <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Ano</label>
-            <select
-              value={filtros.ano}
-              onChange={(e) => setFiltros({ ...filtros, ano: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              <option value={0}>Todos</option>
-              {anosDisponiveis.map(ano => (
-                <option key={ano} value={ano}>{ano}</option>
-              ))}
-            </select>
-            {/* Navegação ano */}
-            {filtros.ano > 0 && (
-              <div className="flex gap-1 mt-1">
+            <div style={{display:'flex',alignItems:'center',gap:'4px'}}>
+              {filtros.ano > 0 && (
                 <button
                   onClick={() => setFiltros({ ...filtros, ano: filtros.ano - 1 })}
-                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
+                  style={{padding:'6px 8px',borderRadius:'6px',border:'1px solid var(--color-border)',background:'var(--color-surface-2)',color:'var(--color-text)',fontWeight:'700',cursor:'pointer',flexShrink:0}}
                   title="Ano anterior"
                 >‹</button>
+              )}
+              <select
+                value={filtros.ano}
+                onChange={(e) => setFiltros({ ...filtros, ano: parseInt(e.target.value) })}
+                className="px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",flex:1}}
+              >
+                <option value={0}>Todos</option>
+                {anosDisponiveis.map(ano => (
+                  <option key={ano} value={ano}>{ano}</option>
+                ))}
+              </select>
+              {filtros.ano > 0 && (
                 <button
                   onClick={() => setFiltros({ ...filtros, ano: filtros.ano + 1 })}
-                  className="flex-1 py-1 hover: rounded text-sm font-bold transition-colors"
+                  style={{padding:'6px 8px',borderRadius:'6px',border:'1px solid var(--color-border)',background:'var(--color-surface-2)',color:'var(--color-text)',fontWeight:'700',cursor:'pointer',flexShrink:0}}
                   title="Próximo ano"
                 >›</button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Filtro Tipo */}
