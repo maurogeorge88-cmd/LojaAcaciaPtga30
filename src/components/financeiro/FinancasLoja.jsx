@@ -1549,6 +1549,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         .filter(l => 
           l.categorias_financeiras?.tipo === 'despesa' &&
           l.tipo_pagamento !== 'compensacao' &&
+          l.tipo_pagamento !== 'dinheiro' &&
           !l.eh_transferencia_interna
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
