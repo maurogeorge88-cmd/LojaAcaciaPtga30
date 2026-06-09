@@ -729,7 +729,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                   <button onClick={handleSalvarValor} style={btnPrimary}>💾</button>
                   <button onClick={() => setEditandoValor(false)} style={{ ...btnEdit }}>✕</button>
                 </div>
-              ) : (
+              ) : podeEditar ? (
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <button onClick={() => { setNovoValor(evento.valor_ajustado || valorCalc.toFixed(2)); setEditandoValor(true); }}
                     style={{ ...btnPrimary }}>✏️ Ajustar Valor</button>
@@ -739,7 +739,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                     </button>
                   )}
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
 
