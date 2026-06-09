@@ -682,7 +682,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
           </div>
         </div>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          <button onClick={() => setModalEvento(true)} style={{ ...btnEdit, padding: '0.45rem 0.85rem' }}>✏️ Editar</button>
+          {podeEditar && <button onClick={() => setModalEvento(true)} style={{ ...btnEdit, padding: '0.45rem 0.85rem' }}>✏️ Editar</button>}
           {podeEditar && <button onClick={gerarPDF} style={{ ...btnPrimary, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#3b82f6' }}>📄 PDF</button>}
           {podeEditar && !encerrado && <button onClick={() => setConfirmEncerrar(true)} style={{ ...btnPrimary, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>🔒 Encerrar</button>}
         </div>
