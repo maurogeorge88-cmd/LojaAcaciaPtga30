@@ -324,7 +324,7 @@ const ModalSituacao = ({ aberto, onFechar, candidatos, processo, podeVerMotivo =
                           ⚠️ {c.motivo_exclusao}
                         </div>
                       )}
-                      {c.observacoes && (
+                      {c.observacoes && (!['excluido','adiado','desistiu'].includes(c.situacao) || podeVerMotivo) && (
                         <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.2rem', fontStyle: 'italic' }}>
                           💬 {c.observacoes}
                         </div>
@@ -727,7 +727,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
                       ⚠️ <strong>Motivo:</strong> {c.motivo_exclusao}
                     </div>
                   )}
-                  {c.observacoes && (
+                  {c.observacoes && (!['excluido','adiado','desistiu'].includes(c.situacao) || podeVerMotivo) && (
                     <div style={{ marginTop: '0.35rem', fontSize: '0.78rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                       💬 {c.observacoes}
                     </div>
@@ -945,8 +945,8 @@ const ModalHistorico = ({ aberto, onFechar, nome, registros }) => {
                   </div>
                 )}
 
-                {/* Observações */}
-                {r.observacoes && (
+                {/* Observações — ocultas para não-Mestres em situações restritas */}
+                {r.observacoes && (!['excluido','adiado','desistiu'].includes(r.situacao) || podeVerMotivo) && (
                   <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                     💬 {r.observacoes}
                   </div>
