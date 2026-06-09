@@ -970,11 +970,10 @@ const Sindicancia = ({ grauUsuario, userData }) => {
   // Controle de acesso
   const isMestre  = grauUsuario === 'Mestre' || grauUsuario === 'Mestre Instalado';
   const isAdmin   = userData?.nivel_acesso === 'admin';
-  const situacao  = userData?.situacao || '';
-  const regularOuLicenciado = ['Regular', 'Licenciado', 'regular', 'licenciado'].includes(situacao);
+  const isIniciado = grauUsuario === 'Aprendiz' || grauUsuario === 'Companheiro';
 
-  // Todos regulares/licenciados têm acesso de leitura; mestres e admin têm leitura completa
-  const temAcesso = isAdmin || isMestre || regularOuLicenciado;
+  // Todos os irmãos iniciados têm acesso de leitura
+  const temAcesso = isAdmin || isMestre || isIniciado;
   // Pode ver motivo de exclusão do profano: apenas Mestres e Admin
   const podeverMotivo = isAdmin || isMestre;
 
