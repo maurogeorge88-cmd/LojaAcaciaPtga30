@@ -1118,7 +1118,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
             <div>
               <h1 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-text)', marginBottom: '0.2rem' }}>Sindicância</h1>
               <p style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
-                Controle de candidatos a iniciação — <span style={{ color: '#ef4444', fontWeight: 600 }}>Uso restrito · Mestres e Administração</span>
+                Controle de candidatos a iniciação — <span style={{ color: podeverMotivo ? '#ef4444' : 'var(--color-accent)', fontWeight: 600 }}>{podeverMotivo ? 'Mestres e Administração' : 'Somente visualização'}</span>
               </p>
             </div>
           </div>
