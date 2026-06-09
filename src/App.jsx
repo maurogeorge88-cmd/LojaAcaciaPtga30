@@ -1850,6 +1850,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Altos Graus</span>}
                 </button>
 
+                {/* ÁGAPE & FESTAS — visível para todos os irmãos */}
+                <button
+                  onClick={() => setCurrentPage('eventos-comemorativos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'eventos-comemorativos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Ágape & Festas"
+                >
+                  <span className="text-base">🍽️</span>
+                  {menuAberto && <span className="font-semibold">Ágape &amp; Festas</span>}
+                </button>
+
                 {/* SINDICÂNCIA — visível para todos os irmãos */}
                 <button
                   onClick={() => setCurrentPage('sindicancia')}
@@ -2945,6 +2959,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <EventosComemorativos
             showSuccess={showSuccess}
             showError={showError}
+            podeEditar={userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo'}
           />
         )}
 
