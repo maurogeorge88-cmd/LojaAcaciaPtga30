@@ -104,7 +104,7 @@ const CAND_VAZIO = {
   data_indicacao: '', situacao: 'indicado', motivo_exclusao: '', observacoes: '',
 };
 
-const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos }) => {
+const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVerMotivo = false }) => {
   const [form, setForm] = useState(CAND_VAZIO);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -253,7 +253,7 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos }) => {
 // ─────────────────────────────────────────────────────────────────
 //  Modal Situação do Processo (painel de filtro por situação)
 // ─────────────────────────────────────────────────────────────────
-const ModalSituacao = ({ aberto, onFechar, candidatos, processo }) => {
+const ModalSituacao = ({ aberto, onFechar, candidatos, processo, podeVerMotivo = false }) => {
   const [filtro, setFiltro] = useState('todos');
 
   const lista = filtro === 'todos' ? candidatos : candidatos.filter(c => c.situacao === filtro);
@@ -791,10 +791,10 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
       {/* Modais */}
       <ModalCandidato aberto={modalCand} onFechar={() => { setModalCand(false); setCandEditando(null); }}
-        onSalvar={handleSalvarCandidato} candidato={candEditando} irmaos={irmaos} />
+        onSalvar={handleSalvarCandidato} candidato={candEditando} irmaos={irmaos} podeVerMotivo={podeVerMotivo} />
 
       <ModalSituacao aberto={modalSituacao} onFechar={() => setModalSituacao(false)}
-        candidatos={candidatos} processo={processo} />
+        candidatos={candidatos} processo={processo} podeVerMotivo={podeVerMotivo} />
 
       <ModalEncerrar aberto={modalEncerrar} onFechar={() => setModalEncerrar(false)}
         onEncerrar={handleEncerrar} processo={processo} />
