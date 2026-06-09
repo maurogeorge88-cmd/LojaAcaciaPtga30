@@ -2459,12 +2459,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 )}
 
-                {/* SINDICÂNCIA — acesso para todos os irmãos iniciados + admin */}
-                {(grauUsuarioLogado === 'Aprendiz' ||
-                  grauUsuarioLogado === 'Companheiro' ||
-                  grauUsuarioLogado === 'Mestre' ||
-                  grauUsuarioLogado === 'Mestre Instalado' ||
-                  userData?.nivel_acesso === 'admin') && (
+                {/* SINDICÂNCIA — acesso para todos os irmãos + admin/cargo */}
+                {(userData?.nivel_acesso === 'irmao' ||
+                  userData?.nivel_acesso === 'admin' ||
+                  userData?.nivel_acesso === 'cargo') && (
                   <button
                     onClick={() => setCurrentPage('sindicancia')}
                     className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
