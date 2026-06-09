@@ -797,8 +797,8 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
                 👥 Participantes e Rateio ({participantes.length})
               </h3>
-              {!encerrado && (
-                {podeEditar && <button onClick={() => { setPartEdit(null); setModalPart(true); }} style={btnPrimary}>➕ Adicionar Participante</button>}
+              {!encerrado && podeEditar && (
+                <button onClick={() => { setPartEdit(null); setModalPart(true); }} style={btnPrimary}>➕ Adicionar Participante</button>
               )}
             </div>
 
