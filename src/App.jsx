@@ -2457,8 +2457,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 )}
 
-                {/* SINDICÂNCIA — acesso restrito a Mestres */}
-                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' || userData?.nivel_acesso === 'admin') && (
+                {/* SINDICÂNCIA — acesso para regulares e licenciados */}
+                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' ||
+                  userData?.nivel_acesso === 'admin' ||
+                  ['Regular','Licenciado','regular','licenciado'].includes(userData?.situacao)) && (
                   <button
                     onClick={() => setCurrentPage('sindicancia')}
                     className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -2867,6 +2869,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <Sindicancia
             grauUsuario={grauUsuarioLogado}
             userData={userData}
+            situacaoUsuario={userData?.situacao || ''}
           />
         )}
 
