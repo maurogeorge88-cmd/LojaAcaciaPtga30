@@ -488,7 +488,8 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   useEffect(() => { carregar(); }, [carregar]);
 
   // ── Cálculos ──
-  const totalDespesas    = despesas.filter(d => d.tipo === 'despesa' && d.status === 'pago').reduce((s, d) => s + parseFloat(d.valor), 0);
+  // Todas as despesas vinculadas ao evento entram no total, independente do status
+  const totalDespesas    = despesas.filter(d => d.tipo === 'despesa').reduce((s, d) => s + parseFloat(d.valor), 0);
   const contribuicaoLoja = evento.contribuicao_loja ? parseFloat(evento.contribuicao_loja) : 0;
   const baseRateio       = Math.max(0, totalDespesas - contribuicaoLoja);
   const totalCotas       = participantes.reduce((s, p) => s + parseFloat(p.cotas || 0), 0);
