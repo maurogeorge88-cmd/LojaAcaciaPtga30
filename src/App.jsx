@@ -360,7 +360,7 @@ function App() {
       if (data.nivel_acesso === 'irmao') {
         const { data: irmaoData } = await supabase
           .from('irmaos')
-          .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
+          .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, situacao')
           .eq('email', userEmail)
           .single();
         
@@ -373,6 +373,8 @@ function App() {
           else if (irmaoData.data_elevacao) grau = 'Companheiro';
           else if (irmaoData.data_iniciacao) grau = 'Aprendiz';
           setGrauUsuarioLogado(grau);
+          // Guardar situação no userData para controle de acesso
+          setUserData(prev => ({ ...prev, situacao: irmaoData.situacao || 'Regular' }));
         }
       } else {
         // Admin e cargos têm acesso total (Mestre)
