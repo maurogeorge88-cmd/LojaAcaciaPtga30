@@ -319,7 +319,7 @@ const ModalSituacao = ({ aberto, onFechar, candidatos, processo }) => {
                         {[c.profissao, c.cidade].filter(Boolean).join(' · ')}
                         {c.indicado_por_irmao && ` · Ir∴ ${c.indicado_por_irmao}`}
                       </div>
-                      {c.situacao === 'excluido' && c.motivo_exclusao && (
+                      {c.situacao === 'excluido' && c.motivo_exclusao && podeVerMotivo && (
                         <div style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '0.2rem' }}>
                           ⚠️ {c.motivo_exclusao}
                         </div>
@@ -389,7 +389,7 @@ const ModalEncerrar = ({ aberto, onFechar, onEncerrar, processo }) => {
 // ─────────────────────────────────────────────────────────────────
 //  Detalhe do Processo (candidatos)
 // ─────────────────────────────────────────────────────────────────
-const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, onProcessoAtualizado }) => {
+const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo, onProcessoAtualizado }) => {
   const [candidatos, setCandidatos] = useState([]);
   const [carregando, setCarregando] = useState(true);
   const [modalCand, setModalCand] = useState(false);
@@ -722,7 +722,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, onProcessoAtu
                     {c.indicado_por_irmao && <span>👤 Ir∴ {c.indicado_por_irmao}</span>}
                     {c.data_indicacao  && <span>📅 {new Date(c.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
                   </div>
-                  {c.situacao === 'excluido' && c.motivo_exclusao && (
+                  {c.situacao === 'excluido' && c.motivo_exclusao && podeVerMotivo && (
                     <div style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: '#ef4444', background: 'rgba(239,68,68,0.08)', padding: '0.4rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
                       ⚠️ <strong>Motivo:</strong> {c.motivo_exclusao}
                     </div>
@@ -938,8 +938,8 @@ const ModalHistorico = ({ aberto, onFechar, nome, registros }) => {
                   {r.data_indicacao && <span>📅 Indicado em {new Date(r.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR')}</span>}
                 </div>
 
-                {/* Motivo exclusão */}
-                {r.situacao === 'excluido' && r.motivo_exclusao && (
+                {/* Motivo exclusão — visível apenas para Mestres e Admin */}
+                {r.situacao === 'excluido' && r.motivo_exclusao && podeVerMotivo && (
                   <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 'var(--radius-sm)', padding: '0.45rem 0.75rem', fontSize: '0.8rem', color: '#ef4444', marginBottom: '0.35rem' }}>
                     ⚠️ <strong>Motivo da exclusão:</strong> {r.motivo_exclusao}
                   </div>
@@ -968,9 +968,15 @@ const ModalHistorico = ({ aberto, onFechar, nome, registros }) => {
 // ─────────────────────────────────────────────────────────────────
 const Sindicancia = ({ grauUsuario, userData }) => {
   // Controle de acesso
-  const isMestre = grauUsuario === 'Mestre' || grauUsuario === 'Mestre Instalado';
-  const isAdmin  = userData?.nivel_acesso === 'admin';
-  const temAcesso = isMestre || isAdmin;
+  const isMestre  = grauUsuario === 'Mestre' || grauUsuario === 'Mestre Instalado';
+  const isAdmin   = userData?.nivel_acesso === 'admin';
+  const situacao  = userData?.situacao || '';
+  const regularOuLicenciado = ['Regular', 'Licenciado', 'regular', 'licenciado'].includes(situacao);
+
+  // Todos regulares/licenciados têm acesso de leitura; mestres e admin têm leitura completa
+  const temAcesso = isAdmin || isMestre || regularOuLicenciado;
+  // Pode ver motivo de exclusão do profano: apenas Mestres e Admin
+  const podeverMotivo = isAdmin || isMestre;
 
   // Cargos que podem criar/editar/encerrar processos e candidatos
   const CARGOS_EDITORES = ['veneravel', 'Veneravel', 'orador', 'Orador', 'vigilante', 'Vigilante', '1o_vigilante', '2o_vigilante', 'secretario', 'Secretario', 'secretário', 'Secretário'];
@@ -1088,6 +1094,7 @@ const Sindicancia = ({ grauUsuario, userData }) => {
           onVoltar={() => setProcessoAtivo(null)}
           irmaos={irmaos}
           podeEditar={podeEditarGlobal}
+          podeVerMotivo={podeverMotivo}
           onProcessoAtualizado={async () => {
             await carregarProcessos();
             // Atualizar processo ativo com dados frescos
