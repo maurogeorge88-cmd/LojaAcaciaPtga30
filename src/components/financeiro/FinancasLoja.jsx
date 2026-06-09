@@ -5908,6 +5908,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
               status: 'pago',
               origem_tipo: debito.origem_tipo,
               origem_irmao_id: debito.origem_irmao_id,
+              evento_comemorativo_id: debito.evento_comemorativo_id || null,
               eh_pagamento_parcial: true,
               lancamento_principal_id: debitoId
             });
@@ -5975,6 +5976,7 @@ function ModalCompensacao({ irmao, debitos, creditos, onClose, onSuccess, showSu
               status: 'pago',
               origem_tipo: credito.origem_tipo,
               origem_irmao_id: credito.origem_irmao_id,
+              evento_comemorativo_id: credito.evento_comemorativo_id || null,
               eh_pagamento_parcial: true,
               lancamento_principal_id: creditoId
             });
