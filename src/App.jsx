@@ -53,8 +53,6 @@ import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
 import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
 import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
 import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
-import EleicaoPosse from './components/administracao/EleicaoPosse';
-import ModelosDocumentos from './components/administracao/ModelosDocumentos';
 
 // ========================================
 // CONFIGURAÇÃO SUPABASE
@@ -360,7 +358,7 @@ function App() {
       if (data.nivel_acesso === 'irmao') {
         const { data: irmaoData } = await supabase
           .from('irmaos')
-          .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado, situacao')
+          .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
           .eq('email', userEmail)
           .single();
         
@@ -373,8 +371,6 @@ function App() {
           else if (irmaoData.data_elevacao) grau = 'Companheiro';
           else if (irmaoData.data_iniciacao) grau = 'Aprendiz';
           setGrauUsuarioLogado(grau);
-          // Guardar situação no userData para controle de acesso
-          setUserData(prev => ({ ...prev, situacao: irmaoData.situacao || 'Regular' }));
         }
       } else {
         // Admin e cargos têm acesso total (Mestre)
@@ -1673,7 +1669,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       }`}
                     >
                       <span>🎉</span>
-                      <span>Eventos Beneficentes</span>
+                      <span>Eventos</span>
                     </button>
                   </div>
                 )}
@@ -1839,32 +1835,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 >
                   <span className="text-base">📋</span>
                   {menuAberto && <span className="font-semibold">Administração</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('eleicao-posse')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'eleicao-posse'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Eleição & Posse"
-                >
-                  <span className="text-base">⚖️</span>
-                  {menuAberto && <span className="font-semibold">Eleição &amp; Posse</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('modelos-documentos')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'modelos-documentos'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Modelos de Documentos"
-                >
-                  <span className="text-base">📋</span>
-                  {menuAberto && <span className="font-semibold">Modelos de Docs</span>}
                 </button>
 
                 <button
@@ -2128,7 +2098,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           }`}
                         >
                           <span>🎉</span>
-                          <span>Ágape &amp; Festas</span>
+                          <span>Eventos</span>
                         </button>
 
                         <button
@@ -2217,7 +2187,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           }`}
                         >
                           <span>🎉</span>
-                          <span>Eventos Beneficentes</span>
+                          <span>Eventos</span>
                         </button>
                       </div>
                     )}
@@ -2491,32 +2461,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
-                  onClick={() => setCurrentPage('eleicao-posse')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'eleicao-posse'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Eleição & Posse"
-                >
-                  <span className="text-base">⚖️</span>
-                  {menuAberto && <span className="font-semibold">Eleição &amp; Posse</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('modelos-documentos')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'modelos-documentos'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Modelos de Documentos"
-                >
-                  <span className="text-base">📋</span>
-                  {menuAberto && <span className="font-semibold">Modelos de Docs</span>}
-                </button>
-
-                <button
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'sobre'
@@ -2641,11 +2585,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
-                  {currentPage === 'eventos-comemorativos' && '🎉 Ágape & Festas'}
+                  {currentPage === 'eventos-comemorativos' && '🎉 Eventos Comemorativos'}
                   {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
                   {currentPage === 'relatorio-financeiro' && '📊 Relatório Financeiro'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
-                  {currentPage === 'eventos' && '🎉 Eventos Beneficentes'}
+                  {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
                   {currentPage === 'dashboard-presenca' && '📊 Dashboard de Presença'}
                   {currentPage === 'cadastro-sessao' && '📋 Cadastro de Sessão'}
@@ -2659,8 +2603,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'dados-loja' && '🏛️ Dados da Loja'}
                   {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
                   {currentPage === 'sindicancia' && '🔍 Sindicância'}
-                  {currentPage === 'eleicao-posse' && '⚖️ Eleição & Posse'}
-                  {currentPage === 'modelos-documentos' && '📋 Modelos de Documentos'}
                 </h2>
               </div>
               <div className="flex items-center gap-4">
@@ -2871,7 +2813,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <Sindicancia
             grauUsuario={grauUsuarioLogado}
             userData={userData}
-            situacaoUsuario={userData?.situacao || ''}
           />
         )}
 
@@ -2882,25 +2823,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             permissoes={permissoes}
             onUpdate={loadCorpoAdmin}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* ELEIÇÃO & POSSE */}
-        {currentPage === 'eleicao-posse' && (
-          <EleicaoPosse
-            permissoes={permissoes}
-            irmaos={irmaos}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* MODELOS DE DOCUMENTOS */}
-        {currentPage === 'modelos-documentos' && (
-          <ModelosDocumentos
-            permissoes={permissoes}
             showSuccess={showSuccess}
             showError={showError}
           />
