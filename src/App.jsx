@@ -1850,6 +1850,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {menuAberto && <span className="font-semibold">Altos Graus</span>}
                 </button>
 
+                {/* SINDICÂNCIA — visível para todos os irmãos */}
+                <button
+                  onClick={() => setCurrentPage('sindicancia')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'sindicancia'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Sindicância"
+                >
+                  <span className="text-base">🔍</span>
+                  {menuAberto && <span className="font-semibold">Sindicância</span>}
+                </button>
+
                 <button
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
@@ -2429,10 +2443,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   </div>
                 )}
 
-                {/* SINDICÂNCIA — acesso para todos os irmãos + admin/cargo */}
-                {(userData?.nivel_acesso === 'irmao' ||
-                  userData?.nivel_acesso === 'admin' ||
-                  userData?.nivel_acesso === 'cargo') && (
+                {/* SINDICÂNCIA — acesso restrito a Mestres */}
+                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' || userData?.nivel_acesso === 'admin') && (
                   <button
                     onClick={() => setCurrentPage('sindicancia')}
                     className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
