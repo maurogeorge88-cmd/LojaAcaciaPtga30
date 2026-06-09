@@ -337,7 +337,7 @@ const ModalParticipante = ({ aberto, onFechar, onSalvar, partEdit, irmaos, event
 // ─────────────────────────────────────────────
 //  Tabela de Participantes separada por grupo
 // ─────────────────────────────────────────────
-const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit, setModalPart, setConfirmExcluirPart, totalCotas, btnEdit, btnDanger }) => {
+const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit, setModalPart, setConfirmExcluirPart, totalCotas, btnEdit, btnDanger, podeEditar = false }) => {
   const irmaos_part   = participantes.filter(p => p.irmao_id);
   const externos_part = participantes.filter(p => !p.irmao_id);
 
@@ -378,7 +378,7 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
       {!encerrado ? (
         <td style={{ padding: '0.55rem 0.5rem', textAlign: 'right' }}>
           <div style={{ display: 'flex', gap: '0.25rem', justifyContent: 'flex-end' }}>
-            <button onClick={() => { setPartEdit(p); setModalPart(true); }} style={btnEdit}>✏️</button>
+            {podeEditar && <button onClick={() => { setPartEdit(p); setModalPart(true); }} style={btnEdit}>✏️</button>}
             {podeEditar && <button onClick={() => setConfirmExcluirPart(p)} style={btnDanger}>🗑️</button>}
           </div>
         </td>
@@ -817,6 +817,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                 totalCotas={totalCotas}
                 btnEdit={btnEdit}
                 btnDanger={btnDanger}
+                podeEditar={podeEditar}
               />
             )}
           </div>
