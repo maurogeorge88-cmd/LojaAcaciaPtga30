@@ -353,7 +353,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
       {/* Formulário */}
       {mostrarFormulario && (
-        <form onSubmit={salvarProjeto} className="rounded-xl p-6 mb-6 border-2 border-indigo-200 mx-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+        <form onSubmit={salvarProjeto} className="rounded-xl p-6 mb-6 border-2 border-indigo-200 mx-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
             {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
           </h3>
@@ -701,7 +701,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Modal de Receitas */}
       {mostrarReceitas && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
             <div style={{background:"#10b981",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
               <div className="flex justify-between items-center">
@@ -725,7 +725,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             <div className="p-6">
               {/* Formulário de Nova Receita */}
               {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <h4 className="font-bold mb-3">➕ Adicionar Receita</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input
@@ -803,12 +803,33 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <div className="text-center py-8">
                   <p>📋 Nenhuma receita registrada para este projeto</p>
                 </div>
-              ) : (
+              ) : (() => {
+                // Separar manuais e do Finanças Loja
+                const manuais = receitasDoModal.filter(r => !r.lancamento_id);
+                const doFinancas = receitasDoModal.filter(r => r.lancamento_id);
+
+                // Agrupar do Finanças Loja por data
+                const agrupadas = Object.values(
+                  doFinancas.reduce((acc, r) => {
+                    const key = r.data_receita;
+                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0, lancamento_id: r.lancamento_id };
+                    acc[key].valor += parseFloat(r.valor);
+                    acc[key].qtd++;
+                    return acc;
+                  }, {})
+                );
+
+                // Juntar e ordenar por data desc
+                const todas = [...manuais, ...agrupadas].sort((a, b) =>
+                  b.data_receita.localeCompare(a.data_receita)
+                );
+
+                return (
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead style={{background:"var(--color-surface-2)"}}>
-                        <tr className="-b-2" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                        <tr style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                           <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
                           <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
                           <th className="px-4 py-3 text-left text-sm font-bold">Origem</th>
@@ -819,30 +840,47 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {receitasDoModal.map((receita, i) => (
-                          <tr key={receita.id} className={i % 2 === 0 ? '' : ''}>
+                        {todas.map((receita, i) => (
+                          <tr key={receita.lancamento_id || receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.descricao}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
-                                {receita.origem}
-                              </span>
+                              {receita.descricao}
+                              {receita.qtd > 1 && (
+                                <span style={{marginLeft:'0.4rem',fontSize:'0.7rem',color:'var(--color-text-muted)'}}>
+                                  ({receita.qtd} registros)
+                                </span>
+                              )}
                             </td>
-                            <td className="px-4 py-3 text-sm text-right font-bold text-green-600" style={{color:"var(--color-text)"}}>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                              {receita.lancamento_id ? (
+                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
+                                  🏦 Finanças Loja
+                                </span>
+                              ) : (
+                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
+                                  {receita.origem}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#10b981"}}>
                               R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.forma_pagamento}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={() => excluirReceita(receita.id)}
-                                  style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
-                                >
-                                  🗑️
-                                </button>
+                                {receita.lancamento_id ? (
+                                  <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                ) : (
+                                  <button
+                                    onClick={() => excluirReceita(receita.id)}
+                                    style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
+                                  >
+                                    🗑️
+                                  </button>
+                                )}
                               </td>
                             )}
                           </tr>
@@ -862,7 +900,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </table>
                   </div>
                 </>
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -871,7 +910,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       {/* Modal de Custos */}
       {mostrarCustos && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             {/* Header do Modal */}
             <div style={{background:"#8b5cf6",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
               <div className="flex justify-between items-center">
@@ -895,7 +934,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
             <div className="p-6">
               {/* Formulário de Novo Custo */}
               {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>>
+                <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
                   <h4 className="font-bold mb-3">➕ Adicionar Custo</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <input
