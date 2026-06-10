@@ -512,9 +512,10 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
     // Buscar categorias de receita para o lançamento
     const { data: cats } = await supabase
       .from('categorias_financeiras')
-      .select('id, nome, tipo, subcategorias(id, nome)')
+      .select('id, nome, tipo, nivel, parent_id')
       .eq('tipo', 'receita')
       .eq('ativo', true)
+      .order('nivel')
       .order('nome');
     setCategoriasCotas(cats || []);
 
@@ -997,8 +998,15 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                     style={{ width:'100%', padding:'0.45rem 0.7rem', background:'var(--color-bg)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', color:'var(--color-text)', fontSize:'0.82rem' }}
                   >
                     <option value="">Selecione...</option>
-                    {categoriasCotas.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                    {categoriasCotas.filter(cat => !cat.parent_id).map(pai => (
+                      <optgroup key={pai.id} label={pai.nome}>
+                        {categoriasCotas.filter(sub => sub.parent_id === pai.id).map(sub => (
+                          <option key={sub.id} value={sub.id}>{sub.nome}</option>
+                        ))}
+                        {categoriasCotas.filter(sub => sub.parent_id === pai.id).length === 0 && (
+                          <option key={pai.id + '_self'} value={pai.id}>{pai.nome}</option>
+                        )}
+                      </optgroup>
                     ))}
                   </select>
                 </div>
