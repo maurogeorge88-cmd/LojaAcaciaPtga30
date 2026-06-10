@@ -1157,12 +1157,14 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
   const carregarCategorias = async () => {
     const { data } = await supabase
       .from('categorias_financeiras')
-      .select('id, nome, tipo, nivel, parent_id')
-      .eq('tipo', 'receita')
+      .select('*')
       .eq('ativo', true)
+      .order('tipo')
       .order('nivel')
+      .order('ordem')
       .order('nome');
-    setCategorias(data || []);
+    // Filtrar apenas receitas
+    setCategorias((data || []).filter(c => c.tipo === 'receita'));
   };
 
   useEffect(() => { carregarEventos(); carregarIrmaos(); carregarCategorias(); }, []);
