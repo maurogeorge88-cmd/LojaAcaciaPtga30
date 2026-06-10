@@ -991,16 +991,19 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
                     style={{ width:'100%', padding:'0.45rem 0.7rem', background:'var(--color-bg)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', color:'var(--color-text)', fontSize:'0.82rem' }}
                   >
                     <option value="">Selecione...</option>
-                    {categoriasCotas.filter(cat => !cat.parent_id).map(pai => (
-                      <optgroup key={pai.id} label={pai.nome}>
-                        {categoriasCotas.filter(sub => sub.parent_id === pai.id).map(sub => (
-                          <option key={sub.id} value={sub.id}>{sub.nome}</option>
-                        ))}
-                        {categoriasCotas.filter(sub => sub.parent_id === pai.id).length === 0 && (
-                          <option key={pai.id + '_self'} value={pai.id}>{pai.nome}</option>
-                        )}
-                      </optgroup>
-                    ))}
+                    {(() => {
+                      const principais = categoriasCotas.filter(c => c.nivel === 1);
+                      const opcoes = [];
+                      principais.forEach(pai => {
+                        opcoes.push(<option key={pai.id} value={pai.id}>{pai.nome}</option>);
+                        categoriasCotas
+                          .filter(s => s.nivel === 2 && s.categoria_pai_id === pai.id)
+                          .forEach(sub => {
+                            opcoes.push(<option key={sub.id} value={sub.id}>&nbsp;&nbsp;↳ {sub.nome}</option>);
+                          });
+                      });
+                      return opcoes;
+                    })()}
                   </select>
                 </div>
                 <div>
