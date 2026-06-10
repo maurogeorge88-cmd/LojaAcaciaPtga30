@@ -471,6 +471,17 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   const [confirmEncerrar, setConfirmEncerrar] = useState(false);
   const [editandoValor, setEditandoValor] = useState(false);
   const [novoValor, setNovoValor] = useState('');
+  const [modalCotas, setModalCotas] = useState(false);
+  const [categoriasCotas, setCategoriasCotas] = useState([]);
+  const [cotasForm, setCotasForm] = useState({
+    categoria_id: '',
+    descricao: '',
+    data_lancamento: new Date().toISOString().split('T')[0],
+    data_vencimento: new Date().toISOString().split('T')[0],
+  });
+  const [cotasSelecionadas, setCotasSelecionadas] = useState({});
+  const [cotasJaLancadas, setCotasJaLancadas] = useState({});
+  const [lancandoCotas, setLancandoCotas] = useState(false);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -495,6 +506,91 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   const totalCotas       = participantes.reduce((s, p) => s + parseFloat(p.cotas || 0), 0);
   const valorCalc        = totalCotas > 0 ? baseRateio / totalCotas : 0;
   const valorCota        = evento.valor_ajustado ? parseFloat(evento.valor_ajustado) : valorCalc;
+
+  // ── Abrir modal de cotas ──
+  const abrirModalCotas = async () => {
+    // Buscar categorias de receita para o lançamento
+    const { data: cats } = await supabase
+      .from('categorias_financeiras')
+      .select('id, nome, tipo, subcategorias(id, nome)')
+      .eq('tipo', 'receita')
+      .eq('ativo', true)
+      .order('nome');
+    setCategoriasCotas(cats || []);
+
+    // Buscar lançamentos já existentes para este evento por irmão
+    const { data: lancExist } = await supabase
+      .from('lancamentos_loja')
+      .select('origem_irmao_id')
+      .eq('evento_comemorativo_id', evento.id)
+      .eq('origem_tipo', 'Irmao')
+      .eq('status', 'pendente');
+
+    const jaLancados = {};
+    (lancExist || []).forEach(l => {
+      if (l.origem_irmao_id) jaLancados[l.origem_irmao_id] = true;
+    });
+    setCotasJaLancadas(jaLancados);
+
+    // Pré-selecionar irmãos que ainda não têm lançamento
+    const preSelected = {};
+    participantes
+      .filter(p => p.irmao_id && !jaLancados[p.irmao_id])
+      .forEach(p => { preSelected[p.irmao_id] = true; });
+    setCotasSelecionadas(preSelected);
+
+    // Pré-preencher descrição
+    setCotasForm(prev => ({
+      ...prev,
+      descricao: `Cota — ${evento.nome}`,
+    }));
+
+    setModalCotas(true);
+  };
+
+  // ── Lançar cotas ──
+  const handleLancarCotas = async () => {
+    if (!cotasForm.categoria_id) {
+      showError('Selecione uma categoria para o lançamento.');
+      return;
+    }
+    const selecionados = participantes.filter(p =>
+      p.irmao_id && cotasSelecionadas[p.irmao_id]
+    );
+    if (selecionados.length === 0) {
+      showError('Selecione pelo menos um irmão.');
+      return;
+    }
+    setLancandoCotas(true);
+    try {
+      const inserts = selecionados.map(p => {
+        const cotas = parseFloat(p.cotas || 1);
+        const valor = (valorCota * cotas).toFixed(2);
+        return {
+          tipo: 'receita',
+          categoria_id: cotasForm.categoria_id,
+          descricao: cotasForm.descricao,
+          valor: parseFloat(valor),
+          data_lancamento: cotasForm.data_lancamento,
+          data_vencimento: cotasForm.data_vencimento,
+          status: 'pendente',
+          tipo_pagamento: 'pix',
+          origem_tipo: 'Irmao',
+          origem_irmao_id: p.irmao_id,
+          evento_comemorativo_id: evento.id,
+        };
+      });
+      const { error } = await supabase.from('lancamentos_loja').insert(inserts);
+      if (error) throw error;
+      showSuccess(`✅ ${inserts.length} lançamento(s) criado(s) com sucesso!`);
+      setModalCotas(false);
+      await carregar();
+    } catch (e) {
+      showError('Erro ao lançar cotas: ' + e.message);
+    } finally {
+      setLancandoCotas(false);
+    }
+  };
 
   // ── Salvar participante ──
   const handleSalvarPart = async (form) => {
@@ -684,6 +780,11 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
         </div>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {podeEditar && <button onClick={() => setModalEvento(true)} style={{ ...btnEdit, padding: '0.45rem 0.85rem' }}>✏️ Editar</button>}
+          {podeEditar && valorCota > 0 && (
+            <button onClick={abrirModalCotas} style={{ ...btnPrimary, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }}>
+              💰 Lançar Cotas
+            </button>
+          )}
           {podeEditar && <button onClick={gerarPDF} style={{ ...btnPrimary, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#3b82f6' }}>📄 PDF</button>}
           {podeEditar && !encerrado && <button onClick={() => setConfirmEncerrar(true)} style={{ ...btnPrimary, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>🔒 Encerrar</button>}
         </div>
@@ -865,6 +966,147 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       )}
 
       {/* Confirm encerrar */}
+
+      {/* ── Modal Lançar Cotas ──────────────────────────────── */}
+      {modalCotas && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:1100, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
+          <div style={{ background:'var(--color-surface)', borderRadius:'var(--radius-xl)', width:'100%', maxWidth:'680px', maxHeight:'90vh', display:'flex', flexDirection:'column', boxShadow:'0 20px 60px rgba(0,0,0,0.4)', overflow:'hidden' }}>
+
+            {/* Header */}
+            <div style={{ padding:'1.1rem 1.4rem', borderBottom:'1px solid var(--color-border)', background:'var(--color-surface-2)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <h3 style={{ fontWeight:700, fontSize:'1rem', color:'var(--color-text)', margin:0 }}>💰 Lançar Cotas — {evento.nome}</h3>
+                <p style={{ fontSize:'0.75rem', color:'var(--color-text-muted)', margin:'0.2rem 0 0' }}>
+                  Valor/cota: <strong style={{ color:'var(--color-accent)' }}>{fmtR(valorCota)}</strong>
+                  {evento.valor_ajustado ? ' (ajustado)' : ' (calculado)'}
+                </p>
+              </div>
+              <button onClick={() => setModalCotas(false)} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--color-text-muted)', fontSize:'1.5rem', lineHeight:1 }}>×</button>
+            </div>
+
+            {/* Configurações */}
+            <div style={{ padding:'1rem 1.4rem', borderBottom:'1px solid var(--color-border)', display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem' }}>
+                <div>
+                  <label style={{ display:'block', fontSize:'0.72rem', fontWeight:600, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.25rem' }}>
+                    Categoria *
+                  </label>
+                  <select
+                    value={cotasForm.categoria_id}
+                    onChange={e => setCotasForm(p => ({ ...p, categoria_id: e.target.value }))}
+                    style={{ width:'100%', padding:'0.45rem 0.7rem', background:'var(--color-bg)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', color:'var(--color-text)', fontSize:'0.82rem' }}
+                  >
+                    <option value="">Selecione...</option>
+                    {categoriasCotas.map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.nome}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display:'block', fontSize:'0.72rem', fontWeight:600, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.25rem' }}>
+                    Descrição
+                  </label>
+                  <input
+                    value={cotasForm.descricao}
+                    onChange={e => setCotasForm(p => ({ ...p, descricao: e.target.value }))}
+                    style={{ width:'100%', padding:'0.45rem 0.7rem', background:'var(--color-bg)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', color:'var(--color-text)', fontSize:'0.82rem', boxSizing:'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display:'block', fontSize:'0.72rem', fontWeight:600, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.25rem' }}>
+                    Data Lançamento
+                  </label>
+                  <input type="date"
+                    value={cotasForm.data_lancamento}
+                    onChange={e => setCotasForm(p => ({ ...p, data_lancamento: e.target.value }))}
+                    style={{ width:'100%', padding:'0.45rem 0.7rem', background:'var(--color-bg)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', color:'var(--color-text)', fontSize:'0.82rem', boxSizing:'border-box' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display:'block', fontSize:'0.72rem', fontWeight:600, color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.25rem' }}>
+                    Data Vencimento
+                  </label>
+                  <input type="date"
+                    value={cotasForm.data_vencimento}
+                    onChange={e => setCotasForm(p => ({ ...p, data_vencimento: e.target.value }))}
+                    style={{ width:'100%', padding:'0.45rem 0.7rem', background:'var(--color-bg)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', color:'var(--color-text)', fontSize:'0.82rem', boxSizing:'border-box' }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Lista de irmãos */}
+            <div style={{ flex:1, overflowY:'auto', padding:'0.75rem 1.4rem' }}>
+              {/* Barra selecionar todos */}
+              <div style={{ display:'flex', alignItems:'center', gap:'1rem', padding:'0.5rem 0', marginBottom:'0.5rem', borderBottom:'1px solid var(--color-border)' }}>
+                <label style={{ display:'flex', alignItems:'center', gap:'0.4rem', cursor:'pointer', fontSize:'0.82rem', fontWeight:600, color:'var(--color-text)' }}>
+                  <input type="checkbox"
+                    checked={participantes.filter(p => p.irmao_id && !cotasJaLancadas[p.irmao_id]).every(p => cotasSelecionadas[p.irmao_id])}
+                    onChange={e => {
+                      const novo = {};
+                      if (e.target.checked) {
+                        participantes.filter(p => p.irmao_id && !cotasJaLancadas[p.irmao_id]).forEach(p => { novo[p.irmao_id] = true; });
+                      }
+                      setCotasSelecionadas(novo);
+                    }}
+                  />
+                  Selecionar todos os pendentes
+                </label>
+                <span style={{ marginLeft:'auto', fontSize:'0.75rem', color:'var(--color-text-muted)' }}>
+                  {Object.values(cotasSelecionadas).filter(Boolean).length} selecionados
+                </span>
+              </div>
+
+              {participantes.filter(p => p.irmao_id).map(p => {
+                const cotas = parseFloat(p.cotas || 1);
+                const valor = valorCota * cotas;
+                const jaLancado = cotasJaLancadas[p.irmao_id];
+                const selecionado = !!cotasSelecionadas[p.irmao_id];
+                const nomeIrmao = p.irmaos?.nome || irmaos.find(i => i.id === p.irmao_id)?.nome || 'Irmão';
+                return (
+                  <div key={p.id} style={{ display:'flex', alignItems:'center', gap:'0.75rem', padding:'0.5rem 0', borderBottom:'1px solid var(--color-surface-2)', opacity: jaLancado ? 0.5 : 1 }}>
+                    <input type="checkbox"
+                      checked={selecionado}
+                      disabled={jaLancado}
+                      onChange={e => setCotasSelecionadas(prev => ({ ...prev, [p.irmao_id]: e.target.checked }))}
+                      style={{ cursor: jaLancado ? 'not-allowed' : 'pointer' }}
+                    />
+                    <div style={{ flex:1 }}>
+                      <span style={{ fontSize:'0.85rem', fontWeight:600, color:'var(--color-text)' }}>{nomeIrmao}</span>
+                      {cotas !== 1 && <span style={{ fontSize:'0.72rem', color:'var(--color-text-muted)', marginLeft:'0.4rem' }}>({cotas} cotas)</span>}
+                    </div>
+                    {jaLancado ? (
+                      <span style={{ fontSize:'0.72rem', color:'#10b981', fontWeight:600 }}>✅ Já lançado</span>
+                    ) : (
+                      <span style={{ fontSize:'0.85rem', fontWeight:700, color:'var(--color-accent)' }}>{fmtR(valor)}</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div style={{ padding:'1rem 1.4rem', borderTop:'1px solid var(--color-border)', background:'var(--color-surface-2)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div style={{ fontSize:'0.82rem', color:'var(--color-text-muted)' }}>
+                Total: <strong style={{ color:'var(--color-accent)', fontSize:'0.95rem' }}>
+                  {fmtR(participantes.filter(p => p.irmao_id && cotasSelecionadas[p.irmao_id]).reduce((s, p) => s + valorCota * parseFloat(p.cotas || 1), 0))}
+                </strong>
+                {' · '}
+                {Object.values(cotasSelecionadas).filter(Boolean).length} irmão(s)
+              </div>
+              <div style={{ display:'flex', gap:'0.5rem' }}>
+                <button onClick={() => setModalCotas(false)} style={{ padding:'0.5rem 1rem', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', background:'transparent', color:'var(--color-text-muted)', fontSize:'0.875rem', cursor:'pointer' }}>
+                  Cancelar
+                </button>
+                <button onClick={handleLancarCotas} disabled={lancandoCotas || Object.values(cotasSelecionadas).filter(Boolean).length === 0}
+                  style={{ padding:'0.5rem 1.25rem', borderRadius:'var(--radius-md)', border:'none', background:'var(--color-success)', color:'white', fontWeight:600, fontSize:'0.875rem', cursor: lancandoCotas ? 'wait' : 'pointer', opacity: Object.values(cotasSelecionadas).filter(Boolean).length === 0 ? 0.5 : 1 }}>
+                  {lancandoCotas ? '⏳ Lançando...' : '💰 Lançar para Selecionados'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {confirmEncerrar && (
         <div style={overlay}>
           <div style={modalBox('420px')}>
