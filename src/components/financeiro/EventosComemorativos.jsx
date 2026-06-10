@@ -459,7 +459,7 @@ const TabelaParticipantes = ({ participantes, valorCota, encerrado, setPartEdit,
 // ─────────────────────────────────────────────
 //  Detalhe do Evento
 // ─────────────────────────────────────────────
-const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, showError, podeEditar = false, onEventoAtualizado }) => {
+const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, showError, podeEditar = false, categorias = [], onEventoAtualizado }) => {
   const [evento, setEvento] = useState(eventoInit);
   const [despesas, setDespesas] = useState([]);
   const [participantes, setParticipantes] = useState([]);
@@ -509,15 +509,8 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
 
   // ── Abrir modal de cotas ──
   const abrirModalCotas = async () => {
-    // Buscar categorias de receita para o lançamento
-    const { data: cats } = await supabase
-      .from('categorias_financeiras')
-      .select('id, nome, tipo, nivel, parent_id')
-      .eq('tipo', 'receita')
-      .eq('ativo', true)
-      .order('nivel')
-      .order('nome');
-    setCategoriasCotas(cats || []);
+    // Categorias já carregadas via prop
+    setCategoriasCotas(categorias);
 
     // Buscar lançamentos já existentes para este evento por irmão
     const { data: lancExist } = await supabase
@@ -1144,6 +1137,7 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
   const [eventoAtivo, setEventoAtivo] = useState(null);
   const [modalNovo, setModalNovo] = useState(false);
   const [irmaos, setIrmaos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
   const [filtroAno, setFiltroAno] = useState('todos');
   const [filtroStatus, setFiltroStatus] = useState('todos');
   const [confirmExcluir, setConfirmExcluir] = useState(null);
@@ -1160,7 +1154,18 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
     setIrmaos(data || []);
   };
 
-  useEffect(() => { carregarEventos(); carregarIrmaos(); }, []);
+  const carregarCategorias = async () => {
+    const { data } = await supabase
+      .from('categorias_financeiras')
+      .select('id, nome, tipo, nivel, parent_id')
+      .eq('tipo', 'receita')
+      .eq('ativo', true)
+      .order('nivel')
+      .order('nome');
+    setCategorias(data || []);
+  };
+
+  useEffect(() => { carregarEventos(); carregarIrmaos(); carregarCategorias(); }, []);
 
   const anos = [...new Set(eventos.map(e => e.ano))].sort((a, b) => b - a);
 
@@ -1201,6 +1206,7 @@ export default function EventosComemorativos({ showSuccess, showError, podeEdita
           showSuccess={showSuccess}
           showError={showError}
           podeEditar={podeEditar}
+          categorias={categorias}
           onEventoAtualizado={carregarEventos}
         />
       </div>
