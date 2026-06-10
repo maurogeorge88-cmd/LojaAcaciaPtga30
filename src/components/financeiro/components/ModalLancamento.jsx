@@ -15,7 +15,8 @@ export default function ModalLancamento({
   categorias,
   irmaos,
   editando = false,
-  eventosComemorativos = []
+  eventosComemorativos = [],
+  projetos = []
 }) {
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -275,6 +276,29 @@ export default function ModalLancamento({
           {formData.evento_comemorativo_id && (
             <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
               ✓ Lançamento vinculado ao evento selecionado
+            </p>
+          )}
+        </div>
+
+        {/* Projeto */}
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+            🏗️ Projeto <span style={{fontSize:"0.75rem",fontWeight:400,color:"var(--color-text-muted)"}}>(opcional)</span>
+          </label>
+          <select
+            value={formData.projeto_id || ''}
+            onChange={(e) => setFormData({ ...formData, projeto_id: e.target.value || null })}
+            className={`w-full px-3 py-2 border rounded-lg ${cfg.corFoco}`}
+            style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+          >
+            <option value="">— Nenhum —</option>
+            {projetos.filter(p => p.status === 'em_andamento').map(p => (
+              <option key={p.id} value={p.id}>{p.nome}</option>
+            ))}
+          </select>
+          {formData.projeto_id && (
+            <p style={{fontSize:"0.72rem",color:"var(--color-text-muted)",marginTop:"0.25rem"}}>
+              ✓ Lançamento vinculado ao projeto selecionado
             </p>
           )}
         </div>
