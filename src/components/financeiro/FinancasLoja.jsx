@@ -32,6 +32,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
   const [eventosComemorativos, setEventosComemorativos] = useState([]);
+  const [projetosAtivos, setProjetosAtivos] = useState([]);
   const [irmaoEditando, setIrmaoEditando]       = useState(null); // irmão extra para edição (ex: desligado)
   const [tipoLancamento, setTipoLancamento] = useState('receita');
   const [mostrarModalIrmaos, setMostrarModalIrmaos] = useState(false);
@@ -114,6 +115,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     comprovante_url: '',
     observacoes: '',
     evento_comemorativo_id: null,
+    projeto_id: null,
     origem_tipo: 'Loja', 
     origem_irmao_id: '' 
   });
@@ -365,6 +367,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const carregarEventosComemorativos = async () => {
     const { data } = await supabase.from('eventos_comemorativos_fin').select('id, nome, ano, status').order('ano', { ascending: false }).order('nome');
     setEventosComemorativos(data || []);
+
+    const { data: projData } = await supabase
+      .from('projetos')
+      .select('id, nome, status')
+      .eq('status', 'em_andamento')
+      .order('nome');
+    setProjetosAtivos(projData || []);
   };
 
   const carregarLancamentos = async () => {
@@ -624,7 +633,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         observacoes: dados.observacoes || null,
         origem_tipo: dados.origem_tipo || 'Loja',
         origem_irmao_id: dados.origem_irmao_id ? parseInt(dados.origem_irmao_id) : null,
-        evento_comemorativo_id: dados.evento_comemorativo_id || null
+        evento_comemorativo_id: dados.evento_comemorativo_id || null,
+        projeto_id: dados.projeto_id ? parseInt(dados.projeto_id) : null,
       };
 
       if (editando) {
@@ -634,6 +644,29 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           .eq('id', editando);
 
         if (error) throw error;
+
+        // Atualizar receita_projeto se projeto vinculado mudou
+        if (dados.projeto_id) {
+          // Remover receita antiga vinculada a este lançamento
+          await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
+          // Criar nova receita
+          const irmaoNome = dados.origem_irmao_id
+            ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+            : '';
+          await supabase.from('receitas_projeto').insert([{
+            projeto_id: dados.projeto_id,
+            data_receita: dados.data_lancamento,
+            descricao: dados.descricao,
+            valor: parseFloat(dados.valor),
+            origem: 'Finanças Loja',
+            forma_pagamento: dados.tipo_pagamento || '',
+            responsavel: irmaoNome,
+            lancamento_id: editando,
+          }]);
+        } else {
+          // Projeto foi removido — excluir receita vinculada se existir
+          await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
+        }
         
         // Registrar log de edição
         if (userData?.id) {
@@ -652,11 +685,31 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         
         showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} atualizada com sucesso!`);
       } else {
-        const { error } = await supabase
+        const { data: novoLanc, error } = await supabase
           .from('lancamentos_loja')
-          .insert(dadosLancamento);
+          .insert(dadosLancamento)
+          .select('id')
+          .single();
 
         if (error) throw error;
+
+        // Criar receita em receitas_projeto se projeto vinculado
+        if (dados.projeto_id && novoLanc?.id) {
+          const irmaoNome = dados.origem_irmao_id
+            ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+            : '';
+          await supabase.from('receitas_projeto').insert([{
+            projeto_id: dados.projeto_id,
+            data_receita: dados.data_lancamento,
+            descricao: dados.descricao,
+            valor: parseFloat(dados.valor),
+            origem: 'Finanças Loja',
+            forma_pagamento: dados.tipo_pagamento || '',
+            responsavel: irmaoNome,
+            lancamento_id: novoLanc.id,
+          }]);
+        }
+
         showSuccess(`${dados.tipo === 'receita' ? 'Receita' : 'Despesa'} criada com sucesso!`);
       }
 
@@ -3596,6 +3649,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
         editando={editando}
         eventosComemorativos={eventosComemorativos}
+        projetos={projetosAtivos}
       />
 
 
