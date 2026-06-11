@@ -24,7 +24,6 @@ import ModalPagamentoParcial from './ModalPagamentoParcial';
 import ModalCompensacao from './ModalCompensacao';
 import ModalQuitacao from './ModalQuitacao';
 import ModalQuitacaoLote from './ModalQuitacaoLote';
-import FinancasLojaTV from './FinancasLojaTV';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -95,7 +94,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
-  const [telaTV, setTelaTV] = useState(false);
   const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
@@ -1879,16 +1877,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     );
   }
 
-  // Renderizar Tela TV em tela cheia
-  if (telaTV) {
-    return (
-      <FinancasLojaTV 
-        filtros={filtros}
-        onClose={() => setTelaTV(false)}
-      />
-    );
-  }
-
   return (
     <div className="space-y-6 px-3 py-3" style={{background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
       {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
@@ -2052,15 +2040,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         >
           <span>📊 Análise</span>
           <span>Categorias</span>
-        </button>
-        
-        {/* Botão Apresentação TV */}
-        <button
-          onClick={() => setTelaTV(true)}
-          className="w-28 h-[55px] px-3 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap"
-        >
-          <span>📺 Tela</span>
-          <span>para TV</span>
         </button>
         
         {/* Botão Ocultar/Mostrar Valores */}
