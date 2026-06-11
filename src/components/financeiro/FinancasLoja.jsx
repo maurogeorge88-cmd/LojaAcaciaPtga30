@@ -4326,6 +4326,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                   {lanc.evento_comemorativo_id && (
                                     <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.6rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.3rem',lineHeight:'1.5',fontWeight:700}}>🎉</span>
                                   )}
+                                  {lanc.projeto_id && (
+                                    <span title="Vinculado a Projeto" style={{flexShrink:0,fontSize:'0.6rem',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'999px',padding:'0 0.3rem',lineHeight:'1.5',fontWeight:700}}>🏗️</span>
+                                  )}
                                 </p>
                                 {/* Datas */}
                                 <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:0}}>
@@ -4492,6 +4495,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{lanc.descricao}</span>
                       {lanc.evento_comemorativo_id && (
                         <span title="Vinculado a Evento Comemorativo" style={{flexShrink:0,fontSize:'0.65rem',background:'rgba(201,168,76,0.15)',color:'#c9a84c',border:'1px solid rgba(201,168,76,0.35)',borderRadius:'999px',padding:'0 0.35rem',lineHeight:'1.4',fontWeight:700}}>🎉</span>
+                      )}
+                      {lanc.projeto_id && (
+                        <span title="Vinculado a Projeto" style={{flexShrink:0,fontSize:'0.65rem',background:'rgba(99,102,241,0.15)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'999px',padding:'0 0.35rem',lineHeight:'1.4',fontWeight:700}}>🏗️</span>
                       )}
                     </div>
                     {/* Origem */}
