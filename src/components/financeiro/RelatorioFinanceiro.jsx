@@ -272,16 +272,23 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
   if (!isOpen) return null;
 
   // ─── Componentes internos ────────────────────────────────────────────────────
+  const sSelect = {
+    padding:'0.35rem 0.6rem',
+    borderRadius:'var(--radius-md)',
+    border:'1px solid var(--color-border)',
+    background:'var(--color-surface-2)',
+    color:'var(--color-text)',
+    fontSize:'0.82rem'
+  };
+
   const SeletorPeriodo = ({ periodo, onChange, label }) => (
     <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
-      <span style={{fontSize:'0.75rem', fontWeight:'700', color:'rgba(255,255,255,0.8)'}}>{label}</span>
-      <select value={periodo.mes} onChange={e => onChange({ ...periodo, mes: parseInt(e.target.value) })}
-        style={{padding:'0.25rem 0.5rem', borderRadius:'var(--radius-md)', border:'1px solid rgba(255,255,255,0.3)', background:'var(--color-surface)', color:'var(--color-text)', fontSize:'0.8rem'}}>
+      <span style={{fontSize:'0.78rem', fontWeight:'700', color:'var(--color-text-muted)'}}>{label}</span>
+      <select value={periodo.mes} onChange={e => onChange({ ...periodo, mes: parseInt(e.target.value) })} style={sSelect}>
         <option value={0}>Ano inteiro</option>
         {MESES.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
       </select>
-      <select value={periodo.ano} onChange={e => onChange({ ...periodo, ano: parseInt(e.target.value) })}
-        style={{padding:'0.25rem 0.5rem', borderRadius:'var(--radius-md)', border:'1px solid rgba(255,255,255,0.3)', background:'var(--color-surface)', color:'var(--color-text)', fontSize:'0.8rem'}}>
+      <select value={periodo.ano} onChange={e => onChange({ ...periodo, ano: parseInt(e.target.value) })} style={sSelect}>
         <option value={0}>📊 Geral (todo o período)</option>
         {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
       </select>
@@ -420,23 +427,26 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
     <div style={{position:'fixed', inset:0, background:'var(--color-bg)', zIndex:50, overflowY:'auto'}}>
 
       {/* CABEÇALHO */}
-      <div style={{position:'sticky', top:0, zIndex:10, background:'var(--color-accent)', padding:'0.75rem 1.25rem', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'0.5rem', boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
+      {/* Barra título */}
+      <div style={{position:'sticky', top:0, zIndex:10, background:'var(--color-accent)', padding:'0.6rem 1.25rem', display:'flex', alignItems:'center', justifyContent:'space-between', boxShadow:'0 2px 8px rgba(0,0,0,0.2)'}}>
         <div>
-          <h2 style={{color:'#fff', fontWeight:'800', fontSize:'1.1rem', margin:0}}>📋 Relatório Financeiro</h2>
-          <p style={{color:'rgba(255,255,255,0.8)', fontSize:'0.72rem', margin:'0.1rem 0 0'}}>Saldo, receitas e despesas por categoria com saldo anterior</p>
+          <h2 style={{color:'#fff', fontWeight:'800', fontSize:'1.05rem', margin:0}}>📋 Relatório Financeiro</h2>
+          <p style={{color:'rgba(255,255,255,0.8)', fontSize:'0.7rem', margin:'0.1rem 0 0'}}>Receitas, despesas e saldo com histórico completo</p>
         </div>
-        <div style={{display:'flex', alignItems:'center', gap:'0.6rem', flexWrap:'wrap'}}>
-          <SeletorPeriodo periodo={periodoA} onChange={setPeriodoA} label="Período:" />
-          <button onClick={() => setMostrarComparacao(!mostrarComparacao)}
-            style={{padding:'0.25rem 0.65rem', background: mostrarComparacao ? '#fff' : 'rgba(255,255,255,0.2)', color: mostrarComparacao ? 'var(--color-accent)' : '#fff', border:'1px solid rgba(255,255,255,0.4)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.75rem', fontWeight:'700'}}>
-            {mostrarComparacao ? '✕ Comparar' : '⚖️ Comparar'}
-          </button>
-          {mostrarComparacao && <SeletorPeriodo periodo={periodoB} onChange={setPeriodoB} label="vs:" />}
-          <button onClick={onClose}
-            style={{padding:'0.25rem 0.65rem', background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.8rem', fontWeight:'600'}}>
-            ← Voltar
-          </button>
-        </div>
+        <button onClick={onClose}
+          style={{padding:'0.3rem 0.9rem', background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'600'}}>
+          ← Voltar
+        </button>
+      </div>
+
+      {/* Barra de filtros — fora do azul, usa tema do sistema */}
+      <div style={{position:'sticky', top:'52px', zIndex:9, background:'var(--color-surface)', borderBottom:'1px solid var(--color-border)', padding:'0.5rem 1.25rem', display:'flex', alignItems:'center', gap:'0.75rem', flexWrap:'wrap'}}>
+        <SeletorPeriodo periodo={periodoA} onChange={setPeriodoA} label="Período:" />
+        <button onClick={() => setMostrarComparacao(!mostrarComparacao)}
+          style={{padding:'0.3rem 0.75rem', background: mostrarComparacao ? 'var(--color-accent)' : 'var(--color-surface-2)', color: mostrarComparacao ? '#fff' : 'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.78rem', fontWeight:'700'}}>
+          {mostrarComparacao ? '✕ Comparação' : '⚖️ Comparar período'}
+        </button>
+        {mostrarComparacao && <SeletorPeriodo periodo={periodoB} onChange={setPeriodoB} label="vs:" />}
       </div>
 
       {loading ? (
