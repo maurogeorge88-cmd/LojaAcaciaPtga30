@@ -645,39 +645,49 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Atualizar receita ou custo se projeto vinculado mudou
-        if (dados.projeto_id) {
-          // Remover registros antigos vinculados a este lançamento (ambas as tabelas)
-          await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
-          await supabase.from('custos_projeto').delete().eq('lancamento_id', editando);
-          const irmaoNome = dados.origem_irmao_id
-            ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-            : '';
-          if (dados.tipo === 'receita') {
-            await supabase.from('receitas_projeto').insert([{
-              projeto_id: parseInt(dados.projeto_id),
-              data_receita: dados.data_lancamento,
-              descricao: dados.descricao,
-              valor: parseFloat(dados.valor),
-              origem: 'Finanças Loja',
-              forma_pagamento: dados.tipo_pagamento || '',
-              responsavel: irmaoNome,
-              lancamento_id: editando,
-            }]);
-          } else {
-            await supabase.from('custos_projeto').insert([{
-              projeto_id: parseInt(dados.projeto_id),
-              data_custo: dados.data_lancamento,
-              descricao: dados.descricao,
-              valor: parseFloat(dados.valor),
-              categoria: 'Finanças Loja',
-              lancamento_id: editando,
-            }]);
+        // Atualizar receita ou custo se projeto vinculado
+        // Buscar se havia projeto vinculado antes
+        const { data: lancAnterior } = await supabase
+          .from('lancamentos_loja')
+          .select('projeto_id')
+          .eq('id', editando)
+          .single();
+        
+        const tinhaProjetoAntes = lancAnterior?.projeto_id;
+
+        if (dados.projeto_id || tinhaProjetoAntes) {
+          // Remover registros antigos apenas se havia vínculo antes
+          if (tinhaProjetoAntes) {
+            await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
+            await supabase.from('custos_projeto').delete().eq('lancamento_id', editando);
           }
-        } else {
-          // Projeto foi removido — excluir registros vinculados se existirem
-          await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
-          await supabase.from('custos_projeto').delete().eq('lancamento_id', editando);
+          // Criar novo vínculo se projeto foi selecionado
+          if (dados.projeto_id) {
+            const irmaoNome = dados.origem_irmao_id
+              ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+              : '';
+            if (dados.tipo === 'receita') {
+              await supabase.from('receitas_projeto').insert([{
+                projeto_id: parseInt(dados.projeto_id),
+                data_receita: dados.data_lancamento,
+                descricao: dados.descricao,
+                valor: parseFloat(dados.valor),
+                origem: 'Finanças Loja',
+                forma_pagamento: dados.tipo_pagamento || '',
+                responsavel: irmaoNome,
+                lancamento_id: editando,
+              }]);
+            } else {
+              await supabase.from('custos_projeto').insert([{
+                projeto_id: parseInt(dados.projeto_id),
+                data_custo: dados.data_lancamento,
+                descricao: dados.descricao,
+                valor: parseFloat(dados.valor),
+                categoria: 'Finanças Loja',
+                lancamento_id: editando,
+              }]);
+            }
+          }
         }
         
         // Registrar log de edição
