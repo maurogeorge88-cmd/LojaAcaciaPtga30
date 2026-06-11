@@ -661,17 +661,37 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         // Gerenciar vínculo com projeto
         if (projetoAnterior || dados.projeto_id) {
           if (projetoAnterior) {
-            // Remover registros anteriores do Finanças Loja para este projeto
-            await supabase.from('receitas_projeto')
-              .delete()
+            // Remover registros anteriores — usa lancamento_id como chave primária (fallback por data)
+            const { data: recAnterior } = await supabase.from('receitas_projeto')
+              .select('id, lancamento_id')
               .eq('projeto_id', projetoAnterior)
               .eq('origem', 'Finanças Loja')
-              .eq('data_receita', dadosLancamento.data_lancamento);
-            await supabase.from('custos_projeto')
-              .delete()
+              .eq('lancamento_id', editando)
+              .maybeSingle();
+            if (recAnterior) {
+              await supabase.from('receitas_projeto').delete().eq('id', recAnterior.id);
+            } else {
+              await supabase.from('receitas_projeto')
+                .delete()
+                .eq('projeto_id', projetoAnterior)
+                .eq('origem', 'Finanças Loja')
+                .eq('data_receita', dadosLancamento.data_lancamento);
+            }
+            const { data: custAnterior } = await supabase.from('custos_projeto')
+              .select('id, lancamento_id')
               .eq('projeto_id', projetoAnterior)
               .eq('categoria', 'Finanças Loja')
-              .eq('data_custo', dadosLancamento.data_lancamento);
+              .eq('lancamento_id', editando)
+              .maybeSingle();
+            if (custAnterior) {
+              await supabase.from('custos_projeto').delete().eq('id', custAnterior.id);
+            } else {
+              await supabase.from('custos_projeto')
+                .delete()
+                .eq('projeto_id', projetoAnterior)
+                .eq('categoria', 'Finanças Loja')
+                .eq('data_custo', dadosLancamento.data_lancamento);
+            }
           }
           if (dados.projeto_id) {
             const irmaoNome = dados.origem_irmao_id
@@ -680,6 +700,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             if (dados.tipo === 'receita') {
               await supabase.from('receitas_projeto').insert([{
                 projeto_id: parseInt(dados.projeto_id),
+                lancamento_id: editando,
                 data_receita: dados.data_lancamento,
                 descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
@@ -690,6 +711,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             } else {
               await supabase.from('custos_projeto').insert([{
                 projeto_id: parseInt(dados.projeto_id),
+                lancamento_id: editando,
                 data_custo: dados.data_lancamento,
                 descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
@@ -736,6 +758,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           if (dados.tipo === 'receita') {
             await supabase.from('receitas_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
+              lancamento_id: novoLanc.id,
               data_receita: dados.data_lancamento,
               descricao: dados.descricao,
               valor: parseFloat(dados.valor),
@@ -746,6 +769,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           } else {
             await supabase.from('custos_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
+              lancamento_id: novoLanc.id,
               data_custo: dados.data_lancamento,
               descricao: dados.descricao,
               valor: parseFloat(dados.valor),
@@ -941,21 +965,41 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       // Se lançamento tem projeto vinculado, remover de receitas/custos_projeto
       const lancToDelete = lancamentos.find(l => l.id === id);
       if (lancToDelete?.projeto_id) {
-        const dataRef = lancToDelete.data_pagamento || lancToDelete.data_lancamento;
         if (lancToDelete.tipo === 'receita') {
-          await supabase.from('receitas_projeto')
-            .delete()
+          // Tentar excluir por lancamento_id (preciso); fallback por data+descricao
+          const { data: recVinc } = await supabase.from('receitas_projeto')
+            .select('id')
             .eq('projeto_id', lancToDelete.projeto_id)
-            .eq('origem', 'Finanças Loja')
-            .eq('data_receita', dataRef)
-            .eq('descricao', lancToDelete.descricao);
+            .eq('lancamento_id', lancToDelete.id)
+            .maybeSingle();
+          if (recVinc) {
+            await supabase.from('receitas_projeto').delete().eq('id', recVinc.id);
+          } else {
+            const dataRef = lancToDelete.data_pagamento || lancToDelete.data_lancamento;
+            await supabase.from('receitas_projeto')
+              .delete()
+              .eq('projeto_id', lancToDelete.projeto_id)
+              .eq('origem', 'Finanças Loja')
+              .eq('data_receita', dataRef)
+              .eq('descricao', lancToDelete.descricao);
+          }
         } else {
-          await supabase.from('custos_projeto')
-            .delete()
+          const { data: custVinc } = await supabase.from('custos_projeto')
+            .select('id')
             .eq('projeto_id', lancToDelete.projeto_id)
-            .eq('categoria', 'Finanças Loja')
-            .eq('data_custo', dataRef)
-            .eq('descricao', lancToDelete.descricao);
+            .eq('lancamento_id', lancToDelete.id)
+            .maybeSingle();
+          if (custVinc) {
+            await supabase.from('custos_projeto').delete().eq('id', custVinc.id);
+          } else {
+            const dataRef = lancToDelete.data_pagamento || lancToDelete.data_lancamento;
+            await supabase.from('custos_projeto')
+              .delete()
+              .eq('projeto_id', lancToDelete.projeto_id)
+              .eq('categoria', 'Finanças Loja')
+              .eq('data_custo', dataRef)
+              .eq('descricao', lancToDelete.descricao);
+          }
         }
       }
 
