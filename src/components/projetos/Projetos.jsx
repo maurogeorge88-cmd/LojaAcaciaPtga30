@@ -804,10 +804,16 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <p>📋 Nenhuma receita registrada para este projeto</p>
                 </div>
               ) : (() => {
-                // Ordenar todas por data desc (sem agrupamento)
-                const todas = [...receitasDoModal].sort((a, b) =>
-                  (b.data_receita || '').localeCompare(a.data_receita || '')
-                );
+                // Agrupar por data
+                const todas = Object.values(
+                  receitasDoModal.reduce((acc, r) => {
+                    const key = (r.data_receita || '') + '|' + (r.origem || '') + '|' + (r.descricao || '');
+                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
+                    acc[key].valor += parseFloat(r.valor || 0);
+                    acc[key].qtd++;
+                    return acc;
+                  }, {})
+                ).sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
 
                 return (
                 <>
@@ -994,10 +1000,16 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <p>📋 Nenhum custo registrado para este projeto</p>
                 </div>
               ) : (() => {
-                // Ordenar todos por data desc (sem agrupamento)
-                const todos = [...custosDoModal].sort((a, b) =>
-                  (b.data_custo || '').localeCompare(a.data_custo || '')
-                );
+                // Agrupar por data
+                const todos = Object.values(
+                  custosDoModal.reduce((acc, r) => {
+                    const key = (r.data_custo || '') + '|' + (r.categoria || '') + '|' + (r.descricao || '');
+                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
+                    acc[key].valor += parseFloat(r.valor || 0);
+                    acc[key].qtd++;
+                    return acc;
+                  }, {})
+                ).sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
                 const totalGeral = todos.reduce((s, c) => s + parseFloat(c.valor), 0);
 
                 return (
