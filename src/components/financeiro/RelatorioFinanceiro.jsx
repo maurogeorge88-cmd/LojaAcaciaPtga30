@@ -31,7 +31,8 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
 
   // Saldos anteriores calculados via query (igual ao FinancasLoja)
   const [saldoAntA, setSaldoAntA] = useState({ bancario: 0, caixa: 0 });
-  const [caixaFisicoHistorico, setCaixaFisicoHistorico] = useState(0); // histórico completo = igual ao FinancasLoja
+  const [caixaFisicoHistorico, setCaixaFisicoHistorico] = useState(0);
+  const [caixaDetalhes, setCaixaDetalhes] = useState({ recDinheiro: 0, sangrias: 0, despDinheiro: 0 });
   const [saldoAntB, setSaldoAntB] = useState({ bancario: 0, caixa: 0 });
 
   useEffect(() => { if (isOpen) carregarDados(); }, [isOpen]);
@@ -164,6 +165,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
         .filter(l => l.cat_tipo === 'despesa' && l.tipo_pagamento === 'dinheiro' && l.eh_transferencia_interna === false && !l.cat_nome?.toLowerCase().includes('tronco'))
         .reduce((s,l) => s + parseFloat(l.valor), 0);
       setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
+      setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
 
       // Calcular saldo anterior para o período padrão
       const sa = await buscarSaldoAnterior({ mes: 0, ano: anoAtual });
@@ -413,7 +415,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
     );
   };
 
-  const PainelExtrato = ({ dados, anterior, label, caixaHistorico }) => (
+  const PainelExtrato = ({ dados, anterior, label, caixaHistorico, caixaDetalhes }) => (
     <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
       {label && (
         <div style={{padding:'0.5rem 1rem', background:'var(--color-surface-2)', borderBottom:'1px solid var(--color-border)'}}>
@@ -439,14 +441,12 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
         {/* CAIXA */}
         <div style={{marginBottom:'0.75rem'}}>
           <p style={{fontSize:'0.72rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', marginBottom:'0.2rem'}}>💵 Caixa Físico</p>
-          <p style={{fontSize:'0.65rem', color:'var(--color-text-muted)', marginBottom:'0.4rem', fontStyle:'italic'}}>Saldo real = histórico completo (independente do período)</p>
           <div style={{background:'var(--color-surface-2)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem 0.75rem'}}>
-            <Linha label="Saldo Anterior" valor={anterior.caixa} cor="var(--color-text-muted)" negrito={false} />
-            <Linha label="+ Receitas em Dinheiro" valor={dados.recCaixa} cor="#10b981" />
-            {dados.sangrias > 0 && <Linha label="− Sangrias Depositadas" valor={-dados.sangrias} cor="#f59e0b" />}
-            <Linha label="− Despesas em Dinheiro" valor={-dados.despCaixa} cor="#ef4444" />
+            <Linha label="+ Rec. Dinheiro (histórico)" valor={caixaDetalhes?.recDinheiro || 0} cor="#10b981" negrito={false} />
+            {(caixaDetalhes?.sangrias || 0) > 0 && <Linha label="− Sangrias Depositadas" valor={-(caixaDetalhes?.sangrias || 0)} cor="#f59e0b" negrito={false} />}
+            {(caixaDetalhes?.despDinheiro || 0) > 0 && <Linha label="− Despesas em Dinheiro" valor={-(caixaDetalhes?.despDinheiro || 0)} cor="#ef4444" negrito={false} />}
             <div style={{borderTop:'1px solid var(--color-border)', marginTop:'0.4rem', paddingTop:'0.4rem'}}>
-              <Linha label="= Saldo Caixa" valor={caixaHistorico !== undefined ? caixaHistorico : dados.saldoCaixa} cor={(caixaHistorico !== undefined ? caixaHistorico : dados.saldoCaixa) >= 0 ? '#f59e0b' : '#ef4444'} negrito={true} grande={true} />
+              <Linha label="= Saldo Caixa Físico" valor={caixaHistorico} cor={caixaHistorico >= 0 ? '#f59e0b' : '#ef4444'} negrito={true} grande={true} />
             </div>
           </div>
         </div>
@@ -546,8 +546,8 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
           {/* ABA SALDO */}
           {aba === 'saldo' && (
             <div style={{display:'grid', gridTemplateColumns: mostrarComparacao ? '1fr 1fr' : '1fr', gap:'1rem'}}>
-              <PainelExtrato dados={dadosA} anterior={saldoAntA} caixaHistorico={caixaFisicoHistorico} label={mostrarComparacao ? labelPeriodo(periodoA) : null} />
-              {mostrarComparacao && <PainelExtrato dados={dadosB} anterior={saldoAntB} caixaHistorico={caixaFisicoHistorico} label={labelPeriodo(periodoB)} />}
+              <PainelExtrato dados={dadosA} anterior={saldoAntA} caixaHistorico={caixaFisicoHistorico} caixaDetalhes={caixaDetalhes} label={mostrarComparacao ? labelPeriodo(periodoA) : null} />
+              {mostrarComparacao && <PainelExtrato dados={dadosB} anterior={saldoAntB} caixaHistorico={caixaFisicoHistorico} caixaDetalhes={caixaDetalhes} label={labelPeriodo(periodoB)} />}
             </div>
           )}
 
