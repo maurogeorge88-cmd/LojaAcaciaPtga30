@@ -805,14 +805,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
               ) : (() => {
                 // Separar manuais e do Finanças Loja
-                const manuais = receitasDoModal.filter(r => !r.lancamento_id);
-                const doFinancas = receitasDoModal.filter(r => r.lancamento_id);
+                const manuais = receitasDoModal.filter(r => r.origem !== 'Finanças Loja');
+                const doFinancas = receitasDoModal.filter(r => r.origem === 'Finanças Loja');
 
                 // Agrupar do Finanças Loja por data
                 const agrupadas = Object.values(
                   doFinancas.reduce((acc, r) => {
                     const key = r.data_receita;
-                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0, lancamento_id: r.lancamento_id };
+                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
                     acc[key].valor += parseFloat(r.valor);
                     acc[key].qtd++;
                     return acc;
@@ -841,7 +841,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       </thead>
                       <tbody>
                         {todas.map((receita, i) => (
-                          <tr key={receita.lancamento_id || receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
+                          <tr key={receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
@@ -854,7 +854,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {receita.lancamento_id ? (
+                              {receita.origem === 'Finanças Loja' ? (
                                 <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
                                   🏦 Finanças Loja
                                 </span>
@@ -871,7 +871,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
-                                {receita.lancamento_id ? (
+                                {receita.origem === 'Finanças Loja' ? (
                                   <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
                                 ) : (
                                   <button
@@ -1014,8 +1014,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </div>
               ) : (() => {
                 // Separar manuais e do Finanças Loja
-                const manuais = custosDoModal.filter(r => !r.lancamento_id);
-                const doFinancas = custosDoModal.filter(r => r.lancamento_id);
+                const manuais = custosDoModal.filter(r => r.responsavel !== 'Finanças Loja');
+                const doFinancas = custosDoModal.filter(r => r.responsavel === 'Finanças Loja');
 
                 // Agrupar do Finanças Loja por data
                 const agrupados = Object.values(
@@ -1050,7 +1050,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       </thead>
                       <tbody>
                         {todos.map((custo, i) => (
-                          <tr key={custo.lancamento_id || custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
+                          <tr key={custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
@@ -1063,13 +1063,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                               )}
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {custo.lancamento_id ? (
+                              {custo.responsavel === 'Finanças Loja' ? (
                                 <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
                                   🏦 Finanças Loja
                                 </span>
                               ) : (
                                 <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>
-                                  {custo.descricao?.startsWith('[FL]') ? '🏦 Finanças Loja' : custo.categoria}
+                                  {custo.categoria}
                                 </span>
                               )}
                             </td>
@@ -1080,7 +1080,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
-                                {custo.lancamento_id ? (
+                                {custo.responsavel === 'Finanças Loja' ? (
                                   <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
                                 ) : (
                                   <button
