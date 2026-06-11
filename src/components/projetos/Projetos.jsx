@@ -1069,7 +1069,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                                 </span>
                               ) : (
                                 <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>
-                                  {custo.categoria}
+                                  {custo.descricao?.startsWith('[FL]') ? '🏦 Finanças Loja' : custo.categoria}
                                 </span>
                               )}
                             </td>
