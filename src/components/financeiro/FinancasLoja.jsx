@@ -1119,7 +1119,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       observacoes: '',
       origem_tipo: 'Loja',
       origem_irmao_id: '',
-      evento_comemorativo_id: null,
       evento_comemorativo_id: null
     });
     setEditando(null);
@@ -3372,10 +3371,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             
             <div 
-              className="rounded-lg p-3 relative flex flex-col justify-center cursor-pointer transition" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}
+              className="rounded-lg p-3 relative flex flex-col justify-center cursor-pointer transition"
               onDoubleClick={abrirDetalhesReceitasPagas}
               title="Clique duplo para ver detalhes"
-             style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+              style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p style={{fontSize:"0.7rem",color:"#10b981",fontWeight:"600"}}>📈 Receitas Pagas 🖱️</p>
               <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#10b981"}}>{showValues ? formatarMoeda(resumo.receitas) : '••••••'}</p>
               <p className="text-[10px] mt-0.5">Total recebido</p>
