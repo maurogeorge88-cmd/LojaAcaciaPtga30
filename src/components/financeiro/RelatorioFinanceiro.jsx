@@ -152,20 +152,25 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
       )].sort((a,b) => b - a);
       setAnosDisponiveis(anos);
 
-      // Caixa físico histórico completo — igual ao calcularCaixaFisicoTotal do FinancasLoja
-      const nomeCatFn = (l) => l.categorias_financeiras?.nome?.toLowerCase() || '';
-      const todosPagos = norm.filter(l => l.status === 'pago');
-      const dinheiroRec = todosPagos
-        .filter(l => l.cat_tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna && !l.cat_nome?.toLowerCase().includes('tronco'))
-        .reduce((s,l) => s + parseFloat(l.valor), 0);
-      const sangriasHist = todosPagos
-        .filter(l => l.cat_tipo === 'despesa' && l.eh_transferencia_interna === true && !l.cat_nome?.toLowerCase().includes('tronco'))
-        .reduce((s,l) => s + parseFloat(l.valor), 0);
-      const despDinhHist = todosPagos
-        .filter(l => l.cat_tipo === 'despesa' && l.tipo_pagamento === 'dinheiro' && l.eh_transferencia_interna === false && !l.cat_nome?.toLowerCase().includes('tronco'))
-        .reduce((s,l) => s + parseFloat(l.valor), 0);
-      setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
-      setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
+      // Caixa físico histórico — query direta igual ao calcularCaixaFisicoTotal do FinancasLoja
+      const { data: dadosCaixa } = await supabase
+        .from('lancamentos_loja')
+        .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)')
+        .eq('status', 'pago');
+      if (dadosCaixa) {
+        const nc = (l) => l.categorias_financeiras?.nome?.toLowerCase() || '';
+        const dinheiroRec = dadosCaixa
+          .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna && !nc(l).includes('tronco'))
+          .reduce((s,l) => s + parseFloat(l.valor), 0);
+        const sangriasHist = dadosCaixa
+          .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.eh_transferencia_interna === true && !nc(l).includes('tronco'))
+          .reduce((s,l) => s + parseFloat(l.valor), 0);
+        const despDinhHist = dadosCaixa
+          .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro' && l.eh_transferencia_interna === false && !nc(l).includes('tronco'))
+          .reduce((s,l) => s + parseFloat(l.valor), 0);
+        setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
+        setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
+      }
 
       // Calcular saldo anterior para o período padrão
       const sa = await buscarSaldoAnterior({ mes: 0, ano: anoAtual });
