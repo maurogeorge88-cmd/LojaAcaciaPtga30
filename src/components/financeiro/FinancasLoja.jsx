@@ -668,7 +668,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             await supabase.from('custos_projeto')
               .delete()
               .eq('projeto_id', projetoAnterior)
-              .eq('responsavel', 'Finanças Loja')
+              .eq('categoria', 'Finanças Loja')
               .eq('data_custo', dadosLancamento.data_lancamento);
           }
           if (dados.projeto_id) {
@@ -691,11 +691,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 data_custo: dados.data_lancamento,
                 descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
-                categoria: 'Outro',
+                categoria: 'Finanças Loja',
                 forma_pagamento: dados.tipo_pagamento || '',
                 responsavel: dados.origem_irmao_id
                   ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-                  : 'Finanças Loja',
+                  : '',
               }]);
             }
           }
@@ -747,11 +747,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               data_custo: dados.data_lancamento,
               descricao: dados.descricao,
               valor: parseFloat(dados.valor),
-              categoria: 'Outro',
+              categoria: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
               responsavel: dados.origem_irmao_id
                 ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
-                : 'Finanças Loja',
+                : '',
             }]);
           }
         }
@@ -1023,6 +1023,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
 
     try {
+      // Se lançamento tem projeto vinculado, remover de receitas/custos_projeto
+      const lancToDelete = lancamentos.find(l => l.id === id);
+      if (lancToDelete?.projeto_id) {
+        const dataRef = lancToDelete.data_pagamento || lancToDelete.data_lancamento;
+        if (lancToDelete.tipo === 'receita') {
+          await supabase.from('receitas_projeto')
+            .delete()
+            .eq('projeto_id', lancToDelete.projeto_id)
+            .eq('origem', 'Finanças Loja')
+            .eq('data_receita', dataRef)
+            .eq('descricao', lancToDelete.descricao);
+        } else {
+          await supabase.from('custos_projeto')
+            .delete()
+            .eq('projeto_id', lancToDelete.projeto_id)
+            .eq('categoria', 'Finanças Loja')
+            .eq('data_custo', dataRef)
+            .eq('descricao', lancToDelete.descricao);
+        }
+      }
+
       const { error } = await supabase
         .from('lancamentos_loja')
         .delete()
