@@ -804,10 +804,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <p>📋 Nenhuma receita registrada para este projeto</p>
                 </div>
               ) : (() => {
-                // Agrupar por data
+                // Agrupar por data + origem (FL agrupa tudo do dia, manual agrupa por descricao)
                 const todas = Object.values(
                   receitasDoModal.reduce((acc, r) => {
-                    const key = (r.data_receita || '') + '|' + (r.origem || '') + '|' + (r.descricao || '');
+                    const isFL = r.origem === 'Finanças Loja';
+                    const key = isFL
+                      ? (r.data_receita || '') + '|FL'
+                      : (r.data_receita || '') + '|' + (r.descricao || '');
                     if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
                     acc[key].valor += parseFloat(r.valor || 0);
                     acc[key].qtd++;
@@ -1000,10 +1003,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <p>📋 Nenhum custo registrado para este projeto</p>
                 </div>
               ) : (() => {
-                // Agrupar por data
+                // Agrupar por data + categoria (FL agrupa tudo do dia, manual agrupa por descricao)
                 const todos = Object.values(
                   custosDoModal.reduce((acc, r) => {
-                    const key = (r.data_custo || '') + '|' + (r.categoria || '') + '|' + (r.descricao || '');
+                    const isFL = r.categoria === 'Finanças Loja';
+                    const key = isFL
+                      ? (r.data_custo || '') + '|FL'
+                      : (r.data_custo || '') + '|' + (r.descricao || '');
                     if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
                     acc[key].valor += parseFloat(r.valor || 0);
                     acc[key].qtd++;
