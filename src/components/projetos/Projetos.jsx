@@ -804,24 +804,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <p>📋 Nenhuma receita registrada para este projeto</p>
                 </div>
               ) : (() => {
-                // Separar manuais e do Finanças Loja
-                const manuais = receitasDoModal.filter(r => r.origem !== 'Finanças Loja');
-                const doFinancas = receitasDoModal.filter(r => r.origem === 'Finanças Loja');
-
-                // Agrupar do Finanças Loja por data
-                const agrupadas = Object.values(
-                  doFinancas.reduce((acc, r) => {
-                    const key = r.data_receita;
-                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
-                    acc[key].valor += parseFloat(r.valor);
-                    acc[key].qtd++;
-                    return acc;
-                  }, {})
-                );
-
-                // Juntar e ordenar por data desc
-                const todas = [...manuais, ...agrupadas].sort((a, b) =>
-                  b.data_receita.localeCompare(a.data_receita)
+                // Ordenar todas por data desc (sem agrupamento)
+                const todas = [...receitasDoModal].sort((a, b) =>
+                  (b.data_receita || '').localeCompare(a.data_receita || '')
                 );
 
                 return (
@@ -847,11 +832,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {receita.descricao}
-                              {receita.qtd > 1 && (
-                                <span style={{marginLeft:'0.4rem',fontSize:'0.7rem',color:'var(--color-text-muted)'}}>
-                                  ({receita.qtd} registros)
-                                </span>
-                              )}
+
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {receita.origem === 'Finanças Loja' ? (
@@ -1013,22 +994,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                   <p>📋 Nenhum custo registrado para este projeto</p>
                 </div>
               ) : (() => {
-                // Separar manuais e do Finanças Loja
-                const manuais = custosDoModal.filter(r => r.responsavel !== 'Finanças Loja');
-                const doFinancas = custosDoModal.filter(r => r.responsavel === 'Finanças Loja');
-
-                // Agrupar do Finanças Loja por data
-                const agrupados = Object.values(
-                  doFinancas.reduce((acc, r) => {
-                    const key = r.data_custo;
-                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
-                    acc[key].valor += parseFloat(r.valor);
-                    acc[key].qtd++;
-                    return acc;
-                  }, {})
-                );
-
-                const todos = [...manuais, ...agrupados].sort((a, b) =>
+                // Ordenar todos por data desc (sem agrupamento)
+                const todos = [...custosDoModal].sort((a, b) =>
                   (b.data_custo || '').localeCompare(a.data_custo || '')
                 );
                 const totalGeral = todos.reduce((s, c) => s + parseFloat(c.valor), 0);
@@ -1056,14 +1023,10 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
                               {custo.descricao}
-                              {custo.qtd > 1 && (
-                                <span style={{marginLeft:'0.4rem',fontSize:'0.7rem',color:'var(--color-text-muted)'}}>
-                                  ({custo.qtd} registros)
-                                </span>
-                              )}
+
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {custo.responsavel === 'Finanças Loja' ? (
+                              {custo.categoria === 'Finanças Loja' ? (
                                 <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
                                   🏦 Finanças Loja
                                 </span>
@@ -1080,7 +1043,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
-                                {custo.responsavel === 'Finanças Loja' ? (
+                                {custo.categoria === 'Finanças Loja' ? (
                                   <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
                                 ) : (
                                   <button
