@@ -659,8 +659,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         // Gerenciar vínculo com projeto
         if (projetoAnterior || dados.projeto_id) {
           if (projetoAnterior) {
-            await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
-            await supabase.from('custos_projeto').delete().eq('lancamento_id', editando);
+            // Remover registros anteriores do Finanças Loja para este projeto
+            await supabase.from('receitas_projeto')
+              .delete()
+              .eq('projeto_id', projetoAnterior)
+              .eq('origem', 'Finanças Loja')
+              .eq('data_receita', dadosLancamento.data_lancamento);
+            await supabase.from('custos_projeto')
+              .delete()
+              .eq('projeto_id', projetoAnterior)
+              .eq('responsavel', 'Finanças Loja')
+              .eq('data_custo', dadosLancamento.data_lancamento);
           }
           if (dados.projeto_id) {
             const irmaoNome = dados.origem_irmao_id
@@ -675,16 +684,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 origem: 'Finanças Loja',
                 forma_pagamento: dados.tipo_pagamento || '',
                 responsavel: irmaoNome,
-                lancamento_id: editando,
               }]);
             } else {
               await supabase.from('custos_projeto').insert([{
                 projeto_id: parseInt(dados.projeto_id),
                 data_custo: dados.data_lancamento,
-                descricao: `[FL] ${dados.descricao}`,
+                descricao: dados.descricao,
                 valor: parseFloat(dados.valor),
                 categoria: 'Outro',
-                lancamento_id: editando,
+                forma_pagamento: dados.tipo_pagamento || '',
+                responsavel: dados.origem_irmao_id
+                  ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+                  : 'Finanças Loja',
               }]);
             }
           }
@@ -729,16 +740,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               origem: 'Finanças Loja',
               forma_pagamento: dados.tipo_pagamento || '',
               responsavel: irmaoNome,
-              lancamento_id: novoLanc.id,
             }]);
           } else {
             await supabase.from('custos_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               data_custo: dados.data_lancamento,
-              descricao: `[FL] ${dados.descricao}`,
+              descricao: dados.descricao,
               valor: parseFloat(dados.valor),
               categoria: 'Outro',
-              lancamento_id: novoLanc.id,
+              forma_pagamento: dados.tipo_pagamento || '',
+              responsavel: dados.origem_irmao_id
+                ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
+                : 'Finanças Loja',
             }]);
           }
         }
