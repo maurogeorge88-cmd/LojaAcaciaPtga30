@@ -315,21 +315,42 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
 
   const dadosMensais = useMemo(() => {
     if (periodoA.ano === 0) return [];
+    // Saldo bancário acumulado mês a mês
+    // Para cada mês: saldo banco = saldoAntA.bancario + tudo pago de jan até esse mês
+    const anoStr = String(periodoA.ano);
+    const todosPeriodo = lancamentos.filter(l =>
+      l.status === 'pago' && l.data_pagamento?.startsWith(anoStr + '-')
+    );
+
     return MESES.map((_, idx) => {
       const mes = idx + 1;
-      const lancs = filtrarPeriodo({ mes, ano: periodoA.ano });
-      // Saldo anterior mensal: calculado em memória (aproximação rápida)
-      const antMes = calcularPeriodo(
-        filtrarPeriodo({ mes: 0, ano: periodoA.ano }).filter(l => {
-          const dp = l.data_pagamento;
-          return dp && parseInt(dp.slice(5,7)) < mes;
-        }),
-        saldoAntA
-      );
-      const dm = calcularPeriodo(lancs, { bancario: antMes.saldoBancario, caixa: antMes.saldoCaixa });
-      return { mes: MESES_ABREV[idx], ...dm };
+      const mesStr = String(mes).padStart(2,'0');
+      // Lançamentos só deste mês
+      const lancsDoMes = todosPeriodo.filter(l => l.data_pagamento?.slice(5,7) === mesStr);
+      // Lançamentos acumulados até este mês (para saldo banco cumulativo)
+      const lancsAte = todosPeriodo.filter(l => parseInt(l.data_pagamento?.slice(5,7) || 0) <= mes);
+
+      // Calcular saldo bancário acumulado até este mês
+      const dmAte = calcularPeriodo(lancsAte, saldoAntA);
+
+      // Receitas e despesas só do mês
+      const dmMes = calcularPeriodo(lancsDoMes, { bancario: 0, caixa: 0 });
+
+      return {
+        mes: MESES_ABREV[idx],
+        recBanco: dmMes.recBanco,
+        recCaixa: dmMes.recCaixa,
+        despBanco: dmMes.despBanco,
+        despCaixa: dmMes.despCaixa,
+        // Saldo banco = cumulativo até este mês (correto para extrato)
+        saldoBancario: dmAte.saldoBancario,
+        // Saldo caixa = sempre o histórico completo (igual ao FinancasLoja)
+        saldoCaixa: caixaFisicoHistorico,
+        // Saldo total = banco cumulativo + caixa histórico
+        saldoTotal: dmAte.saldoBancario + caixaFisicoHistorico,
+      };
     });
-  }, [lancamentos, periodoA, saldoAntA]);
+  }, [lancamentos, periodoA, saldoAntA, caixaFisicoHistorico]);
 
   const maxMensal = Math.max(...dadosMensais.map(m => Math.max(m.recBanco + m.recCaixa, m.despBanco + m.despCaixa)), 1);
 
