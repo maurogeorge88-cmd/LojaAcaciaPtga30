@@ -56,6 +56,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     data_licenca: '',                    // Data início da licença
     data_desligamento: '',               // Data do desligamento (usado para Desligado e Ex-Ofício)
     data_falecimento: '',                // Data do falecimento
+    naturalidade: '',
+    formacao: '',
     observacoes: '',
     status: 'ativo'
   });
@@ -300,6 +302,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       data_licenca: irmao.data_licenca || '',
       data_desligamento: irmao.data_desligamento || '',
       data_falecimento: irmao.data_falecimento || '',
+      naturalidade: irmao.naturalidade || '',
+      formacao: irmao.formacao || '',
       observacoes: irmao.observacoes || '',
       status: irmao.status || 'ativo'
     });
@@ -519,6 +523,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
         data_licenca: irmaoForm.data_licenca || null,
         data_desligamento: irmaoForm.data_desligamento || null,
         data_falecimento: irmaoForm.data_falecimento || null,
+        naturalidade: irmaoForm.naturalidade || null,
+        formacao: irmaoForm.formacao || null,
         observacoes: irmaoForm.observacoes || null,
         status: irmaoForm.status || 'ativo'
       };
@@ -1068,6 +1074,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                   type="text"
                   value={irmaoForm.profissao}
                   onChange={(e) => setIrmaoForm({ ...irmaoForm, profissao: e.target.value })}
+                  placeholder="Ex: Engenheiro, Médico..."
                   className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 />
               </div>
@@ -1100,6 +1107,34 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                     <option key={ne.value} value={ne.value}>{ne.label}</option>
                   ))}
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                  Naturalidade <span style={{fontSize:"0.75rem"}}>(Cidade/Estado onde nasceu)</span>
+                </label>
+                <input
+                  type="text"
+                  value={irmaoForm.naturalidade}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, naturalidade: e.target.value })}
+                  placeholder="Ex: Cuiabá/MT"
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                  Formação Acadêmica <span style={{fontSize:"0.75rem"}}>(para atas)</span>
+                </label>
+                <input
+                  type="text"
+                  value={irmaoForm.formacao}
+                  onChange={(e) => setIrmaoForm({ ...irmaoForm, formacao: e.target.value })}
+                  placeholder="Ex: Bacharel em Direito, Mestre em Engenharia..."
+                  className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                />
               </div>
             </div>
 
