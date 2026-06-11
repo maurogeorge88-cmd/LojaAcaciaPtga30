@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
-import AnaliseCategoriasModal from './AnaliseCategoriasModal';
 import RelatorioFinanceiro from './RelatorioFinanceiro';
 import { 
   verificarVencido,
@@ -93,7 +92,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
   const [limiteRegistros, setLimiteRegistros] = useState(20); // Limite de registros exibidos
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
-  const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
   const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
@@ -2037,13 +2035,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>dos Irmãos</span>
         </button>
         <button
-          onClick={() => setModalAnaliseAberto(true)}
-          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-accent)"}}
-        >
-          <span>📊 Análise</span>
-          <span>Categorias</span>
-        </button>
-        <button
           onClick={() => setModalRelatorioAberto(true)}
           className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"#7c3aed"}}
         >
@@ -3572,13 +3563,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           showError={showError}
         />
       )}
-
-      {/* COMPONENTE MODAL DE ANÁLISE POR CATEGORIA */}
-      <AnaliseCategoriasModal 
-        isOpen={modalAnaliseAberto}
-        onClose={() => setModalAnaliseAberto(false)}
-        showError={showError}
-      />
 
       <RelatorioFinanceiro
         isOpen={modalRelatorioAberto}
