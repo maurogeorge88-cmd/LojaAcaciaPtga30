@@ -674,6 +674,38 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   )}
                 </div>
 
+                {/* Naturalidade */}
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Naturalidade</label>
+                  {modoEdicao ? (
+                    <input
+                      type="text"
+                      value={irmaoForm.naturalidade || ''}
+                      onChange={(e) => setIrmaoForm({ ...irmaoForm, naturalidade: e.target.value })}
+                      placeholder="Ex: Cuiabá/MT"
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                    />
+                  ) : (
+                    <p>{irmao.naturalidade || 'Não informado'}</p>
+                  )}
+                </div>
+
+                {/* Formação */}
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Formação Acadêmica</label>
+                  {modoEdicao ? (
+                    <input
+                      type="text"
+                      value={irmaoForm.formacao || ''}
+                      onChange={(e) => setIrmaoForm({ ...irmaoForm, formacao: e.target.value })}
+                      placeholder="Ex: Bacharel em Direito..."
+                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                    />
+                  ) : (
+                    <p>{irmao.formacao || 'Não informado'}</p>
+                  )}
+                </div>
+
                 {/* Escolaridade */}
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Escolaridade</label>
