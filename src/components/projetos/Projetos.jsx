@@ -11,8 +11,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [projetoEditando, setProjetoEditando] = useState(null);
   const [projetoSelecionado, setProjetoSelecionado] = useState(null);
-  const [mostrarCustos, setMostrarCustos] = useState(false);
-  const [mostrarReceitas, setMostrarReceitas] = useState(false);
+  const [mostrarFinanceiro, setMostrarFinanceiro] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState('receitas');
   const [custoForm, setCustoForm] = useState({});
   const [receitaForm, setReceitaForm] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
@@ -47,7 +47,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   ];
 
   const categoriasCusto = [
-    'Material', 'Serviço', 'Equipamento', 'Transporte', 
+    'Material', 'Serviço', 'Equipamento', 'Transporte',
     'Alimentação', 'Divulgação', 'Outro'
   ];
 
@@ -56,7 +56,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   ];
 
   const origensReceita = [
-    'Caixa da Loja', 'Doação', 'Evento', 'Rifa', 'Bazar', 
+    'Caixa da Loja', 'Doação', 'Evento', 'Rifa', 'Bazar',
     'Contribuição Especial', 'Patrocínio', 'Outro'
   ];
 
@@ -66,8 +66,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const carregarProjetos = async () => {
     setLoading(true);
-    
-    // Carregar projetos
+
     const { data: projetosData, error: projetosError } = await supabase
       .from('projetos')
       .select('*')
@@ -79,15 +78,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       return;
     }
 
-    // Carregar todos os custos
-    const { data: custosData } = await supabase
-      .from('custos_projeto')
-      .select('*');
-
-    // Carregar todas as receitas
-    const { data: receitasData } = await supabase
-      .from('receitas_projeto')
-      .select('*');
+    const { data: custosData } = await supabase.from('custos_projeto').select('*');
+    const { data: receitasData } = await supabase.from('receitas_projeto').select('*');
 
     setProjetos(projetosData || []);
     setTodosOsCustos(custosData || []);
@@ -101,10 +93,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       .select('*')
       .eq('projeto_id', projetoId)
       .order('data_custo', { ascending: false });
-
-    if (!error) {
-      setCustosDoModal(data || []);
-    }
+    if (!error) setCustosDoModal(data || []);
   };
 
   const carregarReceitas = async (projetoId) => {
@@ -113,16 +102,28 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
       .select('*')
       .eq('projeto_id', projetoId)
       .order('data_receita', { ascending: false });
+    if (!error) setReceitasDoModal(data || []);
+  };
 
-    if (!error) {
-      setReceitasDoModal(data || []);
-    }
+  const abrirFinanceiro = (projeto, aba = 'receitas') => {
+    setProjetoSelecionado(projeto);
+    setAbaAtiva(aba);
+    carregarReceitas(projeto.id);
+    carregarCustos(projeto.id);
+    setMostrarFinanceiro(true);
+  };
+
+  const fecharFinanceiro = () => {
+    setMostrarFinanceiro(false);
+    setProjetoSelecionado(null);
+    setReceitasDoModal([]);
+    setCustosDoModal([]);
+    setReceitaForm({});
+    setCustoForm({});
   };
 
   const salvarProjeto = async (e) => {
     e.preventDefault();
-
-    // Converter valores numéricos e datas vazias antes de salvar
     const dadosParaSalvar = {
       ...projetoForm,
       valor_previsto: parseFloat(projetoForm.valor_previsto) || 0,
@@ -131,49 +132,22 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     };
 
     if (projetoEditando) {
-      const { error } = await supabase
-        .from('projetos')
-        .update(dadosParaSalvar)
-        .eq('id', projetoEditando.id);
-
-      if (error) {
-        console.error('Erro ao atualizar:', error);
-        showError('Erro ao atualizar projeto: ' + error.message);
-      } else {
-        showSuccess('Projeto atualizado com sucesso!');
-        limparFormulario();
-        carregarProjetos();
-      }
+      const { error } = await supabase.from('projetos').update(dadosParaSalvar).eq('id', projetoEditando.id);
+      if (error) { showError('Erro ao atualizar projeto: ' + error.message); }
+      else { showSuccess('Projeto atualizado com sucesso!'); limparFormulario(); carregarProjetos(); }
     } else {
-      const { error } = await supabase
-        .from('projetos')
-        .insert([dadosParaSalvar]);
-
-      if (error) {
-        console.error('Erro ao criar:', error);
-        showError('Erro ao criar projeto: ' + error.message);
-      } else {
-        showSuccess('Projeto cadastrado com sucesso!');
-        limparFormulario();
-        carregarProjetos();
-      }
+      const { error } = await supabase.from('projetos').insert([dadosParaSalvar]);
+      if (error) { showError('Erro ao criar projeto: ' + error.message); }
+      else { showSuccess('Projeto cadastrado com sucesso!'); limparFormulario(); carregarProjetos(); }
     }
   };
 
   const limparFormulario = () => {
     setProjetoForm({
-      nome: '',
-      descricao: '',
-      tipo: 'social',
-      prazo: 'curto',
-      data_inicio: '',
-      data_prevista_termino: '',
-      data_finalizacao: '',
-      responsavel: '',
-      observacoes: '',
-      valor_previsto: 0,
-      fonte_recursos: '',
-      status: 'em_andamento'
+      nome: '', descricao: '', tipo: 'social', prazo: 'curto',
+      data_inicio: '', data_prevista_termino: '', data_finalizacao: '',
+      responsavel: '', observacoes: '', valor_previsto: 0,
+      fonte_recursos: '', status: 'em_andamento'
     });
     setProjetoEditando(null);
     setMostrarFormulario(false);
@@ -188,133 +162,74 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
 
   const excluirProjeto = async (id) => {
     if (!confirm('Deseja excluir este projeto? Todos os custos associados também serão excluídos.')) return;
-
-    const { error } = await supabase
-      .from('projetos')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      showError('Erro ao excluir projeto');
-    } else {
-      showSuccess('Projeto excluído com sucesso!');
-      carregarProjetos();
-    }
+    const { error } = await supabase.from('projetos').delete().eq('id', id);
+    if (error) { showError('Erro ao excluir projeto'); }
+    else { showSuccess('Projeto excluído com sucesso!'); carregarProjetos(); }
   };
 
   const adicionarCusto = async (e) => {
     e.preventDefault();
-
-    // Converter valor numérico antes de salvar
-    const dadosCusto = {
-      ...custoForm,
-      projeto_id: projetoSelecionado.id,
-      valor: parseFloat(custoForm.valor) || 0
-    };
-
-    const { error } = await supabase
-      .from('custos_projeto')
-      .insert([dadosCusto]);
-
-    if (error) {
-      console.error('Erro ao adicionar custo:', error);
-      showError('Erro ao adicionar custo: ' + error.message);
-    } else {
+    const dadosCusto = { ...custoForm, projeto_id: projetoSelecionado.id, valor: parseFloat(custoForm.valor) || 0 };
+    const { error } = await supabase.from('custos_projeto').insert([dadosCusto]);
+    if (error) { showError('Erro ao adicionar custo: ' + error.message); }
+    else {
       showSuccess('Custo adicionado com sucesso!');
       setCustoForm({});
-      // Recarregar custos do modal
       await carregarCustos(projetoSelecionado.id);
-      // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
-      // Forçar re-render
       setRefreshKey(prev => prev + 1);
     }
   };
 
   const excluirCusto = async (id) => {
     if (!confirm('Deseja excluir este custo?')) return;
-
-    const { error } = await supabase
-      .from('custos_projeto')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      showError('Erro ao excluir custo');
-    } else {
+    const { error } = await supabase.from('custos_projeto').delete().eq('id', id);
+    if (error) { showError('Erro ao excluir custo'); }
+    else {
       showSuccess('Custo excluído com sucesso!');
-      // Recarregar custos do modal
       await carregarCustos(projetoSelecionado.id);
-      // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
-      // Forçar re-render
       setRefreshKey(prev => prev + 1);
     }
   };
 
   const adicionarReceita = async (e) => {
     e.preventDefault();
-
-    // Converter valor numérico antes de salvar
-    const dadosReceita = {
-      ...receitaForm,
-      projeto_id: projetoSelecionado.id,
-      valor: parseFloat(receitaForm.valor) || 0
-    };
-
-    const { error } = await supabase
-      .from('receitas_projeto')
-      .insert([dadosReceita]);
-
-    if (error) {
-      console.error('Erro ao adicionar receita:', error);
-      showError('Erro ao adicionar receita: ' + error.message);
-    } else {
+    const dadosReceita = { ...receitaForm, projeto_id: projetoSelecionado.id, valor: parseFloat(receitaForm.valor) || 0 };
+    const { error } = await supabase.from('receitas_projeto').insert([dadosReceita]);
+    if (error) { showError('Erro ao adicionar receita: ' + error.message); }
+    else {
       showSuccess('Receita adicionada com sucesso!');
       setReceitaForm({});
-      // Recarregar receitas do modal
       await carregarReceitas(projetoSelecionado.id);
-      // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
-      // Forçar re-render
       setRefreshKey(prev => prev + 1);
     }
   };
 
   const excluirReceita = async (id) => {
     if (!confirm('Deseja excluir esta receita?')) return;
-
-    const { error } = await supabase
-      .from('receitas_projeto')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      showError('Erro ao excluir receita');
-    } else {
+    const { error } = await supabase.from('receitas_projeto').delete().eq('id', id);
+    if (error) { showError('Erro ao excluir receita'); }
+    else {
       showSuccess('Receita excluída com sucesso!');
-      // Recarregar receitas do modal
       await carregarReceitas(projetoSelecionado.id);
-      // Recarregar todos os dados para atualizar os cards
       await carregarProjetos();
-      // Forçar re-render
       setRefreshKey(prev => prev + 1);
     }
   };
 
   const calcularTotalCustos = (projeto) => {
-    const custosDoProjeto = todosOsCustos.filter(c => c.projeto_id === projeto.id);
-    return custosDoProjeto.reduce((total, c) => total + (parseFloat(c.valor) || 0), 0);
+    return todosOsCustos.filter(c => c.projeto_id === projeto.id)
+      .reduce((total, c) => total + (parseFloat(c.valor) || 0), 0);
   };
 
   const calcularTotalReceitas = (projeto) => {
-    const receitasDoProjeto = todasAsReceitas.filter(r => r.projeto_id === projeto.id);
-    return receitasDoProjeto.reduce((total, r) => total + (parseFloat(r.valor) || 0), 0);
+    return todasAsReceitas.filter(r => r.projeto_id === projeto.id)
+      .reduce((total, r) => total + (parseFloat(r.valor) || 0), 0);
   };
 
-  const calcularSaldo = (projeto, totalCustos, totalReceitas) => {
-    return totalReceitas - totalCustos;
-  };
+  const calcularSaldo = (projeto, totalCustos, totalReceitas) => totalReceitas - totalCustos;
 
   const calcularPercentual = (projeto, totalCustos) => {
     const valorPrevisto = parseFloat(projeto.valor_previsto) || 0;
@@ -332,6 +247,33 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   if (loading) {
     return <div style={{textAlign:"center",padding:"3rem",color:"var(--color-text-muted)"}}>⏳ Carregando projetos...</div>;
   }
+
+  // --- Dados agrupados para o modal ---
+  const receitasAgrupadas = Object.values(
+    receitasDoModal.reduce((acc, r) => {
+      const isFL = r.origem === 'Finanças Loja';
+      const key = isFL ? (r.data_receita || '') + '|FL' : (r.data_receita || '') + '|' + (r.descricao || '');
+      if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
+      acc[key].valor += parseFloat(r.valor || 0);
+      acc[key].qtd++;
+      return acc;
+    }, {})
+  ).sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
+
+  const custosAgrupados = Object.values(
+    custosDoModal.reduce((acc, r) => {
+      const isFL = r.categoria === 'Finanças Loja';
+      const key = isFL ? (r.data_custo || '') + '|FL' : (r.data_custo || '') + '|' + (r.descricao || '');
+      if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
+      acc[key].valor += parseFloat(r.valor || 0);
+      acc[key].qtd++;
+      return acc;
+    }, {})
+  ).sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
+
+  const totalReceitasModal = receitasDoModal.reduce((s, r) => s + parseFloat(r.valor || 0), 0);
+  const totalCustosModal = custosDoModal.reduce((s, c) => s + parseFloat(c.valor || 0), 0);
+  const saldoModal = totalReceitasModal - totalCustosModal;
 
   return (
     <div className="max-w-7xl mx-auto -mx-3" style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
@@ -357,177 +299,88 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
           <h3 className="text-xl font-bold mb-4" style={{color:"var(--color-text)"}}>
             {projetoEditando ? '✏️ Editando Projeto' : '➕ Novo Projeto'}
           </h3>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Nome */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Nome do Projeto *</label>
-              <input
-                type="text"
-                required
-                value={projetoForm.nome}
-                onChange={(e) => setProjetoForm({ ...projetoForm, nome: e.target.value })}
+              <input type="text" required value={projetoForm.nome} onChange={(e) => setProjetoForm({ ...projetoForm, nome: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                placeholder="Ex: Campanha de Doação de Alimentos"
-              />
+                placeholder="Ex: Campanha de Doação de Alimentos" />
             </div>
-
-            {/* Descrição */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Descrição</label>
-              <textarea
-                value={projetoForm.descricao}
-                onChange={(e) => setProjetoForm({ ...projetoForm, descricao: e.target.value })}
+              <textarea value={projetoForm.descricao} onChange={(e) => setProjetoForm({ ...projetoForm, descricao: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                rows="3"
-                placeholder="Descreva o objetivo e escopo do projeto..."
-              />
+                rows="3" placeholder="Descreva o objetivo e escopo do projeto..." />
             </div>
-
-            {/* Tipo */}
             <div>
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Tipo *</label>
-              <select
-                required
-                value={projetoForm.tipo}
-                onChange={(e) => setProjetoForm({ ...projetoForm, tipo: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              >
-                {tiposProjeto.map(tipo => (
-                  <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
-                ))}
+              <select required value={projetoForm.tipo} onChange={(e) => setProjetoForm({ ...projetoForm, tipo: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                {tiposProjeto.map(tipo => <option key={tipo.value} value={tipo.value}>{tipo.label}</option>)}
               </select>
             </div>
-
-            {/* Prazo */}
             <div>
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Prazo *</label>
-              <select
-                required
-                value={projetoForm.prazo}
-                onChange={(e) => setProjetoForm({ ...projetoForm, prazo: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              >
-                {prazosProjeto.map(prazo => (
-                  <option key={prazo.value} value={prazo.value}>{prazo.label}</option>
-                ))}
+              <select required value={projetoForm.prazo} onChange={(e) => setProjetoForm({ ...projetoForm, prazo: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                {prazosProjeto.map(prazo => <option key={prazo.value} value={prazo.value}>{prazo.label}</option>)}
               </select>
             </div>
-
-            {/* Data Início */}
             <div>
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data Início *</label>
-              <input
-                type="date"
-                required
-                value={projetoForm.data_inicio}
-                onChange={(e) => setProjetoForm({ ...projetoForm, data_inicio: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              />
+              <input type="date" required value={projetoForm.data_inicio} onChange={(e) => setProjetoForm({ ...projetoForm, data_inicio: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
             </div>
-
-            {/* Data Prevista Término */}
             <div>
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data Prevista Término</label>
-              <input
-                type="date"
-                value={projetoForm.data_prevista_termino}
-                onChange={(e) => setProjetoForm({ ...projetoForm, data_prevista_termino: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              />
+              <input type="date" value={projetoForm.data_prevista_termino} onChange={(e) => setProjetoForm({ ...projetoForm, data_prevista_termino: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
             </div>
-
-            {/* Data Finalização */}
             <div>
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data Finalização</label>
-              <input
-                type="date"
-                value={projetoForm.data_finalizacao}
-                onChange={(e) => setProjetoForm({ ...projetoForm, data_finalizacao: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              />
+              <input type="date" value={projetoForm.data_finalizacao} onChange={(e) => setProjetoForm({ ...projetoForm, data_finalizacao: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
             </div>
-
-            {/* Status */}
             <div>
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Status *</label>
-              <select
-                required
-                value={projetoForm.status}
-                onChange={(e) => setProjetoForm({ ...projetoForm, status: e.target.value })}
-                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-              >
+              <select required value={projetoForm.status} onChange={(e) => setProjetoForm({ ...projetoForm, status: e.target.value })}
+                className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                 <option value="em_andamento">🔄 Em Andamento</option>
                 <option value="concluido">✅ Concluído</option>
                 <option value="suspenso">⏸️ Suspenso</option>
                 <option value="cancelado">❌ Cancelado</option>
               </select>
             </div>
-
-            {/* Responsável */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Responsável</label>
-              <input
-                type="text"
-                value={projetoForm.responsavel}
-                onChange={(e) => setProjetoForm({ ...projetoForm, responsavel: e.target.value })}
+              <input type="text" value={projetoForm.responsavel} onChange={(e) => setProjetoForm({ ...projetoForm, responsavel: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                placeholder="Nome do irmão responsável pelo projeto"
-              />
+                placeholder="Nome do irmão responsável pelo projeto" />
             </div>
-
-            {/* Valor Previsto */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Valor Previsto (R$)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={projetoForm.valor_previsto}
-                onChange={(e) => setProjetoForm({ ...projetoForm, valor_previsto: e.target.value })}
+              <input type="number" step="0.01" min="0" value={projetoForm.valor_previsto} onChange={(e) => setProjetoForm({ ...projetoForm, valor_previsto: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                placeholder="0.00"
-              />
+                placeholder="0.00" />
             </div>
-
-            {/* Fonte de Recursos */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Fonte de Recursos</label>
-              <input
-                type="text"
-                value={projetoForm.fonte_recursos}
-                onChange={(e) => setProjetoForm({ ...projetoForm, fonte_recursos: e.target.value })}
+              <input type="text" value={projetoForm.fonte_recursos} onChange={(e) => setProjetoForm({ ...projetoForm, fonte_recursos: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                placeholder="Ex: Caixa da Loja, Doações, Eventos"
-              />
+                placeholder="Ex: Caixa da Loja, Doações, Eventos" />
             </div>
-
-            {/* Observações */}
             <div className="md:col-span-2">
               <label className="block text-sm font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Observações</label>
-              <textarea
-                value={projetoForm.observacoes}
-                onChange={(e) => setProjetoForm({ ...projetoForm, observacoes: e.target.value })}
+              <textarea value={projetoForm.observacoes} onChange={(e) => setProjetoForm({ ...projetoForm, observacoes: e.target.value })}
                 className="w-full px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                rows="2"
-                placeholder="Informações adicionais relevantes..."
-              />
+                rows="2" placeholder="Informações adicionais relevantes..." />
             </div>
           </div>
-
-          {/* Botões */}
           <div className="flex gap-3 mt-6">
-            <button
-              type="submit"
-              style={{flex:1,padding:"0.6rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}
-            >
+            <button type="submit" style={{flex:1,padding:"0.6rem 1.5rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
               💾 {projetoEditando ? 'Atualizar Projeto' : 'Cadastrar Projeto'}
             </button>
-            <button
-              type="button"
-              onClick={limparFormulario}
-              className="px-6 py-3 rounded-lg transition font-bold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
+            <button type="button" onClick={limparFormulario} className="px-6 py-3 rounded-lg transition font-bold" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}>
               ❌ Cancelar
             </button>
           </div>
@@ -540,10 +393,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
           <div className="col-span-2 text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p className="text-lg">📋 Nenhum projeto cadastrado</p>
             {permissoes?.canEdit && (
-              <button
-                onClick={() => setMostrarFormulario(true)}
-                style={{marginTop:"1rem",padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer"}}
-              >
+              <button onClick={() => setMostrarFormulario(true)}
+                style={{marginTop:"1rem",padding:"0.5rem 1.5rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer"}}>
                 ➕ Cadastrar Primeiro Projeto
               </button>
             )}
@@ -572,19 +423,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       </span>
                     </div>
                   </div>
-                  
                   {permissoes?.canEdit && (
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => editarProjeto(projeto)}
-                        style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                      >
+                      <button onClick={() => editarProjeto(projeto)}
+                        style={{padding:"0.25rem 0.55rem",background:"var(--color-accent-bg)",color:"var(--color-accent)",border:"1px solid var(--color-accent)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
                         ✏️
                       </button>
-                      <button
-                        onClick={() => excluirProjeto(projeto.id)}
-                        style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}
-                      >
+                      <button onClick={() => excluirProjeto(projeto.id)}
+                        style={{padding:"0.25rem 0.55rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",borderRadius:"var(--radius-md)",fontSize:"0.82rem",cursor:"pointer"}}>
                         🗑️
                       </button>
                     </div>
@@ -642,7 +488,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       R$ {totalCustos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 -t-2" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                  <div className="flex justify-between items-center pt-2" style={{borderTop:"1px solid var(--color-border)",background:"var(--color-surface-2)",padding:"0.5rem 0.75rem",borderRadius:"var(--radius-md)"}}>
                     <span className="font-bold">💳 Saldo:</span>
                     <span style={{fontSize:"1.25rem",fontWeight:"800",color:saldo>=0?"#10b981":"#ef4444"}}>
                       R$ {saldo.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -657,10 +503,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </div>
                     <div className="w-full rounded-full h-3 overflow-hidden" style={{background:"var(--color-surface-3)"}}>
                       <div
-                        className={`h-3 rounded-full transition-all ${
-                          percentual > 100 ? '#ef4444' : percentual > 75 ? '#f59e0b' : 'var(--color-accent)'
-                        }`}
-                        style={{ width: `${Math.min(100, percentual)}%` }}
+                        className="h-3 rounded-full transition-all"
+                        style={{width:`${Math.min(100, percentual)}%`, background: percentual > 100 ? '#ef4444' : percentual > 75 ? '#f59e0b' : 'var(--color-accent)'}}
                       />
                     </div>
                     {percentual > 100 && (
@@ -668,29 +512,13 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     )}
                   </div>
 
-                  {/* Botões de Gerenciamento */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        setProjetoSelecionado(projeto);
-                        carregarReceitas(projeto.id);
-                        setMostrarReceitas(true);
-                      }}
-                      style={{padding:"0.4rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600",fontSize:"0.82rem"}}
-                    >
-                      💵 Receitas
-                    </button>
-                    <button
-                      onClick={() => {
-                        setProjetoSelecionado(projeto);
-                        carregarCustos(projeto.id);
-                        setMostrarCustos(true);
-                      }}
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium text-sm"
-                    >
-                      💸 Custos
-                    </button>
-                  </div>
+                  {/* Botão único de acesso financeiro */}
+                  <button
+                    onClick={() => abrirFinanceiro(projeto, 'receitas')}
+                    style={{width:"100%",padding:"0.5rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700",fontSize:"0.9rem"}}
+                  >
+                    📊 Ver Financeiro do Projeto
+                  </button>
                 </div>
               </div>
             );
@@ -698,398 +526,275 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
         )}
       </div>
 
-      {/* Modal de Receitas */}
-      {mostrarReceitas && projetoSelecionado && (
+      {/* Modal Financeiro Unificado */}
+      {mostrarFinanceiro && projetoSelecionado && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+
             {/* Header do Modal */}
-            <div style={{background:"#10b981",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
+            <div style={{background:"var(--color-accent)",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10,borderRadius:"0.75rem 0.75rem 0 0"}}>
               <div className="flex justify-between items-center">
                 <div>
-                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💵 Receitas do Projeto</h3>
-                  <p className="text-sm opacity-90 mt-1" style={{color:"var(--color-text-muted)"}}>{projetoSelecionado.nome}</p>
+                  <h3 className="text-2xl font-bold text-white">📊 Financeiro do Projeto</h3>
+                  <p className="text-sm mt-1" style={{color:"rgba(255,255,255,0.85)"}}>{projetoSelecionado.nome}</p>
                 </div>
+                <button onClick={fecharFinanceiro} className="text-white hover:opacity-80 text-4xl leading-none">×</button>
+              </div>
+
+              {/* Abas */}
+              <div className="flex gap-2 mt-4">
                 <button
-                  onClick={() => {
-                    setMostrarReceitas(false);
-                    setProjetoSelecionado(null);
-                    setReceitasDoModal([]);
+                  onClick={() => setAbaAtiva('receitas')}
+                  style={{
+                    padding:"0.4rem 1.2rem",
+                    borderRadius:"var(--radius-lg)",
+                    border:"none",
+                    cursor:"pointer",
+                    fontWeight:"700",
+                    fontSize:"0.88rem",
+                    background: abaAtiva === 'receitas' ? '#fff' : 'rgba(255,255,255,0.2)',
+                    color: abaAtiva === 'receitas' ? 'var(--color-accent)' : '#fff',
+                    transition:"all 0.15s"
                   }}
-                  className="text-white hover:opacity-80 text-4xl leading-none"
                 >
-                  ×
+                  💵 Receitas
+                  <span style={{marginLeft:"0.4rem",fontSize:"0.75rem",opacity:0.85}}>
+                    R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setAbaAtiva('custos')}
+                  style={{
+                    padding:"0.4rem 1.2rem",
+                    borderRadius:"var(--radius-lg)",
+                    border:"none",
+                    cursor:"pointer",
+                    fontWeight:"700",
+                    fontSize:"0.88rem",
+                    background: abaAtiva === 'custos' ? '#fff' : 'rgba(255,255,255,0.2)',
+                    color: abaAtiva === 'custos' ? '#ef4444' : '#fff',
+                    transition:"all 0.15s"
+                  }}
+                >
+                  💸 Custos
+                  <span style={{marginLeft:"0.4rem",fontSize:"0.75rem",opacity:0.85}}>
+                    R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
                 </button>
               </div>
             </div>
 
+            {/* Rodapé fixo de saldo */}
+            <div style={{padding:"0.75rem 1.5rem",background:"var(--color-surface-2)",borderBottom:"1px solid var(--color-border)",display:"flex",justifyContent:"space-between",alignItems:"center",flexWrap:"wrap",gap:"0.5rem"}}>
+              <span style={{fontSize:"0.85rem",color:"var(--color-text-muted)"}}>
+                Receitas: <strong style={{color:"#10b981"}}>R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+                &nbsp;·&nbsp;
+                Custos: <strong style={{color:"#ef4444"}}>R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</strong>
+              </span>
+              <span style={{fontWeight:"800",fontSize:"1rem",color:saldoModal>=0?"#10b981":"#ef4444"}}>
+                💳 Saldo: R$ {saldoModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+
             <div className="p-6">
-              {/* Formulário de Nova Receita */}
-              {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                  <h4 className="font-bold mb-3">➕ Adicionar Receita</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input
-                      type="date"
-                      required
-                      value={receitaForm.data_receita || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, data_receita: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Descrição"
-                      value={receitaForm.descricao || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, descricao: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <select
-                      required
-                      value={receitaForm.origem || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    >
-                      <option value="">Origem</option>
-                      {origensReceita.map(origem => (
-                        <option key={origem} value={origem}>{origem}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="Valor"
-                      value={receitaForm.valor || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <select
-                      required
-                      value={receitaForm.forma_pagamento || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    >
-                      <option value="">Forma Pagamento</option>
-                      {formasPagamento.map(forma => (
-                        <option key={forma} value={forma}>{forma}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Responsável"
-                      value={receitaForm.responsavel || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, responsavel: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Observação"
-                      value={receitaForm.observacao || ''}
-                      onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
-                      className="md:col-span-2 px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <button
-                      type="submit"
-                      style={{padding:"0.45rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}
-                    >
-                      ➕ Adicionar
-                    </button>
-                  </div>
-                </form>
-              )}
 
-              {/* Tabela de Receitas */}
-              {receitasDoModal.length === 0 ? (
-                <div className="text-center py-8">
-                  <p>📋 Nenhuma receita registrada para este projeto</p>
-                </div>
-              ) : (() => {
-                // Agrupar por data + origem (FL agrupa tudo do dia, manual agrupa por descricao)
-                const todas = Object.values(
-                  receitasDoModal.reduce((acc, r) => {
-                    const isFL = r.origem === 'Finanças Loja';
-                    const key = isFL
-                      ? (r.data_receita || '') + '|FL'
-                      : (r.data_receita || '') + '|' + (r.descricao || '');
-                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
-                    acc[key].valor += parseFloat(r.valor || 0);
-                    acc[key].qtd++;
-                    return acc;
-                  }, {})
-                ).sort((a, b) => (b.data_receita || '').localeCompare(a.data_receita || ''));
-
-                return (
+              {/* ABA RECEITAS */}
+              {abaAtiva === 'receitas' && (
                 <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead style={{background:"var(--color-surface-2)"}}>
-                        <tr style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Origem</th>
-                          <th className="px-4 py-3 text-right text-sm font-bold">Valor</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Pagamento</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Responsável</th>
-                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold">Ações</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {todas.map((receita, i) => (
-                          <tr key={receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {receita.descricao}
+                  {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
+                    <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                      <h4 className="font-bold mb-3">➕ Adicionar Receita</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="date" required value={receitaForm.data_receita || ''} onChange={(e) => setReceitaForm({ ...receitaForm, data_receita: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <input type="text" required placeholder="Descrição" value={receitaForm.descricao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, descricao: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <select required value={receitaForm.origem || ''} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <option value="">Origem</option>
+                          {origensReceita.map(o => <option key={o} value={o}>{o}</option>)}
+                        </select>
+                        <input type="number" step="0.01" required placeholder="Valor" value={receitaForm.valor || ''} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <select required value={receitaForm.forma_pagamento || ''} onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <option value="">Forma Pagamento</option>
+                          {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                        <input type="text" placeholder="Responsável" value={receitaForm.responsavel || ''} onChange={(e) => setReceitaForm({ ...receitaForm, responsavel: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <input type="text" placeholder="Observação" value={receitaForm.observacao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
+                          className="md:col-span-2 px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <button type="submit" style={{padding:"0.45rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
+                          ➕ Adicionar
+                        </button>
+                      </div>
+                    </form>
+                  )}
 
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {receita.origem === 'Finanças Loja' ? (
-                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
-                                  🏦 Finanças Loja
-                                </span>
-                              ) : (
-                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>
-                                  {receita.origem}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#10b981"}}>
-                              R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.forma_pagamento}</td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
-                            {permissoes?.canEdit && (
-                              <td className="px-4 py-3 text-center">
+                  {receitasAgrupadas.length === 0 ? (
+                    <div className="text-center py-8"><p>📋 Nenhuma receita registrada para este projeto</p></div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead style={{background:"var(--color-surface-2)"}}>
+                          <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Origem</th>
+                            <th className="px-4 py-3 text-right text-sm font-bold">Valor</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Pagamento</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Responsável</th>
+                            {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold">Ações</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {receitasAgrupadas.map((receita) => (
+                            <tr key={receita.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                                {new Date(receita.data_receita + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.descricao}</td>
+                              <td className="px-4 py-3 text-sm">
                                 {receita.origem === 'Finanças Loja' ? (
-                                  <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Finanças Loja</span>
                                 ) : (
-                                  <button
-                                    onClick={() => excluirReceita(receita.id)}
-                                    style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
-                                  >
-                                    🗑️
-                                  </button>
+                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(16,185,129,0.15)",color:"#10b981",border:"1px solid rgba(16,185,129,0.3)"}}>{receita.origem}</span>
                                 )}
                               </td>
-                            )}
+                              <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#10b981"}}>
+                                R$ {parseFloat(receita.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.forma_pagamento}</td>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{receita.responsavel}</td>
+                              {permissoes?.canEdit && (
+                                <td className="px-4 py-3 text-center">
+                                  {receita.origem === 'Finanças Loja' ? (
+                                    <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                  ) : (
+                                    <button onClick={() => excluirReceita(receita.id)}
+                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                      🗑️
+                                    </button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                            <td colSpan="3" className="px-4 py-3 text-right font-bold">TOTAL:</td>
+                            <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:"1.05rem"}}>
+                              R$ {totalReceitasModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
                           </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <td colSpan="3" className="px-4 py-3 text-right font-bold">
-                            TOTAL:
-                          </td>
-                          <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#10b981",fontSize:"1.05rem"}}>
-                            R$ {receitasDoModal.reduce((sum, r) => sum + parseFloat(r.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
                 </>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Custos */}
-      {mostrarCustos && projetoSelecionado && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="rounded-xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-            {/* Header do Modal */}
-            <div style={{background:"#8b5cf6",padding:"1.25rem 1.5rem",position:"sticky",top:0,zIndex:10}}>
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>💰 Custos do Projeto</h3>
-                  <p className="text-sm opacity-90 mt-1" style={{color:"var(--color-text-muted)"}}>{projetoSelecionado.nome}</p>
-                </div>
-                <button
-                  onClick={() => {
-                    setMostrarCustos(false);
-                    setProjetoSelecionado(null);
-                    setCustosDoModal([]);
-                  }}
-                  className="text-white hover:opacity-80 text-4xl leading-none"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6">
-              {/* Formulário de Novo Custo */}
-              {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                  <h4 className="font-bold mb-3">➕ Adicionar Custo</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <input
-                      type="date"
-                      required
-                      value={custoForm.data_custo || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, data_custo: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <input
-                      type="text"
-                      required
-                      placeholder="Descrição"
-                      value={custoForm.descricao || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, descricao: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <select
-                      required
-                      value={custoForm.categoria || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    >
-                      <option value="">Categoria</option>
-                      {categoriasCusto.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      step="0.01"
-                      required
-                      placeholder="Valor"
-                      value={custoForm.valor || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <select
-                      required
-                      value={custoForm.forma_pagamento || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    >
-                      <option value="">Forma Pagamento</option>
-                      {formasPagamento.map(forma => (
-                        <option key={forma} value={forma}>{forma}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="text"
-                      placeholder="Responsável"
-                      value={custoForm.responsavel || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, responsavel: e.target.value })}
-                      className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Observação"
-                      value={custoForm.observacao || ''}
-                      onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
-                      className="md:col-span-2 px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition font-medium"
-                    >
-                      ➕ Adicionar
-                    </button>
-                  </div>
-                </form>
               )}
 
-              {/* Tabela de Custos */}
-              {custosDoModal.length === 0 ? (
-                <div className="text-center py-8">
-                  <p>📋 Nenhum custo registrado para este projeto</p>
-                </div>
-              ) : (() => {
-                // Agrupar por data + categoria (FL agrupa tudo do dia, manual agrupa por descricao)
-                const todos = Object.values(
-                  custosDoModal.reduce((acc, r) => {
-                    const isFL = r.categoria === 'Finanças Loja';
-                    const key = isFL
-                      ? (r.data_custo || '') + '|FL'
-                      : (r.data_custo || '') + '|' + (r.descricao || '');
-                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
-                    acc[key].valor += parseFloat(r.valor || 0);
-                    acc[key].qtd++;
-                    return acc;
-                  }, {})
-                ).sort((a, b) => (b.data_custo || '').localeCompare(a.data_custo || ''));
-                const totalGeral = todos.reduce((s, c) => s + parseFloat(c.valor), 0);
-
-                return (
+              {/* ABA CUSTOS */}
+              {abaAtiva === 'custos' && (
                 <>
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead style={{background:"var(--color-surface-2)"}}>
-                        <tr style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Categoria</th>
-                          <th className="px-4 py-3 text-right text-sm font-bold">Valor</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Pagamento</th>
-                          <th className="px-4 py-3 text-left text-sm font-bold">Responsável</th>
-                          {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold">Ações</th>}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {todos.map((custo, i) => (
-                          <tr key={custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {custo.descricao}
+                  {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
+                    <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+                      <h4 className="font-bold mb-3">➕ Adicionar Custo</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <input type="date" required value={custoForm.data_custo || ''} onChange={(e) => setCustoForm({ ...custoForm, data_custo: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <input type="text" required placeholder="Descrição" value={custoForm.descricao || ''} onChange={(e) => setCustoForm({ ...custoForm, descricao: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <select required value={custoForm.categoria || ''} onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <option value="">Categoria</option>
+                          {categoriasCusto.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                        <input type="number" step="0.01" required placeholder="Valor" value={custoForm.valor || ''} onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <select required value={custoForm.forma_pagamento || ''} onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                          <option value="">Forma Pagamento</option>
+                          {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
+                        </select>
+                        <input type="text" placeholder="Responsável" value={custoForm.responsavel || ''} onChange={(e) => setCustoForm({ ...custoForm, responsavel: e.target.value })}
+                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <input type="text" placeholder="Observação" value={custoForm.observacao || ''} onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
+                          className="md:col-span-2 px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                        <button type="submit" style={{padding:"0.4rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
+                          ➕ Adicionar
+                        </button>
+                      </div>
+                    </form>
+                  )}
 
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {custo.categoria === 'Finanças Loja' ? (
-                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
-                                  🏦 Finanças Loja
-                                </span>
-                              ) : (
-                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>
-                                  {custo.categoria}
-                                </span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#ef4444"}}>
-                              R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.forma_pagamento}</td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
-                            {permissoes?.canEdit && (
-                              <td className="px-4 py-3 text-center">
+                  {custosAgrupados.length === 0 ? (
+                    <div className="text-center py-8"><p>📋 Nenhum custo registrado para este projeto</p></div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead style={{background:"var(--color-surface-2)"}}>
+                          <tr style={{border:"1px solid var(--color-border)",color:"var(--color-text)"}}>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Categoria</th>
+                            <th className="px-4 py-3 text-right text-sm font-bold">Valor</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Pagamento</th>
+                            <th className="px-4 py-3 text-left text-sm font-bold">Responsável</th>
+                            {permissoes?.canEdit && <th className="px-4 py-3 text-center text-sm font-bold">Ações</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {custosAgrupados.map((custo) => (
+                            <tr key={custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                                {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.descricao}</td>
+                              <td className="px-4 py-3 text-sm">
                                 {custo.categoria === 'Finanças Loja' ? (
-                                  <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>🏦 Finanças Loja</span>
                                 ) : (
-                                  <button
-                                    onClick={() => excluirCusto(custo.id)}
-                                    style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
-                                  >
-                                    🗑️
-                                  </button>
+                                  <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>{custo.categoria}</span>
                                 )}
                               </td>
-                            )}
+                              <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#ef4444"}}>
+                                R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.forma_pagamento}</td>
+                              <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
+                              {permissoes?.canEdit && (
+                                <td className="px-4 py-3 text-center">
+                                  {custo.categoria === 'Finanças Loja' ? (
+                                    <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                  ) : (
+                                    <button onClick={() => excluirCusto(custo.id)}
+                                      style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}>
+                                      🗑️
+                                    </button>
+                                  )}
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                            <td colSpan="3" className="px-4 py-3 text-right font-bold">TOTAL:</td>
+                            <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:"1.05rem"}}>
+                              R$ {totalCustosModal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                            <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
                           </tr>
-                        ))}
-                      </tbody>
-                      <tfoot>
-                        <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <td colSpan="3" className="px-4 py-3 text-right font-bold">TOTAL:</td>
-                          <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:"1.05rem"}}>
-                            R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </td>
-                          <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                  </div>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
                 </>
-                );
-              })()}
+              )}
             </div>
           </div>
         </div>
