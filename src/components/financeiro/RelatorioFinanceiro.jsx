@@ -49,6 +49,9 @@ const classificar = (l) => {
 
 // ─── Saldo ANTES do período — idêntico ao calcularSaldoAnterior do FinancasLoja
 const calcularSaldoAnterior = (lancamentos, periodo) => {
+  // ano=0 = "Geral" = sem saldo anterior (começa do zero)
+  if (periodo.ano === 0) return { bancario: 0, caixa: 0 };
+
   const dataLimite = periodo.mes > 0
     ? `${periodo.ano}-${String(periodo.mes).padStart(2,'0')}-01`
     : `${periodo.ano}-01-01`;
@@ -90,6 +93,10 @@ const calcularSaldoAnterior = (lancamentos, periodo) => {
 
 // ─── Filtrar lançamentos de um período — usa data_pagamento (consistente com saldo anterior)
 const filtrarPeriodo = (lancamentos, periodo) => {
+  // ano=0 = "Geral" = todos os lançamentos pagos
+  if (periodo.ano === 0) {
+    return lancamentos.filter(l => l.status === 'pago' && l.data_pagamento);
+  }
   const anoStr = String(periodo.ano);
   const mesStr = periodo.mes > 0 ? String(periodo.mes).padStart(2,'0') : null;
   return lancamentos.filter(l => {
@@ -154,7 +161,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
   const [loading, setLoading] = useState(true);
 
   const anoAtual = new Date().getFullYear();
-  const [periodoA, setPeriodoA] = useState({ mes: 0, ano: anoAtual });
+  const [periodoA, setPeriodoA] = useState({ mes: 0, ano: 0 }); // 0 = Geral (todo o período)
   const [periodoB, setPeriodoB] = useState({ mes: 0, ano: anoAtual - 1 });
   const [mostrarComparacao, setMostrarComparacao] = useState(false);
   const [aba, setAba] = useState('saldo');
@@ -269,12 +276,13 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
     <div style={{display:'flex', alignItems:'center', gap:'0.4rem'}}>
       <span style={{fontSize:'0.75rem', fontWeight:'700', color:'rgba(255,255,255,0.8)'}}>{label}</span>
       <select value={periodo.mes} onChange={e => onChange({ ...periodo, mes: parseInt(e.target.value) })}
-        style={{padding:'0.25rem 0.5rem', borderRadius:'var(--radius-md)', border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.15)', color:'#fff', fontSize:'0.8rem'}}>
+        style={{padding:'0.25rem 0.5rem', borderRadius:'var(--radius-md)', border:'1px solid rgba(255,255,255,0.3)', background:'var(--color-surface)', color:'var(--color-text)', fontSize:'0.8rem'}}>
         <option value={0}>Ano inteiro</option>
         {MESES.map((m, i) => <option key={i} value={i+1}>{m}</option>)}
       </select>
       <select value={periodo.ano} onChange={e => onChange({ ...periodo, ano: parseInt(e.target.value) })}
-        style={{padding:'0.25rem 0.5rem', borderRadius:'var(--radius-md)', border:'1px solid rgba(255,255,255,0.3)', background:'rgba(255,255,255,0.15)', color:'#fff', fontSize:'0.8rem'}}>
+        style={{padding:'0.25rem 0.5rem', borderRadius:'var(--radius-md)', border:'1px solid rgba(255,255,255,0.3)', background:'var(--color-surface)', color:'var(--color-text)', fontSize:'0.8rem'}}>
+        <option value={0}>📊 Geral (todo o período)</option>
         {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
       </select>
     </div>
@@ -349,7 +357,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
       {label && (
         <div style={{padding:'0.6rem 1rem', background:'var(--color-surface-2)', borderBottom:'1px solid var(--color-border)'}}>
           <span style={{fontSize:'0.78rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase'}}>
-            {periodo.mes > 0 ? MESES[periodo.mes-1] : 'Ano inteiro'} {periodo.ano}
+            {periodo.ano === 0 ? '📊 Todo o Período' : periodo.mes > 0 ? `${MESES[periodo.mes-1]} ${periodo.ano}` : `Ano inteiro ${periodo.ano}`}
           </span>
         </div>
       )}
@@ -471,7 +479,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                       <div style={{fontSize:'0.68rem', color:'var(--color-text-muted)'}}>
                         🏦 {formatarMoeda(dados.recBanco)} · 💵 {formatarMoeda(dados.recCaixa)}
                       </div>
-                      {mostrarComparacao && <div style={{fontSize:'0.7rem', color:'var(--color-text-muted)'}}>{periodo.mes > 0 ? MESES[periodo.mes-1] : 'Ano'} {periodo.ano}</div>}
+                      {mostrarComparacao && <div style={{fontSize:'0.7rem', color:'var(--color-text-muted)'}}>{periodo.ano === 0 ? 'Todo o período' : periodo.mes > 0 ? `${MESES[periodo.mes-1]} ${periodo.ano}` : `Ano ${periodo.ano}`}</div>}
                     </div>
                   </div>
                   <div style={{padding:'0.75rem'}}>
@@ -497,7 +505,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                       <div style={{fontSize:'0.68rem', color:'var(--color-text-muted)'}}>
                         🏦 {formatarMoeda(dados.despBanco)} · 💵 {formatarMoeda(dados.despCaixa)}
                       </div>
-                      {mostrarComparacao && <div style={{fontSize:'0.7rem', color:'var(--color-text-muted)'}}>{periodo.mes > 0 ? MESES[periodo.mes-1] : 'Ano'} {periodo.ano}</div>}
+                      {mostrarComparacao && <div style={{fontSize:'0.7rem', color:'var(--color-text-muted)'}}>{periodo.ano === 0 ? 'Todo o período' : periodo.mes > 0 ? `${MESES[periodo.mes-1]} ${periodo.ano}` : `Ano ${periodo.ano}`}</div>}
                     </div>
                   </div>
                   <div style={{padding:'0.75rem'}}>
@@ -512,10 +520,16 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
           )}
 
           {/* ABA MENSAL */}
-          {aba === 'mensal' && (
+          {aba === 'mensal' && periodoA.ano === 0 && (
+            <div style={{textAlign:'center', padding:'2rem', color:'var(--color-text-muted)', background:'var(--color-surface)', borderRadius:'var(--radius-xl)', border:'1px solid var(--color-border)'}}>
+              <p style={{fontSize:'1.2rem', marginBottom:'0.5rem'}}>📅</p>
+              <p>Selecione um ano específico para ver a evolução mensal.</p>
+            </div>
+          )}
+          {aba === 'mensal' && periodoA.ano > 0 && (
             <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
               <div style={{padding:'0.75rem 1rem', borderBottom:'1px solid var(--color-border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <span style={{fontWeight:'800', fontSize:'0.95rem', color:'var(--color-text)'}}>📅 Evolução Mensal — {periodoA.ano}</span>
+                <span style={{fontWeight:'800', fontSize:'0.95rem', color:'var(--color-text)'}}>📅 Evolução Mensal{periodoA.ano > 0 ? ` — ${periodoA.ano}` : ''}</span>
                 <div style={{display:'flex', gap:'1rem', fontSize:'0.72rem'}}>
                   <span style={{color:'#10b981', fontWeight:'700'}}>■ Receitas</span>
                   <span style={{color:'#ef4444', fontWeight:'700'}}>■ Despesas</span>
