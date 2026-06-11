@@ -1012,12 +1012,33 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 <div className="text-center py-8">
                   <p>📋 Nenhum custo registrado para este projeto</p>
                 </div>
-              ) : (
+              ) : (() => {
+                // Separar manuais e do Finanças Loja
+                const manuais = custosDoModal.filter(r => !r.lancamento_id);
+                const doFinancas = custosDoModal.filter(r => r.lancamento_id);
+
+                // Agrupar do Finanças Loja por data
+                const agrupados = Object.values(
+                  doFinancas.reduce((acc, r) => {
+                    const key = r.data_custo;
+                    if (!acc[key]) acc[key] = { ...r, valor: 0, qtd: 0 };
+                    acc[key].valor += parseFloat(r.valor);
+                    acc[key].qtd++;
+                    return acc;
+                  }, {})
+                );
+
+                const todos = [...manuais, ...agrupados].sort((a, b) =>
+                  (b.data_custo || '').localeCompare(a.data_custo || '')
+                );
+                const totalGeral = todos.reduce((s, c) => s + parseFloat(c.valor), 0);
+
+                return (
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead style={{background:"var(--color-surface-2)"}}>
-                        <tr className="-b-2" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                        <tr style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
                           <th className="px-4 py-3 text-left text-sm font-bold">Data</th>
                           <th className="px-4 py-3 text-left text-sm font-bold">Descrição</th>
                           <th className="px-4 py-3 text-left text-sm font-bold">Categoria</th>
@@ -1028,30 +1049,47 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                         </tr>
                       </thead>
                       <tbody>
-                        {custosDoModal.map((custo, i) => (
-                          <tr key={custo.id} className={i % 2 === 0 ? '' : ''}>
+                        {todos.map((custo, i) => (
+                          <tr key={custo.lancamento_id || custo.id} style={{borderBottom:"1px solid var(--color-surface-2)"}}>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              {new Date(custo.data_custo + 'T00:00:00').toLocaleDateString('pt-BR')}
+                              {new Date((custo.data_custo || '') + 'T00:00:00').toLocaleDateString('pt-BR')}
                             </td>
-                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.descricao}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
-                              <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
-                                {custo.categoria}
-                              </span>
+                              {custo.descricao}
+                              {custo.qtd > 1 && (
+                                <span style={{marginLeft:'0.4rem',fontSize:'0.7rem',color:'var(--color-text-muted)'}}>
+                                  ({custo.qtd} registros)
+                                </span>
+                              )}
                             </td>
-                            <td className="px-4 py-3 text-sm text-right font-bold text-red-600" style={{color:"var(--color-text)"}}>
+                            <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>
+                              {custo.lancamento_id ? (
+                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(59,130,246,0.15)",color:"#3b82f6",border:"1px solid rgba(59,130,246,0.3)"}}>
+                                  🏦 Finanças Loja
+                                </span>
+                              ) : (
+                                <span style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)"}}>
+                                  {custo.categoria}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-right font-bold" style={{color:"#ef4444"}}>
                               R$ {parseFloat(custo.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                             </td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.forma_pagamento}</td>
                             <td className="px-4 py-3 text-sm" style={{color:"var(--color-text)"}}>{custo.responsavel}</td>
                             {permissoes?.canEdit && (
                               <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={() => excluirCusto(custo.id)}
-                                  style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
-                                >
-                                  🗑️
-                                </button>
+                                {custo.lancamento_id ? (
+                                  <span title="Gerado pelo Finanças Loja — exclua de lá" style={{fontSize:"0.75rem",color:"var(--color-text-muted)"}}>🔒</span>
+                                ) : (
+                                  <button
+                                    onClick={() => excluirCusto(custo.id)}
+                                    style={{padding:"0.15rem 0.5rem",borderRadius:"var(--radius-sm)",fontSize:"0.7rem",background:"rgba(239,68,68,0.15)",color:"#ef4444",border:"1px solid rgba(239,68,68,0.3)",cursor:"pointer"}}
+                                  >
+                                    🗑️
+                                  </button>
+                                )}
                               </td>
                             )}
                           </tr>
@@ -1059,11 +1097,9 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                       </tbody>
                       <tfoot>
                         <tr style={{borderTop:"2px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <td colSpan="3" className="px-4 py-3 text-right font-bold">
-                            TOTAL:
-                          </td>
+                          <td colSpan="3" className="px-4 py-3 text-right font-bold">TOTAL:</td>
                           <td style={{padding:"0.75rem 1rem",textAlign:"right",fontWeight:"800",color:"#ef4444",fontSize:"1.05rem"}}>
-                            R$ {custosDoModal.reduce((sum, c) => sum + parseFloat(c.valor), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            R$ {totalGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td colSpan={permissoes?.canEdit ? 3 : 2}></td>
                         </tr>
@@ -1071,7 +1107,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                     </table>
                   </div>
                 </>
-              )}
+                );
+              })()}
             </div>
           </div>
         </div>
