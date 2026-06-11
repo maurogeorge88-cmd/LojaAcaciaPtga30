@@ -403,7 +403,7 @@ export default function VidaMaconica({ irmaoId, showSuccess, showError }) {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 rounded-lg border-2 border-dashed" style={{background:"var(--color-surface-2)",borderColor:"var(--color-border)"}} style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        <div className="text-center py-12 rounded-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           <div className="text-6xl mb-4">🔺</div>
           <p className="text-lg font-medium">
             Nenhum grau filosófico cadastrado
