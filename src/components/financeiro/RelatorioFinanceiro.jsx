@@ -244,6 +244,9 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
     const filtrados = lancsPeríodo.filter(l => {
       const cl = classificar(l);
       if (!cl) return false;
+      // Excluir transferências internas (banco_deposito / sangria) — não são categorias reais
+      if (cl.grupo === 'banco_deposito') return false;
+      if (cl.grupo === 'sangria') return false;
       return l.cat_tipo === tipo;
     });
 
@@ -254,7 +257,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
       const v = parseFloat(l.valor || 0);
       const cl = classificar(l);
       porCat[id].valor += v;
-      if (cl?.grupo?.includes('banco') || cl?.grupo === 'banco_deposito') porCat[id].valorBanco += v;
+      if (cl?.grupo === 'banco_receita' || cl?.grupo === 'banco_despesa') porCat[id].valorBanco += v;
       else porCat[id].valorCaixa += v;
     });
 
