@@ -627,6 +627,14 @@ const VisualizarIrmaos = ({ irmaos, onEdit, onViewProfile, onViewPerfilCompleto,
                     <span className="font-semibold">Escolaridade:</span>
                     <span className="ml-2">{irmaoSelecionado.escolaridade || 'Não informado'}</span>
                   </div>
+                  <div>
+                    <span className="font-semibold">Naturalidade:</span>
+                    <span className="ml-2">{irmaoSelecionado.naturalidade || 'Não informado'}</span>
+                  </div>
+                  <div>
+                    <span className="font-semibold">Formação:</span>
+                    <span className="ml-2">{irmaoSelecionado.formacao || 'Não informado'}</span>
+                  </div>
                 </div>
               </div>
 
