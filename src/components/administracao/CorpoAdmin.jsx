@@ -392,48 +392,8 @@ export const CorpoAdmin = ({
                 </p>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead style={{ 
-                    background: 'var(--color-surface-2)', 
-                    borderBottom: '2px solid var(--color-border)' 
-                  }}>
-                    <tr>
-                      <th style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        textAlign: 'left', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '600', 
-                        color: 'var(--color-text-muted)', 
-                        textTransform: 'uppercase' 
-                      }}>Cargo</th>
-                      <th style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        textAlign: 'left', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '600', 
-                        color: 'var(--color-text-muted)', 
-                        textTransform: 'uppercase' 
-                      }}>Irmão</th>
-                      <th style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        textAlign: 'left', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '600', 
-                        color: 'var(--color-text-muted)', 
-                        textTransform: 'uppercase' 
-                      }}>CIM</th>
-                      <th style={{ 
-                        padding: '0.75rem 1.5rem', 
-                        textAlign: 'center', 
-                        fontSize: '0.75rem', 
-                        fontWeight: '600', 
-                        color: 'var(--color-text-muted)', 
-                        textTransform: 'uppercase' 
-                      }}>Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody style={{ borderTop: '1px solid var(--color-border)' }}>
+              <div style={{padding:'1rem', display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.75rem'}}>
+
                     {corpoAdmin
                       .filter(ca => ca.ano_exercicio === ano)
                       .sort((a, b) => {
@@ -506,98 +466,91 @@ export const CorpoAdmin = ({
                         // Ambos estão na lista, ordena por índice
                         return indexA - indexB;
                       })
-                      .map((item) => (
-                        <tr 
-                          key={item.id} 
-                          style={{ 
-                            borderBottom: '1px solid var(--color-border)', 
-                            transition: 'background 0.2s ease' 
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-surface)'}
-                          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          <td style={{ 
-                            padding: '1rem 1.5rem', 
-                            whiteSpace: 'nowrap', 
-                            fontWeight: '600', 
-                            color: 'var(--color-text)' 
-                          }}>
-                            {item.cargo || 'Cargo não informado'}
-                          </td>
-                          <td style={{ 
-                            padding: '1rem 1.5rem', 
-                            whiteSpace: 'nowrap', 
-                            fontSize: '0.875rem', 
-                            color: 'var(--color-text-muted)' 
-                          }}>
-                            {item.irmao?.nome || 'Irmão não encontrado'}
-                          </td>
-                          <td style={{ 
-                            padding: '1rem 1.5rem', 
-                            whiteSpace: 'nowrap', 
-                            fontSize: '0.875rem', 
-                            color: 'var(--color-text-muted)' 
-                          }}>
-                            {item.irmao?.cim || '-'}
-                          </td>
-                          <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
-                            {permissoes?.canEdit && (
-                              <div className="flex justify-center gap-2">
-                                <button
-                                  onClick={() => handleEditarCorpoAdmin(item)}
-                                  style={{
-                                    background: 'transparent',
-                                    color: 'var(--color-accent)',
-                                    border: 'none',
-                                    padding: '0.25rem',
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--color-accent-bg)';
-                                    e.target.style.transform = 'scale(1.1)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.target.style.background = 'transparent';
-                                    e.target.style.transform = 'scale(1)';
-                                  }}
-                                  title="Editar"
-                                >
-                                  ✏️
-                                </button>
-                                <button
-                                  onClick={() => handleExcluirCorpoAdmin(item.id)}
-                                  style={{
-                                    background: 'transparent',
-                                    color: 'var(--color-danger)',
-                                    border: 'none',
-                                    padding: '0.25rem',
-                                    borderRadius: 'var(--radius-md)',
-                                    cursor: 'pointer',
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s ease'
-                                  }}
-                                  onMouseEnter={(e) => {
-                                    e.target.style.background = 'var(--color-danger-bg)';
-                                    e.target.style.transform = 'scale(1.1)';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.target.style.background = 'transparent';
-                                    e.target.style.transform = 'scale(1)';
-                                  }}
-                                  title="Remover"
-                                >
-                                  🗑️
-                                </button>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
+                                            .map((item) => {
+                        const irmao = item.irmao;
+                        return (
+                          <div
+                            key={item.id}
+                            style={{
+                              background:'var(--color-surface-2)',
+                              border:'1px solid var(--color-border)',
+                              borderRadius:'var(--radius-lg)',
+                              padding:'0.75rem 1rem',
+                              display:'flex',
+                              flexDirection:'column',
+                              gap:'0.25rem',
+                              position:'relative'
+                            }}
+                          >
+                            {/* Cargo */}
+                            <p style={{
+                              fontSize:'0.72rem',
+                              fontWeight:'700',
+                              color:'var(--color-accent)',
+                              textTransform:'uppercase',
+                              letterSpacing:'0.04em',
+                              margin:0
+                            }}>
+                              {item.cargo || 'Cargo não informado'}
+                            </p>
+
+                            {/* Avatar + Nome */}
+                            <div style={{display:'flex', alignItems:'center', gap:'0.5rem', marginTop:'0.15rem'}}>
+                              {irmao?.foto_url ? (
+                                <img
+                                  src={irmao.foto_url}
+                                  alt={irmao.nome}
+                                  style={{width:'32px',height:'32px',borderRadius:'50%',objectFit:'cover',border:'2px solid var(--color-border)',flexShrink:0}}
+                                />
+                              ) : (
+                                <div style={{width:'32px',height:'32px',borderRadius:'50%',background:'var(--color-surface-3)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'1rem',flexShrink:0}}>
+                                  👤
+                                </div>
+                              )}
+                              <p style={{
+                                fontSize:'0.82rem',
+                                fontWeight:'600',
+                                color:'var(--color-text)',
+                                margin:0,
+                                lineHeight:'1.2',
+                                wordBreak:'break-word'
+                              }}>
+                                {irmao?.nome || 'Irmão não encontrado'}
+                              </p>
+                            </div>
+
+                            {/* CIM + Ações */}
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:'0.25rem'}}>
+                              <span style={{
+                                fontSize:'0.72rem',
+                                color:'var(--color-text-muted)',
+                                background:'var(--color-surface)',
+                                border:'1px solid var(--color-border)',
+                                borderRadius:'var(--radius-sm)',
+                                padding:'0.1rem 0.4rem',
+                                fontWeight:'600'
+                              }}>
+                                CIM {irmao?.cim || '-'}
+                              </span>
+
+                              {permissoes?.canEdit && (
+                                <div style={{display:'flex', gap:'0.25rem'}}>
+                                  <button
+                                    onClick={() => handleEditarCorpoAdmin(item)}
+                                    title="Editar"
+                                    style={{background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-sm)',padding:'0.2rem 0.4rem',cursor:'pointer',fontSize:'0.75rem',lineHeight:1}}
+                                  >✏️</button>
+                                  <button
+                                    onClick={() => handleExcluirCorpoAdmin(item.id)}
+                                    title="Remover"
+                                    style={{background:'rgba(239,68,68,0.1)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-sm)',padding:'0.2rem 0.4rem',cursor:'pointer',fontSize:'0.75rem',lineHeight:1}}
+                                  >🗑️</button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
               </div>
             </div>
           ))}
