@@ -645,23 +645,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Atualizar receita ou custo se projeto vinculado
-        // Buscar se havia projeto vinculado antes
+        // Gerenciar vínculo com projeto (edição)
+        // Verificar se o lançamento tinha projeto antes
         const { data: lancAnterior } = await supabase
           .from('lancamentos_loja')
           .select('projeto_id')
           .eq('id', editando)
           .single();
-        
-        const tinhaProjetoAntes = lancAnterior?.projeto_id;
+        const projetoAnterior = lancAnterior?.projeto_id;
 
-        if (dados.projeto_id || tinhaProjetoAntes) {
-          // Remover registros antigos apenas se havia vínculo antes
-          if (tinhaProjetoAntes) {
+        // Só mexer em receitas_projeto/custos_projeto se há projeto envolvido
+        if (projetoAnterior || dados.projeto_id) {
+          // Remover vínculos anteriores se havia projeto
+          if (projetoAnterior) {
             await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
             await supabase.from('custos_projeto').delete().eq('lancamento_id', editando);
           }
-          // Criar novo vínculo se projeto foi selecionado
+          // Criar novo vínculo se projeto selecionado
           if (dados.projeto_id) {
             const irmaoNome = dados.origem_irmao_id
               ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
@@ -681,9 +681,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               await supabase.from('custos_projeto').insert([{
                 projeto_id: parseInt(dados.projeto_id),
                 data_custo: dados.data_lancamento,
-                descricao: dados.descricao,
+                descricao: `[FL] ${dados.descricao}`,
                 valor: parseFloat(dados.valor),
-                categoria: 'Finanças Loja',
+                categoria: 'Outro',
                 lancamento_id: editando,
               }]);
             }
@@ -715,7 +715,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Criar receita ou custo em projeto vinculado
+        // Criar vínculo com projeto (novo lançamento)
         if (dados.projeto_id && novoLanc?.id) {
           const irmaoNome = dados.origem_irmao_id
             ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
@@ -732,13 +732,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               lancamento_id: novoLanc.id,
             }]);
           } else {
-            // Despesa → custos_projeto
             await supabase.from('custos_projeto').insert([{
               projeto_id: parseInt(dados.projeto_id),
               data_custo: dados.data_lancamento,
-              descricao: dados.descricao,
+              descricao: `[FL] ${dados.descricao}`,
               valor: parseFloat(dados.valor),
-              categoria: 'Finanças Loja',
+              categoria: 'Outro',
               lancamento_id: novoLanc.id,
             }]);
           }
