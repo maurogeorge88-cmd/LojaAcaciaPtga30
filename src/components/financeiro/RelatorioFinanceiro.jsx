@@ -10,36 +10,33 @@ const MESES_ABREV = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out'
 
 const parseData = (dataStr) => dataStr ? new Date(dataStr + 'T00:00:00') : null;
 
-// ─── Classificação de lançamentos ──────────────────────────────────────────────
+// ─── Classificação — lógica IDÊNTICA ao FinancasLoja ──────────────────────────
 const classificar = (l) => {
+  if (l.status !== 'pago') return null;
+
   const nomeCat = l.cat_nome?.toLowerCase() || '';
   const isTronco = nomeCat.includes('tronco');
   const isDinheiro = l.tipo_pagamento === 'dinheiro';
   const isCompensacao = l.tipo_pagamento === 'compensacao';
   const isTransfInterna = l.eh_transferencia_interna === true;
 
-  // Ignorar sempre
-  if (l.status !== 'pago') return null;
   if (isCompensacao) return null;
-  if (l.cat_tipo === 'despesa') {
-    if (nomeCat.includes('despesas pagas pelo irmão') || nomeCat.includes('despesa paga pelo irmão')) return null;
-  }
 
   if (l.cat_tipo === 'receita') {
-    // Tronco em dinheiro → caixa físico
-    if (isTronco && isDinheiro) return { grupo: 'caixa_receita' };
-    // Depósito de tronco (transferência interna receita tronco) → bancário
+    // Depósito de tronco (transf. interna + tronco) → banco
     if (isTronco && isTransfInterna) return { grupo: 'banco_receita' };
-    // Depósito (sangria depositada) → bancário
+    // Tronco em dinheiro → NÃO conta (nem banco nem caixa)
+    if (isTronco && isDinheiro) return null;
+    // Depósito normal (sangria depositada) → banco
     if (isTransfInterna) return { grupo: 'banco_deposito' };
     // Receita em dinheiro → caixa físico
     if (isDinheiro) return { grupo: 'caixa_receita' };
-    // Receita bancária
+    // Receita bancária (pix, transf., cartão)
     return { grupo: 'banco_receita' };
   }
 
   if (l.cat_tipo === 'despesa') {
-    // Sangria (transferência interna despesa) → reduz caixa, aumenta banco
+    // Sangria (transf. interna despesa) → sai do caixa físico
     if (isTransfInterna) return { grupo: 'sangria' };
     // Despesa em dinheiro → caixa físico
     if (isDinheiro) return { grupo: 'caixa_despesa' };
@@ -50,46 +47,57 @@ const classificar = (l) => {
   return null;
 };
 
-// ─── Saldo acumulado ANTES de um período ───────────────────────────────────────
+// ─── Saldo ANTES do período — idêntico ao calcularSaldoAnterior do FinancasLoja
 const calcularSaldoAnterior = (lancamentos, periodo) => {
-  let dataLimite;
-  if (periodo.mes > 0) {
-    dataLimite = new Date(periodo.ano, periodo.mes - 1, 1); // 1º dia do mês
-  } else {
-    dataLimite = new Date(periodo.ano, 0, 1); // 1º jan do ano
-  }
+  const dataLimite = periodo.mes > 0
+    ? `${periodo.ano}-${String(periodo.mes).padStart(2,'0')}-01`
+    : `${periodo.ano}-01-01`;
 
-  const anteriores = lancamentos.filter(l => {
-    const d = parseData(l.data_pagamento);
-    if (!d) return false;
-    return d < dataLimite;
-  });
+  const ant = lancamentos.filter(l => l.status === 'pago' && l.data_pagamento && l.data_pagamento < dataLimite);
 
-  let bancario = 0;
-  let caixa = 0;
+  // BANCO: mesma lógica do FinancasLoja calcularSaldoAnterior
+  const recBanco = ant
+    .filter(l => l.cat_tipo === 'receita' && l.tipo_pagamento !== 'compensacao' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna)
+    .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-  anteriores.forEach(l => {
-    const cl = classificar(l);
-    if (!cl) return;
-    if (cl.grupo === 'banco_receita') bancario += parseFloat(l.valor);
-    if (cl.grupo === 'banco_deposito') bancario += parseFloat(l.valor);
-    if (cl.grupo === 'banco_despesa') bancario -= parseFloat(l.valor);
-    if (cl.grupo === 'sangria') { bancario += parseFloat(l.valor); caixa -= parseFloat(l.valor); }
-    if (cl.grupo === 'caixa_receita') caixa += parseFloat(l.valor);
-    if (cl.grupo === 'caixa_despesa') caixa -= parseFloat(l.valor);
-  });
+  const depositos = ant
+    .filter(l => l.cat_tipo === 'receita' && l.eh_transferencia_interna === true)
+    .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+  const despBanco = ant
+    .filter(l => l.cat_tipo === 'despesa' && l.tipo_pagamento !== 'compensacao' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna)
+    .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+  const bancario = recBanco + depositos - despBanco;
+
+  // CAIXA: mesma lógica do calcularCaixaFisicoTotal do FinancasLoja
+  const recCaixa = ant
+    .filter(l => l.cat_tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna && !l.cat_nome?.toLowerCase().includes('tronco'))
+    .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+  const sangrias = ant
+    .filter(l => l.cat_tipo === 'despesa' && l.eh_transferencia_interna === true && !l.cat_nome?.toLowerCase().includes('tronco'))
+    .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+  const despCaixa = ant
+    .filter(l => l.cat_tipo === 'despesa' && l.tipo_pagamento === 'dinheiro' && l.eh_transferencia_interna === false && !l.cat_nome?.toLowerCase().includes('tronco'))
+    .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+  const caixa = recCaixa - sangrias - despCaixa;
 
   return { bancario, caixa };
 };
 
-// ─── Filtrar lançamentos de um período ─────────────────────────────────────────
+// ─── Filtrar lançamentos de um período — usa data_pagamento (consistente com saldo anterior)
 const filtrarPeriodo = (lancamentos, periodo) => {
+  const anoStr = String(periodo.ano);
+  const mesStr = periodo.mes > 0 ? String(periodo.mes).padStart(2,'0') : null;
   return lancamentos.filter(l => {
     if (l.status !== 'pago') return false;
-    const d = parseData(l.data_pagamento || l.data_vencimento);
-    if (!d) return false;
-    if (d.getFullYear() !== periodo.ano) return false;
-    if (periodo.mes > 0 && d.getMonth() + 1 !== periodo.mes) return false;
+    const dp = l.data_pagamento;
+    if (!dp) return false;
+    if (!dp.startsWith(anoStr + '-')) return false;
+    if (mesStr && dp.slice(5,7) !== mesStr) return false;
     return true;
   });
 };
