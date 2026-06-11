@@ -15,6 +15,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
   const [abaAtiva, setAbaAtiva] = useState('receitas');
   const [custoForm, setCustoForm] = useState({});
   const [receitaForm, setReceitaForm] = useState({});
+  const [mostrarFormReceita, setMostrarFormReceita] = useState(false);
+  const [mostrarFormCusto, setMostrarFormCusto] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [projetoForm, setProjetoForm] = useState({
@@ -120,6 +122,8 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     setCustosDoModal([]);
     setReceitaForm({});
     setCustoForm({});
+    setMostrarFormReceita(false);
+    setMostrarFormCusto(false);
   };
 
   const salvarProjeto = async (e) => {
@@ -175,6 +179,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     else {
       showSuccess('Custo adicionado com sucesso!');
       setCustoForm({});
+      setMostrarFormCusto(false);
       await carregarCustos(projetoSelecionado.id);
       await carregarProjetos();
       setRefreshKey(prev => prev + 1);
@@ -201,6 +206,7 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
     else {
       showSuccess('Receita adicionada com sucesso!');
       setReceitaForm({});
+      setMostrarFormReceita(false);
       await carregarReceitas(projetoSelecionado.id);
       await carregarProjetos();
       setRefreshKey(prev => prev + 1);
@@ -602,34 +608,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               {abaAtiva === 'receitas' && (
                 <>
                   {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                    <form onSubmit={adicionarReceita} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                      <h4 className="font-bold mb-3">➕ Adicionar Receita</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input type="date" required value={receitaForm.data_receita || ''} onChange={(e) => setReceitaForm({ ...receitaForm, data_receita: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <input type="text" required placeholder="Descrição" value={receitaForm.descricao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, descricao: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <select required value={receitaForm.origem || ''} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <option value="">Origem</option>
-                          {origensReceita.map(o => <option key={o} value={o}>{o}</option>)}
-                        </select>
-                        <input type="number" step="0.01" required placeholder="Valor" value={receitaForm.valor || ''} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <select required value={receitaForm.forma_pagamento || ''} onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <option value="">Forma Pagamento</option>
-                          {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
-                        <input type="text" placeholder="Responsável" value={receitaForm.responsavel || ''} onChange={(e) => setReceitaForm({ ...receitaForm, responsavel: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <input type="text" placeholder="Observação" value={receitaForm.observacao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
-                          className="md:col-span-2 px-3 py-2 rounded focus:ring-2 focus:ring-green-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <button type="submit" style={{padding:"0.45rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
-                          ➕ Adicionar
-                        </button>
-                      </div>
-                    </form>
+                    <div className="mb-4 flex justify-end">
+                      <button
+                        onClick={() => { setReceitaForm({}); setMostrarFormReceita(true); }}
+                        style={{padding:"0.45rem 1.2rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700",fontSize:"0.88rem"}}
+                      >
+                        ➕ Nova Receita
+                      </button>
+                    </div>
                   )}
 
                   {receitasAgrupadas.length === 0 ? (
@@ -701,34 +687,14 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
               {abaAtiva === 'custos' && (
                 <>
                   {permissoes?.canEdit && projetoSelecionado.status === 'em_andamento' && (
-                    <form onSubmit={adicionarCusto} className="rounded-lg p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-                      <h4 className="font-bold mb-3">➕ Adicionar Custo</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input type="date" required value={custoForm.data_custo || ''} onChange={(e) => setCustoForm({ ...custoForm, data_custo: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <input type="text" required placeholder="Descrição" value={custoForm.descricao || ''} onChange={(e) => setCustoForm({ ...custoForm, descricao: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <select required value={custoForm.categoria || ''} onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <option value="">Categoria</option>
-                          {categoriasCusto.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                        </select>
-                        <input type="number" step="0.01" required placeholder="Valor" value={custoForm.valor || ''} onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <select required value={custoForm.forma_pagamento || ''} onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
-                          <option value="">Forma Pagamento</option>
-                          {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
-                        </select>
-                        <input type="text" placeholder="Responsável" value={custoForm.responsavel || ''} onChange={(e) => setCustoForm({ ...custoForm, responsavel: e.target.value })}
-                          className="px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <input type="text" placeholder="Observação" value={custoForm.observacao || ''} onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
-                          className="md:col-span-2 px-3 py-2 rounded focus:ring-2 focus:ring-indigo-500" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
-                        <button type="submit" style={{padding:"0.4rem 1rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
-                          ➕ Adicionar
-                        </button>
-                      </div>
-                    </form>
+                    <div className="mb-4 flex justify-end">
+                      <button
+                        onClick={() => { setCustoForm({}); setMostrarFormCusto(true); }}
+                        style={{padding:"0.45rem 1.2rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700",fontSize:"0.88rem"}}
+                      >
+                        ➕ Novo Custo
+                      </button>
+                    </div>
                   )}
 
                   {custosAgrupados.length === 0 ? (
@@ -796,6 +762,148 @@ export default function Projetos({ showSuccess, showError, permissoes }) {
                 </>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nova Receita */}
+      {mostrarFormReceita && projetoSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[60]">
+          <div className="rounded-xl shadow-2xl w-full max-w-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div style={{background:"#10b981",padding:"1rem 1.5rem",borderRadius:"0.75rem 0.75rem 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <h3 className="text-lg font-bold text-white">💵 Nova Receita</h3>
+                <p style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.85)",marginTop:"0.15rem"}}>{projetoSelecionado.nome}</p>
+              </div>
+              <button onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
+            </div>
+            <form onSubmit={adicionarReceita} className="p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
+                  <input type="date" required value={receitaForm.data_receita || ''} onChange={(e) => setReceitaForm({ ...receitaForm, data_receita: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Valor (R$) *</label>
+                  <input type="number" step="0.01" required placeholder="0,00" value={receitaForm.valor || ''} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
+                <input type="text" required placeholder="Ex: Arrecadação do evento" value={receitaForm.descricao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, descricao: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Origem *</label>
+                  <select required value={receitaForm.origem || ''} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                    <option value="">Selecione...</option>
+                    {origensReceita.map(o => <option key={o} value={o}>{o}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Forma Pagamento *</label>
+                  <select required value={receitaForm.forma_pagamento || ''} onChange={(e) => setReceitaForm({ ...receitaForm, forma_pagamento: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                    <option value="">Selecione...</option>
+                    {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Responsável</label>
+                <input type="text" placeholder="Nome do responsável" value={receitaForm.responsavel || ''} onChange={(e) => setReceitaForm({ ...receitaForm, responsavel: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Observação</label>
+                <input type="text" placeholder="Observação opcional" value={receitaForm.observacao || ''} onChange={(e) => setReceitaForm({ ...receitaForm, observacao: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" style={{flex:1,padding:"0.6rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
+                  💾 Salvar Receita
+                </button>
+                <button type="button" onClick={() => { setMostrarFormReceita(false); setReceitaForm({}); }}
+                  style={{padding:"0.6rem 1.2rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Novo Custo */}
+      {mostrarFormCusto && projetoSelecionado && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[60]">
+          <div className="rounded-xl shadow-2xl w-full max-w-lg" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div style={{background:"var(--color-accent)",padding:"1rem 1.5rem",borderRadius:"0.75rem 0.75rem 0 0",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+              <div>
+                <h3 className="text-lg font-bold text-white">💸 Novo Custo</h3>
+                <p style={{fontSize:"0.78rem",color:"rgba(255,255,255,0.85)",marginTop:"0.15rem"}}>{projetoSelecionado.nome}</p>
+              </div>
+              <button onClick={() => { setMostrarFormCusto(false); setCustoForm({}); }} className="text-white hover:opacity-80 text-3xl leading-none">×</button>
+            </div>
+            <form onSubmit={adicionarCusto} className="p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Data *</label>
+                  <input type="date" required value={custoForm.data_custo || ''} onChange={(e) => setCustoForm({ ...custoForm, data_custo: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Valor (R$) *</label>
+                  <input type="number" step="0.01" required placeholder="0,00" value={custoForm.valor || ''} onChange={(e) => setCustoForm({ ...custoForm, valor: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Descrição *</label>
+                <input type="text" required placeholder="Ex: Compra de materiais" value={custoForm.descricao || ''} onChange={(e) => setCustoForm({ ...custoForm, descricao: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Categoria *</label>
+                  <select required value={custoForm.categoria || ''} onChange={(e) => setCustoForm({ ...custoForm, categoria: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                    <option value="">Selecione...</option>
+                    {categoriasCusto.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Forma Pagamento *</label>
+                  <select required value={custoForm.forma_pagamento || ''} onChange={(e) => setCustoForm({ ...custoForm, forma_pagamento: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}}>
+                    <option value="">Selecione...</option>
+                    {formasPagamento.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Responsável</label>
+                <input type="text" placeholder="Nome do responsável" value={custoForm.responsavel || ''} onChange={(e) => setCustoForm({ ...custoForm, responsavel: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold mb-1" style={{color:"var(--color-text-muted)"}}>Observação</label>
+                <input type="text" placeholder="Observação opcional" value={custoForm.observacao || ''} onChange={(e) => setCustoForm({ ...custoForm, observacao: e.target.value })}
+                  className="w-full px-3 py-2 rounded-lg" style={{border:"1px solid var(--color-border)",background:"var(--color-surface-2)",color:"var(--color-text)"}} />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" style={{flex:1,padding:"0.6rem",background:"var(--color-accent)",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"700"}}>
+                  💾 Salvar Custo
+                </button>
+                <button type="button" onClick={() => { setMostrarFormCusto(false); setCustoForm({}); }}
+                  style={{padding:"0.6rem 1.2rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",cursor:"pointer",fontWeight:"600"}}>
+                  Cancelar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
