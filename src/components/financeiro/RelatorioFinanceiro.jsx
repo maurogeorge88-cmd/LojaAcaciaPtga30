@@ -446,23 +446,27 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
     </div>
   );
 
-  const PainelCategoria = ({ grupos, total, tipo, labelComp }) => {
+  const PainelCategoria = ({ grupos, totalBanco, totalCaixa, tipo, labelComp }) => {
     const cor = tipo === 'receita' ? '#10b981' : '#ef4444';
     const emoji = tipo === 'receita' ? '💵' : '💸';
     const titulo = tipo === 'receita' ? 'Receitas' : 'Despesas';
+    const totalGeral = totalBanco + totalCaixa;
     return (
       <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
         <div style={{padding:'0.75rem 1rem', borderBottom:'1px solid var(--color-border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
           <span style={{fontWeight:'800', fontSize:'0.95rem', color:'var(--color-text)'}}>{emoji} {titulo}</span>
           <div style={{textAlign:'right'}}>
-            <div style={{fontSize:'1.05rem', fontWeight:'800', color: cor}}>{formatarMoeda(total)}</div>
+            <div style={{fontSize:'1.05rem', fontWeight:'800', color: cor}}>{formatarMoeda(totalGeral)}</div>
+            <div style={{fontSize:'0.68rem', color:'var(--color-text-muted)'}}>
+              🏦 {formatarMoeda(totalBanco)} · 💵 {formatarMoeda(totalCaixa)}
+            </div>
             {labelComp && <div style={{fontSize:'0.7rem', color:'var(--color-text-muted)'}}>{labelComp}</div>}
           </div>
         </div>
         <div style={{padding:'0.75rem'}}>
           {grupos.length === 0
             ? <p style={{textAlign:'center', color:'var(--color-text-muted)', fontSize:'0.82rem', padding:'1rem 0'}}>Nenhum lançamento no período</p>
-            : grupos.map(g => <GrupoCategoria key={g.id} grupo={g} total={total} cor={cor} />)
+            : grupos.map(g => <GrupoCategoria key={g.id} grupo={g} total={totalGeral} cor={cor} />)
           }
         </div>
       </div>
@@ -528,16 +532,16 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
           {/* ABA RECEITAS */}
           {aba === 'receitas' && (
             <div style={{display:'grid', gridTemplateColumns: mostrarComparacao ? '1fr 1fr' : '1fr', gap:'1rem'}}>
-              <PainelCategoria grupos={gruposRecA} total={dadosA.recBanco + dadosA.recCaixa} tipo="receita" labelComp={mostrarComparacao ? labelPeriodo(periodoA) : null} />
-              {mostrarComparacao && <PainelCategoria grupos={gruposRecB} total={dadosB.recBanco + dadosB.recCaixa} tipo="receita" labelComp={labelPeriodo(periodoB)} />}
+              <PainelCategoria grupos={gruposRecA} totalBanco={dadosA.recBanco} totalCaixa={dadosA.recCaixa} tipo="receita" labelComp={mostrarComparacao ? labelPeriodo(periodoA) : null} />
+              {mostrarComparacao && <PainelCategoria grupos={gruposRecB} totalBanco={dadosB.recBanco} totalCaixa={dadosB.recCaixa} tipo="receita" labelComp={labelPeriodo(periodoB)} />}
             </div>
           )}
 
           {/* ABA DESPESAS */}
           {aba === 'despesas' && (
             <div style={{display:'grid', gridTemplateColumns: mostrarComparacao ? '1fr 1fr' : '1fr', gap:'1rem'}}>
-              <PainelCategoria grupos={gruposDespA} total={dadosA.despBanco + dadosA.despCaixa} tipo="despesa" labelComp={mostrarComparacao ? labelPeriodo(periodoA) : null} />
-              {mostrarComparacao && <PainelCategoria grupos={gruposDespB} total={dadosB.despBanco + dadosB.despCaixa} tipo="despesa" labelComp={labelPeriodo(periodoB)} />}
+              <PainelCategoria grupos={gruposDespA} totalBanco={dadosA.despBanco} totalCaixa={dadosA.despCaixa} tipo="despesa" labelComp={mostrarComparacao ? labelPeriodo(periodoA) : null} />
+              {mostrarComparacao && <PainelCategoria grupos={gruposDespB} totalBanco={dadosB.despBanco} totalCaixa={dadosB.despCaixa} tipo="despesa" labelComp={labelPeriodo(periodoB)} />}
             </div>
           )}
 
