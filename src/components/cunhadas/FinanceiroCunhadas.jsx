@@ -1066,8 +1066,7 @@ export const FinanceiroCunhadas=({userData})=>{
                   </th>
                   {colsMatrix.map(col=>(
                     <th key={`${col.ano}-${col.mes}`}
-                      style={{padding:'0.6rem 0.5rem',textAlign:'center',fontWeight:'700',color:'var(--color-text)',borderBottom:'2px solid var(--color-border)',whiteSpace:'nowrap',
-                        // Destacar mês atual
+                      style={{padding:'0.6rem 0.5rem',textAlign:'center',fontWeight:'700',borderBottom:'2px solid var(--color-border)',whiteSpace:'nowrap',
                         background:col.mes===mesAtual&&col.ano===anoAtual?'rgba(var(--color-primary-600),0.12)':'var(--color-surface-2)',
                         color:col.mes===mesAtual&&col.ano===anoAtual?'var(--color-accent)':'var(--color-text)',
                       }}>
