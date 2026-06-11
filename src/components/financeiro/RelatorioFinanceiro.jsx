@@ -342,12 +342,8 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
         recCaixa: dmMes.recCaixa,
         despBanco: dmMes.despBanco,
         despCaixa: dmMes.despCaixa,
-        // Saldo banco = cumulativo até este mês (correto para extrato)
+        // Saldo banco = cumulativo até este mês
         saldoBancario: dmAte.saldoBancario,
-        // Saldo caixa = sempre o histórico completo (igual ao FinancasLoja)
-        saldoCaixa: caixaFisicoHistorico,
-        // Saldo total = banco cumulativo + caixa histórico
-        saldoTotal: dmAte.saldoBancario + caixaFisicoHistorico,
       };
     });
   }, [lancamentos, periodoA, saldoAntA, caixaFisicoHistorico]);
@@ -621,7 +617,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                   </thead>
                   <tbody>
                     {dadosMensais.map((m, idx) => {
-                      const temDados = m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0;
+                      const temDados = m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0 || m.saldoBancario !== 0;
                       return (
                         <tr key={idx} style={{borderTop:'1px solid var(--color-border)', background: temDados ? 'transparent' : 'var(--color-surface-2)', opacity: temDados ? 1 : 0.45}}>
                           <td style={{padding:'0.5rem 0.6rem', fontWeight:'700', fontSize:'0.82rem', color:'var(--color-text)'}}>{m.mes}</td>
@@ -630,8 +626,6 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                           <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.78rem', color:'#ef4444', fontWeight:'600'}}>{temDados ? formatarMoeda(m.despBanco) : '—'}</td>
                           <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.78rem', color:'#ef4444', fontWeight:'600'}}>{temDados ? formatarMoeda(m.despCaixa) : '—'}</td>
                           <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.8rem', fontWeight:'700', color: m.saldoBancario >= 0 ? '#3b82f6' : '#ef4444'}}>{temDados ? formatarMoeda(m.saldoBancario) : '—'}</td>
-                          <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.8rem', fontWeight:'700', color: m.saldoCaixa >= 0 ? '#f59e0b' : '#ef4444'}}>{temDados ? formatarMoeda(m.saldoCaixa) : '—'}</td>
-                          <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.82rem', fontWeight:'800', color: m.saldoTotal >= 0 ? '#10b981' : '#ef4444'}}>{temDados ? formatarMoeda(m.saldoTotal) : '—'}</td>
                           <td style={{padding:'0.5rem 0.6rem', minWidth:'100px'}}>
                             {temDados && (
                               <div style={{display:'flex', flexDirection:'column', gap:'2px'}}>
@@ -649,7 +643,12 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                       <td style={{padding:'0.6rem', textAlign:'right', fontWeight:'800', fontSize:'0.82rem', color:'#10b981'}}>{formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recCaixa,0))}</td>
                       <td style={{padding:'0.6rem', textAlign:'right', fontWeight:'800', fontSize:'0.82rem', color:'#ef4444'}}>{formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despBanco,0))}</td>
                       <td style={{padding:'0.6rem', textAlign:'right', fontWeight:'800', fontSize:'0.82rem', color:'#ef4444'}}>{formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despCaixa,0))}</td>
-                      <td colSpan="4" />
+                      <td style={{padding:'0.6rem', textAlign:'right', fontWeight:'800', fontSize:'0.9rem', color:'#3b82f6'}}>
+                        {formatarMoeda(dadosA.saldoBancario)}
+                      </td>
+                      <td style={{padding:'0.6rem', textAlign:'right', fontWeight:'800', fontSize:'0.82rem', color:'var(--color-text-muted)', whiteSpace:'nowrap'}}>
+                        + caixa {formatarMoeda(caixaFisicoHistorico)} = <span style={{color:'#10b981'}}>{formatarMoeda(dadosA.saldoBancario + caixaFisicoHistorico)}</span>
+                      </td>
                     </tr>
                   </tbody>
                 </table>
