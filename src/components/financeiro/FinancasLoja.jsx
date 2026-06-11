@@ -637,6 +637,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         projeto_id: dados.projeto_id ? parseInt(dados.projeto_id) : null,
       };
 
+      // Buscar projeto anterior ANTES de qualquer operação
+      let projetoAnterior = null;
+      if (editando) {
+        const { data: lancAnterior } = await supabase
+          .from('lancamentos_loja')
+          .select('projeto_id')
+          .eq('id', editando)
+          .single();
+        projetoAnterior = lancAnterior?.projeto_id || null;
+      }
+
       if (editando) {
         const { error } = await supabase
           .from('lancamentos_loja')
@@ -645,23 +656,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         if (error) throw error;
 
-        // Gerenciar vínculo com projeto (edição)
-        // Verificar se o lançamento tinha projeto antes
-        const { data: lancAnterior } = await supabase
-          .from('lancamentos_loja')
-          .select('projeto_id')
-          .eq('id', editando)
-          .single();
-        const projetoAnterior = lancAnterior?.projeto_id;
-
-        // Só mexer em receitas_projeto/custos_projeto se há projeto envolvido
+        // Gerenciar vínculo com projeto
         if (projetoAnterior || dados.projeto_id) {
-          // Remover vínculos anteriores se havia projeto
           if (projetoAnterior) {
             await supabase.from('receitas_projeto').delete().eq('lancamento_id', editando);
             await supabase.from('custos_projeto').delete().eq('lancamento_id', editando);
           }
-          // Criar novo vínculo se projeto selecionado
           if (dados.projeto_id) {
             const irmaoNome = dados.origem_irmao_id
               ? (irmaos?.find(i => i.id === parseInt(dados.origem_irmao_id))?.nome || '')
