@@ -19,9 +19,9 @@ import {
   gerarRelatorioIndividual,
   gerarRelatorioDeTodos
 } from './utils/pdfFinancas';
-import ModalParcelamento from './components/ModalParcelamento';
-import ModalPagamentoParcial from './components/ModalPagamentoParcial';
-import ModalCompensacao from './components/ModalCompensacao';
+import ModalParcelamento from './ModalParcelamento';
+import ModalPagamentoParcial from './ModalPagamentoParcial';
+import ModalCompensacao from './ModalCompensacao';
 import FinancasLojaTV from './FinancasLojaTV';
 
 // 💰 COMPONENTE: Finanças da Loja
