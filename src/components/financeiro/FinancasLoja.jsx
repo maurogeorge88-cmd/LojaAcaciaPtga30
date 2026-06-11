@@ -3,6 +3,7 @@ import { supabase } from '../../supabaseClient';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
 import AnaliseCategoriasModal from './AnaliseCategoriasModal';
+import RelatorioFinanceiro from './RelatorioFinanceiro';
 import { 
   verificarVencido,
   filtrarIrmaosPorStatus,
@@ -93,6 +94,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [limiteRegistros, setLimiteRegistros] = useState(20); // Limite de registros exibidos
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
   const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
+  const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
   const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
@@ -2041,6 +2043,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>📊 Análise</span>
           <span>Categorias</span>
         </button>
+        <button
+          onClick={() => setModalRelatorioAberto(true)}
+          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"#7c3aed"}}
+        >
+          <span>📋 Relatório</span>
+          <span>Financeiro</span>
+        </button>
         
         {/* Botão Ocultar/Mostrar Valores */}
         <button
@@ -3568,6 +3577,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       <AnaliseCategoriasModal 
         isOpen={modalAnaliseAberto}
         onClose={() => setModalAnaliseAberto(false)}
+        showError={showError}
+      />
+
+      <RelatorioFinanceiro
+        isOpen={modalRelatorioAberto}
+        onClose={() => setModalRelatorioAberto(false)}
         showError={showError}
       />
 
