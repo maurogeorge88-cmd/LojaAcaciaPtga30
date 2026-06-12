@@ -3568,6 +3568,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         isOpen={modalRelatorioAberto}
         onClose={() => setModalRelatorioAberto(false)}
         showError={showError}
+        showSuccess={showSuccess}
       />
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
