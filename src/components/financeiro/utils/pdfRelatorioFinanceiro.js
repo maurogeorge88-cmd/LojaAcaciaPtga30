@@ -437,6 +437,43 @@ export const gerarPDFRelatorioFinanceiro = async ({
       rodape();
     }
 
+    // ─── Última página: rodapé do sistema ─────────────────────────────────
+    doc.setPage(totalPages);
+    const yFinal = 278;
+
+    // Linha separadora
+    doc.setDrawColor(200, 200, 210);
+    doc.setLineWidth(0.3);
+    doc.line(margin, yFinal, colRight, yFinal);
+
+    // Texto do sistema — lado esquerdo
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(79, 70, 229); // cor accent
+    doc.text('SysMacom-MG', margin, yFinal + 4);
+
+    // Texto desenvolvedor — continuação
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 120);
+    doc.text('  Sistema de Gestao para Lojas Maconicas', margin + 22, yFinal + 4);
+
+    // Desenvolvedor — centro
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(7);
+    doc.setTextColor(120, 120, 140);
+    doc.text('Desenvolvido por Mauro George', W / 2, yFinal + 4, { align: 'center' });
+
+    // Data/hora — direita
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    doc.setTextColor(120, 120, 140);
+    const agora = new Date();
+    const dataHora = `${agora.toLocaleDateString('pt-BR')} as ${agora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    doc.text(`Emitido em ${dataHora}`, colRight, yFinal + 4, { align: 'right' });
+
+    doc.setTextColor(0);
+
     // ─── Salvar ───────────────────────────────────────────────────────────
     const periodo = periodoA.ano === 0 ? 'historico' :
       periodoA.mes > 0 ? `${String(periodoA.mes).padStart(2,'0')}-${periodoA.ano}` : `${periodoA.ano}`;
