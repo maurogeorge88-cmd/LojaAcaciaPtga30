@@ -33,6 +33,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
   gruposReceitas,
   gruposDespesas,
   dadosMensais,
+  pendentes,
   showError,
   showSuccess,
 }) => {
@@ -336,6 +337,97 @@ export const gerarPDFRelatorioFinanceiro = async ({
       txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despCaixa,0)), cols.despC, y + 5, { bold: true, size: 7.5, color: COR_VERM });
       txt(formatarMoeda(dadosA.saldoBancario), cols.saldoB, y + 5, { bold: true, size: 8, color: COR_AZUL });
       y += 10;
+    }
+
+    // ─── 6. PENDÊNCIAS ───────────────────────────────────────────────────────
+    if (pendentes && (pendentes.receitas?.length > 0 || pendentes.despesas?.length > 0)) {
+      novaPageSeNecessario(20);
+      const totalRecPend  = (pendentes.receitas  || []).reduce((s,l) => s + parseFloat(l.valor), 0);
+      const totalDespPend = (pendentes.despesas || []).reduce((s,l) => s + parseFloat(l.valor), 0);
+      const hoje = new Date().toISOString().split('T')[0];
+      const recVenc  = (pendentes.receitas  || []).filter(l => l.data_vencimento < hoje).reduce((s,l) => s + parseFloat(l.valor), 0);
+      const despVenc = (pendentes.despesas || []).filter(l => l.data_vencimento < hoje).reduce((s,l) => s + parseFloat(l.valor), 0);
+      const saldoProj = dadosA.saldoBancario + caixaFisicoHistorico + totalRecPend - totalDespPend;
+
+      rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+      txt('6. PENDENCIAS', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+      y += 9;
+
+      // Cards resumo
+      const bw3 = (colRight - margin - 4) / 3;
+      [
+        { label: 'A Receber', valor: totalRecPend, venc: recVenc, cor: COR_VERDE },
+        { label: 'A Pagar',   valor: totalDespPend, venc: despVenc, cor: COR_VERM },
+        { label: 'Saldo Projetado', valor: saldoProj, venc: null, cor: saldoProj >= 0 ? [139,92,246] : COR_VERM },
+      ].forEach((b, i) => {
+        const bx = margin + i * (bw3 + 2);
+        rect(bx, y, bw3, 18, COR_FUNDO, 2);
+        doc.setDrawColor(...b.cor); doc.setLineWidth(0.4); doc.rect(bx, y, bw3, 18, 'S');
+        txt(b.label, bx + bw3/2, y + 5, { size: 7.5, color: COR_CINZA, align: 'center' });
+        txt(formatarMoeda(b.valor), bx + bw3/2, y + 10.5, { bold: true, size: 9, color: b.cor, align: 'center' });
+        if (b.venc !== null && b.venc > 0) txt(`Vencido: ${formatarMoeda(b.venc)}`, bx + bw3/2, y + 15, { size: 6.5, color: COR_VERM, align: 'center' });
+      });
+      y += 22;
+
+      // Tabela receitas pendentes
+      if (pendentes.receitas?.length > 0) {
+        novaPageSeNecessario(15);
+        rect(margin, y, colRight - margin, 5, [209, 250, 229], 1);
+        txt('Receitas a Receber por Categoria', margin + 2, y + 3.5, { bold: true, size: 8, color: [4, 120, 87] });
+        y += 7;
+
+        const gruposRecPend = {};
+        pendentes.receitas.forEach(l => {
+          const k = l.cat_nome || 'Sem categoria';
+          if (!gruposRecPend[k]) gruposRecPend[k] = { valor: 0, vencido: 0 };
+          gruposRecPend[k].valor += parseFloat(l.valor);
+          if (l.data_vencimento < hoje) gruposRecPend[k].vencido += parseFloat(l.valor);
+        });
+
+        Object.entries(gruposRecPend).sort((a,b) => b[1].valor - a[1].valor).forEach(([nome, g], i) => {
+          novaPageSeNecessario(6);
+          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
+          txt(nome, margin + 3, y + 3, { size: 8 });
+          if (g.vencido > 0) txt(`Vencido: ${formatarMoeda(g.vencido)}`, margin + 90, y + 3, { size: 7, color: COR_VERM });
+          txt(formatarMoeda(g.valor), colRight - 3, y + 3, { size: 8, color: COR_VERDE, bold: true, align: 'right' });
+          y += 5.5;
+        });
+        linha(y, margin, colRight, COR_VERDE);
+        y += 1;
+        txt('TOTAL A RECEBER:', margin + 3, y + 4, { bold: true, size: 8 });
+        txt(formatarMoeda(totalRecPend), colRight - 3, y + 4, { bold: true, size: 9, color: COR_VERDE, align: 'right' });
+        y += 8;
+      }
+
+      // Tabela despesas pendentes
+      if (pendentes.despesas?.length > 0) {
+        novaPageSeNecessario(15);
+        rect(margin, y, colRight - margin, 5, [254, 226, 226], 1);
+        txt('Despesas a Pagar por Categoria', margin + 2, y + 3.5, { bold: true, size: 8, color: [185, 28, 28] });
+        y += 7;
+
+        const gruposDespPend = {};
+        pendentes.despesas.forEach(l => {
+          const k = l.cat_nome || 'Sem categoria';
+          if (!gruposDespPend[k]) gruposDespPend[k] = { valor: 0, vencido: 0 };
+          gruposDespPend[k].valor += parseFloat(l.valor);
+          if (l.data_vencimento < hoje) gruposDespPend[k].vencido += parseFloat(l.valor);
+        });
+
+        Object.entries(gruposDespPend).sort((a,b) => b[1].valor - a[1].valor).forEach(([nome, g], i) => {
+          novaPageSeNecessario(6);
+          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
+          txt(nome, margin + 3, y + 3, { size: 8 });
+          if (g.vencido > 0) txt(`Vencido: ${formatarMoeda(g.vencido)}`, margin + 90, y + 3, { size: 7, color: COR_VERM });
+          txt(formatarMoeda(g.valor), colRight - 3, y + 3, { size: 8, color: COR_VERM, bold: true, align: 'right' });
+          y += 5.5;
+        });
+        linha(y, margin, colRight, COR_VERM);
+        y += 1;
+        txt('TOTAL A PAGAR:', margin + 3, y + 4, { bold: true, size: 8 });
+        txt(formatarMoeda(totalDespPend), colRight - 3, y + 4, { bold: true, size: 9, color: COR_VERM, align: 'right' });
+        y += 8;
+      }
     }
 
     // ─── Rodapé em todas as páginas ───────────────────────────────────────
