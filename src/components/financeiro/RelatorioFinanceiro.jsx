@@ -46,6 +46,10 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
     let dataLimite;
     if (periodo.mes > 0) {
       dataLimite = `${periodo.ano}-${String(periodo.mes).padStart(2,'0')}-01`;
+    } else if (periodo.mes === -1) {
+      dataLimite = `${periodo.ano}-01-01`; // 1º semestre: anterior = antes do ano
+    } else if (periodo.mes === -2) {
+      dataLimite = `${periodo.ano}-07-01`; // 2º semestre: anterior = antes de julho
     } else {
       dataLimite = `${periodo.ano}-01-01`;
     }
@@ -187,16 +191,17 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
   // ─── Filtrar por período — usa data_pagamento (consistente com saldo anterior) ─
   const filtrarPeriodo = (periodo) => {
     if (periodo.ano === 0) {
-      // Histórico completo — todos pagos com data_pagamento
       return lancamentos.filter(l => l.status === 'pago' && l.data_pagamento);
     }
     const anoStr = String(periodo.ano);
-    const mesStr = periodo.mes > 0 ? String(periodo.mes).padStart(2,'0') : null;
     return lancamentos.filter(l => {
       if (l.status !== 'pago' || !l.data_pagamento) return false;
       if (!l.data_pagamento.startsWith(anoStr + '-')) return false;
-      if (mesStr && l.data_pagamento.slice(5,7) !== mesStr) return false;
-      return true;
+      const mesNum = parseInt(l.data_pagamento.slice(5,7));
+      if (periodo.mes === -1) return mesNum >= 1 && mesNum <= 6;  // 1º semestre
+      if (periodo.mes === -2) return mesNum >= 7 && mesNum <= 12; // 2º semestre
+      if (periodo.mes > 0) return mesNum === periodo.mes;
+      return true; // ano inteiro
     });
   };
 
@@ -323,30 +328,33 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
       l.status === 'pago' && l.data_pagamento?.startsWith(anoStr + '-')
     );
 
-    return MESES.map((_, idx) => {
-      const mes = idx + 1;
+    // Definir range de meses conforme tipo de período
+    const mesInicio = periodoA.mes === -2 ? 7 : 1;
+    const mesFim    = periodoA.mes === -1 ? 6 : 12;
+
+    return MESES.slice(mesInicio - 1, mesFim).map((_, i) => {
+      const mes = mesInicio + i;
       const mesStr = String(mes).padStart(2,'0');
-      // Lançamentos só deste mês
+
       const lancsDoMes = todosPeriodo.filter(l => l.data_pagamento?.slice(5,7) === mesStr);
-      // Lançamentos acumulados até este mês (para saldo banco cumulativo)
-      const lancsAte = todosPeriodo.filter(l => parseInt(l.data_pagamento?.slice(5,7) || 0) <= mes);
+      // Acumulado desde o início do período (jan ou jul) até este mês
+      const lancsAte = todosPeriodo.filter(l => {
+        const m = parseInt(l.data_pagamento?.slice(5,7) || 0);
+        return m >= mesInicio && m <= mes;
+      });
 
-      // Calcular saldo bancário acumulado até este mês
       const dmAte = calcularPeriodo(lancsAte, saldoAntA);
-
-      // Receitas e despesas só do mês
       const dmMes = calcularPeriodo(lancsDoMes, { bancario: 0, caixa: 0 });
 
       const mesAtualNum = new Date().getFullYear() === periodoA.ano ? new Date().getMonth() + 1 : 12;
       const mesJaOcorreu = mes <= mesAtualNum;
 
       return {
-        mes: MESES_ABREV[idx],
+        mes: MESES_ABREV[mes - 1],
         recBanco: dmMes.recBanco,
         recCaixa: dmMes.recCaixa,
         despBanco: dmMes.despBanco,
         despCaixa: dmMes.despCaixa,
-        // Saldo banco cumulativo — só exibir se o mês já ocorreu
         saldoBancario: mesJaOcorreu ? dmAte.saldoBancario : null,
         mesJaOcorreu,
       };
@@ -357,7 +365,13 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
 
   if (!isOpen) return null;
 
-  const labelPeriodo = (p) => p.ano === 0 ? '📊 Histórico Completo' : p.mes > 0 ? `${MESES[p.mes-1]} ${p.ano}` : `Ano ${p.ano}`;
+  const labelPeriodo = (p) => {
+    if (p.ano === 0) return 'Historico Completo';
+    if (p.mes === -1) return `1o Semestre ${p.ano}`;
+    if (p.mes === -2) return `2o Semestre ${p.ano}`;
+    if (p.mes > 0) return `${MESES[p.mes-1]} ${p.ano}`;
+    return `Ano ${p.ano}`;
+  };
 
   // ─── Sub-componentes ─────────────────────────────────────────────────────────
   const SeletorPeriodo = ({ periodo, onChange, label }) => (
@@ -366,9 +380,11 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
       <select value={periodo.mes} onChange={e => onChange({ ...periodo, mes: parseInt(e.target.value) })} style={sSelect}
         disabled={periodo.ano === 0}>
         <option value={0}>Ano inteiro</option>
+        <option value={-1}>1º Semestre (Jan-Jun)</option>
+        <option value={-2}>2º Semestre (Jul-Dez)</option>
         {MESES.map((m,i) => <option key={i} value={i+1}>{m}</option>)}
       </select>
-      <select value={periodo.ano} onChange={e => onChange({ ...periodo, ano: parseInt(e.target.value), mes: 0 })} style={sSelect}>
+      <select value={periodo.ano} onChange={e => { const a = parseInt(e.target.value); onChange({ ...periodo, ano: a, mes: a === 0 ? 0 : periodo.mes }); }} style={sSelect}>
         <option value={0}>📊 Histórico completo</option>
         {anosDisponiveis.map(a => <option key={a} value={a}>{a}</option>)}
       </select>
@@ -621,7 +637,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
           {aba === 'mensal' && periodoA.ano > 0 && (
             <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
               <div style={{padding:'0.75rem 1rem', borderBottom:'1px solid var(--color-border)', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                <span style={{fontWeight:'800', fontSize:'0.95rem', color:'var(--color-text)'}}>📅 Evolução Mensal — {periodoA.ano}</span>
+                <span style={{fontWeight:'800', fontSize:'0.95rem', color:'var(--color-text)'}}>{periodoA.mes === -1 ? '📅 Evolucao - 1o Semestre' : periodoA.mes === -2 ? '📅 Evolucao - 2o Semestre' : '📅 Evolucao Mensal'} — {periodoA.ano}</span>
                 <div style={{display:'flex', gap:'1rem', fontSize:'0.72rem'}}>
                   <span style={{color:'#10b981', fontWeight:'700'}}>■ Receitas</span>
                   <span style={{color:'#ef4444', fontWeight:'700'}}>■ Despesas</span>
