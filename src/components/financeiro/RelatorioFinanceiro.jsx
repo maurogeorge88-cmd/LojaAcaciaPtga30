@@ -536,6 +536,18 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
           style={{padding:'0.3rem 0.9rem', background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'600'}}>
           ← Voltar
         </button>
+      </div>
+
+      {/* Barra filtros */}
+      <div style={{position:'sticky', top:'44px', zIndex:10, background:'var(--color-surface)', borderBottom:'1px solid var(--color-border)', padding:'0.5rem 1.25rem', display:'flex', alignItems:'center', gap:'0.75rem', flexWrap:'wrap'}}>
+        <SeletorPeriodo periodo={periodoA} onChange={async (p) => { setPeriodoA(p); const s = await buscarSaldoAnterior(p); setSaldoAntA(s); }} label="Período:" />
+        <button onClick={() => setMostrarComparacao(!mostrarComparacao)}
+          style={{padding:'0.3rem 0.75rem', background: mostrarComparacao ? 'var(--color-accent)' : 'var(--color-surface-2)', color: mostrarComparacao ? '#fff' : 'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.78rem', fontWeight:'700'}}>
+          {mostrarComparacao ? '✕ Comparação' : '⚖️ Comparar período'}
+        </button>
+        {mostrarComparacao && (
+          <SeletorPeriodo periodo={periodoB} onChange={async (p) => { setPeriodoB(p); const s = await buscarSaldoAnterior(p); setSaldoAntB(s); }} label="vs:" />
+        )}
         <button
           onClick={() => gerarPDFRelatorioFinanceiro({
             supabase,
@@ -550,21 +562,9 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
             showError,
             showSuccess,
           })}
-          style={{padding:'0.3rem 0.9rem', background:'rgba(255,255,255,0.9)', color:'var(--color-accent)', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'700'}}>
-          ⬇ Gerar PDF
+          style={{padding:'0.3rem 0.9rem', background:'var(--color-accent)', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.78rem', fontWeight:'700', marginLeft:'auto'}}>
+          📄 Gerar PDF
         </button>
-      </div>
-
-      {/* Barra filtros */}
-      <div style={{position:'sticky', top:'44px', zIndex:10, background:'var(--color-surface)', borderBottom:'1px solid var(--color-border)', padding:'0.5rem 1.25rem', display:'flex', alignItems:'center', gap:'0.75rem', flexWrap:'wrap'}}>
-        <SeletorPeriodo periodo={periodoA} onChange={async (p) => { setPeriodoA(p); const s = await buscarSaldoAnterior(p); setSaldoAntA(s); }} label="Período:" />
-        <button onClick={() => setMostrarComparacao(!mostrarComparacao)}
-          style={{padding:'0.3rem 0.75rem', background: mostrarComparacao ? 'var(--color-accent)' : 'var(--color-surface-2)', color: mostrarComparacao ? '#fff' : 'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.78rem', fontWeight:'700'}}>
-          {mostrarComparacao ? '✕ Comparação' : '⚖️ Comparar período'}
-        </button>
-        {mostrarComparacao && (
-          <SeletorPeriodo periodo={periodoB} onChange={async (p) => { setPeriodoB(p); const s = await buscarSaldoAnterior(p); setSaldoAntB(s); }} label="vs:" />
-        )}
       </div>
 
       {loading ? (
