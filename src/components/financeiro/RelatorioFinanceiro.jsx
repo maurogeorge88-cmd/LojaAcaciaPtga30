@@ -336,14 +336,18 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
       // Receitas e despesas só do mês
       const dmMes = calcularPeriodo(lancsDoMes, { bancario: 0, caixa: 0 });
 
+      const mesAtualNum = new Date().getFullYear() === periodoA.ano ? new Date().getMonth() + 1 : 12;
+      const mesJaOcorreu = mes <= mesAtualNum;
+
       return {
         mes: MESES_ABREV[idx],
         recBanco: dmMes.recBanco,
         recCaixa: dmMes.recCaixa,
         despBanco: dmMes.despBanco,
         despCaixa: dmMes.despCaixa,
-        // Saldo banco = cumulativo até este mês
-        saldoBancario: dmAte.saldoBancario,
+        // Saldo banco cumulativo — só exibir se o mês já ocorreu
+        saldoBancario: mesJaOcorreu ? dmAte.saldoBancario : null,
+        mesJaOcorreu,
       };
     });
   }, [lancamentos, periodoA, saldoAntA, caixaFisicoHistorico]);
@@ -617,7 +621,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                   </thead>
                   <tbody>
                     {dadosMensais.map((m, idx) => {
-                      const temDados = m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0 || m.saldoBancario !== 0;
+                      const temDados = m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0;
                       return (
                         <tr key={idx} style={{borderTop:'1px solid var(--color-border)', background: temDados ? 'transparent' : 'var(--color-surface-2)', opacity: temDados ? 1 : 0.45}}>
                           <td style={{padding:'0.5rem 0.6rem', fontWeight:'700', fontSize:'0.82rem', color:'var(--color-text)'}}>{m.mes}</td>
@@ -625,7 +629,9 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
                           <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.78rem', color:'#10b981', fontWeight:'600'}}>{temDados ? formatarMoeda(m.recCaixa) : '—'}</td>
                           <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.78rem', color:'#ef4444', fontWeight:'600'}}>{temDados ? formatarMoeda(m.despBanco) : '—'}</td>
                           <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.78rem', color:'#ef4444', fontWeight:'600'}}>{temDados ? formatarMoeda(m.despCaixa) : '—'}</td>
-                          <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.8rem', fontWeight:'700', color: m.saldoBancario >= 0 ? '#3b82f6' : '#ef4444'}}>{temDados ? formatarMoeda(m.saldoBancario) : '—'}</td>
+                          <td style={{padding:'0.5rem 0.6rem', textAlign:'right', fontSize:'0.8rem', fontWeight:'700', color: (m.saldoBancario ?? 0) >= 0 ? '#3b82f6' : '#ef4444'}}>
+                            {m.mesJaOcorreu && m.saldoBancario !== null ? formatarMoeda(m.saldoBancario) : '—'}
+                          </td>
                           <td style={{padding:'0.5rem 0.6rem', minWidth:'100px'}}>
                             {temDados && (
                               <div style={{display:'flex', flexDirection:'column', gap:'2px'}}>
