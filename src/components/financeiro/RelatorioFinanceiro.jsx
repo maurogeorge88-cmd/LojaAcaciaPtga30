@@ -551,7 +551,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
             showSuccess,
           })}
           style={{padding:'0.3rem 0.9rem', background:'rgba(255,255,255,0.9)', color:'var(--color-accent)', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'700'}}>
-          📄 Gerar PDF
+          ⬇ Gerar PDF
         </button>
       </div>
 
