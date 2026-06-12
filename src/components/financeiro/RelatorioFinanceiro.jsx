@@ -18,7 +18,7 @@ const sSelect = {
   fontSize:'0.82rem'
 };
 
-export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
+export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSuccess }) {
   const [lancamentos, setLancamentos] = useState([]);
   const [categorias, setCategorias]   = useState([]);
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
