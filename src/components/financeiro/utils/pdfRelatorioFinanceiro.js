@@ -120,9 +120,9 @@ export const gerarPDFRelatorioFinanceiro = async ({
     // Três caixas: Banco | Caixa | Total
     const boxW = (colRight - margin - 6) / 3;
     const boxes = [
-      { label: '🏦 Saldo Bancário', valor: dadosA.saldoBancario, cor: COR_AZUL },
-      { label: '💵 Caixa Físico',   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
-      { label: '💳 Saldo Total',    valor: dadosA.saldoBancario + caixaFisicoHistorico, cor: dadosA.saldoBancario + caixaFisicoHistorico >= 0 ? COR_VERDE : COR_VERM },
+      { label: 'SALDO BANCÁRIO', valor: dadosA.saldoBancario, cor: COR_AZUL },
+      { label: 'CAIXA FÍSICO',   valor: caixaFisicoHistorico, cor: [245, 158, 11] },
+      { label: 'SALDO TOTAL',    valor: dadosA.saldoBancario + caixaFisicoHistorico, cor: dadosA.saldoBancario + caixaFisicoHistorico >= 0 ? COR_VERDE : COR_VERM },
     ];
 
     boxes.forEach((b, i) => {
@@ -144,7 +144,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
 
     // Conta Bancária
     rect(margin, y, colRight - margin, 5, [219, 234, 254], 1);
-    txt('🏦 CONTA BANCÁRIA', margin + 2, y + 3.5, { bold: true, size: 8, color: COR_AZUL });
+    txt('CONTA BANCÁRIA', margin + 2, y + 3.5, { bold: true, size: 8, color: COR_AZUL });
     y += 7;
 
     const linhasExtrato = [
@@ -171,7 +171,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     // Caixa Físico
     novaPageSeNecessario(30);
     rect(margin, y, colRight - margin, 5, [254, 243, 199], 1);
-    txt('💵 CAIXA FÍSICO (Histórico Completo)', margin + 2, y + 3.5, { bold: true, size: 8, color: [180, 120, 0] });
+    txt('CAIXA FÍSICO (Histórico Completo)', margin + 2, y + 3.5, { bold: true, size: 8, color: [180, 120, 0] });
     y += 7;
 
     [
@@ -198,7 +198,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     doc.setDrawColor(...(saldoTotal >= 0 ? COR_VERDE : COR_VERM));
     doc.setLineWidth(0.6);
     doc.rect(margin, y, colRight - margin, 9, 'S');
-    txt('💳 SALDO TOTAL (Banco + Caixa)', margin + 3, y + 5.5, { bold: true, size: 10 });
+    txt('SALDO TOTAL (Banco + Caixa)', margin + 3, y + 5.5, { bold: true, size: 10 });
     txt(formatarMoeda(saldoTotal), colRight - 3, y + 5.5, { bold: true, size: 12, color: saldoTotal >= 0 ? COR_VERDE : COR_VERM, align: 'right' });
     y += 14;
 
@@ -330,7 +330,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     const periodo = periodoA.ano === 0 ? 'historico' :
       periodoA.mes > 0 ? `${String(periodoA.mes).padStart(2,'0')}-${periodoA.ano}` : `${periodoA.ano}`;
     doc.save(`relatorio-financeiro-${periodo}.pdf`);
-    showSuccess?.('✅ PDF gerado com sucesso!');
+    showSuccess?.(' PDF gerado com sucesso!');
 
   } catch (err) {
     console.error('Erro ao gerar PDF:', err);
