@@ -33,6 +33,8 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
   // Saldos anteriores calculados via query (igual ao FinancasLoja)
   const [saldoAntA, setSaldoAntA] = useState({ bancario: 0, caixa: 0 });
   const [caixaFisicoHistorico, setCaixaFisicoHistorico] = useState(0);
+  const [pendentes, setPendentes] = useState({ receitas: [], despesas: [] });
+  const [filtrarPendentesPorPeriodo, setFiltrarPendentesPorPeriodo] = useState(false);
   const [caixaDetalhes, setCaixaDetalhes] = useState({ recDinheiro: 0, sangrias: 0, despDinheiro: 0 });
   const [saldoAntB, setSaldoAntB] = useState({ bancario: 0, caixa: 0 });
 
@@ -117,6 +119,53 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
     if (!isOpen || lancamentos.length === 0) return;
     buscarSaldoAnterior(periodoA).then(setSaldoAntA);
   }, [periodoA, isOpen, lancamentos.length]);
+
+  const buscarPendentes = async (periodo, filtrarPorPeriodo) => {
+    let query = supabase
+      .from('lancamentos_loja')
+      .select('id, descricao, valor, tipo_pagamento, data_vencimento, eh_transferencia_interna, categorias_financeiras(id, nome, tipo, categoria_pai_id, nivel)')
+      .eq('status', 'pendente')
+      .neq('tipo_pagamento', 'compensacao');
+
+    if (filtrarPorPeriodo && periodo.ano > 0) {
+      const anoStr = String(periodo.ano);
+      if (periodo.mes > 0) {
+        const mesStr = String(periodo.mes).padStart(2,'0');
+        query = query
+          .gte('data_vencimento', `${anoStr}-${mesStr}-01`)
+          .lte('data_vencimento', `${anoStr}-${mesStr}-31`);
+      } else if (periodo.mes === -1) {
+        query = query.gte('data_vencimento', `${anoStr}-01-01`).lte('data_vencimento', `${anoStr}-06-30`);
+      } else if (periodo.mes === -2) {
+        query = query.gte('data_vencimento', `${anoStr}-07-01`).lte('data_vencimento', `${anoStr}-12-31`);
+      } else {
+        query = query.gte('data_vencimento', `${anoStr}-01-01`).lte('data_vencimento', `${anoStr}-12-31`);
+      }
+    }
+
+    const { data, error } = await query.order('data_vencimento');
+    if (error) { showError?.('Erro ao buscar pendentes'); return; }
+
+    const hoje = new Date().toISOString().split('T')[0];
+    const norm = (data || []).map(l => ({
+      ...l,
+      cat_id: l.categorias_financeiras?.id,
+      cat_nome: l.categorias_financeiras?.nome,
+      cat_tipo: l.categorias_financeiras?.tipo,
+      vencido: l.data_vencimento < hoje,
+      eh_transferencia_interna: l.eh_transferencia_interna ?? false,
+    })).filter(l => !l.eh_transferencia_interna);
+
+    setPendentes({
+      receitas: norm.filter(l => l.cat_tipo === 'receita'),
+      despesas: norm.filter(l => l.cat_tipo === 'despesa'),
+    });
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    buscarPendentes(periodoA, filtrarPendentesPorPeriodo);
+  }, [isOpen, periodoA, filtrarPendentesPorPeriodo]);
 
   useEffect(() => {
     if (!isOpen || !mostrarComparacao || lancamentos.length === 0) return;
@@ -458,6 +507,111 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
     );
   };
 
+  // ── Painel de Pendências ──────────────────────────────────────────────────
+  const PainelPendentes = () => {
+    const totalRecPend = pendentes.receitas.reduce((s,l) => s + parseFloat(l.valor), 0);
+    const totalDespPend = pendentes.despesas.reduce((s,l) => s + parseFloat(l.valor), 0);
+    const saldoProjetado = dadosA.saldoBancario + caixaFisicoHistorico + totalRecPend - totalDespPend;
+
+    const recVencidas  = pendentes.receitas.filter(l => l.vencido).reduce((s,l) => s + parseFloat(l.valor), 0);
+    const despVencidas = pendentes.despesas.filter(l => l.vencido).reduce((s,l) => s + parseFloat(l.valor), 0);
+    const recAVencer   = totalRecPend - recVencidas;
+    const despAVencer  = totalDespPend - despVencidas;
+
+    // Agrupar por categoria
+    const agrupar = (lancs) => {
+      const g = {};
+      lancs.forEach(l => {
+        const k = l.cat_nome || 'Sem categoria';
+        if (!g[k]) g[k] = { nome: k, valor: 0, vencido: 0, aVencer: 0, qtd: 0 };
+        g[k].valor += parseFloat(l.valor);
+        g[k].qtd++;
+        if (l.vencido) g[k].vencido += parseFloat(l.valor);
+        else g[k].aVencer += parseFloat(l.valor);
+      });
+      return Object.values(g).sort((a,b) => b.valor - a.valor);
+    };
+
+    const gruposRec  = agrupar(pendentes.receitas);
+    const gruposDesp = agrupar(pendentes.despesas);
+
+    return (
+      <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden', marginTop:'1rem'}}>
+        {/* Header */}
+        <div style={{padding:'0.75rem 1rem', borderBottom:'1px solid var(--color-border)', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:'0.5rem'}}>
+          <div>
+            <span style={{fontWeight:'800', fontSize:'0.95rem', color:'var(--color-text)'}}>⏳ Pendências</span>
+            <span style={{fontSize:'0.72rem', color:'var(--color-text-muted)', marginLeft:'0.5rem'}}>
+              {filtrarPendentesPorPeriodo ? `Filtrado: ${labelPeriodo(periodoA)}` : 'Todo o período'}
+            </span>
+          </div>
+          <button
+            onClick={() => setFiltrarPendentesPorPeriodo(!filtrarPendentesPorPeriodo)}
+            style={{padding:'0.25rem 0.65rem', background: filtrarPendentesPorPeriodo ? 'var(--color-accent)' : 'var(--color-surface-2)', color: filtrarPendentesPorPeriodo ? '#fff' : 'var(--color-text)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.72rem', fontWeight:'700'}}>
+            {filtrarPendentesPorPeriodo ? '📊 Ver todo o período' : '📅 Filtrar por período'}
+          </button>
+        </div>
+
+        {/* Cards resumo */}
+        <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0.5rem', padding:'0.75rem'}}>
+          {[
+            { label:'💵 A Receber', valor: totalRecPend, cor:'#10b981', sub: `Vencido: ${formatarMoeda(recVencidas)} | A vencer: ${formatarMoeda(recAVencer)}` },
+            { label:'💸 A Pagar',   valor: totalDespPend, cor:'#ef4444', sub: `Vencido: ${formatarMoeda(despVencidas)} | A vencer: ${formatarMoeda(despAVencer)}` },
+            { label:'🔮 Saldo Projetado', valor: saldoProjetado, cor: saldoProjetado >= 0 ? '#8b5cf6' : '#ef4444', sub: 'Saldo atual + pendentes' },
+          ].map(c => (
+            <div key={c.label} style={{background:'var(--color-surface-2)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'0.6rem 0.75rem'}}>
+              <p style={{fontSize:'0.72rem', color:'var(--color-text-muted)', fontWeight:'600', margin:'0 0 0.25rem'}}>{c.label}</p>
+              <p style={{fontSize:'1rem', fontWeight:'800', color: c.cor, margin:'0 0 0.2rem'}}>{formatarMoeda(c.valor)}</p>
+              <p style={{fontSize:'0.62rem', color:'var(--color-text-muted)', margin:0}}>{c.sub}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Detalhes por categoria */}
+        {(gruposRec.length > 0 || gruposDesp.length > 0) && (
+          <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.75rem', padding:'0 0.75rem 0.75rem'}}>
+            {/* Receitas pendentes */}
+            <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', overflow:'hidden'}}>
+              <div style={{padding:'0.4rem 0.75rem', background:'rgba(16,185,129,0.1)', borderBottom:'1px solid var(--color-border)'}}>
+                <span style={{fontSize:'0.78rem', fontWeight:'700', color:'#10b981'}}>A Receber por Categoria</span>
+              </div>
+              {gruposRec.length === 0
+                ? <p style={{padding:'0.75rem', fontSize:'0.78rem', color:'var(--color-text-muted)', textAlign:'center'}}>Nenhuma receita pendente</p>
+                : gruposRec.map(g => (
+                  <div key={g.nome} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0.4rem 0.75rem', borderBottom:'1px solid var(--color-border)'}}>
+                    <div>
+                      <p style={{fontSize:'0.78rem', color:'var(--color-text)', margin:0, fontWeight:'600'}}>{g.nome}</p>
+                      {g.vencido > 0 && <p style={{fontSize:'0.65rem', color:'#ef4444', margin:0}}>⚠️ Vencido: {formatarMoeda(g.vencido)}</p>}
+                    </div>
+                    <span style={{fontSize:'0.82rem', fontWeight:'700', color:'#10b981'}}>{formatarMoeda(g.valor)}</span>
+                  </div>
+                ))
+              }
+            </div>
+            {/* Despesas pendentes */}
+            <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-md)', overflow:'hidden'}}>
+              <div style={{padding:'0.4rem 0.75rem', background:'rgba(239,68,68,0.1)', borderBottom:'1px solid var(--color-border)'}}>
+                <span style={{fontSize:'0.78rem', fontWeight:'700', color:'#ef4444'}}>A Pagar por Categoria</span>
+              </div>
+              {gruposDesp.length === 0
+                ? <p style={{padding:'0.75rem', fontSize:'0.78rem', color:'var(--color-text-muted)', textAlign:'center'}}>Nenhuma despesa pendente</p>
+                : gruposDesp.map(g => (
+                  <div key={g.nome} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'0.4rem 0.75rem', borderBottom:'1px solid var(--color-border)'}}>
+                    <div>
+                      <p style={{fontSize:'0.78rem', color:'var(--color-text)', margin:0, fontWeight:'600'}}>{g.nome}</p>
+                      {g.vencido > 0 && <p style={{fontSize:'0.65rem', color:'#ef4444', margin:0}}>⚠️ Vencido: {formatarMoeda(g.vencido)}</p>}
+                    </div>
+                    <span style={{fontSize:'0.82rem', fontWeight:'700', color:'#ef4444'}}>{formatarMoeda(g.valor)}</span>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const PainelExtrato = ({ dados, anterior, label, caixaHistorico, caixaDetalhes }) => (
     <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden'}}>
       {label && (
@@ -575,6 +729,7 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
             gruposReceitas: gruposRecA,
             gruposDespesas: gruposDespA,
             dadosMensais: periodoA.ano > 0 ? dadosMensais : [],
+            pendentes,
             showError,
             showSuccess,
           })}
@@ -605,10 +760,13 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError, showSu
 
           {/* ABA SALDO */}
           {aba === 'saldo' && (
-            <div style={{display:'grid', gridTemplateColumns: mostrarComparacao ? '1fr 1fr' : '1fr', gap:'1rem'}}>
-              <PainelExtrato dados={dadosA} anterior={saldoAntA} caixaHistorico={caixaFisicoHistorico} caixaDetalhes={caixaDetalhes} label={mostrarComparacao ? labelPeriodo(periodoA) : null} />
-              {mostrarComparacao && <PainelExtrato dados={dadosB} anterior={saldoAntB} caixaHistorico={caixaFisicoHistorico} caixaDetalhes={caixaDetalhes} label={labelPeriodo(periodoB)} />}
-            </div>
+            <>
+              <div style={{display:'grid', gridTemplateColumns: mostrarComparacao ? '1fr 1fr' : '1fr', gap:'1rem'}}>
+                <PainelExtrato dados={dadosA} anterior={saldoAntA} caixaHistorico={caixaFisicoHistorico} caixaDetalhes={caixaDetalhes} label={mostrarComparacao ? labelPeriodo(periodoA) : null} />
+                {mostrarComparacao && <PainelExtrato dados={dadosB} anterior={saldoAntB} caixaHistorico={caixaFisicoHistorico} caixaDetalhes={caixaDetalhes} label={labelPeriodo(periodoB)} />}
+              </div>
+              <PainelPendentes />
+            </>
           )}
 
           {/* ABA RECEITAS */}
