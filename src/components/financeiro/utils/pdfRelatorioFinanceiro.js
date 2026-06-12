@@ -12,10 +12,13 @@ const getJsPDF = async () => {
   return module.default;
 };
 
-const labelPeriodo = (periodo) =>
-  periodo.ano === 0 ? 'Histórico Completo' :
-  periodo.mes > 0 ? `${MESES[periodo.mes - 1]} ${periodo.ano}` :
-  `Ano ${periodo.ano}`;
+const labelPeriodo = (periodo) => {
+  if (periodo.ano === 0) return 'Historico Completo';
+  if (periodo.mes === -1) return `1o Semestre ${periodo.ano}`;
+  if (periodo.mes === -2) return `2o Semestre ${periodo.ano}`;
+  if (periodo.mes > 0) return `${MESES[periodo.mes - 1]} ${periodo.ano}`;
+  return `Ano ${periodo.ano}`;
+};
 
 /**
  * Gera PDF do Relatório Financeiro — Situação Financeira da Loja
