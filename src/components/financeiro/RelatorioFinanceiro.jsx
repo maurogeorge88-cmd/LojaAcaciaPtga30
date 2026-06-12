@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarMoeda } from './utils/formatadores';
+import { gerarPDFRelatorioFinanceiro } from './utils/pdfRelatorioFinanceiro';
 
 const MESES = [
   'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -534,6 +535,23 @@ export default function RelatorioFinanceiro({ isOpen, onClose, showError }) {
         <button onClick={onClose}
           style={{padding:'0.3rem 0.9rem', background:'rgba(255,255,255,0.15)', color:'#fff', border:'1px solid rgba(255,255,255,0.3)', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'600'}}>
           ← Voltar
+        </button>
+        <button
+          onClick={() => gerarPDFRelatorioFinanceiro({
+            supabase,
+            periodoA,
+            dadosA,
+            saldoAntA,
+            caixaFisicoHistorico,
+            caixaDetalhes,
+            gruposReceitas: gruposRecA,
+            gruposDespesas: gruposDespA,
+            dadosMensais: periodoA.ano > 0 ? dadosMensais : [],
+            showError,
+            showSuccess,
+          })}
+          style={{padding:'0.3rem 0.9rem', background:'rgba(255,255,255,0.9)', color:'var(--color-accent)', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'700'}}>
+          📄 Gerar PDF
         </button>
       </div>
 
