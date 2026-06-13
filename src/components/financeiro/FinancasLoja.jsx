@@ -2285,7 +2285,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
           </div>
         </div>
-        </div>{/* fim inner tronco */}
         </div>{/* fim container tronco */}
       </div>{/* fim col-span-1 Tronco */}
       </div>{/* fim grid 4 colunas */}
