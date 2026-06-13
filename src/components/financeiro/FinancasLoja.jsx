@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
-import AnaliseCategoriasModal from './AnaliseCategoriasModal';
+import RelatorioFinanceiro from './RelatorioFinanceiro';
 import { 
   verificarVencido,
   filtrarIrmaosPorStatus,
@@ -92,7 +92,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
   const [limiteRegistros, setLimiteRegistros] = useState(20); // Limite de registros exibidos
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
-  const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
+  const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
   const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
@@ -2054,11 +2054,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>dos Irmãos</span>
         </button>
         <button
-          onClick={() => setModalAnaliseAberto(true)}
-          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-accent)"}}
+          onClick={() => setModalRelatorioAberto(true)}
+          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"#7c3aed"}}
         >
-          <span>📊 Análise</span>
-          <span>Categorias</span>
+          <span>📋 Relatório</span>
+          <span>Financeiro</span>
         </button>
         
         {/* Botão Ocultar/Mostrar Valores */}
@@ -2082,6 +2082,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
           {/* LINHA 1: Resumo Geral */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.4rem'}}>
+              <div style={{width:'3px',height:'12px',background:'#8b5cf6',borderRadius:'2px'}}/>
+              <span style={{fontSize:'0.65rem',fontWeight:'700',color:'#8b5cf6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Histórico do Período</span>
+              <div style={{flex:1,height:'1px',background:'rgba(139,92,246,0.2)'}}/>
+            </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
             <div className="border rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p style={{fontSize:"0.7rem",color:"#8b5cf6",fontWeight:"600"}}>💰 Saldo Anterior</p>
@@ -2124,8 +2130,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
           </div>
+          </div>{/* fim grupo Período */}
 
           {/* LINHA 2: Detalhamento */}
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.4rem'}}>
+              <div style={{width:'3px',height:'12px',background:'#0ea5e9',borderRadius:'2px'}}/>
+              <span style={{fontSize:'0.65rem',fontWeight:'700',color:'#0ea5e9',textTransform:'uppercase',letterSpacing:'0.06em'}}>Saldos Atuais</span>
+              <div style={{flex:1,height:'1px',background:'rgba(14,165,233,0.2)'}}/>
+              <span style={{fontSize:'0.65rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.06em'}}>Pendências</span>
+              <div style={{width:'3px',height:'12px',background:'#f59e0b',borderRadius:'2px'}}/>
+            </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 flex-1">
           <div className="border-2 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p style={{fontSize:"0.7rem",color:"#0ea5e9",fontWeight:"600"}}>🏦 Saldo Bancário</p>
@@ -2181,9 +2196,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <p className="text-lg font-bold">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
             <p className="text-[10px] mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
-          </div>
-        </div>
-      </div>
+          </div>{/* fim grid cards linha 2 */}
+          </div>{/* fim grupo Saldos/Pendências */}
+        </div>{/* fim col-span-3 */}
+      </div>{/* fim grid 4 colunas */}
 
       {/* COLUNA DIREITA: Tronco de Solidariedade (1/4 da largura) */}
       <div className="lg:col-span-1">
@@ -3584,10 +3600,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       )}
 
       {/* COMPONENTE MODAL DE ANÁLISE POR CATEGORIA */}
-      <AnaliseCategoriasModal 
-        isOpen={modalAnaliseAberto}
-        onClose={() => setModalAnaliseAberto(false)}
+      <RelatorioFinanceiro
+        isOpen={modalRelatorioAberto}
+        onClose={() => setModalRelatorioAberto(false)}
         showError={showError}
+        showSuccess={showSuccess}
       />
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
