@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
-import RelatorioFinanceiro from './RelatorioFinanceiro';
+import AnaliseCategoriasModal from './AnaliseCategoriasModal';
 import { 
   verificarVencido,
   filtrarIrmaosPorStatus,
@@ -92,7 +92,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [modalSangriaAberto, setModalSangriaAberto] = useState(false);
   const [limiteRegistros, setLimiteRegistros] = useState(20); // Limite de registros exibidos
   const [modalSangriaTroncoAberto, setModalSangriaTroncoAberto] = useState(false);
-  const [modalRelatorioAberto, setModalRelatorioAberto] = useState(false);
+  const [modalAnaliseAberto, setModalAnaliseAberto] = useState(false);
   const [modalDespesasPendentesAberto, setModalDespesasPendentesAberto] = useState(false);
   const [modalReceitasPagasAberto, setModalReceitasPagasAberto] = useState(false);
   const [detalhesReceitasPagas, setDetalhesReceitasPagas] = useState({ conta: 0, dinheiro: 0 });
@@ -171,13 +171,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   useEffect(() => {
-    carregarDados();
-    calcularSaldoAnterior();
-    calcularCaixaFisicoTotal();
-    calcularTroncoTotal();
-    buscarTotalRegistros();
-    carregarMesesFechados();
-    carregarEventosComemorativos();
+    // OTIMIZAÇÃO: rodar em paralelo em vez de sequencial
+    Promise.all([
+      carregarDados(),
+      calcularSaldoAnterior(),
+      calcularCaixaFisicoTotal(),
+      calcularTroncoTotal(),
+      buscarTotalRegistros(),
+      carregarMesesFechados(),
+      carregarEventosComemorativos(),
+    ]);
   }, [filtros.mes, filtros.ano]);
 
   // Fechar menus dropdown ao clicar fora
@@ -383,7 +386,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let query = supabase
         .from('lancamentos_loja')
         .select(`
-          *,
+          id, valor, status, descricao, observacoes,
+          tipo_pagamento, data_pagamento, data_vencimento, data_lancamento,
+          origem_tipo, origem_irmao_id, categoria_id, projeto_id,
+          evento_comemorativo_id, eh_transferencia_interna, eh_pagamento_parcial,
+          lancamento_principal_id, comprovante_url,
           categorias_financeiras(nome, tipo),
           irmaos(nome)
         `);
@@ -466,39 +473,51 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       if (error) throw error;
 
       // RECALCULAR valores considerando pagamentos parciais
-      const lancamentosProcessados = await Promise.all((data || []).map(async (lanc) => {
-        // Ignorar os próprios registros de pagamento parcial
-        if (lanc.eh_pagamento_parcial) {
-          return lanc;
-        }
+      // OTIMIZAÇÃO: 1 única query para todos os pagamentos parciais (elimina N+1)
+      const idsPrincipais = (data || [])
+        .filter(l => !l.eh_pagamento_parcial)
+        .map(l => l.id);
 
-        const { data: pagamentosParcias, error: errPag } = await supabase
+      let todosPagamentosParciais = [];
+      if (idsPrincipais.length > 0) {
+        const { data: pagParciaisData } = await supabase
           .from('lancamentos_loja')
-          .select('valor, tipo_pagamento')
-          .eq('lancamento_principal_id', lanc.id)
-          .eq('eh_pagamento_parcial', true);
+          .select('lancamento_principal_id, valor, tipo_pagamento')
+          .eq('eh_pagamento_parcial', true)
+          .in('lancamento_principal_id', idsPrincipais);
+        todosPagamentosParciais = pagParciaisData || [];
+      }
 
-        if (!errPag && pagamentosParcias && pagamentosParcias.length > 0) {
-          // Separar compensações e pagamentos reais
-          const pagamentosReais = pagamentosParcias.filter(p => p.tipo_pagamento !== 'compensacao');
-          const compensacoes = pagamentosParcias.filter(p => p.tipo_pagamento === 'compensacao');
-          
-          const totalPago = pagamentosReais.reduce((sum, p) => sum + parseFloat(p.valor), 0);
-          const totalCompensado = compensacoes.reduce((sum, p) => sum + parseFloat(p.valor), 0);
-          
-          // Valor original = apenas valor atual + compensações (pagamentos JÁ foram descontados do banco!)
-          const valorOriginalCalculado = parseFloat(lanc.valor) + totalPago + totalCompensado;
-          
-          return {
-            ...lanc,
-            valor_original: valorOriginalCalculado,
-            total_pago_parcial: totalPago,
-            tem_pagamento_parcial: totalPago > 0 || totalCompensado > 0
-          };
-        }
+      // Agrupar pagamentos parciais por lancamento_principal_id (join em memória)
+      const pagPorLancamento = {};
+      todosPagamentosParciais.forEach(p => {
+        const pid = p.lancamento_principal_id;
+        if (!pagPorLancamento[pid]) pagPorLancamento[pid] = [];
+        pagPorLancamento[pid].push(p);
+      });
 
-        return lanc;
-      }));
+      // Processar cada lançamento usando os dados já em memória
+      const lancamentosProcessados = (data || []).map(lanc => {
+        if (lanc.eh_pagamento_parcial) return lanc;
+
+        const pagamentosParciais = pagPorLancamento[lanc.id];
+        if (!pagamentosParciais || pagamentosParciais.length === 0) return lanc;
+
+        const pagamentosReais = pagamentosParciais.filter(p => p.tipo_pagamento !== 'compensacao');
+        const compensacoes    = pagamentosParciais.filter(p => p.tipo_pagamento === 'compensacao');
+
+        const totalPago       = pagamentosReais.reduce((sum, p) => sum + parseFloat(p.valor), 0);
+        const totalCompensado = compensacoes.reduce((sum, p) => sum + parseFloat(p.valor), 0);
+
+        const valorOriginalCalculado = parseFloat(lanc.valor) + totalPago + totalCompensado;
+
+        return {
+          ...lanc,
+          valor_original: valorOriginalCalculado,
+          total_pago_parcial: totalPago,
+          tem_pagamento_parcial: totalPago > 0 || totalCompensado > 0
+        };
+      });
 
       // Se o filtro é 'vencido', filtrar apenas os que estão realmente vencidos
       let lancamentosFiltrados = lancamentosProcessados;
@@ -2035,11 +2054,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           <span>dos Irmãos</span>
         </button>
         <button
-          onClick={() => setModalRelatorioAberto(true)}
-          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"#7c3aed"}}
+          onClick={() => setModalAnaliseAberto(true)}
+          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-accent)"}}
         >
-          <span>📋 Relatório</span>
-          <span>Financeiro</span>
+          <span>📊 Análise</span>
+          <span>Categorias</span>
         </button>
         
         {/* Botão Ocultar/Mostrar Valores */}
@@ -3564,11 +3583,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         />
       )}
 
-      <RelatorioFinanceiro
-        isOpen={modalRelatorioAberto}
-        onClose={() => setModalRelatorioAberto(false)}
+      {/* COMPONENTE MODAL DE ANÁLISE POR CATEGORIA */}
+      <AnaliseCategoriasModal 
+        isOpen={modalAnaliseAberto}
+        onClose={() => setModalAnaliseAberto(false)}
         showError={showError}
-        showSuccess={showSuccess}
       />
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
