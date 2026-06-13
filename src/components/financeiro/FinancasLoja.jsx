@@ -2222,11 +2222,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
           </div>{/* fim linha 2 */}
         </div>{/* fim col-span-3 */}
-      </div>{/* fim grid 4 colunas */}
 
-      {/* COLUNA DIREITA: Tronco de Solidariedade (1/4 da largura) */}
-      <div className="lg:col-span-1">
-        <div className="bg-gradient-to-br border-2 rounded-lg p-4 h-full flex flex-col" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+        {/* COLUNA DIREITA: Tronco de Solidariedade (1/4 da largura) */}
+        <div className="lg:col-span-1">
+        <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b',height:'100%',display:'flex',flexDirection:'column'}}>
+          <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
+            <div style={{width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px'}}/>
+            <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em'}}>Tronco de Solidariedade</span>
+          </div>
+        <div className="rounded-lg p-4 flex flex-col flex-1" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
           {/* Cabeçalho */}
           <div className="flex items-center gap-3 mb-4 pb-3 border-b">
             <span className="text-3xl">💰</span>
@@ -2281,7 +2285,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
           </div>
         </div>
-      </div>
+        </div>{/* fim inner tronco */}
+        </div>{/* fim container tronco */}
+      </div>{/* fim col-span-1 Tronco */}
+      </div>{/* fim grid 4 colunas */}
 
       {/* BANNER MÊS FECHADO */}
       {mesFechadoAtual() && (
