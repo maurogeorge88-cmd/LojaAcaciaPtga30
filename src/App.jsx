@@ -2972,10 +2972,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {currentPage === 'relatorio-financeiro' && (
           <RelatorioFinanceiro
-            isOpen={true}
-            onClose={() => setCurrentPage('financas-loja')}
             showError={showError}
-            showSuccess={showSuccess}
           />
         )}
 
