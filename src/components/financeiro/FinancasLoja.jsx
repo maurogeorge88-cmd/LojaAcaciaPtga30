@@ -386,7 +386,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       let query = supabase
         .from('lancamentos_loja')
         .select(`
-          id, valor, status, descricao, observacoes,
+          id, tipo, valor, status, descricao, observacoes,
           tipo_pagamento, data_pagamento, data_vencimento, data_lancamento,
           origem_tipo, origem_irmao_id, categoria_id, projeto_id,
           evento_comemorativo_id, eh_transferencia_interna, eh_pagamento_parcial,
