@@ -2282,7 +2282,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           </div>
         </div>
       </div>
-    </div>
 
       {/* BANNER MÊS FECHADO */}
       {mesFechadoAtual() && (
