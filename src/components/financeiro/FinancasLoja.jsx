@@ -2082,13 +2082,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         {/* COLUNA ESQUERDA: Cards principais (3/4 da largura) */}
         <div className="lg:col-span-3 space-y-3 flex flex-col justify-between">
           {/* LINHA 1: Resumo Geral */}
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.4rem'}}>
-              <div style={{width:'3px',height:'12px',background:'#8b5cf6',borderRadius:'2px'}}/>
-              <span style={{fontSize:'0.65rem',fontWeight:'700',color:'#8b5cf6',textTransform:'uppercase',letterSpacing:'0.06em'}}>Histórico do Período</span>
-              <div style={{flex:1,height:'1px',background:'rgba(139,92,246,0.2)'}}/>
-            </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 flex-1">
+          <div style={{display:'grid',gridTemplateColumns:'1fr 3fr',gap:'0.5rem'}}>
+
+            {/* Sub-grupo: Saldo Anterior */}
+            <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(139,92,246,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #8b5cf6'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
+                <div style={{width:'3px',height:'10px',background:'#8b5cf6',borderRadius:'2px'}}/>
+                <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#8b5cf6',textTransform:'uppercase',letterSpacing:'0.07em'}}>Saldo Anterior</span>
+              </div>
+            <div>
             <div className="border rounded-lg p-3 flex flex-col justify-center" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
               <p style={{fontSize:"0.7rem",color:"#8b5cf6",fontWeight:"600"}}>💰 Saldo Anterior</p>
               <p style={{fontSize:"1.1rem",fontWeight:"800",color:saldoAnterior>=0?"#8b5cf6":"#ef4444"}}>
@@ -2102,7 +2104,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   : 'Período base'}
               </p>
             </div>
-            
+            </div>{/* fim card saldo anterior */}
+            </div>{/* fim sub-grupo Saldo Anterior */}
+
+            {/* Sub-grupo: Período */}
+            <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(6,182,212,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #06b6d4'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
+                <div style={{width:'3px',height:'10px',background:'#06b6d4',borderRadius:'2px'}}/>
+                <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#06b6d4',textTransform:'uppercase',letterSpacing:'0.07em'}}>Receitas · Despesas · Saldo</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
             <div 
               className="rounded-lg p-3 relative flex flex-col justify-center cursor-pointer transition"
               onDoubleClick={abrirDetalhesReceitasPagas}
@@ -2129,19 +2140,20 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <p className="text-[10px] mt-0.5">Receitas - Despesas</p>
               <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
             </div>
-          </div>
-          </div>{/* fim grupo Período */}
+              </div>{/* fim grid 3 cols */}
+            </div>{/* fim sub-grupo Período */}
+          </div>{/* fim container linha 1 */}
 
           {/* LINHA 2: Detalhamento */}
-          <div>
-            <div style={{display:'flex',alignItems:'center',gap:'0.5rem',marginBottom:'0.4rem'}}>
-              <div style={{width:'3px',height:'12px',background:'#0ea5e9',borderRadius:'2px'}}/>
-              <span style={{fontSize:'0.65rem',fontWeight:'700',color:'#0ea5e9',textTransform:'uppercase',letterSpacing:'0.06em'}}>Saldos Atuais</span>
-              <div style={{flex:1,height:'1px',background:'rgba(14,165,233,0.2)'}}/>
-              <span style={{fontSize:'0.65rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.06em'}}>Pendências</span>
-              <div style={{width:'3px',height:'12px',background:'#f59e0b',borderRadius:'2px'}}/>
-            </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 flex-1">
+          <div style={{display:'grid',gridTemplateColumns:'3fr 2fr',gap:'0.5rem'}}>
+
+            {/* Grupo Saldos Atuais */}
+            <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(14,165,233,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #0ea5e9'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
+                <div style={{width:'3px',height:'10px',background:'#0ea5e9',borderRadius:'2px'}}/>
+                <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#0ea5e9',textTransform:'uppercase',letterSpacing:'0.07em'}}>Saldos Atuais</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
           <div className="border-2 rounded-lg p-3" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p style={{fontSize:"0.7rem",color:"#0ea5e9",fontWeight:"600"}}>🏦 Saldo Bancário</p>
             <p style={{fontSize:"1.1rem",fontWeight:"800",color:resumo.saldoBancario>=0?"#0ea5e9":"#ef4444"}}>
@@ -2179,14 +2191,22 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               Bancário + Caixa
             </p>
           </div>
+              </div>{/* fim grid saldos */}
+            </div>{/* fim grupo Saldos Atuais */}
 
+            {/* Grupo Pendências */}
+            <div style={{background:'var(--color-surface-2)',border:'1px solid rgba(245,158,11,0.35)',borderRadius:'var(--radius-lg)',padding:'0.6rem 0.75rem',borderTop:'3px solid #f59e0b'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.4rem',marginBottom:'0.5rem'}}>
+                <div style={{width:'3px',height:'10px',background:'#f59e0b',borderRadius:'2px'}}/>
+                <span style={{fontSize:'0.62rem',fontWeight:'700',color:'#f59e0b',textTransform:'uppercase',letterSpacing:'0.07em'}}>Pendências</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
           <div className="border border-yellow-200 rounded-lg p-3 relative" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
             <p style={{fontSize:"0.7rem",color:"#f59e0b",fontWeight:"600"}}>⏳ A Receber</p>
             <p style={{fontSize:"1.1rem",fontWeight:"800",color:"#f59e0b"}}>{showValues ? formatarMoeda(resumo.receitasPendentes) : "••••••"}</p>
             <p className="text-[10px] mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
           </div>
-          
           <div 
             className="rounded-lg p-3 relative cursor-pointer transition" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}
             onDoubleClick={() => setModalDespesasPendentesAberto(true)}
@@ -2196,8 +2216,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <p className="text-lg font-bold">{showValues ? formatarMoeda(resumo.despesasPendentes) : "••••••"}</p>
             <p className="text-[10px] mt-0.5">Pendentes</p>
             <span className="absolute bottom-1 right-2 text-[9px] font-medium">{formatarPeriodo()}</span>
-          </div>{/* fim grid cards linha 2 */}
-          </div>{/* fim grupo Saldos/Pendências */}
+          </div>
+              </div>{/* fim grid pendências */}
+            </div>{/* fim grupo Pendências */}
+
+          </div>{/* fim linha 2 */}
         </div>{/* fim col-span-3 */}
       </div>{/* fim grid 4 colunas */}
 
