@@ -2237,7 +2237,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             <div className="flex-1 text-center">
               <p className="text-sm font-bold leading-tight">Tronco de Solidariedade</p>
               <p className="text-xs mt-0.5">Saldo acumulado</p>
-              <p style={{fontSize:"1.5rem",fontWeight:"800",color:troncoTotalGlobal.total>=0?"var(--color-text)":"#ef4444",marginTop:"0.25rem"}}>
+              <p style={{fontSize:"1.1rem",fontWeight:"800",color:troncoTotalGlobal.total>=0?"var(--color-text)":"#ef4444",marginTop:"0.25rem"}}>
                 {showValues ? formatarMoeda(troncoTotalGlobal.total) : '••••••'}
               </p>
             </div>
@@ -2254,7 +2254,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <p className="text-[10px] leading-tight">PIX, Transf., Cartão</p>
                   </div>
                 </div>
-                <p style={{fontSize:"1.25rem",fontWeight:"800",color:troncoTotalGlobal.banco>=0?"var(--color-accent)":"#ef4444"}}>
+                <p style={{fontSize:"0.95rem",fontWeight:"800",color:troncoTotalGlobal.banco>=0?"var(--color-accent)":"#ef4444"}}>
                   {showValues ? formatarMoeda(troncoTotalGlobal.banco) : '••••••'}
                 </p>
               </div>
@@ -2270,7 +2270,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <p className="text-[10px] leading-tight">Dinheiro físico</p>
                   </div>
                 </div>
-                <p style={{fontSize:"1.25rem",fontWeight:"800",color:troncoTotalGlobal.especie>=0?"#10b981":"#ef4444"}}>
+                <p style={{fontSize:"0.95rem",fontWeight:"800",color:troncoTotalGlobal.especie>=0?"#10b981":"#ef4444"}}>
                   {showValues ? formatarMoeda(troncoTotalGlobal.especie) : '••••••'}
                 </p>
               </div>
