@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 import { formatarDataBR, formatarMoeda, corrigirTimezone } from './utils/formatadores';
 import { gerarRelatorioPDF, gerarRelatorioResumido } from './utils/relatoriosPDF';
-import RelatorioFinanceiro from './RelatorioFinanceiro';
+import RelatorioFinanceiroSaldo from './RelatorioFinanceiroSaldo';
 import { 
   verificarVencido,
   filtrarIrmaosPorStatus,
@@ -3628,7 +3628,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       )}
 
       {/* COMPONENTE MODAL DE ANÁLISE POR CATEGORIA */}
-      <RelatorioFinanceiro
+      <RelatorioFinanceiroSaldo
         isOpen={modalRelatorioAberto}
         onClose={() => setModalRelatorioAberto(false)}
         showError={showError}
