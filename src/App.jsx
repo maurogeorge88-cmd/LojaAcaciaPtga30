@@ -2150,7 +2150,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                           }`}
                         >
                           <span>📊</span>
-                          <span>Relatório Financeiro</span>
+                          <span>Conferir Finanças</span>
                         </button>
                       </div>
                     )}
@@ -2613,7 +2613,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'eventos-comemorativos' && '🍽️ Ágape & Festas'}
                   {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
-                  {currentPage === 'relatorio-financeiro' && '📊 Relatório Financeiro'}
+                  {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
                   {currentPage === 'aniversariantes' && '🎉 Festividades'}
@@ -2972,7 +2972,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {currentPage === 'relatorio-financeiro' && (
           <RelatorioFinanceiro
+            isOpen={true}
+            onClose={() => setCurrentPage('financas-loja')}
             showError={showError}
+            showSuccess={showSuccess}
           />
         )}
 
