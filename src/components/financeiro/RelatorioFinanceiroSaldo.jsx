@@ -36,6 +36,7 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
   const [pendentes, setPendentes] = useState({ receitas: [], despesas: [] });
   const [filtrarPendentesPorPeriodo, setFiltrarPendentesPorPeriodo] = useState(false);
   const [caixaDetalhes, setCaixaDetalhes] = useState({ recDinheiro: 0, sangrias: 0, despDinheiro: 0 });
+  const [troncoGlobal, setTroncoGlobal] = useState({ banco: 0, especie: 0, total: 0 });
   const [saldoAntB, setSaldoAntB] = useState({ bancario: 0, caixa: 0 });
   const [quadrosOpcionais, setQuadrosOpcionais] = useState({ q3: true, q6: true, q7: true });
   const [mostrarOpcoesPDF, setMostrarOpcoesPDF] = useState(false);
@@ -226,6 +227,17 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
           .reduce((s,l) => s + parseFloat(l.valor), 0);
         setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
         setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
+
+        // Tronco de Solidariedade — histórico completo (idêntico ao FinancasLoja)
+        const troncoRecBanco   = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoRecEspecie = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoDespBanco  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoDespEspec  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoSangBanco  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.eh_transferencia_interna === true && l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoSangEspec  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.eh_transferencia_interna === true && l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoBanco   = troncoRecBanco  - troncoDespBanco  + troncoSangBanco;
+        const troncoEspecie = troncoRecEspecie - troncoDespEspec - troncoSangEspec;
+        setTroncoGlobal({ banco: troncoBanco, especie: troncoEspecie, total: troncoBanco + troncoEspecie });
       }
 
       // Calcular saldo anterior para o período padrão
@@ -761,6 +773,7 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
                     showError,
                     showSuccess,
                     quadrosOpcionais,
+                    troncoGlobal,
                   });
                 }}
                 style={{marginTop:'0.65rem', width:'100%', padding:'0.4rem', background:'var(--color-accent)', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'700'}}>
