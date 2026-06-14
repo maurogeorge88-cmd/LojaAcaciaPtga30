@@ -37,6 +37,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
   showError,
   showSuccess,
   quadrosOpcionais = { q3: true, q6: true, q7: true },
+  troncoGlobal = { banco: 0, especie: 0, total: 0 },
 }) => {
   try {
     showSuccess?.('Gerando PDF...');
@@ -230,6 +231,28 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt('SALDO TOTAL (Banco + Caixa)', margin + 3, y + 5.5, { bold: true, size: 10 });
     txt(formatarMoeda(saldoTotal), colRight - 3, y + 5.5, { bold: true, size: 12, color: saldoTotal >= 0 ? COR_VERDE : COR_VERM, align: 'right' });
     y += 14;
+
+    // ── Tronco de Solidariedade ───────────────────────────────────────────
+    novaPageSeNecessario(28);
+    const COR_TRONCO = [16, 100, 80];
+    rect(margin, y, colRight - margin, 5, [167, 243, 208], 1);
+    txt('TRONCO DE SOLIDARIEDADE (Historico Completo)', margin + 3, y + 3.5, { bold: true, size: 8, color: COR_TRONCO });
+    y += 7;
+
+    const tW = (colRight - margin - 4) / 3;
+    const troncoCards = [
+      { label: 'Saldo Bancario',   valor: troncoGlobal.banco,   cor: COR_AZUL },
+      { label: 'Caixa / Especie',  valor: troncoGlobal.especie, cor: [245, 158, 11] },
+      { label: 'Total Disponivel', valor: troncoGlobal.total,   cor: troncoGlobal.total >= 0 ? COR_TRONCO : COR_VERM },
+    ];
+    troncoCards.forEach((b, i) => {
+      const bx = margin + i * (tW + 2);
+      rect(bx, y, tW, 16, COR_FUNDO, 2);
+      doc.setDrawColor(...b.cor); doc.setLineWidth(0.4); doc.rect(bx, y, tW, 16, 'S');
+      txt(b.label, bx + tW / 2, y + 5.5, { size: 7, color: COR_CINZA, align: 'center' });
+      txt(formatarMoeda(b.valor), bx + tW / 2, y + 12, { bold: true, size: 10, color: b.cor, align: 'center' });
+    });
+    y += 20;
 
     // ─── 3. RECEITAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
