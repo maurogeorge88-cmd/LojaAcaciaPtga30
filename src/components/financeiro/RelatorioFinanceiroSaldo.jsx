@@ -730,9 +730,9 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
             <div style={{position:'absolute', right:0, top:'calc(100% + 6px)', background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', padding:'0.85rem 1rem', zIndex:50, minWidth:'220px', boxShadow:'0 4px 16px rgba(0,0,0,0.12)'}}>
               <div style={{fontSize:'0.75rem', fontWeight:'700', color:'var(--color-text-muted)', marginBottom:'0.5rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>Quadros opcionais</div>
               {[
-                { key:'q3', label:'📊 Resultado por Mês' },
-                { key:'q6', label:'📅 Evolução Mensal' },
-                { key:'q7', label:'⏳ Pendências' },
+                { key:'q3', label:'📊 Resultado por Mês (Q5)' },
+                { key:'q6', label:'📅 Evolução Mensal (Q6)' },
+                { key:'q7', label:'⏳ Pendências (Q7)' },
               ].map(({ key, label }) => (
                 <label key={key} style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.82rem', cursor:'pointer', padding:'0.25rem 0', color:'var(--color-text)'}}>
                   <input
