@@ -285,6 +285,14 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   const irmaosExOficio = irmaos.filter(i => i.situacao?.toLowerCase() === 'ex-ofício');
   const totalIrmaos = irmaos.length;
 
+  // Pré-calcular balaustres do ano (evita .filter() repetido no JSX)
+  const anoAtualDash = new Date().getFullYear();
+  const balaustresAno        = balaustres.filter(b => b.data_sessao && new Date(b.data_sessao + 'T00:00:00').getFullYear() === anoAtualDash);
+  const balaustresAprendiz   = balaustresAno.filter(b => b.grau_sessao === 'Aprendiz').length;
+  const balaustresCompanheiro= balaustresAno.filter(b => b.grau_sessao === 'Companheiro').length;
+  const balaustResMestre     = balaustresAno.filter(b => b.grau_sessao === 'Mestre').length;
+  const totalBalaustres      = balaustresAno.length;
+
   // Irmãos ativos (Regulares + Licenciados)
   const irmaosAtivos = [...irmaosRegulares, ...irmaosLicenciados];
 
@@ -456,132 +464,108 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
   return (
     <div style={{padding:'1.5rem 2rem',minHeight:'100vh',background:'var(--color-bg)',overflowX:'hidden'}}>
       {/* Cards de Graus */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <div style={{background:"var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff"}}>
-          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff",marginBottom:"0.75rem"}}>Irmãos Regulares</h3>
-          <div className="mb-4">
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",borderBottom:"1px solid rgba(255,255,255,0.2)",paddingBottom:"0.75rem",marginBottom:"0.75rem"}}>
-              <span style={{fontSize:"0.82rem",opacity:0.9}}>📊 Total de Irmãos Ativos:</span>
-              <span style={{fontWeight:"800",fontSize:"3rem"}}>{irmaosAtivos.length}</span>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.75rem",fontSize:"0.82rem"}}>
-              <div style={{display:"flex",justifyContent:"space-between"}}>
-                <span>✅ Regulares:</span>
-                <span className="font-bold">{irmaosRegulares.length}</span>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between"}}>
-                <span>🎫 Licenciados:</span>
-                <span className="font-bold">{irmaosLicenciados.length}</span>
-              </div>
+      <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'1rem', marginBottom:'1.5rem', alignItems:'stretch'}}>
+
+        {/* CARD 1 — Quadro de Irmãos */}
+        <div style={{background:'linear-gradient(135deg, var(--color-accent) 0%, #4338ca 100%)', borderRadius:'var(--radius-xl)', padding:'1.25rem', color:'#fff', display:'flex', flexDirection:'column', gap:'1rem'}}>
+          <div>
+            <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.7)', margin:'0 0 0.25rem'}}>Quadro de Irmãos</p>
+            <div style={{display:'flex', alignItems:'baseline', gap:'0.5rem'}}>
+              <span style={{fontSize:'3rem', fontWeight:'900', lineHeight:1}}>{irmaosAtivos.length}</span>
+              <span style={{fontSize:'0.82rem', opacity:0.8}}>ativos</span>
             </div>
           </div>
-          <div className="border-t pt-3">
-            <div className="grid grid-cols-3 gap-4 text-sm">
-              {/* Coluna 1: Aprendizes */}
-              <div>
-                <div style={{display:"flex",justifyContent:"space-between",fontWeight:"600"}}>
-                  <span>⬜ Aprendizes:</span>
-                  <span>{irmaosAprendiz}</span>
+          <div style={{borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:'0.75rem', display:'flex', flexDirection:'column', gap:'0.35rem'}}>
+            {[
+              {emoji:'✅', label:'Regulares',   val: irmaosRegulares.length,   pct: irmaosAtivos.length},
+              {emoji:'🎫', label:'Licenciados', val: irmaosLicenciados.length, pct: irmaosAtivos.length},
+            ].map(r => (
+              <div key={r.label} style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                <span style={{fontSize:'0.78rem', minWidth:'80px', opacity:0.9}}>{r.emoji} {r.label}</span>
+                <div style={{flex:1, height:'5px', borderRadius:'3px', background:'rgba(255,255,255,0.2)'}}>
+                  <div style={{width: r.pct > 0 ? `${(r.val/r.pct*100).toFixed(0)}%` : '0%', height:'5px', borderRadius:'3px', background:'rgba(255,255,255,0.85)'}} />
                 </div>
+                <span style={{fontSize:'0.82rem', fontWeight:'700', minWidth:'20px', textAlign:'right'}}>{r.val}</span>
               </div>
-              
-              {/* Coluna 2: Companheiros */}
-              <div>
-                <div style={{display:"flex",justifyContent:"space-between",fontWeight:"600"}}>
-                  <span>🔷 Companheiros:</span>
-                  <span>{irmaosCompanheiro}</span>
+            ))}
+          </div>
+          <div style={{borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:'0.75rem'}}>
+            <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.08em', textTransform:'uppercase', color:'rgba(255,255,255,0.6)', marginBottom:'0.5rem'}}>Por Grau</p>
+            <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0.5rem', textAlign:'center'}}>
+              {[
+                {emoji:'⬜', label:'Aprendiz',    val: irmaosAprendiz},
+                {emoji:'🔷', label:'Companheiro', val: irmaosCompanheiro},
+                {emoji:'🔺', label:'Mestre',      val: totalMestres},
+              ].map(g => (
+                <div key={g.label} style={{background:'rgba(255,255,255,0.12)', borderRadius:'var(--radius-md)', padding:'0.4rem 0.25rem'}}>
+                  <p style={{fontSize:'1.2rem', fontWeight:'800', margin:'0 0 0.1rem'}}>{g.val}</p>
+                  <p style={{fontSize:'0.62rem', opacity:0.8, margin:0}}>{g.emoji} {g.label}</p>
                 </div>
-              </div>
-              
-              {/* Coluna 3: Mestres */}
-              <div>
-                <div style={{display:"flex",justifyContent:"space-between",fontWeight:"700"}}>
-                  <span>🔺 Total Mestres:</span>
-                  <span>{totalMestres}</span>
-                </div>
-                <div style={{fontSize:"0.72rem",opacity:0.8,display:"flex",flexDirection:"column",gap:"0.1rem"}}>
-                  <div style={{display:"flex",justifyContent:"space-between",paddingLeft:"0.5rem"}}>
-                    <span>Mestres:</span>
-                    <span>{irmaosMestre}</span>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",paddingLeft:"0.5rem"}}>
-                    <span>M. Instalados:</span>
-                    <span>{irmaosMestreInstalado}</span>
-                  </div>
-                </div>
-              </div>
+              ))}
             </div>
+            <p style={{fontSize:'0.7rem', opacity:0.65, marginTop:'0.4rem', textAlign:'center'}}>
+              {irmaosMestre} Mestres · {irmaosMestreInstalado} Mestres Instalados
+            </p>
           </div>
         </div>
-        
-        <div style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",borderLeft:"4px solid var(--color-accent)",borderRadius:"var(--radius-xl)",padding:"1.5rem"}}>
-          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"var(--color-text)",marginBottom:"0.25rem"}}>Total Geral</h3>
-          <div style={{display:"flex",alignItems:"baseline",gap:"0.5rem",marginBottom:"0.75rem"}}>
-            <p style={{fontSize:"3rem",fontWeight:"800",color:"var(--color-text)",margin:0}}>{totalIrmaos}</p>
-            <span style={{fontSize:"0.82rem",color:"var(--color-text-muted)"}}>irmãos</span>
+
+        {/* CARD 2 — Distribuição Total */}
+        <div style={{background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', padding:'1.25rem', display:'flex', flexDirection:'column', gap:'1rem'}}>
+          <div>
+            <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.1em', textTransform:'uppercase', color:'var(--color-text-muted)', margin:'0 0 0.25rem'}}>Total no Quadro</p>
+            <div style={{display:'flex', alignItems:'baseline', gap:'0.5rem'}}>
+              <span style={{fontSize:'3rem', fontWeight:'900', lineHeight:1, color:'var(--color-text)'}}>{totalIrmaos}</span>
+              <span style={{fontSize:'0.82rem', color:'var(--color-text-muted)'}}>irmãos</span>
+            </div>
           </div>
-          <div style={{display:"flex",flexDirection:"column",gap:"0.3rem"}}>
+          <div style={{flex:1, display:'flex', flexDirection:'column', gap:'0.3rem'}}>
             {[
-              {label:"✅ Regulares",    val:irmaosRegulares.length,   cor:"#10b981"},
-              {label:"🎫 Licenciados",  val:irmaosLicenciados.length, cor:"#6366f1"},
-              {label:"⚠️ Irregulares",  val:irmaosIrregulares.length, cor:"#f59e0b"},
-              {label:"🚫 Suspensos",    val:irmaosSuspensos.length,   cor:"#ef4444"},
-              {label:"🚪 Desligados",   val:irmaosDesligados.length,  cor:"#94a3b8"},
-              {label:"❌ Excluídos",    val:irmaosExcluidos.length,   cor:"#94a3b8"},
-              {label:"🕊️ Falecidos",    val:irmaosFalecidos.length,   cor:"#94a3b8"},
-              {label:"📋 Ex-Ofício",    val:irmaosExOficio.length,    cor:"#94a3b8"},
+              {label:'Regulares',   val: irmaosRegulares.length,   cor:'#10b981'},
+              {label:'Licenciados', val: irmaosLicenciados.length, cor:'#6366f1'},
+              {label:'Irregulares', val: irmaosIrregulares.length, cor:'#f59e0b'},
+              {label:'Suspensos',   val: irmaosSuspensos.length,   cor:'#ef4444'},
+              {label:'Desligados',  val: irmaosDesligados.length,  cor:'#94a3b8'},
+              {label:'Excluídos',   val: irmaosExcluidos.length,   cor:'#94a3b8'},
+              {label:'Falecidos',   val: irmaosFalecidos.length,   cor:'#64748b'},
+              {label:'Ex-Ofício',   val: irmaosExOficio.length,    cor:'#94a3b8'},
             ].filter(s => s.val > 0).map(s => (
-              <div key={s.label} style={{display:"flex",justifyContent:"space-between",alignItems:"center",fontSize:"0.78rem"}}>
-                <span style={{color:"var(--color-text-muted)"}}>{s.label}</span>
-                <span style={{fontWeight:"700",color:s.cor,minWidth:"1.5rem",textAlign:"right"}}>{s.val}</span>
+              <div key={s.label} style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                <span style={{fontSize:'0.75rem', color:'var(--color-text-muted)', minWidth:'82px'}}>{s.label}</span>
+                <div style={{flex:1, height:'6px', borderRadius:'3px', background:'var(--color-surface-2)'}}>
+                  <div style={{width: totalIrmaos > 0 ? `${(s.val/totalIrmaos*100).toFixed(0)}%` : '0%', height:'6px', borderRadius:'3px', background: s.cor}} />
+                </div>
+                <span style={{fontSize:'0.8rem', fontWeight:'700', color: s.cor, minWidth:'24px', textAlign:'right'}}>{s.val}</span>
               </div>
             ))}
           </div>
         </div>
-        
-        <div style={{background:"#8b5cf6",borderRadius:"var(--radius-xl)",padding:"1.5rem",color:"#fff",position:"relative"}}>
-          <div style={{position:"absolute",top:"1rem",right:"1rem",background:"rgba(255,255,255,0.15)",padding:"0.2rem 0.75rem",borderRadius:"999px",fontSize:"0.82rem",fontWeight:"700",color:"#fff"}}>
-            {new Date().getFullYear()}
+
+        {/* CARD 3 — Balaustres */}
+        <div style={{background:'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)', borderRadius:'var(--radius-xl)', padding:'1.25rem', color:'#fff', display:'flex', flexDirection:'column', gap:'1rem', position:'relative'}}>
+          <div style={{position:'absolute', top:'1rem', right:'1rem', background:'rgba(255,255,255,0.15)', padding:'0.15rem 0.65rem', borderRadius:'999px', fontSize:'0.75rem', fontWeight:'700'}}>
+            {anoAtualDash}
           </div>
-          <h3 style={{fontSize:"1rem",fontWeight:"700",color:"#fff",marginBottom:"0.75rem"}}>Balaustres</h3>
-          <p style={{fontSize:"3rem",fontWeight:"800",color:"#fff",marginBottom:"1rem"}}>
-            {balaustres.filter(b => {
-              if (!b.data_sessao) return false;
-              const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
-              return dataBalaustre.getFullYear() === new Date().getFullYear();
-            }).length}
-          </p>
-          <div style={{borderTop:"1px solid rgba(255,255,255,0.2)",paddingTop:"0.75rem",display:"flex",flexDirection:"column",gap:"0.25rem"}}>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.82rem",color:"rgba(255,255,255,0.85)"}}>
-              <span>⬜ Grau 1 (Aprendiz):</span>
-              <span className="font-bold">
-                {balaustres.filter(b => {
-                  if (!b.data_sessao) return false;
-                  const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
-                  return b.grau_sessao === 'Aprendiz' && dataBalaustre.getFullYear() === new Date().getFullYear();
-                }).length}
-              </span>
+          <div>
+            <p style={{fontSize:'0.62rem', fontWeight:'700', letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.7)', margin:'0 0 0.25rem'}}>Balaustres</p>
+            <div style={{display:'flex', alignItems:'baseline', gap:'0.5rem'}}>
+              <span style={{fontSize:'3rem', fontWeight:'900', lineHeight:1}}>{totalBalaustres}</span>
+              <span style={{fontSize:'0.82rem', opacity:0.8}}>sessões</span>
             </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.82rem",color:"rgba(255,255,255,0.85)"}}>
-              <span>🔷 Grau 2 (Companheiro):</span>
-              <span className="font-bold">
-                {balaustres.filter(b => {
-                  if (!b.data_sessao) return false;
-                  const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
-                  return b.grau_sessao === 'Companheiro' && dataBalaustre.getFullYear() === new Date().getFullYear();
-                }).length}
-              </span>
-            </div>
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:"0.82rem",color:"rgba(255,255,255,0.85)"}}>
-              <span>🔺 Grau 3 (Mestre):</span>
-              <span className="font-bold">
-                {balaustres.filter(b => {
-                  if (!b.data_sessao) return false;
-                  const dataBalaustre = new Date(b.data_sessao + 'T00:00:00');
-                  return b.grau_sessao === 'Mestre' && dataBalaustre.getFullYear() === new Date().getFullYear();
-                }).length}
-              </span>
-            </div>
+          </div>
+          <div style={{borderTop:'1px solid rgba(255,255,255,0.2)', paddingTop:'0.75rem', display:'flex', flexDirection:'column', gap:'0.4rem'}}>
+            {[
+              {emoji:'⬜', label:'Aprendiz',    val: balaustresAprendiz},
+              {emoji:'🔷', label:'Companheiro', val: balaustresCompanheiro},
+              {emoji:'🔺', label:'Mestre',      val: balaustResMestre},
+            ].map(g => (
+              <div key={g.label} style={{display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                <span style={{fontSize:'0.78rem', opacity:0.85, minWidth:'110px'}}>{g.emoji} Grau {g.label === 'Aprendiz' ? '1' : g.label === 'Companheiro' ? '2' : '3'} ({g.label})</span>
+                <div style={{flex:1, height:'5px', borderRadius:'3px', background:'rgba(255,255,255,0.2)'}}>
+                  <div style={{width: totalBalaustres > 0 ? `${(g.val/totalBalaustres*100).toFixed(0)}%` : '0%', height:'5px', borderRadius:'3px', background:'rgba(255,255,255,0.85)'}} />
+                </div>
+                <span style={{fontSize:'0.82rem', fontWeight:'700', minWidth:'20px', textAlign:'right'}}>{g.val}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
