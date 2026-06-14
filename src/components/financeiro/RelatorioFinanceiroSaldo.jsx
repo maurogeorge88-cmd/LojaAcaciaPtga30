@@ -37,6 +37,8 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
   const [filtrarPendentesPorPeriodo, setFiltrarPendentesPorPeriodo] = useState(false);
   const [caixaDetalhes, setCaixaDetalhes] = useState({ recDinheiro: 0, sangrias: 0, despDinheiro: 0 });
   const [saldoAntB, setSaldoAntB] = useState({ bancario: 0, caixa: 0 });
+  const [quadrosOpcionais, setQuadrosOpcionais] = useState({ q3: true, q6: true, q7: true });
+  const [mostrarOpcoesPDF, setMostrarOpcoesPDF] = useState(false);
 
   useEffect(() => { if (isOpen) carregarDados(); }, [isOpen]);
 
@@ -718,24 +720,55 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
         {mostrarComparacao && (
           <SeletorPeriodo periodo={periodoB} onChange={async (p) => { setPeriodoB(p); const s = await buscarSaldoAnterior(p); setSaldoAntB(s); }} label="vs:" />
         )}
-        <button
-          onClick={() => gerarPDFRelatorioFinanceiro({
-            supabase,
-            periodoA,
-            dadosA,
-            saldoAntA,
-            caixaFisicoHistorico,
-            caixaDetalhes,
-            gruposReceitas: gruposRecA,
-            gruposDespesas: gruposDespA,
-            dadosMensais: periodoA.ano > 0 ? dadosMensais : [],
-            pendentes,
-            showError,
-            showSuccess,
-          })}
-          style={{padding:'0.3rem 0.9rem', background:'var(--color-accent)', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.78rem', fontWeight:'700', marginLeft:'auto'}}>
-          📄 Gerar PDF
-        </button>
+        <div style={{marginLeft:'auto', position:'relative'}}>
+          <button
+            onClick={() => setMostrarOpcoesPDF(v => !v)}
+            style={{padding:'0.3rem 0.9rem', background:'var(--color-accent)', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.78rem', fontWeight:'700'}}>
+            📄 Gerar PDF ▾
+          </button>
+          {mostrarOpcoesPDF && (
+            <div style={{position:'absolute', right:0, top:'calc(100% + 6px)', background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-lg)', padding:'0.85rem 1rem', zIndex:50, minWidth:'220px', boxShadow:'0 4px 16px rgba(0,0,0,0.12)'}}>
+              <div style={{fontSize:'0.75rem', fontWeight:'700', color:'var(--color-text-muted)', marginBottom:'0.5rem', textTransform:'uppercase', letterSpacing:'0.05em'}}>Quadros opcionais</div>
+              {[
+                { key:'q3', label:'📊 Resultado por Mês' },
+                { key:'q6', label:'📅 Evolução Mensal' },
+                { key:'q7', label:'⏳ Pendências' },
+              ].map(({ key, label }) => (
+                <label key={key} style={{display:'flex', alignItems:'center', gap:'0.5rem', fontSize:'0.82rem', cursor:'pointer', padding:'0.25rem 0', color:'var(--color-text)'}}>
+                  <input
+                    type="checkbox"
+                    checked={quadrosOpcionais[key]}
+                    onChange={e => setQuadrosOpcionais(prev => ({ ...prev, [key]: e.target.checked }))}
+                    style={{accentColor:'var(--color-accent)', width:'14px', height:'14px'}}
+                  />
+                  {label}
+                </label>
+              ))}
+              <button
+                onClick={() => {
+                  setMostrarOpcoesPDF(false);
+                  gerarPDFRelatorioFinanceiro({
+                    supabase,
+                    periodoA,
+                    dadosA,
+                    saldoAntA,
+                    caixaFisicoHistorico,
+                    caixaDetalhes,
+                    gruposReceitas: gruposRecA,
+                    gruposDespesas: gruposDespA,
+                    dadosMensais: periodoA.ano > 0 ? dadosMensais : [],
+                    pendentes,
+                    showError,
+                    showSuccess,
+                    quadrosOpcionais,
+                  });
+                }}
+                style={{marginTop:'0.65rem', width:'100%', padding:'0.4rem', background:'var(--color-accent)', color:'#fff', border:'none', borderRadius:'var(--radius-lg)', cursor:'pointer', fontSize:'0.82rem', fontWeight:'700'}}>
+                ✅ Confirmar e Gerar
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {loading ? (
