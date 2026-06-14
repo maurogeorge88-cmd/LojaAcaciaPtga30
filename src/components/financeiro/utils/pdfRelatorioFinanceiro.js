@@ -499,6 +499,149 @@ export const gerarPDFRelatorioFinanceiro = async ({
       }
     }
 
+    // ─── 8. RESUMO GERAL DO PERÍODO + COMPENSAÇÕES ───────────────────────
+    novaPageSeNecessario(70);
+
+    // Buscar compensações do período
+    let compensacoesRec = 0, compensacoesDesp = 0, nCompRec = 0, nCompDesp = 0;
+    try {
+      let qComp = supabase
+        .from('lancamentos_loja')
+        .select('valor, tipo, data_pagamento, categorias_financeiras(tipo)')
+        .eq('tipo_pagamento', 'compensacao')
+        .eq('status', 'pago');
+
+      if (periodoA.ano > 0) {
+        const anoStr = String(periodoA.ano);
+        if (periodoA.mes > 0) {
+          const mesStr = String(periodoA.mes).padStart(2, '0');
+          qComp = qComp
+            .gte('data_pagamento', `${anoStr}-${mesStr}-01`)
+            .lte('data_pagamento', `${anoStr}-${mesStr}-31`);
+        } else if (periodoA.mes === -1) {
+          qComp = qComp.gte('data_pagamento', `${anoStr}-01-01`).lte('data_pagamento', `${anoStr}-06-30`);
+        } else if (periodoA.mes === -2) {
+          qComp = qComp.gte('data_pagamento', `${anoStr}-07-01`).lte('data_pagamento', `${anoStr}-12-31`);
+        } else {
+          qComp = qComp.gte('data_pagamento', `${anoStr}-01-01`).lte('data_pagamento', `${anoStr}-12-31`);
+        }
+      }
+
+      const { data: compData } = await qComp;
+      (compData || []).forEach(c => {
+        const v = parseFloat(c.valor || 0);
+        const catTipo = c.categorias_financeiras?.tipo;
+        if (catTipo === 'receita') { compensacoesRec += v; nCompRec++; }
+        if (catTipo === 'despesa') { compensacoesDesp += v; nCompDesp++; }
+      });
+    } catch {}
+
+    const COR_ROXO = [139, 92, 246];
+
+    rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+    txt('8. RESUMO GERAL DO PERIODO', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+    txt(labelPeriodo(periodoA), colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
+    y += 9;
+
+    // Bloco receitas/despesas banco e caixa
+    const col2L = margin;
+    const col2R = margin + (colRight - margin) / 2 + 1;
+    const col2W = (colRight - margin) / 2 - 2;
+
+    // Cabeçalho das duas colunas
+    rect(col2L, y, col2W, 5.5, [209, 250, 229], 1);
+    txt('ENTRADAS', col2L + col2W / 2, y + 3.8, { bold: true, size: 7.5, color: [4, 120, 87], align: 'center' });
+    rect(col2R, y, col2W, 5.5, [254, 226, 226], 1);
+    txt('SAIDAS', col2R + col2W / 2, y + 3.8, { bold: true, size: 7.5, color: [185, 28, 28], align: 'center' });
+    y += 7;
+
+    const totalEntradas = dadosA.recBanco + dadosA.recCaixa;
+    const totalSaidas   = dadosA.despBanco + dadosA.despCaixa;
+    const saldoPeriodo  = totalEntradas - totalSaidas;
+
+    // Linhas lado a lado
+    const linhasResumo = [
+      { label: 'Bancarias', entradas: dadosA.recBanco,  saidas: dadosA.despBanco },
+      { label: 'Dinheiro',  entradas: dadosA.recCaixa,  saidas: dadosA.despCaixa },
+    ];
+    linhasResumo.forEach((l, i) => {
+      if (i % 2 === 0) {
+        rect(col2L, y - 1, col2W, 5.5, COR_FUNDO);
+        rect(col2R, y - 1, col2W, 5.5, COR_FUNDO);
+      }
+      txt(l.label, col2L + 3,  y + 3, { size: 7.5 });
+      txt(formatarMoeda(l.entradas), col2L + col2W - 3, y + 3, { size: 7.5, color: COR_VERDE, bold: true, align: 'right' });
+      txt(l.label, col2R + 3, y + 3, { size: 7.5 });
+      txt(formatarMoeda(l.saidas), col2R + col2W - 3, y + 3, { size: 7.5, color: COR_VERM, bold: true, align: 'right' });
+      y += 5.5;
+    });
+
+    linha(y, margin, colRight, [180, 180, 200]);
+    y += 1;
+
+    // Totais entradas / saidas
+    rect(col2L, y, col2W, 7, [209, 250, 229], 1);
+    txt('TOTAL ENTRADAS', col2L + 3, y + 5, { bold: true, size: 8, color: [4, 120, 87] });
+    txt(formatarMoeda(totalEntradas), col2L + col2W - 3, y + 5, { bold: true, size: 9, color: COR_VERDE, align: 'right' });
+    rect(col2R, y, col2W, 7, [254, 226, 226], 1);
+    txt('TOTAL SAIDAS', col2R + 3, y + 5, { bold: true, size: 8, color: [185, 28, 28] });
+    txt(formatarMoeda(totalSaidas), col2R + col2W - 3, y + 5, { bold: true, size: 9, color: COR_VERM, align: 'right' });
+    y += 10;
+
+    // Saldo do período e saldo total — linha única larga
+    const corSaldoPer  = saldoPeriodo  >= 0 ? COR_VERDE : COR_VERM;
+    const corSaldoTot  = (dadosA.saldoBancario + caixaFisicoHistorico) >= 0 ? COR_VERDE : COR_VERM;
+    const saldoTotal8  = dadosA.saldoBancario + caixaFisicoHistorico;
+    const metW = (colRight - margin - 2) / 2;
+
+    rect(col2L, y, metW, 9, saldoPeriodo >= 0 ? [209, 250, 229] : [254, 226, 226], 2);
+    doc.setDrawColor(...corSaldoPer); doc.setLineWidth(0.5); doc.rect(col2L, y, metW, 9, 'S');
+    txt('RESULTADO DO PERIODO', col2L + 3, y + 4, { size: 7, bold: true });
+    txt((saldoPeriodo >= 0 ? '+' : '') + formatarMoeda(saldoPeriodo), col2L + metW - 3, y + 6.5, { bold: true, size: 9, color: corSaldoPer, align: 'right' });
+
+    rect(col2R, y, metW, 9, saldoTotal8 >= 0 ? [209, 250, 229] : [254, 226, 226], 2);
+    doc.setDrawColor(...corSaldoTot); doc.setLineWidth(0.5); doc.rect(col2R, y, metW, 9, 'S');
+    txt('SALDO TOTAL (Banco+Caixa)', col2R + 3, y + 4, { size: 7, bold: true });
+    txt(formatarMoeda(saldoTotal8), col2R + metW - 3, y + 6.5, { bold: true, size: 9.5, color: corSaldoTot, align: 'right' });
+    y += 13;
+
+    // ── Bloco Compensações ────────────────────────────────────────────────
+    novaPageSeNecessario(35);
+    rect(margin, y, colRight - margin, 5.5, [237, 233, 254], 1);
+    txt('COMPENSACOES DO PERIODO', margin + 3, y + 3.8, { bold: true, size: 8, color: [109, 40, 217] });
+    txt('(quitacoes sem movimentacao financeira real)', colRight - 3, y + 3.8, { size: 7, color: [109, 40, 217], align: 'right' });
+    y += 7;
+
+    if (nCompRec === 0 && nCompDesp === 0) {
+      rect(margin, y, colRight - margin, 7, COR_FUNDO, 1);
+      txt('Nenhuma compensacao registrada no periodo', (margin + colRight) / 2, y + 4.8, { size: 8, color: COR_CINZA, align: 'center' });
+      y += 10;
+    } else {
+      // Dois cards lado a lado
+      const cW = (colRight - margin - 3) / 2;
+      // Card receitas compensadas (débitos de irmãos quitados)
+      rect(margin, y, cW, 20, [237, 233, 254], 2);
+      doc.setDrawColor(...COR_ROXO); doc.setLineWidth(0.4); doc.rect(margin, y, cW, 20, 'S');
+      txt('Debitos de irmaos quitados', margin + cW / 2, y + 5.5, { size: 7, color: COR_CINZA, align: 'center' });
+      txt(formatarMoeda(compensacoesRec), margin + cW / 2, y + 12, { bold: true, size: 10, color: COR_ROXO, align: 'center' });
+      txt(`${nCompRec} lancamento(s)`, margin + cW / 2, y + 17, { size: 6.5, color: COR_CINZA, align: 'center' });
+
+      // Card despesas compensadas (obrigações da loja quitadas)
+      const cx2 = margin + cW + 3;
+      rect(cx2, y, cW, 20, [237, 233, 254], 2);
+      doc.setDrawColor(...COR_ROXO); doc.setLineWidth(0.4); doc.rect(cx2, y, cW, 20, 'S');
+      txt('Obrigacoes da loja quitadas', cx2 + cW / 2, y + 5.5, { size: 7, color: COR_CINZA, align: 'center' });
+      txt(formatarMoeda(compensacoesDesp), cx2 + cW / 2, y + 12, { bold: true, size: 10, color: COR_ROXO, align: 'center' });
+      txt(`${nCompDesp} lancamento(s)`, cx2 + cW / 2, y + 17, { size: 6.5, color: COR_CINZA, align: 'center' });
+      y += 24;
+
+      // Linha explicativa
+      rect(margin, y, colRight - margin, 8, COR_FUNDO, 1);
+      txt('Obs: compensacoes sao acordos entre debitos de irmaos e obrigacoes da loja, sem transacao financeira real.', margin + 3, y + 3.2, { size: 6.5, color: COR_CINZA });
+      txt('Os valores acima nao impactam saldo bancario nem caixa fisico.', margin + 3, y + 6.5, { size: 6.5, color: COR_CINZA });
+      y += 11;
+    }
+
     // ─── Rodapé em todas as páginas ───────────────────────────────────────
     const totalPages = doc.internal.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
