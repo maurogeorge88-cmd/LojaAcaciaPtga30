@@ -36,6 +36,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
   pendentes,
   showError,
   showSuccess,
+  quadrosOpcionais = { q3: true, q6: true, q7: true },
 }) => {
   try {
     showSuccess?.('Gerando PDF...');
@@ -231,7 +232,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     y += 14;
 
     // ─── 3. RESULTADO POR MÊS ─────────────────────────────────────────────
-    if (periodoA.ano > 0 && dadosMensais?.length > 0) {
+    if (quadrosOpcionais.q3 && periodoA.ano > 0 && dadosMensais?.length > 0) {
       const mesesComMov = dadosMensais.filter(m => m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0);
       if (mesesComMov.length > 0) {
         novaPageSeNecessario(20);
@@ -364,7 +365,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     });
 
     // ─── 5. EVOLUÇÃO MENSAL ───────────────────────────────────────────────
-    if (periodoA.ano > 0 && dadosMensais?.length > 0) {
+    if (quadrosOpcionais.q6 && periodoA.ano > 0 && dadosMensais?.length > 0) {
       novaPageSeNecessario(20);
       rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
       txt('6. EVOLUÇÃO MENSAL', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
@@ -408,7 +409,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     }
 
     // ─── 6. PENDÊNCIAS ───────────────────────────────────────────────────────
-    if (pendentes && (pendentes.receitas?.length > 0 || pendentes.despesas?.length > 0)) {
+    if (quadrosOpcionais.q7 && pendentes && (pendentes.receitas?.length > 0 || pendentes.despesas?.length > 0)) {
       novaPageSeNecessario(20);
       const totalRecPend  = (pendentes.receitas  || []).reduce((s,l) => s + parseFloat(l.valor), 0);
       const totalDespPend = (pendentes.despesas || []).reduce((s,l) => s + parseFloat(l.valor), 0);
