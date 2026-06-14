@@ -231,70 +231,10 @@ export const gerarPDFRelatorioFinanceiro = async ({
     txt(formatarMoeda(saldoTotal), colRight - 3, y + 5.5, { bold: true, size: 12, color: saldoTotal >= 0 ? COR_VERDE : COR_VERM, align: 'right' });
     y += 14;
 
-    // ─── 3. RESULTADO POR MÊS ─────────────────────────────────────────────
-    if (quadrosOpcionais.q3 && periodoA.ano > 0 && dadosMensais?.length > 0) {
-      const mesesComMov = dadosMensais.filter(m => m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0);
-      if (mesesComMov.length > 0) {
-        novaPageSeNecessario(20);
-        rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-        txt('3. RESULTADO POR MES', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
-        txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
-        y += 9;
-
-        // Cabeçalho tabela
-        rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
-        const cM = { mes: margin + 2, rec: margin + 33, desp: margin + 76, res: margin + 122, bar: margin + 156 };
-        txt('Mes',       cM.mes,  y + 4, { size: 7, bold: true, color: [255,255,255] });
-        txt('Receitas',  cM.rec,  y + 4, { size: 7, bold: true, color: [255,255,255] });
-        txt('Despesas',  cM.desp, y + 4, { size: 7, bold: true, color: [255,255,255] });
-        txt('Resultado', cM.res,  y + 4, { size: 7, bold: true, color: [255,255,255] });
-        y += 7;
-
-        // Calcular max absoluto para escala das barras
-        const maxAbsRes = Math.max(...mesesComMov.map(m => Math.abs((m.recBanco + m.recCaixa) - (m.despBanco + m.despCaixa))), 1);
-        const barMaxW = 26;
-
-        mesesComMov.forEach((m, i) => {
-          novaPageSeNecessario(6);
-          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
-          const recTotal  = m.recBanco + m.recCaixa;
-          const despTotal = m.despBanco + m.despCaixa;
-          const res = recTotal - despTotal;
-          const corRes = res >= 0 ? COR_VERDE : COR_VERM;
-          const barW = Math.abs(res) / maxAbsRes * barMaxW;
-
-          txt(m.mes,                             cM.mes,  y + 3.5, { size: 7.5, bold: true });
-          txt(formatarMoeda(recTotal),            cM.rec,  y + 3.5, { size: 7,   color: COR_VERDE });
-          txt(formatarMoeda(despTotal),           cM.desp, y + 3.5, { size: 7,   color: COR_VERM });
-          txt((res >= 0 ? '+' : '') + formatarMoeda(res), cM.res, y + 3.5, { size: 7.5, bold: true, color: corRes });
-
-          // Barra visual do resultado
-          rect(cM.bar, y + 1.5, barMaxW, 2.5, [220, 220, 220]);
-          if (barW > 0) rect(cM.bar, y + 1.5, barW, 2.5, corRes);
-          y += 5.5;
-        });
-
-        // Linha total
-        novaPageSeNecessario(10);
-        linha(y, margin, colRight, COR_ACCENT);
-        y += 1;
-        rect(margin, y, colRight - margin, 7, [219, 234, 254], 1);
-        const totalRecMes  = dadosMensais.reduce((s, m) => s + m.recBanco + m.recCaixa, 0);
-        const totalDespMes = dadosMensais.reduce((s, m) => s + m.despBanco + m.despCaixa, 0);
-        const totalResMes  = totalRecMes - totalDespMes;
-        const corTotalRes  = totalResMes >= 0 ? COR_VERDE : COR_VERM;
-        txt('TOTAL', cM.mes, y + 4.5, { bold: true, size: 8 });
-        txt(formatarMoeda(totalRecMes),  cM.rec,  y + 4.5, { bold: true, size: 7.5, color: COR_VERDE });
-        txt(formatarMoeda(totalDespMes), cM.desp, y + 4.5, { bold: true, size: 7.5, color: COR_VERM });
-        txt((totalResMes >= 0 ? '+' : '') + formatarMoeda(totalResMes), cM.res, y + 4.5, { bold: true, size: 8, color: corTotalRes });
-        y += 12;
-      }
-    }
-
-    // ─── 4. RECEITAS POR CATEGORIA ────────────────────────────────────────
+    // ─── 3. RECEITAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
     rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-    txt('4. RECEITAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+    txt('3. RECEITAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
     const totalRec = dadosA.recBanco + dadosA.recCaixa;
     txt(formatarMoeda(totalRec), colRight - 3, y + 4.2, { bold: true, size: 9, color: [200, 255, 220], align: 'right' });
     y += 9;
@@ -308,7 +248,6 @@ export const gerarPDFRelatorioFinanceiro = async ({
       txt(`${pct}%`, margin + 95, y + 4, { size: 7.5, color: COR_CINZA });
       txt(formatarMoeda(g.valor), colRight - 3, y + 4, { bold: true, size: 8.5, color: COR_VERDE, align: 'right' });
 
-      // Barra de progresso
       const barW = 80;
       rect(margin + 3, y + 5, barW, 1.5, [220, 220, 220]);
       rect(margin + 3, y + 5, barW * parseFloat(pct) / 100, 1.5, COR_VERDE);
@@ -331,7 +270,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
     // ─── 4. DESPESAS POR CATEGORIA ────────────────────────────────────────
     novaPageSeNecessario(20);
     rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-    txt('5. DESPESAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+    txt('4. DESPESAS POR CATEGORIA', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
     const totalDesp = dadosA.despBanco + dadosA.despCaixa;
     txt(formatarMoeda(totalDesp), colRight - 3, y + 4.2, { bold: true, size: 9, color: [255, 200, 200], align: 'right' });
     y += 9;
@@ -364,18 +303,73 @@ export const gerarPDFRelatorioFinanceiro = async ({
       y += 2;
     });
 
-    // ─── 5. EVOLUÇÃO MENSAL ───────────────────────────────────────────────
+    // ─── 5. RESULTADO POR MÊS ────────────────────────────────────────────
+    if (quadrosOpcionais.q3 && periodoA.ano > 0 && dadosMensais?.length > 0) {
+      const mesesComMov = dadosMensais.filter(m => m.recBanco + m.recCaixa + m.despBanco + m.despCaixa > 0);
+      if (mesesComMov.length > 0) {
+        novaPageSeNecessario(20);
+        rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
+        txt('5. RESULTADO POR MES', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+        txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
+        y += 9;
+
+        rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
+        const cM = { mes: margin + 2, rec: margin + 33, desp: margin + 76, res: margin + 122, bar: margin + 156 };
+        txt('Mes',       cM.mes,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+        txt('Receitas',  cM.rec,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+        txt('Despesas',  cM.desp, y + 4, { size: 7, bold: true, color: [255,255,255] });
+        txt('Resultado', cM.res,  y + 4, { size: 7, bold: true, color: [255,255,255] });
+        y += 7;
+
+        const maxAbsRes = Math.max(...mesesComMov.map(m => Math.abs((m.recBanco + m.recCaixa) - (m.despBanco + m.despCaixa))), 1);
+        const barMaxW = 26;
+
+        mesesComMov.forEach((m, i) => {
+          novaPageSeNecessario(6);
+          if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 5.5, COR_FUNDO);
+          const recTotal  = m.recBanco + m.recCaixa;
+          const despTotal = m.despBanco + m.despCaixa;
+          const res = recTotal - despTotal;
+          const corRes = res >= 0 ? COR_VERDE : COR_VERM;
+          const barW = Math.abs(res) / maxAbsRes * barMaxW;
+
+          txt(m.mes,                                       cM.mes,  y + 3.5, { size: 7.5, bold: true });
+          txt(formatarMoeda(recTotal),                     cM.rec,  y + 3.5, { size: 7,   color: COR_VERDE });
+          txt(formatarMoeda(despTotal),                    cM.desp, y + 3.5, { size: 7,   color: COR_VERM });
+          txt((res >= 0 ? '+' : '') + formatarMoeda(res), cM.res,  y + 3.5, { size: 7.5, bold: true, color: corRes });
+
+          rect(cM.bar, y + 1.5, barMaxW, 2.5, [220, 220, 220]);
+          if (barW > 0) rect(cM.bar, y + 1.5, barW, 2.5, corRes);
+          y += 5.5;
+        });
+
+        novaPageSeNecessario(10);
+        linha(y, margin, colRight, COR_ACCENT);
+        y += 1;
+        rect(margin, y, colRight - margin, 7, [219, 234, 254], 1);
+        const totalRecMes  = dadosMensais.reduce((s, m) => s + m.recBanco + m.recCaixa, 0);
+        const totalDespMes = dadosMensais.reduce((s, m) => s + m.despBanco + m.despCaixa, 0);
+        const totalResMes  = totalRecMes - totalDespMes;
+        const corTotalRes  = totalResMes >= 0 ? COR_VERDE : COR_VERM;
+        txt('TOTAL', cM.mes, y + 4.5, { bold: true, size: 8 });
+        txt(formatarMoeda(totalRecMes),  cM.rec,  y + 4.5, { bold: true, size: 7.5, color: COR_VERDE });
+        txt(formatarMoeda(totalDespMes), cM.desp, y + 4.5, { bold: true, size: 7.5, color: COR_VERM });
+        txt((totalResMes >= 0 ? '+' : '') + formatarMoeda(totalResMes), cM.res, y + 4.5, { bold: true, size: 8, color: corTotalRes });
+        y += 12;
+      }
+    }
+
+    // ─── 6. EVOLUÇÃO MENSAL ───────────────────────────────────────────────
     if (quadrosOpcionais.q6 && periodoA.ano > 0 && dadosMensais?.length > 0) {
       novaPageSeNecessario(20);
       rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-      txt('6. EVOLUÇÃO MENSAL', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+      txt('6. EVOLUCAO MENSAL', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
       txt(`Ano ${periodoA.ano}`, colRight - 3, y + 4.2, { size: 8, color: [200, 210, 255], align: 'right' });
       y += 9;
 
-      // Cabeçalho tabela
       const cols = { mes: 14, recB: 45, recC: 75, despB: 105, despC: 135, saldoB: 165 };
       rect(margin, y, colRight - margin, 6, [79, 70, 229], 1);
-      [['Mês', cols.mes], ['Rec. Banco', cols.recB], ['Rec. Caixa', cols.recC],
+      [['Mes', cols.mes], ['Rec. Banco', cols.recB], ['Rec. Caixa', cols.recC],
        ['Desp. Banco', cols.despB], ['Desp. Caixa', cols.despC], ['Saldo Banco', cols.saldoB]
       ].forEach(([h, x]) => txt(h, x, y + 4, { size: 7, bold: true, color: [255,255,255] }));
       y += 7;
@@ -394,21 +388,20 @@ export const gerarPDFRelatorioFinanceiro = async ({
         y += 5.5;
       });
 
-      // Linha total
       novaPageSeNecessario(10);
       linha(y, margin, colRight, COR_ACCENT);
       y += 1;
       rect(margin, y, colRight - margin, 7, [219, 234, 254], 1);
       txt('TOTAL', cols.mes, y + 5, { bold: true, size: 8 });
-      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recBanco,0)), cols.recB, y + 5, { bold: true, size: 7.5, color: COR_VERDE });
-      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recCaixa,0)), cols.recC, y + 5, { bold: true, size: 7.5, color: COR_VERDE });
+      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recBanco,0)),  cols.recB,  y + 5, { bold: true, size: 7.5, color: COR_VERDE });
+      txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.recCaixa,0)),  cols.recC,  y + 5, { bold: true, size: 7.5, color: COR_VERDE });
       txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despBanco,0)), cols.despB, y + 5, { bold: true, size: 7.5, color: COR_VERM });
       txt(formatarMoeda(dadosMensais.reduce((s,m)=>s+m.despCaixa,0)), cols.despC, y + 5, { bold: true, size: 7.5, color: COR_VERM });
       txt(formatarMoeda(dadosA.saldoBancario), cols.saldoB, y + 5, { bold: true, size: 8, color: COR_AZUL });
       y += 10;
     }
 
-    // ─── 6. PENDÊNCIAS ───────────────────────────────────────────────────────
+    // ─── 7. PENDÊNCIAS ───────────────────────────────────────────────────────
     if (quadrosOpcionais.q7 && pendentes && (pendentes.receitas?.length > 0 || pendentes.despesas?.length > 0)) {
       novaPageSeNecessario(20);
       const totalRecPend  = (pendentes.receitas  || []).reduce((s,l) => s + parseFloat(l.valor), 0);
@@ -419,7 +412,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
       const saldoProj = dadosA.saldoBancario + caixaFisicoHistorico + totalRecPend - totalDespPend;
 
       rect(margin, y, colRight - margin, 6, COR_ACCENT, 2);
-      txt('7. PENDENCIAS', margin + 3, y + 4.2, { bold: true, size: 9, color: [255, 255, 255] });
+      txt('7. PENDENCIAS', margin + 3, y + 4.2, { bold: true, size: 9, color: [255,255,255] });
       y += 9;
 
       // Cards resumo
