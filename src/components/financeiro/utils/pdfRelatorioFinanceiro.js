@@ -242,7 +242,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
 
         // Cabeçalho tabela
         rect(margin, y, colRight - margin, 6, [60, 55, 200], 1);
-        const cM = { mes: margin + 2, rec: margin + 38, desp: margin + 85, res: margin + 132, bar: margin + 158 };
+        const cM = { mes: margin + 2, rec: margin + 33, desp: margin + 76, res: margin + 122, bar: margin + 156 };
         txt('Mes',       cM.mes,  y + 4, { size: 7, bold: true, color: [255,255,255] });
         txt('Receitas',  cM.rec,  y + 4, { size: 7, bold: true, color: [255,255,255] });
         txt('Despesas',  cM.desp, y + 4, { size: 7, bold: true, color: [255,255,255] });
@@ -251,7 +251,7 @@ export const gerarPDFRelatorioFinanceiro = async ({
 
         // Calcular max absoluto para escala das barras
         const maxAbsRes = Math.max(...mesesComMov.map(m => Math.abs((m.recBanco + m.recCaixa) - (m.despBanco + m.despCaixa))), 1);
-        const barMaxW = 38;
+        const barMaxW = 26;
 
         mesesComMov.forEach((m, i) => {
           novaPageSeNecessario(6);
