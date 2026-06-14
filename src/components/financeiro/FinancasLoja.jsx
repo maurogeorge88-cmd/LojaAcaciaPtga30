@@ -57,6 +57,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [resumoIrmaos, setResumoIrmaos] = useState([]);
   const [editando, setEditando] = useState(null);
   const [viewMode, setViewMode] = useState('lancamentos');
+  const [viewAgrupado, setViewAgrupado] = useState(() => {
+    try { return localStorage.getItem('financas_view_agrupado') !== 'false'; } catch { return true; }
+  });
+  const [expandedGroups, setExpandedGroups] = useState(new Set());
   const [saldoAnterior, setSaldoAnterior] = useState(0);
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
@@ -2749,6 +2753,23 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             {lancamentos.filter(l => l.status === 'pendente' && l.origem_tipo === 'Irmao').length > 0 && (
               <div style={{display:'flex',gap:'0.5rem',alignItems:'center',flexWrap:'wrap'}}>
+                {/* Toggle agrupado/detalhado */}
+                <div style={{display:'flex',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',overflow:'hidden',flexShrink:0}}>
+                  <button
+                    onClick={() => { setViewAgrupado(true); try { localStorage.setItem('financas_view_agrupado','true'); } catch {} }}
+                    style={{padding:'0.35rem 0.75rem',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',border:'none',
+                      background: viewAgrupado ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                      color: viewAgrupado ? '#fff' : 'var(--color-text-muted)'}}>
+                    📅 Agrupado
+                  </button>
+                  <button
+                    onClick={() => { setViewAgrupado(false); try { localStorage.setItem('financas_view_agrupado','false'); } catch {} }}
+                    style={{padding:'0.35rem 0.75rem',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',border:'none',borderLeft:'1px solid var(--color-border)',
+                      background: !viewAgrupado ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                      color: !viewAgrupado ? '#fff' : 'var(--color-text-muted)'}}>
+                    ☰ Detalhado
+                  </button>
+                </div>
                 <button
                   onClick={() => gerarRelatorioDeTodosWrapper()}
                   className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
@@ -2869,7 +2890,129 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
                       {/* GRID DE LANÇAMENTOS */}
                       <div style={{padding:'0.75rem',display:'flex',flexDirection:'column',gap:'0.5rem'}}>
-                        {irmaoData.lancamentos.map((lanc, index) => {
+                        {viewAgrupado ? (() => {
+                          // ── MODO AGRUPADO ─────────────────────────────────
+                          const grupos = Object.values(
+                            irmaoData.lancamentos.reduce((acc, lanc) => {
+                              const chave = lanc.status === 'pago'
+                                ? (lanc.data_pagamento || 'sem-data')
+                                : (lanc.data_vencimento || 'sem-data');
+                              if (!acc[chave]) acc[chave] = { chave, data: chave, lancamentos: [] };
+                              acc[chave].lancamentos.push(lanc);
+                              return acc;
+                            }, {})
+                          ).sort((a, b) => a.data.localeCompare(b.data));
+
+                          return grupos.map(grupo => {
+                            const groupKey = `${irmaoData.irmaoId}-${grupo.chave}`;
+                            const isOpen = expandedGroups.has(groupKey);
+                            const toggleGroup = () => setExpandedGroups(prev => {
+                              const next = new Set(prev);
+                              isOpen ? next.delete(groupKey) : next.add(groupKey);
+                              return next;
+                            });
+
+                            const totalGrupo = grupo.lancamentos.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+                            const temReceita = grupo.lancamentos.some(l => l.categorias_financeiras?.tipo === 'receita');
+                            const temDespesa = grupo.lancamentos.some(l => l.categorias_financeiras?.tipo === 'despesa');
+                            const misto = temReceita && temDespesa;
+                            const corGrupo = misto ? '#f59e0b' : temReceita ? '#ef4444' : '#3b82f6';
+
+                            const quitarGrupo = () => {
+                              const msg = misto
+                                ? `Este grupo contém receitas e despesas. Deseja quitar todos os ${grupo.lancamentos.length} lançamentos?`
+                                : `Quitar todos os ${grupo.lancamentos.length} lançamentos deste dia?`;
+                              if (!window.confirm(msg)) return;
+                              grupo.lancamentos.forEach(l => abrirModalQuitacao(l));
+                            };
+
+                            return (
+                              <div key={groupKey} style={{borderRadius:'var(--radius-lg)',border:`1px solid var(--color-border)`,overflow:'hidden'}}>
+                                {/* Cabeçalho do grupo */}
+                                <div
+                                  onClick={toggleGroup}
+                                  style={{display:'flex',alignItems:'center',gap:'0.6rem',padding:'0.5rem 0.75rem',
+                                    background:'var(--color-surface-2)',cursor:'pointer',userSelect:'none',
+                                    borderLeft:`3px solid ${corGrupo}`}}>
+                                  <span style={{fontSize:'0.75rem',fontWeight:'700',color:corGrupo,flexShrink:0}}>
+                                    📅 {grupo.data !== 'sem-data' ? new Date(grupo.data + 'T00:00:00').toLocaleDateString('pt-BR') : '—'}
+                                  </span>
+                                  <span style={{fontSize:'0.7rem',color:'var(--color-text-muted)',flexShrink:0}}>
+                                    • {grupo.lancamentos.length} {grupo.lancamentos.length === 1 ? 'lançamento' : 'lançamentos'}
+                                  </span>
+                                  <span style={{flex:1}}/>
+                                  <span style={{fontSize:'0.82rem',fontWeight:'800',color:corGrupo,flexShrink:0}}>
+                                    {formatarMoeda(totalGrupo)}
+                                  </span>
+                                  <button
+                                    onClick={e => { e.stopPropagation(); quitarGrupo(); }}
+                                    style={{padding:'0.2rem 0.55rem',fontSize:'0.7rem',fontWeight:'700',cursor:'pointer',flexShrink:0,
+                                      background: misto ? 'rgba(245,158,11,0.15)' : temReceita ? 'rgba(239,68,68,0.12)' : 'rgba(59,130,246,0.12)',
+                                      color: corGrupo, border:`1px solid ${corGrupo}40`,borderRadius:'var(--radius-md)'}}>
+                                    ✅ Quitar todos
+                                  </button>
+                                  <span style={{fontSize:'0.7rem',color:'var(--color-text-muted)',flexShrink:0,transform: isOpen ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
+                                </div>
+
+                                {/* Lançamentos internos — minimalistas */}
+                                {isOpen && (
+                                  <div style={{display:'flex',flexDirection:'column'}}>
+                                    {grupo.lancamentos.map((lanc, idx) => {
+                                      const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                                      const cor = ehReceita ? '#ef4444' : '#3b82f6';
+                                      return (
+                                        <div key={lanc.id} style={{
+                                          display:'flex',alignItems:'center',gap:'0.6rem',
+                                          padding:'0.4rem 0.75rem',
+                                          background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                                          borderTop:'1px solid var(--color-border)',
+                                          borderLeft:`3px solid ${cor}40`}}>
+                                          <span style={{fontSize:'0.65rem',color:cor,fontWeight:'700',flexShrink:0}}>
+                                            {ehReceita ? '📈' : '📉'}
+                                          </span>
+                                          <span style={{fontSize:'0.75rem',color:'var(--color-text)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                            {lanc.descricao}
+                                            {lanc.categorias_financeiras?.nome && (
+                                              <span style={{fontSize:'0.65rem',color:'var(--color-text-muted)',marginLeft:'0.35rem'}}>
+                                                · {lanc.categorias_financeiras.nome}
+                                              </span>
+                                            )}
+                                            {lanc.eh_parcelado && (
+                                              <span style={{fontSize:'0.63rem',color:'#8b5cf6',marginLeft:'0.35rem'}}>
+                                                · Parcela {lanc.parcela_numero}/{lanc.parcela_total}
+                                              </span>
+                                            )}
+                                            {lanc.evento_comemorativo_id && <span style={{marginLeft:'0.3rem',fontSize:'0.65rem'}}>🎉</span>}
+                                            {lanc.projeto_id && <span style={{marginLeft:'0.3rem',fontSize:'0.65rem'}}>🏗️</span>}
+                                          </span>
+                                          <span style={{fontSize:'0.78rem',fontWeight:'700',color:cor,flexShrink:0}}>
+                                            {formatarMoeda(parseFloat(lanc.valor))}
+                                          </span>
+                                          <div style={{display:'flex',gap:'0.25rem',flexShrink:0}}>
+                                            <button onClick={() => abrirModalQuitacao(lanc)}
+                                              style={{padding:'0.2rem 0.45rem',background:'rgba(16,185,129,0.12)',color:'#10b981',border:'1px solid rgba(16,185,129,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.7rem',fontWeight:'700',cursor:'pointer'}}>
+                                              💰
+                                            </button>
+                                            <button onClick={() => editarLancamento(lanc)}
+                                              style={{padding:'0.2rem 0.45rem',background:'rgba(99,102,241,0.12)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.7rem',fontWeight:'700',cursor:'pointer'}}>
+                                              ✏️
+                                            </button>
+                                            <button onClick={() => { if (window.confirm('Excluir este lançamento permanentemente?')) excluirLancamento(lanc.id); }}
+                                              style={{padding:'0.2rem 0.45rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.7rem',fontWeight:'700',cursor:'pointer'}}>
+                                              🗑
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          });
+                        })() : (
+                          // ── MODO DETALHADO (original) ──────────────────────
+                          irmaoData.lancamentos.map((lanc, index) => {
                           const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
                           const corBorda = ehReceita ? '#ef4444' : '#3b82f6';
                           const bgCard = index % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)';
@@ -2962,7 +3105,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                               </div>
                             </div>
                           );
-                        })}
+                        }))}
                       </div>
 
                       {/* RODAPÉ */}
