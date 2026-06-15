@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import CadastroSessao from './CadastroSessao';
 
-export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca }) {
+export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, abrirModalInicio = false }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [modalAberto, setModalAberto] = useState(abrirModalInicio);
 
   // Estados para visitas
   const [visitas, setVisitas] = useState([]);
@@ -972,6 +974,17 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca })
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {modalAberto && (
+        <div onClick={() => setModalAberto(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+          <div onClick={e => e.stopPropagation()}>
+            <CadastroSessao
+              modalInicialAberto={true}
+              onModalFechado={() => { setModalAberto(false); carregarSessoes(); }}
+            />
           </div>
         </div>
       )}
