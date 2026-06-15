@@ -61,6 +61,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     try { return localStorage.getItem('financas_view_agrupado') !== 'false'; } catch { return true; }
   });
   const [expandedGroups, setExpandedGroups] = useState(new Set());
+  const [viewAgrupadoLista, setViewAgrupadoLista] = useState(() => {
+    try { return localStorage.getItem('financas_view_agrupado_lista') !== 'false'; } catch { return true; }
+  });
+  const [expandedLista, setExpandedLista] = useState({ origens: new Set(), datas: new Set() });
   const [saldoAnterior, setSaldoAnterior] = useState(0);
   const [caixaFisicoTotal, setCaixaFisicoTotal] = useState(0);
   const [troncoTotalGlobal, setTroncoTotalGlobal] = useState({ banco: 0, especie: 0, total: 0 });
@@ -3133,32 +3137,257 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <h3 className="text-lg font-semibold" style={{color:"var(--color-text)"}}>
                 Lançamentos de {meses[filtros.mes - 1]}/{filtros.ano}
               </h3>
-              <div className="flex items-center gap-2">
-                <label className="text-sm" style={{color:"var(--color-text-muted)"}}>Mostrar:</label>
-                <select
-                  value={limiteRegistros}
-                  onChange={(e) => setLimiteRegistros(Number(e.target.value))}
-                  className="px-3 py-1 border rounded-lg text-sm" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                >
-                  <option value={20}>20</option>
-                  <option value={30}>30</option>
-                  <option value={40}>40</option>
-                  <option value={50}>50</option>
-                  <option value={9999}>Todos</option>
-                </select>
-                <span className="text-sm" style={{color:"var(--color-text-muted)"}}>registros</span>
-              </div>
+              {!viewAgrupadoLista && (
+                <div className="flex items-center gap-2">
+                  <label className="text-sm" style={{color:"var(--color-text-muted)"}}>Mostrar:</label>
+                  <select
+                    value={limiteRegistros}
+                    onChange={(e) => setLimiteRegistros(Number(e.target.value))}
+                    className="px-3 py-1 border rounded-lg text-sm" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                  >
+                    <option value={20}>20</option>
+                    <option value={30}>30</option>
+                    <option value={40}>40</option>
+                    <option value={50}>50</option>
+                    <option value={9999}>Todos</option>
+                  </select>
+                  <span className="text-sm" style={{color:"var(--color-text-muted)"}}>registros</span>
+                </div>
+              )}
             </div>
-            {lancamentos.filter(l => l.status === 'pendente').length > 0 && (
-              <button
-                onClick={() => setMostrarModalQuitacaoLote(true)}
-                className="px-4 py-2 text-white rounded-lg hover: font-medium text-sm"
-              >
-                💰 Quitar em Lote
-              </button>
-            )}
+            <div style={{display:'flex',gap:'0.5rem',alignItems:'center',flexWrap:'wrap'}}>
+              {/* Toggle agrupado/detalhado */}
+              <div style={{display:'flex',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',overflow:'hidden',flexShrink:0}}>
+                <button
+                  onClick={() => { setViewAgrupadoLista(true); try { localStorage.setItem('financas_view_agrupado_lista','true'); } catch {} }}
+                  style={{padding:'0.35rem 0.75rem',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',border:'none',
+                    background: viewAgrupadoLista ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                    color: viewAgrupadoLista ? '#fff' : 'var(--color-text-muted)'}}>
+                  📅 Agrupado
+                </button>
+                <button
+                  onClick={() => { setViewAgrupadoLista(false); try { localStorage.setItem('financas_view_agrupado_lista','false'); } catch {} }}
+                  style={{padding:'0.35rem 0.75rem',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',border:'none',borderLeft:'1px solid var(--color-border)',
+                    background: !viewAgrupadoLista ? 'var(--color-accent)' : 'var(--color-surface-2)',
+                    color: !viewAgrupadoLista ? '#fff' : 'var(--color-text-muted)'}}>
+                  ☰ Detalhado
+                </button>
+              </div>
+              {lancamentos.filter(l => l.status === 'pendente').length > 0 && (
+                <button
+                  onClick={() => setMostrarModalQuitacaoLote(true)}
+                  className="px-4 py-2 text-white rounded-lg hover: font-medium text-sm"
+                >
+                  💰 Quitar em Lote
+                </button>
+              )}
+            </div>
           </div>
           <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.75rem'}}>
+            {viewAgrupadoLista ? (() => {
+              // ── MODO AGRUPADO ─────────────────────────────────────────────
+              // Nível 1: agrupar por origem (Loja ou cada irmão)
+              const origemMap = lancamentos.reduce((acc, lanc) => {
+                const origemKey = lanc.origem_tipo === 'Loja'
+                  ? '__loja__'
+                  : (lanc.origem_irmao_id || '__sem_irmao__');
+                const origemLabel = lanc.origem_tipo === 'Loja'
+                  ? '🏛️ Loja'
+                  : (lanc.irmaos?.nome || 'Não identificado');
+                if (!acc[origemKey]) acc[origemKey] = { key: origemKey, label: origemLabel, isLoja: lanc.origem_tipo === 'Loja', lancamentos: [] };
+                acc[origemKey].lancamentos.push(lanc);
+                return acc;
+              }, {});
+
+              // Ordenar: Loja primeiro, depois irmãos alfabeticamente
+              const origens = Object.values(origemMap).sort((a, b) => {
+                if (a.isLoja) return -1;
+                if (b.isLoja) return 1;
+                return a.label.localeCompare(b.label);
+              }).slice(0, 50);
+
+              // Auto-expandir se filtrado por irmão específico
+              const filtroIrmaoAtivo = !!filtros.origem_irmao_id;
+
+              return origens.map(origem => {
+                const origemAberta = filtroIrmaoAtivo || expandedLista.origens.has(origem.key);
+                const toggleOrigem = () => setExpandedLista(prev => {
+                  const next = new Set(prev.origens);
+                  origemAberta ? next.delete(origem.key) : next.add(origem.key);
+                  return { ...prev, origens: next };
+                });
+
+                // Totais da origem
+                const totalRec  = origem.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor||0), 0);
+                const totalDesp = origem.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor||0), 0);
+                const pendentes = origem.lancamentos.filter(l => l.status === 'pendente').length;
+                const vencidos  = origem.lancamentos.filter(l => l.status === 'pendente' && l.data_vencimento < new Date().toISOString().split('T')[0]).length;
+
+                // Nível 2: agrupar por data dentro da origem
+                const dataMap = origem.lancamentos.reduce((acc, lanc) => {
+                  const chave = lanc.status === 'pago'
+                    ? (lanc.data_pagamento || 'sem-data')
+                    : (lanc.data_vencimento || 'sem-data');
+                  if (!acc[chave]) acc[chave] = { chave, lancamentos: [] };
+                  acc[chave].lancamentos.push(lanc);
+                  return acc;
+                }, {});
+                const grupos = Object.values(dataMap).sort((a,b) => b.chave.localeCompare(a.chave));
+
+                return (
+                  <div key={origem.key} style={{borderRadius:'var(--radius-xl)',overflow:'hidden',border:'1px solid var(--color-border)',background:'var(--color-surface)',marginBottom:'0.5rem'}}>
+
+                    {/* Cabeçalho de origem */}
+                    <div onClick={toggleOrigem} style={{
+                      display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.75rem 1rem',cursor:'pointer',userSelect:'none',
+                      background: origem.isLoja ? 'rgba(99,102,241,0.15)' : 'rgba(139,92,246,0.12)',
+                      borderLeft:`4px solid ${origem.isLoja ? '#6366f1' : '#8b5cf6'}`}}>
+                      <span style={{fontSize:'0.95rem',fontWeight:'800',color: origem.isLoja ? '#6366f1' : '#8b5cf6',flex:1}}>
+                        {origem.label}
+                      </span>
+                      <div style={{display:'flex',gap:'0.6rem',alignItems:'center',flexWrap:'wrap'}}>
+                        {totalRec > 0 && (
+                          <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#10b981',background:'rgba(16,185,129,0.1)',padding:'0.15rem 0.5rem',borderRadius:'999px',border:'1px solid rgba(16,185,129,0.3)'}}>
+                            📈 {formatarMoeda(totalRec)}
+                          </span>
+                        )}
+                        {totalDesp > 0 && (
+                          <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#ef4444',background:'rgba(239,68,68,0.1)',padding:'0.15rem 0.5rem',borderRadius:'999px',border:'1px solid rgba(239,68,68,0.3)'}}>
+                            📉 {formatarMoeda(totalDesp)}
+                          </span>
+                        )}
+                        {pendentes > 0 && (
+                          <span style={{fontSize:'0.68rem',fontWeight:'700',color: vencidos > 0 ? '#ef4444' : '#f59e0b',background: vencidos > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',padding:'0.15rem 0.5rem',borderRadius:'999px',border:`1px solid ${vencidos > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`}}>
+                            {vencidos > 0 ? `⚠️ ${vencidos} vencido${vencidos>1?'s':''}` : `⏳ ${pendentes} pendente${pendentes>1?'s':''}`}
+                          </span>
+                        )}
+                        <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',transform: origemAberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
+                      </div>
+                    </div>
+
+                    {/* Grupos de data */}
+                    {origemAberta && (
+                      <div style={{padding:'0.4rem 0.6rem',display:'flex',flexDirection:'column',gap:'0.35rem'}}>
+                        {grupos.map(grupo => {
+                          const dataKey = `${origem.key}__${grupo.chave}`;
+                          const dataAberta = filtroIrmaoAtivo || expandedLista.datas.has(dataKey);
+                          const toggleData = (e) => {
+                            e.stopPropagation();
+                            setExpandedLista(prev => {
+                              const next = new Set(prev.datas);
+                              dataAberta ? next.delete(dataKey) : next.add(dataKey);
+                              return { ...prev, datas: next };
+                            });
+                          };
+
+                          const recGrupo  = grupo.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s+parseFloat(l.valor||0),0);
+                          const despGrupo = grupo.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s+parseFloat(l.valor||0),0);
+                          const pendGrupo = grupo.lancamentos.filter(l => l.status === 'pendente').length;
+                          const vencGrupo = grupo.lancamentos.filter(l => l.status === 'pendente' && l.data_vencimento < new Date().toISOString().split('T')[0]).length;
+                          const dataLabel = grupo.chave !== 'sem-data'
+                            ? new Date(grupo.chave + 'T00:00:00').toLocaleDateString('pt-BR')
+                            : '—';
+
+                          return (
+                            <div key={dataKey} style={{borderRadius:'var(--radius-lg)',border:'1px solid var(--color-border)',overflow:'hidden'}}>
+                              {/* Cabeçalho do grupo de data */}
+                              <div onClick={toggleData} style={{
+                                display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.4rem 0.75rem',
+                                background:'var(--color-surface-2)',cursor:'pointer',userSelect:'none',
+                                borderLeft:'3px solid var(--color-border)'}}>
+                                <span style={{fontSize:'0.75rem',fontWeight:'700',color:'var(--color-text)',flexShrink:0}}>
+                                  📅 {dataLabel}
+                                </span>
+                                <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0}}>
+                                  • {grupo.lancamentos.length} {grupo.lancamentos.length === 1 ? 'lançamento' : 'lançamentos'}
+                                </span>
+                                <span style={{flex:1}}/>
+                                {recGrupo > 0 && <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#10b981',flexShrink:0}}>📈 {formatarMoeda(recGrupo)}</span>}
+                                {despGrupo > 0 && <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#ef4444',flexShrink:0,marginLeft:'0.35rem'}}>📉 {formatarMoeda(despGrupo)}</span>}
+                                {pendGrupo > 0 && (
+                                  <span style={{fontSize:'0.65rem',fontWeight:'700',marginLeft:'0.35rem',flexShrink:0,
+                                    color: vencGrupo > 0 ? '#ef4444' : '#f59e0b'}}>
+                                    {vencGrupo > 0 ? `⚠️ ${vencGrupo} venc.` : `⏳ ${pendGrupo} pend.`}
+                                  </span>
+                                )}
+                                <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0,marginLeft:'0.35rem',transform: dataAberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
+                              </div>
+
+                              {/* Registros internos minimalistas */}
+                              {dataAberta && (
+                                <div style={{display:'flex',flexDirection:'column'}}>
+                                  {grupo.lancamentos.map((lanc, idx) => {
+                                    const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
+                                    const cor = ehReceita ? '#10b981' : '#ef4444';
+                                    const badge = obterBadgeStatus(lanc);
+                                    return (
+                                      <div key={lanc.id} style={{
+                                        display:'grid',
+                                        gridTemplateColumns:'1fr auto auto auto',
+                                        alignItems:'center',gap:'0.5rem',
+                                        padding:'0.38rem 0.75rem',
+                                        background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
+                                        borderTop:'1px solid var(--color-border)',
+                                        borderLeft:`3px solid ${cor}40`}}>
+                                        {/* Info */}
+                                        <div style={{minWidth:0,display:'flex',alignItems:'center',gap:'0.4rem'}}>
+                                          <span style={{fontSize:'0.65rem',color:cor,flexShrink:0}}>{ehReceita?'📈':'📉'}</span>
+                                          <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)',flexShrink:0,whiteSpace:'nowrap'}}>
+                                            {lanc.categorias_financeiras?.nome}
+                                          </span>
+                                          <span style={{fontSize:'0.75rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                                            · {lanc.descricao}
+                                            {lanc.evento_comemorativo_id && <span style={{marginLeft:'0.25rem',fontSize:'0.65rem'}}>🎉</span>}
+                                            {lanc.projeto_id && <span style={{marginLeft:'0.25rem',fontSize:'0.65rem'}}>🏗️</span>}
+                                            {lanc.eh_parcelado && <span style={{marginLeft:'0.25rem',fontSize:'0.65rem',color:'#8b5cf6'}}> {lanc.parcela_numero}/{lanc.parcela_total}</span>}
+                                          </span>
+                                        </div>
+                                        {/* Status */}
+                                        <span style={{fontSize:'0.62rem',color:'var(--color-text-muted)',whiteSpace:'nowrap',flexShrink:0}}>
+                                          {badge.icone} {badge.texto}
+                                        </span>
+                                        {/* Valor */}
+                                        <span style={{fontSize:'0.8rem',fontWeight:'700',color:cor,flexShrink:0,whiteSpace:'nowrap'}}>
+                                          {formatarMoeda(parseFloat(lanc.valor))}
+                                        </span>
+                                        {/* Ações */}
+                                        <div style={{display:'flex',gap:'0.2rem',flexShrink:0}}>
+                                          {lanc.status === 'pendente' && !lanc.eh_pagamento_parcial && (
+                                            <button onClick={() => abrirModalQuitacao(lanc)}
+                                              style={{padding:'0.18rem 0.4rem',background:'rgba(16,185,129,0.12)',color:'#10b981',border:'1px solid rgba(16,185,129,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
+                                              ✅
+                                            </button>
+                                          )}
+                                          {lanc.status === 'pendente' && !lanc.eh_parcelado && !lanc.eh_pagamento_parcial && (
+                                            <button onClick={() => abrirModalPagamentoParcial(lanc)}
+                                              style={{padding:'0.18rem 0.4rem',background:'none',border:'none',cursor:'pointer',fontSize:'0.75rem'}}
+                                              title="Pagamento parcial">💰</button>
+                                          )}
+                                          <button onClick={() => editarLancamento(lanc)}
+                                            style={{padding:'0.18rem 0.4rem',background:'rgba(99,102,241,0.12)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
+                                            ✏️
+                                          </button>
+                                          <button onClick={() => { if(window.confirm('Excluir este lançamento permanentemente?')) excluirLancamento(lanc.id); }}
+                                            style={{padding:'0.18rem 0.4rem',background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.35)',borderRadius:'var(--radius-md)',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer'}}>
+                                            🗑
+                                          </button>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })() : (
+              // ── MODO DETALHADO (original) ──────────────────────────────────
+              <>
                 {/* Cabeçalho das colunas */}
                 <div style={{
                   display:'grid',
@@ -3345,10 +3574,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 Nenhum lançamento encontrado
               </div>
             )}
-            {lancamentos.length > limiteRegistros && (
+            {!viewAgrupadoLista && lancamentos.length > limiteRegistros && (
               <div className="text-center py-4 text-sm border-t">
                 Exibindo {limiteRegistros} de {lancamentos.length} registros
               </div>
+            )}
+              </>
             )}
           </div>
         </div>
