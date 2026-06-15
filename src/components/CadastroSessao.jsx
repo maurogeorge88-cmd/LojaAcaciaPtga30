@@ -9,13 +9,17 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
   const [modalAberto, setModalAberto] = useState(false);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ dataSessao: '', grauSessao: '', classificacaoSessaoId: '', observacoes: '' });
-  const [editando, setEditando] = useState(null);
+  const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
+  const [anosDisponiveis, setAnosDisponiveis] = useState([new Date().getFullYear()]);
 
   useEffect(() => {
     carregarGraus();
     carregarClassificacoesSessao();
-    carregarSessoes();
   }, []);
+
+  useEffect(() => {
+    carregarSessoes();
+  }, [anoFiltro]);
 
   const carregarGraus = async () => {
     try {
@@ -34,11 +38,25 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
 
   const carregarSessoes = async () => {
     try {
+      // Buscar anos disponíveis
+      const { data: todos } = await supabase
+        .from('sessoes_presenca')
+        .select('data_sessao')
+        .order('data_sessao', { ascending: false });
+
+      if (todos?.length) {
+        const anos = [...new Set(todos.map(s => new Date(s.data_sessao + 'T00:00:00').getFullYear()))].sort((a,b) => b - a);
+        setAnosDisponiveis(anos);
+      }
+
+      // Buscar sessões do ano filtrado
       const { data } = await supabase
         .from('sessoes_presenca')
         .select('*, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
-        .order('data_sessao', { ascending: false })
-        .limit(20);
+        .gte('data_sessao', `${anoFiltro}-01-01`)
+        .lte('data_sessao', `${anoFiltro}-12-31`)
+        .order('data_sessao', { ascending: false });
+
       setSessoes(data || []);
     } catch (e) { console.error(e); }
   };
@@ -147,7 +165,28 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
       <div style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:'var(--radius-xl)', overflow:'hidden' }}>
 
         {/* Cabeçalho da lista */}
-        <div style={{ display:'grid', gridTemplateColumns:'110px 1fr 1fr auto', gap:'0.75rem', padding:'0.6rem 1.25rem', background:'var(--color-surface-2)', borderBottom:'2px solid var(--color-border)' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.75rem 1.25rem', background:'var(--color-surface-2)', borderBottom:'2px solid var(--color-border)' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            <span style={{ fontSize:'0.75rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', letterSpacing:'0.05em' }}>Ano</span>
+            <div style={{ display:'flex', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', overflow:'hidden' }}>
+              {anosDisponiveis.map(ano => (
+                <button key={ano} onClick={() => setAnoFiltro(ano)}
+                  style={{ padding:'0.25rem 0.75rem', fontSize:'0.8rem', fontWeight:'700', cursor:'pointer', border:'none',
+                    background: anoFiltro === ano ? 'var(--color-accent)' : 'transparent',
+                    color: anoFiltro === ano ? '#fff' : 'var(--color-text-muted)',
+                    borderLeft: ano !== anosDisponiveis[0] ? '1px solid var(--color-border)' : 'none' }}>
+                  {ano}
+                </button>
+              ))}
+            </div>
+          </div>
+          <span style={{ fontSize:'0.75rem', color:'var(--color-text-muted)' }}>
+            {sessoes.length} sessão{sessoes.length !== 1 ? 'ões' : ''} em {anoFiltro}
+          </span>
+        </div>
+
+        {/* Cabeçalho das colunas */}
+        <div style={{ display:'grid', gridTemplateColumns:'110px 1fr 1fr auto', gap:'0.75rem', padding:'0.5rem 1.25rem', borderBottom:'1px solid var(--color-border)' }}>
           {['DATA','GRAU','CLASSIFICAÇÃO','AÇÕES'].map((h, i) => (
             <div key={h} style={{ fontSize:'0.68rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', letterSpacing:'0.05em', textAlign: i === 3 ? 'right' : 'left' }}>{h}</div>
           ))}
