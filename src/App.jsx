@@ -3036,15 +3036,11 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
-        {/* CADASTRO DE SESSÃO */}
-        {currentPage === 'cadastro-sessao' && (
-          <CadastroSessao 
-            onSessaoCriada={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('registro-presenca');
-            }}
-          />
-        )}
+        {/* CADASTRO DE SESSÃO — redirecionado para lista-sessoes que já tem modal embutido */}
+        {currentPage === 'cadastro-sessao' && (() => {
+          setCurrentPage('lista-sessoes');
+          return null;
+        })()}
 
         {/* DASHBOARD DE PRESENÇA */}
         {currentPage === 'dashboard-presenca' && (
