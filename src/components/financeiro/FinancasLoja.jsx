@@ -3281,7 +3281,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
                     {/* Grupos de data */}
                     {origemAberta && (
-                      <div style={{padding:'0.4rem 0.6rem',display:'flex',flexDirection:'column',gap:'0.35rem'}}>
+                      <div style={{padding:'0.4rem 0.6rem 0.4rem 1.1rem',display:'flex',flexDirection:'column',gap:'0.35rem'}}>
                         {grupos.map(grupo => {
                           const dataKey = `${origem.key}__${grupo.chave}`;
                           const dataAberta = filtroIrmaoAtivo || expandedLista.datas.has(dataKey);
@@ -3340,7 +3340,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                                         display:'grid',
                                         gridTemplateColumns:'1fr auto auto auto',
                                         alignItems:'center',gap:'0.5rem',
-                                        padding:'0.38rem 0.75rem',
+                                        padding:'0.38rem 0.75rem 0.38rem 1.75rem',
                                         background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',
                                         borderTop:'1px solid var(--color-border)',
                                         borderLeft:`3px solid ${cor}40`}}>
