@@ -204,12 +204,12 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
               <div style={{ fontSize: '0.88rem', fontWeight: '700', color: 'var(--color-text)' }}>
                 {new Date(s.data_sessao + 'T00:00:00').toLocaleDateString('pt-BR')}
               </div>
-              <div>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: '700', padding: '0.18rem 0.55rem', borderRadius: '999px', background: 'rgba(99,102,241,0.12)', color: 'var(--color-accent)', border: '1px solid rgba(99,102,241,0.25)' }}>
                   {s.graus_sessao?.nome || '—'}
                 </span>
                 {s.observacoes && (
-                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: '0.25rem 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', margin: '0.25rem 0 0', wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'normal', maxWidth: '100%' }}>
                     💬 {s.observacoes}
                   </p>
                 )}
