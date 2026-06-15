@@ -69,6 +69,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   const [comissaoEditando, setComissaoEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [integrantesTemp, setIntegrantesTemp] = useState([]);
+  const [modalComissaoAberto, setModalComissaoAberto] = useState(false);
   
   // Estados para visualização
   const [modalVisualizar, setModalVisualizar] = useState(false);
@@ -123,6 +124,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
     setIntegrantesTemp([]);
     setModoEdicao(false);
     setComissaoEditando(null);
+    setModalComissaoAberto(false);
   };
 
   // Adicionar integrante temporário
@@ -206,6 +208,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
       showSuccess('Comissão cadastrada com sucesso!');
       limparFormulario();
+      limparFormulario();
       onUpdate();
 
     } catch (error) {
@@ -266,6 +269,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
       showSuccess('Comissão atualizada com sucesso!');
       limparFormulario();
+      limparFormulario();
       onUpdate();
 
     } catch (error) {
@@ -278,6 +282,7 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
   // Editar comissão
   const handleEditar = async (comissao) => {
     setModoEdicao(true);
+    setModalComissaoAberto(true);
     setComissaoEditando(comissao);
     setComissaoForm({
       nome: comissao.nome,
@@ -387,14 +392,138 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
 
   return (
     <div style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
-      {/* FORMULÁRIO - Só aparece para quem pode editar */}
-      {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
-        <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <h3 className="text-xl font-bold text-blue-900 mb-4" style={{color:"var(--color-text)"}}>
-            {modoEdicao ? '✏️ Editar Comissão' : '➕ Nova Comissão'}
-          </h3>
 
-        <div className="space-y-4 mb-4">
+      {/* MODAL CADASTRO/EDIÇÃO */}
+      {modalComissaoAberto && (permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
+        <div onClick={limparFormulario} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',zIndex:50,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'1.5rem 1rem',overflowY:'auto'}}>
+          <div onClick={e => e.stopPropagation()} style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',border:'1px solid var(--color-border)',width:'100%',maxWidth:'680px',boxShadow:'0 20px 60px rgba(0,0,0,0.4)',overflow:'hidden',marginBottom:'1.5rem'}}>
+
+            {/* Header do modal */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'1.1rem 1.4rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.6rem'}}>
+                <span style={{fontSize:'1.2rem'}}>🏛️</span>
+                <div>
+                  <h3 style={{margin:0,fontSize:'1rem',fontWeight:'800',color:'var(--color-text)'}}>
+                    {modoEdicao ? 'Editar Comissão' : 'Nova Comissão'}
+                  </h3>
+                  <p style={{margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)'}}>
+                    {modoEdicao ? 'Atualize os dados da comissão' : 'Preencha os dados para cadastrar'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={limparFormulario} style={{background:'transparent',border:'none',color:'var(--color-text-muted)',fontSize:'1.3rem',cursor:'pointer',padding:'0.2rem 0.5rem',borderRadius:'var(--radius-md)',lineHeight:1}}>✕</button>
+            </div>
+
+            {/* Corpo do modal */}
+            <div style={{padding:'1.4rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+
+              {/* LINHA 1: Nome, Origem, Status */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 140px 160px',gap:'0.75rem'}}>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Nome da Comissão *</label>
+                  <input type="text" value={comissaoForm.nome} onChange={e => setComissaoForm({...comissaoForm, nome: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Origem *</label>
+                  <select value={comissaoForm.origem} onChange={e => setComissaoForm({...comissaoForm, origem: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none'}}>
+                    <option value="interna">Interna</option>
+                    <option value="externa">Externa</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Status *</label>
+                  <select value={comissaoForm.status} onChange={e => setComissaoForm({...comissaoForm, status: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none'}}>
+                    <option value="em_andamento">Em Andamento</option>
+                    <option value="encerrada">Encerrada</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* LINHA 2: Data Criação, Data Início, Data Fim */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Data de Criação *</label>
+                  <input type="date" value={comissaoForm.data_criacao} onChange={e => setComissaoForm({...comissaoForm, data_criacao: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Data Início *</label>
+                  <input type="date" value={comissaoForm.data_inicio} onChange={e => setComissaoForm({...comissaoForm, data_inicio: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Data Fim</label>
+                  <input type="date" value={comissaoForm.data_fim} onChange={e => setComissaoForm({...comissaoForm, data_fim: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
+                </div>
+              </div>
+
+              {/* Objetivo */}
+              <div>
+                <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Objetivo *</label>
+                <textarea value={comissaoForm.objetivo} onChange={e => setComissaoForm({...comissaoForm, objetivo: e.target.value})} rows={3}
+                  placeholder="Descreva o objetivo desta comissão..."
+                  style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',resize:'vertical',boxSizing:'border-box'}} required />
+              </div>
+
+              {/* INTEGRANTES */}
+              <div style={{borderTop:'1px solid var(--color-border)',paddingTop:'1rem'}}>
+                <h4 style={{fontWeight:'700',fontSize:'0.85rem',color:'var(--color-text)',marginBottom:'0.75rem'}}>👥 Integrantes</h4>
+                <div style={{display:'flex',gap:'0.5rem',marginBottom:'0.75rem'}}>
+                  <select id="select-irmao-comissao" style={{flex:1,padding:'0.55rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.82rem',outline:'none'}}>
+                    <option value="">Selecione um irmão</option>
+                    {irmaos.filter(i => i.situacao?.toLowerCase() === 'regular').map(i => (
+                      <option key={i.id} value={i.id}>{i.nome} - CIM {i.cim}</option>
+                    ))}
+                  </select>
+                  <select id="select-funcao-comissao" style={{width:'140px',padding:'0.55rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.82rem',outline:'none'}}>
+                    <option value="">Função</option>
+                    <option value="Presidente">Presidente</option>
+                    <option value="Vice-Presidente">Vice-Presidente</option>
+                    <option value="Secretário">Secretário</option>
+                    <option value="Membro">Membro</option>
+                    <option value="Relator">Relator</option>
+                  </select>
+                  <button type="button" onClick={adicionarIntegrante}
+                    style={{padding:'0.55rem 0.9rem',background:'#10b981',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',cursor:'pointer',fontWeight:'700',fontSize:'0.82rem',whiteSpace:'nowrap'}}>
+                    + Adicionar
+                  </button>
+                </div>
+                {integrantesTemp.length > 0 && (
+                  <div style={{borderRadius:'var(--radius-lg)',overflow:'hidden',border:'1px solid var(--color-border)'}}>
+                    {integrantesTemp.map((integrante, idx) => (
+                      <div key={idx} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.5rem 0.75rem',background: idx%2===0 ? 'var(--color-surface)' : 'var(--color-surface-2)',borderBottom: idx < integrantesTemp.length-1 ? '1px solid var(--color-border)' : 'none'}}>
+                        <span style={{fontWeight:'600',fontSize:'0.82rem',color:'var(--color-text)'}}>{integrante.irmao_nome}</span>
+                        <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)'}}>{integrante.funcao}</span>
+                        <button type="button" onClick={() => removerIntegrante(integrante.irmao_id)}
+                          style={{background:'rgba(239,68,68,0.12)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',padding:'0.18rem 0.5rem',cursor:'pointer',fontSize:'0.75rem',fontWeight:'700'}}>
+                          ❌
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Botões */}
+              <div style={{display:'flex',gap:'0.65rem',paddingTop:'0.25rem'}}>
+                <button type="button" onClick={limparFormulario}
+                  style={{flex:1,height:'40px',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.85rem',cursor:'pointer'}}>
+                  Cancelar
+                </button>
+                <button type="button" onClick={modoEdicao ? handleAtualizar : handleSubmit} disabled={loading}
+                  style={{flex:2,height:'40px',background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.85rem',cursor: loading ? 'not-allowed' : 'pointer'}}>
+                  {loading ? 'Salvando...' : modoEdicao ? '✏️ Atualizar Comissão' : '✅ Cadastrar Comissão'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
           {/* LINHA 1: Nome, Data Criação, Origem, Status */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
@@ -549,25 +678,19 @@ const Comissoes = ({ comissoes, irmaos, onUpdate, showSuccess, showError, permis
           >
             {loading ? 'Salvando...' : (modoEdicao ? 'Atualizar Comissão' : 'Cadastrar Comissão')}
           </button>
-          
-          {modoEdicao && (
-            <button
-              type="button"
-              onClick={limparFormulario}
-              className="px-6 py-2 rounded-lg transition-colors" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-            >
-              Cancelar Edição
-            </button>
-          )}
-        </div>
-      </div>
-      )}
-
       {/* LISTAGEM */}
       <div className="rounded-xl overflow-hidden" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-        <div style={{padding:"1rem 1.25rem",background:"var(--color-accent)"}}>
-          <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Comissões Cadastradas</h3>
-          <p className="text-sm text-blue-100">Total: {comissoes.length} comissão(ões)</p>
+        <div style={{padding:"1rem 1.25rem",background:"var(--color-accent)",display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <h3 className="text-xl font-bold" style={{color:"var(--color-text)"}}>Comissões Cadastradas</h3>
+            <p className="text-sm text-blue-100">Total: {comissoes.length} comissão(ões)</p>
+          </div>
+          {(permissoes?.pode_gerenciar_usuarios || permissoes?.pode_editar_comissoes) && (
+            <button onClick={() => { limparFormulario(); setModalComissaoAberto(true); }}
+              style={{height:'38px',padding:'0 1rem',background:'rgba(255,255,255,0.15)',color:'#fff',border:'1px solid rgba(255,255,255,0.3)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',display:'flex',alignItems:'center',gap:'0.4rem',whiteSpace:'nowrap'}}>
+              ➕ Nova Comissão
+            </button>
+          )}
         </div>
 
         {/* ABAS E FILTRO */}
