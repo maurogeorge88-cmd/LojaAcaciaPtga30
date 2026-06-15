@@ -36,7 +36,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     try {
       const { data } = await supabase
         .from('sessoes_presenca')
-        .select('*, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome, cor)')
+        .select('*, graus_sessao:grau_sessao_id(nome), classificacoes_sessao:classificacao_id(nome)')
         .order('data_sessao', { ascending: false })
         .limit(20);
       setSessoes(data || []);
