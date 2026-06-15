@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import CadastroSessao from './CadastroSessao';
 
-export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, abrirModalInicio = false }) {
+export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
-  const [modalAberto, setModalAberto] = useState(abrirModalInicio);
 
   // Estados para visitas
   const [visitas, setVisitas] = useState([]);
@@ -133,6 +131,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
       setLoading(false);
     }
   };
+
 
   const carregarVisitas = async () => {
     try {
@@ -411,23 +410,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
             >
               📍 Nova Visita
             </button>
-            <button
-              onClick={() => setModalAberto(true)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: 'var(--color-accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
-              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
-            >
-              ➕ Nova Sessão
-            </button>
+
           </div>
         </div>
 
@@ -509,25 +492,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
               : 'Comece cadastrando sua primeira sessão.'
             }
           </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setModalAberto(true)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: 'var(--color-accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
-              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
-            >
-              Cadastrar Primeira Sessão
-            </button>
-          </div>
+
         </div>
       ) : (
         <div className="space-y-6">
@@ -977,18 +942,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
           </div>
         </div>
       )}
-
-      {modalAberto && (
-        <div onClick={() => setModalAberto(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
-          <div onClick={e => e.stopPropagation()}>
-            <CadastroSessao
-              modalInicialAberto={true}
-              onModalFechado={() => { setModalAberto(false); carregarSessoes(); }}
-            />
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
