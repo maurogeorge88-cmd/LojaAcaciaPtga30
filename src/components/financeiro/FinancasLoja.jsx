@@ -3212,9 +3212,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               return origens.map(origem => {
                 const origemAberta = filtroIrmaoAtivo || expandedLista.origens.has(origem.key);
                 const toggleOrigem = () => setExpandedLista(prev => {
-                  const next = new Set(prev.origens);
-                  origemAberta ? next.delete(origem.key) : next.add(origem.key);
-                  return { ...prev, origens: next };
+                  const novaOrigens = new Set(prev.origens);
+                  const novaDatas  = new Set(prev.datas);
+                  if (origemAberta) {
+                    novaOrigens.delete(origem.key);
+                    // colapsa todos os grupos de data desta origem
+                    grupos.forEach(g => novaDatas.delete(`${origem.key}__${g.chave}`));
+                  } else {
+                    novaOrigens.add(origem.key);
+                    // expande todos os grupos de data desta origem
+                    grupos.forEach(g => novaDatas.add(`${origem.key}__${g.chave}`));
+                  }
+                  return { origens: novaOrigens, datas: novaDatas };
                 });
 
                 // Totais da origem
@@ -3222,6 +3231,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 const totalDesp = origem.lancamentos.filter(l => l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor||0), 0);
                 const pendentes = origem.lancamentos.filter(l => l.status === 'pendente').length;
                 const vencidos  = origem.lancamentos.filter(l => l.status === 'pendente' && l.data_vencimento < new Date().toISOString().split('T')[0]).length;
+
+                // Cor da origem para usar nos grupos de data
+                const corOrigem = origem.isLoja ? '#6366f1' : '#8b5cf6';
+                const corOrigemLight = origem.isLoja ? 'rgba(99,102,241,0.08)' : 'rgba(139,92,246,0.08)';
+                const corOrigemBorder = origem.isLoja ? 'rgba(99,102,241,0.25)' : 'rgba(139,92,246,0.25)';
 
                 // Nível 2: agrupar por data dentro da origem
                 const dataMap = origem.lancamentos.reduce((acc, lanc) => {
@@ -3293,9 +3307,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                               {/* Cabeçalho do grupo de data */}
                               <div onClick={toggleData} style={{
                                 display:'flex',alignItems:'center',gap:'0.5rem',padding:'0.4rem 0.75rem',
-                                background:'var(--color-surface-2)',cursor:'pointer',userSelect:'none',
-                                borderLeft:'3px solid var(--color-border)'}}>
-                                <span style={{fontSize:'0.75rem',fontWeight:'700',color:'var(--color-text)',flexShrink:0}}>
+                                background: corOrigemLight,
+                                cursor:'pointer',userSelect:'none',
+                                borderLeft:`3px solid ${corOrigemBorder}`}}>
+                                <span style={{fontSize:'0.75rem',fontWeight:'700',color: corOrigem,flexShrink:0}}>
                                   📅 {dataLabel}
                                 </span>
                                 <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',flexShrink:0}}>
