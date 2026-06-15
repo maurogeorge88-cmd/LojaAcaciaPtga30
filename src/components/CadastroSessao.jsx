@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
-const CadastroSessao = ({ onSuccess, onClose }) => {
+const CadastroSessao = ({ onSuccess, onClose, modalInicialAberto = false, onModalFechado }) => {
   const [graus, setGraus] = useState([]);
   const [classificacoesSessao, setClassificacoesSessao] = useState([]);
   const [sessoes, setSessoes] = useState([]);
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
-  const [modalAberto, setModalAberto] = useState(false);
+  const [modalAberto, setModalAberto] = useState(modalInicialAberto);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ dataSessao: '', grauSessao: '', classificacaoSessaoId: '', observacoes: '' });
+  const [editando, setEditando] = useState(null);
   const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
   const [anosDisponiveis, setAnosDisponiveis] = useState([new Date().getFullYear()]);
 
@@ -80,7 +81,7 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
     setModalAberto(true);
   };
 
-  const fecharModal = () => { setModalAberto(false); setEditando(null); };
+  const fecharModal = () => { setModalAberto(false); setEditando(null); if (onModalFechado) onModalFechado(); };
 
   const excluirSessao = async (id) => {
     if (!confirm('Tem certeza que deseja excluir esta sessão?')) return;
