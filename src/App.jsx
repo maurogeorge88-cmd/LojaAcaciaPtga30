@@ -3039,10 +3039,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* CADASTRO DE SESSÃO */}
         {currentPage === 'cadastro-sessao' && (
           <CadastroSessao 
-            onSessaoCriada={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('registro-presenca');
-            }}
+            onSuccess={() => setCurrentPage('cadastro-sessao')}
           />
         )}
 
