@@ -3087,7 +3087,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <RegistroPresenca 
             sessaoId={sessaoIdAtual}
             onVoltar={() => {
-              setCurrentPage('cadastro-sessao');
+              setCurrentPage('lista-sessoes');
               setSessaoIdAtual(null);
             }}
           />
