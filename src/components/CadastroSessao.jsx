@@ -168,17 +168,12 @@ const CadastroSessao = ({ onSuccess, onClose }) => {
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.75rem 1.25rem', background:'var(--color-surface-2)', borderBottom:'2px solid var(--color-border)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
             <span style={{ fontSize:'0.75rem', fontWeight:'700', color:'var(--color-text-muted)', textTransform:'uppercase', letterSpacing:'0.05em' }}>Ano</span>
-            <div style={{ display:'flex', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', overflow:'hidden' }}>
+            <select value={anoFiltro} onChange={e => setAnoFiltro(Number(e.target.value))}
+              style={{ padding:'0.28rem 0.65rem', borderRadius:'var(--radius-md)', border:'1px solid var(--color-border)', background:'var(--color-surface)', color:'var(--color-text)', fontSize:'0.82rem', fontWeight:'700', cursor:'pointer', outline:'none' }}>
               {anosDisponiveis.map(ano => (
-                <button key={ano} onClick={() => setAnoFiltro(ano)}
-                  style={{ padding:'0.25rem 0.75rem', fontSize:'0.8rem', fontWeight:'700', cursor:'pointer', border:'none',
-                    background: anoFiltro === ano ? 'var(--color-accent)' : 'transparent',
-                    color: anoFiltro === ano ? '#fff' : 'var(--color-text-muted)',
-                    borderLeft: ano !== anosDisponiveis[0] ? '1px solid var(--color-border)' : 'none' }}>
-                  {ano}
-                </button>
+                <option key={ano} value={ano}>{ano}</option>
               ))}
-            </div>
+            </select>
           </div>
           <span style={{ fontSize:'0.75rem', color:'var(--color-text-muted)' }}>
             {sessoes.length} sessão{sessoes.length !== 1 ? 'ões' : ''} em {anoFiltro}
