@@ -1,3115 +1,994 @@
-import { useState, useEffect } from 'react';
-import { supabase } from './supabaseClient';
-import { useTema } from './hooks/useTema';
-import { useCarregarTema } from './hooks/useCarregarTema';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
+import CadastroSessao from './CadastroSessao';
 
-// ========================================
-// IMPORTAR COMPONENTES REFATORADOS
-// ========================================
-import { Dashboard } from './components/Dashboard';
-import { CorpoAdmin } from './components/administracao/CorpoAdmin';
-import Usuarios from './components/administracao/Usuarios';
-import GestaoSistema from './components/administracao/GestaoSistema';
-import DadosLoja from './components/sistema/DadosLoja';
-import ControleAcesso from './components/administracao/ControleAcesso';
-import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
-import VisualizarIrmaos from './components/irmaos/VisualizarIrmaos';
-import QuadroIrmaos from './components/irmaos/QuadroIrmaos';
-import PerfilIrmao from './components/irmaos/PerfilIrmao';
-import PerfilCompletoIrmao from './components/irmaos/PerfilCompletoIrmao';
-import EmailIrmaos from './components/irmaos/EmailIrmaos';
-import RelatorioFinanceiro from './components/financeiro/RelatorioFinanceiro';
-import Balaustres from './components/balaustres/Balaustres';
-import Pranchas from './components/pranchas/Pranchas';
-import Comissoes from './components/comissoes/Comissoes';
-import Projetos from './components/projetos/Projetos';
-import Biblioteca from './components/biblioteca/Biblioteca';
-import BibliotecaOnline from './components/biblioteca/BibliotecaOnline';
-import Cronograma from './components/cronograma/Cronograma';
-import FinancasLoja from './components/financeiro/FinancasLoja';
-import LancamentosLote from './components/financeiro/LancamentosLote';
-import CategoriasFinanceiras from './components/financeiro/CategoriasFinanceiras';
-import EventosComemorativos from './components/financeiro/EventosComemorativos';
-import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
-import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
-import PrimeiroAcesso from './components/PrimeiroAcesso';
-import MeuCadastroWrapper from './components/MeuCadastroWrapper';
-import MinhasFinancas from './components/MinhasFinancas';
-import Caridade from './components/caridade/Caridade';
-import Eventos from './components/filantropia/Eventos';
-import Sobre from './components/Sobre';
-import Aniversariantes from './components/aniversariantes/Aniversariantes';
-import Sindicancia from './components/sindicancia/Sindicancia';
-import Comodatos from './components/comodatos/Comodatos';
-import CreditosDebitos from './components/creditos-debitos/CreditosDebitos';
-import CadastroSessao from './components/CadastroSessao';
-import RegistroPresenca from './components/RegistroPresenca';
-import ListaSessoes from './components/ListaSessoes';
-import DashboardPresenca from './components/DashboardPresenca';
-import MinhaPresenca from './components/MinhaPresenca';
-import ModalVisualizarPresenca from './components/ModalVisualizarPresenca';
-import Login from './components/Login';
-import DashboardCunhadas from './components/cunhadas/DashboardCunhadas';
-import CadastroCunhadas from './components/cunhadas/CadastroCunhadas';
-import FinanceiroCunhadas from './components/cunhadas/FinanceiroCunhadas';
-import AcessoCunhadas from './components/cunhadas/AcessoCunhadas';
-
-// ========================================
-// CONFIGURAÇÃO SUPABASE
-// ========================================
-// Supabase já importado de './supabaseClient'
-
-const LOGO_URL = 'https://ypnvzjctyfdrkkrhskzs.supabase.co/storage/v1/object/public/LogoAcacia/LogoAcaciaPtga30.png';
-const NOME_LOJA = 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
-
-// Função para tratar datas vazias
-const tratarData = (data) => {
-  if (!data || data === '' || data === 'undefined' || data === 'null') {
-    return null;
-  }
-  return data;
-};
-
-// ========================================
-// FUNÇÕES AUXILIARES
-// ========================================
-const calcularTempoMaconaria = (dataIniciacao) => {
-  if (!dataIniciacao) return '';
-  const inicio = new Date(dataIniciacao + 'T00:00:00');
-  const hoje = new Date();
-  let anos = hoje.getFullYear() - inicio.getFullYear();
-  let meses = hoje.getMonth() - inicio.getMonth();
-  if (meses < 0) { anos--; meses = 12 + meses; }
-  return `${anos} ano(s) e ${meses} mês(es)`;
-};
-
-const calcularIdade = (dataNascimento) => {
-  if (!dataNascimento) return '';
-  const nascimento = new Date(dataNascimento + 'T00:00:00');
-  const hoje = new Date();
-  let idade = hoje.getFullYear() - nascimento.getFullYear();
-  const m = hoje.getMonth() - nascimento.getMonth();
-  if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) {
-    idade--;
-  }
-  return `${idade} anos`;
-};
-
-const formatarData = (data) => {
-  if (!data) return '-';
-  const date = new Date(data + 'T00:00:00');
-  return date.toLocaleDateString('pt-BR');
-};
-
-const formatarDataInput = (data) => {
-  if (!data) return '';
-  const date = new Date(data + 'T00:00:00');
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const obterDiaSemana = (data) => {
-  if (!data) return '';
-  const dias = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-  const date = new Date(data + 'T00:00:00');
-  return dias[date.getDay()];
-};
-
-// ========================================
-// COMPONENTE PRINCIPAL
-function App() {
-  // ========================================
-  // CARREGAR TEMA DO SISTEMA
-  // ========================================
-  useTema();
-
-  // ========================================
-  // VERIFICAR ROTA DE PRIMEIRO ACESSO
-  // ========================================
-  if (window.location.pathname === '/primeiro-acesso') {
-    return <PrimeiroAcesso />;
-  }
-
-  // ========================================
-  // ESTADOS
-  // ========================================
-  const [session, setSession] = useState(null);
+export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, abrirModalInicio = false }) {
   const [loading, setLoading] = useState(true);
-  const [userData, setUserData] = useState(null);
-  const [grauUsuarioLogado, setGrauUsuarioLogado] = useState(null);
-  const [permissoes, setPermissoes] = useState(null);
-  const [currentPage, setCurrentPage] = useState('dashboard');
-  const [portalAtivo, setPortalAtivo] = useState('irmaos'); // 'irmaos' ou 'cunhadas' — definido após validação da sessão
-  const [modalAcessoNegado, setModalAcessoNegado] = useState(false); // Modal de acesso negado (sobrevive ao re-render do Login)
-  const [irmaoParaEditar, setIrmaoParaEditar] = useState(null);
-  const [irmaoParaPerfil, setIrmaoParaPerfil] = useState(null);
-  const [modalPerfilCompletoAberto, setModalPerfilCompletoAberto] = useState(false);
-  const [irmaoIdPerfilCompleto, setIrmaoIdPerfilCompleto] = useState(null);
-  const [irmaoLogadoId, setIrmaoLogadoId] = useState(null);
-  const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
-  const [abrirModalSessao, setAbrirModalSessao] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  
-  // ========================================
-  // CARREGAR TEMA DO USUÁRIO AUTOMATICAMENTE
-  // ========================================
-  useCarregarTema(userData);
+  const [sessoes, setSessoes] = useState([]);
+  const [filtroMes, setFiltroMes] = useState('');
+  const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
+  const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
+  const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [modalAberto, setModalAberto] = useState(abrirModalInicio);
 
-  // Helper: Verificar se é Admin ou Venerável (acesso total)
-  const isAdminOrVeneravel = (user = userData) => {
-    if (!user) return false;
-    return user.nivel_acesso === 'admin' || 
-           user.cargo === 'veneravel' || 
-           user.cargo === 'Veneravel';
-  };
-
-  // Estados do menu colapsável
-  const [menuAberto, setMenuAberto] = useState(true);
-  const [submenuIrmaos, setSubmenuIrmaos] = useState(false);
-  const [submenuExpedientes, setSubmenuExpedientes] = useState(false);
-  const [submenuFinanceiro, setSubmenuFinanceiro] = useState(false);
-  const [submenuFilantropia, setSubmenuFilantropia] = useState(false);
-  const [submenuGestaoSistema, setSubmenuGestaoSistema] = useState(false);
-  const [submenuSindicancia, setSubmenuSindicancia] = useState(false);
-  const [submenuPresenca, setSubmenuPresenca] = useState(false);
-
-  // Estados de login
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  // Estados de dados
+  // Estados para visitas
+  const [visitas, setVisitas] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [balaustres, setBalaustres] = useState([]);
-  const [tiposSessao, setTiposSessao] = useState([]);
-  const [cargosLoja, setCargosLoja] = useState([]);
-  const [cronograma, setCronograma] = useState([]);
-  
-  // Estados para Comissões
-  const [comissoes, setComissoes] = useState([]);
-
-  // Estados para Biblioteca
-  const [livros, setLivros] = useState([]);
-  const [emprestimos, setEmprestimos] = useState([]);
-
-  // Estados para Balaustre
-  const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
-
-  // Estados para Usuários
-  const [usuarioForm, setUsuarioForm] = useState({
-    nome: '',
-    email: '',
-    senha: '',
-    cargo: 'irmao',
-    ativo: true
-  });
-  const [modoEdicaoUsuario, setModoEdicaoUsuario] = useState(false);
-  const [usuarioEditando, setUsuarioEditando] = useState(null);
-  const [permissoesDisponiveis, setPermissoesDisponiveis] = useState([]);
-
-  // Estados para Pranchas Expedidas
-  const [pranchas, setPranchas] = useState([]);
-
-  // Estados para Corpo Administrativo
-  const [corpoAdmin, setCorpoAdmin] = useState([]);
-  const [corpoAdminForm, setCorpoAdminForm] = useState({
+  const [potencias, setPotencias] = useState([]);
+  const [modalVisita, setModalVisita] = useState(false);
+  const [visitaEditando, setVisitaEditando] = useState(null);
+  const [visitaForm, setVisitaForm] = useState({
     irmao_id: '',
-    cargo: '',
-    ano_exercicio: ''
+    data_visita: '',
+    nome_loja: '',
+    oriente: '',
+    potencia_id: '',
+    observacoes: ''
   });
-  const [anoFiltroAdmin, setAnoFiltroAdmin] = useState('');
-  const [modoEdicaoCorpoAdmin, setModoEdicaoCorpoAdmin] = useState(false);
-  const [corpoAdminEditando, setCorpoAdminEditando] = useState(null);
+  const [editandoPotencia, setEditandoPotencia] = useState(null);
+  const [novaPotencia, setNovaPotencia] = useState({ sigla: '', nome_completo: '' });
+  const [mostrarFormPotencia, setMostrarFormPotencia] = useState(false);
 
-  // Lista fixa de cargos administrativos
-  const cargosAdministrativos = [
-    'Venerável Mestre',
-    '1º Vigilante',
-    '2º Vigilante',
-    'Orador',
-    'Secretário',
-    'Tesoureiro',
-    'Chanceler',
-    'Mestre de Cerimônias',
-    'Mestre de Harmonia',
-    'Hospitaleiro',
-    'Guarda do Templo',
-    '1º Diácono',
-    '2º Diácono',
-    '1º Experto',
-    '2º Experto',
-    'Porta-Estandarte',
-    'Porta-Espada',
-    'Bibliotecário',
-    'Orador Adjunto',
-    'Secretário Adjunto',
-    'Tesoureiro Adjunto'
+  const meses = [
+    { valor: '', nome: 'Todos os meses' },
+    { valor: '1', nome: 'Janeiro' },
+    { valor: '2', nome: 'Fevereiro' },
+    { valor: '3', nome: 'Março' },
+    { valor: '4', nome: 'Abril' },
+    { valor: '5', nome: 'Maio' },
+    { valor: '6', nome: 'Junho' },
+    { valor: '7', nome: 'Julho' },
+    { valor: '8', nome: 'Agosto' },
+    { valor: '9', nome: 'Setembro' },
+    { valor: '10', nome: 'Outubro' },
+    { valor: '11', nome: 'Novembro' },
+    { valor: '12', nome: 'Dezembro' }
   ];
 
-  // ========================================
-  // FUNÇÃO REGISTRAR ACESSO
-  // ========================================
-  const registrarAcesso = async (userId) => {
-    try {
-      await supabase.from('logs_acesso').insert({
-        usuario_id: userId,
-        acao: 'acesso_sistema',
-        detalhes: 'Usuário acessou o sistema',
-        created_at: new Date().toISOString()
-      });
-      console.log('✅ Acesso registrado');
-    } catch (error) {
-      console.error('❌ Erro ao registrar acesso:', error);
-    }
+  const anoAtual = new Date().getFullYear();
+
+  const formatarData = (data) => {
+    if (!data) return '';
+    const date = new Date(data + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR');
   };
 
-  // ========================================
-  // EFEITOS E CARREGAMENTOS
-  // ========================================
+  const obterCorPorcentagem = (total, presentes) => {
+    if (total === 0) return { background: 'var(--color-surface-2)', color: 'var(--color-text-muted)' };
+    const percentual = (presentes / total) * 100;
+    if (percentual >= 75) return { background: '#dcfce7', color: '#166534' }; // verde
+    if (percentual >= 50) return { background: '#fef9c3', color: '#854d0e' }; // amarelo
+    return { background: '#fee2e2', color: '#991b1b' }; // vermelho
+  };
+
+  // Buscar anos disponíveis
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const portalSalvo = sessionStorage.getItem('portalAtivo');
-      const tipoPerfilSalvo = sessionStorage.getItem('tipoPerfil'); // 'cunhada' ou null
-
-      // Portal cunhadas: força novo login ao reabrir o navegador
-      if (session && portalSalvo === 'cunhadas' && !tipoPerfilSalvo) {
-        supabase.auth.signOut();
-        sessionStorage.removeItem('portalAtivo');
-        setLoading(false);
-        return;
+    const buscarAnos = async () => {
+      const { data } = await supabase
+        .from('sessoes_presenca')
+        .select('data_sessao')
+        .order('data_sessao', { ascending: true });
+      
+      if (data && data.length > 0) {
+        const anos = [...new Set(data.map(s => new Date(s.data_sessao).getFullYear()))];
+        const anosSorted = anos.sort((a, b) => b - a);
+        setAnosDisponiveis(anosSorted);
+        setFiltroAno(anosSorted[0].toString());
       }
-
-      // Cunhada com aba ainda aberta (sessionStorage intacto): restaura normalmente
-      if (session && tipoPerfilSalvo === 'cunhada') {
-        setSession(session);
-        setPortalAtivo('cunhadas');
-        setCurrentPage('dashboard-cunhadas');
-        setLoading(false);
-        return;
-      }
-
-      // Irmão — fluxo normal
-      setSession(session);
-      if (session) {
-        loadUserData(session.user.email);
-        loadIrmaos();
-        loadTiposSessao();
-        loadCargosLoja();
-        loadBalaustres();
-        loadUsuarios();
-        loadPermissoes();
-        loadPranchas();
-        loadCorpoAdmin();
-        loadComissoes();
-        loadLivros();
-        loadEmprestimos();
-        loadCronograma();
-      }
-      setLoading(false);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    };
+    buscarAnos();
   }, []);
 
-
-  // Filtrar balaustres por grau
   useEffect(() => {
-    if (currentPage === 'balaustres') {
-      loadBalaustres();
-    }
-  }, [currentPage]);  // Removido grauSelecionado - não precisa recarregar ao mudar grau
+    carregarSessoes();
+    carregarVisitas();
+  }, [filtroMes, filtroAno]);
 
-  // ========================================
-  // FUNÇÕES HELPER PARA COMPONENTES
-  // ========================================
-  const showSuccess = (message) => {
-    setSuccessMessage(message);
-    setTimeout(() => setSuccessMessage(''), 3000);
-  };
+  useEffect(() => {
+    carregarIrmaos();
+    carregarPotencias();
+  }, []);
 
-  const showError = (message) => {
-    setError(message);
-    setTimeout(() => setError(''), 5000);
-  };
+  const carregarSessoes = async () => {
+    try {
+      setLoading(true);
 
-  // ========================================
-  // FUNÇÕES DE CARREGAMENTO
-  // ========================================
-  const loadUserData = async (userEmail) => {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('email', userEmail)
-      .single();
+      let query = supabase
+        .from('vw_resumo_sessoes')
+        .select('*')
+        .order('data_sessao', { ascending: false });
 
-    if (data) {
-      setUserData(data);
-      
-      // Registrar acesso ao sistema
-      registrarAcesso(data.id);
-      
-      // Buscar grau do irmão logado (se for irmão)
-      if (data.nivel_acesso === 'irmao') {
-        const { data: irmaoData } = await supabase
-          .from('irmaos')
-          .select('id, data_iniciacao, data_elevacao, data_exaltacao, mestre_instalado')
-          .eq('email', userEmail)
-          .single();
-        
-        if (irmaoData) {
-          setIrmaoLogadoId(irmaoData.id);
-          let grau = 'Não Iniciado';
-          if (irmaoData.data_exaltacao) {
-            grau = irmaoData.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
-          }
-          else if (irmaoData.data_elevacao) grau = 'Companheiro';
-          else if (irmaoData.data_iniciacao) grau = 'Aprendiz';
-          setGrauUsuarioLogado(grau);
-        }
-      } else {
-        // Admin e cargos têm acesso total (Mestre)
-        setGrauUsuarioLogado('Mestre');
+      if (filtroAno) {
+        query = query
+          .gte('data_sessao', `${filtroAno}-01-01`)
+          .lte('data_sessao', `${filtroAno}-12-31`);
       }
-      
-      // Definir permissões - VERIFICAR CARGO PRIMEIRO!
-      if (data.cargo === 'veneravel' || data.cargo === 'Veneravel' || data.nivel_acesso === 'admin') {
-        // Venerável OU Admin: acesso total
-        setPermissoes({
-          canEdit: true,
-          canEditMembers: true,
-          canDelete: true,
-          canManageUsers: true,
-          canViewFinancial: true,
-          canEditFinancial: true,
-          pode_editar_biblioteca: true,
-          pode_editar_comodatos: true,
-          pode_editar_caridade: true,
-          pode_editar_balaustres: true,
-          pode_editar_pranchas: true,
-          pode_editar_comissoes: true,
-          pode_editar_corpo_admin: true,
-          pode_editar_presenca: true,
-          pode_editar_projetos: true,
-          pode_gerenciar_usuarios: true
-        });
-      } else if (data.nivel_acesso === 'irmao') {
-        // Irmão: usa permissões específicas do banco
-        setPermissoes({
-          canEdit: data.pode_editar_cadastros || false,
-          canEditMembers: data.pode_editar_cadastros || false,
-          canDelete: false,
-          canManageUsers: false,
-          canViewFinancial: data.pode_visualizar_financeiro || false,
-          canEditFinancial: data.pode_editar_financeiro || false,
-          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
-          pode_editar_comodatos: data.pode_editar_comodatos || false,
-          pode_editar_caridade: data.pode_editar_caridade || false,
-          pode_editar_balaustres: data.pode_editar_balaustres || false,
-          pode_editar_pranchas: data.pode_editar_pranchas || false,
-          pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: false,
-          pode_editar_presenca: data.pode_editar_presenca || false,
-          pode_editar_projetos: data.pode_editar_projetos || false,
-          pode_gerenciar_usuarios: false
-        });
-      } else if (data.nivel_acesso === 'cargo') {
-        // Cargo: baseado nas permissões específicas
-        setPermissoes({
-          canEdit: data.pode_editar_cadastros || false,
-          canEditMembers: data.pode_editar_cadastros || false,
-          canDelete: data.pode_editar_cadastros || false,
-          canManageUsers: data.pode_gerenciar_usuarios || false,
-          canViewFinancial: data.pode_visualizar_financeiro || false,
-          canEditFinancial: data.pode_editar_financeiro || false,
-          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
-          pode_editar_comodatos: data.pode_editar_comodatos || false,
-          pode_editar_caridade: data.pode_editar_caridade || false,
-          pode_editar_balaustres: data.pode_editar_balaustres || false,
-          pode_editar_pranchas: data.pode_editar_pranchas || false,
-          pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
-          pode_editar_presenca: data.pode_editar_presenca || false,
-          pode_editar_projetos: data.pode_editar_projetos || false,
-          pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
-        });
-      } else {
-        // NULL ou não reconhecido: trata como irmão com permissões do banco
-        setPermissoes({
-          canEdit: data.pode_editar_cadastros || false,
-          canEditMembers: data.pode_editar_cadastros || false,
-          canDelete: false,
-          canManageUsers: data.pode_gerenciar_usuarios || false,
-          canViewFinancial: data.pode_visualizar_financeiro || false,
-          canEditFinancial: data.pode_editar_financeiro || false,
-          pode_editar_biblioteca: data.pode_editar_biblioteca || false,
-          pode_editar_comodatos: data.pode_editar_comodatos || false,
-          pode_editar_caridade: data.pode_editar_caridade || false,
-          pode_editar_balaustres: data.pode_editar_balaustres || false,
-          pode_editar_pranchas: data.pode_editar_pranchas || false,
-          pode_editar_comissoes: data.pode_editar_comissoes || false,
-          pode_editar_corpo_admin: data.pode_editar_corpo_admin || false,
-          pode_editar_presenca: data.pode_editar_presenca || false,
-          pode_editar_projetos: data.pode_editar_projetos || false,
-          pode_gerenciar_usuarios: data.pode_gerenciar_usuarios || false
-        });
-      }
-    }
-  };
 
-  const loadIrmaos = async () => {
-    const { data, error } = await supabase
-      .from('irmaos')
-      .select(`
-        *,
-        esposas (*),
-        pais (*),
-        filhos (*)
-      `)
-      .order('nome');
-    
-    if (data) {
-      // Adicionar situacao padrão para registros que não tem
-      const irmaosComSituacao = data.map(irmao => ({
-        ...irmao,
-        situacao: irmao.situacao || 'Regular'
+      if (filtroMes && filtroAno) {
+        const ultimoDia = new Date(parseInt(filtroAno), parseInt(filtroMes), 0).getDate();
+        query = query
+          .gte('data_sessao', `${filtroAno}-${filtroMes.padStart(2, '0')}-01`)
+          .lte('data_sessao', `${filtroAno}-${filtroMes.padStart(2, '0')}-${ultimoDia}`);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      const sessoesMapeadas = (data || []).map(s => ({
+        ...s,
+        graus_presentes: {
+          aprendizes:             s.presentes_aprendizes,
+          companheiros:           s.presentes_companheiros,
+          mestres:                s.presentes_mestres,
+          mestres_instalados:     s.presentes_mestres_instalados,
+        },
       }));
-      setIrmaos(irmaosComSituacao);
+
+      setSessoes(sessoesMapeadas);
+
+    } catch (error) {
+      console.error('Erro ao carregar sessões:', error);
+      setMensagem({ tipo: 'erro', texto: 'Erro ao carregar sessões.' });
+    } finally {
+      setLoading(false);
     }
-    if (error) console.error('Erro ao carregar irmãos:', error);
   };
 
-  const loadTiposSessao = async () => {
+  const carregarVisitas = async () => {
     try {
-      console.log('🔍 Carregando tipos de sessão...');
-      
-      const { data, error } = await supabase
-        .from('tipos_sessao')
-        .select('*')
-        .eq('ativo', true)
-        .order('nome');
-      
-      console.log('📊 Tipos de sessão:', { data, error });
-      
-      if (error) {
-        console.error('❌ Erro ao carregar tipos de sessão:', error);
-        return;
+      let query = supabase
+        .from('visitas_outras_lojas')
+        .select(`
+          *,
+          irmaos(nome),
+          potencias_masonicas(sigla, nome_completo)
+        `)
+        .order('data_visita', { ascending: false });
+
+      if (filtroAno) {
+        const anoInicio = `${filtroAno}-01-01`;
+        const anoFim = `${filtroAno}-12-31`;
+        query = query.gte('data_visita', anoInicio).lte('data_visita', anoFim);
       }
-      
-      if (data) {
-        console.log('✅ Tipos de sessão carregados:', data.length, 'tipos');
-        setTiposSessao(data);
+
+      if (filtroMes && filtroAno) {
+        const mesInicio = `${filtroAno}-${filtroMes.padStart(2, '0')}-01`;
+        const ultimoDia = new Date(parseInt(filtroAno), parseInt(filtroMes), 0).getDate();
+        const mesFim = `${filtroAno}-${filtroMes.padStart(2, '0')}-${ultimoDia}`;
+        query = query.gte('data_visita', mesInicio).lte('data_visita', mesFim);
       }
-    } catch (err) {
-      console.error('❌ Exceção ao carregar tipos de sessão:', err);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      setVisitas(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar visitas:', error);
     }
   };
 
-  const loadCargosLoja = async () => {
-    const { data, error } = await supabase
-      .from('cargos_loja')
+  const carregarIrmaos = async () => {
+    // Buscar irmãos ativos
+    const { data: todosIrmaos } = await supabase
+      .from('irmaos')
+      .select('id, nome, situacao')
+      .eq('status', 'ativo')
+      .order('nome');
+
+    // Buscar situações ativas mais recentes (sem data_fim)
+    const { data: situacoes } = await supabase
+      .from('historico_situacoes')
       .select('*')
-      .eq('ativo', true)
-      .order('ordem');
-    
-    if (data) setCargosLoja(data);
-    if (error) console.error('Erro ao carregar cargos:', error);
+      .eq('status', 'ativa')
+      .is('data_fim', null);
+
+    // Filtrar apenas Regular e Licenciado
+    const irmaosValidos = todosIrmaos?.filter(irmao => {
+      // Primeiro tenta pelo histórico
+      const situacaoHistorico = situacoes?.find(s => s.membro_id === irmao.id);
+      
+      if (situacaoHistorico) {
+        const tipoSituacao = situacaoHistorico.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return tipoSituacao === 'regular' || tipoSituacao === 'licenciado';
+      }
+      
+      // Fallback: se não tem histórico, verifica o campo situacao da tabela irmaos
+      if (irmao.situacao) {
+        const situacaoIrmao = irmao.situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return situacaoIrmao === 'regular' || situacaoIrmao === 'licenciado';
+      }
+      
+      // Se não tem nenhuma informação de situação, inclui (assume regular)
+      return true;
+    }) || [];
+
+    setIrmaos(irmaosValidos);
   };
 
-  const loadUsuarios = async () => {
-    try {
-      console.log('🔍 Carregando usuários...');
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .order('nome');
-      
-      if (error) {
-        console.error('❌ Erro ao carregar usuários:', error);
-        return;
-      }
-      
-      if (data) {
-        console.log('✅ Usuários carregados:', data.length);
-        setUsuarios(data);
-      }
-    } catch (err) {
-      console.error('❌ Exceção ao carregar usuários:', err);
+  const carregarPotencias = async () => {
+    const { data } = await supabase
+      .from('potencias_masonicas')
+      .select('*')
+      .eq('ativa', true)
+      .order('sigla');
+    setPotencias(data || []);
+  };
+
+  const salvarNovaPotencia = async () => {
+    if (!novaPotencia.sigla || !novaPotencia.nome_completo) {
+      setMensagem({ tipo: 'erro', texto: 'Preencha sigla e nome completo da potência' });
+      return;
     }
-  };
 
-  const loadPermissoes = async () => {
-    try {
-      console.log('🔍 Carregando permissões...');
-      const { data, error } = await supabase
-        .from('permissoes')
-        .select('*')
-        .order('cargo');
-      
-      if (error) {
-        console.error('❌ Erro ao carregar permissões:', error);
-        return;
-      }
-      
-      if (data) {
-        console.log('✅ Permissões carregadas:', data.length);
-        setPermissoesDisponiveis(data);
-      }
-    } catch (err) {
-      console.error('❌ Exceção ao carregar permissões:', err);
-    }
-  };
-
-  const loadPranchas = async () => {
-    try {
-      console.log('🔍 Carregando pranchas expedidas...');
-      const { data, error } = await supabase
-        .from('pranchas_expedidas')
-        .select('*')
-        .order('data_prancha', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Erro ao carregar pranchas:', error);
-        return;
-      }
-      
-      if (data) {
-        console.log('✅ Pranchas carregadas:', data.length);
-        setPranchas(data);
-      }
-    } catch (err) {
-      console.error('❌ Exceção ao carregar pranchas:', err);
-    }
-  };
-
-  const loadCorpoAdmin = async () => {
-    try {
-      console.log('🔍 Carregando corpo administrativo...');
-      const { data, error } = await supabase
-        .from('corpo_administrativo')
-        .select('*')
-        .order('ano_exercicio', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Erro ao carregar corpo admin:', error);
-        return;
-      }
-      
-      if (data) {
-        // Buscar dados dos irmãos separadamente
-        const irmaoIds = [...new Set(data.map(ca => ca.irmao_id))];
-        const { data: irmaosData } = await supabase
-          .from('irmaos')
-          .select('id, nome, cim')
-          .in('id', irmaoIds);
-        
-        // Fazer join manual
-        const corpoComIrmaos = data.map(ca => ({
-          ...ca,
-          irmao: irmaosData?.find(i => i.id === ca.irmao_id)
-        }));
-        
-        console.log('✅ Corpo administrativo carregado:', corpoComIrmaos.length);
-        setCorpoAdmin(corpoComIrmaos);
-      }
-    } catch (err) {
-      console.error('❌ Exceção ao carregar corpo admin:', err);
-    }
-  };
-
-  const loadBalaustres = async () => {
-    try {
-      console.log('🔍 Carregando TODOS os balaustres');
-      
-      // Buscar TODOS os balaustres (sem filtro de grau)
-      const { data: balaustreData, error: balaustreError } = await supabase
-        .from('balaustres')
-        .select('*')
-        .order('numero_balaustre', { ascending: false });
-      
-      if (balaustreError) {
-        // Se JWT expirou, tentar renovar sessão e repetir
-        if (balaustreError.message?.includes('JWT') || balaustreError.code === 'PGRST301') {
-          console.warn('⚠️ JWT expirado — tentando renovar sessão...');
-          const { error: refreshError } = await supabase.auth.refreshSession();
-          if (!refreshError) {
-            console.log('✅ Sessão renovada — recarregando balaustres');
-            return loadBalaustres(); // retry
-          }
-        }
-        console.error('❌ Erro ao carregar balaustres:', balaustreError);
-        setError('Erro ao carregar balaustres: ' + balaustreError.message);
-        return;
-      }
-      
-      console.log('📊 Balaustres encontrados:', balaustreData?.length || 0);
-      
-      if (!balaustreData || balaustreData.length === 0) {
-        console.log('⚠️ Nenhum balaustre encontrado');
-        setBalaustres([]);
-        return;
-      }
-
-      // Buscar tipos de sessão separadamente
-      const { data: tiposData, error: tiposError } = await supabase
-        .from('tipos_sessao')
-        .select('*');
-      
-      if (tiposError) {
-        console.error('⚠️ Erro ao carregar tipos de sessão:', tiposError);
-      }
-
-      // Fazer o "join" manualmente
-      const balaustreComTipos = balaustreData.map(bal => {
-        const tipo = tiposData?.find(t => t.id === bal.tipo_sessao_id);
-        return {
-          ...bal,
-          tipos_sessao: tipo ? { id: tipo.id, nome: tipo.nome } : null
-        };
-      });
-
-      console.log('✅ Balaustres processados:', balaustreComTipos.length);
-      setBalaustres(balaustreComTipos);
-      
-    } catch (err) {
-      console.error('❌ Exceção ao carregar balaustres:', err);
-      setError('Erro inesperado ao carregar balaustres');
-      setBalaustres([]);
-    }
-  };
-
-  const loadComissoes = async () => {
-    try {
-      console.log('🔍 Carregando comissões...');
-      const { data, error } = await supabase
-        .from('comissoes')
-        .select('*')
-        .order('data_criacao', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Erro ao carregar comissões:', error);
-        return;
-      }
-      
-      console.log('✅ Comissões carregadas:', data?.length || 0);
-      setComissoes(data || []);
-    } catch (err) {
-      console.error('❌ Exceção ao carregar comissões:', err);
-      setComissoes([]);
-    }
-  };
-
-  const loadLivros = async () => {
-    try {
-      console.log('🔍 Carregando livros...');
-      const { data, error } = await supabase
-        .from('biblioteca_livros')
-        .select('*')
-        .order('titulo', { ascending: true });
-      
-      if (error) {
-        console.error('❌ Erro ao carregar livros:', error);
-        return;
-      }
-      
-      console.log('✅ Livros carregados:', data?.length || 0);
-      setLivros(data || []);
-    } catch (err) {
-      console.error('❌ Exceção ao carregar livros:', err);
-      setLivros([]);
-    }
-  };
-
-  const loadCronograma = async () => {
     try {
       const { data, error } = await supabase
-        .from('eventos_comemorativos')
-        .select('*')
-        .order('mes', { ascending: true });
-      
-      if (error) {
-        console.error('Erro ao carregar eventos:', error);
-        setCronograma([]);
-        return;
-      }
-      
-      console.log('✅ Eventos comemorativos carregados:', data?.length || 0);
-      setCronograma(data || []);
-    } catch (err) {
-      console.error('Exceção ao carregar eventos:', err);
-      setCronograma([]);
-    }
-  };
-
-  const loadEmprestimos = async () => {
-    try {
-      console.log('🔍 Carregando empréstimos...');
-      const { data, error } = await supabase
-        .from('biblioteca_emprestimos')
-        .select('*')
-        .order('data_emprestimo', { ascending: false });
-      
-      if (error) {
-        console.error('❌ Erro ao carregar empréstimos:', error);
-        return;
-      }
-      
-      console.log('✅ Empréstimos carregados:', data?.length || 0);
-      setEmprestimos(data || []);
-    } catch (err) {
-      console.error('❌ Exceção ao carregar empréstimos:', err);
-      setEmprestimos([]);
-    }
-  };
-
-  const carregarProximoNumero = async (grau) => {
-    try {
-      console.log('🔢 Carregando próximo número para grau:', grau);
-      
-      const { data, error } = await supabase
-        .rpc('get_proximo_numero_balaustre', { grau });
-      
-      console.log('📊 Próximo número:', { data, error });
-      
-      if (data !== null && data !== undefined) {
-        console.log('✅ Próximo número definido:', data);
-        setBalaustreForm(prev => ({ ...prev, numero_balaustre: data }));
-      } else {
-        console.log('⚠️ Próximo número não retornado, usando 1');
-        setBalaustreForm(prev => ({ ...prev, numero_balaustre: 1 }));
-      }
-      
-      if (error) {
-        console.error('❌ Erro ao carregar próximo número:', error);
-      }
-    } catch (err) {
-      console.error('❌ Exceção ao carregar próximo número:', err);
-      setBalaustreForm(prev => ({ ...prev, numero_balaustre: 1 }));
-    }
-  };
-
-  // ========================================
-  // ========================================
-  // FUNÇÕES DE AUTENTICAÇÃO
-  // ========================================
-  const handleLogin = async (emailParam, passwordParam, portalEscolhido = 'irmaos') => {
-    setLoading(true);
-    setError('');
-
-    try {
-      console.log('🔐 Iniciando login...', { email: emailParam, portal: portalEscolhido });
-      
-      // PASSO 1: Autenticar
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: emailParam,
-        password: passwordParam,
-      });
-
-      if (error) throw error;
-      console.log('✅ Autenticação OK');
-
-      // PASSO 2A: Verificar se é uma CUNHADA com login próprio
-      const { data: dadosCunhada } = await supabase
-        .from('cunhadas')
-        .select('id, nome, ativa, cargo')
-        .eq('email', emailParam)
-        .maybeSingle();
-
-      const ehCunhada = !!dadosCunhada;
-
-      if (ehCunhada) {
-        // ── Fluxo CUNHADA ──────────────────────────────────────────
-        console.log('👩 Usuário identificado como cunhada, cargo:', dadosCunhada.cargo);
-
-        if (!dadosCunhada.ativa) {
-          await supabase.auth.signOut();
-          throw new Error('Cadastro inativo. Entre em contato com a administração.');
-        }
-
-        // Cunhadas só acessam o portal cunhadas
-        if (portalEscolhido !== 'cunhadas') {
-          await supabase.auth.signOut();
-          setLoading(false);
-          setModalAcessoNegado(true);
-          return;
-        }
-
-        // Apenas presidente e tesoureira têm acesso (por enquanto)
-        const cargosPermitidosCunhadas = ['presidente', 'tesoureira'];
-        if (!cargosPermitidosCunhadas.includes(dadosCunhada.cargo)) {
-          await supabase.auth.signOut();
-          setLoading(false);
-          setModalAcessoNegado(true);
-          return;
-        }
-
-        console.log('✅ Cunhada autorizada — cargo:', dadosCunhada.cargo);
-        sessionStorage.setItem('portalAtivo', 'cunhadas');
-        sessionStorage.setItem('tipoPerfil', 'cunhada');
-        setSession(data.session);
-        setPortalAtivo('cunhadas');
-        setCurrentPage('dashboard-cunhadas');
-        setLoading(false);
-        return; // Cunhada não carrega dados dos irmãos
-      }
-
-      // ── Fluxo IRMÃO ────────────────────────────────────────────
-      // PASSO 2B: Buscar dados do irmão (incluindo cargo)
-      const { data: userData } = await supabase
-        .from('usuarios')
-        .select('*, cargo')
-        .eq('email', emailParam)
-        .single();
-
-      console.log('👤 Irmão carregado:', { cargo: userData?.cargo, ativo: userData?.ativo });
-
-      if (!userData?.ativo) {
-        await supabase.auth.signOut();
-        throw new Error('Usuário inativo. Entre em contato com o administrador.');
-      }
-
-      // PASSO 3: VALIDAR PERMISSÃO (portal cunhadas: só admin e venerável)
-      if (portalEscolhido === 'cunhadas') {
-        console.log('🔍 Validando permissão de irmão para portal cunhadas...');
-
-        const cargosComAcesso = ['administrador', 'veneravel', 'Veneravel'];
-        const temPermissaodireta = cargosComAcesso.includes(userData?.cargo) ||
-                                   userData?.nivel_acesso === 'admin';
-
-        if (!temPermissaodireta) {
-          const { data: perms } = await supabase
-            .from('permissoes')
-            .select('pode_acessar_portal_cunhadas')
-            .eq('cargo', userData.cargo)
-            .single();
-
-          if (!perms?.pode_acessar_portal_cunhadas) {
-            await supabase.auth.signOut();
-            setLoading(false);
-            setModalAcessoNegado(true);
-            return;
-          }
-        }
-
-        console.log('✅ Irmão autorizado para portal cunhadas');
-      }
-
-      // PASSO 4: SÓ AGORA (após validação OK) - Atualizar estados
-      console.log('✅ Atualizando estados...');
-      sessionStorage.setItem('portalAtivo', portalEscolhido); // persiste enquanto a aba estiver aberta
-      setSession(data.session);
-      loadUserData(emailParam);
-      setPortalAtivo(portalEscolhido);
-      
-      // PASSO 5: Redirecionar para página correta
-      if (portalEscolhido === 'cunhadas') {
-        console.log('📍 Redirecionando para dashboard-cunhadas');
-        setCurrentPage('dashboard-cunhadas');
-      } else {
-        console.log('📍 Redirecionando para dashboard');
-        setCurrentPage('dashboard');
-      }
-      
-      // Registrar log de login
-      try {
-        const { data: user } = await supabase
-          .from('usuarios')
-          .select('id, nome')
-          .eq('email', emailParam)
-          .single();
-        
-        if (user) {
-          await supabase
-            .from('logs_acesso')
-            .insert([{
-              usuario_id: user.id,
-              acao: 'login',
-              detalhes: `${user.nome} fez login no sistema`,
-              ip: 'Browser',
-              user_agent: navigator.userAgent
-            }]);
-        }
-      } catch (logError) {
-        console.error('Erro ao registrar log:', logError);
-      }
-      
-      loadIrmaos();
-      loadTiposSessao();
-      loadCargosLoja();
-      loadBalaustres();
-    } catch (error) {
-      console.error('❌ Erro no handleLogin:', error.message);
-      setError(error.message);
-      setLoading(false);
-      throw error; // RE-LANÇAR o erro para o Login.jsx capturar!
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    sessionStorage.removeItem('portalAtivo');
-    sessionStorage.removeItem('tipoPerfil');
-    setSession(null);
-    setUserData(null);
-    setPermissoes(null);
-    setCurrentPage('dashboard');
-    setPortalAtivo('irmaos'); // Resetar para portal irmãos
-  };
-
-  // ========================================
-  // FUNÇÕES PARA IRMÃOS
-  // ========================================
-
-  // ========================================
-  // ========================================
-  // FUNÇÕES PARA USUÁRIOS
-  // ========================================
-  const handleSubmitUsuario = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      console.log('💾 Criando novo usuário:', usuarioForm.email);
-
-      // Criar usuário no Auth usando signUp
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: usuarioForm.email,
-        password: usuarioForm.senha,
-        options: {
-          data: {
-            nome: usuarioForm.nome
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Inserir dados complementares na tabela usuarios
-      const { error: dbError } = await supabase
-        .from('usuarios')
-        .insert([{
-          email: usuarioForm.email,
-          nome: usuarioForm.nome,
-          cargo: usuarioForm.cargo,
-          ativo: usuarioForm.ativo
-        }]);
-
-      if (dbError) throw dbError;
-
-      setSuccessMessage('✅ Usuário criado com sucesso! Um email de confirmação foi enviado.');
-      loadUsuarios();
-      limparFormularioUsuario();
-
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-
-    } catch (error) {
-      console.error('❌ Erro ao criar usuário:', error);
-      setError('Erro ao criar usuário: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAtualizarUsuario = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      console.log('💾 Atualizando usuário:', usuarioEditando.email);
-
-      const { error } = await supabase
-        .from('usuarios')
-        .update({
-          nome: usuarioForm.nome,
-          cargo: usuarioForm.cargo,
-          ativo: usuarioForm.ativo
-        })
-        .eq('id', usuarioEditando.id);
+        .from('potencias_masonicas')
+        .insert([{ ...novaPotencia, ativa: true }])
+        .select();
 
       if (error) throw error;
 
-      // Se tem nova senha, atualizar no Auth
-      if (usuarioForm.senha) {
-        // Buscar o usuário no Auth pelo email para obter o UUID correto
-        const { data: authUsers, error: listError } = await supabase.auth.admin.listUsers();
-        
-        if (listError) throw listError;
-        
-        // Encontrar o usuário pelo email
-        const authUser = authUsers.users.find(u => u.email === usuarioEditando.email);
-        
-        if (authUser) {
-          // Usar o UUID correto do Auth
-          const { error: updateError } = await supabase.auth.admin.updateUserById(
-            authUser.id,  // UUID do auth.users
-            { password: usuarioForm.senha }
-          );
-          
-          if (updateError) throw updateError;
-        } else {
-          throw new Error('Usuário não encontrado no sistema de autenticação');
-        }
-      }
-
-      setSuccessMessage('Usuário atualizado com sucesso!');
-      loadUsuarios();
-      limparFormularioUsuario();
-
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-
+      setMensagem({ tipo: 'sucesso', texto: '✅ Potência cadastrada com sucesso!' });
+      setNovaPotencia({ sigla: '', nome_completo: '' });
+      setMostrarFormPotencia(false);
+      carregarPotencias();
     } catch (error) {
-      console.error('❌ Erro ao atualizar usuário:', error);
-      setError('Erro ao atualizar usuário: ' + error.message);
-    } finally {
-      setLoading(false);
+      console.error('Erro ao salvar potência:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao salvar potência' });
     }
   };
 
-  const handleEditarUsuario = (usuario) => {
-    setModoEdicaoUsuario(true);
-    setUsuarioEditando(usuario);
-    setUsuarioForm({
-      nome: usuario.nome,
-      email: usuario.email,
-      senha: '', // Não carregar senha
-      cargo: usuario.cargo,
-      ativo: usuario.ativo
-    });
-  };
-
-  const handleExcluirUsuario = async (usuario) => {
-    if (!window.confirm(`Tem certeza que deseja excluir o usuário ${usuario.nome}?`)) return;
-
-    setLoading(true);
-    try {
-      console.log('🗑️ Excluindo usuário:', usuario.email);
-
-      // Excluir do banco
-      const { error: dbError } = await supabase
-        .from('usuarios')
-        .delete()
-        .eq('id', usuario.id);
-
-      if (dbError) throw dbError;
-
-      // Excluir do Auth (se necessário)
-      // Note: pode requerer privilégios de admin
-      
-      setSuccessMessage('Usuário excluído com sucesso!');
-      loadUsuarios();
-
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-
-    } catch (error) {
-      console.error('❌ Erro ao excluir usuário:', error);
-      setError('Erro ao excluir usuário: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const limparFormularioUsuario = () => {
-    setUsuarioForm({
-      nome: '',
-      email: '',
-      senha: '',
-      cargo: 'irmao',
-      ativo: true
-    });
-    setModoEdicaoUsuario(false);
-    setUsuarioEditando(null);
-  };
-
-  const getPermissoesUsuario = (cargo) => {
-    return permissoesDisponiveis.find(p => p.cargo === cargo);
-  };
-
-  // ========================================
-  // ========================================
-  // FUNÇÕES PARA CORPO ADMINISTRATIVO
-  // ========================================
-  const handleSubmitCorpoAdmin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      console.log('💾 Salvando cargo administrativo...');
-
-      const { error } = await supabase
-        .from('corpo_administrativo')
-        .insert([corpoAdminForm]);
-
-      if (error) throw error;
-
-      setSuccessMessage('✅ Cargo cadastrado com sucesso!');
-      limparFormularioCorpoAdmin();
-      loadCorpoAdmin();
-
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      console.error('❌ Erro ao cadastrar cargo:', err);
-      setError('Erro ao cadastrar cargo: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAtualizarCorpoAdmin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccessMessage('');
-
-    try {
-      console.log('💾 Atualizando cargo administrativo...');
-
-      const { error } = await supabase
-        .from('corpo_administrativo')
-        .update(corpoAdminForm)
-        .eq('id', corpoAdminEditando.id);
-
-      if (error) throw error;
-
-      setSuccessMessage('✅ Cargo atualizado com sucesso!');
-      limparFormularioCorpoAdmin();
-      loadCorpoAdmin();
-
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      console.error('❌ Erro ao atualizar cargo:', err);
-      setError('Erro ao atualizar cargo: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditarCorpoAdmin = (item) => {
-    setModoEdicaoCorpoAdmin(true);
-    setCorpoAdminEditando(item);
-    setCorpoAdminForm({
-      irmao_id: item.irmao_id,
-      cargo: item.cargo,
-      ano_exercicio: item.ano_exercicio
-    });
-  };
-
-  const limparFormularioCorpoAdmin = () => {
-    setCorpoAdminForm({ irmao_id: '', cargo: '', ano_exercicio: '' });
-    setModoEdicaoCorpoAdmin(false);
-    setCorpoAdminEditando(null);
-  };
-
-  const handleExcluirCorpoAdmin = async (id) => {
-    if (!window.confirm('Tem certeza que deseja remover este cargo?')) return;
-
-    setLoading(true);
+  const atualizarPotencia = async (id, dados) => {
     try {
       const { error } = await supabase
-        .from('corpo_administrativo')
-        .delete()
+        .from('potencias_masonicas')
+        .update(dados)
         .eq('id', id);
 
       if (error) throw error;
 
-      setSuccessMessage('✅ Cargo removido!');
-      loadCorpoAdmin();
-
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err) {
-      setError('Erro ao remover: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ========================================
-  // FUNÇÃO PARA GERAR PDF
-  // ========================================
-  const gerarPDFIrmao = async (irmao) => {
-    try {
-      console.log('📄 Gerando PDF para:', irmao.nome);
-
-      // Buscar dados familiares
-      const { data: esposaData } = await supabase
-        .from('esposas')
-        .select('*')
-        .eq('irmao_id', irmao.id)
-        .single();
-
-      const { data: paisData } = await supabase
-        .from('pais')
-        .select('*')
-        .eq('irmao_id', irmao.id);
-
-      const { data: filhosData } = await supabase
-        .from('filhos')
-        .select('*')
-        .eq('irmao_id', irmao.id);
-
-      const pai = paisData?.find(p => p.tipo === 'pai');
-      const mae = paisData?.find(p => p.tipo === 'mae');
-
-      // Criar conteúdo HTML para o PDF
-      let htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Ficha - ${irmao.nome}</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-    .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #1e40af; padding-bottom: 20px; }
-    .header h1 { color: #1e40af; margin: 0; font-size: 24px; }
-    .header h2 { color: #666; margin: 5px 0 0 0; font-size: 16px; }
-    .section { margin: 25px 0; page-break-inside: avoid; }
-    .section-title { background: #1e40af; color: white; padding: 10px; font-size: 16px; font-weight: bold; margin-bottom: 15px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .info-item { margin-bottom: 10px; }
-    .info-label { font-weight: bold; color: #1e40af; display: block; margin-bottom: 3px; }
-    .info-value { color: #333; display: block; padding-left: 10px; }
-    .family-member { background: #f3f4f6; padding: 15px; margin: 10px 0; border-left: 4px solid #1e40af; }
-    .footer { text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #ccc; color: #666; font-size: 12px; }
-    @media print { body { margin: 20px; } }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>${NOME_LOJA}</h1>
-    <h2>Ficha Cadastral de Irmão</h2>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📋 DADOS PESSOAIS</div>
-    <div class="info-grid">
-      <div class="info-item"><span class="info-label">Nome Completo:</span><span class="info-value">${irmao.nome || '-'}</span></div>
-      <div class="info-item"><span class="info-label">CIM:</span><span class="info-value">${irmao.cim || '-'}</span></div>
-      <div class="info-item"><span class="info-label">CPF:</span><span class="info-value">${irmao.cpf || '-'}</span></div>
-      <div class="info-item"><span class="info-label">RG:</span><span class="info-value">${irmao.rg || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(irmao.data_nascimento)}</span></div>
-      <div class="info-item"><span class="info-label">Naturalidade:</span><span class="info-value">${irmao.naturalidade || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Estado Civil:</span><span class="info-value">${irmao.estado_civil || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Profissão:</span><span class="info-value">${irmao.profissao || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Formação:</span><span class="info-value">${irmao.formacao || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Situação:</span><span class="info-value">${irmao.situacao || 'Regular'}</span></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">📍 CONTATO</div>
-    <div class="info-grid">
-      <div class="info-item"><span class="info-label">Endereço:</span><span class="info-value">${irmao.endereco || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Cidade:</span><span class="info-value">${irmao.cidade || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Celular:</span><span class="info-value">${irmao.celular || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Email:</span><span class="info-value">${irmao.email || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Local de Trabalho:</span><span class="info-value">${irmao.local_trabalho || '-'}</span></div>
-      <div class="info-item"><span class="info-label">Cargo:</span><span class="info-value">${irmao.cargo || '-'}</span></div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">🔺 DADOS MAÇÔNICOS</div>
-    <div class="info-grid">
-      <div class="info-item"><span class="info-label">Data de Iniciação:</span><span class="info-value">${formatarData(irmao.data_iniciacao)}</span></div>
-      <div class="info-item"><span class="info-label">Data de Elevação:</span><span class="info-value">${formatarData(irmao.data_elevacao)}</span></div>
-      <div class="info-item"><span class="info-label">Data de Exaltação:</span><span class="info-value">${formatarData(irmao.data_exaltacao)}</span></div>
-      <div class="info-item"><span class="info-label">Grau Atual:</span><span class="info-value">${obterGrau(irmao)}</span></div>
-    </div>
-  </div>`;
-
-      if (esposaData) {
-        htmlContent += `<div class="section"><div class="section-title">💑 ESPOSA</div><div class="family-member">
-<div class="info-item"><span class="info-label">Nome:</span><span class="info-value">${esposaData.nome || '-'}</span></div>
-<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(esposaData.data_nascimento)}</span></div>
-</div></div>`;
-      }
-
-      if (pai || mae) {
-        htmlContent += `<div class="section"><div class="section-title">👨‍👩‍👦 PAIS</div>`;
-        if (pai) {
-          htmlContent += `<div class="family-member"><div class="info-item"><span class="info-label">Pai:</span><span class="info-value">${pai.nome || '-'}</span></div>
-<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(pai.data_nascimento)}</span></div>
-${pai.falecido ? `<div class="info-item"><span class="info-label">Status:</span><span class="info-value">🕊️ Falecido em ${formatarData(pai.data_obito)}</span></div>` : ''}</div>`;
-        }
-        if (mae) {
-          htmlContent += `<div class="family-member"><div class="info-item"><span class="info-label">Mãe:</span><span class="info-value">${mae.nome || '-'}</span></div>
-<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(mae.data_nascimento)}</span></div>
-${mae.falecido ? `<div class="info-item"><span class="info-label">Status:</span><span class="info-value">🕊️ Falecida em ${formatarData(mae.data_obito)}</span></div>` : ''}</div>`;
-        }
-        htmlContent += `</div>`;
-      }
-
-      if (filhosData && filhosData.length > 0) {
-        htmlContent += `<div class="section"><div class="section-title">👶 FILHOS</div>`;
-        filhosData.forEach((filho, index) => {
-          htmlContent += `<div class="family-member"><div class="info-item"><span class="info-label">Filho(a) ${index + 1}:</span><span class="info-value">${filho.nome || '-'}</span></div>
-<div class="info-item"><span class="info-label">Data de Nascimento:</span><span class="info-value">${formatarData(filho.data_nascimento)}</span></div>
-${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</span><span class="info-value">🕊️ Falecido(a) em ${formatarData(filho.data_obito)}</span></div>` : ''}</div>`;
-        });
-        htmlContent += `</div>`;
-      }
-
-      htmlContent += `<div class="footer"><p>Documento gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p><p>${NOME_LOJA}</p></div></body></html>`;
-
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Ficha_${irmao.nome.replace(/\s+/g, '_')}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      setSuccessMessage('✅ Arquivo HTML gerado! Abra no navegador e use Ctrl+P para salvar em PDF.');
-      setTimeout(() => setSuccessMessage(''), 5000);
-
+      setMensagem({ tipo: 'sucesso', texto: '✅ Potência atualizada com sucesso!' });
+      setEditandoPotencia(null);
+      carregarPotencias();
     } catch (error) {
-      console.error('❌ Erro ao gerar PDF:', error);
-      setError('Erro ao gerar arquivo: ' + error.message);
+      console.error('Erro ao atualizar potência:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao atualizar potência' });
     }
   };
 
-  // ========================================
-  // RENDERIZAÇÃO
-  // ========================================
-  if (loading && !session) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-2xl">Carregando...</div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return <Login 
-      onLogin={handleLogin} 
-      modalAcessoNegado={modalAcessoNegado}
-      onFecharModalAcessoNegado={() => setModalAcessoNegado(false)}
-    />;
-  }
-
-  // Contagens por situação
-  const irmaosRegulares = irmaos.filter(i => i.situacao === 'Regular');
-  const irmaosIrregulares = irmaos.filter(i => i.situacao === 'Irregular');
-  const irmaosLicenciados = irmaos.filter(i => i.situacao === 'Licenciado');
-  const irmaosSuspensos = irmaos.filter(i => i.situacao === 'Suspenso');
-  const irmaosDesligados = irmaos.filter(i => i.situacao === 'Desligado');
-  const irmaosExcluidos = irmaos.filter(i => i.situacao === 'Excluído');
-  const irmaosFalecidos = irmaos.filter(i => i.situacao === 'Falecido');
-  const irmaosExOficio = irmaos.filter(i => i.situacao === 'Ex-Ofício');
-  
-  const totalIrmaos = irmaos.length;
-
-  // Função para determinar o grau do irmão
-  const obterGrau = (irmao) => {
-    if (irmao.data_exaltacao) {
-      return irmao.mestre_instalado ? 'Mestre Instalado' : 'Mestre';
+  const abrirModalVisita = (visita = null) => {
+    if (visita) {
+      setVisitaEditando(visita);
+      setVisitaForm({
+        irmao_id: visita.irmao_id,
+        data_visita: visita.data_visita,
+        nome_loja: visita.nome_loja,
+        oriente: visita.oriente,
+        potencia_id: visita.potencia_id,
+        observacoes: visita.observacoes || ''
+      });
+    } else {
+      setVisitaEditando(null);
+      setVisitaForm({
+        irmao_id: '',
+        data_visita: '',
+        nome_loja: '',
+        oriente: '',
+        potencia_id: '',
+        observacoes: ''
+      });
     }
-    if (irmao.data_elevacao) return 'Companheiro';
-    if (irmao.data_iniciacao) return 'Aprendiz';
-    return 'Não Iniciado';
+    setModalVisita(true);
   };
 
-  // Contagem por grau (apenas regulares)
-  const irmaosAprendiz = irmaosRegulares.filter(i => obterGrau(i) === 'Aprendiz').length;
-  const irmaosCompanheiro = irmaosRegulares.filter(i => obterGrau(i) === 'Companheiro').length;
-  const irmaosMestre = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre').length;
-  const irmaosMestreInstalado = irmaosRegulares.filter(i => obterGrau(i) === 'Mestre Instalado').length;
-  const totalMestres = irmaosMestre + irmaosMestreInstalado;
+  const salvarVisita = async (e) => {
+    e.preventDefault();
 
+    if (!visitaForm.irmao_id || !visitaForm.data_visita || !visitaForm.nome_loja || !visitaForm.oriente) {
+      setMensagem({ tipo: 'erro', texto: 'Preencha todos os campos obrigatórios' });
+      return;
+    }
+
+    try {
+      if (visitaEditando) {
+        const { error } = await supabase
+          .from('visitas_outras_lojas')
+          .update(visitaForm)
+          .eq('id', visitaEditando.id);
+        
+        if (error) throw error;
+        setMensagem({ tipo: 'sucesso', texto: '✅ Visita atualizada com sucesso!' });
+      } else {
+        const { error } = await supabase
+          .from('visitas_outras_lojas')
+          .insert([visitaForm]);
+        
+        if (error) throw error;
+        setMensagem({ tipo: 'sucesso', texto: '✅ Visita cadastrada com sucesso!' });
+      }
+
+      setModalVisita(false);
+      carregarVisitas();
+    } catch (error) {
+      console.error('Erro ao salvar visita:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao salvar visita' });
+    }
+  };
+
+  const excluirVisita = async (id) => {
+    if (!confirm('Deseja realmente excluir esta visita?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('visitas_outras_lojas')
+        .delete()
+        .eq('id', id);
+      
+      if (error) throw error;
+      setMensagem({ tipo: 'sucesso', texto: '✅ Visita excluída com sucesso!' });
+      carregarVisitas();
+    } catch (error) {
+      console.error('Erro ao excluir visita:', error);
+      setMensagem({ tipo: 'erro', texto: '❌ Erro ao excluir visita' });
+    }
+  };
+
+  const handleExcluir = async (sessaoId) => {
+    if (!confirm('Tem certeza que deseja excluir esta sessão?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('sessoes_presenca')
+        .delete()
+        .eq('id', sessaoId);
+
+      if (error) throw error;
+
+      setMensagem({
+        tipo: 'sucesso',
+        texto: '✅ Sessão excluída com sucesso!'
+      });
+
+      carregarSessoes();
+    } catch (error) {
+      console.error('Erro ao excluir:', error);
+      setMensagem({
+        tipo: 'erro',
+        texto: '❌ Erro ao excluir sessão'
+      });
+    }
+  };
+
+  const formatarNomeCurto = (nomeCompleto) => {
+    if (!nomeCompleto) return '';
+    
+    const partes = nomeCompleto.trim().split(' ');
+    
+    // Se tem 2 nomes ou menos, retorna tudo
+    if (partes.length <= 2) return nomeCompleto;
+    
+    // Se tem "de" ou "da", pega primeiro nome + último
+    const conectores = ['de', 'da', 'do', 'dos', 'das'];
+    const temConector = partes.some(p => conectores.includes(p.toLowerCase()));
+    
+    if (temConector) {
+      return `${partes[0]} ${partes[partes.length - 1]}`;
+    }
+    
+    // Caso contrário, retorna os dois primeiros nomes
+    return `${partes[0]} ${partes[1]}`;
+  };
 
   return (
-    <div className="flex min-h-screen" style={{ background: 'var(--color-bg)' }}>
-      {/* SIDEBAR LATERAL COLAPSÁVEL */}
-      <aside className={`${menuAberto ? 'w-64' : 'w-16'} bg-gradient-to-b from-blue-900 to-indigo-900 text-white fixed h-screen shadow-2xl flex flex-col transition-all duration-300`}>
-        {/* Logo e Título */}
-        <div className="p-4 border-b border-primary-700 flex-shrink-0">
-          <div className="flex items-center justify-between">
-            {menuAberto && (
-              <div className="flex flex-col items-center flex-1">
-                <img src={LOGO_URL} alt="Logo" className="w-16 h-16 rounded-full border-4 border-white mb-2" />
-                <h1 className="text-sm font-bold text-center leading-tight">{NOME_LOJA}</h1>
-                <p className="text-xs text-blue-200 mt-1">Gestão e Controle</p>
-              </div>
-            )}
-            {!menuAberto && (
-              <img src={LOGO_URL} alt="Logo" className="w-10 h-10 rounded-full border-2 border-white mx-auto" />
-            )}
+    <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
+      {/* Cabeçalho */}
+      <div className="card">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--color-text)' }}>
+              Sessões Realizadas
+            </h2>
+            <p style={{ color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
+              Visualize e gerencie as sessões cadastradas
+            </p>
           </div>
-          {/* Botão Hamburger */}
-          <button
-            onClick={() => setMenuAberto(!menuAberto)}
-            className="absolute top-4 right-2 p-2 hover:bg-primary-800 rounded-lg transition"
-            title={menuAberto ? "Fechar menu" : "Abrir menu"}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {menuAberto ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => abrirModalVisita()}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'var(--color-warning)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.target.style.opacity = '1'}
+            >
+              📍 Nova Visita
+            </button>
+            <button
+              onClick={() => setModalAberto(true)}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
+            >
+              ➕ Nova Sessão
+            </button>
+          </div>
         </div>
 
-        {/* Menu de Navegação */}
-        <nav className="py-2 flex-1 overflow-y-auto">
-          {/* MOSTRAR MENU APENAS SE ESTIVER NO PORTAL DOS IRMÃOS */}
-          {portalAtivo === 'irmaos' && (
-            <>
-              {/* DASHBOARD - Todos */}
-              <button
-                onClick={() => setCurrentPage('dashboard')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'dashboard'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Dashboard"
-              >
-                <span className="text-base">📊</span>
-                {menuAberto && <span className="font-semibold">Dashboard</span>}
-              </button>
-
-              {/* ===== MENU PARA IRMÃO COMUM ===== */}
-              {userData?.nivel_acesso === 'irmao' && (
-            <>
-              {/* MEU CADASTRO E VISUALIZAR */}
-              <button
-                onClick={() => setCurrentPage('meu-cadastro')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'meu-cadastro'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Meu Cadastro"
-              >
-                <span className="text-base">👤</span>
-                {menuAberto && <span className="font-semibold">Meu Cadastro</span>}
-              </button>
-
-              <button
-                onClick={() => {
-                  if (irmaoLogadoId) {
-                    setIrmaoIdPerfilCompleto(irmaoLogadoId);
-                    setModalPerfilCompletoAberto(true);
-                  }
-                }}
-                className="w-full px-4 py-2 flex items-center gap-2 transition text-sm hover:bg-primary-800"
-                title="Meu Perfil Completo"
-              >
-                <span className="text-base">📋</span>
-                {menuAberto && <span className="font-semibold">Meu Perfil Completo</span>}
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('visualizar')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'visualizar'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Visualizar Irmãos"
-              >
-                <span className="text-base">👥</span>
-                {menuAberto && <span className="font-semibold">Visualizar Irmãos</span>}
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('minhas-financas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'minhas-financas'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Minhas Finanças"
-              >
-                <span className="text-base">💰</span>
-                {menuAberto && <span className="font-semibold">Minhas Finanças</span>}
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('minhas-presencas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'minhas-presencas'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Minhas Presenças"
-              >
-                <span className="text-base">📊</span>
-                {menuAberto && <span className="font-semibold">Minhas Presenças</span>}
-              </button>
-
-              {/* SUBMENU: EXPEDIENTES */}
-              <div className="border-t border-primary-700 mt-2 pt-2">
-                <button
-                  onClick={() => setSubmenuExpedientes(!submenuExpedientes)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                  title="Expedientes"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📑</span>
-                    {menuAberto && <span className="font-semibold">Expedientes</span>}
-                  </div>
-                  {menuAberto && (
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${submenuExpedientes ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                </button>
-
-                {(submenuExpedientes && menuAberto) && (
-                  <div className="bg-primary-900 bg-opacity-50">
-                    <button
-                      onClick={() => setCurrentPage('balaustres')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'balaustres'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>📜</span>
-                      <span>Balaustres</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('pranchas')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'pranchas'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>📄</span>
-                      <span>Pranchas</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* SUBMENU: FILANTROPIA */}
-              <div className="border-t border-primary-700 mt-2 pt-2">
-                <button
-                  onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                  title="Filantropia"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🤝</span>
-                    {menuAberto && <span className="font-semibold">Filantropia</span>}
-                  </div>
-                  {menuAberto && (
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${submenuFilantropia ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                </button>
-
-                {(submenuFilantropia && menuAberto) && (
-                  <div className="bg-primary-900 bg-opacity-50">
-                    <button
-                      onClick={() => setCurrentPage('comodatos')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'comodatos'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>♿</span>
-                      <span>Comodatos</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('caridade')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'caridade'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>❤️</span>
-                      <span>Caridade</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('eventos')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'eventos'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>🎉</span>
-                      <span>Eventos</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* ITENS INDIVIDUAIS */}
-              <div className="border-t border-primary-700 mt-2 pt-2">
-                <button
-                  onClick={() => setCurrentPage('projetos')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'projetos'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Projetos"
-                >
-                  <span className="text-base">📊</span>
-                  {menuAberto && <span className="font-semibold">Projetos</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('comissoes')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'comissoes'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Comissões"
-                >
-                  <span className="text-base">📋</span>
-                  {menuAberto && <span className="font-semibold">Comissões</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('biblioteca')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'biblioteca'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Biblioteca"
-                >
-                  <span className="text-base">📚</span>
-                  {menuAberto && <span className="font-semibold">Biblioteca</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('biblioteca-online')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'biblioteca-online'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Biblioteca Online"
-                >
-                  <span className="text-base">📖</span>
-                  {menuAberto && <span className="font-semibold">Biblioteca Online</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('cronograma')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'cronograma'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Cronograma"
-                >
-                  <span className="text-base">📅</span>
-                  {menuAberto && <span className="font-semibold">Cronograma</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('aniversariantes')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'aniversariantes'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Festividades"
-                >
-                  <span className="text-base">🎉</span>
-                  {menuAberto && <span className="font-semibold">Festividades</span>}
-                </button>
-
-                {/* SUBMENU: PRESENÇA IRMÃOS */}
-                {(userData?.nivel_acesso === 'admin' || userData?.pode_editar_presenca) && (
-                <div className="border-t border-primary-700 mt-2 pt-2">
-                  <button
-                    onClick={() => setSubmenuPresenca(!submenuPresenca)}
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                    title="Presença Irmãos"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">✅</span>
-                      {menuAberto && <span className="font-semibold">Presença Irmãos</span>}
-                    </div>
-                    {menuAberto && (
-                      <svg 
-                        className={`w-4 h-4 transition-transform ${submenuPresenca ? 'rotate-180' : ''}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {(submenuPresenca && menuAberto) && (
-                    <div className="bg-primary-900 bg-opacity-50">
-                      <button
-                        onClick={() => setCurrentPage('dashboard-presenca')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'dashboard-presenca'
-                            ? 'bg-primary-700 border-l-4 border-white'
-                            : 'hover:bg-primary-800'
-                        }`}
-                        title="Dashboard de Presença"
-                      >
-                        <span>📊</span>
-                        <span>Dashboard</span>
-                      </button>
-
-                      <button
-                        onClick={() => setCurrentPage('cadastro-sessao')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs hover:bg-primary-800`}
-                        title="Nova Sessão"
-                      >
-                        <span>➕</span>
-                        <span>Nova Sessão</span>
-                      </button>
-
-                      <button
-                        onClick={() => setCurrentPage('lista-sessoes')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'lista-sessoes'
-                            ? 'bg-primary-700 border-l-4 border-white'
-                            : 'hover:bg-primary-800'
-                        }`}
-                        title="Sessões Realizadas"
-                      >
-                        <span>📑</span>
-                        <span>Sessões Realizadas</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-                )}
-
-                <button
-                  onClick={() => setCurrentPage('corpo-admin')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'corpo-admin'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Administração"
-                >
-                  <span className="text-base">📋</span>
-                  {menuAberto && <span className="font-semibold">Administração</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('altos-graus')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'altos-graus'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Altos Graus"
-                >
-                  <span className="text-base">🔺</span>
-                  {menuAberto && <span className="font-semibold">Altos Graus</span>}
-                </button>
-
-                {/* ÁGAPE & FESTAS — visível para todos os irmãos */}
-                <button
-                  onClick={() => setCurrentPage('eventos-comemorativos')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'eventos-comemorativos'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Ágape & Festas"
-                >
-                  <span className="text-base">🍽️</span>
-                  {menuAberto && <span className="font-semibold">Ágape &amp; Festas</span>}
-                </button>
-
-                {/* SINDICÂNCIA — visível para todos os irmãos */}
-                <button
-                  onClick={() => setCurrentPage('sindicancia')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'sindicancia'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Sindicância"
-                >
-                  <span className="text-base">🔍</span>
-                  {menuAberto && <span className="font-semibold">Sindicância</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('sobre')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'sobre'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Sobre"
-                >
-                  <span className="text-base">ℹ️</span>
-                  {menuAberto && <span className="font-semibold">Sobre</span>}
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* ===== MENU PARA ADMIN/CARGO COM SUBMENUS ===== */}
-          {(userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo') && (
-            <>
-              {/* SUBMENU: CONTROLE DE IRMÃOS */}
-              <div className="border-t border-primary-700 mt-2 pt-2">
-                <button
-                  onClick={() => setSubmenuIrmaos(!submenuIrmaos)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                  title="Controle de Irmãos"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">👥</span>
-                    {menuAberto && <span className="font-semibold">Controle de Irmãos</span>}
-                  </div>
-                  {menuAberto && (
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${submenuIrmaos ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Subitens do submenu */}
-                {(submenuIrmaos && menuAberto) && (
-                  <div className="bg-primary-900 bg-opacity-50">
-                    <button
-                      onClick={() => setCurrentPage('cadastro')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'cadastro'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>➕</span>
-                      <span>Cadastrar</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('visualizar')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'visualizar'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>👁️</span>
-                      <span>Visualizar</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('quadro')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'quadro'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>📋</span>
-                      <span>Quadro</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('altos-graus')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'altos-graus'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>🔺</span>
-                      <span>Altos Graus</span>
-                    </button>
-
-                    {permissoes?.canManageUsers && (
-                      <button
-                        onClick={() => setCurrentPage('gerenciar-graus')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'gerenciar-graus'
-                            ? 'bg-primary-700 border-l-4 border-white'
-                            : 'hover:bg-primary-800'
-                        }`}
-                      >
-                        <span>⚙️</span>
-                        <span>Gerenciar Graus</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* SUBMENU: CONTROLE DE EXPEDIENTES */}
-              <div className="border-t border-primary-700 mt-2 pt-2">
-                <button
-                  onClick={() => setSubmenuExpedientes(!submenuExpedientes)}
-                  className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                  title="Controle de Expedientes"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">📑</span>
-                    {menuAberto && <span className="font-semibold">Expedientes</span>}
-                  </div>
-                  {menuAberto && (
-                    <svg 
-                      className={`w-4 h-4 transition-transform ${submenuExpedientes ? 'rotate-180' : ''}`} 
-                      fill="none" 
-                      stroke="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  )}
-                </button>
-
-                {/* Subitens do submenu */}
-                {(submenuExpedientes && menuAberto) && (
-                  <div className="bg-primary-900 bg-opacity-50">
-                    <button
-                      onClick={() => setCurrentPage('balaustres')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'balaustres'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>📜</span>
-                      <span>Balaustres</span>
-                    </button>
-
-                    <button
-                      onClick={() => setCurrentPage('pranchas')}
-                      className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                        currentPage === 'pranchas'
-                          ? 'bg-primary-700 border-l-4 border-white'
-                          : 'hover:bg-primary-800'
-                      }`}
-                    >
-                      <span>📄</span>
-                      <span>Pranchas</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {(permissoes?.canViewFinancial || userData?.nivel_acesso === 'admin') && (
-                <>
-                  {/* SUBMENU: CONTROLE FINANCEIRO */}
-                  <div className="border-t border-primary-700 mt-2 pt-2">
-                    <button
-                      onClick={() => setSubmenuFinanceiro(!submenuFinanceiro)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                      title="Controle Financeiro"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">💰</span>
-                        {menuAberto && <span className="font-semibold">Controle Financeiro</span>}
-                      </div>
-                      {menuAberto && (
-                        <svg 
-                          className={`w-4 h-4 transition-transform ${submenuFinanceiro ? 'rotate-180' : ''}`} 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
-                    </button>
-
-                    {/* Subitens do submenu */}
-                    {(submenuFinanceiro && menuAberto) && (
-                      <div className="bg-primary-900 bg-opacity-50">
-                        <button
-                          onClick={() => setCurrentPage('financas-loja')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'financas-loja'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>🏦</span>
-                          <span>Finanças - Loja</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('lancamentos-lote')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'lancamentos-lote'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>📦</span>
-                          <span>Lançamentos em Lote</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('creditos-debitos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'creditos-debitos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>💵</span>
-                          <span>Créditos/Débitos</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('categorias-financeiras')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'categorias-financeiras'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>🏷️</span>
-                          <span>Categorias</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('eventos-comemorativos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'eventos-comemorativos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>🍽️</span>
-                          <span>Ágape &amp; Festas</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('email-irmaos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'email-irmaos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>📧</span>
-                          <span>E-mails para Irmãos</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('relatorio-financeiro')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'relatorio-financeiro'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>📊</span>
-                          <span>Conferir Finanças</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* SUBMENU: FILANTROPIA */}
-                  <div className="border-t border-primary-700 mt-2 pt-2">
-                    <button
-                      onClick={() => setSubmenuFilantropia(!submenuFilantropia)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                      title="Filantropia"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">🤝</span>
-                        {menuAberto && <span className="font-semibold">Filantropia</span>}
-                      </div>
-                      {menuAberto && (
-                        <svg 
-                          className={`w-4 h-4 transition-transform ${submenuFilantropia ? 'rotate-180' : ''}`} 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
-                    </button>
-
-                    {/* Subitens do submenu */}
-                    {(submenuFilantropia && menuAberto) && (
-                      <div className="bg-primary-900 bg-opacity-50">
-                        <button
-                          onClick={() => setCurrentPage('comodatos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'comodatos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>♿</span>
-                          <span>Comodatos</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('caridade')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'caridade'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>❤️</span>
-                          <span>Caridade</span>
-                        </button>
-
-                        <button
-                          onClick={() => setCurrentPage('eventos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'eventos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>🎉</span>
-                          <span>Eventos</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
-
-              {/* ITENS INDIVIDUAIS */}
-              <div className="border-t border-primary-700 mt-2 pt-2">
-                <button
-                  onClick={() => setCurrentPage('projetos')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'projetos'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Projetos"
-                >
-                  <span className="text-base">📊</span>
-                  {menuAberto && <span className="font-semibold">Projetos</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('comissoes')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'comissoes'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Comissões"
-                >
-                  <span className="text-base">📋</span>
-                  {menuAberto && <span className="font-semibold">Comissões</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('biblioteca')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'biblioteca'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Biblioteca"
-                >
-                  <span className="text-base">📚</span>
-                  {menuAberto && <span className="font-semibold">Biblioteca</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('biblioteca-online')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'biblioteca-online'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Biblioteca Online"
-                >
-                  <span className="text-base">📖</span>
-                  {menuAberto && <span className="font-semibold">Biblioteca Online</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('cronograma')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'cronograma'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Cronograma"
-                >
-                  <span className="text-base">📅</span>
-                  {menuAberto && <span className="font-semibold">Cronograma</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('aniversariantes')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'aniversariantes'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Festividades"
-                >
-                  <span className="text-base">🎉</span>
-                  {menuAberto && <span className="font-semibold">Festividades</span>}
-                </button>
-
-                {/* SUBMENU: PRESENÇA IRMÃOS */}
-                <div className="border-t border-primary-700 mt-2 pt-2">
-                  <button
-                    onClick={() => setSubmenuPresenca(!submenuPresenca)}
-                    className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                    title="Presença Irmãos"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">✅</span>
-                      {menuAberto && <span className="font-semibold">Presença Irmãos</span>}
-                    </div>
-                    {menuAberto && (
-                      <svg 
-                        className={`w-4 h-4 transition-transform ${submenuPresenca ? 'rotate-180' : ''}`} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    )}
-                  </button>
-
-                  {/* Subitens do submenu Presença */}
-                  {(submenuPresenca && menuAberto) && (
-                    <div className="bg-primary-900 bg-opacity-50">
-                      {/* DASHBOARD DE PRESENÇA */}
-                      <button
-                        onClick={() => setCurrentPage('dashboard-presenca')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'dashboard-presenca'
-                            ? 'bg-primary-700 border-l-4 border-white'
-                            : 'hover:bg-primary-800'
-                        }`}
-                        title="Dashboard de Presença"
-                      >
-                        <span>📊</span>
-                        <span>Dashboard</span>
-                      </button>
-
-                      {/* CADASTRO DE SESSÃO */}
-                      <button
-                        onClick={() => setCurrentPage('cadastro-sessao')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs hover:bg-primary-800`}
-                        title="Nova Sessão"
-                      >
-                        <span>➕</span>
-                        <span>Nova Sessão</span>
-                      </button>
-
-                      {/* LISTA DE SESSÕES */}
-                      <button
-                        onClick={() => setCurrentPage('lista-sessoes')}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'lista-sessoes'
-                            ? 'bg-primary-700 border-l-4 border-white'
-                            : 'hover:bg-primary-800'
-                        }`}
-                        title="Sessões Realizadas"
-                      >
-                        <span>📑</span>
-                        <span>Sessões Realizadas</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* SUBMENU: GESTÃO DO SISTEMA */}
-                {permissoes?.canManageUsers && (
-                  <div className="border-t border-primary-700 mt-2 pt-2">
-                    <button
-                      onClick={() => setSubmenuGestaoSistema(!submenuGestaoSistema)}
-                      className="w-full px-4 py-2 flex items-center justify-between hover:bg-primary-800 transition text-sm"
-                      title="Gestão do Sistema"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">⚙️</span>
-                        {menuAberto && <span className="font-semibold">Gestão do Sistema</span>}
-                      </div>
-                      {menuAberto && (
-                        <svg 
-                          className={`w-4 h-4 transition-transform ${submenuGestaoSistema ? 'rotate-180' : ''}`} 
-                          fill="none" 
-                          stroke="currentColor" 
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
-                    </button>
-
-                    {/* Subitens do submenu */}
-                    {(submenuGestaoSistema && menuAberto) && (
-                      <div className="bg-primary-900 bg-opacity-50">
-                        {/* GERENCIAR USUÁRIOS */}
-                        <button
-                          onClick={() => setCurrentPage('gestao-sistema-usuarios')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'gestao-sistema-usuarios'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>👤</span>
-                          <span>Gerenciar Usuários</span>
-                        </button>
-
-                        {/* CONTROLE DE ACESSO */}
-                        <button
-                          onClick={() => setCurrentPage('gestao-sistema-logs')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'gestao-sistema-logs'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>🔐</span>
-                          <span>Controle de Acesso</span>
-                        </button>
-
-                        {/* DADOS DA LOJA */}
-                        <button
-                          onClick={() => setCurrentPage('dados-loja')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'dados-loja'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>🏛️</span>
-                          <span>Dados da Loja</span>
-                        </button>
-
-                        {/* ACESSO CUNHADAS */}
-                        <button
-                          onClick={() => setCurrentPage('acesso-cunhadas')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'acesso-cunhadas'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>💜</span>
-                          <span>Acesso das Cunhadas</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* SINDICÂNCIA — acesso restrito a Mestres */}
-                {(grauUsuarioLogado === 'Mestre' || grauUsuarioLogado === 'Mestre Instalado' || userData?.nivel_acesso === 'admin') && (
-                  <button
-                    onClick={() => setCurrentPage('sindicancia')}
-                    className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                      currentPage === 'sindicancia'
-                        ? 'bg-primary-700 border-l-4 border-white'
-                        : 'hover:bg-primary-800'
-                    }`}
-                    title="Sindicância"
-                  >
-                    <span className="text-base">🔍</span>
-                    {menuAberto && <span className="font-semibold">Sindicância</span>}
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setCurrentPage('corpo-admin')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'corpo-admin'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Administração"
-                >
-                  <span className="text-base">👔</span>
-                  {menuAberto && <span className="font-semibold">Administração</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('sobre')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'sobre'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Sobre o Sistema"
-                >
-                  <span className="text-base">ℹ️</span>
-                  {menuAberto && <span className="font-semibold">Sobre</span>}
-                </button>
-              </div>
-            </>
-          )}
-          </>
-          )}
-
-          {/* MENU PORTAL CUNHADAS */}
-          {portalAtivo === 'cunhadas' && (
-            <>
-              <button
-                onClick={() => setCurrentPage('dashboard-cunhadas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'dashboard-cunhadas'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Dashboard Cunhadas"
-              >
-                <span className="text-base">💜</span>
-                {menuAberto && <span className="font-semibold">Dashboard</span>}
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('cadastro-cunhadas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'cadastro-cunhadas'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Cadastro Cunhadas"
-              >
-                <span className="text-base">👥</span>
-                {menuAberto && <span className="font-semibold">Cadastro</span>}
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('financeiro-cunhadas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'financeiro-cunhadas'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Financeiro Cunhadas"
-              >
-                <span className="text-base">💰</span>
-                {menuAberto && <span className="font-semibold">Financeiro</span>}
-              </button>
-
-              <button
-                onClick={() => setCurrentPage('relatorios-cunhadas')}
-                className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                  currentPage === 'relatorios-cunhadas'
-                    ? 'bg-primary-700 border-l-4 border-white'
-                    : 'hover:bg-primary-800'
-                }`}
-                title="Relatórios Cunhadas"
-              >
-                <span className="text-base">📊</span>
-                {menuAberto && <span className="font-semibold">Relatórios</span>}
-              </button>
-            </>
-          )}
-        </nav>
-
-        {/* Botão Sair */}
-        <div className="border-t border-primary-700 bg-primary-900 p-3 flex-shrink-0">
+        {/* Filtros */}
+        <div className="grid grid-cols-2 gap-4 mt-6">
+          <div className="flex-1">
+            <label className="form-label">
+              Mês
+            </label>
+            <select
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(e.target.value)}
+              className="form-input"
+            >
+              {meses.map(mes => (
+                <option key={mes.valor} value={mes.valor}>
+                  {mes.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex-1">
+            <label className="form-label">
+              Ano
+            </label>
+            <select
+              value={filtroAno}
+              onChange={(e) => setFiltroAno(e.target.value)}
+              className="form-input"
+            >
+              {anosDisponiveis.map(ano => (
+                <option key={ano} value={ano}>
+                  {ano}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Mensagens */}
+      {mensagem.texto && (
+        <div style={{
+          marginBottom: '1rem',
+          padding: '1rem',
+          borderRadius: 'var(--radius-lg)',
+          background: mensagem.tipo === 'sucesso' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+          color: mensagem.tipo === 'sucesso' ? 'var(--color-success)' : 'var(--color-danger)',
+          border: `1px solid ${mensagem.tipo === 'sucesso' ? 'var(--color-success)' : 'var(--color-danger)'}`
+        }}>
+          {mensagem.texto}
           <button
-            onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg font-semibold transition flex items-center justify-center gap-2 text-sm"
+            onClick={() => setMensagem({ tipo: '', texto: '' })}
+            style={{ marginLeft: '1rem', fontSize: '0.875rem', textDecoration: 'underline', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit' }}
           >
-            <span>🚪</span>
-            <span>Sair</span>
+            Fechar
           </button>
         </div>
-      </aside>
-
-      {/* CONTEÚDO PRINCIPAL */}
-      <main 
-        className={`flex-1 ${menuAberto ? 'ml-64' : 'ml-16'} transition-all duration-300 min-h-screen`}
-        style={{ background: 'var(--color-bg)' }}
-      >
-        {/* HEADER SUPERIOR */}
-        <header 
-          className="shadow-md sticky top-0 z-40"
-          style={{
-            background: 'linear-gradient(to right, rgb(var(--color-primary-600)), rgb(var(--color-primary-700)))',
-            borderBottom: '2px solid rgb(var(--color-primary-800))'
-          }}
-        >
-          <div className="px-8 py-4">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-white">
-                  {currentPage === 'dashboard' && '📊 Dashboard'}
-                  {currentPage === 'dashboard-cunhadas' && '💜 Dashboard Cunhadas'}
-                  {currentPage === 'meu-cadastro' && '👤 Meu Cadastro'}
-                  {currentPage === 'minhas-financas' && '💰 Minhas Finanças'}
-                  {currentPage === 'minhas-presencas' && '📊 Minhas Presenças'}
-                  {currentPage === 'cadastro' && '➕ Cadastro de Irmãos'}
-                  {currentPage === 'visualizar' && '👥 Visualizar Irmãos'}
-                  {currentPage === 'quadro' && '📋 Quadro de Irmãos'}
-                  {currentPage === 'balaustres' && '📜 Balaustres'}
-                  {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
-                  {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
-                  {currentPage === 'projetos' && '📊 Projetos'}
-                  {currentPage === 'comissoes' && '📋 Comissões'}
-                  {currentPage === 'biblioteca' && '📚 Biblioteca'}
-                  {currentPage === 'biblioteca-online' && '📖 Biblioteca Online'}
-                  {currentPage === 'cronograma' && '📅 Cronograma Anual'}
-                  {currentPage === 'financas-loja' && '🏦 Finanças da Loja'}
-                  {currentPage === 'creditos-debitos' && '💰 Créditos e Débitos'}
-                  {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
-                  {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
-                  {currentPage === 'eventos-comemorativos' && '🍽️ Ágape & Festas'}
-                  {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
-                  {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
-                  {currentPage === 'caridade' && '❤️ Caridade'}
-                  {currentPage === 'eventos' && '🎉 Eventos'}
-                  {currentPage === 'aniversariantes' && '🎉 Festividades'}
-                  {currentPage === 'dashboard-presenca' && '📊 Dashboard de Presença'}
-                  {currentPage === 'cadastro-sessao' && '📋 Cadastro de Sessão'}
-                  {currentPage === 'lista-sessoes' && '📊 Sessões Realizadas'}
-                  {currentPage === 'registro-presenca' && '✅ Registro de Presença'}
-                  {currentPage === 'comodatos' && '♿ Controle de Comodatos'}
-                  {currentPage === 'altos-graus' && '🔺 Altos Graus'}
-                  {currentPage === 'gerenciar-graus' && '⚙️ Gerenciar Graus'}
-                  {currentPage === 'perfil-irmao' && '👤 Perfil do Irmão'}
-                  {currentPage === 'usuarios' && '👤 Gerenciar Usuários'}
-                  {currentPage === 'dados-loja' && '🏛️ Dados da Loja'}
-                  {currentPage === 'sobre' && 'ℹ️ Sobre o Sistema'}
-                  {currentPage === 'sindicancia' && '🔍 Sindicância'}
-                </h2>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="font-semibold text-sm text-white">{userData?.nome}</p>
-                  <p className="text-xs text-white opacity-80 capitalize">{userData?.cargo}</p>
-                </div>
-                <div className="text-sm text-white opacity-90">
-                  {new Date().toLocaleDateString('pt-BR', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* MENSAGENS */}
-        {error && (
-          <div className="px-8 mt-4">
-            <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg">
-              {error}
-            </div>
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="px-8 mt-4">
-            <div className="bg-green-50 border-l-4 border-green-500 text-green-700 p-4 rounded-lg">
-              {successMessage}
-            </div>
-          </div>
-        )}
-
-        {/* CONTEÚDO DAS PÁGINAS */}
-        <div>
-        {/* DASHBOARD */}
-        {currentPage === 'dashboard' && (
-          <Dashboard 
-            irmaos={irmaos}
-            balaustres={balaustres}
-            cronograma={cronograma}
-          />
-        )}
-
-        {/* DASHBOARD CUNHADAS */}
-        {currentPage === 'dashboard-cunhadas' && (
-          <DashboardCunhadas 
-            userData={userData}
-            onNavigate={(page) => setCurrentPage(page)}
-          />
-        )}
-
-        {/* CADASTRO CUNHADAS */}
-        {currentPage === 'cadastro-cunhadas' && (
-          <CadastroCunhadas
-            userData={userData}
-          />
-        )}
-
-        {/* FINANCEIRO CUNHADAS */}
-        {currentPage === 'financeiro-cunhadas' && (
-          <FinanceiroCunhadas
-            userData={userData}
-          />
-        )}
-
-        {/* ACESSO CUNHADAS */}
-        {currentPage === 'acesso-cunhadas' && permissoes?.canManageUsers && (
-          <AcessoCunhadas />
-        )}
-
-        {/* CADASTRO DE IRMÃOS */}
-        {currentPage === 'cadastro' && (
-          <CadastrarIrmao
-            irmaos={irmaos}
-            irmaoParaEditar={irmaoParaEditar}
-            onUpdate={loadIrmaos}
-            showSuccess={showSuccess}
-            showError={showError}
-            onCancelarEdicao={() => setIrmaoParaEditar(null)}
-            userData={userData}
-          />
-        )}
-
-        {/* VISUALIZAR IRMÃOS */}
-        {currentPage === 'visualizar' && (
-          <VisualizarIrmaos
-            irmaos={irmaos}
-            onEdit={(irmao) => {
-              setIrmaoParaEditar(irmao);
-              setCurrentPage('cadastro');
-            }}
-            onViewProfile={(irmaoId) => {
-              setIrmaoParaPerfil(irmaoId);
-              setCurrentPage('perfil-irmao');
-            }}
-            onViewPerfilCompleto={(irmaoId) => {
-              setIrmaoIdPerfilCompleto(irmaoId);
-              setModalPerfilCompletoAberto(true);
-            }}
-            onUpdate={loadIrmaos}
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={permissoes}
-            userEmail={userData?.email}
-            userData={userData}
-          />
-        )}
-
-        {/* QUADRO DE IRMÃOS */}
-        {currentPage === 'quadro' && (
-          <QuadroIrmaos irmaos={irmaos} />
-        )}
-
-
-        {/* CONTROLE DE BALAUSTRES */}
-        {currentPage === 'balaustres' && (
-          <Balaustres
-            balaustres={balaustres}
-            tiposSessao={tiposSessao}
-            session={session}
-            onUpdate={() => loadBalaustres()}
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={permissoes}
-            grauUsuario={grauUsuarioLogado}
-          />
-        )}
-
-
-
-        {/* GERENCIAMENTO DE USUÁRIOS */}
-        {/* GERENCIAR USUÁRIOS - VERSÃO ANTIGA (mantida para compatibilidade) */}
-        {currentPage === 'usuarios' && permissoes?.canManageUsers && (
-          <Usuarios
-            usuarios={usuarios}
-            userData={userData}
-            onUpdate={loadUsuarios}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* GESTÃO DO SISTEMA - NOVA VERSÃO UNIFICADA */}
-        {(currentPage === 'gestao-sistema-usuarios' || currentPage === 'gestao-sistema-logs') && permissoes?.canManageUsers && (
-          <GestaoSistema
-            usuarios={usuarios}
-            userData={userData}
-            onUpdate={loadUsuarios}
-            showSuccess={showSuccess}
-            showError={showError}
-            abaInicial={currentPage === 'gestao-sistema-logs' ? 'logs' : 'usuarios'}
-          />
-        )}
-
-        {/* DADOS DA LOJA */}
-        {currentPage === 'dados-loja' && isAdminOrVeneravel() && (
-          <DadosLoja
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* MEU CADASTRO - Irmão */}
-        {currentPage === 'meu-cadastro' && (
-          <MeuCadastroWrapper
-            userEmail={userData?.email}
-            userData={userData}
-            permissoes={permissoes}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* MINHAS FINANÇAS - Irmão */}
-        {currentPage === 'minhas-financas' && (
-          <MinhasFinancas
-            userEmail={userData?.email}
-          />
-        )}
-
-        {/* MINHAS PRESENÇAS - Irmão */}
-        {currentPage === 'minhas-presencas' && (
-          <MinhaPresenca
-            userData={userData}
-          />
-        )}
-
-
-        {/* PRANCHAS EXPEDIDAS */}
-        {currentPage === 'pranchas' && (
-          <Pranchas
-            pranchas={pranchas}
-            onUpdate={loadPranchas}
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={permissoes}
-            grauUsuario={grauUsuarioLogado}
-          />
-        )}
-
-        {/* SINDICÂNCIA */}
-        {currentPage === 'sindicancia' && (
-          <Sindicancia
-            grauUsuario={grauUsuarioLogado}
-            userData={userData}
-          />
-        )}
-
-        {/* CORPO ADMINISTRATIVO */}
-        {currentPage === 'corpo-admin' && (
-          <CorpoAdmin
-            corpoAdmin={corpoAdmin}
-            irmaos={irmaos}
-            permissoes={permissoes}
-            onUpdate={loadCorpoAdmin}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-        
-        {/* ========================================
-            PÁGINA: PROJETOS E COMISSÕES
-            ======================================== */}
-
-        {/* PROJETOS */}
-        {currentPage === 'projetos' && (
-          <Projetos
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={{
-              ...permissoes,
-              canEdit: permissoes?.pode_editar_projetos || false
-            }}
-          />
-        )}
-
-        {/* COMISSÕES */}
-        {currentPage === 'comissoes' && (
-          <Comissoes
-            comissoes={comissoes}
-            irmaos={irmaos}
-            onUpdate={loadComissoes}
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={permissoes}
-            userData={userData}
-          />
-        )}
-
-
-        {/* BIBLIOTECA */}
-        {currentPage === 'biblioteca' && (
-          <Biblioteca
-            livros={livros}
-            emprestimos={emprestimos}
-            irmaos={irmaos}
-            onUpdate={() => {
-              loadLivros();
-              loadEmprestimos();
-            }}
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={permissoes}
-          />
-        )}
-
-        {currentPage === 'biblioteca-online' && (
-          <BibliotecaOnline
-            permissoes={permissoes}
-            grauUsuario={grauUsuarioLogado}
-            irmaoLogadoId={irmaoLogadoId}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* CRONOGRAMA */}
-        {currentPage === 'cronograma' && (
-          <Cronograma
-            showSuccess={showSuccess}
-            showError={showError}
-            userEmail={userData?.email}
-            permissoes={permissoes}
-          />
-        )}
-
-        {/* FINANÇAS - LOJA */}
-        {currentPage === 'financas-loja' && (
-          <FinancasLoja
-            showSuccess={showSuccess}
-            showError={showError}
-            userEmail={userData?.email}
-            userData={userData}
-          />
-        )}
-
-        {/* CRÉDITOS E DÉBITOS */}
-        {currentPage === 'creditos-debitos' && (
-          <CreditosDebitos
-            permissoes={permissoes}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* LANÇAMENTOS EM LOTE */}
-        {currentPage === 'lancamentos-lote' && (
-          <LancamentosLote
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* CATEGORIAS FINANCEIRAS */}
-        {currentPage === 'categorias-financeiras' && (
-          <CategoriasFinanceiras
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {currentPage === 'eventos-comemorativos' && (
-          <EventosComemorativos
-            showSuccess={showSuccess}
-            showError={showError}
-            podeEditar={userData?.nivel_acesso === 'admin' || userData?.nivel_acesso === 'cargo'}
-          />
-        )}
-
-        {currentPage === 'email-irmaos' && (
-          <EmailIrmaos
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {currentPage === 'relatorio-financeiro' && (
-          <RelatorioFinanceiro
-            showError={showError}
-          />
-        )}
-
-        {/* CARIDADE */}
-        {currentPage === 'caridade' && (
-          <Caridade
-            permissoes={permissoes}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* EVENTOS */}
-        {currentPage === 'eventos' && (
-          <Eventos 
-            userPermissions={permissoes}
-            userData={userData}
-          />
-        )}
-
-        {/* ALTOS GRAUS */}
-        {currentPage === 'altos-graus' && (
-          <VisualizarAltosGraus />
-        )}
-
-        {/* GERENCIAR GRAUS */}
-        {currentPage === 'gerenciar-graus' && permissoes?.canManageUsers && (
-          <GerenciarGraus
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* PERFIL DO IRMÃO */}
-        {currentPage === 'perfil-irmao' && irmaoParaPerfil && (
-          <PerfilIrmao
-            irmaoId={irmaoParaPerfil}
-            onVoltar={() => {
-              setCurrentPage('visualizar');
-              setIrmaoParaPerfil(null);
-            }}
-            showSuccess={showSuccess}
-            showError={showError}
-            permissoes={permissoes}
-            userEmail={userData?.email}
-            userData={userData}
-          />
-        )}
-
-        {/* ANIVERSARIANTES */}
-        {currentPage === 'aniversariantes' && (
-          <Aniversariantes />
-        )}
-
-        {/* COMODATOS */}
-        {currentPage === 'comodatos' && (
-          <Comodatos
-            permissoes={permissoes}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {/* CADASTRO DE SESSÃO — abre lista-sessoes com modal */}
-        {currentPage === 'cadastro-sessao' && (
-          <ListaSessoes
-            abrirModalInicio={true}
-            onEditarPresenca={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('registro-presenca');
-            }}
-            onVisualizarPresenca={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('visualizar-presenca');
-            }}
-          />
-        )}
-
-        {/* DASHBOARD DE PRESENÇA */}
-        {currentPage === 'dashboard-presenca' && (
-          <DashboardPresenca 
-            onEditarPresenca={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('registro-presenca');
-            }}
-          />
-        )}
-
-        {/* LISTA DE SESSÕES */}
-        {currentPage === 'lista-sessoes' && (
-          <ListaSessoes 
-            onVisualizarPresenca={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('visualizar-presenca');
-            }}
-            onEditarPresenca={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('registro-presenca');
-            }}
-          />
-        )}
-
-        {/* VISUALIZAR PRESENÇA */}
-        {currentPage === 'visualizar-presenca' && (
-          <ModalVisualizarPresenca 
-            sessaoId={sessaoIdAtual}
-            onFechar={() => {
-              setCurrentPage('lista-sessoes');
-              setSessaoIdAtual(null);
-            }}
-          />
-        )}
-
-        {/* REGISTRO DE PRESENÇA */}
-        {currentPage === 'registro-presenca' && (
-          <RegistroPresenca 
-            sessaoId={sessaoIdAtual}
-            onVoltar={() => {
-              setCurrentPage('lista-sessoes');
-              setSessaoIdAtual(null);
-            }}
-          />
-        )}
-
-        {/* SOBRE O SISTEMA */}
-        {currentPage === 'sobre' && (
-          <Sobre />
-        )}
-        </div> {/* Fecha div do conteúdo (px-8 py-6) */}
-      </main>
-
-      {/* MODAL PERFIL COMPLETO DO IRMÃO */}
-      {modalPerfilCompletoAberto && irmaoIdPerfilCompleto && (
-        <PerfilCompletoIrmao
-          irmaoId={irmaoIdPerfilCompleto}
-          userData={userData}
-          irmaoLogadoId={irmaoLogadoId}
-          onClose={() => {
-            setModalPerfilCompletoAberto(false);
-            setIrmaoIdPerfilCompleto(null);
-          }}
-        />
       )}
+
+      {/* Lista de Sessões */}
+      {loading ? (
+        <div className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '16rem' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: 'var(--color-accent)' }}></div>
+            <p style={{ marginTop: '1rem', color: 'var(--color-text-muted)' }}>Carregando sessões...</p>
+          </div>
+        </div>
+      ) : sessoes.length === 0 ? (
+        <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
+          <svg className="mx-auto h-12 w-12" style={{ color: 'var(--color-text-muted)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h3 style={{ marginTop: '0.5rem', fontSize: '1.125rem', fontWeight: '500', color: 'var(--color-text)' }}>Nenhuma sessão encontrada</h3>
+          <p style={{ marginTop: '0.25rem', color: 'var(--color-text-muted)' }}>
+            {filtroMes || filtroAno !== anoAtual.toString() 
+              ? 'Tente ajustar os filtros ou cadastre uma nova sessão.'
+              : 'Comece cadastrando sua primeira sessão.'
+            }
+          </p>
+          <div className="mt-6">
+            <button
+              onClick={() => setModalAberto(true)}
+              style={{
+                padding: '0.75rem 1.5rem',
+                background: 'var(--color-accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 'var(--radius-md)',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
+              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
+            >
+              Cadastrar Primeira Sessão
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {(() => {
+            const sessoesPorMes = {};
+            
+            sessoes.forEach((sessao) => {
+              const data = new Date(sessao.data_sessao + 'T00:00:00');
+              const mes = data.getMonth();
+              const ano = data.getFullYear();
+              const mesAno = `${ano}-${String(mes + 1).padStart(2, '0')}`;
+              
+              if (!sessoesPorMes[mesAno]) {
+                sessoesPorMes[mesAno] = {
+                  mesNome: `${meses[mes + 1].nome} de ${ano}`,
+                  mes,
+                  ano,
+                  sessoes: []
+                };
+              }
+              
+              sessoesPorMes[mesAno].sessoes.push(sessao);
+            });
+
+            return Object.entries(sessoesPorMes).map(([mesAno, grupo]) => (
+              <div key={mesAno} className="card" style={{ overflow: 'hidden', padding: 0 }}>
+                <div style={{ background: 'var(--color-accent)', padding: '0.75rem 1.5rem' }}>
+                  <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', color: 'white' }}>
+                    📅 {grupo.mesNome}
+                  </h3>
+                </div>
+
+                <div className="overflow-x-auto">
+                  {/* Cabeçalho alinhado com os cards */}
+                  <div style={{
+                    display:'grid',
+                    gridTemplateColumns:'120px 1fr 130px 1fr 70px 120px',
+                    gap:'0.75rem',
+                    padding:'0.5rem 1rem',
+                    background:'var(--color-surface-2)',
+                    borderBottom:'2px solid var(--color-accent)',
+                    fontSize:'0.7rem',
+                    fontWeight:'700',
+                    color:'var(--color-text-muted)',
+                    textTransform:'uppercase',
+                    letterSpacing:'0.05em',
+                  }}>
+                    <div>Data</div>
+                    <div>Tipo de Sessão</div>
+                    <div>Classificação</div>
+                    <div style={{textAlign:'center'}}>Presença</div>
+                    <div style={{textAlign:'center'}}>Visit.</div>
+                    <div style={{textAlign:'center'}}>Ações</div>
+                  </div>
+                  {/* Cards de sessões */}
+                  <div style={{display:'flex',flexDirection:'column',gap:'0.4rem',padding:'0.5rem'}}>
+                      {grupo.sessoes.map((sessao, idx) => {
+                        const totalRegistros = sessao.total_registros || 0;
+                        const presentes = sessao.total_presentes || 0;
+                        const ausentes = sessao.total_ausentes || 0;
+                        const percentual = totalRegistros > 0 ? Math.round((presentes / totalRegistros) * 100) : 0;
+                        const corPct = obterCorPorcentagem(totalRegistros, presentes);
+                        const graus = sessao.graus_presentes;
+
+                        return (
+                          <div
+                            key={sessao.id}
+                            style={{
+                              display:'grid',
+                              gridTemplateColumns:'120px 1fr 130px 1fr 70px 120px',
+                              alignItems:'center',
+                              gap:'0.75rem',
+                              padding:'0.65rem 1rem',
+                              borderRadius:'var(--radius-lg)',
+                              border:'1px solid var(--color-border)',
+                              borderLeft:'4px solid var(--color-accent)',
+                              background: idx%2===0 ? 'var(--color-surface-2)' : 'var(--color-surface)',
+                              transition:'opacity 0.15s',
+                            }}
+                          >
+                            {/* Data */}
+                            <div style={{fontSize:'0.85rem',fontWeight:'600',color:'var(--color-text)',whiteSpace:'nowrap'}}>
+                              {formatarData(sessao.data_sessao)}
+                            </div>
+                            {/* Tipo de Sessão */}
+                            <div style={{fontSize:'0.85rem',color:'var(--color-text)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                              {sessao.grau_sessao}
+                            </div>
+                            {/* Classificação */}
+                            <div>
+                              <span style={{
+                                padding:'0.15rem 0.55rem',
+                                fontSize:'0.72rem',
+                                fontWeight:'700',
+                                borderRadius:'999px',
+                                background: sessao.classificacao ? 'rgba(245,158,11,0.15)' : 'var(--color-surface-2)',
+                                color: sessao.classificacao ? '#f59e0b' : 'var(--color-text-muted)',
+                                border: sessao.classificacao ? '1px solid rgba(245,158,11,0.3)' : '1px solid var(--color-border)',
+                                whiteSpace:'nowrap',
+                              }}>
+                                {sessao.classificacao || '—'}
+                              </span>
+                            </div>
+                            {/* Presença — 3 linhas centralizadas */}
+                            <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:'0.2rem',textAlign:'center'}}>
+                              {/* Linha 1: percentual */}
+                              <span style={{...corPct,padding:'0.15rem 0.7rem',borderRadius:'999px',fontSize:'0.82rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                {percentual}% ({presentes}/{totalRegistros})
+                              </span>
+                              {/* Linha 2: ausentes */}
+                              {totalRegistros > 0 && (
+                                <span style={{fontSize:'0.72rem',color:'var(--color-text-muted)',whiteSpace:'nowrap'}}>
+                                  {ausentes} ausente(s)
+                                </span>
+                              )}
+                              {/* Linha 3: badges de grau */}
+                              {graus && presentes > 0 && (
+                                <div style={{display:'flex',gap:'0.25rem',flexWrap:'nowrap',justifyContent:'center'}}>
+                                  {graus.aprendizes > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(245,158,11,0.15)',color:'#f59e0b',border:'1px solid rgba(245,158,11,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      A:{graus.aprendizes}
+                                    </span>
+                                  )}
+                                  {graus.companheiros > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      C:{graus.companheiros}
+                                    </span>
+                                  )}
+                                  {graus.mestres > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      M:{graus.mestres}
+                                    </span>
+                                  )}
+                                  {graus.mestres_instalados > 0 && (
+                                    <span style={{padding:'0.1rem 0.4rem',background:'rgba(139,92,246,0.15)',color:'#8b5cf6',border:'1px solid rgba(139,92,246,0.3)',borderRadius:'var(--radius-sm)',fontSize:'0.7rem',fontWeight:'700',whiteSpace:'nowrap'}}>
+                                      M.I:{graus.mestres_instalados}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                            {/* Visitantes */}
+                            <div style={{textAlign:'center'}}>
+                              <span style={{padding:'0.15rem 0.55rem',background:'rgba(59,130,246,0.15)',color:'#3b82f6',border:'1px solid rgba(59,130,246,0.3)',borderRadius:'999px',fontSize:'0.8rem',fontWeight:'600'}}>
+                                {sessao.total_visitantes}
+                              </span>
+                            </div>
+                            {/* Ações */}
+                            <div style={{display:'flex',gap:'0.3rem',justifyContent:'flex-end'}}>
+                              <button
+                                onClick={() => onVisualizarPresenca(sessao.id)}
+                                style={{padding:'0.35rem 0.7rem',background:'rgba(16,185,129,0.15)',color:'#10b981',border:'1px solid rgba(16,185,129,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Visualizar"
+                              >
+                                👁️
+                              </button>
+                              <button
+                                onClick={() => onEditarPresenca(sessao.id)}
+                                style={{padding:'0.35rem 0.7rem',background:'var(--color-accent-bg)',color:'var(--color-accent)',border:'1px solid var(--color-accent)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Editar"
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => handleExcluir(sessao.id)}
+                                style={{padding:'0.35rem 0.7rem',background:'rgba(239,68,68,0.15)',color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)',borderRadius:'var(--radius-md)',fontSize:'0.78rem',fontWeight:'700',cursor:'pointer',whiteSpace:'nowrap'}}
+                                title="Excluir"
+                              >
+                                🗑️
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+
+                {/* VISITAS DO MÊS */}
+                {(() => {
+                  const visitasDoMes = visitas.filter(v => {
+                    const dataVisita = new Date(v.data_visita + 'T00:00:00');
+                    return dataVisita.getMonth() === grupo.mes && dataVisita.getFullYear() === grupo.ano;
+                  });
+
+                  if (visitasDoMes.length === 0) return null;
+
+                  return (
+                    <div style={{ borderTop: '4px dashed var(--color-warning)', marginTop: '1rem' }}>
+                      <div style={{ background: 'var(--color-warning-bg)', padding: '0.75rem 1.5rem' }}>
+                        <h4 style={{ fontSize: '0.875rem', fontWeight: 'bold', color: 'var(--color-warning)' }}>
+                          📍 Visitas dos Irmãos a Outras Lojas
+                        </h4>
+                      </div>
+                      <div className="p-4">
+                        <div className="grid grid-cols-3 gap-3">
+                          {visitasDoMes.map(visita => (
+                            <div 
+                              key={visita.id} 
+                              className="card" 
+                              style={{ 
+                                padding: '0.75rem',
+                                border: '1px solid var(--color-warning)',
+                                transition: 'box-shadow 0.2s'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1)'}
+                              onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                            >
+                              {/* Linha 1: Data, Nome e Botões */}
+                              <div className="flex justify-between items-center mb-1">
+                                <div className="text-sm">
+                                  <span style={{ color: 'var(--color-text-muted)' }}>{new Date(visita.data_visita + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
+                                  <span style={{ color: 'var(--color-text-muted)' }}> - </span>
+                                  <span style={{ fontWeight: '600', color: 'var(--color-text)' }}>{formatarNomeCurto(visita.irmaos?.nome)}</span>
+                                </div>
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => abrirModalVisita(visita)}
+                                    className="p-1 bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors text-xs"
+                                    title="Editar"
+                                  >
+                                    ✏️
+                                  </button>
+                                  <button
+                                    onClick={() => excluirVisita(visita.id)}
+                                    className="p-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-xs"
+                                    title="Excluir"
+                                  >
+                                    🗑️
+                                  </button>
+                                </div>
+                              </div>
+                              
+                              {/* Linha 2: Loja - Potência - Oriente */}
+                              <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                                {visita.nome_loja} - {visita.potencias_masonicas?.sigla || 'N/A'} - {visita.oriente}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ));
+          })()}
+        </div>
+      )}
+
+      {/* Resumo */}
+      {sessoes.length > 0 && (
+        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+          <p className="text-sm text-blue-800">
+            <strong>Total:</strong> {sessoes.length} sessão(ões) encontrada(s)
+            {filtroMes && ` em ${meses.find(m => m.valor === filtroMes)?.nome}`}
+            {filtroAno && ` de ${filtroAno}`}
+          </p>
+        </div>
+      )}
+
+      {/* MODAL */}
+      {modalVisita && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
+            <div className="bg-purple-600 text-white p-6">
+              <h3 className="text-2xl font-bold" style={{color:"var(--color-text)"}}>
+                {visitaEditando ? '✏️ Editar Visita' : '➕ Nova Visita'}
+              </h3>
+            </div>
+
+            <form onSubmit={salvarVisita} className="p-6 space-y-4">
+              <div>
+                <label className="form-label">Irmão Visitante *</label>
+                <select
+                  value={visitaForm.irmao_id}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, irmao_id: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                  required
+                >
+                  <option value="">Selecione...</option>
+                  {irmaos.map(irmao => (
+                    <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="form-label">Data da Visita *</label>
+                <input
+                  type="date"
+                  value={visitaForm.data_visita}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, data_visita: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Nome da Loja *</label>
+                  <input
+                    type="text"
+                    value={visitaForm.nome_loja}
+                    onChange={(e) => setVisitaForm({ ...visitaForm, nome_loja: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                    placeholder="Ex: Acácia do Cerrado"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label">Oriente (Município) *</label>
+                  <input
+                    type="text"
+                    value={visitaForm.oriente}
+                    onChange={(e) => setVisitaForm({ ...visitaForm, oriente: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                    placeholder="Ex: Cuiabá"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Potência com gerenciador */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Potência Maçônica</label>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarFormPotencia(!mostrarFormPotencia)}
+                    className="text-xs text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    {mostrarFormPotencia ? '✖ Cancelar' : '➕ Nova Potência'}
+                  </button>
+                </div>
+
+                {/* Formulário para nova potência */}
+                {mostrarFormPotencia && (
+                  <div className="mb-3 p-3 bg-purple-50 border border-purple-200 rounded-lg space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Sigla (ex: GLESP)"
+                        value={novaPotencia.sigla}
+                        onChange={(e) => setNovaPotencia({ ...novaPotencia, sigla: e.target.value.toUpperCase() })}
+                        className="px-2 py-1 text-sm border rounded focus:ring-purple-500"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Nome completo"
+                        value={novaPotencia.nome_completo}
+                        onChange={(e) => setNovaPotencia({ ...novaPotencia, nome_completo: e.target.value })}
+                        className="px-2 py-1 text-sm border rounded focus:ring-purple-500"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={salvarNovaPotencia}
+                      className="w-full px-3 py-1 bg-purple-600 text-white text-sm rounded hover:bg-purple-700 transition-colors"
+                    >
+                      💾 Salvar Potência
+                    </button>
+                  </div>
+                )}
+
+                {/* Lista de potências existentes */}
+                <div className="space-y-2">
+                  {potencias.map(pot => (
+                    <div key={pot.id} className="flex items-center gap-2">
+                      {editandoPotencia === pot.id ? (
+                        <>
+                          <input
+                            type="text"
+                            defaultValue={pot.sigla}
+                            onBlur={(e) => atualizarPotencia(pot.id, { sigla: e.target.value })}
+                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-purple-500"
+                          />
+                          <input
+                            type="text"
+                            defaultValue={pot.nome_completo}
+                            onBlur={(e) => atualizarPotencia(pot.id, { nome_completo: e.target.value })}
+                            className="flex-1 px-2 py-1 text-sm border border-purple-300 rounded focus:ring-purple-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setEditandoPotencia(null)}
+                            className="px-2 py-1 bg-gray-500 text-white text-xs rounded hover:bg-primary-700"
+                          >
+                            ✓
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <input
+                            type="radio"
+                            name="potencia"
+                            value={pot.id}
+                            checked={visitaForm.potencia_id === pot.id.toString()}
+                            onChange={(e) => setVisitaForm({ ...visitaForm, potencia_id: e.target.value })}
+                            className="w-4 h-4 text-purple-600"
+                          />
+                          <span className="flex-1 text-sm">
+                            <span className="font-medium">{pot.sigla}</span> - {pot.nome_completo}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEditandoPotencia(pot.id)}
+                            className="px-2 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700"
+                            title="Editar potência"
+                          >
+                            ✏️
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Observações</label>
+                <textarea
+                  value={visitaForm.observacoes}
+                  onChange={(e) => setVisitaForm({ ...visitaForm, observacoes: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-purple-500"
+                  rows="3"
+                  placeholder="Informações adicionais..."
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setModalVisita(false)}
+                  className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  ❌ Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  💾 Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {modalAberto && (
+        <div onClick={() => setModalAberto(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
+          <div onClick={e => e.stopPropagation()}>
+            <CadastroSessao
+              modalInicialAberto={true}
+              onModalFechado={() => { setModalAberto(false); carregarSessoes(); }}
+            />
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
-export default App;
