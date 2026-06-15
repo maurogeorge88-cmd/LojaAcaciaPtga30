@@ -3215,6 +3215,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                           </span>
                         )}
                         <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',transform: origemAberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
+                        {/* Bolinha status */}
+                        <span title={pendentes === 0 ? 'Quite' : 'Em débito'} style={{width:'10px',height:'10px',borderRadius:'50%',flexShrink:0,background: pendentes === 0 ? '#3b82f6' : '#ef4444',boxShadow:`0 0 5px ${pendentes === 0 ? 'rgba(59,130,246,0.6)' : 'rgba(239,68,68,0.6)'}`}}/>
                       </div>
                     </div>
 
