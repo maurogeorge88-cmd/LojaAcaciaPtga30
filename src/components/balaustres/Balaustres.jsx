@@ -27,6 +27,7 @@ const Balaustres = ({
 
   // Estados de controle
   const [modoEdicao, setModoEdicao] = useState(false);
+  const [modalAberto, setModalAberto] = useState(false);
   const [balaustreEditando, setBalaustreEditando] = useState(null);
   const [loading, setLoading] = useState(false);
   const [grauSelecionado, setGrauSelecionado] = useState('Aprendiz');
@@ -99,6 +100,7 @@ const Balaustres = ({
     });
     setModoEdicao(false);
     setBalaustreEditando(null);
+    setModalAberto(false);
     carregarProximoNumero(grauSelecionado, anoAtual);
   };
 
@@ -120,6 +122,7 @@ const Balaustres = ({
       if (error) throw error;
 
       showSuccess('Balaustre cadastrado com sucesso!');
+      limparFormulario();
       onUpdate();
       limparFormulario();
 
@@ -144,6 +147,7 @@ const Balaustres = ({
       if (error) throw error;
 
       showSuccess('Balaustre atualizado com sucesso!');
+      limparFormulario();
       onUpdate();
       limparFormulario();
 
@@ -157,6 +161,7 @@ const Balaustres = ({
   // Editar balaustre
   const handleEditar = (balaustre) => {
     setModoEdicao(true);
+    setModalAberto(true);
     setBalaustreEditando(balaustre);
     setBalaustreForm({
       grau_sessao: balaustre.grau_sessao,
@@ -252,180 +257,127 @@ const Balaustres = ({
 
   return (
     <div style={{ padding: '2rem', background: 'var(--color-bg)', minHeight: '100vh', overflowX: 'hidden' }}>
-      {/* FORMULÁRIO - Só aparece para quem pode editar */}
-      {permissoes?.pode_editar_balaustres && (
-        <div className="card" style={{overflow:"hidden"}}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--color-text)', marginBottom: '1rem' }}>
-            {modoEdicao ? '✏️ Editar Balaustre' : '➕ Novo Balaustre'}
-          </h3>
 
-        <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit} style={{width:"100%",maxWidth:"100%",boxSizing:"border-box",overflow:"hidden"}}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Grau da Sessão */}
-            <div>
-              <label className="form-label">Grau da Sessão *</label>
-              <select
-                value={balaustreForm.grau_sessao}
-                onChange={(e) => { setBalaustreForm({ ...balaustreForm, grau_sessao: e.target.value }); setGrauSelecionado(e.target.value); }}
-                className="form-input"
-                required
-              >
-                <option value="Aprendiz">Aprendiz</option>
-                <option value="Companheiro">Companheiro</option>
-                <option value="Mestre">Mestre</option>
-              </select>
-            </div>
+      {/* MODAL CADASTRO/EDIÇÃO */}
+      {modalAberto && permissoes?.pode_editar_balaustres && (
+        <div onClick={limparFormulario} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',zIndex:50,display:'flex',alignItems:'flex-start',justifyContent:'center',padding:'1.5rem 1rem',overflowY:'auto'}}>
+          <div onClick={e => e.stopPropagation()} style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',border:'1px solid var(--color-border)',width:'100%',maxWidth:'680px',boxShadow:'0 20px 60px rgba(0,0,0,0.4)',overflow:'hidden',marginBottom:'1.5rem'}}>
 
-            {/* Número do Balaustre com Ano */}
-            <div>
-              <label className="form-label">
-                Número do Balaustre *
-                <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '0.5rem' }}>(Formato: N/ANO)</span>
-              </label>
-              <div className="flex gap-2">
-                <input
-                  type="number"
-                  value={balaustreForm.numero_balaustre}
-                  onChange={(e) => setBalaustreForm({ ...balaustreForm, numero_balaustre: parseInt(e.target.value) || '' })}
-                  className="form-input"
-                  style={{ width: '6rem' }}
-                  required
-                  min="1"
-                  placeholder="Nº"
-                />
-                <span style={{ display: 'flex', alignItems: 'center', color: 'var(--color-text-muted)', fontSize: '1.125rem', fontWeight: 'bold' }}>/</span>
-                <input
-                  type="number"
-                  value={balaustreForm.ano_balaustre}
-                  onChange={(e) => setBalaustreForm({ ...balaustreForm, ano_balaustre: parseInt(e.target.value) || new Date().getFullYear() })}
-                  className="form-input"
-                  style={{ width: '7rem' }}
-                  required
-                  min="2020"
-                  max="2099"
-                  placeholder="Ano"
-                />
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'1.1rem 1.4rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.6rem'}}>
+                <span style={{fontSize:'1.2rem'}}>📜</span>
+                <div>
+                  <h3 style={{margin:0,fontSize:'1rem',fontWeight:'800',color:'var(--color-text)'}}>
+                    {modoEdicao ? 'Editar Balaustre' : 'Novo Balaustre'}
+                  </h3>
+                  <p style={{margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)'}}>
+                    {modoEdicao ? 'Atualize os dados do balaustre' : 'Preencha os dados para cadastrar'}
+                  </p>
+                </div>
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '0.25rem' }}>
-                Ex: {balaustreForm.numero_balaustre || '1'}/{balaustreForm.ano_balaustre || new Date().getFullYear()}
+              <button onClick={limparFormulario} style={{background:'transparent',border:'none',color:'var(--color-text-muted)',fontSize:'1.3rem',cursor:'pointer',padding:'0.2rem 0.5rem',borderRadius:'var(--radius-md)',lineHeight:1}}>✕</button>
+            </div>
+
+            {/* Corpo */}
+            <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit} style={{padding:'1.4rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+
+              {/* Linha 1: Grau, Número, Ano, Data */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 80px 100px 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Grau da Sessão *</label>
+                  <select value={balaustreForm.grau_sessao}
+                    onChange={e => { setBalaustreForm({...balaustreForm, grau_sessao: e.target.value}); setGrauSelecionado(e.target.value); }}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none'}} required>
+                    <option value="Aprendiz">Aprendiz</option>
+                    <option value="Companheiro">Companheiro</option>
+                    <option value="Mestre">Mestre</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Nº *</label>
+                  <input type="number" value={balaustreForm.numero_balaustre} min="1" placeholder="Nº"
+                    onChange={e => setBalaustreForm({...balaustreForm, numero_balaustre: parseInt(e.target.value)||''})}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Ano *</label>
+                  <input type="number" value={balaustreForm.ano_balaustre} min="2020" max="2099"
+                    onChange={e => setBalaustreForm({...balaustreForm, ano_balaustre: parseInt(e.target.value)||new Date().getFullYear()})}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Data da Sessão *</label>
+                  <input type="date" value={balaustreForm.data_sessao}
+                    onChange={e => setBalaustreForm({...balaustreForm, data_sessao: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} required />
+                </div>
+              </div>
+
+              {/* Linha 2: Dia Semana (readonly) + Tipo Sessão */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Dia da Semana</label>
+                  <input type="text" value={balaustreForm.dia_semana} readOnly
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',cursor:'not-allowed',boxSizing:'border-box'}} />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Tipo de Sessão *</label>
+                  <select value={balaustreForm.tipo_sessao_id}
+                    onChange={e => setBalaustreForm({...balaustreForm, tipo_sessao_id: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none'}} required>
+                    <option value="">Selecione...</option>
+                    {tiposSessao.map(tipo => <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Ordem do Dia e Observações */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Ordem do Dia</label>
+                  <textarea value={balaustreForm.ordem_dia} rows={4} placeholder="Descreva a ordem do dia..."
+                    onChange={e => setBalaustreForm({...balaustreForm, ordem_dia: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',resize:'vertical',boxSizing:'border-box'}} />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Observações</label>
+                  <textarea value={balaustreForm.observacoes} rows={4} placeholder="Observações adicionais..."
+                    onChange={e => setBalaustreForm({...balaustreForm, observacoes: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.75rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',resize:'vertical',boxSizing:'border-box'}} />
+                </div>
+              </div>
+
+              {/* Preview do número */}
+              <p style={{fontSize:'0.75rem',color:'var(--color-text-muted)',margin:0}}>
+                📜 Balaustre: <strong>{balaustreForm.numero_balaustre || '?'}/{balaustreForm.ano_balaustre}</strong> — {balaustreForm.grau_sessao}
               </p>
-            </div>
 
-            {/* Data da Sessão */}
-            <div>
-              <label className="form-label">Data da Sessão *</label>
-              <input
-                type="date"
-                value={balaustreForm.data_sessao}
-                onChange={(e) => setBalaustreForm({ ...balaustreForm, data_sessao: e.target.value })}
-                className="form-input"
-                required
-              />
-            </div>
-
-            {/* Dia da Semana */}
-            <div>
-              <label className="form-label">Dia da Semana</label>
-              <input
-                type="text"
-                value={balaustreForm.dia_semana}
-                className="form-input"
-                style={{ background: 'var(--color-surface-2)', cursor: 'not-allowed' }}
-                readOnly
-              />
-            </div>
-
-            {/* Tipo de Sessão */}
-            <div>
-              <label className="form-label">Tipo de Sessão *</label>
-              <select
-                value={balaustreForm.tipo_sessao_id}
-                onChange={(e) => setBalaustreForm({ ...balaustreForm, tipo_sessao_id: e.target.value })}
-                className="form-input"
-                required
-              >
-                <option value="">Selecione...</option>
-                {tiposSessao.map(tipo => (
-                  <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>
-                ))}
-              </select>
-            </div>
+              {/* Botões */}
+              <div style={{display:'flex',gap:'0.65rem',paddingTop:'0.25rem'}}>
+                <button type="button" onClick={limparFormulario}
+                  style={{flex:1,height:'40px',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.85rem',cursor:'pointer'}}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={loading}
+                  style={{flex:2,height:'40px',background:loading ? 'var(--color-surface-3)' : 'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.85rem',cursor:loading ? 'not-allowed' : 'pointer'}}>
+                  {loading ? 'Salvando...' : modoEdicao ? '✏️ Atualizar Balaustre' : '✅ Cadastrar Balaustre'}
+                </button>
+              </div>
+            </form>
           </div>
-
-          {/* Ordem do Dia e Observações */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
-            <div>
-              <label className="form-label">Ordem do Dia</label>
-              <textarea
-                value={balaustreForm.ordem_dia}
-                onChange={(e) => setBalaustreForm({ ...balaustreForm, ordem_dia: e.target.value })}
-                className="form-input"
-                rows="4"
-                style={{resize:"vertical"}}
-                placeholder="Descreva a ordem do dia da sessão..."
-              />
-            </div>
-
-            <div>
-              <label className="form-label">Observações</label>
-              <textarea
-                value={balaustreForm.observacoes}
-                onChange={(e) => setBalaustreForm({ ...balaustreForm, observacoes: e.target.value })}
-                className="form-input"
-                rows="4"
-                style={{resize:"vertical"}}
-                placeholder="Observações adicionais..."
-              />
-            </div>
-          </div>
-
-          {/* Botões */}
-          <div className="flex gap-3 mt-6">
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                padding: '0.5rem 1.5rem',
-                background: loading ? 'var(--color-surface-3)' : 'var(--color-accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-lg)',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => { if (!loading) e.target.style.background = 'var(--color-accent-hover)'; }}
-              onMouseLeave={(e) => { if (!loading) e.target.style.background = 'var(--color-accent)'; }}
-            >
-              {loading ? 'Salvando...' : (modoEdicao ? 'Atualizar Balaustre' : 'Cadastrar Balaustre')}
-            </button>
-            
-            {modoEdicao && (
-              <button
-                type="button"
-                onClick={limparFormulario}
-                style={{
-                  padding: '0.5rem 1.5rem',
-                  background: 'var(--color-surface-3)',
-                  color: 'var(--color-text)',
-                  border: 'none',
-                  borderRadius: 'var(--radius-lg)',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.target.style.background = 'var(--color-surface-2)'}
-                onMouseLeave={(e) => e.target.style.background = 'var(--color-surface-3)'}
-              >
-                Cancelar Edição
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+        </div>
       )}
 
-      {/* FILTRO POR GRAU */}
+      {/* FILTRO POR GRAU + BOTÃO NOVO */}
+      {permissoes?.pode_editar_balaustres && (
+        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'0.75rem'}}>
+          <button onClick={() => { limparFormulario(); setModalAberto(true); }}
+            style={{height:'38px',padding:'0 1rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',display:'flex',alignItems:'center',gap:'0.4rem'}}>
+            ➕ Novo Balaustre
+          </button>
+        </div>
+      )}
       <div className="card" style={{ padding: "1rem", marginBottom: "1.5rem" }}>
         <div className="flex gap-2">
           <button
