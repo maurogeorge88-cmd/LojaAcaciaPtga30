@@ -1,13 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import CadastroSessao from './CadastroSessao';
 
-export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, onNovaSessao }) {
+export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, abrirModalNovo, onModalAberto }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
+  const [modalAberto, setModalAberto] = useState(false);
+
+  useEffect(() => {
+    if (abrirModalNovo) {
+      setModalAberto(true);
+      if (onModalAberto) onModalAberto();
+    }
+  }, [abrirModalNovo]);
 
   // Estados para visitas
   const [visitas, setVisitas] = useState([]);
@@ -410,7 +419,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               📍 Nova Visita
             </button>
             <button
-              onClick={onNovaSessao}
+              onClick={() => setModalAberto(true)}
               style={{
                 padding: '0.75rem 1.5rem',
                 background: 'var(--color-accent)',
@@ -509,7 +518,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
           </p>
           <div className="mt-6">
             <button
-              onClick={onNovaSessao}
+              onClick={() => setModalAberto(true)}
               style={{
                 padding: '0.75rem 1.5rem',
                 background: 'var(--color-accent)',
@@ -973,6 +982,15 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, o
               </div>
             </form>
           </div>
+        </div>
+      )}
+      {/* Modal Nova Sessão via CadastroSessao */}
+      {modalAberto && (
+        <div style={{position:'fixed',inset:0,zIndex:100}}>
+          <CadastroSessao
+            modalInicialAberto={true}
+            onModalFechado={() => { setModalAberto(false); carregarSessoes(); }}
+          />
         </div>
       )}
     </div>
