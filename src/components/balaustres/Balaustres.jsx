@@ -266,7 +266,7 @@ const Balaustres = ({
               <label className="form-label">Grau da Sessão *</label>
               <select
                 value={balaustreForm.grau_sessao}
-                onChange={(e) => setBalaustreForm({ ...balaustreForm, grau_sessao: e.target.value })}
+                onChange={(e) => { setBalaustreForm({ ...balaustreForm, grau_sessao: e.target.value }); setGrauSelecionado(e.target.value); }}
                 className="form-input"
                 required
               >
