@@ -1795,18 +1795,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         <span>Dashboard</span>
                       </button>
 
-                      <button
-                        onClick={() => { setCurrentPage('lista-sessoes'); setAbrirModalSessao(true); }}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'lista-sessoes'
-                            ? 'hover:bg-primary-800'
-                            : 'hover:bg-primary-800'
-                        }`}
-                        title="Nova Sessão"
-                      >
-                        <span>➕</span>
-                        <span>Nova Sessão</span>
-                      </button>
 
                       <button
                         onClick={() => setCurrentPage('lista-sessoes')}
@@ -2345,18 +2333,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       </button>
 
                       {/* CADASTRO DE SESSÃO */}
-                      <button
-                        onClick={() => { setCurrentPage('lista-sessoes'); setAbrirModalSessao(true); }}
-                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'lista-sessoes'
-                            ? 'hover:bg-primary-800'
-                            : 'hover:bg-primary-800'
-                        }`}
-                        title="Nova Sessão"
-                      >
-                        <span>➕</span>
-                        <span>Nova Sessão</span>
-                      </button>
 
                       {/* LISTA DE SESSÕES */}
                       <button
@@ -3056,8 +3032,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* LISTA DE SESSÕES */}
         {currentPage === 'lista-sessoes' && (
           <ListaSessoes 
-            abrirModalNovo={abrirModalSessao}
-            onModalAberto={() => setAbrirModalSessao(false)}
             onVisualizarPresenca={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
               setCurrentPage('visualizar-presenca');
