@@ -18,7 +18,7 @@ const SITUACOES = [
   { value: 'aprovado',    label: 'Aprovado',     cor: '#10b981', bg: 'rgba(16,185,129,0.15)'  },
   { value: 'excluido',    label: 'Excluído',     cor: '#ef4444', bg: 'rgba(239,68,68,0.15)'   },
   { value: 'desistiu',    label: 'Desistiu',     cor: '#f59e0b', bg: 'rgba(245,158,11,0.15)'  },
-  { value: 'adiado',      label: 'Adiado',       cor: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
+  { value: 'adiado',      label: 'Sobre Malhete',       cor: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
 ];
 
 const STATUS_PROCESSO = [
