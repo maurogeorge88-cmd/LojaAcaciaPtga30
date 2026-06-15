@@ -3036,15 +3036,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
-        {/* CADASTRO DE SESSÃO — abre lista com modal */}
+        {/* CADASTRO DE SESSÃO */}
         {currentPage === 'cadastro-sessao' && (
-          <ListaSessoes
-            abrirModalInicio={true}
-            onVisualizarPresenca={(sessaoId) => {
-              setSessaoIdAtual(sessaoId);
-              setCurrentPage('visualizar-presenca');
-            }}
-            onEditarPresenca={(sessaoId) => {
+          <CadastroSessao 
+            onSessaoCriada={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
               setCurrentPage('registro-presenca');
             }}
