@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import CadastroSessao from './CadastroSessao';
 
-export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, abrirModalInicio = false }) {
+export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca }) {
   const [loading, setLoading] = useState(true);
   const [sessoes, setSessoes] = useState([]);
   const [filtroMes, setFiltroMes] = useState('');
   const [filtroAno, setFiltroAno] = useState(new Date().getFullYear().toString());
   const [mensagem, setMensagem] = useState({ tipo: '', texto: '' });
   const [anosDisponiveis, setAnosDisponiveis] = useState([]);
-  const [modalAberto, setModalAberto] = useState(abrirModalInicio);
 
   // Estados para visitas
   const [visitas, setVisitas] = useState([]);
@@ -94,41 +92,156 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
       setLoading(true);
 
       let query = supabase
-        .from('vw_resumo_sessoes')
-        .select('*')
+        .from('sessoes_presenca')
+        .select('*, graus_sessao:grau_sessao_id(nome, grau_minimo_requerido), classificacoes_sessao:classificacao_id(nome)')
         .order('data_sessao', { ascending: false });
 
       if (filtroAno) {
-        query = query
-          .gte('data_sessao', `${filtroAno}-01-01`)
-          .lte('data_sessao', `${filtroAno}-12-31`);
+        const anoInicio = `${filtroAno}-01-01`;
+        const anoFim = `${filtroAno}-12-31`;
+        query = query.gte('data_sessao', anoInicio).lte('data_sessao', anoFim);
       }
 
       if (filtroMes && filtroAno) {
+        const mesInicio = `${filtroAno}-${filtroMes.padStart(2, '0')}-01`;
         const ultimoDia = new Date(parseInt(filtroAno), parseInt(filtroMes), 0).getDate();
-        query = query
-          .gte('data_sessao', `${filtroAno}-${filtroMes.padStart(2, '0')}-01`)
-          .lte('data_sessao', `${filtroAno}-${filtroMes.padStart(2, '0')}-${ultimoDia}`);
+        const mesFim = `${filtroAno}-${filtroMes.padStart(2, '0')}-${ultimoDia}`;
+        query = query.gte('data_sessao', mesInicio).lte('data_sessao', mesFim);
       }
 
       const { data, error } = await query;
+
       if (error) throw error;
 
-      const sessoesMapeadas = (data || []).map(s => ({
-        ...s,
-        graus_presentes: {
-          aprendizes:             s.presentes_aprendizes,
-          companheiros:           s.presentes_companheiros,
-          mestres:                s.presentes_mestres,
-          mestres_instalados:     s.presentes_mestres_instalados,
-        },
-      }));
+      // Buscar histórico de situações
+      const { data: historicoSituacoes } = await supabase
+        .from('historico_situacoes')
+        .select('*')
+        .eq('status', 'ativa');
 
-      setSessoes(sessoesMapeadas);
+      const sessoesComPresenca = await Promise.all((data || []).map(async (sessao) => {
+        const grauMinimoRaw = sessao?.graus_sessao?.grau_minimo_requerido;
+        const grauMinimo = grauMinimoRaw ? parseInt(grauMinimoRaw) : null;
+        
+        const { data: todosIrmaos } = await supabase
+          .from('irmaos')
+          .select('id, data_iniciacao, data_ingresso_loja, data_elevacao, data_exaltacao, mestre_instalado, data_instalacao, data_falecimento, situacao');
+        
+        const { data: registrosPresenca } = await supabase
+          .from('registros_presenca')
+          .select('membro_id, presente')
+          .eq('sessao_id', sessao.id);
+        
+        const presencaMap = new Map();
+        registrosPresenca?.forEach(r => presencaMap.set(r.membro_id, r.presente));
+        
+        const { count: totalVisitantes } = await supabase
+          .from('visitantes_sessao')
+          .select('*', { count: 'exact', head: true })
+          .eq('sessao_id', sessao.id);
+        
+        const dataSessao = new Date(sessao.data_sessao + 'T00:00:00');
+        const irmaosValidos = todosIrmaos?.filter(irmao => {
+          if (!irmao) return false;
+          
+          const situacaoBloqueadora = historicoSituacoes?.find(sit => {
+            if (sit.membro_id !== irmao.id) return false;
+            
+            const tipoSituacao = sit.tipo_situacao?.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+            const situacoesQueExcluem = ['desligado', 'desligamento', 'irregular', 'suspenso', 'excluido', 'ex-oficio'];
+            
+            if (!situacoesQueExcluem.includes(tipoSituacao)) return false;
+            
+            const dataInicio = new Date(sit.data_inicio + 'T00:00:00');
+            if (dataSessao < dataInicio) return false;
+            
+            if (sit.data_fim) {
+              const dataFim = new Date(sit.data_fim + 'T00:00:00');
+              return dataSessao >= dataInicio && dataSessao <= dataFim;
+            }
+            
+            return dataSessao >= dataInicio;
+          });
+          
+          if (situacaoBloqueadora) return false;
+          
+          const dataIngresso = irmao.data_ingresso_loja 
+            ? new Date(irmao.data_ingresso_loja + 'T00:00:00')
+            : irmao.data_iniciacao 
+            ? new Date(irmao.data_iniciacao + 'T00:00:00')
+            : null;
+          
+          if (!dataIngresso || dataSessao < dataIngresso) return false;
+          
+          if (irmao.data_falecimento) {
+            const dataFalec = new Date(irmao.data_falecimento + 'T00:00:00');
+            if (dataSessao > dataFalec) return false;
+          }
+          
+          if (grauMinimo === 2) {
+            if (!irmao.data_elevacao) return false;
+            const dataElevacao = new Date(irmao.data_elevacao + 'T00:00:00');
+            if (dataSessao < dataElevacao) return false;
+          } else if (grauMinimo === 3) {
+            if (!irmao.data_exaltacao) return false;
+            const dataExaltacao = new Date(irmao.data_exaltacao + 'T00:00:00');
+            if (dataSessao < dataExaltacao) return false;
+          }
+          
+          return true;
+        });
+
+        const total_registros = irmaosValidos?.length || 0;
+        const total_presentes = irmaosValidos?.filter(i => presencaMap.get(i.id) === true).length || 0;
+        const total_ausentes = total_registros - total_presentes;
+
+        const aprendizes = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return !i.data_elevacao;
+        }).length || 0;
+
+        const companheiros = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return i.data_elevacao && !i.data_exaltacao;
+        }).length || 0;
+
+        // Mestre: exaltado E não instalado (mestre_instalado é false/null)
+        const mestres = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return i.data_exaltacao && !i.mestre_instalado;
+        }).length || 0;
+
+        // Mestre Instalado: mestre_instalado = true (independente de ter data_instalacao)
+        const mestresInstalados = irmaosValidos?.filter(i => {
+          if (!presencaMap.get(i.id)) return false;
+          return i.mestre_instalado === true;
+        }).length || 0;
+
+        return {
+          ...sessao,
+          grau_sessao: sessao.graus_sessao?.nome || 'Aprendiz',
+          classificacao: sessao.classificacoes_sessao?.nome || null,
+          total_registros,
+          total_presentes,
+          total_ausentes,
+          total_visitantes: totalVisitantes || 0,
+          graus_presentes: {
+            aprendizes,
+            companheiros,
+            mestres,
+            mestres_instalados: mestresInstalados
+          }
+        };
+      }));
+      
+      setSessoes(sessoesComPresenca);
 
     } catch (error) {
       console.error('Erro ao carregar sessões:', error);
-      setMensagem({ tipo: 'erro', texto: 'Erro ao carregar sessões.' });
+      setMensagem({
+        tipo: 'erro',
+        texto: 'Erro ao carregar sessões.'
+      });
     } finally {
       setLoading(false);
     }
@@ -411,23 +524,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
             >
               📍 Nova Visita
             </button>
-            <button
-              onClick={() => setModalAberto(true)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: 'var(--color-accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
-              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
-            >
-              ➕ Nova Sessão
-            </button>
+
           </div>
         </div>
 
@@ -509,25 +606,7 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
               : 'Comece cadastrando sua primeira sessão.'
             }
           </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setModalAberto(true)}
-              style={{
-                padding: '0.75rem 1.5rem',
-                background: 'var(--color-accent)',
-                color: 'white',
-                border: 'none',
-                borderRadius: 'var(--radius-md)',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              onMouseEnter={(e) => e.target.style.background = 'var(--color-accent-hover)'}
-              onMouseLeave={(e) => e.target.style.background = 'var(--color-accent)'}
-            >
-              Cadastrar Primeira Sessão
-            </button>
-          </div>
+
         </div>
       ) : (
         <div className="space-y-6">
@@ -977,18 +1056,6 @@ export default function ListaSessoes({ onEditarPresenca, onVisualizarPresenca, a
           </div>
         </div>
       )}
-
-      {modalAberto && (
-        <div onClick={() => setModalAberto(false)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}}>
-          <div onClick={e => e.stopPropagation()}>
-            <CadastroSessao
-              modalInicialAberto={true}
-              onModalFechado={() => { setModalAberto(false); carregarSessoes(); }}
-            />
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
