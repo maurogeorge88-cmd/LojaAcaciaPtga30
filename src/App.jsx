@@ -149,6 +149,7 @@ function App() {
   const [irmaoIdPerfilCompleto, setIrmaoIdPerfilCompleto] = useState(null);
   const [irmaoLogadoId, setIrmaoLogadoId] = useState(null);
   const [sessaoIdAtual, setSessaoIdAtual] = useState(null);
+  const [abrirModalSessao, setAbrirModalSessao] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   
@@ -1795,16 +1796,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       </button>
 
                       <button
-                        onClick={() => setCurrentPage('cadastro-sessao')}
+                        onClick={() => { setCurrentPage('lista-sessoes'); setAbrirModalSessao(true); }}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'cadastro-sessao'
-                            ? 'bg-primary-700 border-l-4 border-white'
+                          currentPage === 'lista-sessoes'
+                            ? 'hover:bg-primary-800'
                             : 'hover:bg-primary-800'
                         }`}
-                        title="Cadastro de Sessão"
+                        title="Nova Sessão"
                       >
-                        <span>📋</span>
-                        <span>Cadastrar Sessão</span>
+                        <span>➕</span>
+                        <span>Nova Sessão</span>
                       </button>
 
                       <button
@@ -2345,16 +2346,16 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
                       {/* CADASTRO DE SESSÃO */}
                       <button
-                        onClick={() => setCurrentPage('cadastro-sessao')}
+                        onClick={() => { setCurrentPage('lista-sessoes'); setAbrirModalSessao(true); }}
                         className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                          currentPage === 'cadastro-sessao'
-                            ? 'bg-primary-700 border-l-4 border-white'
+                          currentPage === 'lista-sessoes'
+                            ? 'hover:bg-primary-800'
                             : 'hover:bg-primary-800'
                         }`}
-                        title="Cadastro de Sessão"
+                        title="Nova Sessão"
                       >
-                        <span>📋</span>
-                        <span>Cadastrar Sessão</span>
+                        <span>➕</span>
+                        <span>Nova Sessão</span>
                       </button>
 
                       {/* LISTA DE SESSÕES */}
@@ -3055,6 +3056,8 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* LISTA DE SESSÕES */}
         {currentPage === 'lista-sessoes' && (
           <ListaSessoes 
+            abrirModalNovo={abrirModalSessao}
+            onModalAberto={() => setAbrirModalSessao(false)}
             onVisualizarPresenca={(sessaoId) => {
               setSessaoIdAtual(sessaoId);
               setCurrentPage('visualizar-presenca');
@@ -3063,7 +3066,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
               setSessaoIdAtual(sessaoId);
               setCurrentPage('registro-presenca');
             }}
-            onNovaSessao={() => setCurrentPage('cadastro-sessao')}
+          />
           />
         )}
 
