@@ -1907,95 +1907,62 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   return (
     <div className="space-y-6 px-3 py-3" style={{background:"var(--color-bg)",minHeight:"100vh",overflowX:"hidden"}}>
       {/* CABEÇALHO COM BOTÕES - TODOS EM UMA LINHA */}
-      <div className="flex gap-2 items-center flex-nowrap mt-3">
-        {/* Botões de visualização */}
-        <button
-          onClick={() => setViewMode('lancamentos')}
-          style={{padding:'0 0.75rem',height:'55px',borderRadius:'var(--radius-lg)',fontWeight:'600',whiteSpace:'nowrap',fontSize:'0.875rem',cursor:'pointer',border:'none',background:viewMode==='lancamentos'?'var(--color-accent)':'var(--color-surface-2)',color:viewMode==='lancamentos'?'#fff':'var(--color-text)'}}
-        >
+      <div style={{display:'flex',gap:'0.4rem',alignItems:'center',flexWrap:'nowrap',marginTop:'0.75rem'}}>
+
+        {/* ── Grupo Navegação ─────────────────────────────────────── */}
+        <button onClick={() => setViewMode('lancamentos')}
+          style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',border:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',
+            background: viewMode==='lancamentos' ? 'var(--color-accent)' : 'var(--color-surface-2)',
+            color: viewMode==='lancamentos' ? '#fff' : 'var(--color-text)'}}>
           📊 Lançam.
         </button>
-        <button
-          onClick={() => setViewMode('inadimplentes')}
-          style={{padding:'0 0.75rem',height:'55px',borderRadius:'var(--radius-lg)',fontWeight:'600',whiteSpace:'nowrap',fontSize:'0.875rem',cursor:'pointer',border:'none',background:viewMode==='inadimplentes'?'#dc2626':'var(--color-surface-2)',color:viewMode==='inadimplentes'?'#fff':'var(--color-text)'}}
-        >
+        <button onClick={() => setViewMode('inadimplentes')}
+          style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',border:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',
+            background: viewMode==='inadimplentes' ? '#dc2626' : 'var(--color-surface-2)',
+            color: viewMode==='inadimplentes' ? '#fff' : 'var(--color-text)'}}>
           ⚠️ Inadimp.
         </button>
-        
-        {/* Espaçador menor */}
-        <div className="w-8"></div>
-        
-        {/* Botão Fechar/Reabrir Mês - só aparece se mês e ano estiver selecionado */}
+
+        {/* Divisor */}
+        <div style={{width:'1px',height:'28px',background:'var(--color-border)',flexShrink:0,margin:'0 0.2rem'}}/>
+
+        {/* ── Grupo Ações ──────────────────────────────────────────── */}
         {filtros.mes > 0 && filtros.ano > 0 && (
           mesFechadoAtual() ? (
-            <button
-              onClick={reabrirMes}
-              disabled={fechandoMes}
-              style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#f59e0b",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"700",fontSize:"0.82rem",cursor:"pointer",display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:"0.3rem",whiteSpace:"nowrap"}}
-              title={`Reabrir ${meses[filtros.mes - 1]}/${filtros.ano}`}
-            >
+            <button onClick={reabrirMes} disabled={fechandoMes}
+              style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',border:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'#f59e0b',color:'#fff'}}>
               🔓 Reabrir Mês
             </button>
           ) : (
-            <button
-              onClick={fecharMes}
-              disabled={fechandoMes}
-              style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"700",fontSize:"0.82rem",cursor:"pointer",display:"flex",flexDirection:"row",alignItems:"center",justifyContent:"center",gap:"0.3rem",whiteSpace:"nowrap"}}
-              title={`Fechar ${meses[filtros.mes - 1]}/${filtros.ano}`}
-            >
+            <button onClick={fecharMes} disabled={fechandoMes}
+              style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)'}}>
               🔒 Fechar Mês
             </button>
           )
         )}
 
-        {/* Botões de ação - com dropdowns */}
-        
         {/* Menu Lançamentos */}
         <div className="relative">
-          <button
-            onClick={() => setMenuLancamentosAberto(!menuLancamentosAberto)}
-            style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#8b5cf6",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
-          >
-            📝 Lançam. ▼
+          <button onClick={() => setMenuLancamentosAberto(!menuLancamentosAberto)}
+            style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',border:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'#8b5cf6',color:'#fff'}}>
+            📝 Lançam. ▾
           </button>
-          
           {menuLancamentosAberto && (
-            <div className="absolute top-full left-0 mt-1 rounded-lg z-50 min-w-[150px]" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
-              <button
-                onClick={() => {
-                  abrirModalLancamento('receita');
-                  setMenuLancamentosAberto(false);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+            <div className="absolute top-full left-0 mt-1 rounded-lg z-50 min-w-[160px]" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
+              <button onClick={() => { abrirModalLancamento('receita'); setMenuLancamentosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 💵 Nova Receita
               </button>
-              <button
-                onClick={() => {
-                  abrirModalLancamento('despesa');
-                  setMenuLancamentosAberto(false);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+              <button onClick={() => { abrirModalLancamento('despesa'); setMenuLancamentosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 💳 Nova Despesa
               </button>
-              <button
-                onClick={() => {
-                  setLancamentoParcelar(null);
-                  setModalParcelamentoAberto(true);
-                  setMenuLancamentosAberto(false);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+              <button onClick={() => { setLancamentoParcelar(null); setModalParcelamentoAberto(true); setMenuLancamentosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 🔀 Parcelar
               </button>
-              <button
-                onClick={() => {
-                  setMostrarModalIrmaos(true);
-                  setMenuLancamentosAberto(false);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+              <button onClick={() => { setMostrarModalIrmaos(true); setMenuLancamentosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 👥 Lanç. em Lote
               </button>
             </div>
@@ -2004,85 +1971,57 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
         {/* Menu Relatórios */}
         <div className="relative">
-          <button
-            onClick={() => setMenuRelatoriosAberto(!menuRelatoriosAberto)}
-            style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
-          >
-            📄 Relatórios ▼
+          <button onClick={() => setMenuRelatoriosAberto(!menuRelatoriosAberto)}
+            style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)'}}>
+            📄 Relatórios ▾
           </button>
-          
           {menuRelatoriosAberto && (
-            <div className="absolute top-full left-0 mt-1 rounded-lg z-50 min-w-[150px]" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
-              <button
-                onClick={() => {
-                  gerarPDF();
-                  setMenuRelatoriosAberto(false);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+            <div className="absolute top-full left-0 mt-1 rounded-lg z-50 min-w-[200px]" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)",boxShadow:"var(--shadow-xl)"}}>
+              <button onClick={() => { gerarPDF(); setMenuRelatoriosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 📊 Relatório Detalhado
               </button>
-              <button
-                onClick={() => {
-                  gerarPDFResumido();
-                  setMenuRelatoriosAberto(false);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+              <button onClick={() => { gerarPDFResumido(); setMenuRelatoriosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 📋 Fechamento Mensal
               </button>
-              <button
-                onClick={() => {
-                  setMenuRelatoriosAberto(false);
-                  setModalMovAberto(true);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+              <button onClick={() => { setMenuRelatoriosAberto(false); setModalMovAberto(true); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 📂 Movimentação do Irmão
               </button>
-              <div style={{borderTop:"1px solid var(--color-border)",margin:"0.25rem 0"}} />
-              <button
-                onClick={() => {
-                  setMenuRelatoriosAberto(false);
-                  setModalArcoRealAberto(true);
-                }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"#2d6a9f",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem",whiteSpace:"nowrap"}}
-              >
+              <div style={{borderTop:"1px solid var(--color-border)",margin:"0.25rem 0"}}/>
+              <button onClick={() => { setMenuRelatoriosAberto(false); setModalArcoRealAberto(true); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"#2d6a9f",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 🔺 Arco Real
               </button>
             </div>
           )}
         </div>
 
-        <button
-          onClick={calcularResumoIrmaos}
-          style={{width:"7rem",height:"55px",padding:"0 0.75rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-lg)",fontWeight:"600",fontSize:"0.875rem",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",lineHeight:"1.3",whiteSpace:"nowrap"}}
-        >
-          <span>💰 Resumo</span>
-          <span>dos Irmãos</span>
+        <button onClick={calcularResumoIrmaos}
+          style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',border:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'#10b981',color:'#fff'}}>
+          💰 Resumo Irmãos
         </button>
-        <button
-          onClick={() => setModalRelatorioAberto(true)}
-          className="w-28 h-[55px] px-3 text-sm text-white rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"#7c3aed"}}
-        >
-          <span>📋 Relatório</span>
-          <span>Financeiro</span>
+
+        <button onClick={() => setModalRelatorioAberto(true)}
+          style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',border:'none',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'#7c3aed',color:'#fff'}}>
+          📋 Rel. Financeiro
         </button>
-        
-        {/* Botão Ocultar/Mostrar Valores */}
-        <button
-          onClick={() => setShowValues(!showValues)}
-          className="w-28 h-[55px] px-3 text-sm rounded-lg font-medium flex flex-col items-center justify-center leading-tight whitespace-nowrap" style={{background:"var(--color-surface-3)",color:"var(--color-text)"}}
-        >
-          <span className="text-xl">{showValues ? '🙈' : '👁️'}</span>
-          <span className="text-xs">{showValues ? 'Ocultar' : 'Mostrar'}</span>
+
+        {/* Divisor */}
+        <div style={{width:'1px',height:'28px',background:'var(--color-border)',flexShrink:0,margin:'0 0.2rem'}}/>
+
+        {/* ── Grupo Info ───────────────────────────────────────────── */}
+        <button onClick={() => setShowValues(!showValues)}
+          style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',whiteSpace:'nowrap',display:'flex',alignItems:'center',gap:'0.35rem',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)'}}>
+          {showValues ? '🙈 Ocultar' : '👁️ Mostrar'}
         </button>
-        
-        {/* Badge de Total de Registros - ÚLTIMA POSIÇÃO */}
-        <div className="border rounded-lg px-4 h-[55px] flex flex-col justify-center min-w-[100px] whitespace-nowrap" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
-          <p style={{fontSize:"0.6rem",color:"var(--color-text-muted)",fontWeight:"600",lineHeight:"1.2"}}>Total de Registros</p>
-          <p style={{fontSize:"1.1rem",fontWeight:"700",color:"var(--color-accent)",lineHeight:"1.2"}}>{totalRegistros}</p>
+
+        <div style={{height:'40px',padding:'0 0.9rem',borderRadius:'var(--radius-lg)',display:'flex',flexDirection:'column',justifyContent:'center',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',whiteSpace:'nowrap',flexShrink:0}}>
+          <span style={{fontSize:'0.58rem',color:'var(--color-text-muted)',fontWeight:'600',lineHeight:'1.2',textTransform:'uppercase',letterSpacing:'0.04em'}}>Registros</span>
+          <span style={{fontSize:'1rem',fontWeight:'700',color:'var(--color-accent)',lineHeight:'1.2'}}>{totalRegistros}</span>
         </div>
+
       </div>
 
       {/* RESUMO FINANCEIRO - LAYOUT COM TRONCO AO LADO */}
