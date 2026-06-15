@@ -1795,6 +1795,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         <span>Dashboard</span>
                       </button>
 
+                      <button
+                        onClick={() => setCurrentPage('cadastro-sessao')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs hover:bg-primary-800`}
+                        title="Nova Sessão"
+                      >
+                        <span>➕</span>
+                        <span>Nova Sessão</span>
+                      </button>
 
                       <button
                         onClick={() => setCurrentPage('lista-sessoes')}
@@ -2333,6 +2341,14 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                       </button>
 
                       {/* CADASTRO DE SESSÃO */}
+                      <button
+                        onClick={() => setCurrentPage('cadastro-sessao')}
+                        className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs hover:bg-primary-800`}
+                        title="Nova Sessão"
+                      >
+                        <span>➕</span>
+                        <span>Nova Sessão</span>
+                      </button>
 
                       {/* LISTA DE SESSÕES */}
                       <button
@@ -3013,11 +3029,20 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           />
         )}
 
-        {/* CADASTRO DE SESSÃO — redirecionado para lista-sessoes que já tem modal embutido */}
-        {currentPage === 'cadastro-sessao' && (() => {
-          setCurrentPage('lista-sessoes');
-          return null;
-        })()}
+        {/* CADASTRO DE SESSÃO — abre lista-sessoes com modal */}
+        {currentPage === 'cadastro-sessao' && (
+          <ListaSessoes
+            abrirModalInicio={true}
+            onEditarPresenca={(sessaoId) => {
+              setSessaoIdAtual(sessaoId);
+              setCurrentPage('registro-presenca');
+            }}
+            onVisualizarPresenca={(sessaoId) => {
+              setSessaoIdAtual(sessaoId);
+              setCurrentPage('visualizar-presenca');
+            }}
+          />
+        )}
 
         {/* DASHBOARD DE PRESENÇA */}
         {currentPage === 'dashboard-presenca' && (
