@@ -19,6 +19,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
   const [pranchaVisualizando, setPranchaVisualizando] = useState(null);
   const [modalVisualizar, setModalVisualizar] = useState(false);
   const [anoSelecionado, setAnoSelecionado] = useState(null);
+  const [modalAberto, setModalAberto] = useState(false);
 
   // Função para tratar datas vazias
   const tratarData = (data) => {
@@ -38,6 +39,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
     });
     setModoEdicao(false);
     setPranchaEditando(null);
+    setModalAberto(false);
   };
 
   // Cadastrar prancha
@@ -60,6 +62,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
       if (error) throw error;
 
       showSuccess('Prancha cadastrada com sucesso!');
+      limparFormulario();
       limparFormulario();
       onUpdate();
 
@@ -92,6 +95,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
 
       showSuccess('Prancha atualizada com sucesso!');
       limparFormulario();
+      limparFormulario();
       onUpdate();
 
     } catch (err) {
@@ -104,6 +108,7 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
   // Editar prancha
   const handleEditar = (prancha) => {
     setModoEdicao(true);
+    setModalAberto(true);
     setPranchaEditando(prancha);
     setPranchaForm({
       numero_prancha: prancha.numero_prancha,
@@ -184,85 +189,80 @@ const Pranchas = ({ pranchas, onUpdate, showSuccess, showError, permissoes, grau
 
   return (
     <div style={{background:"var(--color-bg)",minHeight:"100vh",padding:"0.5rem",overflowX:"hidden"}}>
-      {/* FORMULÁRIO DE CADASTRO - Só aparece para quem pode editar */}
-      {permissoes?.pode_editar_pranchas && (
-        <div className="rounded-xl p-6 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-          <h3 className="text-xl font-bold text-blue-900 mb-4" style={{color:"var(--color-text)"}}>
-            {modoEdicao ? '✏️ Editar Prancha' : '➕ Registrar Nova Prancha'}
-          </h3>
 
-        <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Número da Prancha *</label>
-              <input
-                type="text"
-                value={pranchaForm.numero_prancha}
-                onChange={(e) => setPranchaForm({ ...pranchaForm, numero_prancha: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                placeholder="Ex: 001/2024"
-                required
-              />
+      {/* MODAL CADASTRO/EDIÇÃO */}
+      {modalAberto && permissoes?.pode_editar_pranchas && (
+        <div onClick={limparFormulario} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.65)',zIndex:50,display:'flex',alignItems:'center',justifyContent:'center',padding:'1.5rem 1rem'}}>
+          <div onClick={e => e.stopPropagation()} style={{background:'var(--color-surface)',borderRadius:'var(--radius-xl)',border:'1px solid var(--color-border)',width:'100%',maxWidth:'560px',boxShadow:'0 20px 60px rgba(0,0,0,0.4)',overflow:'hidden'}}>
+
+            {/* Header */}
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'1.1rem 1.4rem',borderBottom:'1px solid var(--color-border)',background:'var(--color-surface-2)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'0.6rem'}}>
+                <span style={{fontSize:'1.2rem'}}>📄</span>
+                <div>
+                  <h3 style={{margin:0,fontSize:'1rem',fontWeight:'800',color:'var(--color-text)'}}>
+                    {modoEdicao ? 'Editar Prancha' : 'Nova Prancha'}
+                  </h3>
+                  <p style={{margin:0,fontSize:'0.72rem',color:'var(--color-text-muted)'}}>
+                    {modoEdicao ? 'Atualize os dados da prancha' : 'Preencha os dados para registrar'}
+                  </p>
+                </div>
+              </div>
+              <button onClick={limparFormulario} style={{background:'transparent',border:'none',color:'var(--color-text-muted)',fontSize:'1.3rem',cursor:'pointer',padding:'0.2rem 0.5rem',borderRadius:'var(--radius-md)',lineHeight:1}}>✕</button>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Data da Prancha *</label>
-              <input
-                type="date"
-                value={pranchaForm.data_prancha}
-                onChange={(e) => setPranchaForm({ ...pranchaForm, data_prancha: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Destinatário *</label>
-              <input
-                type="text"
-                value={pranchaForm.destinatario}
-                onChange={(e) => setPranchaForm({ ...pranchaForm, destinatario: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                placeholder="Ex: Grande Oriente de Mato Grosso"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2" style={{color:"var(--color-text-muted)"}}>Assunto *</label>
-              <input
-                type="text"
-                value={pranchaForm.assunto}
-                onChange={(e) => setPranchaForm({ ...pranchaForm, assunto: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg outline-none" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                placeholder="Ex: Solicitação de Regularização"
-                required
-              />
-            </div>
+            {/* Corpo */}
+            <form onSubmit={modoEdicao ? handleAtualizar : handleSubmit} style={{padding:'1.4rem',display:'flex',flexDirection:'column',gap:'1rem'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Número da Prancha *</label>
+                  <input type="text" value={pranchaForm.numero_prancha} placeholder="Ex: 001/2026" required
+                    onChange={e => setPranchaForm({...pranchaForm, numero_prancha: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
+                </div>
+                <div>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Data da Prancha *</label>
+                  <input type="date" value={pranchaForm.data_prancha} required
+                    onChange={e => setPranchaForm({...pranchaForm, data_prancha: e.target.value})}
+                    style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
+                </div>
+              </div>
+              <div>
+                <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Destinatário *</label>
+                <input type="text" value={pranchaForm.destinatario} placeholder="Ex: Grande Oriente de Mato Grosso" required
+                  onChange={e => setPranchaForm({...pranchaForm, destinatario: e.target.value})}
+                  style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
+              </div>
+              <div>
+                <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',letterSpacing:'0.05em',display:'block',marginBottom:'0.35rem'}}>Assunto *</label>
+                <input type="text" value={pranchaForm.assunto} placeholder="Ex: Solicitação de Regularização" required
+                  onChange={e => setPranchaForm({...pranchaForm, assunto: e.target.value})}
+                  style={{width:'100%',padding:'0.6rem 0.85rem',borderRadius:'var(--radius-lg)',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',fontSize:'0.875rem',outline:'none',boxSizing:'border-box'}} />
+              </div>
+              <div style={{display:'flex',gap:'0.65rem',paddingTop:'0.25rem'}}>
+                <button type="button" onClick={limparFormulario}
+                  style={{flex:1,height:'40px',background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.85rem',cursor:'pointer'}}>
+                  Cancelar
+                </button>
+                <button type="submit" disabled={loading}
+                  style={{flex:2,height:'40px',background:loading ? 'var(--color-surface-3)' : 'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.85rem',cursor:loading ? 'not-allowed' : 'pointer'}}>
+                  {loading ? 'Salvando...' : modoEdicao ? '✏️ Atualizar Prancha' : '✅ Registrar Prancha'}
+                </button>
+              </div>
+            </form>
           </div>
-
-          <div className="flex justify-end gap-4 mt-6">
-            {modoEdicao && (
-              <button
-                type="button"
-                onClick={limparFormulario}
-                className="px-6 py-2 border rounded-lg font-semibold hover: transition" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-              >
-                Cancelar
-              </button>
-            )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-8 py-2 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-lg transition disabled:opacity-50"
-            >
-              {loading ? 'Salvando...' : modoEdicao ? '💾 Atualizar Prancha' : '💾 Registrar Prancha'}
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
       )}
 
+      {/* BOTÃO NOVA PRANCHA */}
+      {permissoes?.pode_editar_pranchas && (
+        <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'0.75rem'}}>
+          <button onClick={() => { limparFormulario(); setModalAberto(true); }}
+            style={{height:'38px',padding:'0 1rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',fontSize:'0.82rem',cursor:'pointer',display:'flex',alignItems:'center',gap:'0.4rem'}}>
+            ➕ Nova Prancha
+          </button>
+        </div>
+      )}
       {/* BUSCA + FILTRO ANO */}
       <div className="rounded-xl p-4 mb-6" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
         <div className="flex gap-3 flex-wrap">
