@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import jsPDF from 'jspdf';
 
 // ─────────────────────────────────────────────
 //  Estilos base
@@ -246,7 +247,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const [modalInutilizar, setModalInutilizar] = useState(null);
   const [modalHistorico, setModalHistorico] = useState(null);
   const [editando, setEditando] = useState(null);
-  const [filtroStatus, setFiltroStatus] = useState(['disponivel', 'manutencao']);
+  const [filtroStatus, setFiltroStatus] = useState('disponivel_manutencao');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busca, setBusca] = useState('');
 
@@ -482,14 +483,114 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
   const equipamentosFiltrados = equipamentos.filter(eq => {
     const st = (eq.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const statusOk = filtroStatus.length === 0
-      || filtroStatus.includes('todos')
-      || filtroStatus.some(f => st === f.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    const statusOk = filtroStatus === 'todos'
+      ? true
+      : filtroStatus === 'disponivel_manutencao'
+      ? st === 'disponivel' || st === 'manutencao'
+      : st === filtroStatus.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     return statusOk
       && (filtroTipo === 'todos' || eq.tipo_id === parseInt(filtroTipo))
       && (eq.numero_patrimonio.toLowerCase().includes(busca.toLowerCase())
         || eq.tipos_equipamentos?.nome.toLowerCase().includes(busca.toLowerCase()));
   });
+
+  const gerarPDF = () => {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const margin = 14;
+    const colRight = 196;
+    let y = 14;
+
+    const txt = (text, x, yy, opts = {}) => {
+      doc.setFontSize(opts.size || 9);
+      doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+      if (opts.color) doc.setTextColor(...opts.color);
+      else doc.setTextColor(30, 30, 30);
+      doc.text(String(text), x, yy, { align: opts.align || 'left', maxWidth: opts.maxWidth });
+      doc.setTextColor(30, 30, 30);
+    };
+
+    const rect = (x, yy, w, h, cor = [240, 240, 245], radius = 0) => {
+      doc.setFillColor(...cor);
+      doc.roundedRect(x, yy, w, h, radius, radius, 'F');
+    };
+
+    // Cabeçalho
+    rect(margin, y, colRight - margin, 14, [30, 58, 95], 2);
+    txt('Relatório de Equipamentos', margin + 3, y + 5.5, { bold: true, size: 11, color: [255,255,255] });
+    const labelFiltro = filtroStatus === 'todos' ? 'Todos os Status'
+      : filtroStatus === 'disponivel_manutencao' ? 'Disponível + Manutenção'
+      : filtroStatus === 'disponivel' ? 'Disponível'
+      : filtroStatus === 'emprestado' ? 'Emprestado'
+      : filtroStatus === 'manutencao' ? 'Manutenção'
+      : 'Descartado';
+    txt(`Filtro: ${labelFiltro}`, colRight - 3, y + 5.5, { size: 8, color: [180,210,255], align: 'right' });
+    txt(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, colRight - 3, y + 10.5, { size: 7, color: [150,190,230], align: 'right' });
+    y += 18;
+
+    // Totais
+    const totais = {
+      total: equipamentosFiltrados.length,
+      disponivel: equipamentosFiltrados.filter(e => e.status === 'disponivel').length,
+      emprestado: equipamentosFiltrados.filter(e => e.status === 'emprestado').length,
+      manutencao: equipamentosFiltrados.filter(e => e.status === 'manutencao').length,
+      descartado: equipamentosFiltrados.filter(e => e.status === 'descartado').length,
+    };
+    const cW = (colRight - margin - 3) / 4;
+    [
+      { label: 'Total', valor: totais.total, cor: [99,102,241] },
+      { label: 'Disponivel', valor: totais.disponivel, cor: [16,185,129] },
+      { label: 'Emprestado', valor: totais.emprestado, cor: [59,130,246] },
+      { label: 'Manutencao', valor: totais.manutencao, cor: [245,158,11] },
+    ].forEach((c, i) => {
+      const cx = margin + i * (cW + 1);
+      rect(cx, y, cW, 14, [245,247,252], 2);
+      doc.setDrawColor(...c.cor); doc.setLineWidth(0.4); doc.roundedRect(cx, y, cW, 14, 2, 2, 'S');
+      txt(String(c.valor), cx + cW / 2, y + 7, { bold: true, size: 13, color: c.cor, align: 'center' });
+      txt(c.label, cx + cW / 2, y + 12, { size: 6.5, color: [100,100,120], align: 'center' });
+    });
+    y += 18;
+
+    // Cabeçalho tabela
+    rect(margin, y, colRight - margin, 6, [30, 58, 95], 1);
+    const cols = { pat: margin + 2, tipo: margin + 28, desc: margin + 68, est: margin + 128, status: margin + 155, val: colRight - 3 };
+    [['Patrimônio', cols.pat], ['Tipo', cols.tipo], ['Descrição', cols.desc], ['Conservação', cols.est], ['Status', cols.status], ['Valor', cols.val]].forEach(([h, x]) => {
+      txt(h, x, y + 4.2, { size: 7, bold: true, color: [255,255,255], align: x === cols.val ? 'right' : 'left' });
+    });
+    y += 8;
+
+    const STATUS_COR = {
+      disponivel: [16,185,129],
+      emprestado: [59,130,246],
+      manutencao: [245,158,11],
+      descartado: [239,68,68],
+    };
+
+    equipamentosFiltrados.forEach((eq, i) => {
+      if (y > 270) { doc.addPage(); y = 14; }
+      if (i % 2 === 0) rect(margin, y - 1, colRight - margin, 7, [248,249,252]);
+      const st = eq.status || 'disponivel';
+      const corSt = STATUS_COR[st] || [120,120,120];
+      const valor = eq.valor_aquisicao ? `R$ ${parseFloat(eq.valor_aquisicao).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—';
+      txt(eq.numero_patrimonio || '—', cols.pat, y + 4, { size: 7.5, bold: true });
+      txt(eq.tipos_equipamentos?.nome || '—', cols.tipo, y + 4, { size: 7, maxWidth: 38 });
+      txt(eq.descricao || '—', cols.desc, y + 4, { size: 7, maxWidth: 58 });
+      txt(eq.estado_conservacao || '—', cols.est, y + 4, { size: 7 });
+      txt(st.charAt(0).toUpperCase() + st.slice(1), cols.status, y + 4, { size: 7, bold: true, color: corSt });
+      txt(valor, cols.val, y + 4, { size: 7, align: 'right' });
+      y += 7;
+    });
+
+    // Rodapé
+    const total = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= total; i++) {
+      doc.setPage(i);
+      doc.setFontSize(7); doc.setTextColor(150,150,160);
+      doc.text(`Página ${i} de ${total}`, colRight - 3, 290, { align: 'right' });
+      doc.text('SysMacom - Sistema de Gestão Maçônica', margin, 290);
+    }
+
+    doc.save(`equipamentos-${labelFiltro.toLowerCase().replace(/\s+/g,'-')}-${new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')}.pdf`);
+  };
 
   const getStatusStyle = (status) => {
     const m = {
@@ -537,6 +638,9 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
               <button onClick={() => abrirModal()} style={{ padding: '0.5rem 1rem', background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 600 }}>
                 ➕ Novo Equipamento
               </button>
+              <button onClick={gerarPDF} style={{ padding: '0.5rem 1rem', background: 'rgba(99,102,241,0.15)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 600 }}>
+                📄 Gerar PDF
+              </button>
             </div>
           )}
         </div>
@@ -548,32 +652,14 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
             <option value="todos">Todos os Tipos</option>
             {tipos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
           </select>
-          {/* Filtro de status — multi-seleção */}
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            {[
-              { value: 'disponivel', label: '✅ Disponível',  cor: '#10b981' },
-              { value: 'emprestado', label: '🔄 Emprestado',  cor: '#3b82f6' },
-              { value: 'manutencao', label: '🔧 Manutenção',  cor: '#f59e0b' },
-              { value: 'descartado', label: '🗑️ Descartado',  cor: '#ef4444' },
-            ].map(s => {
-              const ativo = filtroStatus.includes(s.value);
-              return (
-                <button key={s.value}
-                  onClick={() => setFiltroStatus(prev =>
-                    prev.includes(s.value) ? prev.filter(x => x !== s.value) : [...prev, s.value]
-                  )}
-                  style={{ padding: '0.3rem 0.7rem', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', border: `1px solid ${ativo ? s.cor : 'var(--color-border)'}`, background: ativo ? `${s.cor}22` : 'var(--color-surface-2)', color: ativo ? s.cor : 'var(--color-text-muted)', transition: 'all 0.15s' }}>
-                  {s.label}
-                </button>
-              );
-            })}
-            {filtroStatus.length > 0 && (
-              <button onClick={() => setFiltroStatus([])}
-                style={{ padding: '0.3rem 0.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-muted)' }}>
-                Todos
-              </button>
-            )}
-          </div>
+          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={inp()}>
+            <option value="todos">Todos os Status</option>
+            <option value="disponivel_manutencao">✅ Disponível + 🔧 Manutenção</option>
+            <option value="disponivel">✅ Disponível</option>
+            <option value="emprestado">🔄 Emprestado</option>
+            <option value="manutencao">🔧 Manutenção</option>
+            <option value="descartado">🗑️ Descartado</option>
+          </select>
           <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
             <strong style={{ color: 'var(--color-text)' }}>{equipamentosFiltrados.length}</strong> equipamento(s)
           </div>
