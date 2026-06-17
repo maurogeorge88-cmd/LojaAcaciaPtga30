@@ -701,33 +701,34 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                 <span style={{ fontWeight: '600', color: 'var(--color-text)', fontSize: '0.875rem' }}>Ativar envio automático</span>
               </label>
 
-              {/* Frequência — oculta para felicitacoes (disparo é sempre no dia do aniversário) */}
+              {/* Frequência + Dia — ocultos para felicitacoes (disparo é sempre no dia do aniversário) */}
               {modalConfig !== 'felicitacoes_aniversario' && (
-                <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Frequência</label>
-                <select value={formConfig.frequencia} onChange={e => setFormConfig(p => ({ ...p, frequencia: e.target.value }))} style={sInput}>
-                  {FREQ.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
-                </select>
-              </div>
+                <>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Frequência</label>
+                    <select value={formConfig.frequencia} onChange={e => setFormConfig(p => ({ ...p, frequencia: e.target.value }))} style={sInput}>
+                      {FREQ.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+                    </select>
+                  </div>
 
-              {formConfig.frequencia === 'semanal' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia da semana</label>
-                  <select value={formConfig.dia_semana} onChange={e => setFormConfig(p => ({ ...p, dia_semana: parseInt(e.target.value) }))} style={sInput}>
-                    {DIAS_SEMANA.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                  </select>
-                </div>
-              )}
+                  {formConfig.frequencia === 'semanal' && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia da semana</label>
+                      <select value={formConfig.dia_semana} onChange={e => setFormConfig(p => ({ ...p, dia_semana: parseInt(e.target.value) }))} style={sInput}>
+                        {DIAS_SEMANA.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                      </select>
+                    </div>
+                  )}
 
-              {(formConfig.frequencia === 'mensal' || formConfig.frequencia === 'quinzenal') && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia do mês</label>
-                  <select value={formConfig.dia_mes} onChange={e => setFormConfig(p => ({ ...p, dia_mes: parseInt(e.target.value) }))} style={sInput}>
-                    {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
-                  </select>
-                </div>
-              )}
-              </div>
+                  {(formConfig.frequencia === 'mensal' || formConfig.frequencia === 'quinzenal') && (
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia do mês</label>
+                      <select value={formConfig.dia_mes} onChange={e => setFormConfig(p => ({ ...p, dia_mes: parseInt(e.target.value) }))} style={sInput}>
+                        {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
+                      </select>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Hora — sempre visível */}
