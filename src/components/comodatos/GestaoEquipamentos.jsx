@@ -246,7 +246,7 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   const [modalInutilizar, setModalInutilizar] = useState(null);
   const [modalHistorico, setModalHistorico] = useState(null);
   const [editando, setEditando] = useState(null);
-  const [filtroStatus, setFiltroStatus] = useState('disponivel');
+  const [filtroStatus, setFiltroStatus] = useState(['disponivel', 'manutencao']);
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busca, setBusca] = useState('');
 
@@ -482,8 +482,10 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
 
   const equipamentosFiltrados = equipamentos.filter(eq => {
     const st = (eq.status || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const ft = filtroStatus.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    return (filtroStatus === 'todos' || st === ft)
+    const statusOk = filtroStatus.length === 0
+      || filtroStatus.includes('todos')
+      || filtroStatus.some(f => st === f.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+    return statusOk
       && (filtroTipo === 'todos' || eq.tipo_id === parseInt(filtroTipo))
       && (eq.numero_patrimonio.toLowerCase().includes(busca.toLowerCase())
         || eq.tipos_equipamentos?.nome.toLowerCase().includes(busca.toLowerCase()));
@@ -546,13 +548,32 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
             <option value="todos">Todos os Tipos</option>
             {tipos.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
           </select>
-          <select value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={inp()}>
-            <option value="todos">Todos os Status</option>
-            <option value="disponivel">✅ Disponível</option>
-            <option value="emprestado">🔄 Emprestado</option>
-            <option value="manutencao">🔧 Manutenção</option>
-            <option value="descartado">🗑️ Descartado</option>
-          </select>
+          {/* Filtro de status — multi-seleção */}
+          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {[
+              { value: 'disponivel', label: '✅ Disponível',  cor: '#10b981' },
+              { value: 'emprestado', label: '🔄 Emprestado',  cor: '#3b82f6' },
+              { value: 'manutencao', label: '🔧 Manutenção',  cor: '#f59e0b' },
+              { value: 'descartado', label: '🗑️ Descartado',  cor: '#ef4444' },
+            ].map(s => {
+              const ativo = filtroStatus.includes(s.value);
+              return (
+                <button key={s.value}
+                  onClick={() => setFiltroStatus(prev =>
+                    prev.includes(s.value) ? prev.filter(x => x !== s.value) : [...prev, s.value]
+                  )}
+                  style={{ padding: '0.3rem 0.7rem', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', border: `1px solid ${ativo ? s.cor : 'var(--color-border)'}`, background: ativo ? `${s.cor}22` : 'var(--color-surface-2)', color: ativo ? s.cor : 'var(--color-text-muted)', transition: 'all 0.15s' }}>
+                  {s.label}
+                </button>
+              );
+            })}
+            {filtroStatus.length > 0 && (
+              <button onClick={() => setFiltroStatus([])}
+                style={{ padding: '0.3rem 0.5rem', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer', border: '1px solid var(--color-border)', background: 'transparent', color: 'var(--color-text-muted)' }}>
+                Todos
+              </button>
+            )}
+          </div>
           <div style={{ color: 'var(--color-text-muted)', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
             <strong style={{ color: 'var(--color-text)' }}>{equipamentosFiltrados.length}</strong> equipamento(s)
           </div>
