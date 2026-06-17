@@ -50,6 +50,8 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
   const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
+  const [extrasAnivConfig, setExtrasAnivConfig] = useState<{id:number,nome:string,email:string}[]>([]);
+  const [buscaAnivConfig, setBuscaAnivConfig] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
   const [destinatariosExtras, setDestinatariosExtras] = useState([]);
   const [buscaExtra, setBuscaExtra] = useState('');
@@ -214,10 +216,11 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     setSalvandoConfig(modalConfig);
     try {
       const existente = configs.find(c => c.tipo === modalConfig);
+      const extrasIds = modalConfig === 'aniversariantes' ? extrasAnivConfig.map(e => e.id) : [];
       if (existente) {
-        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }).eq('id', existente.id);
+        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, destinatarios_extras_ids: extrasIds }).eq('id', existente.id);
       } else {
-        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }]);
+        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, destinatarios_extras_ids: extrasIds }]);
       }
       showSuccess('✅ Configuração salva!');
       carregarConfigs();
@@ -235,12 +238,21 @@ export default function EmailIrmaos({ showSuccess, showError }) {
       setFormConfig({ ativo: existente.ativo, frequencia: existente.frequencia || 'mensal', dia_semana: existente.dia_semana || 1, dia_mes: existente.dia_mes || 1, hora: existente.hora ?? 8 });
       setIrmaosConfigSelec(existente.irmaos_ids || []);
       setOpcoesConfig(existente.opcoes_conteudo || { financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
+      // Carregar extras de aniversariantes salvos
+      if (tipo === 'aniversariantes') {
+        const extrasIds = existente.destinatarios_extras_ids || [];
+        const extrasCarregados = irmaos.filter(i => extrasIds.includes(i.id) && i.email)
+          .map(i => ({ id: i.id, nome: i.nome, email: i.email }));
+        setExtrasAnivConfig(extrasCarregados);
+      }
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
       setIrmaosConfigSelec([]);
       setOpcoesConfig({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
+      setExtrasAnivConfig([]);
     }
     setFiltroBuscaConfig('');
+    setBuscaAnivConfig('');
     setModalConfig(tipo);
   };
 
@@ -696,6 +708,53 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
                 </select>
               </div>
+
+              {/* Destinatários extras — só para aniversariantes */}
+              {modalConfig === 'aniversariantes' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
+                    📬 Destinatário adicional fixo
+                  </label>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem' }}>
+                    ℹ️ Além do Venerável e Chanceler, indique abaixo um responsável adicional fixo. Permanece até ser removido manualmente.
+                  </p>
+                  <input type="text" placeholder="🔍 Buscar irmão..." value={buscaAnivConfig}
+                    onChange={e => setBuscaAnivConfig(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.35rem' }} />
+                  {buscaAnivConfig.trim().length >= 2 && (
+                    <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', marginBottom: '0.35rem' }}>
+                      {irmaos
+                        .filter(i => i.email && i.nome.toLowerCase().includes(buscaAnivConfig.toLowerCase()) && !extrasAnivConfig.find(e => e.id === i.id))
+                        .slice(0, 8)
+                        .map((i, idx) => (
+                          <div key={i.id}
+                            onClick={() => { setExtrasAnivConfig(prev => [...prev, { id: i.id, nome: i.nome, email: i.email }]); setBuscaAnivConfig(''); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.6rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.78rem' }}>
+                            <span style={{ flex: 1, color: 'var(--color-text)', fontWeight: '600' }}>{i.nome}</span>
+                            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>{i.email}</span>
+                            <span style={{ color: 'var(--color-accent)', fontWeight: '700', fontSize: '0.75rem' }}>+ Add</span>
+                          </div>
+                        ))}
+                      {irmaos.filter(i => i.email && i.nome.toLowerCase().includes(buscaAnivConfig.toLowerCase()) && !extrasAnivConfig.find(e => e.id === i.id)).length === 0 && (
+                        <div style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>Nenhum irmão encontrado com e-mail.</div>
+                      )}
+                    </div>
+                  )}
+                  {extrasAnivConfig.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                      {extrasAnivConfig.map(e => (
+                        <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.22rem 0.55rem', background: 'rgba(99,102,241,0.12)', color: 'var(--color-accent)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600' }}>
+                          {e.nome}
+                          <button onClick={() => setExtrasAnivConfig(prev => prev.filter(x => x.id !== e.id))}
+                            style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem', lineHeight: 1 }}>×</button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', margin: 0 }}>Nenhum responsável adicional. Digite acima para buscar.</p>
+                  )}
+                </div>
+              )}
 
               {/* Opções de conteúdo — só para resumo_individual */}
               {modalConfig === 'resumo_individual' && (
