@@ -50,7 +50,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
   const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
-  const [extrasAnivConfig, setExtrasAnivConfig] = useState<{id:number,nome:string,email:string}[]>([]);
+  const [extrasAnivConfig, setExtrasAnivConfig] = useState([]);
   const [buscaAnivConfig, setBuscaAnivConfig] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
   const [destinatariosExtras, setDestinatariosExtras] = useState([]);
