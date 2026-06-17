@@ -701,8 +701,9 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                 <span style={{ fontWeight: '600', color: 'var(--color-text)', fontSize: '0.875rem' }}>Ativar envio automático</span>
               </label>
 
-              {/* Frequência */}
-              <div>
+              {/* Frequência — oculta para felicitacoes (disparo é sempre no dia do aniversário) */}
+              {modalConfig !== 'felicitacoes_aniversario' && (
+                <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Frequência</label>
                 <select value={formConfig.frequencia} onChange={e => setFormConfig(p => ({ ...p, frequencia: e.target.value }))} style={sInput}>
                   {FREQ.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
@@ -726,10 +727,14 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   </select>
                 </div>
               )}
+              </div>
+              )}
 
-              {/* Hora */}
+              {/* Hora — sempre visível */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Horário de envio</label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
+                  {modalConfig === 'felicitacoes_aniversario' ? 'Horário do envio no dia do aniversário' : 'Horário de envio'}
+                </label>
                 <select value={formConfig.hora} onChange={e => setFormConfig(p => ({ ...p, hora: parseInt(e.target.value) }))} style={sInput}>
                   {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
                 </select>
