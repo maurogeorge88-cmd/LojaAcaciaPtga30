@@ -264,6 +264,8 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
   });
 
   const [formTipo, setFormTipo] = useState({ nome: '', descricao: '', ativo: true });
+  const [tipoEditando, setTipoEditando] = useState(null);
+  const [modalGerenciarTipos, setModalGerenciarTipos] = useState(false);
 
   useEffect(() => { carregarDados(); }, []);
 
@@ -464,16 +466,29 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
     }
   };
 
+  const abrirEditarTipo = (tipo) => {
+    setTipoEditando(tipo.id);
+    setFormTipo({ nome: tipo.nome, descricao: tipo.descricao || '', ativo: tipo.ativo });
+    setModalTipo(true);
+  };
+
   const salvarTipo = async (e) => {
     e.preventDefault();
     if (!formTipo.nome) { showError('Nome do tipo é obrigatório!'); return; }
     try {
-      const { data: existe } = await supabase.from('tipos_equipamentos').select('id').ilike('nome', formTipo.nome).single();
-      if (existe) { showError('Já existe um tipo com este nome!'); return; }
-      const { error } = await supabase.from('tipos_equipamentos').insert([formTipo]);
-      if (error) throw error;
-      showSuccess('Tipo cadastrado!');
+      if (tipoEditando) {
+        const { error } = await supabase.from('tipos_equipamentos').update({ nome: formTipo.nome, descricao: formTipo.descricao }).eq('id', tipoEditando);
+        if (error) throw error;
+        showSuccess('Tipo atualizado com sucesso!');
+      } else {
+        const { data: existe } = await supabase.from('tipos_equipamentos').select('id').ilike('nome', formTipo.nome).single();
+        if (existe) { showError('Já existe um tipo com este nome!'); return; }
+        const { error } = await supabase.from('tipos_equipamentos').insert([formTipo]);
+        if (error) throw error;
+        showSuccess('Tipo cadastrado!');
+      }
       setModalTipo(false);
+      setTipoEditando(null);
       setFormTipo({ nome: '', descricao: '', ativo: true });
       carregarDados();
     } catch (error) {
@@ -629,8 +644,11 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
           <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--color-text)' }}>🛠️ Gestão de Equipamentos</h2>
           {permissoes?.pode_editar_comodatos && (
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <button onClick={() => setModalTipo(true)} style={{ ...inp(), width: 'auto', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
+              <button onClick={() => { setTipoEditando(null); setFormTipo({ nome: '', descricao: '', ativo: true }); setModalTipo(true); }} style={{ ...inp(), width: 'auto', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
                 ➕ Novo Tipo
+              </button>
+              <button onClick={() => setModalGerenciarTipos(true)} style={{ ...inp(), width: 'auto', padding: '0.5rem 1rem', cursor: 'pointer', fontWeight: 600 }}>
+                ✏️ Gerenciar Tipos
               </button>
               <button onClick={() => setModalLote(true)} style={{ padding: '0.5rem 1rem', background: 'rgba(139,92,246,0.15)', color: '#8b5cf6', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 600 }}>
                 📦 Cadastro em Lote
@@ -909,8 +927,10 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
         <div style={modalOverlay}>
           <div style={modalBox('28rem')}>
             <div style={modalHead()}>
-              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>➕ Novo Tipo de Equipamento</h3>
-              <button onClick={() => setModalTipo(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>
+                {tipoEditando ? '✏️ Editar Tipo de Equipamento' : '➕ Novo Tipo de Equipamento'}
+              </h3>
+              <button onClick={() => { setModalTipo(false); setTipoEditando(null); setFormTipo({ nome: '', descricao: '', ativo: true }); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
             </div>
             <form onSubmit={salvarTipo} style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
@@ -923,11 +943,44 @@ export default function GestaoEquipamentos({ showSuccess, showError, permissoes 
               </div>
               <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
                 <button type="submit" style={{ flex: 1, padding: '0.65rem', background: 'var(--color-accent-bg)', color: 'var(--color-accent)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 'var(--radius-lg)', cursor: 'pointer', fontWeight: 700 }}>
-                  💾 Salvar Tipo
+                  {tipoEditando ? '✏️ Atualizar Tipo' : '💾 Salvar Tipo'}
                 </button>
-                <button type="button" onClick={() => setModalTipo(false)} style={{ ...inp(), width: 'auto', padding: '0.65rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+                <button type="button" onClick={() => { setModalTipo(false); setTipoEditando(null); setFormTipo({ nome: '', descricao: '', ativo: true }); }} style={{ ...inp(), width: 'auto', padding: '0.65rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Gerenciar Tipos ──────────────────────────────── */}
+      {modalGerenciarTipos && (
+        <div style={modalOverlay}>
+          <div style={modalBox('32rem')}>
+            <div style={modalHead()}>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--color-text)' }}>✏️ Gerenciar Tipos de Equipamento</h3>
+              <button onClick={() => setModalGerenciarTipos(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '60vh', overflowY: 'auto' }}>
+              {tipos.length === 0 && (
+                <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', fontSize: '0.875rem' }}>Nenhum tipo cadastrado.</p>
+              )}
+              {tipos.map((t, idx) => (
+                <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-lg)', background: idx % 2 === 0 ? 'var(--color-surface-2)' : 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.875rem', color: 'var(--color-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.nome}</p>
+                    {t.descricao && <p style={{ margin: '0.15rem 0 0', fontSize: '0.75rem', color: 'var(--color-text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.descricao}</p>}
+                  </div>
+                  <button
+                    onClick={() => { setModalGerenciarTipos(false); abrirEditarTipo(t); }}
+                    style={{ padding: '0.28rem 0.65rem', background: 'rgba(99,102,241,0.12)', color: '#6366f1', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    ✏️ Editar
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '0.75rem 1.25rem', borderTop: '1px solid var(--color-border)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setModalGerenciarTipos(false)} style={{ ...inp(), width: 'auto', padding: '0.55rem 1.25rem', cursor: 'pointer', fontWeight: 600 }}>Fechar</button>
+            </div>
           </div>
         </div>
       )}
