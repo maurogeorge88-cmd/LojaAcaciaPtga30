@@ -3,10 +3,11 @@ import { supabase } from '../../supabaseClient';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const TIPOS = [
-  { id: 'resumo_individual',   label: 'Resumo Individual',   emoji: '📋', desc: 'Financeiro, presença, comissões e eventos de cada irmão' },
-  { id: 'aniversariantes',     label: 'Aniversariantes',     emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
-  { id: 'lembrete_financeiro', label: 'Lembrete Financeiro', emoji: '⚠️', desc: 'Apenas irmãos com saldo devedor' },
-  { id: 'cronograma_mes',      label: 'Cronograma do Mês',   emoji: '📅', desc: 'Eventos do mês selecionado enviados aos irmãos' },
+  { id: 'resumo_individual',          label: 'Resumo Individual',          emoji: '📋', desc: 'Financeiro, presença, comissões e eventos de cada irmão' },
+  { id: 'aniversariantes',            label: 'Aniversariantes (Semana)',   emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
+  { id: 'felicitacoes_aniversario',   label: 'Felicitações Aniversário',  emoji: '🎉', desc: 'Envio automático de parabéns no dia + notificação ao responsável' },
+  { id: 'lembrete_financeiro',        label: 'Lembrete Financeiro',        emoji: '⚠️', desc: 'Apenas irmãos com saldo devedor' },
+  { id: 'cronograma_mes',             label: 'Cronograma do Mês',          emoji: '📅', desc: 'Eventos do mês selecionado enviados aos irmãos' },
 ];
 
 const FREQ = [
@@ -52,6 +53,8 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
   const [extrasAnivConfig, setExtrasAnivConfig] = useState([]);
   const [buscaAnivConfig, setBuscaAnivConfig] = useState('');
+  const [notifFelicConfig, setNotifFelicConfig] = useState([]);
+  const [buscaNotifFelic, setBuscaNotifFelic] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
   const [destinatariosExtras, setDestinatariosExtras] = useState([]);
   const [buscaExtra, setBuscaExtra] = useState('');
@@ -216,7 +219,11 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     setSalvandoConfig(modalConfig);
     try {
       const existente = configs.find(c => c.tipo === modalConfig);
-      const extrasIds = modalConfig === 'aniversariantes' ? extrasAnivConfig.map(e => e.id) : [];
+      const extrasIds = modalConfig === 'aniversariantes'
+        ? extrasAnivConfig.map(e => e.id)
+        : modalConfig === 'felicitacoes_aniversario'
+        ? notifFelicConfig.map(e => e.id)
+        : [];
       if (existente) {
         await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, destinatarios_extras_ids: extrasIds }).eq('id', existente.id);
       } else {
@@ -245,11 +252,19 @@ export default function EmailIrmaos({ showSuccess, showError }) {
           .map(i => ({ id: i.id, nome: i.nome, email: i.email }));
         setExtrasAnivConfig(extrasCarregados);
       }
+      // Carregar notificadores de felicitações
+      if (tipo === 'felicitacoes_aniversario') {
+        const notifIds = existente.destinatarios_extras_ids || [];
+        const notifCarregados = irmaos.filter(i => notifIds.includes(i.id) && i.email)
+          .map(i => ({ id: i.id, nome: i.nome, email: i.email }));
+        setNotifFelicConfig(notifCarregados);
+      }
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
       setIrmaosConfigSelec([]);
       setOpcoesConfig({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
       setExtrasAnivConfig([]);
+      setNotifFelicConfig([]);
     }
     setFiltroBuscaConfig('');
     setBuscaAnivConfig('');
@@ -418,6 +433,17 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               </>
             )}
 
+            {/* Info para felicitacoes_aniversario */}
+            {tipoSelec === 'felicitacoes_aniversario' && (
+              <div style={{ ...sCard, background: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.3)' }}>
+                <p style={{ color: 'var(--color-text)', margin: 0, fontSize: '0.875rem' }}>
+                  🎉 Este tipo funciona apenas de forma <strong>automática</strong>.<br/>
+                  Configure acima o horário e os responsáveis que receberão a confirmação de envio.<br/>
+                  No dia do aniversário, o sistema envia os parabéns ao irmão e notifica os responsáveis.
+                </p>
+              </div>
+            )}
+
             {/* Info + destinatários extras para aniversariantes */}
             {tipoSelec === 'aniversariantes' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -482,7 +508,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
             )}
 
             {/* Botão enviar */}
-            <button onClick={enviarManual} disabled={enviando}
+            {tipoSelec !== 'felicitacoes_aniversario' && <button onClick={enviarManual} disabled={enviando}
               style={{ padding: '0.75rem', background: enviando ? 'var(--color-surface-3)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', fontSize: '1rem', cursor: enviando ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}>
               {enviando
                 ? '📤 Enviando...'
@@ -491,7 +517,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   : tipoSelec === 'cronograma_mes'
                     ? `📅 Enviar cronograma de ${labelMesSel || '...'} para ${irmaosSelec.length} irmão(s)`
                     : `📤 Enviar para ${irmaosSelec.length} irmão(s)`}
-            </button>
+            </button>}
 
             {/* Resultados */}
             {resultados.length > 0 && (
@@ -517,7 +543,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               <p style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '0.95rem' }}>
                 {tipoSelec === 'aniversariantes' ? 'Irmãos com e-mail' : `${irmaosSelec.length === 0 ? 'Selecionar' : `${irmaosSelec.length} selecionado(s)`}`}
               </p>
-              {tipoSelec !== 'aniversariantes' && (
+              {tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' && (
                 <button onClick={selecionarTodos}
                   style={{ padding: '0.25rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer' }}>
                   {irmaosSelec.length === irmaosVisiveis.length ? 'Desmarcar todos' : 'Selecionar todos'}
@@ -532,9 +558,9 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               {irmaosVisiveis.map((irmao, idx) => {
                 const sel = irmaosSelec.includes(irmao.id);
                 return (
-                  <div key={irmao.id} onClick={() => tipoSelec !== 'aniversariantes' && toggleIrmao(irmao.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-lg)', background: sel ? 'var(--color-accent-bg)' : idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', border: '1px solid ' + (sel ? 'var(--color-accent)' : 'transparent'), cursor: tipoSelec !== 'aniversariantes' ? 'pointer' : 'default', transition: 'all 0.15s' }}>
-                    {tipoSelec !== 'aniversariantes' && (
+                  <div key={irmao.id} onClick={() => tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' && toggleIrmao(irmao.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-lg)', background: sel ? 'var(--color-accent-bg)' : idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', border: '1px solid ' + (sel ? 'var(--color-accent)' : 'transparent'), cursor: tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' ? 'pointer' : 'default', transition: 'all 0.15s' }}>
+                    {tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' && (
                       <input type="checkbox" checked={sel} readOnly
                         style={{ accentColor: 'var(--color-accent)', flexShrink: 0 }} />
                     )}
@@ -708,6 +734,59 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
                 </select>
               </div>
+
+              {/* Notificadores — só para felicitacoes_aniversario */}
+              {modalConfig === 'felicitacoes_aniversario' && (
+                <div>
+                  <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', marginBottom: '0.75rem' }}>
+                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text)' }}>
+                      🎉 No dia do aniversário, o sistema enviará automaticamente o e-mail de parabéns ao irmão.<br/>
+                      📬 Os responsáveis abaixo receberão uma notificação confirmando o envio.
+                    </p>
+                  </div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
+                    📬 Quem recebe a confirmação de envio
+                  </label>
+                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem' }}>
+                    ℹ️ Venerável e Chanceler já recebem automaticamente. Adicione outros responsáveis fixos abaixo.
+                  </p>
+                  <input type="text" placeholder="🔍 Buscar irmão..." value={buscaNotifFelic}
+                    onChange={e => setBuscaNotifFelic(e.target.value)}
+                    style={{ width: '100%', padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.35rem' }} />
+                  {buscaNotifFelic.trim().length >= 2 && (
+                    <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', marginBottom: '0.35rem' }}>
+                      {irmaos
+                        .filter(i => i.email && i.nome.toLowerCase().includes(buscaNotifFelic.toLowerCase()) && !notifFelicConfig.find(e => e.id === i.id))
+                        .slice(0, 8)
+                        .map((i, idx) => (
+                          <div key={i.id}
+                            onClick={() => { setNotifFelicConfig(prev => [...prev, { id: i.id, nome: i.nome, email: i.email }]); setBuscaNotifFelic(''); }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.6rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.78rem' }}>
+                            <span style={{ flex: 1, color: 'var(--color-text)', fontWeight: '600' }}>{i.nome}</span>
+                            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>{i.email}</span>
+                            <span style={{ color: 'var(--color-accent)', fontWeight: '700', fontSize: '0.75rem' }}>+ Add</span>
+                          </div>
+                        ))}
+                      {irmaos.filter(i => i.email && i.nome.toLowerCase().includes(buscaNotifFelic.toLowerCase()) && !notifFelicConfig.find(e => e.id === i.id)).length === 0 && (
+                        <div style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>Nenhum irmão encontrado com e-mail.</div>
+                      )}
+                    </div>
+                  )}
+                  {notifFelicConfig.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                      {notifFelicConfig.map(e => (
+                        <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.22rem 0.55rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600' }}>
+                          {e.nome}
+                          <button onClick={() => setNotifFelicConfig(prev => prev.filter(x => x.id !== e.id))}
+                            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', padding: 0, fontSize: '0.85rem', lineHeight: 1 }}>×</button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', margin: 0 }}>Nenhum responsável adicional. Digite acima para buscar.</p>
+                  )}
+                </div>
+              )}
 
               {/* Destinatários extras — só para aniversariantes */}
               {modalConfig === 'aniversariantes' && (
