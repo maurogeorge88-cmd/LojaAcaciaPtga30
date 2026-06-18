@@ -116,14 +116,16 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
             nome: familiares.conjuge.nome,
             data_nascimento: familiares.conjuge.data_nascimento,
             data_casamento: familiares.conjuge.data_casamento,
-            profissao: familiares.conjuge.profissao
+            profissao: familiares.conjuge.profissao,
+            email: familiares.conjuge.email || null
           }).eq('irmao_id', irmaoId);
         } else {
           await supabase.from('esposas').insert({
             irmao_id: irmaoId, nome: familiares.conjuge.nome,
             data_nascimento: familiares.conjuge.data_nascimento,
             data_casamento: familiares.conjuge.data_casamento,
-            profissao: familiares.conjuge.profissao
+            profissao: familiares.conjuge.profissao,
+            email: familiares.conjuge.email || null
           });
         }
       }
@@ -1387,6 +1389,19 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>E-mail</label>
+                      <input
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        value={familiares.conjuge?.email || ''}
+                        onChange={(e) => setFamiliares({
+                          ...familiares,
+                          conjuge: { ...familiares.conjuge, email: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      />
+                    </div>
                   </div>
                 ) : (
                   familiares.conjuge && (
@@ -1415,6 +1430,12 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                         <div>
                           <span className="font-semibold">Profissão:</span>
                           <span className="ml-2">{familiares.conjuge.profissao}</span>
+                        </div>
+                      )}
+                      {familiares.conjuge.email && (
+                        <div>
+                          <span className="font-semibold">E-mail:</span>
+                          <span className="ml-2">{familiares.conjuge.email}</span>
                         </div>
                       )}
                     </div>
