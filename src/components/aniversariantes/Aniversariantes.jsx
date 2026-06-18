@@ -114,6 +114,7 @@ export default function Aniversariantes() {
   const [salvandoEvento, setSalvandoEvento] = useState(false);
   const [enviandoEmail, setEnviandoEmail]   = useState(null); // irmao_id em envio
   const [emailEnviados, setEmailEnviados]   = useState({});   // { irmao_id: true }
+  const [emailEnviadosEsposas, setEmailEnviadosEsposas] = useState({});  // { esposa_id: true }
   const [modalEmail, setModalEmail]         = useState(null); // irmao para preview
   const [dadosLoja, setDadosLoja]           = useState({});
   const [chanceler, setChanceler]           = useState('');
@@ -142,7 +143,7 @@ export default function Aniversariantes() {
         .maybeSingle();
       if (ca?.irmaos?.nome) setChanceler(ca.irmaos.nome);
 
-      // Emails já enviados este ano
+      // Emails já enviados este ano — irmãos
       const { data: enviados } = await supabase
         .from('emails_aniversario')
         .select('irmao_id')
@@ -151,6 +152,17 @@ export default function Aniversariantes() {
         const mapa = {};
         enviados.forEach(e => { mapa[e.irmao_id] = true; });
         setEmailEnviados(mapa);
+      }
+
+      // Emails já enviados para esposas este ano
+      const { data: enviadosEsposas } = await supabase
+        .from('emails_aniversario_esposas')
+        .select('esposa_id')
+        .eq('ano', new Date().getFullYear());
+      if (enviadosEsposas) {
+        const mapaEsposas = {};
+        enviadosEsposas.forEach(e => { mapaEsposas[e.esposa_id] = true; });
+        setEmailEnviadosEsposas(mapaEsposas);
       }
     } catch (e) {
       console.error('Erro ao carregar dados para email:', e);
@@ -308,6 +320,31 @@ export default function Aniversariantes() {
       alert(`✅ Email enviado com sucesso para ${irmao.nome}!`);
     } catch (e) {
       alert(`❌ Erro ao enviar email: ${e.message}`);
+    } finally {
+      setEnviandoEmail(null);
+    }
+  };
+
+  const handleEnviarEmailEsposa = async (aniv) => {
+    if (!aniv.email) { alert('Esta cunhada não possui e-mail cadastrado.'); return; }
+    setEnviandoEmail(`esposa_${aniv.esposa_id}`);
+    try {
+      const nomeLoja = dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
+      const logoUrl  = dadosLoja.logo_url  || '';
+      const { data, error } = await supabase.functions.invoke('enviar-aniversario', {
+        body: { esposaId: aniv.esposa_id, irmaoNome: aniv.irmao_responsavel }
+      });
+      if (error) throw new Error(error.message);
+      // Registrar envio
+      await supabase.from('emails_aniversario_esposas').insert({
+        esposa_id: aniv.esposa_id,
+        ano: new Date().getFullYear(),
+        modo: 'manual'
+      });
+      setEmailEnviadosEsposas(prev => ({ ...prev, [aniv.esposa_id]: true }));
+      alert(`✅ Felicitações enviadas para ${aniv.nome}!`);
+    } catch (e) {
+      alert(`❌ Erro ao enviar: ${e.message}`);
     } finally {
       setEnviandoEmail(null);
     }
@@ -860,7 +897,7 @@ export default function Aniversariantes() {
       // ESPOSAS de irmãos vivos
       const { data: esposas } = await supabase
         .from('esposas')
-        .select('nome, data_nascimento, irmao_id, irmaos(nome, situacao)')
+        .select('id, nome, data_nascimento, email, irmao_id, irmaos(nome, situacao)')
         .in('irmao_id', irmaoVivosIds);
 
       console.log('✅ Esposas:', esposas?.length);
@@ -901,6 +938,9 @@ export default function Aniversariantes() {
               data_nascimento: dataNasc,
               idade,
               irmao_responsavel: esposa.irmaos?.nome,
+              irmao_id: esposa.irmao_id,
+              esposa_id: esposa.id,
+              email: esposa.email || null,
               nivel: 2
             });
           }
@@ -1475,6 +1515,36 @@ export default function Aniversariantes() {
                   }}>
                   📧 {emailEnviados[aniv.irmao_id] ? 'Enviar novamente' : 'Enviar Parabéns'}
                 </button>
+              </div>
+            )}
+
+            {/* Botão enviar email — para esposas/cunhadas */}
+            {aniv.tipo === 'Esposa' && (
+              <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {emailEnviadosEsposas[aniv.esposa_id] && (
+                  <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                    ✅ Já felicitada
+                  </span>
+                )}
+                {aniv.email ? (
+                  <button
+                    onClick={e => { e.stopPropagation(); handleEnviarEmailEsposa(aniv); }}
+                    disabled={enviandoEmail === `esposa_${aniv.esposa_id}`}
+                    style={{
+                      padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                      background: emailEnviadosEsposas[aniv.esposa_id] ? 'transparent' : 'rgba(236,72,153,0.10)',
+                      border: emailEnviadosEsposas[aniv.esposa_id] ? '1px solid var(--color-border)' : '1px solid rgba(236,72,153,0.4)',
+                      borderRadius: 'var(--radius-md)',
+                      color: emailEnviadosEsposas[aniv.esposa_id] ? 'var(--color-text-muted)' : '#ec4899',
+                      cursor: enviandoEmail === `esposa_${aniv.esposa_id}` ? 'not-allowed' : 'pointer',
+                    }}>
+                    🌸 {enviandoEmail === `esposa_${aniv.esposa_id}` ? 'Enviando...' : emailEnviadosEsposas[aniv.esposa_id] ? 'Enviar novamente' : 'Enviar Felicitações'}
+                  </button>
+                ) : (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                    📭 Sem e-mail cadastrado
+                  </span>
+                )}
               </div>
             )}
           </div>
