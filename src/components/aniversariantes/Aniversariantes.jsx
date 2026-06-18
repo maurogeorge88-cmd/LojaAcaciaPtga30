@@ -123,7 +123,7 @@ export default function Aniversariantes() {
 
   useEffect(() => {
     carregarAniversariantes();
-  }, [filtro]);
+  }, [filtro, mesFiltro]);
 
   useEffect(() => {
     carregarDadosEmail();
@@ -1264,7 +1264,8 @@ export default function Aniversariantes() {
             const deveMostrar = filtro === 'todos' || 
               (filtro === 'hoje' && ehHoje) ||
               (filtro === 'semana' && proximoEvento <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-              (filtro === 'mes' && proximoEvento.getMonth() === hoje.getMonth());
+              (filtro === 'mes' && proximoEvento.getMonth() === hoje.getMonth()) ||
+              (filtro === 'mes_especifico' && proximoEvento.getMonth() + 1 === mesFiltro);
 
             if (deveMostrar) {
               aniversariantesEventos.push({
