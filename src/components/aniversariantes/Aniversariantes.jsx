@@ -1340,12 +1340,30 @@ export default function Aniversariantes() {
       aniversariantesEventos.sort((a, b) => a.proximo_aniversario - b.proximo_aniversario);
 
       // Combinar todos em uma lista única mantendo os níveis
-      const todosAniversariantes = [
+      // Deduplicar: se mesmo nome e mesma data, manter Esposa sobre Filha
+      const todosRaw = [
         ...aniversariantesIrmaos,
         ...familiaresConsolidados,
         ...aniversariantesEventos,
         ...aniversariantesInMemoriam
       ];
+
+      const todosAniversariantes = todosRaw.reduce((acc, item) => {
+        const chave = `${item.nome?.toLowerCase().trim()}_${item.data_nascimento ? new Date(item.data_nascimento).toISOString().split('T')[0] : ''}`;
+        const existente = acc.findIndex(a => {
+          const c = `${a.nome?.toLowerCase().trim()}_${a.data_nascimento ? new Date(a.data_nascimento).toISOString().split('T')[0] : ''}`;
+          return c === chave;
+        });
+        if (existente === -1) {
+          acc.push(item);
+        } else {
+          // Priorizar Esposa sobre Filha (tem botão de felicitações)
+          if (item.tipo === 'Esposa' && acc[existente].tipo !== 'Esposa') {
+            acc[existente] = item;
+          }
+        }
+        return acc;
+      }, []);
 
       console.log('🎂 Total Irmãos:', aniversariantesIrmaos.length);
       console.log('🎂 Total Familiares:', aniversariantesFamiliares.length);
