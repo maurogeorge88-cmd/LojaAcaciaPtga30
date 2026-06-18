@@ -113,8 +113,9 @@ export default function Aniversariantes() {
   const [eventoEditando, setEventoEditando] = useState(null);
   const [salvandoEvento, setSalvandoEvento] = useState(false);
   const [enviandoEmail, setEnviandoEmail]   = useState(null); // irmao_id em envio
-  const [emailEnviados, setEmailEnviados]   = useState({});   // { irmao_id: true }
-  const [emailEnviadosEsposas, setEmailEnviadosEsposas] = useState({});  // { esposa_id: true }
+  const [emailEnviados, setEmailEnviados]   = useState({});
+  const [emailEnviadosEsposas, setEmailEnviadosEsposas] = useState({});
+  const [emailEnviadosBodas, setEmailEnviadosBodas] = useState({});
   const [modalEmail, setModalEmail]         = useState(null); // irmao para preview
   const [dadosLoja, setDadosLoja]           = useState({});
   const [chanceler, setChanceler]           = useState('');
@@ -163,6 +164,17 @@ export default function Aniversariantes() {
         const mapaEsposas = {};
         enviadosEsposas.forEach(e => { mapaEsposas[e.esposa_id] = true; });
         setEmailEnviadosEsposas(mapaEsposas);
+      }
+
+      // Emails de bodas já enviados este ano
+      const { data: enviadosBodas } = await supabase
+        .from('emails_bodas')
+        .select('esposa_id')
+        .eq('ano', new Date().getFullYear());
+      if (enviadosBodas) {
+        const mapaBodas = {};
+        enviadosBodas.forEach(e => { mapaBodas[e.esposa_id] = true; });
+        setEmailEnviadosBodas(mapaBodas);
       }
     } catch (e) {
       console.error('Erro ao carregar dados para email:', e);
@@ -343,6 +355,31 @@ export default function Aniversariantes() {
       });
       setEmailEnviadosEsposas(prev => ({ ...prev, [aniv.esposa_id]: true }));
       alert(`✅ Felicitações enviadas para ${aniv.nome}!`);
+    } catch (e) {
+      alert(`❌ Erro ao enviar: ${e.message}`);
+    } finally {
+      setEnviandoEmail(null);
+    }
+  };
+
+  const handleEnviarBodas = async (aniv) => {
+    if (!aniv.email_irmao && !aniv.email_esposa) {
+      alert('Nenhum dos dois possui e-mail cadastrado.');
+      return;
+    }
+    setEnviandoEmail(`bodas_${aniv.esposa_id}`);
+    try {
+      const { data, error } = await supabase.functions.invoke('email-aniversario', {
+        body: { bodasId: aniv.esposa_id }
+      });
+      if (error) throw new Error(error.message);
+      await supabase.from('emails_bodas').insert({
+        esposa_id: aniv.esposa_id,
+        ano: new Date().getFullYear(),
+        modo: 'manual'
+      });
+      setEmailEnviadosBodas(prev => ({ ...prev, [aniv.esposa_id]: true }));
+      alert(`✅ Felicitações de Bodas enviadas!`);
     } catch (e) {
       alert(`❌ Erro ao enviar: ${e.message}`);
     } finally {
@@ -1242,7 +1279,7 @@ export default function Aniversariantes() {
       try {
         const { data: esposasCasamento } = await supabase
           .from('esposas')
-          .select('nome, data_casamento, irmao_id, irmaos(nome, situacao)')
+          .select('id, nome, data_casamento, email, irmao_id, irmaos(id, nome, email, situacao)')
           .in('irmao_id', irmaoVivosIds);
         
         if (esposasCasamento) {
@@ -1276,6 +1313,10 @@ export default function Aniversariantes() {
                 data_nascimento: dataCas,
                 idade: anosDeUniao,
                 irmao_responsavel: esposa.irmaos?.nome,
+                esposa_id: esposa.id,
+                irmao_id: esposa.irmao_id,
+                email_esposa: esposa.email || null,
+                email_irmao: esposa.irmaos?.email || null,
                 nivel: 2,
                 icone: '💑'
               });
@@ -1542,7 +1583,7 @@ export default function Aniversariantes() {
               </div>
             )}
 
-            {/* Botão enviar email — para esposas/cunhadas */}
+            {/* Botão enviar email — para esposas/cunhadas (pelo tipo ou pelo esposa_id) */}
             {(aniv.tipo === 'Esposa' || aniv.tipo?.includes('Esposa')) && (
               <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {emailEnviadosEsposas[aniv.esposa_id] && (
@@ -1567,6 +1608,36 @@ export default function Aniversariantes() {
                 ) : (
                   <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                     📭 Sem e-mail cadastrado
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Botão enviar — para Bodas */}
+            {aniv.tipo === 'Bodas' && (
+              <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                {emailEnviadosBodas[aniv.esposa_id] && (
+                  <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                    ✅ Já parabenizados
+                  </span>
+                )}
+                {(aniv.email_irmao || aniv.email_esposa) ? (
+                  <button
+                    onClick={e => { e.stopPropagation(); handleEnviarBodas(aniv); }}
+                    disabled={enviandoEmail === `bodas_${aniv.esposa_id}`}
+                    style={{
+                      padding: '0.3rem 0.75rem', fontSize: '0.75rem', fontWeight: 600,
+                      background: emailEnviadosBodas[aniv.esposa_id] ? 'transparent' : 'rgba(201,168,76,0.12)',
+                      border: emailEnviadosBodas[aniv.esposa_id] ? '1px solid var(--color-border)' : '1px solid rgba(201,168,76,0.4)',
+                      borderRadius: 'var(--radius-md)',
+                      color: emailEnviadosBodas[aniv.esposa_id] ? 'var(--color-text-muted)' : 'var(--color-accent)',
+                      cursor: enviandoEmail === `bodas_${aniv.esposa_id}` ? 'not-allowed' : 'pointer',
+                    }}>
+                    💑 {enviandoEmail === `bodas_${aniv.esposa_id}` ? 'Enviando...' : emailEnviadosBodas[aniv.esposa_id] ? 'Enviar novamente' : 'Parabéns pelas Bodas'}
+                  </button>
+                ) : (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                    📭 Nenhum e-mail cadastrado
                   </span>
                 )}
               </div>
