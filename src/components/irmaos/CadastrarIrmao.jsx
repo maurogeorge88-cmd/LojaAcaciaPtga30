@@ -68,7 +68,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
     cpf: '',
     data_nascimento: '',
     data_casamento: '',
-    profissao: ''
+    profissao: '',
+    email: ''
   });
 
   const [pais, setPais] = useState({
@@ -324,7 +325,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
           cpf: esposaData.cpf || '',
           data_nascimento: esposaData.data_nascimento || '',
           data_casamento: esposaData.data_casamento || '',
-          profissao: esposaData.profissao || ''
+          profissao: esposaData.profissao || '',
+          email: esposaData.email || ''
         });
       } else {
         setMostrarConjuge(false);
@@ -549,7 +551,8 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
             cpf: limparCPF(conjuge.cpf),
             data_nascimento: conjuge.data_nascimento || null,
             data_casamento: conjuge.data_casamento || null,
-            profissao: conjuge.profissao || null
+            profissao: conjuge.profissao || null,
+            email: conjuge.email || null
           };
 
           console.log('💾 SALVANDO ESPOSA:', dadosConjuge);
@@ -804,7 +807,7 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
       observacoes: '',
       status: 'ativo'
     });
-    setConjuge({ nome: '', cpf: '', data_nascimento: '', data_casamento: '', profissao: '' });
+    setConjuge({ nome: '', cpf: '', data_nascimento: '', data_casamento: '', profissao: '', email: '' });
     setPais({ nome_pai: '', pai_vivo: true, data_nascimento_pai: '', data_obito_pai: '', nome_mae: '', mae_viva: true, data_nascimento_mae: '', data_obito_mae: '' });
     setFilhos([]);
     setFilhoForm({ nome: '', data_nascimento: '', sexo: 'M' });
@@ -1726,6 +1729,18 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                         type="text"
                         value={conjuge.profissao}
                         onChange={(e) => setConjuge({ ...conjuge, profissao: e.target.value })}
+                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                        E-mail
+                      </label>
+                      <input
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        value={conjuge.email}
+                        onChange={(e) => setConjuge({ ...conjuge, email: e.target.value })}
                         className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                       />
                     </div>
