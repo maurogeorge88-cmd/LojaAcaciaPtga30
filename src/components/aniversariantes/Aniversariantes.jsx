@@ -331,7 +331,7 @@ export default function Aniversariantes() {
     try {
       const nomeLoja = dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30';
       const logoUrl  = dadosLoja.logo_url  || '';
-      const { data, error } = await supabase.functions.invoke('enviar-aniversario', {
+      const { data, error } = await supabase.functions.invoke('email-aniversario', {
         body: { esposaId: aniv.esposa_id, irmaoNome: aniv.irmao_responsavel }
       });
       if (error) throw new Error(error.message);
