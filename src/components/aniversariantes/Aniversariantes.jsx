@@ -100,6 +100,7 @@ const obterEmojiPessoa = (idade, sexo, tipo = null) => {
 export default function Aniversariantes() {
   const [aniversariantes, setAniversariantes] = useState([]);
   const [filtro, setFiltro] = useState('hoje');
+  const [mesFiltro, setMesFiltro] = useState(new Date().getMonth() + 1);
   const [loading, setLoading] = useState(true);
   const [modalEventos, setModalEventos] = useState(false);
   const [eventosCustomizados, setEventosCustomizados] = useState([]);
@@ -849,7 +850,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -910,7 +912,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -963,7 +966,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1019,7 +1023,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1081,7 +1086,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1138,7 +1144,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1196,7 +1203,8 @@ export default function Aniversariantes() {
           const deveMostrar = filtro === 'todos' || 
             (filtro === 'hoje' && ehHoje) ||
             (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1302,7 +1310,8 @@ export default function Aniversariantes() {
             const deveMostrar = filtro === 'todos' || 
               (filtro === 'hoje' && ehHoje) ||
               (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-              (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth());
+              (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
             if (deveMostrar) {
               const anosDeUniao = hoje.getFullYear() - dataCas.getFullYear();
@@ -1687,11 +1696,12 @@ export default function Aniversariantes() {
         </div>
 
         {/* Filtros */}
-        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {[
             { id: 'hoje',   label: '📅 Hoje' },
             { id: 'semana', label: '📆 7 Dias' },
             { id: 'mes',    label: '📊 Este Mês' },
+            { id: 'mes_especifico', label: '🗓️ Mês' },
             { id: 'todos',  label: '📋 Todos' },
           ].map(({ id, label }) => (
             <button key={id} onClick={() => setFiltro(id)} style={{
@@ -1705,6 +1715,13 @@ export default function Aniversariantes() {
               {label}
             </button>
           ))}
+          {filtro === 'mes_especifico' && (
+            <select value={mesFiltro} onChange={e => setMesFiltro(parseInt(e.target.value))}
+              style={{ padding: '0.42rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(201,168,76,0.4)', background: 'var(--color-surface-2)', color: 'var(--color-accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
+              {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+                .map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+            </select>
+          )}
         </div>
       </div>
 
