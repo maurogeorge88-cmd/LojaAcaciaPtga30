@@ -1325,6 +1325,12 @@ export default function Aniversariantes() {
           // Atualizar tipo para mostrar que tem múltiplos vínculos
           const tipos = familiarExistente.vinculos.map(v => v.tipo);
           familiarExistente.tipo = tipos.join(' / ');
+
+          // Se o novo vínculo é Esposa, preservar esposa_id e email
+          if (familiar.tipo === 'Esposa') {
+            familiarExistente.esposa_id = familiar.esposa_id;
+            familiarExistente.email = familiar.email;
+          }
           
         } else {
           // Primeiro registro deste familiar
@@ -1537,7 +1543,7 @@ export default function Aniversariantes() {
             )}
 
             {/* Botão enviar email — para esposas/cunhadas */}
-            {aniv.tipo === 'Esposa' && (
+            {(aniv.tipo === 'Esposa' || aniv.tipo?.includes('Esposa')) && (
               <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {emailEnviadosEsposas[aniv.esposa_id] && (
                   <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
