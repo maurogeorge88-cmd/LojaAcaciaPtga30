@@ -103,6 +103,8 @@ export default function Aniversariantes() {
   const [mesFiltro, setMesFiltro] = useState(new Date().getMonth() + 1);
   const [abaAtiva, setAbaAtiva] = useState('festividades');
   const [periodoRelatorio, setPeriodoRelatorio] = useState('semanal');
+  const [trimestreSel, setTrimestreSel] = useState(Math.floor(new Date().getMonth() / 3));
+  const [semestreSel, setSemestreSel] = useState(new Date().getMonth() < 6 ? 0 : 1);
   const [todosAniversariantes, setTodosAniversariantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalEventos, setModalEventos] = useState(false);
@@ -1681,27 +1683,24 @@ export default function Aniversariantes() {
   const calcularIntervalo = (periodo) => {
     const hoje = new Date();
     const ano = hoje.getFullYear();
-    const mes = hoje.getMonth();
     switch (periodo) {
       case 'semanal': {
         const diaSemana = hoje.getDay();
         const diasAteSeg = diaSemana === 0 ? -6 : 1 - diaSemana;
-        const seg = new Date(hoje); seg.setDate(hoje.getDate() + diasAteSeg);
-        const dom = new Date(seg); dom.setDate(seg.getDate() + 6);
-        return { inicio: seg, fim: dom, label: `${seg.toLocaleDateString('pt-BR')} — ${dom.toLocaleDateString('pt-BR')}` };
+        const seg = new Date(hoje); seg.setDate(hoje.getDate() + diasAteSeg); seg.setHours(0,0,0,0);
+        const dom = new Date(seg); dom.setDate(seg.getDate() + 6); dom.setHours(23,59,59,999);
+        return { inicio: seg, fim: dom, label: `${seg.toLocaleDateString('pt-BR')} — ${dom.toLocaleDateString('pt-BR')}`, mesBaixo: seg.getMonth(), mesAlto: dom.getMonth() };
       }
       case 'trimestral': {
-        const trim = Math.floor(mes / 3);
-        const inicio = new Date(ano, trim * 3, 1);
-        const fim = new Date(ano, trim * 3 + 3, 0);
-        const nomes = ['Jan–Mar', 'Abr–Jun', 'Jul–Set', 'Out–Dez'];
-        return { inicio, fim, label: `${nomes[trim]} / ${ano}` };
+        const inicio = new Date(ano, trimestreSel * 3, 1);
+        const fim = new Date(ano, trimestreSel * 3 + 3, 0);
+        const nomes = ['1º Trim (Jan–Mar)', '2º Trim (Abr–Jun)', '3º Trim (Jul–Set)', '4º Trim (Out–Dez)'];
+        return { inicio, fim, label: `${nomes[trimestreSel]} / ${ano}` };
       }
       case 'semestral': {
-        const sem = mes < 6 ? 0 : 1;
-        const inicio = new Date(ano, sem * 6, 1);
-        const fim = new Date(ano, sem * 6 + 6, 0);
-        return { inicio, fim, label: `${sem === 0 ? '1º' : '2º'} Semestre / ${ano}` };
+        const inicio = new Date(ano, semestreSel * 6, 1);
+        const fim = new Date(ano, semestreSel * 6 + 6, 0);
+        return { inicio, fim, label: `${semestreSel === 0 ? '1º' : '2º'} Semestre / ${ano}` };
       }
       default:
         return { inicio: new Date(ano, 0, 1), fim: new Date(ano, 11, 31), label: `Ano ${ano}` };
@@ -1710,15 +1709,31 @@ export default function Aniversariantes() {
 
   const filtrarPorPeriodo = (lista, periodo) => {
     const { inicio, fim } = calcularIntervalo(periodo);
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+
     return lista.filter(item => {
       const d = item.proximo_aniversario;
       if (!d) return false;
       const data = d instanceof Date ? d : new Date(d);
-      return data >= inicio && data <= fim;
+      // Comparar dia e mês dentro do intervalo, ignorando ano
+      const diaMes = new Date(inicio.getFullYear(), data.getMonth(), data.getDate());
+      // Para semanal, o intervalo pode cruzar o ano-novo
+      if (periodo === 'semanal') {
+        return diaMes >= inicio && diaMes <= fim;
+      }
+      // Para os demais: verificar se mês/dia caem dentro do intervalo
+      const mesInicio = inicio.getMonth();
+      const mesFim = fim.getMonth();
+      const mes = data.getMonth();
+      const dia = data.getDate();
+      const diaNoIntervalo = new Date(inicio.getFullYear(), mes, dia);
+      return diaNoIntervalo >= inicio && diaNoIntervalo <= fim;
     }).sort((a, b) => {
-      const da = a.proximo_aniversario instanceof Date ? a.proximo_aniversario : new Date(a.proximo_aniversario);
-      const db = b.proximo_aniversario instanceof Date ? b.proximo_aniversario : new Date(b.proximo_aniversario);
-      return da - db;
+      const getMesDia = (item) => {
+        const d = item.proximo_aniversario instanceof Date ? item.proximo_aniversario : new Date(item.proximo_aniversario);
+        return d.getMonth() * 100 + d.getDate();
+      };
+      return getMesDia(a) - getMesDia(b);
     });
   };
 
@@ -2180,6 +2195,97 @@ export default function Aniversariantes() {
           return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         };
 
+        const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
+
+        const isPassado = (item) => {
+          const d = item.proximo_aniversario;
+          if (!d) return false;
+          const data = d instanceof Date ? d : new Date(d);
+          const diaMes = new Date(hoje2.getFullYear(), data.getMonth(), data.getDate());
+          return diaMes < hoje2;
+        };
+
+        const gerarPDFVisaoGeral = (felic, fam, com, inMem, labelPeriodo) => {
+          const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+          const margin = 14; const colRight = 196; let y = 14;
+          const nomesLoja = dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga nº 30';
+
+          const txt = (text, x, yy, opts = {}) => {
+            doc.setFontSize(opts.size || 9); doc.setFont('helvetica', opts.bold ? 'bold' : 'normal');
+            if (opts.color) doc.setTextColor(...opts.color); else doc.setTextColor(30, 30, 30);
+            doc.text(String(text), x, yy, { align: opts.align || 'left', maxWidth: opts.maxWidth });
+            doc.setTextColor(30, 30, 30);
+          };
+
+          // Cabeçalho
+          doc.setFillColor(30, 58, 95); doc.roundedRect(margin, y, colRight - margin, 14, 2, 2, 'F');
+          txt('Relatorio de Comemorativos e Eventos', margin + 3, y + 5.5, { bold: true, size: 11, color: [255,255,255] });
+          txt(labelPeriodo, colRight - 3, y + 5.5, { size: 8, color: [180,210,255], align: 'right' });
+          txt(`Gerado em ${new Date().toLocaleDateString('pt-BR')}`, colRight - 3, y + 10.5, { size: 7, color: [150,190,230], align: 'right' });
+          y += 18;
+
+          const renderTabela = (titulo, dados, colunas, corRgb) => {
+            if (dados.length === 0) return;
+            if (y > 240) { doc.addPage(); y = 14; }
+            doc.setFillColor(...corRgb); doc.roundedRect(margin, y, colRight - margin, 7, 1, 1, 'F');
+            txt(titulo, margin + 3, y + 4.8, { bold: true, size: 9, color: [255,255,255] });
+            txt(`${dados.length} registro${dados.length !== 1 ? 's' : ''}`, colRight - 3, y + 4.8, { size: 8, color: [220,230,255], align: 'right' });
+            y += 9;
+            // header cols
+            doc.setFillColor(240, 242, 248); doc.rect(margin, y, colRight - margin, 5.5, 'F');
+            colunas.forEach(c => txt(c.label, c.x, y + 3.8, { size: 7, bold: true, color: [80,80,120] }));
+            y += 6;
+            dados.forEach((item, idx) => {
+              if (y > 270) { doc.addPage(); y = 14; }
+              if (idx % 2 === 0) { doc.setFillColor(248,249,252); doc.rect(margin, y - 1, colRight - margin, 6.5, 'F'); }
+              colunas.forEach(c => txt(c.render ? c.render(item) : String(item[c.key] || '—'), c.x, y + 3.5, { size: 7.5, bold: c.bold, maxWidth: c.maxWidth }));
+              y += 6.5;
+            });
+            y += 4;
+          };
+
+          const fmtD = (item) => {
+            const d = item.proximo_aniversario;
+            if (!d) return '—';
+            const dt = d instanceof Date ? d : new Date(d);
+            return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+          };
+
+          renderTabela('Felicitacoes - Irmaos e Cunhadas', felic, [
+            { label: 'DATA', x: margin + 2, render: fmtD },
+            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 80 },
+            { label: 'TIPO', x: margin + 110, render: i => i.tipo === 'Irmao' ? 'Irmao' : 'Cunhada' },
+            { label: 'IDADE', x: margin + 140, render: i => i.idade ? `${i.idade} anos` : '—' },
+          ], [30, 70, 130]);
+
+          renderTabela('Familia - Pais, Filhos e Bodas', fam, [
+            { label: 'DATA', x: margin + 2, render: fmtD },
+            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 70 },
+            { label: 'TIPO', x: margin + 100, key: 'tipo' },
+            { label: 'IRMAO RESP.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—', maxWidth: 55 },
+          ], [16, 120, 90]);
+
+          renderTabela('Datas Comemorativas', com, [
+            { label: 'DATA', x: margin + 2, render: fmtD },
+            { label: 'EVENTO', x: margin + 20, key: 'nome', bold: true, maxWidth: 100 },
+            { label: 'TIPO', x: margin + 130, key: 'tipo' },
+          ], [200, 130, 10]);
+
+          renderTabela('In Memoriam', inMem, [
+            { label: 'DATA', x: margin + 2, render: fmtD },
+            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 100 },
+            { label: 'REF.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—' },
+          ], [120, 120, 130]);
+
+          const total = doc.internal.getNumberOfPages();
+          for (let i = 1; i <= total; i++) {
+            doc.setPage(i); doc.setFontSize(7); doc.setTextColor(150,150,160);
+            doc.text(`Pagina ${i} de ${total}`, colRight - 3, 290, { align: 'right' });
+            doc.text(`SysMacom - ${nomesLoja}`, margin, 290);
+          }
+          doc.save(`comemorativos-${labelPeriodo.replace(/[^a-zA-Z0-9]/g,'-')}.pdf`);
+        };
+
         const TabelaSection = ({ titulo, cor, dados, colunas }) => dados.length === 0 ? null : (
           <div style={{ marginBottom: '1.5rem', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: `1px solid ${cor}40` }}>
             <div style={{ background: `${cor}18`, padding: '0.65rem 1rem', borderBottom: `1px solid ${cor}30`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2194,15 +2300,18 @@ export default function Aniversariantes() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dados.map((item, idx) => (
-                    <tr key={idx} style={{ borderTop: '1px solid var(--color-border)', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)' }}>
+                  {dados.map((item, idx) => {
+                    const passou = isPassado(item);
+                    return (
+                    <tr key={idx} style={{ borderTop: '1px solid var(--color-border)', background: passou ? 'rgba(0,0,0,0.04)' : idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', opacity: passou ? 0.6 : 1 }}>
                       {colunas.map(c => (
-                        <td key={c.key} style={{ padding: '0.5rem 0.75rem', color: c.color || 'var(--color-text)', fontWeight: c.bold ? 700 : 400, whiteSpace: c.nowrap ? 'nowrap' : 'normal' }}>
+                        <td key={c.key} style={{ padding: '0.5rem 0.75rem', color: passou ? 'var(--color-text-muted)' : c.color || 'var(--color-text)', fontWeight: c.bold ? 700 : 400, whiteSpace: c.nowrap ? 'nowrap' : 'normal' }}>
                           {c.render ? c.render(item) : item[c.key] || '—'}
                         </td>
                       ))}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -2212,25 +2321,61 @@ export default function Aniversariantes() {
         return (
           <div>
             {/* Seletor de período */}
-            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1rem 1.25rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-text)' }}>📅 Período:</span>
-              <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'semanal',    label: '📆 Semanal' },
-                  { id: 'trimestral', label: '📊 Trimestral' },
-                  { id: 'semestral',  label: '📈 Semestral' },
-                  { id: 'anual',      label: '🗓️ Anual' },
-                ].map(p => (
-                  <button key={p.id} onClick={() => setPeriodoRelatorio(p.id)} style={{
-                    padding: '0.38rem 0.85rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
-                    border: periodoRelatorio === p.id ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
-                    background: periodoRelatorio === p.id ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
-                    color: periodoRelatorio === p.id ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                    borderRadius: 'var(--radius-md)', transition: 'all 0.15s',
-                  }}>{p.label}</button>
-                ))}
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: periodoRelatorio === 'trimestral' || periodoRelatorio === 'semestral' ? '0.75rem' : 0 }}>
+                <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-text)' }}>📅 Período:</span>
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'semanal',    label: '📆 Semanal' },
+                    { id: 'trimestral', label: '📊 Trimestral' },
+                    { id: 'semestral',  label: '📈 Semestral' },
+                    { id: 'anual',      label: '🗓️ Anual' },
+                  ].map(p => (
+                    <button key={p.id} onClick={() => setPeriodoRelatorio(p.id)} style={{
+                      padding: '0.38rem 0.85rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+                      border: periodoRelatorio === p.id ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                      background: periodoRelatorio === p.id ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                      color: periodoRelatorio === p.id ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                      borderRadius: 'var(--radius-md)', transition: 'all 0.15s',
+                    }}>{p.label}</button>
+                  ))}
+                </div>
+                <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>📍 {label}</span>
+                <button onClick={() => gerarPDFVisaoGeral(felicitacoes, familia, comemorativas, inMemoriam, label)}
+                  style={{ padding: '0.38rem 0.85rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', border: '1px solid rgba(99,102,241,0.4)', background: 'rgba(99,102,241,0.1)', color: '#6366f1', borderRadius: 'var(--radius-md)' }}>
+                  📄 Gerar PDF
+                </button>
               </div>
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', marginLeft: 'auto' }}>📍 {label}</span>
+              {/* Seletor de trimestre */}
+              {periodoRelatorio === 'trimestral' && (
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600, alignSelf: 'center' }}>Trimestre:</span>
+                  {[['1º Trim (Jan–Mar)',0],['2º Trim (Abr–Jun)',1],['3º Trim (Jul–Set)',2],['4º Trim (Out–Dez)',3]].map(([l,v]) => (
+                    <button key={v} onClick={() => setTrimestreSel(v)} style={{
+                      padding: '0.3rem 0.75rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                      border: trimestreSel === v ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                      background: trimestreSel === v ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                      color: trimestreSel === v ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                      borderRadius: 'var(--radius-md)',
+                    }}>{l}</button>
+                  ))}
+                </div>
+              )}
+              {/* Seletor de semestre */}
+              {periodoRelatorio === 'semestral' && (
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600, alignSelf: 'center' }}>Semestre:</span>
+                  {[['1º Semestre (Jan–Jun)',0],['2º Semestre (Jul–Dez)',1]].map(([l,v]) => (
+                    <button key={v} onClick={() => setSemestreSel(v)} style={{
+                      padding: '0.3rem 0.75rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                      border: semestreSel === v ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                      background: semestreSel === v ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                      color: semestreSel === v ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                      borderRadius: 'var(--radius-md)',
+                    }}>{l}</button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Tabela 1 — Felicitações */}
