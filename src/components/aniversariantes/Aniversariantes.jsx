@@ -103,6 +103,7 @@ export default function Aniversariantes() {
   const [mesFiltro, setMesFiltro] = useState(new Date().getMonth() + 1);
   const [abaAtiva, setAbaAtiva] = useState('festividades');
   const [periodoRelatorio, setPeriodoRelatorio] = useState('semanal');
+  const [todosAniversariantes, setTodosAniversariantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalEventos, setModalEventos] = useState(false);
   const [eventosCustomizados, setEventosCustomizados] = useState([]);
@@ -126,6 +127,10 @@ export default function Aniversariantes() {
   useEffect(() => {
     carregarAniversariantes();
   }, [filtro, mesFiltro]);
+
+  useEffect(() => {
+    if (abaAtiva === 'visao_geral') carregarTodos();
+  }, [abaAtiva]);
 
   useEffect(() => {
     carregarDadosEmail();
@@ -809,7 +814,19 @@ export default function Aniversariantes() {
     doc.save(nomeArquivo);
   };
 
+  const carregarTodos = async () => {
+    // Salva filtro atual, força 'todos', carrega, restaura
+    const filtroOriginal = filtro;
+    // Executa carregamento com filtro 'todos' usando uma cópia do state
+    // Como filtro é closure, usamos uma flag passada por parâmetro
+    await carregarAniversariantesFiltro('todos', setTodosAniversariantes);
+  };
+
   const carregarAniversariantes = async () => {
+    await carregarAniversariantesFiltro(filtro, setAniversariantes);
+  };
+
+  const carregarAniversariantesFiltro = async (filtroParam, setFn) => {
     setLoading(true);
     try {
       const hoje = new Date();
@@ -849,11 +866,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -911,11 +928,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -965,11 +982,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1022,11 +1039,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1085,11 +1102,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1143,11 +1160,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1202,11 +1219,11 @@ export default function Aniversariantes() {
                         proximoAniv.getMonth() === hoje.getMonth() &&
                         proximoAniv.getFullYear() === hoje.getFullYear();
 
-          const deveMostrar = filtro === 'todos' || 
-            (filtro === 'hoje' && ehHoje) ||
-            (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-            (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+          const deveMostrar = filtroParam === 'todos' || 
+            (filtroParam === 'hoje' && ehHoje) ||
+            (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+            (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
             const idade = hoje.getFullYear() - dataNasc.getFullYear();
@@ -1263,11 +1280,11 @@ export default function Aniversariantes() {
                           proximoEvento.getMonth() === hoje.getMonth() &&
                           proximoEvento.getFullYear() === hoje.getFullYear();
 
-            const deveMostrar = filtro === 'todos' || 
-              (filtro === 'hoje' && ehHoje) ||
-              (filtro === 'semana' && proximoEvento <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-              (filtro === 'mes' && proximoEvento.getMonth() === hoje.getMonth()) ||
-              (filtro === 'mes_especifico' && proximoEvento.getMonth() + 1 === mesFiltro);
+            const deveMostrar = filtroParam === 'todos' || 
+              (filtroParam === 'hoje' && ehHoje) ||
+              (filtroParam === 'semana' && proximoEvento <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+              (filtroParam === 'mes' && proximoEvento.getMonth() === hoje.getMonth()) ||
+              (filtroParam === 'mes_especifico' && proximoEvento.getMonth() + 1 === mesFiltro);
 
             if (deveMostrar) {
               aniversariantesEventos.push({
@@ -1310,11 +1327,11 @@ export default function Aniversariantes() {
                           proximoAniv.getMonth() === hoje.getMonth() &&
                           proximoAniv.getFullYear() === hoje.getFullYear();
 
-            const deveMostrar = filtro === 'todos' || 
-              (filtro === 'hoje' && ehHoje) ||
-              (filtro === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
-              (filtro === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
-            (filtro === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
+            const deveMostrar = filtroParam === 'todos' || 
+              (filtroParam === 'hoje' && ehHoje) ||
+              (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
+              (filtroParam === 'mes' && proximoAniv.getMonth() === hoje.getMonth()) ||
+            (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
             if (deveMostrar) {
               const anosDeUniao = hoje.getFullYear() - dataCas.getFullYear();
@@ -1430,7 +1447,7 @@ export default function Aniversariantes() {
       console.log('🎂 Total In Memoriam:', aniversariantesInMemoriam.length);
       console.log('🎂 Total Final:', todosAniversariantes.length);
 
-      setAniversariantes(todosAniversariantes);
+      setFn(todosAniversariantes);
       setLoading(false);
     } catch (error) {
       console.error('❌ ERRO:', error);
@@ -1783,7 +1800,7 @@ export default function Aniversariantes() {
               {label}
             </button>
           ))}
-          {filtro === 'mes_especifico' && (
+          {filtroParam === 'mes_especifico' && (
             <select value={mesFiltro} onChange={e => setMesFiltro(parseInt(e.target.value))}
               style={{ padding: '0.42rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(201,168,76,0.4)', background: 'var(--color-surface-2)', color: 'var(--color-accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
               {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
@@ -2150,7 +2167,7 @@ export default function Aniversariantes() {
       {/* ── Aba Visão Geral ───────────────────────────────────── */}
       {abaAtiva === 'visao_geral' && (() => {
         const { label } = calcularIntervalo(periodoRelatorio);
-        const todos = aniversariantes;
+        const todos = todosAniversariantes.length > 0 ? todosAniversariantes : aniversariantes;
 
         const felicitacoes  = filtrarPorPeriodo(todos.filter(a => a.tipo === 'Irmão' || a.tipo?.includes('Esposa') || a.tipo === 'Esposa'), periodoRelatorio);
         const familia       = filtrarPorPeriodo(todos.filter(a => ['Pai/Mãe','Pai','Mãe','Filho','Filha','Filho(a)','Bodas'].includes(a.tipo)), periodoRelatorio);
