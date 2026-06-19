@@ -1854,57 +1854,46 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
 
             {/* Filhos */}
             <div className="p-6 rounded-lg shadow space-y-4" style={{background:"var(--color-surface)",border:"1px solid var(--color-border)"}}>
-              <h3 className="text-lg font-semibold border-b pb-2" style={{color:"var(--color-text)"}}>Filhos</h3>
+              <h3 className="text-lg font-semibold border-b pb-2" style={{color:"var(--color-text)"}}>👶 Filhos</h3>
 
               {/* Formulário para adicionar filho */}
-              <div className="p-4 rounded space-y-3">
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                      Nome *
-                    </label>
+              <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",display:"flex",flexDirection:"column",gap:"0.75rem"}}>
+                <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:"0.75rem"}}>
+                  <div>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome *</label>
                     <input
                       type="text"
                       value={filhoForm.nome}
                       onChange={(e) => setFilhoForm({ ...filhoForm, nome: e.target.value })}
-                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none",boxSizing:"border-box"}}
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                      Data Nascimento
-                    </label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Nascimento</label>
                     <input
                       type="date"
                       value={filhoForm.data_nascimento}
                       onChange={(e) => setFilhoForm({ ...filhoForm, data_nascimento: e.target.value })}
-                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none",boxSizing:"border-box"}}
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                      Sexo
-                    </label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Sexo</label>
                     <select
                       value={filhoForm.sexo}
                       onChange={(e) => setFilhoForm({ ...filhoForm, sexo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none"}}
                     >
                       <option value="M">Masculino</option>
                       <option value="F">Feminino</option>
                     </select>
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                      Tipo de Vínculo
-                    </label>
+                    <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo de Vínculo</label>
                     <select
                       value={filhoForm.tipo_vinculo}
                       onChange={(e) => setFilhoForm({ ...filhoForm, tipo_vinculo: e.target.value })}
-                      className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none"}}
                     >
                       <option value="filho">Filho</option>
                       <option value="filha">Filha</option>
@@ -1919,47 +1908,42 @@ const CadastrarIrmao = ({ irmaos, irmaoParaEditar, onUpdate, showSuccess, showEr
                 </div>
 
                 {/* Segunda linha - Vivo/Falecido */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="flex items-center">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={filhoForm.vivo}
-                        onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
-                        style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
-                      />
-                      <span className="text-sm font-medium">Vivo</span>
-                    </label>
-                  </div>
-
+                <div style={{display:"flex",alignItems:"center",gap:"1rem"}}>
+                  <label style={{display:"flex",alignItems:"center",gap:"0.5rem",cursor:"pointer",fontSize:"0.875rem",color:"var(--color-text)",fontWeight:600}}>
+                    <input
+                      type="checkbox"
+                      checked={filhoForm.vivo}
+                      onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
+                      style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
+                    />
+                    Vivo
+                  </label>
                   {!filhoForm.vivo && (
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                        Data de Óbito
-                      </label>
+                    <div style={{flex:1,maxWidth:"200px"}}>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
                       <input
                         type="date"
                         value={filhoForm.data_obito}
                         onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
-                        className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                        style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none",boxSizing:"border-box"}}
                       />
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div style={{display:"flex",gap:"0.5rem"}}>
                   <button
                     type="button"
                     onClick={adicionarFilho}
-                    style={{padding:"0.5rem 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
+                    style={{height:"36px",padding:"0 1rem",background:"#10b981",color:"#fff",border:"none",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:600,fontSize:"0.875rem"}}
                   >
-                    {filhoEditandoIndex !== null ? '💾 Salvar Alterações' : '➕ Adicionar Filho'}
+                    {filhoEditandoIndex !== null ? '💾 Salvar Alterações' : '➕ Adicionar'}
                   </button>
                   {filhoEditandoIndex !== null && (
                     <button
                       type="button"
                       onClick={cancelarEdicaoFilho}
-                      style={{padding:"0.5rem 1rem",background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:"600"}}
+                      style={{height:"36px",padding:"0 1rem",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-md)",cursor:"pointer",fontWeight:600,fontSize:"0.875rem"}}
                     >
                       ❌ Cancelar
                     </button>
