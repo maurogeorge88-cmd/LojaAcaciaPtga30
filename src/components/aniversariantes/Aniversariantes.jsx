@@ -1707,6 +1707,13 @@ export default function Aniversariantes() {
         return { inicio, fim, label: `${semestreSel === 0 ? '1º' : '2º'} Semestre / ${ano}` };
       }
       default:
+        if (periodo === 'mes_visao') {
+          const ano = hoje.getFullYear();
+          const inicio = new Date(ano, mesFiltro - 1, 1);
+          const fim = new Date(ano, mesFiltro, 0);
+          const nomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+          return { inicio, fim, label: `${nomes[mesFiltro - 1]} / ${ano}` };
+        }
         return { inicio: new Date(ano, 0, 1), fim: new Date(ano, 11, 31), label: `Ano ${ano}` };
     }
   };
@@ -2331,10 +2338,11 @@ export default function Aniversariantes() {
                 <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-text)' }}>📅 Período:</span>
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
                   {[
-                    { id: 'semanal',    label: '📆 Semanal' },
-                    { id: 'trimestral', label: '📊 Trimestral' },
-                    { id: 'semestral',  label: '📈 Semestral' },
-                    { id: 'anual',      label: '🗓️ Anual' },
+                    { id: 'semanal',      label: '📆 Semanal' },
+                    { id: 'trimestral',   label: '📊 Trimestral' },
+                    { id: 'semestral',    label: '📈 Semestral' },
+                    { id: 'anual',        label: '🗓️ Anual' },
+                    { id: 'mes_visao',    label: '📅 Mês' },
                   ].map(p => (
                     <button key={p.id} onClick={() => setPeriodoRelatorio(p.id)} style={{
                       padding: '0.38rem 0.85rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
@@ -2351,6 +2359,22 @@ export default function Aniversariantes() {
                   📄 Gerar PDF
                 </button>
               </div>
+              {/* Seletor de mês específico */}
+              {periodoRelatorio === 'mes_visao' && (
+                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600, alignSelf: 'center' }}>Mês:</span>
+                  {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'].map((m, i) => (
+                    <button key={i+1} onClick={() => setMesFiltro(i+1)} style={{
+                      padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                      border: mesFiltro === i+1 ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                      background: mesFiltro === i+1 ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                      color: mesFiltro === i+1 ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                      borderRadius: 'var(--radius-md)',
+                    }}>{m.slice(0,3)}</button>
+                  ))}
+                </div>
+              )}
+
               {/* Seletor de trimestre */}
               {periodoRelatorio === 'trimestral' && (
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
