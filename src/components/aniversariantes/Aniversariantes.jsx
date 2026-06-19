@@ -897,13 +897,34 @@ export default function Aniversariantes() {
       // IDs dos irmãos vivos (para filtrar familiares)
       const irmaoVivosIds = irmaos?.map(i => i.id) || [];
 
+      // ── Otimização: disparar todas as queries dependentes em paralelo ──
+      const [
+        { data: paisVivosRaw },
+        { data: esposasRaw },
+        { data: filhosVivosRaw },
+        { data: irmaosFalecidosRaw, error: errorIrmaosFalecidos },
+        { data: paisFalecidosRaw, error: errorPaisFalecidos },
+        { data: filhosFalecidosRaw, error: errorFilhosFalecidos },
+        eventosCustomizadosResult,
+        esposasCasamentoResult,
+      ] = await Promise.all([
+        supabase.from('pais').select('nome, data_nascimento, irmao_id, falecido, tipo, irmaos(nome, situacao)').in('irmao_id', irmaoVivosIds),
+        supabase.from('esposas').select('id, nome, data_nascimento, email, irmao_id, irmaos(nome, situacao)').in('irmao_id', irmaoVivosIds),
+        supabase.from('filhos').select('nome, data_nascimento, irmao_id, vivo, data_obito, tipo_vinculo, sexo, irmaos(nome, situacao)').in('irmao_id', irmaoVivosIds),
+        supabase.from('irmaos').select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url, situacao').eq('situacao', 'falecido'),
+        supabase.from('pais').select('nome, data_nascimento, data_obito, irmao_id, falecido, tipo, irmaos(nome, situacao)').in('irmao_id', irmaoVivosIds),
+        supabase.from('filhos').select('nome, data_nascimento, data_obito, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, situacao)').in('irmao_id', irmaoVivosIds),
+        supabase.from('eventos_comemorativos').select('*').then(r => r).catch(e => ({ data: null, error: e })),
+        supabase.from('esposas').select('id, nome, data_casamento, email, irmao_id, irmaos(id, nome, email, situacao)').in('irmao_id', irmaoVivosIds).then(r => r).catch(e => ({ data: null, error: e })),
+      ]);
+
+      const eventosCustomizados = eventosCustomizadosResult?.data;
+      const esposasCasamento = esposasCasamentoResult?.data;
+
       // ===== NÍVEL 2: FAMILIARES (Pais, Esposas e Filhos VIVOS de irmãos vivos) =====
       
       // PAIS VIVOS de irmãos vivos (considera null como vivo)
-      let { data: paisVivos } = await supabase
-        .from('pais')
-        .select('nome, data_nascimento, irmao_id, falecido, tipo, irmaos(nome, situacao)')
-        .in('irmao_id', irmaoVivosIds);
+      let paisVivos = paisVivosRaw;
       
       // Filtrar apenas os vivos (falecido = false ou null)
       paisVivos = paisVivos?.filter(p => !p.falecido) || [];
@@ -957,10 +978,7 @@ export default function Aniversariantes() {
       }
 
       // ESPOSAS de irmãos vivos
-      const { data: esposas } = await supabase
-        .from('esposas')
-        .select('id, nome, data_nascimento, email, irmao_id, irmaos(nome, situacao)')
-        .in('irmao_id', irmaoVivosIds);
+      const esposas = esposasRaw;
 
       console.log('✅ Esposas:', esposas?.length);
 
@@ -1011,10 +1029,7 @@ export default function Aniversariantes() {
       }
 
       // FILHOS VIVOS de irmãos vivos (vivo = true ou null)
-      let { data: filhosVivos } = await supabase
-        .from('filhos')
-        .select('nome, data_nascimento, irmao_id, vivo, data_obito, tipo_vinculo, sexo, irmaos(nome, situacao)')
-        .in('irmao_id', irmaoVivosIds);
+      let filhosVivos = filhosVivosRaw;
       
       // Filtrar apenas os vivos: vivo deve ser true ou null E sem data_obito
       filhosVivos = filhosVivos?.filter(f => {
@@ -1081,10 +1096,7 @@ export default function Aniversariantes() {
       // ===== NÍVEL 3: IN MEMORIAM =====
       
       // IRMÃOS FALECIDOS
-      let { data: irmaosFalecidos, error: errorIrmaosFalecidos } = await supabase
-        .from('irmaos')
-        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url, situacao')
-        .eq('situacao', 'falecido');
+      let irmaosFalecidos = irmaosFalecidosRaw;
 
       if (errorIrmaosFalecidos) {
         console.error('❌ Erro ao buscar irmãos falecidos:', errorIrmaosFalecidos);
@@ -1134,10 +1146,7 @@ export default function Aniversariantes() {
       }
 
       // PAIS FALECIDOS de irmãos VIVOS
-      let { data: paisFalecidos, error: errorPaisFalecidos } = await supabase
-        .from('pais')
-        .select('nome, data_nascimento, data_obito, irmao_id, falecido, tipo, irmaos(nome, situacao)')
-        .in('irmao_id', irmaoVivosIds);
+      let paisFalecidos = paisFalecidosRaw;
 
       if (errorPaisFalecidos) {
         console.error('❌ Erro ao buscar pais falecidos:', errorPaisFalecidos);
@@ -1188,10 +1197,7 @@ export default function Aniversariantes() {
       }
 
       // FILHOS FALECIDOS de irmãos VIVOS
-      let { data: filhosFalecidos, error: errorFilhosFalecidos } = await supabase
-        .from('filhos')
-        .select('nome, data_nascimento, data_obito, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, situacao)')
-        .in('irmao_id', irmaoVivosIds);
+      let filhosFalecidos = filhosFalecidosRaw;
 
       if (errorFilhosFalecidos) {
         console.error('❌ Erro ao buscar filhos falecidos:', errorFilhosFalecidos);
@@ -1267,10 +1273,6 @@ export default function Aniversariantes() {
       
       // Buscar eventos cadastrados
       try {
-        const { data: eventosCustomizados } = await supabase
-          .from('eventos_comemorativos')
-          .select('*');
-        
         if (eventosCustomizados && eventosCustomizados.length > 0) {
           eventosCustomizados.forEach(evento => {
             if (!evento.dia || !evento.mes) return;
@@ -1311,11 +1313,6 @@ export default function Aniversariantes() {
       
       // Buscar ANIVERSÁRIOS DE CASAMENTO das esposas (se o campo existir)
       try {
-        const { data: esposasCasamento } = await supabase
-          .from('esposas')
-          .select('id, nome, data_casamento, email, irmao_id, irmaos(id, nome, email, situacao)')
-          .in('irmao_id', irmaoVivosIds);
-        
         if (esposasCasamento) {
           esposasCasamento.forEach(esposa => {
             if (esposa.irmaos?.situacao === 'falecido') return;
