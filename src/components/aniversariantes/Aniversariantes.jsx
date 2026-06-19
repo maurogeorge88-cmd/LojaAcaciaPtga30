@@ -841,13 +841,14 @@ export default function Aniversariantes() {
       // ===== NÍVEL 1: IRMÃOS VIVOS =====
       const { data: irmaos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao, email')
+        .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao, email, data_falecimento')
         .neq('situacao', 'falecido')
         .neq('situacao', 'irregular')
         .neq('situacao', 'desligado')
         .neq('situacao', 'suspenso')
         .neq('situacao', 'excluído')
-        .neq('situacao', 'ex-ofício');
+        .neq('situacao', 'ex-ofício')
+        .is('data_falecimento', null);
 
       console.log('✅ Irmãos vivos:', irmaos?.length);
       console.log('📋 IDs dos irmãos vivos:', irmaos?.map(i => `${i.nome} (${i.situacao})`).join(', '));
