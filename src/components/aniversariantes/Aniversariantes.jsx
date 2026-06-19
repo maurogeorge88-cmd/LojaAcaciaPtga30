@@ -1800,7 +1800,7 @@ export default function Aniversariantes() {
               {label}
             </button>
           ))}
-          {filtroParam === 'mes_especifico' && (
+          {filtro === 'mes_especifico' && (
             <select value={mesFiltro} onChange={e => setMesFiltro(parseInt(e.target.value))}
               style={{ padding: '0.42rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid rgba(201,168,76,0.4)', background: 'var(--color-surface-2)', color: 'var(--color-accent)', fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}>
               {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
