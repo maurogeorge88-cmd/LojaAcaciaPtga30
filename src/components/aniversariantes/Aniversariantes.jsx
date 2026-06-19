@@ -2145,7 +2145,6 @@ export default function Aniversariantes() {
           </div>
         </div>
       )}
-    </div>
     </> )}
 
       {/* ── Aba Visão Geral ───────────────────────────────────── */}
