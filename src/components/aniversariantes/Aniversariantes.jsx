@@ -2193,8 +2193,8 @@ export default function Aniversariantes() {
         const { label } = calcularIntervalo(periodoRelatorio);
         const todos = todosAniversariantes.length > 0 ? todosAniversariantes : aniversariantes;
 
-        const felicitacoes  = filtrarPorPeriodo(todos.filter(a => a.tipo === 'Irmão' || a.tipo?.includes('Esposa') || a.tipo === 'Esposa'), periodoRelatorio);
-        const familia       = filtrarPorPeriodo(todos.filter(a => ['Pai/Mãe','Pai','Mãe','Filho','Filha','Filho(a)','Bodas'].includes(a.tipo)), periodoRelatorio);
+        const felicitacoes  = filtrarPorPeriodo(todos.filter(a => (a.tipo === 'Irmão' || a.tipo?.includes('Esposa') || a.tipo === 'Esposa') && a.nivel !== 3 && !a.falecido), periodoRelatorio);
+        const familia       = filtrarPorPeriodo(todos.filter(a => ['Pai/Mãe','Pai','Mãe','Filho','Filha','Filho(a)','Bodas'].includes(a.tipo) && a.nivel !== 3 && !a.falecido), periodoRelatorio);
         const comemorativas = filtrarPorPeriodo(todos.filter(a => a.nivel === 4), periodoRelatorio);
         const inMemoriam    = filtrarPorPeriodo(todos.filter(a => a.nivel === 3), periodoRelatorio);
 
