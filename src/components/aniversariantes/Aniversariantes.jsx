@@ -1083,7 +1083,7 @@ export default function Aniversariantes() {
       // IRMÃOS FALECIDOS
       let { data: irmaosFalecidos, error: errorIrmaosFalecidos } = await supabase
         .from('irmaos')
-        .select('id, cim, nome, data_nascimento, cargo, foto_url, situacao')
+        .select('id, cim, nome, data_nascimento, data_falecimento, cargo, foto_url, situacao')
         .eq('situacao', 'falecido');
 
       if (errorIrmaosFalecidos) {
@@ -1095,20 +1095,18 @@ export default function Aniversariantes() {
 
       if (irmaosFalecidos) {
         irmaosFalecidos.forEach(irmao => {
-          if (!irmao.data_nascimento) return;
+          // Usa data_falecimento se disponível, senão data_nascimento
+          const dataRef = irmao.data_falecimento || irmao.data_nascimento;
+          if (!dataRef) return;
 
-          const dataNasc = new Date(irmao.data_nascimento + 'T00:00:00');
-          const proximoAniv = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+          const dataBase = new Date(dataRef + 'T00:00:00');
+          const dataNasc = irmao.data_nascimento ? new Date(irmao.data_nascimento + 'T00:00:00') : dataBase;
+          const proximoAniv = new Date(hoje.getFullYear(), dataBase.getMonth(), dataBase.getDate());
           
           const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-          if (proximoAniv < hojeZerado) {
-            proximoAniv.setFullYear(hoje.getFullYear() + 1);
-          }
+          if (proximoAniv < hojeZerado) proximoAniv.setFullYear(hoje.getFullYear() + 1);
 
-          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
-                        proximoAniv.getMonth() === hoje.getMonth() &&
-                        proximoAniv.getFullYear() === hoje.getFullYear();
-
+          const ehHoje = proximoAniv.getDate() === hoje.getDate() && proximoAniv.getMonth() === hoje.getMonth() && proximoAniv.getFullYear() === hoje.getFullYear();
           const deveMostrar = filtroParam === 'todos' || 
             (filtroParam === 'hoje' && ehHoje) ||
             (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
@@ -1116,13 +1114,14 @@ export default function Aniversariantes() {
             (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
-            const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            const idade = dataNasc ? hoje.getFullYear() - dataNasc.getFullYear() : null;
             aniversariantesInMemoriam.push({
               tipo: 'Irmão',
               nome: irmao.nome,
               cim: irmao.cim,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
+              data_falecimento: irmao.data_falecimento ? new Date(irmao.data_falecimento + 'T00:00:00') : null,
               idade,
               cargo: irmao.cargo,
               foto_url: irmao.foto_url,
@@ -1137,7 +1136,7 @@ export default function Aniversariantes() {
       // PAIS FALECIDOS de irmãos VIVOS
       let { data: paisFalecidos, error: errorPaisFalecidos } = await supabase
         .from('pais')
-        .select('nome, data_nascimento, irmao_id, falecido, tipo, irmaos(nome, situacao)')
+        .select('nome, data_nascimento, data_obito, irmao_id, falecido, tipo, irmaos(nome, situacao)')
         .in('irmao_id', irmaoVivosIds);
 
       if (errorPaisFalecidos) {
@@ -1145,28 +1144,23 @@ export default function Aniversariantes() {
         paisFalecidos = [];
       }
       
-      // Filtrar apenas os falecidos (falecido = true)
       paisFalecidos = paisFalecidos?.filter(p => p.falecido === true) || [];
-      
       console.log('✅ Pais falecidos:', paisFalecidos?.length);
 
       if (paisFalecidos) {
         paisFalecidos.forEach(pai => {
-          if (pai.irmaos?.situacao === 'falecido') return; // Irmão deve estar vivo
-          if (!pai.data_nascimento) return;
+          if (pai.irmaos?.situacao === 'falecido') return;
+          const dataRef = pai.data_obito || pai.data_nascimento;
+          if (!dataRef) return;
 
-          const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
-          const proximoAniv = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+          const dataBase = new Date(dataRef + 'T00:00:00');
+          const dataNasc = pai.data_nascimento ? new Date(pai.data_nascimento + 'T00:00:00') : dataBase;
+          const proximoAniv = new Date(hoje.getFullYear(), dataBase.getMonth(), dataBase.getDate());
           
           const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-          if (proximoAniv < hojeZerado) {
-            proximoAniv.setFullYear(hoje.getFullYear() + 1);
-          }
+          if (proximoAniv < hojeZerado) proximoAniv.setFullYear(hoje.getFullYear() + 1);
 
-          const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
-                        proximoAniv.getMonth() === hoje.getMonth() &&
-                        proximoAniv.getFullYear() === hoje.getFullYear();
-
+          const ehHoje = proximoAniv.getDate() === hoje.getDate() && proximoAniv.getMonth() === hoje.getMonth() && proximoAniv.getFullYear() === hoje.getFullYear();
           const deveMostrar = filtroParam === 'todos' || 
             (filtroParam === 'hoje' && ehHoje) ||
             (filtroParam === 'semana' && proximoAniv <= new Date(hoje.getTime() + 7*24*60*60*1000)) ||
@@ -1174,16 +1168,16 @@ export default function Aniversariantes() {
             (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
-            const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            const idade = dataNasc ? hoje.getFullYear() - dataNasc.getFullYear() : null;
             const sexo = pai.tipo === 'mae' ? 'F' : 'M';
             const tipoExibicao = pai.tipo === 'mae' ? 'Mãe' : 'Pai';
-            
             aniversariantesInMemoriam.push({
               tipo: tipoExibicao,
               nome: pai.nome,
-              sexo: sexo,
+              sexo,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
+              data_falecimento: pai.data_obito ? new Date(pai.data_obito + 'T00:00:00') : null,
               idade,
               irmao_responsavel: pai.irmaos?.nome,
               nivel: 3,
@@ -1215,16 +1209,16 @@ export default function Aniversariantes() {
 
       if (filhosFalecidos) {
         filhosFalecidos.forEach(filho => {
-          if (filho.irmaos?.situacao === 'falecido') return; // Irmão deve estar vivo
-          if (!filho.data_nascimento) return;
+          if (filho.irmaos?.situacao === 'falecido') return;
+          const dataRef = filho.data_obito || filho.data_nascimento;
+          if (!dataRef) return;
 
-          const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
-          const proximoAniv = new Date(hoje.getFullYear(), dataNasc.getMonth(), dataNasc.getDate());
+          const dataBase = new Date(dataRef + 'T00:00:00');
+          const dataNasc = filho.data_nascimento ? new Date(filho.data_nascimento + 'T00:00:00') : dataBase;
+          const proximoAniv = new Date(hoje.getFullYear(), dataBase.getMonth(), dataBase.getDate());
           
           const hojeZerado = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
-          if (proximoAniv < hojeZerado) {
-            proximoAniv.setFullYear(hoje.getFullYear() + 1);
-          }
+          if (proximoAniv < hojeZerado) proximoAniv.setFullYear(hoje.getFullYear() + 1);
 
           const ehHoje = proximoAniv.getDate() === hoje.getDate() && 
                         proximoAniv.getMonth() === hoje.getMonth() &&
@@ -1237,7 +1231,7 @@ export default function Aniversariantes() {
             (filtroParam === 'mes_especifico' && proximoAniv.getMonth() + 1 === mesFiltro);
 
           if (deveMostrar) {
-            const idade = hoje.getFullYear() - dataNasc.getFullYear();
+            const idade = dataNasc ? hoje.getFullYear() - dataNasc.getFullYear() : null;
             
             // Usar tipo_vinculo do banco, com fallback para lógica antiga
             let tipoExibicao = 'Filho(a)';
@@ -1253,6 +1247,7 @@ export default function Aniversariantes() {
               nome: filho.nome,
               proximo_aniversario: proximoAniv,
               data_nascimento: dataNasc,
+              data_falecimento: filho.data_obito ? new Date(filho.data_obito + 'T00:00:00') : null,
               idade,
               irmao_responsavel: filho.irmaos?.nome,
               nivel: 3,
@@ -2449,7 +2444,12 @@ export default function Aniversariantes() {
               cor="#94a3b8"
               dados={inMemoriam}
               colunas={[
-                { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
+                { key: 'data_falec', label: 'Falecimento', nowrap: true, render: i => {
+                  const d = i.data_falecimento;
+                  if (!d) return '—';
+                  const dt = d instanceof Date ? d : new Date(d);
+                  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }},
                 { key: 'nome', label: 'Nome', bold: true },
                 { key: 'tipo', label: 'Parentesco', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(148,163,184,0.15)', color: '#94a3b8' }}>
@@ -2457,7 +2457,7 @@ export default function Aniversariantes() {
                   </span>
                 )},
                 { key: 'irmao_responsavel', label: 'Referência', render: i => i.irmao_responsavel ? `Ir∴ ${i.irmao_responsavel}` : '—' },
-                { key: 'idade', label: 'Anos', render: i => i.idade ? `${i.idade} anos` : '—', nowrap: true },
+                { key: 'idade', label: 'Idade', render: i => i.idade ? `${i.idade} anos` : '—', nowrap: true },
               ]}
             />
 
