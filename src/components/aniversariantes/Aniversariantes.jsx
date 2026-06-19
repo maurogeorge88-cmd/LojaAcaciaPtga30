@@ -1017,7 +1017,11 @@ export default function Aniversariantes() {
         .in('irmao_id', irmaoVivosIds);
       
       // Filtrar apenas os vivos: vivo deve ser true ou null E sem data_obito
-      filhosVivos = filhosVivos?.filter(f => f.vivo !== false && !f.data_obito) || [];
+      filhosVivos = filhosVivos?.filter(f => {
+        if (f.vivo === false) return false;
+        if (f.data_obito && f.data_obito !== '' && f.data_obito !== null) return false;
+        return true;
+      }) || [];
 
       console.log('✅ Filhos vivos:', filhosVivos?.length);
 
@@ -1192,7 +1196,7 @@ export default function Aniversariantes() {
       // FILHOS FALECIDOS de irmãos VIVOS
       let { data: filhosFalecidos, error: errorFilhosFalecidos } = await supabase
         .from('filhos')
-        .select('nome, data_nascimento, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, situacao)')
+        .select('nome, data_nascimento, data_obito, irmao_id, vivo, tipo_vinculo, sexo, irmaos(nome, situacao)')
         .in('irmao_id', irmaoVivosIds);
 
       if (errorFilhosFalecidos) {
@@ -1200,8 +1204,12 @@ export default function Aniversariantes() {
         filhosFalecidos = [];
       }
       
-      // Filtrar apenas os falecidos (vivo = false)
-      filhosFalecidos = filhosFalecidos?.filter(f => f.vivo === false) || [];
+      // Filtrar apenas os falecidos (vivo = false OU data_obito preenchida)
+      filhosFalecidos = filhosFalecidos?.filter(f => {
+        if (f.vivo === false) return true;
+        if (f.data_obito && f.data_obito !== '' && f.data_obito !== null) return true;
+        return false;
+      }) || [];
       
       console.log('✅ Filhos falecidos:', filhosFalecidos?.length);
 
