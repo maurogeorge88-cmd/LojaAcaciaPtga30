@@ -2282,8 +2282,9 @@ export default function Aniversariantes() {
 
           renderTabela('In Memoriam', inMem, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 100 },
-            { label: 'REF.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—' },
+            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 70 },
+            { label: 'PARENTESCO', x: margin + 100, key: 'tipo' },
+            { label: 'REF.', x: margin + 135, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—', maxWidth: 50 },
           ], [120, 120, 130]);
 
           const total = doc.internal.getNumberOfPages();
@@ -2450,6 +2451,11 @@ export default function Aniversariantes() {
               colunas={[
                 { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
                 { key: 'nome', label: 'Nome', bold: true },
+                { key: 'tipo', label: 'Parentesco', render: i => (
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(148,163,184,0.15)', color: '#94a3b8' }}>
+                    {i.tipo || '—'}
+                  </span>
+                )},
                 { key: 'irmao_responsavel', label: 'Referência', render: i => i.irmao_responsavel ? `Ir∴ ${i.irmao_responsavel}` : '—' },
                 { key: 'idade', label: 'Anos', render: i => i.idade ? `${i.idade} anos` : '—', nowrap: true },
               ]}
