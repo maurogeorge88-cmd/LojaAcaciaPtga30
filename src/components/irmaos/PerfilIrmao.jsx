@@ -1655,77 +1655,75 @@ export default function PerfilIrmao({ irmaoId, onVoltar, showSuccess, showError,
                   <h4 className="text-lg font-bold text-green-900 mb-4" style={{color:"var(--color-text)"}}>👶 Filhos ({familiares.filhos.length})</h4>
                   
                   {modoEdicao && (
-                    <div className="p-4 rounded mb-4" style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)"}}>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                        <div className="md:col-span-2">
+                    <div style={{background:"var(--color-surface-2)",border:"1px solid var(--color-border)",borderRadius:"var(--radius-lg)",padding:"1rem",display:"flex",flexDirection:"column",gap:"0.75rem",marginBottom:"1rem"}}>
+                      <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:"0.75rem"}}>
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Nome *</label>
                           <input 
                             type="text" 
                             value={filhoForm.nome}
                             onChange={(e) => setFilhoForm({...filhoForm, nome: e.target.value})}
-                            placeholder="Nome" 
-                            className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} 
+                            placeholder="Nome do filho" 
+                            style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none",boxSizing:"border-box"}}
                           />
                         </div>
                         <div>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data Nascimento</label>
                           <input 
                             type="date" 
                             value={filhoForm.data_nascimento}
                             onChange={(e) => setFilhoForm({...filhoForm, data_nascimento: e.target.value})}
-                            className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}} 
+                            style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none",boxSizing:"border-box"}}
                           />
                         </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <select 
-                          value={filhoForm.sexo}
-                          onChange={(e) => setFilhoForm({...filhoForm, sexo: e.target.value})}
-                          className="px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                        >
-                          <option value="">Sexo...</option>
-                          <option value="M">Masculino</option>
-                          <option value="F">Feminino</option>
-                        </select>
-                        <select 
-                          value={filhoForm.tipo_vinculo}
-                          onChange={(e) => setFilhoForm({...filhoForm, tipo_vinculo: e.target.value})}
-                          className="px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                        >
-                          <option value="">Vínculo...</option>
-                          <option value="filho">Filho</option>
-                          <option value="filha">Filha</option>
-                          <option value="enteado">Enteado</option>
-                          <option value="enteada">Enteada</option>
-                          <option value="neto">Neto</option>
-                          <option value="neta">Neta</option>
-                          <option value="bisneto">Bisneto</option>
-                          <option value="bisneta">Bisneta</option>
-                        </select>
-                      </div>
-                      
-                      {/* Linha 3: Vivo e Data Óbito */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="flex items-center">
-                          <label className="flex items-center gap-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={filhoForm.vivo}
-                              onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
-                              style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
-                            />
-                            <span className="text-sm font-medium">Vivo</span>
-                          </label>
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Sexo</label>
+                          <select 
+                            value={filhoForm.sexo}
+                            onChange={(e) => setFilhoForm({...filhoForm, sexo: e.target.value})}
+                            style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none"}}
+                          >
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                          </select>
                         </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Tipo de Vínculo</label>
+                          <select 
+                            value={filhoForm.tipo_vinculo}
+                            onChange={(e) => setFilhoForm({...filhoForm, tipo_vinculo: e.target.value})}
+                            style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none"}}
+                          >
+                            <option value="filho">Filho</option>
+                            <option value="filha">Filha</option>
+                            <option value="enteado">Enteado</option>
+                            <option value="enteada">Enteada</option>
+                            <option value="neto">Neto</option>
+                            <option value="neta">Neta</option>
+                            <option value="bisneto">Bisneto</option>
+                            <option value="bisneta">Bisneta</option>
+                          </select>
+                        </div>
+                      </div>
 
+                      <div style={{display:"flex",alignItems:"center",gap:"1rem"}}>
+                        <label style={{display:"flex",alignItems:"center",gap:"0.5rem",cursor:"pointer",fontSize:"0.875rem",color:"var(--color-text)",fontWeight:600}}>
+                          <input
+                            type="checkbox"
+                            checked={filhoForm.vivo}
+                            onChange={(e) => setFilhoForm({ ...filhoForm, vivo: e.target.checked, data_obito: e.target.checked ? '' : filhoForm.data_obito })}
+                            style={{width:"1rem",height:"1rem",accentColor:"var(--color-accent)"}}
+                          />
+                          Vivo
+                        </label>
                         {!filhoForm.vivo && (
-                          <div className="md:col-span-2">
-                            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                              Data de Óbito
-                            </label>
+                          <div style={{flex:1,maxWidth:"200px"}}>
+                            <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Data de Óbito</label>
                             <input
                               type="date"
                               value={filhoForm.data_obito}
                               onChange={(e) => setFilhoForm({ ...filhoForm, data_obito: e.target.value })}
-                              className="w-full px-3 py-2 border rounded" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                              style={{width:"100%",padding:"0.55rem 0.75rem",borderRadius:"var(--radius-md)",background:"var(--color-surface)",color:"var(--color-text)",border:"1px solid var(--color-border)",fontSize:"0.875rem",outline:"none",boxSizing:"border-box"}}
                             />
                           </div>
                         )}
