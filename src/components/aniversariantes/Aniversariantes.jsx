@@ -2522,7 +2522,11 @@ export default function Aniversariantes({ permissoes }) {
               dados={felicitacoes}
               colunas={[
                 { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
-                { key: 'nome', label: 'Nome', bold: true, render: i => abreviarNomeExibicao(i) },
+                { key: 'nome', label: 'Nome', bold: true, render: i => (
+                  <span style={{ color: i.tipo === 'Irmão' ? '#3b82f6' : '#ec4899', fontWeight: 700 }}>
+                    {abreviarNomeExibicao(i)}
+                  </span>
+                )},
                 { key: 'tipo', label: 'Tipo', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px',
                     background: i.tipo === 'Irmão' ? 'rgba(59,130,246,0.12)' : 'rgba(236,72,153,0.12)',
@@ -2541,7 +2545,11 @@ export default function Aniversariantes({ permissoes }) {
               dados={familia}
               colunas={[
                 { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
-                { key: 'nome', label: 'Nome', bold: true, render: i => abreviarNomeExibicao(i) },
+                { key: 'nome', label: 'Nome', bold: true, render: i => (
+                  i.tipo === 'Bodas'
+                    ? <span style={{ color: 'var(--color-accent)', fontWeight: 700 }}>{abreviarNomeExibicao(i)}</span>
+                    : <span>{abreviarNomeExibicao(i)}</span>
+                )},
                 { key: 'tipo', label: 'Tipo', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px',
                     background: i.tipo === 'Bodas' ? 'rgba(201,168,76,0.12)' : 'rgba(16,185,129,0.12)',
