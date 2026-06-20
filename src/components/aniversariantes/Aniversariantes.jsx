@@ -106,6 +106,8 @@ export default function Aniversariantes({ permissoes }) {
   const [periodoRelatorio, setPeriodoRelatorio] = useState('semanal');
   const [trimestreSel, setTrimestreSel] = useState(Math.floor(new Date().getMonth() / 3));
   const [semestreSel, setSemestreSel] = useState(new Date().getMonth() < 6 ? 0 : 1);
+  const [mesSemanaSel, setMesSemanaSel] = useState(new Date().getMonth());
+  const [semanaSel, setSemanaSel] = useState(null); // null = calculado automaticamente (semana atual)
   const [todosAniversariantes, setTodosAniversariantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalEventos, setModalEventos] = useState(false);
@@ -1702,17 +1704,52 @@ export default function Aniversariantes({ permissoes }) {
     );
   };
 
+  // ── Calcula as semanas (seg-dom) que um mês cobre ────────────────────────
+  const obterSemanasDoMes = (ano, mesIndex) => {
+    const primeiroDia = new Date(ano, mesIndex, 1);
+    const ultimoDia = new Date(ano, mesIndex + 1, 0);
+
+    // Encontrar a segunda-feira da semana que contém o dia 1
+    const diaSemanaPrimeiro = primeiroDia.getDay();
+    const diasAteSeg = diaSemanaPrimeiro === 0 ? -6 : 1 - diaSemanaPrimeiro;
+    let segAtual = new Date(primeiroDia);
+    segAtual.setDate(primeiroDia.getDate() + diasAteSeg);
+
+    const semanas = [];
+    while (segAtual <= ultimoDia) {
+      const dom = new Date(segAtual);
+      dom.setDate(segAtual.getDate() + 6);
+      semanas.push({
+        inicio: new Date(segAtual.getFullYear(), segAtual.getMonth(), segAtual.getDate(), 0, 0, 0, 0),
+        fim: new Date(dom.getFullYear(), dom.getMonth(), dom.getDate(), 23, 59, 59, 999),
+      });
+      segAtual = new Date(segAtual);
+      segAtual.setDate(segAtual.getDate() + 7);
+    }
+    return semanas;
+  };
+
   // ── Cálculo de intervalos por período ────────────────────────────────────
   const calcularIntervalo = (periodo) => {
     const hoje = new Date();
     const ano = hoje.getFullYear();
     switch (periodo) {
       case 'semanal': {
-        const diaSemana = hoje.getDay();
-        const diasAteSeg = diaSemana === 0 ? -6 : 1 - diaSemana;
-        const seg = new Date(hoje); seg.setDate(hoje.getDate() + diasAteSeg); seg.setHours(0,0,0,0);
-        const dom = new Date(seg); dom.setDate(seg.getDate() + 6); dom.setHours(23,59,59,999);
-        return { inicio: seg, fim: dom, label: `${seg.toLocaleDateString('pt-BR')} — ${dom.toLocaleDateString('pt-BR')}`, mesBaixo: seg.getMonth(), mesAlto: dom.getMonth() };
+        const semanasDoMes = obterSemanasDoMes(ano, mesSemanaSel);
+        let idx = semanaSel;
+        if (idx === null || idx === undefined || idx >= semanasDoMes.length) {
+          // Semana atual como padrão: encontrar a semana que contém hoje
+          const hojeZero = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+          idx = semanasDoMes.findIndex(s => hojeZero >= s.inicio && hojeZero <= s.fim);
+          if (idx === -1) idx = 0;
+        }
+        const semana = semanasDoMes[idx] || semanasDoMes[0];
+        const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+        return {
+          inicio: semana.inicio, fim: semana.fim,
+          label: `Semana ${idx + 1} — ${semana.inicio.toLocaleDateString('pt-BR')} — ${semana.fim.toLocaleDateString('pt-BR')} (${nomesMes[mesSemanaSel]})`,
+          totalSemanas: semanasDoMes.length, semanaIdx: idx,
+        };
       }
       case 'trimestral': {
         const inicio = new Date(ano, trimestreSel * 3, 1);
@@ -2358,10 +2395,10 @@ export default function Aniversariantes({ permissoes }) {
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
                   {[
                     { id: 'semanal',      label: '📆 Semanal' },
+                    { id: 'mes_visao',    label: '📅 Mensal' },
                     { id: 'trimestral',   label: '📊 Trimestral' },
                     { id: 'semestral',    label: '📈 Semestral' },
                     { id: 'anual',        label: '🗓️ Anual' },
-                    { id: 'mes_visao',    label: '📅 Mês' },
                   ].map(p => (
                     <button key={p.id} onClick={() => setPeriodoRelatorio(p.id)} style={{
                       padding: '0.38rem 0.85rem', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
@@ -2378,6 +2415,45 @@ export default function Aniversariantes({ permissoes }) {
                   📄 Gerar PDF
                 </button>
               </div>
+              {/* Seletor de semana do mês */}
+              {periodoRelatorio === 'semanal' && (() => {
+                const semanasDoMes = obterSemanasDoMes(new Date().getFullYear(), mesSemanaSel);
+                const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Mês:</span>
+                      {nomesMes.map((m, i) => (
+                        <button key={i} onClick={() => { setMesSemanaSel(i); setSemanaSel(null); }} style={{
+                          padding: '0.3rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                          border: mesSemanaSel === i ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                          background: mesSemanaSel === i ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                          color: mesSemanaSel === i ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                          borderRadius: 'var(--radius-md)',
+                        }}>{m.slice(0,3)}</button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Semana:</span>
+                      {semanasDoMes.map((s, i) => {
+                        const ativo = (semanaSel === null ? calcularIntervalo('semanal').semanaIdx : semanaSel) === i;
+                        return (
+                          <button key={i} onClick={() => setSemanaSel(i)} style={{
+                            padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                            border: ativo ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                            background: ativo ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                            color: ativo ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                            borderRadius: 'var(--radius-md)',
+                          }}>
+                            Semana {i + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* Seletor de mês específico */}
               {periodoRelatorio === 'mes_visao' && (
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
