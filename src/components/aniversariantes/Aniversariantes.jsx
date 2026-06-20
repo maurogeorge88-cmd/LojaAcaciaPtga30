@@ -106,7 +106,6 @@ export default function Aniversariantes({ permissoes }) {
   const [periodoRelatorio, setPeriodoRelatorio] = useState('semanal');
   const [trimestreSel, setTrimestreSel] = useState(Math.floor(new Date().getMonth() / 3));
   const [semestreSel, setSemestreSel] = useState(new Date().getMonth() < 6 ? 0 : 1);
-  const [mesSemanaSel, setMesSemanaSel] = useState(new Date().getMonth());
   const [semanaSel, setSemanaSel] = useState(null); // null = calculado automaticamente (semana atual)
   const [todosAniversariantes, setTodosAniversariantes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1735,7 +1734,7 @@ export default function Aniversariantes({ permissoes }) {
     const ano = hoje.getFullYear();
     switch (periodo) {
       case 'semanal': {
-        const semanasDoMes = obterSemanasDoMes(ano, mesSemanaSel);
+        const semanasDoMes = obterSemanasDoMes(ano, hoje.getMonth());
         let idx = semanaSel;
         if (idx === null || idx === undefined || idx >= semanasDoMes.length) {
           // Semana atual como padrão: encontrar a semana que contém hoje
@@ -1747,7 +1746,7 @@ export default function Aniversariantes({ permissoes }) {
         const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
         return {
           inicio: semana.inicio, fim: semana.fim,
-          label: `Semana ${idx + 1} — ${semana.inicio.toLocaleDateString('pt-BR')} — ${semana.fim.toLocaleDateString('pt-BR')} (${nomesMes[mesSemanaSel]})`,
+          label: `Semana ${idx + 1} — ${semana.inicio.toLocaleDateString('pt-BR')} — ${semana.fim.toLocaleDateString('pt-BR')} (${nomesMes[hoje.getMonth()]})`,
           totalSemanas: semanasDoMes.length, semanaIdx: idx,
         };
       }
@@ -2415,41 +2414,28 @@ export default function Aniversariantes({ permissoes }) {
                   📄 Gerar PDF
                 </button>
               </div>
-              {/* Seletor de semana do mês */}
+              {/* Seletor de semana do mês atual */}
               {periodoRelatorio === 'semanal' && (() => {
-                const semanasDoMes = obterSemanasDoMes(new Date().getFullYear(), mesSemanaSel);
+                const hoje = new Date();
+                const semanasDoMes = obterSemanasDoMes(hoje.getFullYear(), hoje.getMonth());
                 const nomesMes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
                 return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
-                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Mês:</span>
-                      {nomesMes.map((m, i) => (
-                        <button key={i} onClick={() => { setMesSemanaSel(i); setSemanaSel(null); }} style={{
-                          padding: '0.3rem 0.6rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                          border: mesSemanaSel === i ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
-                          background: mesSemanaSel === i ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
-                          color: mesSemanaSel === i ? 'var(--color-accent)' : 'var(--color-text-muted)',
+                  <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center', paddingTop: '0.6rem', borderTop: '1px solid var(--color-border)' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Semana de {nomesMes[hoje.getMonth()]}:</span>
+                    {semanasDoMes.map((s, i) => {
+                      const ativo = (semanaSel === null ? calcularIntervalo('semanal').semanaIdx : semanaSel) === i;
+                      return (
+                        <button key={i} onClick={() => setSemanaSel(i)} style={{
+                          padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
+                          border: ativo ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
+                          background: ativo ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
+                          color: ativo ? 'var(--color-accent)' : 'var(--color-text-muted)',
                           borderRadius: 'var(--radius-md)',
-                        }}>{m.slice(0,3)}</button>
-                      ))}
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                      <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', fontWeight: 600 }}>Semana:</span>
-                      {semanasDoMes.map((s, i) => {
-                        const ativo = (semanaSel === null ? calcularIntervalo('semanal').semanaIdx : semanaSel) === i;
-                        return (
-                          <button key={i} onClick={() => setSemanaSel(i)} style={{
-                            padding: '0.3rem 0.65rem', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer',
-                            border: ativo ? '1px solid rgba(201,168,76,0.5)' : '1px solid var(--color-border)',
-                            background: ativo ? 'rgba(201,168,76,0.12)' : 'var(--color-surface-2)',
-                            color: ativo ? 'var(--color-accent)' : 'var(--color-text-muted)',
-                            borderRadius: 'var(--radius-md)',
-                          }}>
-                            Semana {i + 1}
-                          </button>
-                        );
-                      })}
-                    </div>
+                        }}>
+                          Semana {i + 1}
+                        </button>
+                      );
+                    })}
                   </div>
                 );
               })()}
