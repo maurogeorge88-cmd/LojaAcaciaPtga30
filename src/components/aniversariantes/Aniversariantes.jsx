@@ -1804,7 +1804,7 @@ export default function Aniversariantes({ permissoes }) {
   };
 
   return (
-    <div style={{ padding: '1.5rem', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ padding: '1.5rem', maxWidth: '1500px', margin: '0 auto' }}>
 
       {/* ── Tabs ──────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '1rem', borderBottom: '2px solid var(--color-border)', paddingBottom: '0' }}>
