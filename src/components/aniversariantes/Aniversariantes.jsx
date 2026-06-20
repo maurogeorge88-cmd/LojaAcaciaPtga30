@@ -2351,7 +2351,7 @@ export default function Aniversariantes({ permissoes }) {
             { label: 'DATA', x: margin + 2, render: fmtD },
             { label: 'NOME', x: margin + 20, render: i => {
                 const nome = abreviarNomeExibicao(i);
-                return i.tipo !== 'Irmão' && i.irmao_responsavel ? `${nome} (Ir∴ ${abreviarNome(i.irmao_responsavel)})` : nome;
+                return i.tipo !== 'Irmão' && i.irmao_responsavel ? `${nome} (Ir. ${abreviarNome(i.irmao_responsavel)})` : nome;
               }, bold: true, maxWidth: 95, color: i => i.tipo === 'Irmão' ? [37,99,235] : [219,39,119] },
             { label: 'TIPO', x: margin + 125, render: i => i.tipo === 'Irmão' ? 'Irmao' : 'Cunhada' },
             { label: 'IDADE', x: margin + 160, render: i => i.idade ? `${i.idade} anos` : '—' },
@@ -2362,7 +2362,7 @@ export default function Aniversariantes({ permissoes }) {
             { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 65,
               color: i => i.tipo === 'Bodas' ? [201,168,76] : null },
             { label: 'TIPO', x: margin + 95, key: 'tipo' },
-            { label: 'IRMAO RESP.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir∴ ${abreviarNome(i.irmao_responsavel)}` : '—', maxWidth: 60 },
+            { label: 'IRMAO RESP.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir. ${abreviarNome(i.irmao_responsavel)}` : '—', maxWidth: 60 },
           ], [16, 120, 90]);
 
           renderTabela('Datas Comemorativas', com, [
@@ -2376,7 +2376,7 @@ export default function Aniversariantes({ permissoes }) {
             { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 60,
               color: i => (i.tipo === 'Irmão') ? [37,99,235] : (i.tipo === 'Esposa' || i.tipo?.includes('Esposa')) ? [219,39,119] : null },
             { label: 'PARENTESCO', x: margin + 90, key: 'tipo' },
-            { label: 'REF.', x: margin + 135, render: i => i.irmao_responsavel ? `Ir∴ ${abreviarNome(i.irmao_responsavel)}` : '—', maxWidth: 55 },
+            { label: 'REF.', x: margin + 135, render: i => i.irmao_responsavel ? `Ir. ${abreviarNome(i.irmao_responsavel)}` : '—', maxWidth: 55 },
           ], [120, 120, 130]);
 
           const total = doc.internal.getNumberOfPages();
