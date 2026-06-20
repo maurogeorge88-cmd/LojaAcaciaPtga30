@@ -2981,6 +2981,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
           <EmailIrmaos
             showSuccess={showSuccess}
             showError={showError}
+            permissoes={permissoes}
           />
         )}
 
@@ -3038,7 +3039,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
 
         {/* ANIVERSARIANTES */}
         {currentPage === 'aniversariantes' && (
-          <Aniversariantes />
+          <Aniversariantes permissoes={permissoes} />
         )}
 
         {/* COMODATOS */}
