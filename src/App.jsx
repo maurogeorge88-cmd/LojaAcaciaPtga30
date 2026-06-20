@@ -10,6 +10,7 @@ import { Dashboard } from './components/Dashboard';
 import { CorpoAdmin } from './components/administracao/CorpoAdmin';
 import Usuarios from './components/administracao/Usuarios';
 import GestaoSistema from './components/administracao/GestaoSistema';
+import EleicaoPosse from './components/administracao/EleicaoPosse';
 import DadosLoja from './components/sistema/DadosLoja';
 import ControleAcesso from './components/administracao/ControleAcesso';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
@@ -1851,6 +1852,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('eleicao-posse')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'eleicao-posse'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Eleição e Posse"
+                >
+                  <span className="text-base">🗳️</span>
+                  {menuAberto && <span className="font-semibold">Eleição e Posse</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('altos-graus')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'altos-graus'
@@ -2501,6 +2515,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('eleicao-posse')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'eleicao-posse'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Eleição e Posse"
+                >
+                  <span className="text-base">🗳️</span>
+                  {menuAberto && <span className="font-semibold">Eleição e Posse</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('sobre')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'sobre'
@@ -2616,6 +2643,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'balaustres' && '📜 Balaustres'}
                   {currentPage === 'pranchas' && '📄 Pranchas Expedidas'}
                   {currentPage === 'corpo-admin' && '👔 Corpo Administrativo'}
+                  {currentPage === 'eleicao-posse' && '🗳️ Eleição e Posse'}
                   {currentPage === 'projetos' && '📊 Projetos'}
                   {currentPage === 'comissoes' && '📋 Comissões'}
                   {currentPage === 'biblioteca' && '📚 Biblioteca'}
@@ -2863,6 +2891,15 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             permissoes={permissoes}
             onUpdate={loadCorpoAdmin}
+            showSuccess={showSuccess}
+            showError={showError}
+          />
+        )}
+
+        {currentPage === 'eleicao-posse' && (
+          <EleicaoPosse
+            irmaos={irmaos}
+            permissoes={permissoes}
             showSuccess={showSuccess}
             showError={showError}
           />
