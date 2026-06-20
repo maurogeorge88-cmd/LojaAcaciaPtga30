@@ -2547,13 +2547,13 @@ export default function Aniversariantes({ permissoes }) {
                 { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
                 { key: 'nome', label: 'Nome', bold: true, render: i => (
                   i.tipo === 'Bodas'
-                    ? <span style={{ color: 'var(--color-accent)', fontWeight: 700 }}>{abreviarNomeExibicao(i)}</span>
+                    ? <span style={{ color: '#c9a84c', fontWeight: 700 }}>{abreviarNomeExibicao(i)}</span>
                     : <span>{abreviarNomeExibicao(i)}</span>
                 )},
                 { key: 'tipo', label: 'Tipo', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px',
                     background: i.tipo === 'Bodas' ? 'rgba(201,168,76,0.12)' : 'rgba(16,185,129,0.12)',
-                    color: i.tipo === 'Bodas' ? 'var(--color-accent)' : '#10b981' }}>
+                    color: i.tipo === 'Bodas' ? '#c9a84c' : '#10b981' }}>
                     {i.tipo}
                   </span>
                 )},
