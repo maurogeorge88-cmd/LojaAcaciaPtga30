@@ -115,9 +115,14 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
         }
       }
       const { data: lancs } = await q.limit(300);
-      const rec  = (lancs||[]).filter(l=>l.categorias_financeiras?.tipo==='receita').reduce((s,l)=>s+parseFloat(l.valor||0),0);
-      const desp = (lancs||[]).filter(l=>l.categorias_financeiras?.tipo==='despesa').reduce((s,l)=>s+parseFloat(l.valor||0),0);
-      setDadosFinanceiro({ receitas:rec, despesas:desp, saldo:rec-desp });
+      // Usa o campo 'tipo' da própria tabela lancamentos_loja (fonte correta), com fallback para a categoria
+      const getTipo = (l) => l.tipo || l.categorias_financeiras?.tipo;
+      const rec  = (lancs||[]).filter(l=>getTipo(l)==='receita' && l.status==='pago').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+      const desp = (lancs||[]).filter(l=>getTipo(l)==='despesa' && l.status==='pago').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+      // Situação real: existe algum lançamento pendente (independente do período de data_vencimento já filtrado)
+      const temPendencia = (lancs||[]).some(l => l.status === 'pendente');
+      const valorPendente = (lancs||[]).filter(l => l.status === 'pendente').reduce((s,l)=>s+parseFloat(l.valor||0),0);
+      setDadosFinanceiro({ receitas:rec, despesas:desp, saldo:rec-desp, temPendencia, valorPendente });
     } catch(e) { console.error(e); }
   };
 
@@ -258,7 +263,7 @@ const PerfilCompletoIrmao = ({ irmaoId, userData, irmaoLogadoId, onClose }) => {
                   {label:'Receitas',  val:fmtMoeda(dadosFinanceiro.receitas),  cor:'#f97316'},
                   {label:'Despesas',  val:fmtMoeda(dadosFinanceiro.despesas),  cor:'#10b981'},
                   {label:'Saldo',     val:fmtMoeda(dadosFinanceiro.saldo),     cor:dadosFinanceiro.saldo>=0?'#3b82f6':'#ef4444'},
-                  {label:'Situação',  val:dadosFinanceiro.saldo>=0?'✅ Pago':'⚠️ Devendo', cor:dadosFinanceiro.saldo>=0?'#10b981':'#ef4444'},
+                  {label:'Situação',  val:dadosFinanceiro.temPendencia?`⚠️ Em débito (${fmtMoeda(dadosFinanceiro.valorPendente)})`:'✅ Quite', cor:dadosFinanceiro.temPendencia?'#ef4444':'#10b981'},
                 ].map((item,i)=>(
                   <div key={i} style={{borderRadius:'var(--radius-lg)',padding:'0.9rem',background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderLeft:`4px solid ${item.cor}`}}>
                     <p style={{fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',margin:'0 0 0.3rem'}}>{item.label}</p>
