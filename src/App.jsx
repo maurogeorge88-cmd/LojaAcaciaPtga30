@@ -10,7 +10,6 @@ import { Dashboard } from './components/Dashboard';
 import { CorpoAdmin } from './components/administracao/CorpoAdmin';
 import Usuarios from './components/administracao/Usuarios';
 import GestaoSistema from './components/administracao/GestaoSistema';
-import EleicaoPosse from './components/administracao/EleicaoPosse';
 import DadosLoja from './components/sistema/DadosLoja';
 import ControleAcesso from './components/administracao/ControleAcesso';
 import CadastrarIrmao from './components/irmaos/CadastrarIrmao';
@@ -1744,6 +1743,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 </button>
 
                 <button
+                  onClick={() => setCurrentPage('email-irmaos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'email-irmaos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Central E-Mail"
+                >
+                  <span className="text-base">📧</span>
+                  {menuAberto && <span className="font-semibold">Central E-Mail</span>}
+                </button>
+
+                <button
                   onClick={() => setCurrentPage('aniversariantes')}
                   className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
                     currentPage === 'aniversariantes'
@@ -1836,19 +1848,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 >
                   <span className="text-base">📋</span>
                   {menuAberto && <span className="font-semibold">Administração</span>}
-                </button>
-
-                <button
-                  onClick={() => setCurrentPage('eleicao-posse')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'eleicao-posse'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Eleição e Posse"
-                >
-                  <span className="text-base">🗳️</span>
-                  {menuAberto && <span className="font-semibold">Eleição e Posse</span>}
                 </button>
 
                 <button
@@ -2144,18 +2143,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                         </button>
 
                         <button
-                          onClick={() => setCurrentPage('email-irmaos')}
-                          className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
-                            currentPage === 'email-irmaos'
-                              ? 'bg-primary-700 border-l-4 border-white'
-                              : 'hover:bg-primary-800'
-                          }`}
-                        >
-                          <span>📧</span>
-                          <span>E-mails para Irmãos</span>
-                        </button>
-
-                        <button
                           onClick={() => setCurrentPage('relatorio-financeiro')}
                           className={`w-full px-8 py-2 flex items-center gap-2 transition text-xs ${
                             currentPage === 'relatorio-financeiro'
@@ -2302,6 +2289,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                 >
                   <span className="text-base">📅</span>
                   {menuAberto && <span className="font-semibold">Cronograma</span>}
+                </button>
+
+                <button
+                  onClick={() => setCurrentPage('email-irmaos')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'email-irmaos'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Central E-Mail"
+                >
+                  <span className="text-base">📧</span>
+                  {menuAberto && <span className="font-semibold">Central E-Mail</span>}
                 </button>
 
                 <button
@@ -2499,18 +2499,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   <span className="text-base">👔</span>
                   {menuAberto && <span className="font-semibold">Administração</span>}
                 </button>
-                <button
-                  onClick={() => setCurrentPage('eleicao-posse')}
-                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
-                    currentPage === 'eleicao-posse'
-                      ? 'bg-primary-700 border-l-4 border-white'
-                      : 'hover:bg-primary-800'
-                  }`}
-                  title="Eleição e Posse"
-                >
-                  <span className="text-base">🗳️</span>
-                  {menuAberto && <span className="font-semibold">Eleição e Posse</span>}
-                </button>
 
                 <button
                   onClick={() => setCurrentPage('sobre')}
@@ -2638,7 +2626,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   {currentPage === 'lancamentos-lote' && '📦 Lançamentos em Lote'}
                   {currentPage === 'categorias-financeiras' && '🏷️ Categorias Financeiras'}
                   {currentPage === 'eventos-comemorativos' && '🍽️ Ágape & Festas'}
-                  {currentPage === 'email-irmaos' && '📧 E-mails para Irmãos'}
+                  {currentPage === 'email-irmaos' && '📧 Central E-Mail'}
                   {currentPage === 'relatorio-financeiro' && '📊 Conferir Finanças'}
                   {currentPage === 'caridade' && '❤️ Caridade'}
                   {currentPage === 'eventos' && '🎉 Eventos'}
@@ -2875,15 +2863,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
             irmaos={irmaos}
             permissoes={permissoes}
             onUpdate={loadCorpoAdmin}
-            showSuccess={showSuccess}
-            showError={showError}
-          />
-        )}
-
-        {currentPage === 'eleicao-posse' && (
-          <EleicaoPosse
-            irmaos={irmaos}
-            permissoes={permissoes}
             showSuccess={showSuccess}
             showError={showError}
           />
