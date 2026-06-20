@@ -273,7 +273,9 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
 
       {/* Abas */}
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0' }}>
-        {[{ id: 'manual', label: '📤 Envio Manual' }, { id: 'automatico', label: '⏰ Automático' }, { id: 'historico', label: '📋 Histórico' }].map(a => (
+        {[{ id: 'manual', label: '📤 Envio Manual' }, { id: 'automatico', label: '⏰ Automático' }, { id: 'historico', label: '📋 Histórico' }]
+          .filter(a => a.id !== 'automatico' || podeEnviarEmail)
+          .map(a => (
           <button key={a.id} onClick={() => setAba(a.id)}
             style={{ padding: '0.6rem 1.25rem', fontWeight: '600', fontSize: '0.875rem', border: 'none', cursor: 'pointer', borderBottom: aba === a.id ? '3px solid var(--color-accent)' : '3px solid transparent', background: 'transparent', color: aba === a.id ? 'var(--color-accent)' : 'var(--color-text-muted)', borderRadius: '0', marginBottom: '-1px' }}>
             {a.label}
@@ -497,7 +499,7 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
       )}
 
       {/* ── ABA: AUTOMÁTICO ──────────────────────────────────────────────────── */}
-      {aba === 'automatico' && (
+      {aba === 'automatico' && podeEnviarEmail && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ ...sCard, background: 'var(--color-accent-bg)', borderColor: 'var(--color-accent)' }}>
             <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--color-text)' }}>
