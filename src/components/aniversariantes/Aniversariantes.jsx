@@ -97,7 +97,8 @@ const obterEmojiPessoa = (idade, sexo, tipo = null) => {
   return sexo === 'F' ? '👵' : '👴';
 };
 
-export default function Aniversariantes() {
+export default function Aniversariantes({ permissoes }) {
+  const podeEnviarEmail = permissoes?.canEditFinancial || permissoes?.canManageUsers || false;
   const [aniversariantes, setAniversariantes] = useState([]);
   const [filtro, setFiltro] = useState('hoje');
   const [mesFiltro, setMesFiltro] = useState(new Date().getMonth() + 1);
@@ -334,6 +335,7 @@ export default function Aniversariantes() {
   };
 
   const handleEnviarEmail = async (irmao) => {
+    if (!podeEnviarEmail) { alert('Você não tem permissão para enviar felicitações.'); return; }
     setEnviandoEmail(irmao.irmao_id);
     try {
       await enviarEmailAniversario(irmao, dadosLoja.nome_loja || 'A∴R∴L∴S∴ Acácia de Paranatinga nº 30', chanceler || 'Chanceler', dadosLoja.logo_url || '', 'manual');
@@ -348,6 +350,7 @@ export default function Aniversariantes() {
   };
 
   const handleEnviarEmailEsposa = async (aniv) => {
+    if (!podeEnviarEmail) { alert('Você não tem permissão para enviar felicitações.'); return; }
     if (!aniv.email) { alert('Esta cunhada não possui e-mail cadastrado.'); return; }
     setEnviandoEmail(`esposa_${aniv.esposa_id}`);
     try {
@@ -373,6 +376,7 @@ export default function Aniversariantes() {
   };
 
   const handleEnviarBodas = async (aniv) => {
+    if (!podeEnviarEmail) { alert('Você não tem permissão para enviar felicitações.'); return; }
     if (!aniv.email_irmao && !aniv.email_esposa) {
       alert('Nenhum dos dois possui e-mail cadastrado.');
       return;
@@ -1600,6 +1604,7 @@ export default function Aniversariantes() {
                     ✅ Já felicitado
                   </span>
                 )}
+                {podeEnviarEmail ? (
                 <button
                   onClick={e => { e.stopPropagation(); setModalEmail(aniv); }}
                   style={{
@@ -1612,6 +1617,11 @@ export default function Aniversariantes() {
                   }}>
                   📧 {emailEnviados[aniv.irmao_id] ? 'Enviar novamente' : 'Enviar Parabéns'}
                 </button>
+                ) : !emailEnviados[aniv.irmao_id] && (
+                  <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                    🔒 Sem permissão para enviar
+                  </span>
+                )}
               </div>
             )}
 
@@ -1624,6 +1634,7 @@ export default function Aniversariantes() {
                   </span>
                 )}
                 {aniv.email ? (
+                  podeEnviarEmail ? (
                   <button
                     onClick={e => { e.stopPropagation(); handleEnviarEmailEsposa(aniv); }}
                     disabled={enviandoEmail === `esposa_${aniv.esposa_id}`}
@@ -1637,6 +1648,11 @@ export default function Aniversariantes() {
                     }}>
                     🌸 {enviandoEmail === `esposa_${aniv.esposa_id}` ? 'Enviando...' : emailEnviadosEsposas[aniv.esposa_id] ? 'Enviar novamente' : 'Enviar Felicitações'}
                   </button>
+                  ) : !emailEnviadosEsposas[aniv.esposa_id] && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                      🔒 Sem permissão para enviar
+                    </span>
+                  )
                 ) : (
                   <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                     📭 Sem e-mail cadastrado
@@ -1654,6 +1670,7 @@ export default function Aniversariantes() {
                   </span>
                 )}
                 {(aniv.email_irmao || aniv.email_esposa) ? (
+                  podeEnviarEmail ? (
                   <button
                     onClick={e => { e.stopPropagation(); handleEnviarBodas(aniv); }}
                     disabled={enviandoEmail === `bodas_${aniv.esposa_id}`}
@@ -1667,6 +1684,11 @@ export default function Aniversariantes() {
                     }}>
                     💑 {enviandoEmail === `bodas_${aniv.esposa_id}` ? 'Enviando...' : emailEnviadosBodas[aniv.esposa_id] ? 'Enviar novamente' : 'Parabéns pelas Bodas'}
                   </button>
+                  ) : !emailEnviadosBodas[aniv.esposa_id] && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+                      🔒 Sem permissão para enviar
+                    </span>
+                  )
                 ) : (
                   <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
                     📭 Nenhum e-mail cadastrado
