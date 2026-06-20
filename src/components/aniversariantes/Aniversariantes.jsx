@@ -2261,6 +2261,33 @@ export default function Aniversariantes({ permissoes }) {
           return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
         };
 
+        // Abrevia nome: pega os 2 primeiros nomes; se o 2º for preposição, usa o último nome
+        const PREPOSICOES = ['de', 'da', 'do', 'das', 'dos', 'e'];
+        const abreviarNome = (nomeCompleto) => {
+          if (!nomeCompleto) return nomeCompleto;
+          const partes = nomeCompleto.trim().split(/\s+/);
+          if (partes.length <= 2) return nomeCompleto;
+          const segundo = partes[1].toLowerCase();
+          if (PREPOSICOES.includes(segundo)) {
+            return `${partes[0]} ${partes[partes.length - 1]}`;
+          }
+          return `${partes[0]} ${partes[1]}`;
+        };
+
+        // Para registros de Bodas, abrevia cada lado do "&" separadamente
+        const abreviarNomeExibicao = (item) => {
+          const nome = item.nome || '';
+          if (item.tipo === 'Bodas' && nome.includes(' & ')) {
+            const [ladoIrmao, ladoEsposa] = nome.split(' & ');
+            return `${abreviarNome(ladoIrmao)} & ${abreviarNome(ladoEsposa)}`;
+          }
+          // Irmãos, Cunhadas (Esposa) e In Memoriam (Irmão/Esposa/Cunhada) são abreviados
+          if (item.tipo === 'Irmão' || item.tipo === 'Esposa' || item.tipo?.includes('Esposa') || item.tipo === 'Cunhada') {
+            return abreviarNome(nome);
+          }
+          return nome;
+        };
+
         const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
 
         const isPassado = (item) => {
@@ -2319,14 +2346,14 @@ export default function Aniversariantes({ permissoes }) {
 
           renderTabela('Felicitacoes - Irmaos e Cunhadas', felic, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 80 },
+            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 80 },
             { label: 'TIPO', x: margin + 110, render: i => i.tipo === 'Irmao' ? 'Irmao' : 'Cunhada' },
             { label: 'IDADE', x: margin + 140, render: i => i.idade ? `${i.idade} anos` : '—' },
           ], [30, 70, 130]);
 
           renderTabela('Familia - Pais, Filhos e Bodas', fam, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 70 },
+            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 70 },
             { label: 'TIPO', x: margin + 100, key: 'tipo' },
             { label: 'IRMAO RESP.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—', maxWidth: 55 },
           ], [16, 120, 90]);
@@ -2339,7 +2366,7 @@ export default function Aniversariantes({ permissoes }) {
 
           renderTabela('In Memoriam', inMem, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, key: 'nome', bold: true, maxWidth: 70 },
+            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 70 },
             { label: 'PARENTESCO', x: margin + 100, key: 'tipo' },
             { label: 'REF.', x: margin + 135, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—', maxWidth: 50 },
           ], [120, 120, 130]);
@@ -2495,7 +2522,7 @@ export default function Aniversariantes({ permissoes }) {
               dados={felicitacoes}
               colunas={[
                 { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
-                { key: 'nome', label: 'Nome', bold: true },
+                { key: 'nome', label: 'Nome', bold: true, render: i => abreviarNomeExibicao(i) },
                 { key: 'tipo', label: 'Tipo', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px',
                     background: i.tipo === 'Irmão' ? 'rgba(59,130,246,0.12)' : 'rgba(236,72,153,0.12)',
@@ -2514,7 +2541,7 @@ export default function Aniversariantes({ permissoes }) {
               dados={familia}
               colunas={[
                 { key: 'data', label: 'Data', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
-                { key: 'nome', label: 'Nome', bold: true },
+                { key: 'nome', label: 'Nome', bold: true, render: i => abreviarNomeExibicao(i) },
                 { key: 'tipo', label: 'Tipo', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px',
                     background: i.tipo === 'Bodas' ? 'rgba(201,168,76,0.12)' : 'rgba(16,185,129,0.12)',
@@ -2555,7 +2582,7 @@ export default function Aniversariantes({ permissoes }) {
                   const dt = d instanceof Date ? d : new Date(d);
                   return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 }},
-                { key: 'nome', label: 'Nome', bold: true },
+                { key: 'nome', label: 'Nome', bold: true, render: i => abreviarNomeExibicao(i) },
                 { key: 'tipo', label: 'Parentesco', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(148,163,184,0.15)', color: '#94a3b8' }}>
                     {i.tipo || '—'}
