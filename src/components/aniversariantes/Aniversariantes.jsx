@@ -2331,7 +2331,10 @@ export default function Aniversariantes({ permissoes }) {
             dados.forEach((item, idx) => {
               if (y > 270) { doc.addPage(); y = 14; }
               if (idx % 2 === 0) { doc.setFillColor(248,249,252); doc.rect(margin, y - 1, colRight - margin, 6.5, 'F'); }
-              colunas.forEach(c => txt(c.render ? c.render(item) : String(item[c.key] || '—'), c.x, y + 3.5, { size: 7.5, bold: c.bold, maxWidth: c.maxWidth }));
+              colunas.forEach(c => {
+                const corCol = typeof c.color === 'function' ? c.color(item) : c.color;
+                txt(c.render ? c.render(item) : String(item[c.key] || '—'), c.x, y + 3.5, { size: 7.5, bold: c.bold, maxWidth: c.maxWidth, color: corCol });
+              });
               y += 6.5;
             });
             y += 4;
@@ -2346,16 +2349,20 @@ export default function Aniversariantes({ permissoes }) {
 
           renderTabela('Felicitacoes - Irmaos e Cunhadas', felic, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 80 },
-            { label: 'TIPO', x: margin + 110, render: i => i.tipo === 'Irmao' ? 'Irmao' : 'Cunhada' },
-            { label: 'IDADE', x: margin + 140, render: i => i.idade ? `${i.idade} anos` : '—' },
+            { label: 'NOME', x: margin + 20, render: i => {
+                const nome = abreviarNomeExibicao(i);
+                return i.tipo !== 'Irmão' && i.irmao_responsavel ? `${nome} (Ir∴ ${abreviarNome(i.irmao_responsavel)})` : nome;
+              }, bold: true, maxWidth: 95, color: i => i.tipo === 'Irmão' ? [37,99,235] : [219,39,119] },
+            { label: 'TIPO', x: margin + 125, render: i => i.tipo === 'Irmão' ? 'Irmao' : 'Cunhada' },
+            { label: 'IDADE', x: margin + 160, render: i => i.idade ? `${i.idade} anos` : '—' },
           ], [30, 70, 130]);
 
           renderTabela('Familia - Pais, Filhos e Bodas', fam, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 70 },
-            { label: 'TIPO', x: margin + 100, key: 'tipo' },
-            { label: 'IRMAO RESP.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—', maxWidth: 55 },
+            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 65,
+              color: i => i.tipo === 'Bodas' ? [201,168,76] : null },
+            { label: 'TIPO', x: margin + 95, key: 'tipo' },
+            { label: 'IRMAO RESP.', x: margin + 130, render: i => i.irmao_responsavel ? `Ir∴ ${abreviarNome(i.irmao_responsavel)}` : '—', maxWidth: 60 },
           ], [16, 120, 90]);
 
           renderTabela('Datas Comemorativas', com, [
@@ -2366,9 +2373,10 @@ export default function Aniversariantes({ permissoes }) {
 
           renderTabela('In Memoriam', inMem, [
             { label: 'DATA', x: margin + 2, render: fmtD },
-            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 70 },
-            { label: 'PARENTESCO', x: margin + 100, key: 'tipo' },
-            { label: 'REF.', x: margin + 135, render: i => i.irmao_responsavel ? `Ir. ${i.irmao_responsavel.split(' ')[0]}` : '—', maxWidth: 50 },
+            { label: 'NOME', x: margin + 20, render: i => abreviarNomeExibicao(i), bold: true, maxWidth: 60,
+              color: i => (i.tipo === 'Irmão') ? [37,99,235] : (i.tipo === 'Esposa' || i.tipo?.includes('Esposa')) ? [219,39,119] : null },
+            { label: 'PARENTESCO', x: margin + 90, key: 'tipo' },
+            { label: 'REF.', x: margin + 135, render: i => i.irmao_responsavel ? `Ir∴ ${abreviarNome(i.irmao_responsavel)}` : '—', maxWidth: 55 },
           ], [120, 120, 130]);
 
           const total = doc.internal.getNumberOfPages();
