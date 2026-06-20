@@ -2549,7 +2549,7 @@ export default function Aniversariantes({ permissoes }) {
                     {i.tipo}
                   </span>
                 )},
-                { key: 'irmao_responsavel', label: 'Irmão Responsável', render: i => i.irmao_responsavel ? `Ir∴ ${i.irmao_responsavel}` : '—' },
+                { key: 'irmao_responsavel', label: 'Irmão Responsável', render: i => i.irmao_responsavel ? `Ir∴ ${abreviarNome(i.irmao_responsavel)}` : '—' },
                 { key: 'idade', label: 'Anos', render: i => i.tipo === 'Bodas' ? `${i.idade} anos de união` : i.idade ? `${i.idade} anos` : '—', nowrap: true },
               ]}
             />
@@ -2588,7 +2588,7 @@ export default function Aniversariantes({ permissoes }) {
                     {i.tipo || '—'}
                   </span>
                 )},
-                { key: 'irmao_responsavel', label: 'Referência', render: i => i.irmao_responsavel ? `Ir∴ ${i.irmao_responsavel}` : '—' },
+                { key: 'irmao_responsavel', label: 'Referência', render: i => i.irmao_responsavel ? `Ir∴ ${abreviarNome(i.irmao_responsavel)}` : '—' },
                 { key: 'idade', label: 'Idade', render: i => i.idade ? `${i.idade} anos` : '—', nowrap: true },
               ]}
             />
