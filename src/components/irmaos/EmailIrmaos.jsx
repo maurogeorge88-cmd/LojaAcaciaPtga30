@@ -3,11 +3,10 @@ import { supabase } from '../../supabaseClient';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const TIPOS = [
-  { id: 'resumo_individual',          label: 'Resumo Individual',          emoji: '📋', desc: 'Financeiro, presença, comissões e eventos de cada irmão' },
-  { id: 'aniversariantes',            label: 'Aniversariantes (Semana)',   emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
-  { id: 'felicitacoes_aniversario',   label: 'Felicitações Aniversário',  emoji: '🎉', desc: 'Envio automático de parabéns no dia + notificação ao responsável' },
-  { id: 'lembrete_financeiro',        label: 'Lembrete Financeiro',        emoji: '⚠️', desc: 'Apenas irmãos com saldo devedor' },
-  { id: 'cronograma_mes',             label: 'Cronograma do Mês',          emoji: '📅', desc: 'Eventos do mês selecionado enviados aos irmãos' },
+  { id: 'resumo_individual',   label: 'Resumo Individual',   emoji: '📋', desc: 'Financeiro, presença, comissões e eventos de cada irmão' },
+  { id: 'aniversariantes',     label: 'Aniversariantes',     emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
+  { id: 'lembrete_financeiro', label: 'Lembrete Financeiro', emoji: '⚠️', desc: 'Apenas irmãos com saldo devedor' },
+  { id: 'cronograma_mes',      label: 'Cronograma do Mês',   emoji: '📅', desc: 'Eventos do mês selecionado enviados aos irmãos' },
 ];
 
 const FREQ = [
@@ -34,7 +33,8 @@ const TIPO_LABEL = { sessao: 'Sessão', trabalho_irmao: 'Trabalho', instrucao: '
   evento_externo: 'Evento Externo', outro: 'Outro' };
 const MESES_ABR_FE = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 
-export default function EmailIrmaos({ showSuccess, showError }) {
+export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
+  const podeEnviarEmail = permissoes?.canEditFinancial || permissoes?.canManageUsers || false;
   const [aba, setAba] = useState('manual');
   const [irmaos, setIrmaos] = useState([]);
   const [irmaosSelec, setIrmaosSelec] = useState([]);
@@ -51,13 +51,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
   const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
-  const [extrasAnivConfig, setExtrasAnivConfig] = useState([]);
-  const [buscaAnivConfig, setBuscaAnivConfig] = useState('');
-  const [notifFelicConfig, setNotifFelicConfig] = useState([]);
-  const [buscaNotifFelic, setBuscaNotifFelic] = useState('');
   const [filtroBusca, setFiltroBusca] = useState('');
-  const [destinatariosExtras, setDestinatariosExtras] = useState([]);
-  const [buscaExtra, setBuscaExtra] = useState('');
 
   // ── Cronograma ──────────────────────────────────────────────────────────────
   const [mesesComRegistros, setMesesComRegistros] = useState([]); // [{ valor: '2026-04', label: 'Abril 2026' }]
@@ -174,6 +168,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
 
   // ── Envio manual ────────────────────────────────────────────────────────────
   const enviarManual = async () => {
+    if (!podeEnviarEmail) { showError('Você não tem permissão para enviar e-mails.'); return; }
     if (tipoSelec === 'resumo_individual' && irmaosSelec.length === 0) {
       showError('Selecione ao menos um irmão.'); return;
     }
@@ -197,7 +192,6 @@ export default function EmailIrmaos({ showSuccess, showError }) {
           opcoes: opcoesConteudo,
           mes_cronograma: mesCronograma,
           destaques_ids: eventosDestaque,
-          destinatarios_extras_ids: tipoSelec === 'aniversariantes' ? destinatariosExtras.map(d => d.id) : [],
         },
       });
       if (fnError) throw fnError;
@@ -219,15 +213,10 @@ export default function EmailIrmaos({ showSuccess, showError }) {
     setSalvandoConfig(modalConfig);
     try {
       const existente = configs.find(c => c.tipo === modalConfig);
-      const extrasIds = modalConfig === 'aniversariantes'
-        ? extrasAnivConfig.map(e => e.id)
-        : modalConfig === 'felicitacoes_aniversario'
-        ? notifFelicConfig.map(e => e.id)
-        : [];
       if (existente) {
-        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, destinatarios_extras_ids: extrasIds }).eq('id', existente.id);
+        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }).eq('id', existente.id);
       } else {
-        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, destinatarios_extras_ids: extrasIds }]);
+        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }]);
       }
       showSuccess('✅ Configuração salva!');
       carregarConfigs();
@@ -245,29 +234,12 @@ export default function EmailIrmaos({ showSuccess, showError }) {
       setFormConfig({ ativo: existente.ativo, frequencia: existente.frequencia || 'mensal', dia_semana: existente.dia_semana || 1, dia_mes: existente.dia_mes || 1, hora: existente.hora ?? 8 });
       setIrmaosConfigSelec(existente.irmaos_ids || []);
       setOpcoesConfig(existente.opcoes_conteudo || { financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
-      // Carregar extras de aniversariantes salvos
-      if (tipo === 'aniversariantes') {
-        const extrasIds = existente.destinatarios_extras_ids || [];
-        const extrasCarregados = irmaos.filter(i => extrasIds.includes(i.id) && i.email)
-          .map(i => ({ id: i.id, nome: i.nome, email: i.email }));
-        setExtrasAnivConfig(extrasCarregados);
-      }
-      // Carregar notificadores de felicitações
-      if (tipo === 'felicitacoes_aniversario') {
-        const notifIds = existente.destinatarios_extras_ids || [];
-        const notifCarregados = irmaos.filter(i => notifIds.includes(i.id) && i.email)
-          .map(i => ({ id: i.id, nome: i.nome, email: i.email }));
-        setNotifFelicConfig(notifCarregados);
-      }
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
       setIrmaosConfigSelec([]);
       setOpcoesConfig({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
-      setExtrasAnivConfig([]);
-      setNotifFelicConfig([]);
     }
     setFiltroBuscaConfig('');
-    setBuscaAnivConfig('');
     setModalConfig(tipo);
   };
 
@@ -321,7 +293,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               <p style={{ fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.75rem', fontSize: '0.95rem' }}>1. Tipo de envio</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {TIPOS.map(t => (
-                  <div key={t.id} onClick={() => { setTipoSelec(t.id); setDestinatariosExtras([]); setBuscaExtra(''); }} style={sCardSel(tipoSelec === t.id)}>
+                  <div key={t.id} onClick={() => setTipoSelec(t.id)} style={sCardSel(tipoSelec === t.id)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '1.25rem' }}>{t.emoji}</span>
                       <div>
@@ -433,82 +405,18 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               </>
             )}
 
-            {/* Info para felicitacoes_aniversario */}
-            {tipoSelec === 'felicitacoes_aniversario' && (
-              <div style={{ ...sCard, background: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.3)' }}>
+            {/* Info para aniversariantes */}
+            {tipoSelec === 'aniversariantes' && (
+              <div style={{ ...sCard, background: 'var(--color-accent-bg)', borderColor: 'var(--color-accent)' }}>
                 <p style={{ color: 'var(--color-text)', margin: 0, fontSize: '0.875rem' }}>
-                  🎉 Este tipo funciona apenas de forma <strong>automática</strong>.<br/>
-                  Configure acima o horário e os responsáveis que receberão a confirmação de envio.<br/>
-                  No dia do aniversário, o sistema envia os parabéns ao irmão e notifica os responsáveis.
+                  ℹ️ O e-mail de aniversariantes é enviado automaticamente para o <strong>Venerável Mestre</strong> e o <strong>Chanceler</strong> cadastrados no sistema.
                 </p>
               </div>
             )}
 
-            {/* Info + destinatários extras para aniversariantes */}
-            {tipoSelec === 'aniversariantes' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {/* Info */}
-                <div style={{ ...sCard, background: 'var(--color-accent-bg)', borderColor: 'var(--color-accent)' }}>
-                  <p style={{ color: 'var(--color-text)', margin: 0, fontSize: '0.875rem' }}>
-                    ℹ️ Será enviado automaticamente para o <strong>Venerável Mestre</strong> e o <strong>Chanceler</strong>. Adicione abaixo outros destinatários se necessário.
-                  </p>
-                </div>
-
-                {/* Seletor de extras */}
-                <div style={{ ...sCard }}>
-                  <p style={{ fontWeight: '700', color: 'var(--color-text)', margin: '0 0 0.75rem', fontSize: '0.85rem' }}>
-                    ➕ Destinatários adicionais
-                  </p>
-                  {/* Busca */}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <input
-                      type="text"
-                      placeholder="🔍 Buscar irmão..."
-                      value={buscaExtra}
-                      onChange={e => setBuscaExtra(e.target.value)}
-                      style={{ flex: 1, padding: '0.45rem 0.75rem', borderRadius: 'var(--radius-md)', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', fontSize: '0.82rem', outline: 'none' }}
-                    />
-                  </div>
-                  {/* Lista de irmãos filtrada */}
-                  {buscaExtra.trim().length >= 2 && (
-                    <div style={{ maxHeight: '160px', overflowY: 'auto', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '0.5rem' }}>
-                      {irmaos
-                        .filter(i => i.email && i.nome.toLowerCase().includes(buscaExtra.toLowerCase()) && !destinatariosExtras.find(d => d.id === i.id))
-                        .slice(0, 10)
-                        .map((i, idx) => (
-                          <div key={i.id}
-                            onClick={() => { setDestinatariosExtras(prev => [...prev, { id: i.id, nome: i.nome, email: i.email }]); setBuscaExtra(''); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.4rem 0.75rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.82rem' }}>
-                            <span style={{ flex: 1, color: 'var(--color-text)', fontWeight: '600' }}>{i.nome}</span>
-                            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>{i.email}</span>
-                            <span style={{ color: 'var(--color-accent)', fontWeight: '700' }}>+ Add</span>
-                          </div>
-                        ))}
-                      {irmaos.filter(i => i.email && i.nome.toLowerCase().includes(buscaExtra.toLowerCase()) && !destinatariosExtras.find(d => d.id === i.id)).length === 0 && (
-                        <div style={{ padding: '0.5rem 0.75rem', color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>Nenhum irmão encontrado com e-mail.</div>
-                      )}
-                    </div>
-                  )}
-                  {/* Tags dos selecionados */}
-                  {destinatariosExtras.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                      {destinatariosExtras.map(d => (
-                        <span key={d.id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.6rem', background: 'rgba(99,102,241,0.12)', color: 'var(--color-accent)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '999px', fontSize: '0.78rem', fontWeight: '600' }}>
-                          {d.nome}
-                          <button onClick={() => setDestinatariosExtras(prev => prev.filter(x => x.id !== d.id))}
-                            style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem', lineHeight: 1 }}>×</button>
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', margin: 0 }}>Nenhum destinatário adicional. Digite acima para buscar.</p>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Botão enviar */}
-            {tipoSelec !== 'felicitacoes_aniversario' && <button onClick={enviarManual} disabled={enviando}
+            {podeEnviarEmail ? (
+            <button onClick={enviarManual} disabled={enviando}
               style={{ padding: '0.75rem', background: enviando ? 'var(--color-surface-3)' : 'var(--color-accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius-lg)', fontWeight: '700', fontSize: '1rem', cursor: enviando ? 'not-allowed' : 'pointer', transition: 'all 0.2s' }}>
               {enviando
                 ? '📤 Enviando...'
@@ -517,7 +425,12 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                   : tipoSelec === 'cronograma_mes'
                     ? `📅 Enviar cronograma de ${labelMesSel || '...'} para ${irmaosSelec.length} irmão(s)`
                     : `📤 Enviar para ${irmaosSelec.length} irmão(s)`}
-            </button>}
+            </button>
+            ) : (
+              <div style={{ padding: '0.75rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.875rem', fontWeight: 600 }}>
+                🔒 Você não tem permissão para enviar e-mails — apenas visualização
+              </div>
+            )}
 
             {/* Resultados */}
             {resultados.length > 0 && (
@@ -543,7 +456,7 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               <p style={{ fontWeight: '700', color: 'var(--color-text)', margin: 0, fontSize: '0.95rem' }}>
                 {tipoSelec === 'aniversariantes' ? 'Irmãos com e-mail' : `${irmaosSelec.length === 0 ? 'Selecionar' : `${irmaosSelec.length} selecionado(s)`}`}
               </p>
-              {tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' && (
+              {tipoSelec !== 'aniversariantes' && (
                 <button onClick={selecionarTodos}
                   style={{ padding: '0.25rem 0.75rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.75rem', cursor: 'pointer' }}>
                   {irmaosSelec.length === irmaosVisiveis.length ? 'Desmarcar todos' : 'Selecionar todos'}
@@ -558,9 +471,9 @@ export default function EmailIrmaos({ showSuccess, showError }) {
               {irmaosVisiveis.map((irmao, idx) => {
                 const sel = irmaosSelec.includes(irmao.id);
                 return (
-                  <div key={irmao.id} onClick={() => tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' && toggleIrmao(irmao.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-lg)', background: sel ? 'var(--color-accent-bg)' : idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', border: '1px solid ' + (sel ? 'var(--color-accent)' : 'transparent'), cursor: tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' ? 'pointer' : 'default', transition: 'all 0.15s' }}>
-                    {tipoSelec !== 'aniversariantes' && tipoSelec !== 'felicitacoes_aniversario' && (
+                  <div key={irmao.id} onClick={() => tipoSelec !== 'aniversariantes' && toggleIrmao(irmao.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-lg)', background: sel ? 'var(--color-accent-bg)' : idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', border: '1px solid ' + (sel ? 'var(--color-accent)' : 'transparent'), cursor: tipoSelec !== 'aniversariantes' ? 'pointer' : 'default', transition: 'all 0.15s' }}>
+                    {tipoSelec !== 'aniversariantes' && (
                       <input type="checkbox" checked={sel} readOnly
                         style={{ accentColor: 'var(--color-accent)', flexShrink: 0 }} />
                     )}
@@ -701,145 +614,39 @@ export default function EmailIrmaos({ showSuccess, showError }) {
                 <span style={{ fontWeight: '600', color: 'var(--color-text)', fontSize: '0.875rem' }}>Ativar envio automático</span>
               </label>
 
-              {/* Frequência + Dia — ocultos para felicitacoes (disparo é sempre no dia do aniversário) */}
-              {modalConfig !== 'felicitacoes_aniversario' && (
-                <>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Frequência</label>
-                    <select value={formConfig.frequencia} onChange={e => setFormConfig(p => ({ ...p, frequencia: e.target.value }))} style={sInput}>
-                      {FREQ.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
-                    </select>
-                  </div>
+              {/* Frequência */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Frequência</label>
+                <select value={formConfig.frequencia} onChange={e => setFormConfig(p => ({ ...p, frequencia: e.target.value }))} style={sInput}>
+                  {FREQ.map(f => <option key={f.id} value={f.id}>{f.label}</option>)}
+                </select>
+              </div>
 
-                  {formConfig.frequencia === 'semanal' && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia da semana</label>
-                      <select value={formConfig.dia_semana} onChange={e => setFormConfig(p => ({ ...p, dia_semana: parseInt(e.target.value) }))} style={sInput}>
-                        {DIAS_SEMANA.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                      </select>
-                    </div>
-                  )}
-
-                  {(formConfig.frequencia === 'mensal' || formConfig.frequencia === 'quinzenal') && (
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia do mês</label>
-                      <select value={formConfig.dia_mes} onChange={e => setFormConfig(p => ({ ...p, dia_mes: parseInt(e.target.value) }))} style={sInput}>
-                        {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
-                      </select>
-                    </div>
-                  )}
-                </>
+              {formConfig.frequencia === 'semanal' && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia da semana</label>
+                  <select value={formConfig.dia_semana} onChange={e => setFormConfig(p => ({ ...p, dia_semana: parseInt(e.target.value) }))} style={sInput}>
+                    {DIAS_SEMANA.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                  </select>
+                </div>
               )}
 
-              {/* Hora — sempre visível */}
+              {(formConfig.frequencia === 'mensal' || formConfig.frequencia === 'quinzenal') && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Dia do mês</label>
+                  <select value={formConfig.dia_mes} onChange={e => setFormConfig(p => ({ ...p, dia_mes: parseInt(e.target.value) }))} style={sInput}>
+                    {Array.from({ length: 28 }, (_, i) => i + 1).map(d => <option key={d} value={d}>Dia {d}</option>)}
+                  </select>
+                </div>
+              )}
+
+              {/* Hora */}
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
-                  {modalConfig === 'felicitacoes_aniversario' ? 'Horário do envio no dia do aniversário' : 'Horário de envio'}
-                </label>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>Horário de envio</label>
                 <select value={formConfig.hora} onChange={e => setFormConfig(p => ({ ...p, hora: parseInt(e.target.value) }))} style={sInput}>
                   {Array.from({ length: 24 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2,'0')}:00</option>)}
                 </select>
               </div>
-
-              {/* Notificadores — só para felicitacoes_aniversario */}
-              {modalConfig === 'felicitacoes_aniversario' && (
-                <div>
-                  <div style={{ padding: '0.75rem', borderRadius: 'var(--radius-md)', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)', marginBottom: '0.75rem' }}>
-                    <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--color-text)' }}>
-                      🎉 No dia do aniversário, o sistema enviará automaticamente o e-mail de parabéns ao irmão.<br/>
-                      📬 Os responsáveis abaixo receberão uma notificação confirmando o envio.
-                    </p>
-                  </div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
-                    📬 Quem recebe a confirmação de envio
-                  </label>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem' }}>
-                    ℹ️ Venerável e Chanceler já recebem automaticamente. Adicione outros responsáveis fixos abaixo.
-                  </p>
-                  <input type="text" placeholder="🔍 Buscar irmão..." value={buscaNotifFelic}
-                    onChange={e => setBuscaNotifFelic(e.target.value)}
-                    style={{ width: '100%', padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.35rem' }} />
-                  {buscaNotifFelic.trim().length >= 2 && (
-                    <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', marginBottom: '0.35rem' }}>
-                      {irmaos
-                        .filter(i => i.email && i.nome.toLowerCase().includes(buscaNotifFelic.toLowerCase()) && !notifFelicConfig.find(e => e.id === i.id))
-                        .slice(0, 8)
-                        .map((i, idx) => (
-                          <div key={i.id}
-                            onClick={() => { setNotifFelicConfig(prev => [...prev, { id: i.id, nome: i.nome, email: i.email }]); setBuscaNotifFelic(''); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.6rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.78rem' }}>
-                            <span style={{ flex: 1, color: 'var(--color-text)', fontWeight: '600' }}>{i.nome}</span>
-                            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>{i.email}</span>
-                            <span style={{ color: 'var(--color-accent)', fontWeight: '700', fontSize: '0.75rem' }}>+ Add</span>
-                          </div>
-                        ))}
-                      {irmaos.filter(i => i.email && i.nome.toLowerCase().includes(buscaNotifFelic.toLowerCase()) && !notifFelicConfig.find(e => e.id === i.id)).length === 0 && (
-                        <div style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>Nenhum irmão encontrado com e-mail.</div>
-                      )}
-                    </div>
-                  )}
-                  {notifFelicConfig.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                      {notifFelicConfig.map(e => (
-                        <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.22rem 0.55rem', background: 'rgba(16,185,129,0.12)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600' }}>
-                          {e.nome}
-                          <button onClick={() => setNotifFelicConfig(prev => prev.filter(x => x.id !== e.id))}
-                            style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', padding: 0, fontSize: '0.85rem', lineHeight: 1 }}>×</button>
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', margin: 0 }}>Nenhum responsável adicional. Digite acima para buscar.</p>
-                  )}
-                </div>
-              )}
-
-              {/* Destinatários extras — só para aniversariantes */}
-              {modalConfig === 'aniversariantes' && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.35rem' }}>
-                    📬 Destinatário adicional fixo
-                  </label>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)', margin: '0 0 0.5rem' }}>
-                    ℹ️ Além do Venerável e Chanceler, indique abaixo um responsável adicional fixo. Permanece até ser removido manualmente.
-                  </p>
-                  <input type="text" placeholder="🔍 Buscar irmão..." value={buscaAnivConfig}
-                    onChange={e => setBuscaAnivConfig(e.target.value)}
-                    style={{ width: '100%', padding: '0.4rem 0.6rem', background: 'var(--color-surface-2)', color: 'var(--color-text)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.8rem', outline: 'none', boxSizing: 'border-box', marginBottom: '0.35rem' }} />
-                  {buscaAnivConfig.trim().length >= 2 && (
-                    <div style={{ maxHeight: '130px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', marginBottom: '0.35rem' }}>
-                      {irmaos
-                        .filter(i => i.email && i.nome.toLowerCase().includes(buscaAnivConfig.toLowerCase()) && !extrasAnivConfig.find(e => e.id === i.id))
-                        .slice(0, 8)
-                        .map((i, idx) => (
-                          <div key={i.id}
-                            onClick={() => { setExtrasAnivConfig(prev => [...prev, { id: i.id, nome: i.nome, email: i.email }]); setBuscaAnivConfig(''); }}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.35rem 0.6rem', cursor: 'pointer', background: idx % 2 === 0 ? 'var(--color-surface)' : 'var(--color-surface-2)', borderBottom: '1px solid var(--color-border)', fontSize: '0.78rem' }}>
-                            <span style={{ flex: 1, color: 'var(--color-text)', fontWeight: '600' }}>{i.nome}</span>
-                            <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem' }}>{i.email}</span>
-                            <span style={{ color: 'var(--color-accent)', fontWeight: '700', fontSize: '0.75rem' }}>+ Add</span>
-                          </div>
-                        ))}
-                      {irmaos.filter(i => i.email && i.nome.toLowerCase().includes(buscaAnivConfig.toLowerCase()) && !extrasAnivConfig.find(e => e.id === i.id)).length === 0 && (
-                        <div style={{ padding: '0.4rem 0.6rem', color: 'var(--color-text-muted)', fontSize: '0.78rem' }}>Nenhum irmão encontrado com e-mail.</div>
-                      )}
-                    </div>
-                  )}
-                  {extrasAnivConfig.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                      {extrasAnivConfig.map(e => (
-                        <span key={e.id} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.22rem 0.55rem', background: 'rgba(99,102,241,0.12)', color: 'var(--color-accent)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: '999px', fontSize: '0.75rem', fontWeight: '600' }}>
-                          {e.nome}
-                          <button onClick={() => setExtrasAnivConfig(prev => prev.filter(x => x.id !== e.id))}
-                            style={{ background: 'none', border: 'none', color: 'var(--color-accent)', cursor: 'pointer', padding: 0, fontSize: '0.85rem', lineHeight: 1 }}>×</button>
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', margin: 0 }}>Nenhum responsável adicional. Digite acima para buscar.</p>
-                  )}
-                </div>
-              )}
 
               {/* Opções de conteúdo — só para resumo_individual */}
               {modalConfig === 'resumo_individual' && (
