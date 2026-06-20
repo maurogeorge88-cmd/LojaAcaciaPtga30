@@ -792,6 +792,27 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
   // RENDER
   // ════════════════════════════════════════════════════════════════
 
+  if (!temAcesso) {
+    return (
+      <div style={{ padding: '1.5rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
+        <div style={{
+          maxWidth: '520px', margin: '4rem auto', textAlign: 'center',
+          background: 'var(--color-surface)', border: '1px solid var(--color-border)',
+          borderRadius: 'var(--radius-xl)', padding: '2.5rem 2rem',
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔒</div>
+          <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text)' }}>
+            Acesso Restrito
+          </h2>
+          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
+            Esta área é destinada apenas a usuários com cargo administrativo na Loja.
+            Caso acredite que deveria ter acesso, fale com a Diretoria.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) return (
     <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--color-text-muted)' }}>
       Carregando...
@@ -1014,27 +1035,6 @@ export default function EleicaoPosse({ permissoes, irmaos, showSuccess, showErro
     { n: 3, label: 'Sessão Posse' },
     { n: 4, label: 'Documentos' },
   ];
-
-  if (!temAcesso) {
-    return (
-      <div style={{ padding: '1.5rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
-        <div style={{
-          maxWidth: '520px', margin: '4rem auto', textAlign: 'center',
-          background: 'var(--color-surface)', border: '1px solid var(--color-border)',
-          borderRadius: 'var(--radius-xl)', padding: '2.5rem 2rem',
-        }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🔒</div>
-          <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.25rem', fontWeight: 800, color: 'var(--color-text)' }}>
-            Acesso Restrito
-          </h2>
-          <p style={{ margin: 0, fontSize: '0.95rem', color: 'var(--color-text-muted)', lineHeight: 1.6 }}>
-            Esta área é destinada apenas a usuários com cargo administrativo na Loja.
-            Caso acredite que deveria ter acesso, fale com a Diretoria.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ padding: '1.5rem', background: 'var(--color-bg)', minHeight: '100vh' }}>
