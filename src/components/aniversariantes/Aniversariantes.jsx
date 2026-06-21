@@ -1112,8 +1112,8 @@ export default function Aniversariantes({ permissoes }) {
 
       if (irmaosFalecidos) {
         irmaosFalecidos.forEach(irmao => {
-          // Usa data_falecimento se disponível, senão data_nascimento
-          const dataRef = irmao.data_falecimento || irmao.data_nascimento;
+          // In Memoriam é referenciado pela data de nascimento (não pela data de falecimento)
+          const dataRef = irmao.data_nascimento;
           if (!dataRef) return;
 
           const dataBase = new Date(dataRef + 'T00:00:00');
@@ -1164,7 +1164,7 @@ export default function Aniversariantes({ permissoes }) {
       if (paisFalecidos) {
         paisFalecidos.forEach(pai => {
           if (pai.irmaos?.situacao === 'falecido') return;
-          const dataRef = pai.data_obito || pai.data_nascimento;
+          const dataRef = pai.data_nascimento;
           if (!dataRef) return;
 
           const dataBase = new Date(dataRef + 'T00:00:00');
@@ -1221,7 +1221,7 @@ export default function Aniversariantes({ permissoes }) {
       if (filhosFalecidos) {
         filhosFalecidos.forEach(filho => {
           if (filho.irmaos?.situacao === 'falecido') return;
-          const dataRef = filho.data_obito || filho.data_nascimento;
+          const dataRef = filho.data_nascimento;
           if (!dataRef) return;
 
           const dataBase = new Date(dataRef + 'T00:00:00');
@@ -2592,13 +2592,17 @@ export default function Aniversariantes({ permissoes }) {
               cor="#94a3b8"
               dados={inMemoriam}
               colunas={[
-                { key: 'data_falec', label: 'Falecimento', nowrap: true, render: i => {
-                  const d = i.data_falecimento;
-                  if (!d) return '—';
-                  const dt = d instanceof Date ? d : new Date(d);
-                  return dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                }},
-                { key: 'nome', label: 'Nome', bold: true, render: i => abreviarNomeExibicao(i) },
+                { key: 'data', label: 'Aniversário', nowrap: true, render: i => fmtData(i.proximo_aniversario) },
+                { key: 'nome', label: 'Nome', bold: true, render: i => (
+                  <div>
+                    <div>{abreviarNomeExibicao(i)}</div>
+                    {i.data_falecimento && (
+                      <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', fontWeight: 400, marginTop: '0.1rem' }}>
+                        🕊️ Falecimento: {(i.data_falecimento instanceof Date ? i.data_falecimento : new Date(i.data_falecimento)).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
+                  </div>
+                )},
                 { key: 'tipo', label: 'Parentesco', render: i => (
                   <span style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(148,163,184,0.15)', color: '#94a3b8' }}>
                     {i.tipo || '—'}
