@@ -107,6 +107,7 @@ export default function Aniversariantes({ permissoes }) {
   const [trimestreSel, setTrimestreSel] = useState(Math.floor(new Date().getMonth() / 3));
   const [semestreSel, setSemestreSel] = useState(new Date().getMonth() < 6 ? 0 : 1);
   const [semanaSel, setSemanaSel] = useState(null); // null = calculado automaticamente (semana atual)
+  const [buscaNomeVisaoGeral, setBuscaNomeVisaoGeral] = useState('');
   const [todosAniversariantes, setTodosAniversariantes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalEventos, setModalEventos] = useState(false);
@@ -2250,10 +2251,25 @@ export default function Aniversariantes({ permissoes }) {
         const { label } = calcularIntervalo(periodoRelatorio);
         const todos = todosAniversariantes.length > 0 ? todosAniversariantes : aniversariantes;
 
-        const felicitacoes  = filtrarPorPeriodo(todos.filter(a => (a.tipo === 'Irmão' || a.tipo?.includes('Esposa') || a.tipo === 'Esposa') && a.nivel !== 3 && !a.falecido), periodoRelatorio);
-        const familia       = filtrarPorPeriodo(todos.filter(a => ['Pai/Mãe','Pai','Mãe','Filho','Filha','Filho(a)','Bodas'].includes(a.tipo) && a.nivel !== 3 && !a.falecido), periodoRelatorio);
-        const comemorativas = filtrarPorPeriodo(todos.filter(a => a.nivel === 4), periodoRelatorio);
-        const inMemoriam    = filtrarPorPeriodo(todos.filter(a => a.nivel === 3), periodoRelatorio);
+        const buscaAtiva = buscaNomeVisaoGeral.trim().length >= 2;
+        const normalizar = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const termoBusca = normalizar(buscaNomeVisaoGeral);
+
+        const bateBusca = (item) => {
+          if (!buscaAtiva) return true;
+          const nomePessoa = normalizar(item.nome);
+          const nomeIrmao = normalizar(item.irmao_responsavel);
+          return nomePessoa.includes(termoBusca) || nomeIrmao.includes(termoBusca);
+        };
+
+        const aplicarFiltro = (lista) => buscaAtiva
+          ? lista.filter(bateBusca).sort((a, b) => (a.nome || '').localeCompare(b.nome || ''))
+          : filtrarPorPeriodo(lista, periodoRelatorio);
+
+        const felicitacoes  = aplicarFiltro(todos.filter(a => (a.tipo === 'Irmão' || a.tipo?.includes('Esposa') || a.tipo === 'Esposa') && a.nivel !== 3 && !a.falecido));
+        const familia       = aplicarFiltro(todos.filter(a => ['Pai/Mãe','Pai','Mãe','Filho','Filha','Filho(a)','Bodas'].includes(a.tipo) && a.nivel !== 3 && !a.falecido));
+        const comemorativas = buscaAtiva ? [] : filtrarPorPeriodo(todos.filter(a => a.nivel === 4), periodoRelatorio);
+        const inMemoriam    = aplicarFiltro(todos.filter(a => a.nivel === 3));
 
         const fmtData = (d) => {
           if (!d) return '—';
@@ -2422,7 +2438,33 @@ export default function Aniversariantes({ permissoes }) {
 
         return (
           <div>
-            {/* Seletor de período */}
+            {/* Busca por nome */}
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '0.85rem 1.25rem', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ fontSize: '1rem' }}>🔍</span>
+              <input
+                type="text"
+                value={buscaNomeVisaoGeral}
+                onChange={e => setBuscaNomeVisaoGeral(e.target.value)}
+                placeholder="Buscar por nome do irmão... (mostra todos os vínculos: esposa, pais, filhos, in memoriam)"
+                style={{
+                  flex: 1, padding: '0.5rem 0.75rem', borderRadius: 'var(--radius-md)',
+                  background: 'var(--color-surface-2)', color: 'var(--color-text)',
+                  border: '1px solid var(--color-border)', fontSize: '0.85rem', outline: 'none',
+                }}
+              />
+              {buscaNomeVisaoGeral && (
+                <button onClick={() => setBuscaNomeVisaoGeral('')} style={{
+                  padding: '0.4rem 0.7rem', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                  border: '1px solid var(--color-border)', background: 'var(--color-surface-2)',
+                  color: 'var(--color-text-muted)', borderRadius: 'var(--radius-md)',
+                }}>
+                  ✕ Limpar
+                </button>
+              )}
+            </div>
+
+            {/* Seletor de período — oculto durante busca por nome */}
+            {!buscaAtiva && (
             <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-xl)', padding: '1rem 1.25rem', marginBottom: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', marginBottom: periodoRelatorio === 'trimestral' || periodoRelatorio === 'semestral' ? '0.75rem' : 0 }}>
                 <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--color-text)' }}>📅 Período:</span>
@@ -2522,6 +2564,14 @@ export default function Aniversariantes({ permissoes }) {
                 </div>
               )}
             </div>
+            )}
+
+            {/* Indicador de busca ativa */}
+            {buscaAtiva && (
+              <div style={{ marginBottom: '1.25rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
+                Mostrando todos os vínculos para <strong style={{ color: 'var(--color-text)' }}>"{buscaNomeVisaoGeral}"</strong>, sem filtro de período.
+              </div>
+            )}
 
             {/* Tabela 1 — Felicitações */}
             <TabelaSection
