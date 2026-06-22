@@ -104,9 +104,30 @@ const BadgeSit = ({ value }) => {
 //  Modal Candidato (criar / editar)
 // ─────────────────────────────────────────────────────────────────
 const CAND_VAZIO = {
-  nome: '', idade: '', estado_civil: '', profissao: '',
-  local_trabalho: '', cidade: '', indicado_por_irmao: '',
-  data_indicacao: '', situacao: 'indicado', motivo_exclusao: '', observacoes: '',
+  // Identificação
+  nome: '', idade: '', data_nascimento: '', nacionalidade: 'Brasileiro(a)',
+  naturalidade: '', estado_civil: '', profissao: '', cargo: '',
+  local_trabalho: '', cidade: '', renda_aproximada: '',
+  // Contato
+  tel_residencial: '', tel_comercial: '', tel_celular: '',
+  // Documentos
+  rg: '', orgao_expedidor: '', cpf: '', tipo_sanguineo: '',
+  // Endereço
+  end_residencial: '', numero_end: '', bairro: '', cep: '',
+  tempo_residencia_mt: '',
+  // Esposa
+  nome_esposa: '', data_nasc_esposa: '', tipo_sang_esposa: '',
+  profissao_esposa: '', cargo_esposa: '', empresa_esposa: '',
+  end_comercial_esposa: '', numero_esposa: '', bairro_esposa: '',
+  cidade_esposa: '', uf_esposa: '', cep_esposa: '',
+  renda_esposa: '', nome_mae_esposa: '',
+  // Referências
+  ref_bancaria_nome: '', ref_bancaria_end: '',
+  ref_comercial_nome: '', ref_comercial_end: '',
+  ref_pessoal_nome: '', ref_pessoal_end: '',
+  // Processo
+  indicado_por_irmao: '', data_indicacao: '',
+  situacao: 'indicado', motivo_exclusao: '', observacoes: '',
 };
 
 const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVerMotivo = false }) => {
@@ -144,48 +165,125 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
           </h3>
           <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', overflowY: 'auto', maxHeight: '75vh' }}>
 
-          {/* Nome + Idade */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '0.75rem' }}>
-            <div>
-              <label style={lbl}>Nome Completo *</label>
-              <input style={inp} value={form.nome} onChange={e => f('nome', e.target.value)} placeholder="Nome do profano" autoFocus />
-            </div>
-            <div>
-              <label style={lbl}>Idade</label>
-              <input style={inp} type="number" min="18" max="99" value={form.idade} onChange={e => f('idade', e.target.value)} placeholder="Ex: 35" />
-            </div>
+          {/* ── IDENTIFICAÇÃO ───────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Identificação</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 120px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Nome Completo *</label><input style={inp} value={form.nome} onChange={e => f('nome', e.target.value)} placeholder="Nome do profano" autoFocus /></div>
+            <div><label style={lbl}>Idade</label><input style={inp} type="number" min="18" max="99" value={form.idade} onChange={e => f('idade', e.target.value)} placeholder="35" /></div>
+            <div><label style={lbl}>Data Nascimento</label><input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.data_nascimento} onChange={e => f('data_nascimento', e.target.value)} /></div>
           </div>
 
-          {/* Estado Civil + Profissão */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={lbl}>Estado Civil</label>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>Nacionalidade</label><input style={inp} value={form.nacionalidade} onChange={e => f('nacionalidade', e.target.value)} /></div>
+            <div><label style={lbl}>Naturalidade</label><input style={inp} value={form.naturalidade} onChange={e => f('naturalidade', e.target.value)} placeholder="Cidade/UF" /></div>
+            <div><label style={lbl}>Estado Civil</label>
               <select style={inp} value={form.estado_civil} onChange={e => f('estado_civil', e.target.value)}>
                 <option value="">Selecione...</option>
                 {ESTADOS_CIVIS.map(ec => <option key={ec} value={ec}>{ec}</option>)}
               </select>
             </div>
-            <div>
-              <label style={lbl}>Profissão</label>
-              <input style={inp} value={form.profissao} onChange={e => f('profissao', e.target.value)} placeholder="Ex: Engenheiro" />
-            </div>
           </div>
 
-          {/* Local Trabalho + Cidade */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-            <div>
-              <label style={lbl}>Local de Trabalho</label>
-              <input style={inp} value={form.local_trabalho} onChange={e => f('local_trabalho', e.target.value)} placeholder="Empresa / Órgão" />
-            </div>
-            <div>
-              <label style={lbl}>Cidade</label>
-              <input style={inp} value={form.cidade} onChange={e => f('cidade', e.target.value)} placeholder="Cidade - UF" />
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Profissão</label><input style={inp} value={form.profissao} onChange={e => f('profissao', e.target.value)} placeholder="Ex: Bancário" /></div>
+            <div><label style={lbl}>Cargo</label><input style={inp} value={form.cargo} onChange={e => f('cargo', e.target.value)} placeholder="Ex: Gerente" /></div>
+            <div><label style={lbl}>Tipo Sanguíneo</label><input style={inp} value={form.tipo_sanguineo} onChange={e => f('tipo_sanguineo', e.target.value)} placeholder="O+" /></div>
           </div>
 
-          {/* Indicado por + Data */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>Empresa / Local de Trabalho</label><input style={inp} value={form.local_trabalho} onChange={e => f('local_trabalho', e.target.value)} placeholder="Empresa / Órgão" /></div>
+            <div><label style={lbl}>Renda Aproximada</label><input style={inp} value={form.renda_aproximada} onChange={e => f('renda_aproximada', e.target.value)} placeholder="Ex: R$ 5.000" /></div>
+          </div>
+
+          {/* ── CONTATO ─────────────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Contato</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>Tel. Residencial</label><input style={inp} value={form.tel_residencial} onChange={e => f('tel_residencial', e.target.value)} placeholder="(66) 99999-9999" /></div>
+            <div><label style={lbl}>Tel. Comercial</label><input style={inp} value={form.tel_comercial} onChange={e => f('tel_comercial', e.target.value)} placeholder="(66) 3333-3333" /></div>
+            <div><label style={lbl}>Celular</label><input style={inp} value={form.tel_celular} onChange={e => f('tel_celular', e.target.value)} placeholder="(66) 99999-9999" /></div>
+          </div>
+
+          {/* ── DOCUMENTOS ──────────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Documentos</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>RG</label><input style={inp} value={form.rg} onChange={e => f('rg', e.target.value)} placeholder="0000000-0" /></div>
+            <div><label style={lbl}>Org. Exp./UF</label><input style={inp} value={form.orgao_expedidor} onChange={e => f('orgao_expedidor', e.target.value)} placeholder="SSP/MT" /></div>
+            <div><label style={lbl}>CPF</label><input style={inp} value={form.cpf} onChange={e => f('cpf', e.target.value)} placeholder="000.000.000-00" /></div>
+          </div>
+
+          {/* ── ENDEREÇO RESIDENCIAL ────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Endereço Residencial</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Logradouro</label><input style={inp} value={form.end_residencial} onChange={e => f('end_residencial', e.target.value)} placeholder="Rua / Av." /></div>
+            <div><label style={lbl}>Número</label><input style={inp} value={form.numero_end} onChange={e => f('numero_end', e.target.value)} /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 120px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Bairro</label><input style={inp} value={form.bairro} onChange={e => f('bairro', e.target.value)} /></div>
+            <div><label style={lbl}>Cidade</label><input style={inp} value={form.cidade} onChange={e => f('cidade', e.target.value)} placeholder="Cidade - MT" /></div>
+            <div><label style={lbl}>CEP</label><input style={inp} value={form.cep} onChange={e => f('cep', e.target.value)} placeholder="78000-000" /></div>
+            <div><label style={lbl}>Reside em MT há (anos)</label><input style={inp} value={form.tempo_residencia_mt} onChange={e => f('tempo_residencia_mt', e.target.value)} placeholder="Ex: 10" /></div>
+          </div>
+
+          {/* ── ESPOSA ──────────────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Esposa</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Nome da Esposa</label><input style={inp} value={form.nome_esposa} onChange={e => f('nome_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>Data Nascimento</label><input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.data_nasc_esposa} onChange={e => f('data_nasc_esposa', e.target.value)} /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Profissão</label><input style={inp} value={form.profissao_esposa} onChange={e => f('profissao_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>Cargo</label><input style={inp} value={form.cargo_esposa} onChange={e => f('cargo_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>Tipo Sanguíneo</label><input style={inp} value={form.tipo_sang_esposa} onChange={e => f('tipo_sang_esposa', e.target.value)} placeholder="A+" /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>Empresa (Esposa)</label><input style={inp} value={form.empresa_esposa} onChange={e => f('empresa_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>Renda Aproximada</label><input style={inp} value={form.renda_esposa} onChange={e => f('renda_esposa', e.target.value)} placeholder="Ex: R$ 3.000" /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '0.6rem' }}>
+            <div><label style={lbl}>End. Comercial (Esposa)</label><input style={inp} value={form.end_comercial_esposa} onChange={e => f('end_comercial_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>Número</label><input style={inp} value={form.numero_esposa} onChange={e => f('numero_esposa', e.target.value)} /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 120px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Bairro</label><input style={inp} value={form.bairro_esposa} onChange={e => f('bairro_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>Cidade</label><input style={inp} value={form.cidade_esposa} onChange={e => f('cidade_esposa', e.target.value)} /></div>
+            <div><label style={lbl}>UF</label><input style={inp} value={form.uf_esposa} onChange={e => f('uf_esposa', e.target.value)} placeholder="MT" /></div>
+            <div><label style={lbl}>CEP</label><input style={inp} value={form.cep_esposa} onChange={e => f('cep_esposa', e.target.value)} /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>Nome da Mãe (Esposa)</label><input style={inp} value={form.nome_mae_esposa} onChange={e => f('nome_mae_esposa', e.target.value)} /></div>
+          </div>
+
+          {/* ── REFERÊNCIAS ─────────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Referências</div>
+
+          {[
+            { label: 'Bancária', nomeKey: 'ref_bancaria_nome', endKey: 'ref_bancaria_end' },
+            { label: 'Comercial', nomeKey: 'ref_comercial_nome', endKey: 'ref_comercial_end' },
+            { label: 'Pessoal', nomeKey: 'ref_pessoal_nome', endKey: 'ref_pessoal_end' },
+          ].map(ref => (
+            <div key={ref.label} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr', gap: '0.6rem', alignItems: 'end' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', paddingBottom: '0.5rem' }}>{ref.label}</div>
+              <div><label style={lbl}>Nome</label><input style={inp} value={form[ref.nomeKey]} onChange={e => f(ref.nomeKey, e.target.value)} /></div>
+              <div><label style={lbl}>Endereço / Contato</label><input style={inp} value={form[ref.endKey]} onChange={e => f(ref.endKey, e.target.value)} /></div>
+            </div>
+          ))}
+
+          {/* ── PROCESSO ────────────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Processo</div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem' }}>
             <div>
               <label style={lbl}>Indicado por (Irmão)</label>
@@ -427,10 +525,47 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       processo_id: processo.id,
       nome: form.nome.trim(),
       idade: form.idade ? parseInt(form.idade) : null,
+      data_nascimento: form.data_nascimento || null,
+      nacionalidade: form.nacionalidade || null,
+      naturalidade: form.naturalidade || null,
       estado_civil: form.estado_civil || null,
       profissao: form.profissao || null,
+      cargo: form.cargo || null,
       local_trabalho: form.local_trabalho || null,
       cidade: form.cidade || null,
+      renda_aproximada: form.renda_aproximada || null,
+      tel_residencial: form.tel_residencial || null,
+      tel_comercial: form.tel_comercial || null,
+      tel_celular: form.tel_celular || null,
+      rg: form.rg || null,
+      orgao_expedidor: form.orgao_expedidor || null,
+      cpf: form.cpf || null,
+      tipo_sanguineo: form.tipo_sanguineo || null,
+      end_residencial: form.end_residencial || null,
+      numero_end: form.numero_end || null,
+      bairro: form.bairro || null,
+      cep: form.cep || null,
+      tempo_residencia_mt: form.tempo_residencia_mt || null,
+      nome_esposa: form.nome_esposa || null,
+      data_nasc_esposa: form.data_nasc_esposa || null,
+      tipo_sang_esposa: form.tipo_sang_esposa || null,
+      profissao_esposa: form.profissao_esposa || null,
+      cargo_esposa: form.cargo_esposa || null,
+      empresa_esposa: form.empresa_esposa || null,
+      end_comercial_esposa: form.end_comercial_esposa || null,
+      numero_esposa: form.numero_esposa || null,
+      bairro_esposa: form.bairro_esposa || null,
+      cidade_esposa: form.cidade_esposa || null,
+      uf_esposa: form.uf_esposa || null,
+      cep_esposa: form.cep_esposa || null,
+      renda_esposa: form.renda_esposa || null,
+      nome_mae_esposa: form.nome_mae_esposa || null,
+      ref_bancaria_nome: form.ref_bancaria_nome || null,
+      ref_bancaria_end: form.ref_bancaria_end || null,
+      ref_comercial_nome: form.ref_comercial_nome || null,
+      ref_comercial_end: form.ref_comercial_end || null,
+      ref_pessoal_nome: form.ref_pessoal_nome || null,
+      ref_pessoal_end: form.ref_pessoal_end || null,
       indicado_por_irmao: form.indicado_por_irmao || null,
       data_indicacao: form.data_indicacao || null,
       situacao: form.situacao,
@@ -555,76 +690,76 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
     // Linha 1 — Nome + Data Nasc
     campo('Nome do candidato:', s(cand.nome),     M,            y, IW * 0.72, rh);
-    campo('Data Nasc:',         '',               M + IW*0.72,  y, IW * 0.28, rh);
+    campo('Data Nasc:',         s(cand.data_nascimento ? new Date(cand.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.72, y, IW * 0.28, rh);
     y += rh;
     // Linha 2 — Nac + Naturalidade + Est Civil + Idade
-    campo('Nacionalidade:',   'Brasileiro(a)',    M,            y, IW * 0.25, rh);
-    campo('Naturalidade:',    '',                 M + IW*0.25,  y, IW * 0.35, rh);
-    campo('Estado Civil:',    s(cand.estado_civil), M + IW*0.60, y, IW * 0.27, rh);
+    campo('Nacionalidade:',   s(cand.nacionalidade || 'Brasileiro(a)'), M, y, IW * 0.25, rh);
+    campo('Naturalidade:',    s(cand.naturalidade),  M + IW*0.25, y, IW * 0.35, rh);
+    campo('Estado Civil:',    s(cand.estado_civil),  M + IW*0.60, y, IW * 0.27, rh);
     campo('Idade:',           s(cand.idade ? cand.idade+' anos' : ''), M + IW*0.87, y, IW*0.13, rh);
     y += rh;
     // Linha 3 — Telefones
-    campo('Tel. Resid:',      '',                 M,            y, IW * 0.33, rh);
-    campo('Comercial:',       '',                 M + IW*0.33,  y, IW * 0.33, rh);
-    campo('Cel:',             '',                 M + IW*0.66,  y, IW * 0.34, rh);
+    campo('Tel. Resid:',      s(cand.tel_residencial), M,          y, IW * 0.33, rh);
+    campo('Comercial:',       s(cand.tel_comercial),   M + IW*0.33, y, IW * 0.33, rh);
+    campo('Cel:',             s(cand.tel_celular),     M + IW*0.66, y, IW * 0.34, rh);
     y += rh;
     // Linha 4 — RG + Org + CPF + Tipo Sang
-    campo('RG:',              '',                 M,            y, IW * 0.25, rh);
-    campo('Org Exp/UF:',      '',                 M + IW*0.25,  y, IW * 0.20, rh);
-    campo('CPF:',             '',                 M + IW*0.45,  y, IW * 0.30, rh);
-    campo('Tipo Sanguineo:',  '',                 M + IW*0.75,  y, IW * 0.25, rh);
+    campo('RG:',              s(cand.rg),              M,           y, IW * 0.25, rh);
+    campo('Org Exp/UF:',      s(cand.orgao_expedidor), M + IW*0.25, y, IW * 0.20, rh);
+    campo('CPF:',             s(cand.cpf),             M + IW*0.45, y, IW * 0.30, rh);
+    campo('Tipo Sanguineo:',  s(cand.tipo_sanguineo),  M + IW*0.75, y, IW * 0.25, rh);
     y += rh;
     // Linha 5 — End Residencial + No
-    campo('End Residencial:', '',                 M,            y, IW * 0.82, rh);
-    campo('No:',              '',                 M + IW*0.82,  y, IW * 0.18, rh);
+    campo('End Residencial:', s(cand.end_residencial), M,           y, IW * 0.82, rh);
+    campo('No:',              s(cand.numero_end),      M + IW*0.82, y, IW * 0.18, rh);
     y += rh;
     // Linha 6 — Bairro + Cidade + UF + CEP
-    campo('Bairro:',          '',                 M,            y, IW * 0.28, rh);
-    campo('Cidade:',          s(cand.cidade),     M + IW*0.28,  y, IW * 0.36, rh);
-    campo('UF:',              'MT',               M + IW*0.64,  y, IW * 0.10, rh);
-    campo('CEP:',             '',                 M + IW*0.74,  y, IW * 0.26, rh);
+    campo('Bairro:',          s(cand.bairro),          M,           y, IW * 0.28, rh);
+    campo('Cidade:',          s(cand.cidade),          M + IW*0.28, y, IW * 0.36, rh);
+    campo('UF:',              'MT',                    M + IW*0.64, y, IW * 0.10, rh);
+    campo('CEP:',             s(cand.cep),             M + IW*0.74, y, IW * 0.26, rh);
     y += rh;
-    // Linha 7 — Reside MT + Tipo Sang (já na L4) → usar: Reside + Profissao + Ha
-    campo('Reside em MT ha (anos):', '',          M,            y, IW * 0.28, rh);
-    campo('Profissao CBO:',   s(cand.profissao),  M + IW*0.28,  y, IW * 0.45, rh);
-    campo('Ha(em anos):',     '',                 M + IW*0.73,  y, IW * 0.27, rh);
+    // Linha 7 — Reside + Profissao + Ha
+    campo('Reside em MT ha (anos):', s(cand.tempo_residencia_mt), M, y, IW * 0.28, rh);
+    campo('Profissao CBO:',   s(cand.profissao),       M + IW*0.28, y, IW * 0.45, rh);
+    campo('Ha(em anos):',     '',                      M + IW*0.73, y, IW * 0.27, rh);
     y += rh;
     // Linha 8 — Cargo + Empresa
-    campo('Cargo:',           '',                 M,            y, IW * 0.42, rh);
-    campo('Empresa:',         s(cand.local_trabalho), M + IW*0.42, y, IW * 0.58, rh);
+    campo('Cargo:',           s(cand.cargo),           M,           y, IW * 0.42, rh);
+    campo('Empresa:',         s(cand.local_trabalho),  M + IW*0.42, y, IW * 0.58, rh);
     y += rh;
     // Linha 9 — End Comercial + No
-    campo('End Comercial:',   '',                 M,            y, IW * 0.82, rh);
-    campo('No:',              '',                 M + IW*0.82,  y, IW * 0.18, rh);
+    campo('End Comercial:',   '',                      M,           y, IW * 0.82, rh);
+    campo('No:',              '',                      M + IW*0.82, y, IW * 0.18, rh);
     y += rh;
     // Linha 10 — Bairro + Cidade + UF + Renda
-    campo('Bairro:',          '',                 M,            y, IW * 0.25, rh);
-    campo('Cidade:',          s(cand.cidade),     M + IW*0.25,  y, IW * 0.33, rh);
-    campo('UF:',              'MT',               M + IW*0.58,  y, IW * 0.10, rh);
-    campo('Renda Aproximada:', '',                M + IW*0.68,  y, IW * 0.32, rh);
+    campo('Bairro:',          '',                      M,           y, IW * 0.25, rh);
+    campo('Cidade:',          s(cand.cidade),          M + IW*0.25, y, IW * 0.33, rh);
+    campo('UF:',              'MT',                    M + IW*0.58, y, IW * 0.10, rh);
+    campo('Renda Aproximada:',s(cand.renda_aproximada),M + IW*0.68, y, IW * 0.32, rh);
     y += rh + 1;
 
     // ── Dados da Esposa (pág 1, logo após candidato) ──────────────────────
-    campo('Nome da Esposa:',    '',              M,            y, IW * 0.68, rh);
-    campo('Data Nasc:',         '',              M + IW*0.68,  y, IW * 0.32, rh);
+    campo('Nome da Esposa:',    s(cand.nome_esposa),        M,            y, IW * 0.68, rh);
+    campo('Data Nasc:',         s(cand.data_nasc_esposa ? new Date(cand.data_nasc_esposa+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.68, y, IW * 0.32, rh);
     y += rh;
-    campo('Tipo Sanguineo:',    '',              M,            y, IW * 0.25, rh);
-    campo('Profissao CBO:',     '',              M + IW*0.25,  y, IW * 0.50, rh);
-    campo('Ha(em anos):',       '',              M + IW*0.75,  y, IW * 0.25, rh);
+    campo('Tipo Sanguineo:',    s(cand.tipo_sang_esposa),   M,            y, IW * 0.25, rh);
+    campo('Profissao CBO:',     s(cand.profissao_esposa),   M + IW*0.25,  y, IW * 0.50, rh);
+    campo('Ha(em anos):',       '',                         M + IW*0.75,  y, IW * 0.25, rh);
     y += rh;
-    campo('Cargo:',             '',              M,            y, IW * 0.50, rh);
-    campo('Empresa:',           '',              M + IW*0.50,  y, IW * 0.50, rh);
+    campo('Cargo:',             s(cand.cargo_esposa),       M,            y, IW * 0.50, rh);
+    campo('Empresa:',           s(cand.empresa_esposa),     M + IW*0.50,  y, IW * 0.50, rh);
     y += rh;
-    campo('End Comercial esposa:', '',           M,            y, IW * 0.82, rh);
-    campo('No:',                '',              M + IW*0.82,  y, IW * 0.18, rh);
+    campo('End Comercial esposa:', s(cand.end_comercial_esposa), M,        y, IW * 0.82, rh);
+    campo('No:',                s(cand.numero_esposa),      M + IW*0.82,  y, IW * 0.18, rh);
     y += rh;
-    campo('Bairro:',            '',              M,            y, IW * 0.28, rh);
-    campo('Cidade:',            '',              M + IW*0.28,  y, IW * 0.36, rh);
-    campo('UF:',                '',              M + IW*0.64,  y, IW * 0.10, rh);
-    campo('CEP:',               '',              M + IW*0.74,  y, IW * 0.26, rh);
+    campo('Bairro:',            s(cand.bairro_esposa),      M,            y, IW * 0.28, rh);
+    campo('Cidade:',            s(cand.cidade_esposa),      M + IW*0.28,  y, IW * 0.36, rh);
+    campo('UF:',                s(cand.uf_esposa || 'MT'),  M + IW*0.64,  y, IW * 0.10, rh);
+    campo('CEP:',               s(cand.cep_esposa),         M + IW*0.74,  y, IW * 0.26, rh);
     y += rh;
-    campo('Renda Aproximada:',  '',              M,            y, IW * 0.50, rh);
-    campo('Nome da Mae:',       '',              M + IW*0.50,  y, IW * 0.50, rh);
+    campo('Renda Aproximada:',  s(cand.renda_esposa),       M,            y, IW * 0.50, rh);
+    campo('Nome da Mae:',       s(cand.nome_mae_esposa),    M + IW*0.50,  y, IW * 0.50, rh);
     y += rh + 2;
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -694,12 +829,18 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     doc.setTextColor(255,255,255); doc.setFontSize(7.5);
     ['REFERENCIAS', 'NOME', 'ENDERECO'].forEach((h, i) => doc.text(h, col[i] + 2, tr + 4.5));
     ['BANCARIA:', 'COMERCIAL:', 'PESSOAL:'].forEach((ref, i) => {
-      const ry = tr + 7 + i * 8;
-      doc.setFillColor(210, 215, 240); doc.rect(M, ry, 35, 8, 'F');
-      doc.setDrawColor(0,0,180); doc.setLineWidth(0.2); doc.rect(M, ry, IW, 8);
+      const ry2 = tr + 7 + i * 8;
+      doc.setFillColor(210, 215, 240); doc.rect(M, ry2, 35, 8, 'F');
+      doc.setDrawColor(0,0,180); doc.setLineWidth(0.2); doc.rect(M, ry2, IW, 8);
       doc.setTextColor(0,0,120); doc.setFont('helvetica','bold'); doc.setFontSize(7);
-      doc.text(ref, M + 2, ry + 5);
-      doc.setDrawColor(0,0,180); doc.line(M + 35, ry, M + 35, ry + 8); doc.line(M + 100, ry, M + 100, ry + 8);
+      doc.text(ref, M + 2, ry2 + 5);
+      doc.setDrawColor(0,0,180); doc.line(M + 35, ry2, M + 35, ry2 + 8); doc.line(M + 100, ry2, M + 100, ry2 + 8);
+      // Preencher com dados reais
+      doc.setTextColor(0); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+      const nomeRef = i === 0 ? s(cand.ref_bancaria_nome) : i === 1 ? s(cand.ref_comercial_nome) : s(cand.ref_pessoal_nome);
+      const endRef  = i === 0 ? s(cand.ref_bancaria_end)  : i === 1 ? s(cand.ref_comercial_end)  : s(cand.ref_pessoal_end);
+      if (nomeRef) doc.text(nomeRef, M + 37, ry2 + 5, { maxWidth: 60 });
+      if (endRef)  doc.text(endRef,  M + 102, ry2 + 5, { maxWidth: IW - 95 });
     });
     y += bh6 + 3;
 
