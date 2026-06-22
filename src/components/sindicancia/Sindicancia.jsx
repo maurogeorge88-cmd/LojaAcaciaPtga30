@@ -139,7 +139,18 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
 
   useEffect(() => {
     if (aberto) {
-      setForm(candidato ? { ...CAND_VAZIO, ...candidato } : CAND_VAZIO);
+      if (candidato) {
+        // Merge com CAND_VAZIO, convertendo null/undefined para '' em todos os campos
+        const merged = { ...CAND_VAZIO };
+        Object.keys(CAND_VAZIO).forEach(k => {
+          const v = candidato[k];
+          merged[k] = (v === null || v === undefined) ? '' : v;
+        });
+        setForm(merged);
+      } else {
+        // Novo candidato — estado totalmente limpo
+        setForm({ ...CAND_VAZIO });
+      }
       setErro('');
     }
   }, [aberto, candidato]);
@@ -532,59 +543,61 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
   const handleSalvarCandidato = async (form) => {
     await supabase.auth.refreshSession();
+    // Converte string vazia para null — evita gravar '' no banco
+    const n = (v) => (v === '' || v === null || v === undefined) ? null : v;
     const payload = {
       processo_id: processo.id,
       nome: form.nome.trim(),
       idade: form.idade ? parseInt(form.idade) : null,
-      data_nascimento: form.data_nascimento || null,
-      nacionalidade: form.nacionalidade || null,
-      naturalidade: form.naturalidade || null,
-      estado_civil: form.estado_civil || null,
-      profissao: form.profissao || null,
-      cargo: form.cargo || null,
-      local_trabalho: form.local_trabalho || null,
-      cidade: form.cidade || null,
-      renda_aproximada: form.renda_aproximada || null,
-      tel_residencial: form.tel_residencial || null,
-      tel_comercial: form.tel_comercial || null,
-      tel_celular: form.tel_celular || null,
-      rg: form.rg || null,
-      orgao_expedidor: form.orgao_expedidor || null,
-      cpf: form.cpf || null,
-      tipo_sanguineo: form.tipo_sanguineo || null,
-      end_residencial: form.end_residencial || null,
-      numero_end: form.numero_end || null,
-      bairro: form.bairro || null,
-      cep: form.cep || null,
-      tempo_residencia_mt: form.tempo_residencia_mt || null,
-      nome_esposa: form.nome_esposa || null,
-      data_nasc_esposa: form.data_nasc_esposa || null,
-      tipo_sang_esposa: form.tipo_sang_esposa || null,
-      profissao_esposa: form.profissao_esposa || null,
-      ha_anos_esposa: form.ha_anos_esposa || null,
-      cargo_esposa: form.cargo_esposa || null,
-      empresa_esposa: form.empresa_esposa || null,
-      end_comercial_esposa: form.end_comercial_esposa || null,
-      numero_esposa: form.numero_esposa || null,
-      bairro_esposa: form.bairro_esposa || null,
-      cidade_esposa: form.cidade_esposa || null,
-      uf_esposa: form.uf_esposa || null,
-      cep_esposa: form.cep_esposa || null,
-      renda_esposa: form.renda_esposa || null,
-      nome_mae_esposa: form.nome_mae_esposa || null,
-      nome_pai: form.nome_pai || null,
-      nome_mae: form.nome_mae || null,
-      ref_bancaria_nome: form.ref_bancaria_nome || null,
-      ref_bancaria_end: form.ref_bancaria_end || null,
-      ref_comercial_nome: form.ref_comercial_nome || null,
-      ref_comercial_end: form.ref_comercial_end || null,
-      ref_pessoal_nome: form.ref_pessoal_nome || null,
-      ref_pessoal_end: form.ref_pessoal_end || null,
-      indicado_por_irmao: form.indicado_por_irmao || null,
-      data_indicacao: form.data_indicacao || null,
+      data_nascimento: n(form.data_nascimento),
+      nacionalidade: n(form.nacionalidade),
+      naturalidade: n(form.naturalidade),
+      estado_civil: n(form.estado_civil),
+      profissao: n(form.profissao),
+      cargo: n(form.cargo),
+      local_trabalho: n(form.local_trabalho),
+      cidade: n(form.cidade),
+      renda_aproximada: n(form.renda_aproximada),
+      tel_residencial: n(form.tel_residencial),
+      tel_comercial: n(form.tel_comercial),
+      tel_celular: n(form.tel_celular),
+      rg: n(form.rg),
+      orgao_expedidor: n(form.orgao_expedidor),
+      cpf: n(form.cpf),
+      tipo_sanguineo: n(form.tipo_sanguineo),
+      end_residencial: n(form.end_residencial),
+      numero_end: n(form.numero_end),
+      bairro: n(form.bairro),
+      cep: n(form.cep),
+      tempo_residencia_mt: n(form.tempo_residencia_mt),
+      nome_esposa: n(form.nome_esposa),
+      data_nasc_esposa: n(form.data_nasc_esposa),
+      tipo_sang_esposa: n(form.tipo_sang_esposa),
+      profissao_esposa: n(form.profissao_esposa),
+      ha_anos_esposa: n(form.ha_anos_esposa),
+      cargo_esposa: n(form.cargo_esposa),
+      empresa_esposa: n(form.empresa_esposa),
+      end_comercial_esposa: n(form.end_comercial_esposa),
+      numero_esposa: n(form.numero_esposa),
+      bairro_esposa: n(form.bairro_esposa),
+      cidade_esposa: n(form.cidade_esposa),
+      uf_esposa: n(form.uf_esposa),
+      cep_esposa: n(form.cep_esposa),
+      renda_esposa: n(form.renda_esposa),
+      nome_mae_esposa: n(form.nome_mae_esposa),
+      nome_pai: n(form.nome_pai),
+      nome_mae: n(form.nome_mae),
+      ref_bancaria_nome: n(form.ref_bancaria_nome),
+      ref_bancaria_end: n(form.ref_bancaria_end),
+      ref_comercial_nome: n(form.ref_comercial_nome),
+      ref_comercial_end: n(form.ref_comercial_end),
+      ref_pessoal_nome: n(form.ref_pessoal_nome),
+      ref_pessoal_end: n(form.ref_pessoal_end),
+      indicado_por_irmao: n(form.indicado_por_irmao),
+      data_indicacao: n(form.data_indicacao),
       situacao: form.situacao,
-      motivo_exclusao: form.situacao === 'excluido' ? form.motivo_exclusao : null,
-      observacoes: form.observacoes || null,
+      motivo_exclusao: form.situacao === 'excluido' ? n(form.motivo_exclusao) : null,
+      observacoes: n(form.observacoes),
     };
     if (candEditando) {
       const { error } = await supabase.from('sindicancia_candidatos').update(payload).eq('id', candEditando.id);
