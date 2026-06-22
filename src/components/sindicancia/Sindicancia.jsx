@@ -511,8 +511,8 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     try { doc.addImage(GLEMT_LOGO, 'PNG', M + 1, y + 1, 22, 22); } catch(e) {}
     doc.setLineWidth(0.2);
     label(`Or. de ${nomeLoja} ....../......../20........, E.V.`,          M + 25, y + 5, 8);
-    label('Do Mestre Macon ' + linha(120),                                M + 25, y + 11, 8);
-    label('A Aug. e Resp. Loj. Simb. ' + linha(100) + '  No.........',   M + 25, y + 17, 8);
+    label('Do Mestre Macon ' + linha(85),                                 M + 25, y + 11, 8);
+    label('A Aug. e Resp. Loj. Simb. ' + linha(70) + '  No.........',    M + 25, y + 17, 8);
     label('Veneravel Mestre,',                                             M + 25, y + 23, 8);
     doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0,0,100);
     doc.text('S.:.S.:.S.:.',  W / 2,  y + 27, { align: 'center' });
@@ -601,11 +601,9 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  PÁGINA 2 — Declarações do apoiador
+    //  CONTINUAÇÃO PÁG 1 — Declarações 1-4 (mesma página dos dados)
     // ═══════════════════════════════════════════════════════════════════════
-    doc.addPage(); y = M; numPag(2, 3);
-    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
-    doc.text('FORMULARIO I', W / 2, y + 5, { align:'center' }); y += 11;
+    y += 3;
 
     const bloco = (num, texto, linhas = 5, yAtual) => {
       const txtLines = doc.splitTextToSize(s(texto), IW - 16);
@@ -639,20 +637,20 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
     y = bloco(3,
       'O candidato podera contribuir muito para com a instituicao Maconica, porque:',
-      7, y);
+      5, y);
 
     y = bloco(4,
       'O candidato desfruta de condicoes para arcar com os encargos financeiros, mensalidades, rateios e outras captacoes caso seja admitido, porque:',
       4, y);
 
-    // Rodapé pág 2
+    // Rodapé pág 1
     doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0);
     doc.text('Este Formulario devera ser preenchido pelo Apoiador da Iniciacao', W/2, 290, { align:'center' });
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  PÁGINA 3 — Itens 5-7 + Tramitação
+    //  PÁGINA 2 — Itens 5-7 + Tramitação
     // ═══════════════════════════════════════════════════════════════════════
-    doc.addPage(); y = M; numPag(3, 3);
+    doc.addPage(); y = M; numPag(2, 2);
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
     doc.text('Formulario I', W / 2, y + 5, { align:'center' }); y += 11;
 
