@@ -499,7 +499,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
     // Número de página (canto superior direito)
     const numPag = (n, tot) => { doc.setFillColor(0, 0, 100); doc.circle(W - M - 7, M + 7, 8, 'F'); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.text(`${n}`, W - M - 7, M + 8, {align:'center'}); doc.setFontSize(6.5); doc.text(`Pagina`, W - M - 7, M + 2.5, {align:'center'}); doc.text(`de ${tot}`, W - M - 7, M + 12, {align:'center'}); };
-    numPag(1, 3);
+    numPag(1, 2);
 
     // Título formulario
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(0);
@@ -531,77 +531,56 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     doc.text(linSubmeto, M, y + 4); y += linSubmeto.length * 4 + 3;
 
     // Grid de dados pessoais
-    const rh = 7; // row height
+    const rh = 5.5; // row height reduzido
     const apoiador = s(cand.indicado_por_irmao || '');
     const dataInd  = cand.data_indicacao ? new Date(cand.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '';
 
     campo('Nome do candidato:', s(cand.nome),       M,        y, IW * 0.68, rh);
     campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
     y += rh;
-    campo('Nacionalidade:',     'Brasileiro(a)',     M,        y, IW * 0.33, rh);
-    campo('Naturalidade:',      '',                  M + IW * 0.33, y, IW * 0.43, rh);
-    campo('Idade:',             s(cand.idade ? cand.idade + ' anos' : ''), M + IW * 0.76, y, IW * 0.24, rh);
+    campo('Nacionalidade:',     'Brasileiro(a)',     M,        y, IW * 0.28, rh);
+    campo('Naturalidade:',      '',                  M + IW * 0.28, y, IW * 0.37, rh);
+    campo('Estado Civil:',      s(cand.estado_civil),M + IW * 0.65, y, IW * 0.22, rh);
+    campo('Idade:',             s(cand.idade ? cand.idade + ' anos' : ''), M + IW * 0.87, y, IW * 0.13, rh);
     y += rh;
     campo('Tel. Resid:',        '',                  M,        y, IW * 0.33, rh);
     campo('Comercial:',         '',                  M + IW * 0.33, y, IW * 0.33, rh);
     campo('Cel:',               '',                  M + IW * 0.66, y, IW * 0.34, rh);
     y += rh;
-    campo('RG:',                '',                  M,        y, IW * 0.3, rh);
-    campo('Org Exp/UF:',        '',                  M + IW * 0.3, y, IW * 0.3, rh);
-    campo('CPF:',               '',                  M + IW * 0.6, y, IW * 0.4, rh);
+    campo('RG:',                '',                  M,        y, IW * 0.28, rh);
+    campo('Org Exp/UF:',        '',                  M + IW * 0.28, y, IW * 0.22, rh);
+    campo('CPF:',               '',                  M + IW * 0.50, y, IW * 0.28, rh);
+    campo('Tipo Sanguineo:',    '',                  M + IW * 0.78, y, IW * 0.22, rh);
     y += rh;
-    campo('End Residencial:',   '',                  M,        y, IW * 0.8, rh);
-    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
+    campo('End Residencial:',   '',                  M,        y, IW * 0.75, rh);
+    campo('No:',                '',                  M + IW * 0.75, y, IW * 0.1, rh);
+    campo('CEP:',               '',                  M + IW * 0.85, y, IW * 0.15, rh);
     y += rh;
-    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
-    campo('Cidade:',            s(cand.cidade),      M + IW * 0.33, y, IW * 0.43, rh);
-    campo('UF:',                'MT',                M + IW * 0.76, y, IW * 0.24, rh);
+    campo('Bairro:',            '',                  M,        y, IW * 0.3, rh);
+    campo('Cidade:',            s(cand.cidade),      M + IW * 0.3, y, IW * 0.38, rh);
+    campo('UF:',                'MT',                M + IW * 0.68, y, IW * 0.1, rh);
+    campo('Reside em MT ha:',   '',                  M + IW * 0.78, y, IW * 0.22, rh);
     y += rh;
-    campo('CEP:',               '',                  M,        y, IW * 0.25, rh);
-    campo('Complemento:',       '',                  M + IW * 0.25, y, IW * 0.4, rh);
-    campo('Reside em MT ha (anos):', '',             M + IW * 0.65, y, IW * 0.35, rh);
+    campo('Profissao CBO:',     s(cand.profissao),   M,        y, IW * 0.5, rh);
+    campo('Ha(em anos):',       '',                  M + IW * 0.5, y, IW * 0.2, rh);
+    campo('Renda Aproximada:',  '',                  M + IW * 0.7, y, IW * 0.3, rh);
     y += rh;
-    campo('Tipo Sanguineo:',    '',                  M,        y, IW * 0.25, rh);
-    campo('Profissao CBO:',     s(cand.profissao),   M + IW * 0.25, y, IW * 0.5, rh);
-    campo('Ha(em anos):',       '',                  M + IW * 0.75, y, IW * 0.25, rh);
+    campo('Cargo:',             '',                  M,        y, IW * 0.45, rh);
+    campo('Empresa:',           s(cand.local_trabalho), M + IW * 0.45, y, IW * 0.55, rh);
     y += rh;
-    campo('Cargo:',             '',                  M,        y, IW * 0.5, rh);
-    campo('Empresa:',           s(cand.local_trabalho), M + IW * 0.5, y, IW * 0.5, rh);
+    campo('End Comercial:',     '',                  M,        y, IW * 0.75, rh);
+    campo('No:',                '',                  M + IW * 0.75, y, IW * 0.1, rh);
+    campo('CEP:',               '',                  M + IW * 0.85, y, IW * 0.15, rh);
     y += rh;
-    campo('End Comercial:',     '',                  M,        y, IW * 0.8, rh);
-    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
-    y += rh;
-    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
-    campo('Cidade:',            s(cand.cidade),      M + IW * 0.33, y, IW * 0.43, rh);
-    campo('UF:',                'MT',                M + IW * 0.76, y, IW * 0.24, rh);
-    y += rh;
-    campo('CEP:',               '',                  M,        y, IW * 0.35, rh);
-    campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
-    y += rh + 1;
+    campo('Bairro:',            '',                  M,        y, IW * 0.3, rh);
+    campo('Cidade:',            s(cand.cidade),      M + IW * 0.3, y, IW * 0.38, rh);
+    campo('UF:',                'MT',                M + IW * 0.68, y, IW * 0.1, rh);
+    campo('Renda Aprox. (Comercial):', '',           M + IW * 0.78, y, IW * 0.22, rh);
+    y += rh + 2;
 
-    // Esposa
-    campo('Nome da Esposa:',    '',                  M,        y, IW * 0.68, rh);
-    campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
-    y += rh;
-    campo('Tipo Sanguineo:',    '',                  M,        y, IW * 0.25, rh);
-    campo('Profissao CBO:',     '',                  M + IW * 0.25, y, IW * 0.5, rh);
-    campo('Ha(em anos):',       '',                  M + IW * 0.75, y, IW * 0.25, rh);
-    y += rh;
-    campo('Cargo:',             '',                  M,        y, IW * 0.5, rh);
-    campo('Empresa:',           '',                  M + IW * 0.5, y, IW * 0.5, rh);
-    y += rh;
-    campo('End Comercial esposa:', '',               M,        y, IW * 0.8, rh);
-    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
-    y += rh;
-    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
-    campo('Cidade:',            '',                  M + IW * 0.33, y, IW * 0.43, rh);
-    campo('UF:',                '',                  M + IW * 0.76, y, IW * 0.24, rh);
-    y += rh;
-    campo('CEP:',               '',                  M,        y, IW * 0.35, rh);
-    campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  CONTINUAÇÃO PÁG 1 — Declarações 1-4 (mesma página dos dados)
+    //  CONTINUAÇÃO PÁG 1 — Declarações 1-4 (após dados pessoais)
     // ═══════════════════════════════════════════════════════════════════════
     y += 3;
 
@@ -622,7 +601,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       return yAtual + bh + 3;
     };
 
-    // Item 1
+    // Item 1 — sem espaço extra após o texto
     y = bloco(1,
       `Declaro que conheco pessoalmente o candidato ha mais de ............. anos e ATESTO ser o candidato ora apresentado, pessoa de conduta bem conceituada, de boa indole, cumpridora de suas obrigacoes em sua vida familiar, comercial e profissional.`,
       0, y);
@@ -637,22 +616,46 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
     y = bloco(3,
       'O candidato podera contribuir muito para com a instituicao Maconica, porque:',
-      5, y);
+      2, y);
 
     y = bloco(4,
       'O candidato desfruta de condicoes para arcar com os encargos financeiros, mensalidades, rateios e outras captacoes caso seja admitido, porque:',
-      4, y);
+      1, y);
 
     // Rodapé pág 1
     doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0);
     doc.text('Este Formulario devera ser preenchido pelo Apoiador da Iniciacao', W/2, 290, { align:'center' });
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  PÁGINA 2 — Itens 5-7 + Tramitação
+    //  PÁGINA 2 — Esposa + Itens 5-7 + Tramitação
     // ═══════════════════════════════════════════════════════════════════════
     doc.addPage(); y = M; numPag(2, 2);
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
     doc.text('Formulario I', W / 2, y + 5, { align:'center' }); y += 11;
+
+    // Dados da esposa (continuação)
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0,0,120);
+    doc.text('Continuacao — Dados da Esposa:', M, y + 4); y += 7;
+    campo('Nome da Esposa:',    '',                  M,        y, IW * 0.68, rh);
+    campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
+    y += rh;
+    campo('Tipo Sanguineo:',    '',                  M,        y, IW * 0.25, rh);
+    campo('Profissao CBO:',     '',                  M + IW * 0.25, y, IW * 0.5, rh);
+    campo('Ha(em anos):',       '',                  M + IW * 0.75, y, IW * 0.25, rh);
+    y += rh;
+    campo('Cargo:',             '',                  M,        y, IW * 0.5, rh);
+    campo('Empresa:',           '',                  M + IW * 0.5, y, IW * 0.5, rh);
+    y += rh;
+    campo('End Comercial esposa:', '',               M,        y, IW * 0.8, rh);
+    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
+    y += rh;
+    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
+    campo('Cidade:',            '',                  M + IW * 0.33, y, IW * 0.43, rh);
+    campo('UF:',                '',                  M + IW * 0.76, y, IW * 0.24, rh);
+    y += rh;
+    campo('CEP:',               '',                  M,        y, IW * 0.35, rh);
+    campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
+    y += rh + 4;
 
     y = bloco(5,
       'O candidato dispoe de horarios para participar assiduamente dos trabalhos da Oficina, todas as semanas bem como para atender a outras incumbencias porque:',
