@@ -117,10 +117,12 @@ const CAND_VAZIO = {
   tempo_residencia_mt: '',
   // Esposa
   nome_esposa: '', data_nasc_esposa: '', tipo_sang_esposa: '',
-  profissao_esposa: '', cargo_esposa: '', empresa_esposa: '',
+  profissao_esposa: '', ha_anos_esposa: '', cargo_esposa: '', empresa_esposa: '',
   end_comercial_esposa: '', numero_esposa: '', bairro_esposa: '',
   cidade_esposa: '', uf_esposa: '', cep_esposa: '',
   renda_esposa: '', nome_mae_esposa: '',
+  // Filiação do candidato
+  nome_pai: '', nome_mae: '',
   // Referências
   ref_bancaria_nome: '', ref_bancaria_end: '',
   ref_comercial_nome: '', ref_comercial_end: '',
@@ -198,6 +200,14 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
             <div><label style={lbl}>Renda Aproximada</label><input style={inp} value={form.renda_aproximada} onChange={e => f('renda_aproximada', e.target.value)} placeholder="Ex: R$ 5.000" /></div>
           </div>
 
+          {/* ── FILIAÇÃO ────────────────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Filiação</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+            <div><label style={lbl}>Nome do Pai</label><input style={inp} value={form.nome_pai} onChange={e => f('nome_pai', e.target.value)} placeholder="Nome completo do pai" /></div>
+            <div><label style={lbl}>Nome da Mãe</label><input style={inp} value={form.nome_mae} onChange={e => f('nome_mae', e.target.value)} placeholder="Nome completo da mãe" /></div>
+          </div>
+
           {/* ── CONTATO ─────────────────────────────────────── */}
           <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Contato</div>
 
@@ -239,10 +249,11 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
             <div><label style={lbl}>Data Nascimento</label><input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.data_nasc_esposa} onChange={e => f('data_nasc_esposa', e.target.value)} /></div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '0.6rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 100px', gap: '0.6rem' }}>
             <div><label style={lbl}>Profissão</label><input style={inp} value={form.profissao_esposa} onChange={e => f('profissao_esposa', e.target.value)} /></div>
             <div><label style={lbl}>Cargo</label><input style={inp} value={form.cargo_esposa} onChange={e => f('cargo_esposa', e.target.value)} /></div>
             <div><label style={lbl}>Tipo Sanguíneo</label><input style={inp} value={form.tipo_sang_esposa} onChange={e => f('tipo_sang_esposa', e.target.value)} placeholder="A+" /></div>
+            <div><label style={lbl}>Há (em anos)</label><input style={inp} value={form.ha_anos_esposa} onChange={e => f('ha_anos_esposa', e.target.value)} placeholder="Ex: 5" /></div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
@@ -550,6 +561,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       data_nasc_esposa: form.data_nasc_esposa || null,
       tipo_sang_esposa: form.tipo_sang_esposa || null,
       profissao_esposa: form.profissao_esposa || null,
+      ha_anos_esposa: form.ha_anos_esposa || null,
       cargo_esposa: form.cargo_esposa || null,
       empresa_esposa: form.empresa_esposa || null,
       end_comercial_esposa: form.end_comercial_esposa || null,
@@ -560,6 +572,8 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       cep_esposa: form.cep_esposa || null,
       renda_esposa: form.renda_esposa || null,
       nome_mae_esposa: form.nome_mae_esposa || null,
+      nome_pai: form.nome_pai || null,
+      nome_mae: form.nome_mae || null,
       ref_bancaria_nome: form.ref_bancaria_nome || null,
       ref_bancaria_end: form.ref_bancaria_end || null,
       ref_comercial_nome: form.ref_comercial_nome || null,
@@ -737,6 +751,10 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     campo('Cidade:',          s(cand.cidade),          M + IW*0.25, y, IW * 0.33, rh);
     campo('UF:',              'MT',                    M + IW*0.58, y, IW * 0.10, rh);
     campo('Renda Aproximada:',s(cand.renda_aproximada),M + IW*0.68, y, IW * 0.32, rh);
+    y += rh;
+    // Linha 11 — Pai e Mãe do candidato
+    campo('Nome do Pai:',     s(cand.nome_pai),        M,           y, IW * 0.50, rh);
+    campo('Nome da Mae:',     s(cand.nome_mae),        M + IW*0.50, y, IW * 0.50, rh);
     y += rh + 1;
 
     // ── Dados da Esposa (pág 1, logo após candidato) ──────────────────────
@@ -745,7 +763,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     y += rh;
     campo('Tipo Sanguineo:',    s(cand.tipo_sang_esposa),   M,            y, IW * 0.25, rh);
     campo('Profissao CBO:',     s(cand.profissao_esposa),   M + IW*0.25,  y, IW * 0.50, rh);
-    campo('Ha(em anos):',       '',                         M + IW*0.75,  y, IW * 0.25, rh);
+    campo('Ha(em anos):',       s(cand.ha_anos_esposa),     M + IW*0.75,  y, IW * 0.25, rh);
     y += rh;
     campo('Cargo:',             s(cand.cargo_esposa),       M,            y, IW * 0.50, rh);
     campo('Empresa:',           s(cand.empresa_esposa),     M + IW*0.50,  y, IW * 0.50, rh);
