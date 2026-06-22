@@ -719,12 +719,12 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     doc.text('(...................)', sigX + sigW + 2, y, { align:'left' });
     y += 4;
     doc.setFontSize(7.5); doc.text(`Nome do M.:.M.:. Apoiador e No do Cadastro GLEMT`, W/2, y, { align:'center' });
-    y += 6;
-    // Imagem ATENÇÃO fotos 3x4 — fim pág 2
-    try { doc.addImage(IMG4_ATENCAO, 'PNG', M, y, IW, 10); } catch(e) {}
-    y += 12;
-    // Imagem rodapé GLEMT — fim pág 2
-    try { doc.addImage(IMG5_RODAPE_GLEMT, 'PNG', M, 276, IW, 14); } catch(e) {}
+
+    // Frase ATENÇÃO — fundo azul fixado no rodapé da pág 2
+    doc.setFillColor(0, 0, 180); doc.rect(M, 276, IW, 9, 'F');
+    doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+    doc.text('ATENCAO: A este formulario deve ser anexado 02 fotos 3x4 do candidato, trajado Maconicamente', W/2, 282, { align: 'center' });
+
     // Número de página 2 no final (por cima de tudo)
     numPag(2, 3);
 
