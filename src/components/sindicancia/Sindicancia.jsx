@@ -480,10 +480,19 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     const box    = (x, y, w, h, fill) => { if (fill) { doc.setFillColor(...fill); doc.rect(x, y, w, h, 'F'); } doc.setDrawColor(0,0,180); doc.setLineWidth(0.3); doc.rect(x, y, w, h); };
     const label  = (txt, x, y, size = 7.5, bold = false) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(0, 0, 100); doc.text(s(txt), x, y); };
     const valor  = (txt, x, y, size = 8) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(size); doc.setTextColor(0, 0, 0); doc.text(s(txt || ''), x, y); };
-    const campo  = (lbl, val, x, y, w, h = 6) => {
+    const campo  = (lbl, val, x, y, w, h = 8) => {
       box(x, y, w, h, [230, 232, 245]);
-      label(lbl, x + 1.5, y + 3.5, 6.5);
-      valor(val, x + 1.5, y + 5.8, 7.5);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(6); doc.setTextColor(0, 0, 100);
+      doc.text(s(lbl), x + 1.2, y + 2.8, { maxWidth: w - 2 });
+      if (val) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(7); doc.setTextColor(0, 0, 0);
+        // Truncar texto para não ultrapassar largura do campo
+        let txt = s(val);
+        while (txt.length > 0 && doc.getStringUnitWidth(txt) * 7 / doc.internal.scaleFactor > w - 3) {
+          txt = txt.slice(0, -1);
+        }
+        doc.text(txt, x + 1.2, y + 6.5);
+      }
     };
     const campoLinha = (lbl, val, x, y, w) => {
       label(lbl, x, y, 7); doc.setDrawColor(0, 0, 180); doc.setLineWidth(0.2);
@@ -531,51 +540,59 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     doc.text(linSubmeto, M, y + 4); y += linSubmeto.length * 4 + 3;
 
     // Grid de dados pessoais
-    const rh = 5.5; // row height reduzido
+    const rh = 8;
     const apoiador = s(cand.indicado_por_irmao || '');
     const dataInd  = cand.data_indicacao ? new Date(cand.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '';
 
-    campo('Nome do candidato:', s(cand.nome),       M,        y, IW * 0.68, rh);
-    campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
+    // Linha 1 — Nome + Data Nasc
+    campo('Nome do candidato:', s(cand.nome),     M,            y, IW * 0.72, rh);
+    campo('Data Nasc:',         '',               M + IW*0.72,  y, IW * 0.28, rh);
     y += rh;
-    campo('Nacionalidade:',     'Brasileiro(a)',     M,        y, IW * 0.28, rh);
-    campo('Naturalidade:',      '',                  M + IW * 0.28, y, IW * 0.37, rh);
-    campo('Estado Civil:',      s(cand.estado_civil),M + IW * 0.65, y, IW * 0.22, rh);
-    campo('Idade:',             s(cand.idade ? cand.idade + ' anos' : ''), M + IW * 0.87, y, IW * 0.13, rh);
+    // Linha 2 — Nac + Naturalidade + Est Civil + Idade
+    campo('Nacionalidade:',   'Brasileiro(a)',    M,            y, IW * 0.25, rh);
+    campo('Naturalidade:',    '',                 M + IW*0.25,  y, IW * 0.35, rh);
+    campo('Estado Civil:',    s(cand.estado_civil), M + IW*0.60, y, IW * 0.27, rh);
+    campo('Idade:',           s(cand.idade ? cand.idade+' anos' : ''), M + IW*0.87, y, IW*0.13, rh);
     y += rh;
-    campo('Tel. Resid:',        '',                  M,        y, IW * 0.33, rh);
-    campo('Comercial:',         '',                  M + IW * 0.33, y, IW * 0.33, rh);
-    campo('Cel:',               '',                  M + IW * 0.66, y, IW * 0.34, rh);
+    // Linha 3 — Telefones
+    campo('Tel. Resid:',      '',                 M,            y, IW * 0.33, rh);
+    campo('Comercial:',       '',                 M + IW*0.33,  y, IW * 0.33, rh);
+    campo('Cel:',             '',                 M + IW*0.66,  y, IW * 0.34, rh);
     y += rh;
-    campo('RG:',                '',                  M,        y, IW * 0.28, rh);
-    campo('Org Exp/UF:',        '',                  M + IW * 0.28, y, IW * 0.22, rh);
-    campo('CPF:',               '',                  M + IW * 0.50, y, IW * 0.28, rh);
-    campo('Tipo Sanguineo:',    '',                  M + IW * 0.78, y, IW * 0.22, rh);
+    // Linha 4 — RG + Org + CPF + Tipo Sang
+    campo('RG:',              '',                 M,            y, IW * 0.25, rh);
+    campo('Org Exp/UF:',      '',                 M + IW*0.25,  y, IW * 0.20, rh);
+    campo('CPF:',             '',                 M + IW*0.45,  y, IW * 0.30, rh);
+    campo('Tipo Sanguineo:',  '',                 M + IW*0.75,  y, IW * 0.25, rh);
     y += rh;
-    campo('End Residencial:',   '',                  M,        y, IW * 0.75, rh);
-    campo('No:',                '',                  M + IW * 0.75, y, IW * 0.1, rh);
-    campo('CEP:',               '',                  M + IW * 0.85, y, IW * 0.15, rh);
+    // Linha 5 — End Residencial + No
+    campo('End Residencial:', '',                 M,            y, IW * 0.82, rh);
+    campo('No:',              '',                 M + IW*0.82,  y, IW * 0.18, rh);
     y += rh;
-    campo('Bairro:',            '',                  M,        y, IW * 0.3, rh);
-    campo('Cidade:',            s(cand.cidade),      M + IW * 0.3, y, IW * 0.38, rh);
-    campo('UF:',                'MT',                M + IW * 0.68, y, IW * 0.1, rh);
-    campo('Reside em MT ha:',   '',                  M + IW * 0.78, y, IW * 0.22, rh);
+    // Linha 6 — Bairro + Cidade + UF + CEP
+    campo('Bairro:',          '',                 M,            y, IW * 0.28, rh);
+    campo('Cidade:',          s(cand.cidade),     M + IW*0.28,  y, IW * 0.36, rh);
+    campo('UF:',              'MT',               M + IW*0.64,  y, IW * 0.10, rh);
+    campo('CEP:',             '',                 M + IW*0.74,  y, IW * 0.26, rh);
     y += rh;
-    campo('Profissao CBO:',     s(cand.profissao),   M,        y, IW * 0.5, rh);
-    campo('Ha(em anos):',       '',                  M + IW * 0.5, y, IW * 0.2, rh);
-    campo('Renda Aproximada:',  '',                  M + IW * 0.7, y, IW * 0.3, rh);
+    // Linha 7 — Reside MT + Tipo Sang (já na L4) → usar: Reside + Profissao + Ha
+    campo('Reside em MT ha (anos):', '',          M,            y, IW * 0.28, rh);
+    campo('Profissao CBO:',   s(cand.profissao),  M + IW*0.28,  y, IW * 0.45, rh);
+    campo('Ha(em anos):',     '',                 M + IW*0.73,  y, IW * 0.27, rh);
     y += rh;
-    campo('Cargo:',             '',                  M,        y, IW * 0.45, rh);
-    campo('Empresa:',           s(cand.local_trabalho), M + IW * 0.45, y, IW * 0.55, rh);
+    // Linha 8 — Cargo + Empresa
+    campo('Cargo:',           '',                 M,            y, IW * 0.42, rh);
+    campo('Empresa:',         s(cand.local_trabalho), M + IW*0.42, y, IW * 0.58, rh);
     y += rh;
-    campo('End Comercial:',     '',                  M,        y, IW * 0.75, rh);
-    campo('No:',                '',                  M + IW * 0.75, y, IW * 0.1, rh);
-    campo('CEP:',               '',                  M + IW * 0.85, y, IW * 0.15, rh);
+    // Linha 9 — End Comercial + No
+    campo('End Comercial:',   '',                 M,            y, IW * 0.82, rh);
+    campo('No:',              '',                 M + IW*0.82,  y, IW * 0.18, rh);
     y += rh;
-    campo('Bairro:',            '',                  M,        y, IW * 0.3, rh);
-    campo('Cidade:',            s(cand.cidade),      M + IW * 0.3, y, IW * 0.38, rh);
-    campo('UF:',                'MT',                M + IW * 0.68, y, IW * 0.1, rh);
-    campo('Renda Aprox. (Comercial):', '',           M + IW * 0.78, y, IW * 0.22, rh);
+    // Linha 10 — Bairro + Cidade + UF + Renda
+    campo('Bairro:',          '',                 M,            y, IW * 0.25, rh);
+    campo('Cidade:',          s(cand.cidade),     M + IW*0.25,  y, IW * 0.33, rh);
+    campo('UF:',              'MT',               M + IW*0.58,  y, IW * 0.10, rh);
+    campo('Renda Aproximada:', '',                M + IW*0.68,  y, IW * 0.32, rh);
     y += rh + 2;
 
 
