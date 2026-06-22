@@ -108,6 +108,9 @@ const CAND_VAZIO = {
   nome: '', idade: '', data_nascimento: '', nacionalidade: 'Brasileiro(a)',
   naturalidade: '', estado_civil: '', profissao: '', cargo: '',
   local_trabalho: '', cidade: '', renda_aproximada: '',
+  ha_anos: '',
+  end_comercial: '', numero_comercial: '', bairro_comercial: '',
+  cidade_comercial: '', uf_comercial: '', cep_comercial: '',
   // Contato
   tel_residencial: '', tel_comercial: '', tel_celular: '',
   // Documentos
@@ -200,15 +203,31 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px', gap: '0.6rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 80px', gap: '0.6rem' }}>
             <div><label style={lbl}>Profissão</label><input style={inp} value={form.profissao} onChange={e => f('profissao', e.target.value)} placeholder="Ex: Bancário" /></div>
             <div><label style={lbl}>Cargo</label><input style={inp} value={form.cargo} onChange={e => f('cargo', e.target.value)} placeholder="Ex: Gerente" /></div>
             <div><label style={lbl}>Tipo Sanguíneo</label><input style={inp} value={form.tipo_sanguineo} onChange={e => f('tipo_sanguineo', e.target.value)} placeholder="O+" /></div>
+            <div><label style={lbl}>Há (anos)</label><input style={inp} value={form.ha_anos} onChange={e => f('ha_anos', e.target.value)} placeholder="5" /></div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
             <div><label style={lbl}>Empresa / Local de Trabalho</label><input style={inp} value={form.local_trabalho} onChange={e => f('local_trabalho', e.target.value)} placeholder="Empresa / Órgão" /></div>
             <div><label style={lbl}>Renda Aproximada</label><input style={inp} value={form.renda_aproximada} onChange={e => f('renda_aproximada', e.target.value)} placeholder="Ex: R$ 5.000" /></div>
+          </div>
+
+          {/* ── ENDEREÇO COMERCIAL ───────────────────────────── */}
+          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Endereço Comercial</div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Logradouro</label><input style={inp} value={form.end_comercial} onChange={e => f('end_comercial', e.target.value)} placeholder="Rua / Av." /></div>
+            <div><label style={lbl}>Número</label><input style={inp} value={form.numero_comercial} onChange={e => f('numero_comercial', e.target.value)} /></div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 120px', gap: '0.6rem' }}>
+            <div><label style={lbl}>Bairro</label><input style={inp} value={form.bairro_comercial} onChange={e => f('bairro_comercial', e.target.value)} /></div>
+            <div><label style={lbl}>Cidade</label><input style={inp} value={form.cidade_comercial} onChange={e => f('cidade_comercial', e.target.value)} placeholder="Cidade - MT" /></div>
+            <div><label style={lbl}>UF</label><input style={inp} value={form.uf_comercial} onChange={e => f('uf_comercial', e.target.value)} placeholder="MT" /></div>
+            <div><label style={lbl}>CEP</label><input style={inp} value={form.cep_comercial} onChange={e => f('cep_comercial', e.target.value)} placeholder="78000-000" /></div>
           </div>
 
           {/* ── FILIAÇÃO ────────────────────────────────────── */}
@@ -558,6 +577,13 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       local_trabalho: n(form.local_trabalho),
       cidade: n(form.cidade),
       renda_aproximada: n(form.renda_aproximada),
+      ha_anos: n(form.ha_anos),
+      end_comercial: n(form.end_comercial),
+      numero_comercial: n(form.numero_comercial),
+      bairro_comercial: n(form.bairro_comercial),
+      cidade_comercial: n(form.cidade_comercial),
+      uf_comercial: n(form.uf_comercial),
+      cep_comercial: n(form.cep_comercial),
       tel_residencial: n(form.tel_residencial),
       tel_comercial: n(form.tel_comercial),
       tel_celular: n(form.tel_celular),
@@ -749,20 +775,20 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     // Linha 7 — Reside + Profissao + Ha
     campo('Reside em MT ha (anos):', s(cand.tempo_residencia_mt), M, y, IW * 0.28, rh);
     campo('Profissao CBO:',   s(cand.profissao),       M + IW*0.28, y, IW * 0.45, rh);
-    campo('Ha(em anos):',     '',                      M + IW*0.73, y, IW * 0.27, rh);
+    campo('Ha(em anos):',     s(cand.ha_anos),         M + IW*0.73, y, IW * 0.27, rh);
     y += rh;
     // Linha 8 — Cargo + Empresa
     campo('Cargo:',           s(cand.cargo),           M,           y, IW * 0.42, rh);
     campo('Empresa:',         s(cand.local_trabalho),  M + IW*0.42, y, IW * 0.58, rh);
     y += rh;
     // Linha 9 — End Comercial + No
-    campo('End Comercial:',   '',                      M,           y, IW * 0.82, rh);
-    campo('No:',              '',                      M + IW*0.82, y, IW * 0.18, rh);
+    campo('End Comercial:',   s(cand.end_comercial),   M,           y, IW * 0.82, rh);
+    campo('No:',              s(cand.numero_comercial),M + IW*0.82, y, IW * 0.18, rh);
     y += rh;
     // Linha 10 — Bairro + Cidade + UF + Renda
-    campo('Bairro:',          '',                      M,           y, IW * 0.25, rh);
-    campo('Cidade:',          s(cand.cidade),          M + IW*0.25, y, IW * 0.33, rh);
-    campo('UF:',              'MT',                    M + IW*0.58, y, IW * 0.10, rh);
+    campo('Bairro:',          s(cand.bairro_comercial),M,           y, IW * 0.25, rh);
+    campo('Cidade:',          s(cand.cidade_comercial || cand.cidade), M + IW*0.25, y, IW * 0.33, rh);
+    campo('UF:',              s(cand.uf_comercial || 'MT'),           M + IW*0.58, y, IW * 0.10, rh);
     campo('Renda Aproximada:',s(cand.renda_aproximada),M + IW*0.68, y, IW * 0.32, rh);
     y += rh;
     // Linha 11 — Pai e Mãe do candidato
