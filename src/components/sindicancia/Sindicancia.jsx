@@ -18,7 +18,7 @@ const SITUACOES = [
   { value: 'aprovado',    label: 'Aprovado',     cor: '#10b981', bg: 'rgba(16,185,129,0.15)'  },
   { value: 'excluido',    label: 'Excluído',     cor: '#ef4444', bg: 'rgba(239,68,68,0.15)'   },
   { value: 'desistiu',    label: 'Desistiu',     cor: '#f59e0b', bg: 'rgba(245,158,11,0.15)'  },
-  { value: 'adiado',      label: 'Sobre Malhete',       cor: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
+  { value: 'adiado',      label: 'Adiado',       cor: '#8b5cf6', bg: 'rgba(139,92,246,0.15)'  },
 ];
 
 const STATUS_PROCESSO = [
@@ -466,6 +466,287 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     }
   };
 
+  const gerarFormularioI = async (cand) => {
+    const { jsPDF } = await import('jspdf');
+    const s  = (v) => { if (!v) return ''; let r = ''; for (const c of String(v).normalize('NFD')) { if (c.charCodeAt(0) < 128) r += c; } return r; };
+    const nomeLoja = s(processo.loja_nome || 'ARLS Acacia de Paranatinga No 30');
+    const doc = new jsPDF({ orientation: 'portrait', format: 'a4', unit: 'mm' });
+    const W = 210; const M = 10; const IW = W - M * 2;
+
+    // ── helpers ────────────────────────────────────────────────────────────
+    const linha  = (dots = IW - 4) => '.'.repeat(Math.floor(dots * 2.2));
+    const box    = (x, y, w, h, fill) => { if (fill) { doc.setFillColor(...fill); doc.rect(x, y, w, h, 'F'); } doc.setDrawColor(0,0,180); doc.setLineWidth(0.3); doc.rect(x, y, w, h); };
+    const label  = (txt, x, y, size = 7.5, bold = false) => { doc.setFont('helvetica', bold ? 'bold' : 'normal'); doc.setFontSize(size); doc.setTextColor(0, 0, 100); doc.text(s(txt), x, y); };
+    const valor  = (txt, x, y, size = 8) => { doc.setFont('helvetica', 'normal'); doc.setFontSize(size); doc.setTextColor(0, 0, 0); doc.text(s(txt || ''), x, y); };
+    const campo  = (lbl, val, x, y, w, h = 6) => {
+      box(x, y, w, h, [230, 232, 245]);
+      label(lbl, x + 1.5, y + 3.5, 6.5);
+      valor(val, x + 1.5, y + 5.8, 7.5);
+    };
+    const campoLinha = (lbl, val, x, y, w) => {
+      label(lbl, x, y, 7); doc.setDrawColor(0, 0, 180); doc.setLineWidth(0.2);
+      doc.line(x, y + 0.8, x + w, y + 0.8);
+      valor(val, x + 0.5, y, 7.5);
+    };
+    const pontos = (x, y, w) => { doc.setTextColor(0, 0, 180); doc.setFontSize(6); doc.text('.'.repeat(Math.floor(w * 2.5)), x, y); };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  PÁGINA 1 — Cabeçalho + dados do candidato
+    // ═══════════════════════════════════════════════════════════════════════
+    let y = M;
+
+    // Número de página (canto superior direito)
+    const numPag = (n, tot) => { doc.setFillColor(0, 0, 100); doc.circle(W - M - 7, M + 7, 8, 'F'); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.text(`${n}`, W - M - 7, M + 8, {align:'center'}); doc.setFontSize(6.5); doc.text(`Pagina`, W - M - 7, M + 2.5, {align:'center'}); doc.text(`de ${tot}`, W - M - 7, M + 12, {align:'center'}); };
+    numPag(1, 3);
+
+    // Título formulario
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(0);
+    doc.text('Formulario I', W / 2, y + 5, { align: 'center' }); y += 9;
+
+    // Caixa do cabeçalho (Or, Do Mestre, A Aug, Veneravel)
+    doc.setDrawColor(0, 0, 180); doc.setLineWidth(0.5); doc.rect(M, y, IW, 28);
+    doc.setLineWidth(0.2);
+    label(`Or. de ${nomeLoja} ....../......../20........, E.V.`,          M + 2,  y + 5, 8);
+    label('Do Mestre Macon ' + linha(120),                                M + 2,  y + 11, 8);
+    label('A Aug. e Resp. Loj. Simb. ' + linha(100) + '  No.........',   M + 2,  y + 17, 8);
+    label('Veneravel Mestre,',                                             M + 2,  y + 23, 8);
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0,0,100);
+    doc.text('S.:.S.:.S.:.',  W / 2,  y + 27, { align: 'center' });
+    y += 33;
+
+    // Título proposta (fundo azul)
+    doc.setFillColor(0, 0, 180); doc.rect(M, y, IW, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(8.5);
+    doc.text('PROPOSTA PRELIMINAR DE CANDIDATO PARA ADMISSAO (SINDICANCIA PREVIA)', W / 2, y + 4.8, { align: 'center' });
+    y += 9;
+
+    // Texto submeto
+    doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    const submeto = 'Submeto a apreciacao do quadro dessa Loja, nos termos do Regulamento geral o nome do profano abaixo indicado, solicitando que sejam feitas as devidas sindicancias regulamentares:';
+    const linSubmeto = doc.splitTextToSize(s(submeto), IW);
+    doc.text(linSubmeto, M, y + 4); y += linSubmeto.length * 4 + 3;
+
+    // Grid de dados pessoais
+    const rh = 7; // row height
+    const apoiador = s(cand.indicado_por_irmao || '');
+    const dataInd  = cand.data_indicacao ? new Date(cand.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '';
+
+    campo('Nome do candidato:', s(cand.nome),       M,        y, IW * 0.68, rh);
+    campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
+    y += rh;
+    campo('Nacionalidade:',     'Brasileiro(a)',     M,        y, IW * 0.33, rh);
+    campo('Naturalidade:',      '',                  M + IW * 0.33, y, IW * 0.43, rh);
+    campo('Idade:',             s(cand.idade ? cand.idade + ' anos' : ''), M + IW * 0.76, y, IW * 0.24, rh);
+    y += rh;
+    campo('Tel. Resid:',        '',                  M,        y, IW * 0.33, rh);
+    campo('Comercial:',         '',                  M + IW * 0.33, y, IW * 0.33, rh);
+    campo('Cel:',               '',                  M + IW * 0.66, y, IW * 0.34, rh);
+    y += rh;
+    campo('RG:',                '',                  M,        y, IW * 0.3, rh);
+    campo('Org Exp/UF:',        '',                  M + IW * 0.3, y, IW * 0.3, rh);
+    campo('CPF:',               '',                  M + IW * 0.6, y, IW * 0.4, rh);
+    y += rh;
+    campo('End Residencial:',   '',                  M,        y, IW * 0.8, rh);
+    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
+    y += rh;
+    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
+    campo('Cidade:',            s(cand.cidade),      M + IW * 0.33, y, IW * 0.43, rh);
+    campo('UF:',                'MT',                M + IW * 0.76, y, IW * 0.24, rh);
+    y += rh;
+    campo('CEP:',               '',                  M,        y, IW * 0.25, rh);
+    campo('Complemento:',       '',                  M + IW * 0.25, y, IW * 0.4, rh);
+    campo('Reside em MT ha (anos):', '',             M + IW * 0.65, y, IW * 0.35, rh);
+    y += rh;
+    campo('Tipo Sanguineo:',    '',                  M,        y, IW * 0.25, rh);
+    campo('Profissao CBO:',     s(cand.profissao),   M + IW * 0.25, y, IW * 0.5, rh);
+    campo('Ha(em anos):',       '',                  M + IW * 0.75, y, IW * 0.25, rh);
+    y += rh;
+    campo('Cargo:',             '',                  M,        y, IW * 0.5, rh);
+    campo('Empresa:',           s(cand.local_trabalho), M + IW * 0.5, y, IW * 0.5, rh);
+    y += rh;
+    campo('End Comercial:',     '',                  M,        y, IW * 0.8, rh);
+    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
+    y += rh;
+    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
+    campo('Cidade:',            s(cand.cidade),      M + IW * 0.33, y, IW * 0.43, rh);
+    campo('UF:',                'MT',                M + IW * 0.76, y, IW * 0.24, rh);
+    y += rh;
+    campo('CEP:',               '',                  M,        y, IW * 0.35, rh);
+    campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
+    y += rh + 1;
+
+    // Esposa
+    campo('Nome da Esposa:',    '',                  M,        y, IW * 0.68, rh);
+    campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
+    y += rh;
+    campo('Tipo Sanguineo:',    '',                  M,        y, IW * 0.25, rh);
+    campo('Profissao CBO:',     '',                  M + IW * 0.25, y, IW * 0.5, rh);
+    campo('Ha(em anos):',       '',                  M + IW * 0.75, y, IW * 0.25, rh);
+    y += rh;
+    campo('Cargo:',             '',                  M,        y, IW * 0.5, rh);
+    campo('Empresa:',           '',                  M + IW * 0.5, y, IW * 0.5, rh);
+    y += rh;
+    campo('End Comercial esposa:', '',               M,        y, IW * 0.8, rh);
+    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
+    y += rh;
+    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
+    campo('Cidade:',            '',                  M + IW * 0.33, y, IW * 0.43, rh);
+    campo('UF:',                '',                  M + IW * 0.76, y, IW * 0.24, rh);
+    y += rh;
+    campo('CEP:',               '',                  M,        y, IW * 0.35, rh);
+    campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  PÁGINA 2 — Declarações do apoiador
+    // ═══════════════════════════════════════════════════════════════════════
+    doc.addPage(); y = M; numPag(2, 3);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
+    doc.text('FORMULARIO I', W / 2, y + 5, { align:'center' }); y += 11;
+
+    const bloco = (num, texto, linhas = 5, yAtual) => {
+      const txtLines = doc.splitTextToSize(s(texto), IW - 16);
+      const bh = txtLines.length * 5 + linhas * 4.5 + 8;
+      box(M, yAtual, IW, bh, [255,255,255]);
+      doc.setFillColor(0,0,180); doc.rect(M, yAtual, 7, 7, 'F');
+      doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+      doc.text(`${num}`, M + 3.5, yAtual + 5, { align:'center' });
+      doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+      doc.text(txtLines, M + 8, yAtual + 5);
+      for (let i = 0; i < linhas; i++) {
+        const ly = yAtual + txtLines.length * 5 + 4 + i * 4.5;
+        doc.setDrawColor(0,0,180); doc.setLineWidth(0.15);
+        doc.line(M + 3, ly, M + IW - 3, ly);
+      }
+      return yAtual + bh + 3;
+    };
+
+    // Item 1
+    y = bloco(1,
+      `Declaro que conheco pessoalmente o candidato ha mais de ............. anos e ATESTO ser o candidato ora apresentado, pessoa de conduta bem conceituada, de boa indole, cumpridora de suas obrigacoes em sua vida familiar, comercial e profissional.`,
+      0, y);
+
+    // Item 2
+    box(M, y, IW, 10, [255,255,255]);
+    doc.setFillColor(0,0,180); doc.rect(M, y, 7, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('2', M + 3.5, y + 5, { align:'center' });
+    doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
+    doc.text('Considero que o Candidato possui nivel intelectual:   REGULAR (   )   BOM (   )   EXCELENTE (   )', M + 8, y + 5);
+    y += 13;
+
+    y = bloco(3,
+      'O candidato podera contribuir muito para com a instituicao Maconica, porque:',
+      7, y);
+
+    y = bloco(4,
+      'O candidato desfruta de condicoes para arcar com os encargos financeiros, mensalidades, rateios e outras captacoes caso seja admitido, porque:',
+      4, y);
+
+    // Rodapé pág 2
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0);
+    doc.text('Este Formulario devera ser preenchido pelo Apoiador da Iniciacao', W/2, 290, { align:'center' });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  PÁGINA 3 — Itens 5-7 + Tramitação
+    // ═══════════════════════════════════════════════════════════════════════
+    doc.addPage(); y = M; numPag(3, 3);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
+    doc.text('Formulario I', W / 2, y + 5, { align:'center' }); y += 11;
+
+    y = bloco(5,
+      'O candidato dispoe de horarios para participar assiduamente dos trabalhos da Oficina, todas as semanas bem como para atender a outras incumbencias porque:',
+      6, y);
+
+    // Item 6 — Referências
+    const bh6 = 52;
+    box(M, y, IW, bh6, [255,255,255]);
+    doc.setFillColor(0,0,180); doc.rect(M, y, 7, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('6', M + 3.5, y + 5, { align:'center' });
+    doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.text('Na qualidade de Apoiador, declaro que o candidato esta ciente e nao faz restricao alguma a que os Irmaos busquem informacoes junto aos ambientes de seu relacionamento social, profissional e comercial. para tanto, indica as seguintes fontes para eventuais verificacoes:', M + 8, y + 5, { maxWidth: IW - 10 });
+    // Tabela referências
+    const tr = y + 18; const col = [M, M + 35, M + 100];
+    doc.setFillColor(0,0,180); doc.rect(M, tr, IW, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5);
+    ['REFERENCIAS', 'NOME', 'ENDERECO'].forEach((h, i) => doc.text(h, col[i] + 2, tr + 4.5));
+    ['BANCARIA:', 'COMERCIAL:', 'PESSOAL:'].forEach((ref, i) => {
+      const ry = tr + 7 + i * 8;
+      doc.setFillColor(210, 215, 240); doc.rect(M, ry, 35, 8, 'F');
+      doc.setDrawColor(0,0,180); doc.setLineWidth(0.2); doc.rect(M, ry, IW, 8);
+      doc.setTextColor(0,0,120); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+      doc.text(ref, M + 2, ry + 5);
+      doc.setDrawColor(0,0,180); doc.line(M + 35, ry, M + 35, ry + 8); doc.line(M + 100, ry, M + 100, ry + 8);
+    });
+    y += bh6 + 3;
+
+    // Item 7
+    y = bloco(7,
+      'Tudo eu declaro conscientemente que estou apresentando um Candidato de grande valor que muito pode oferecer a esta Oficina e a Maconaria Universal.',
+      0, y);
+
+    // Assinatura
+    y += 5;
+    doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(0);
+    doc.text('Fraternalmente:', M, y); y += 12;
+    const sigW = 75;
+    const sigX = (W - sigW) / 2;
+    doc.setDrawColor(0); doc.setLineWidth(0.3);
+    doc.line(sigX, y, sigX + sigW, y);
+    doc.text('(...................)', sigX + sigW + 2, y, { align:'left' });
+    y += 4;
+    doc.setFontSize(7.5); doc.text(`Nome do M.:.M.:. Apoiador e No do Cadastro GLEMT`, W/2, y, { align:'center' });
+    y += 12;
+
+    // ─── TRAMITAÇÃO (continua na pág 3) ───────────────────────────────────
+    doc.setFillColor(0,0,180); doc.rect(M, y, IW, 8, 'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
+    doc.text('TRAMITACAO DA PROPOSTA', W/2, y + 6, { align:'center' });
+    y += 11;
+
+    doc.setTextColor(0); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+    doc.text('5    Proposta recebida ne Bolsa de Propostas e Informacoes da Sessao do dia: ______/______/____________', M, y + 5);
+    y += 11;
+
+    // Tabela tramitação
+    const th = y; const cols = [M, M + 20, M + 70]; const colW = [20, 50, IW - 70];
+    doc.setFillColor(0,0,180); doc.rect(M, th, IW, 7, 'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(7.5); doc.setFont('helvetica','bold');
+    ['LEITURAS','SESSAO DO DIA','PROVIDENCIAS'].forEach((h, i) => doc.text(h, cols[i] + 2, th + 4.5));
+    const tramRows = [
+      ['1a', '', 'Publicidade:\n  - Edital (afixar no mural da Loja);\n  - Boletim Informativo Mensal (Anexar 01 foto 3x4)'],
+      ['2a', '', 'Ler pela 2a vez e aguardar para a 3a leitura'],
+      ['3a', '', 'Entrega da proposta de admissao - Modelo Completo'],
+      ['--', '', 'PUBLICACAO EM BOLETIM OFICIAL DA GRANDE LOJA DO ESTADO DE MT'],
+      ['4a', '', 'Apos a publicacao - efetuar a 4a leitura'],
+      ['5a', '', 'Escrutinio Secreto'],
+    ];
+    let ry = th + 7;
+    tramRows.forEach((row, idx) => {
+      const linhas = doc.splitTextToSize(s(row[2]), colW[2] - 4);
+      const rHeight = Math.max(7, linhas.length * 4.5 + 3);
+      if (idx % 2 === 0) { doc.setFillColor(240,241,250); doc.rect(M, ry, IW, rHeight, 'F'); }
+      doc.setDrawColor(0,0,180); doc.setLineWidth(0.15); doc.rect(M, ry, IW, rHeight);
+      doc.line(cols[1], ry, cols[1], ry + rHeight); doc.line(cols[2], ry, cols[2], ry + rHeight);
+      doc.setTextColor(0); doc.setFont('helvetica', row[0] === '--' ? 'bold' : 'normal'); doc.setFontSize(7.5);
+      doc.text(s(row[0]), cols[0] + 2, ry + 4.5);
+      doc.text(linhas, cols[2] + 2, ry + 4.5);
+      ry += rHeight;
+    });
+    y = ry + 5;
+
+    // Observações finais
+    doc.setDrawColor(0,0,180); doc.setLineWidth(0.3); doc.rect(M, y, IW, 40);
+    doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor(0);
+    doc.text('Observacoes/Providencias:', M + 2, y + 5);
+    for (let i = 0; i < 6; i++) {
+      const ly = y + 10 + i * 5;
+      doc.setDrawColor(0,0,180); doc.setLineWidth(0.12); doc.line(M + 3, ly, M + IW - 3, ly);
+    }
+
+    // Salvar
+    const nomePDF = s(cand.nome || 'candidato').replace(/\s+/g, '_');
+    doc.save(`Formulario_I_${nomePDF}.pdf`);
+  };
+
   const gerarPDF = async () => {
     const { jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
@@ -735,6 +1016,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
                 </div>
                 {podeEditar && !encerrado && (
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                    <button onClick={() => gerarFormularioI(c)} style={{ ...btnEdit, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)', color: '#c9a84c' }} title="Gerar Formulário I">📋</button>
                     <button onClick={() => { setCandEditando(c); setModalCand(true); }} style={btnEdit} title="Editar">✏️</button>
                     <button onClick={() => setConfirmExcluir(c)} style={btnDanger} title="Excluir">🗑️</button>
                   </div>
