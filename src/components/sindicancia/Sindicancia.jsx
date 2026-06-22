@@ -508,7 +508,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
 
     // Número de página (canto superior direito)
     const numPag = (n, tot) => { doc.setFillColor(0, 0, 100); doc.circle(W - M - 7, M + 7, 8, 'F'); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.text(`${n}`, W - M - 7, M + 8, {align:'center'}); doc.setFontSize(6.5); doc.text(`Pagina`, W - M - 7, M + 2.5, {align:'center'}); doc.text(`de ${tot}`, W - M - 7, M + 12, {align:'center'}); };
-    numPag(1, 2);
+    numPag(1, 3);
 
     // Título formulario
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(0);
@@ -593,23 +593,45 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     campo('Cidade:',          s(cand.cidade),     M + IW*0.25,  y, IW * 0.33, rh);
     campo('UF:',              'MT',               M + IW*0.58,  y, IW * 0.10, rh);
     campo('Renda Aproximada:', '',                M + IW*0.68,  y, IW * 0.32, rh);
+    y += rh + 1;
+
+    // ── Dados da Esposa (pág 1, logo após candidato) ──────────────────────
+    campo('Nome da Esposa:',    '',              M,            y, IW * 0.68, rh);
+    campo('Data Nasc:',         '',              M + IW*0.68,  y, IW * 0.32, rh);
+    y += rh;
+    campo('Tipo Sanguineo:',    '',              M,            y, IW * 0.25, rh);
+    campo('Profissao CBO:',     '',              M + IW*0.25,  y, IW * 0.50, rh);
+    campo('Ha(em anos):',       '',              M + IW*0.75,  y, IW * 0.25, rh);
+    y += rh;
+    campo('Cargo:',             '',              M,            y, IW * 0.50, rh);
+    campo('Empresa:',           '',              M + IW*0.50,  y, IW * 0.50, rh);
+    y += rh;
+    campo('End Comercial esposa:', '',           M,            y, IW * 0.82, rh);
+    campo('No:',                '',              M + IW*0.82,  y, IW * 0.18, rh);
+    y += rh;
+    campo('Bairro:',            '',              M,            y, IW * 0.28, rh);
+    campo('Cidade:',            '',              M + IW*0.28,  y, IW * 0.36, rh);
+    campo('UF:',                '',              M + IW*0.64,  y, IW * 0.10, rh);
+    campo('CEP:',               '',              M + IW*0.74,  y, IW * 0.26, rh);
+    y += rh;
+    campo('Renda Aproximada:',  '',              M,            y, IW * 0.50, rh);
+    campo('Nome da Mae:',       '',              M + IW*0.50,  y, IW * 0.50, rh);
     y += rh + 2;
 
-
     // ═══════════════════════════════════════════════════════════════════════
-    //  CONTINUAÇÃO PÁG 1 — Declarações 1-4 (após dados pessoais)
+    //  CONTINUAÇÃO PÁG 1 — Declarações 1-4
     // ═══════════════════════════════════════════════════════════════════════
-    y += 3;
 
-    const bloco = (num, texto, linhas = 5, yAtual) => {
-      const txtLines = doc.splitTextToSize(s(texto), IW - 16);
+    const bloco = (num, texto, linhas = 5, yAtual, maxW) => {
+      const mw = maxW || (IW - 16);
+      const txtLines = doc.splitTextToSize(s(texto), mw);
       const bh = txtLines.length * 5 + linhas * 4.5 + 8;
       box(M, yAtual, IW, bh, [255,255,255]);
       doc.setFillColor(0,0,180); doc.rect(M, yAtual, 7, 7, 'F');
       doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
       doc.text(`${num}`, M + 3.5, yAtual + 5, { align:'center' });
       doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-      doc.text(txtLines, M + 8, yAtual + 5);
+      doc.text(txtLines, M + 8, yAtual + 5, { maxWidth: mw });
       for (let i = 0; i < linhas; i++) {
         const ly = yAtual + txtLines.length * 5 + 4 + i * 4.5;
         doc.setDrawColor(0,0,180); doc.setLineWidth(0.15);
@@ -618,65 +640,37 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       return yAtual + bh + 3;
     };
 
-    // Item 1 — sem espaço extra após o texto
+    // Item 1 — texto com maxWidth para não ultrapassar caixa
     y = bloco(1,
-      `Declaro que conheco pessoalmente o candidato ha mais de ............. anos e ATESTO ser o candidato ora apresentado, pessoa de conduta bem conceituada, de boa indole, cumpridora de suas obrigacoes em sua vida familiar, comercial e profissional.`,
-      0, y);
+      'Declaro que conheco pessoalmente o candidato ha mais de ............. anos e ATESTO ser o candidato ora apresentado, pessoa de conduta bem conceituada, de boa indole, cumpridora de suas obrigacoes em sua vida familiar, comercial e profissional.',
+      0, y, IW - 12);
 
     // Item 2
     box(M, y, IW, 10, [255,255,255]);
     doc.setFillColor(0,0,180); doc.rect(M, y, 7, 7, 'F');
-    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('2', M + 3.5, y + 5, { align:'center' });
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(9);
+    doc.text('2', M + 3.5, y + 5, { align:'center' });
     doc.setTextColor(0); doc.setFont('helvetica','bold'); doc.setFontSize(7.5);
-    doc.text('Considero que o Candidato possui nivel intelectual:   REGULAR (   )   BOM (   )   EXCELENTE (   )', M + 8, y + 5);
+    doc.text('Considero que o Candidato possui nivel intelectual:   REGULAR (   )   BOM (   )   EXCELENTE (   )', M + 8, y + 5, { maxWidth: IW - 12 });
     y += 13;
 
-    y = bloco(3,
-      'O candidato podera contribuir muito para com a instituicao Maconica, porque:',
-      2, y);
-
-    y = bloco(4,
-      'O candidato desfruta de condicoes para arcar com os encargos financeiros, mensalidades, rateios e outras captacoes caso seja admitido, porque:',
-      1, y);
+    y = bloco(3, 'O candidato podera contribuir muito para com a instituicao Maconica, porque:', 2, y);
+    y = bloco(4, 'O candidato desfruta de condicoes para arcar com os encargos financeiros, mensalidades, rateios e outras captacoes caso seja admitido, porque:', 3, y, IW - 12);
 
     // Rodapé pág 1
     doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0);
     doc.text('Este Formulario devera ser preenchido pelo Apoiador da Iniciacao', W/2, 290, { align:'center' });
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  PÁGINA 2 — Esposa + Itens 5-7 + Tramitação
+    //  PÁGINA 2 — Itens 5, 6, 7 + Assinatura
     // ═══════════════════════════════════════════════════════════════════════
-    doc.addPage(); y = M; numPag(2, 2);
+    doc.addPage(); y = M; numPag(2, 3);
     doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
     doc.text('Formulario I', W / 2, y + 5, { align:'center' }); y += 11;
 
-    // Dados da esposa (continuação)
-    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(0,0,120);
-    doc.text('Continuacao — Dados da Esposa:', M, y + 4); y += 7;
-    campo('Nome da Esposa:',    '',                  M,        y, IW * 0.68, rh);
-    campo('Data Nasc:',         '',                  M + IW * 0.68, y, IW * 0.32, rh);
-    y += rh;
-    campo('Tipo Sanguineo:',    '',                  M,        y, IW * 0.25, rh);
-    campo('Profissao CBO:',     '',                  M + IW * 0.25, y, IW * 0.5, rh);
-    campo('Ha(em anos):',       '',                  M + IW * 0.75, y, IW * 0.25, rh);
-    y += rh;
-    campo('Cargo:',             '',                  M,        y, IW * 0.5, rh);
-    campo('Empresa:',           '',                  M + IW * 0.5, y, IW * 0.5, rh);
-    y += rh;
-    campo('End Comercial esposa:', '',               M,        y, IW * 0.8, rh);
-    campo('No:',                '',                  M + IW * 0.8, y, IW * 0.2, rh);
-    y += rh;
-    campo('Bairro:',            '',                  M,        y, IW * 0.33, rh);
-    campo('Cidade:',            '',                  M + IW * 0.33, y, IW * 0.43, rh);
-    campo('UF:',                '',                  M + IW * 0.76, y, IW * 0.24, rh);
-    y += rh;
-    campo('CEP:',               '',                  M,        y, IW * 0.35, rh);
-    campo('Renda Aproximada:',  '',                  M + IW * 0.35, y, IW * 0.65, rh);
-    y += rh + 4;
-
     y = bloco(5,
       'O candidato dispoe de horarios para participar assiduamente dos trabalhos da Oficina, todas as semanas bem como para atender a outras incumbencias porque:',
-      6, y);
+      6, y, IW - 12);
 
     // Item 6 — Referências
     const bh6 = 52;
@@ -716,9 +710,11 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     doc.text('(...................)', sigX + sigW + 2, y, { align:'left' });
     y += 4;
     doc.setFontSize(7.5); doc.text(`Nome do M.:.M.:. Apoiador e No do Cadastro GLEMT`, W/2, y, { align:'center' });
-    y += 12;
 
-    // ─── TRAMITAÇÃO (continua na pág 3) ───────────────────────────────────
+    // ─── TRAMITAÇÃO — Página 3 ─────────────────────────────────────────────
+    doc.addPage(); y = M; numPag(3, 3);
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(0);
+    doc.text('Formulario I', W / 2, y + 5, { align:'center' }); y += 11;
     doc.setFillColor(0,0,180); doc.rect(M, y, IW, 8, 'F');
     doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(11);
     doc.text('TRAMITACAO DA PROPOSTA', W/2, y + 6, { align:'center' });
