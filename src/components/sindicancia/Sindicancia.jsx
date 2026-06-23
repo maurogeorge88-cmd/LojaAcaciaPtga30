@@ -881,9 +881,10 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     campo('Data Nasc:',  s(cand.data_nascimento ? new Date(cand.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.55, y, IW * 0.18, rh);
     campo('Idade:',      s(cand.idade ? cand.idade+' anos' : ''),   M + IW*0.73, y, IW * 0.27, rh);
     y += rh;
-    // L2 — Nacionalidade, Naturalidade
-    campo('Nacionalidade:', s(cand.nacionalidade || 'Brasileiro(a)'), M,           y, IW * 0.35, rh);
-    campo('Naturalidade:',  s(cand.naturalidade),                    M + IW*0.35, y, IW * 0.65, rh);
+    // L2 — Estado Civil, Nacionalidade, Naturalidade
+    campo('Estado Civil:',  s(cand.estado_civil),                    M,           y, IW * 0.20, rh);
+    campo('Nacionalidade:', s(cand.nacionalidade || 'Brasileiro(a)'), M + IW*0.20, y, IW * 0.25, rh);
+    campo('Naturalidade:',  s(cand.naturalidade),                    M + IW*0.45, y, IW * 0.55, rh);
     y += rh;
     // L2 — RG, Org Exp, CPF, Tipo Sanguineo
     campo('RG:',             s(cand.rg),              M,           y, IW * 0.25, rh);
@@ -891,11 +892,10 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     campo('CPF:',            s(cand.cpf),             M + IW*0.45, y, IW * 0.30, rh);
     campo('Tipo Sanguineo:', s(cand.tipo_sanguineo),  M + IW*0.75, y, IW * 0.25, rh);
     y += rh;
-    // L3 — Estado Civil, Tel. Resid., Comercial, Cel
-    campo('Estado Civil:',   s(cand.estado_civil),    M,           y, IW * 0.22, rh);
-    campo('Tel. Resid:',     s(cand.tel_residencial), M + IW*0.22, y, IW * 0.26, rh);
-    campo('Comercial:',      s(cand.tel_comercial),   M + IW*0.48, y, IW * 0.26, rh);
-    campo('Cel:',            s(cand.tel_celular),     M + IW*0.74, y, IW * 0.26, rh);
+    // L4 — Tel. Resid., Comercial, Cel
+    campo('Tel. Resid:',     s(cand.tel_residencial), M,           y, IW * 0.33, rh);
+    campo('Comercial:',      s(cand.tel_comercial),   M + IW*0.33, y, IW * 0.33, rh);
+    campo('Cel:',            s(cand.tel_celular),     M + IW*0.66, y, IW * 0.34, rh);
     y += rh;
     // L4 — End Residencial, No, Bairro, Cidade, UF, CEP
     campo('End Residencial:', s(cand.end_residencial), M,           y, IW * 0.38, rh);
