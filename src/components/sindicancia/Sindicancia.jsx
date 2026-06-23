@@ -876,82 +876,75 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     const apoiador = s(cand.indicado_por_irmao || '');
     const dataInd  = cand.data_indicacao ? new Date(cand.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '';
 
-    // Linha 1 — Nome + Data Nasc
-    campo('Nome do candidato:', s(cand.nome),     M,            y, IW * 0.72, rh);
-    campo('Data Nasc:',         s(cand.data_nascimento ? new Date(cand.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.72, y, IW * 0.28, rh);
+    // L1 — Nome, Dt Nasc, Idade, Nacionalidade, Naturalidade
+    campo('Nome do candidato:', s(cand.nome),            M,            y, IW * 0.40, rh);
+    campo('Data Nasc:',  s(cand.data_nascimento ? new Date(cand.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.40, y, IW * 0.13, rh);
+    campo('Idade:',      s(cand.idade ? cand.idade+' anos' : ''),   M + IW*0.53, y, IW * 0.10, rh);
+    campo('Nacionalidade:', s(cand.nacionalidade || 'Brasileiro(a)'), M + IW*0.63, y, IW * 0.37, rh);
     y += rh;
-    // Linha 2 — Nac + Naturalidade + Est Civil + Idade
-    campo('Nacionalidade:',   s(cand.nacionalidade || 'Brasileiro(a)'), M, y, IW * 0.25, rh);
-    campo('Naturalidade:',    s(cand.naturalidade),  M + IW*0.25, y, IW * 0.35, rh);
-    campo('Estado Civil:',    s(cand.estado_civil),  M + IW*0.60, y, IW * 0.27, rh);
-    campo('Idade:',           s(cand.idade ? cand.idade+' anos' : ''), M + IW*0.87, y, IW*0.13, rh);
+    // (Naturalidade na mesma "linha lógica" mas ocupa linha separada para caber bem)
+    campo('Naturalidade:',    s(cand.naturalidade),   M,           y, IW * 1.00, rh);
     y += rh;
-    // Linha 3 — Telefones
-    campo('Tel. Resid:',      s(cand.tel_residencial), M,          y, IW * 0.33, rh);
-    campo('Comercial:',       s(cand.tel_comercial),   M + IW*0.33, y, IW * 0.33, rh);
-    campo('Cel:',             s(cand.tel_celular),     M + IW*0.66, y, IW * 0.34, rh);
+    // L2 — RG, Org Exp, CPF, Tipo Sanguineo
+    campo('RG:',             s(cand.rg),              M,           y, IW * 0.25, rh);
+    campo('Org Exp/UF:',     s(cand.orgao_expedidor), M + IW*0.25, y, IW * 0.20, rh);
+    campo('CPF:',            s(cand.cpf),             M + IW*0.45, y, IW * 0.30, rh);
+    campo('Tipo Sanguineo:', s(cand.tipo_sanguineo),  M + IW*0.75, y, IW * 0.25, rh);
     y += rh;
-    // Linha 4 — RG + Org + CPF + Tipo Sang
-    campo('RG:',              s(cand.rg),              M,           y, IW * 0.25, rh);
-    campo('Org Exp/UF:',      s(cand.orgao_expedidor), M + IW*0.25, y, IW * 0.20, rh);
-    campo('CPF:',             s(cand.cpf),             M + IW*0.45, y, IW * 0.30, rh);
-    campo('Tipo Sanguineo:',  s(cand.tipo_sanguineo),  M + IW*0.75, y, IW * 0.25, rh);
+    // L3 — Estado Civil, Tel. Resid., Comercial, Cel
+    campo('Estado Civil:',   s(cand.estado_civil),    M,           y, IW * 0.22, rh);
+    campo('Tel. Resid:',     s(cand.tel_residencial), M + IW*0.22, y, IW * 0.26, rh);
+    campo('Comercial:',      s(cand.tel_comercial),   M + IW*0.48, y, IW * 0.26, rh);
+    campo('Cel:',            s(cand.tel_celular),     M + IW*0.74, y, IW * 0.26, rh);
     y += rh;
-    // Linha 5 — End Residencial + No
-    campo('End Residencial:', s(cand.end_residencial), M,           y, IW * 0.82, rh);
-    campo('No:',              s(cand.numero_end),      M + IW*0.82, y, IW * 0.18, rh);
+    // L4 — End Residencial, No, Bairro, Cidade, UF, CEP
+    campo('End Residencial:', s(cand.end_residencial), M,           y, IW * 0.38, rh);
+    campo('No:',              s(cand.numero_end),      M + IW*0.38, y, IW * 0.09, rh);
+    campo('Bairro:',          s(cand.bairro),          M + IW*0.47, y, IW * 0.20, rh);
+    campo('Cidade:',          s(cand.cidade),          M + IW*0.67, y, IW * 0.18, rh);
+    campo('UF:',              s(cand.uf || 'MT'),      M + IW*0.85, y, IW * 0.07, rh);
+    campo('CEP:',             s(cand.cep),             M + IW*0.92, y, IW * 0.08, rh);
     y += rh;
-    // Linha 6 — Bairro + Cidade + UF + CEP
-    campo('Bairro:',          s(cand.bairro),          M,           y, IW * 0.28, rh);
-    campo('Cidade:',          s(cand.cidade),          M + IW*0.28, y, IW * 0.36, rh);
-    campo('UF:',              'MT',                    M + IW*0.64, y, IW * 0.10, rh);
-    campo('CEP:',             s(cand.cep),             M + IW*0.74, y, IW * 0.26, rh);
+    // L5 — Residencia MT, Profissao, Ha (anos), Cargo, Empresa
+    campo('Reside em MT ha (anos):', s(cand.tempo_residencia_mt), M,           y, IW * 0.17, rh);
+    campo('Profissao:',       s(cand.profissao),       M + IW*0.17, y, IW * 0.22, rh);
+    campo('Ha(em anos):',     s(cand.ha_anos),         M + IW*0.39, y, IW * 0.10, rh);
+    campo('Cargo:',           s(cand.cargo),           M + IW*0.49, y, IW * 0.24, rh);
+    campo('Empresa:',         s(cand.local_trabalho),  M + IW*0.73, y, IW * 0.27, rh);
     y += rh;
-    // Linha 7 — Reside + Profissao + Ha
-    campo('Reside em MT ha (anos):', s(cand.tempo_residencia_mt), M, y, IW * 0.28, rh);
-    campo('Profissao CBO:',   s(cand.profissao),       M + IW*0.28, y, IW * 0.45, rh);
-    campo('Ha(em anos):',     s(cand.ha_anos),         M + IW*0.73, y, IW * 0.27, rh);
+    // L6 — End Comercial, No, Bairro, Cidade, UF, Renda
+    campo('End Comercial:',   s(cand.end_comercial),   M,           y, IW * 0.35, rh);
+    campo('No:',              s(cand.numero_comercial),M + IW*0.35, y, IW * 0.09, rh);
+    campo('Bairro:',          s(cand.bairro_comercial),M + IW*0.44, y, IW * 0.20, rh);
+    campo('Cidade:',          s(cand.cidade_comercial || cand.cidade), M + IW*0.64, y, IW * 0.18, rh);
+    campo('UF:',              s(cand.uf_comercial || 'MT'),            M + IW*0.82, y, IW * 0.07, rh);
+    campo('Renda:',           s(cand.renda_aproximada),M + IW*0.89, y, IW * 0.11, rh);
     y += rh;
-    // Linha 8 — Cargo + Empresa
-    campo('Cargo:',           s(cand.cargo),           M,           y, IW * 0.42, rh);
-    campo('Empresa:',         s(cand.local_trabalho),  M + IW*0.42, y, IW * 0.58, rh);
-    y += rh;
-    // Linha 9 — End Comercial + No
-    campo('End Comercial:',   s(cand.end_comercial),   M,           y, IW * 0.82, rh);
-    campo('No:',              s(cand.numero_comercial),M + IW*0.82, y, IW * 0.18, rh);
-    y += rh;
-    // Linha 10 — Bairro + Cidade + UF + Renda
-    campo('Bairro:',          s(cand.bairro_comercial),M,           y, IW * 0.25, rh);
-    campo('Cidade:',          s(cand.cidade_comercial || cand.cidade), M + IW*0.25, y, IW * 0.33, rh);
-    campo('UF:',              s(cand.uf_comercial || 'MT'),           M + IW*0.58, y, IW * 0.10, rh);
-    campo('Renda Aproximada:',s(cand.renda_aproximada),M + IW*0.68, y, IW * 0.32, rh);
-    y += rh;
-    // Linha 11 — Pai e Mãe do candidato
+    // L7 — Nome do Pai, Nome da Mãe
     campo('Nome do Pai:',     s(cand.nome_pai),        M,           y, IW * 0.50, rh);
     campo('Nome da Mae:',     s(cand.nome_mae),        M + IW*0.50, y, IW * 0.50, rh);
     y += rh + 1;
 
     // ── Dados da Esposa (pág 1, logo após candidato) ──────────────────────
-    campo('Nome da Esposa:',    s(cand.nome_esposa),        M,            y, IW * 0.68, rh);
-    campo('Data Nasc:',         s(cand.data_nasc_esposa ? new Date(cand.data_nasc_esposa+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.68, y, IW * 0.32, rh);
+    // E-L1 — Nome esposa, Dt Nasc, Tipo Sanguineo
+    campo('Nome da Esposa:',  s(cand.nome_esposa),     M,            y, IW * 0.55, rh);
+    campo('Data Nasc:',  s(cand.data_nasc_esposa ? new Date(cand.data_nasc_esposa+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.55, y, IW * 0.20, rh);
+    campo('Tipo Sanguineo:', s(cand.tipo_sang_esposa), M + IW*0.75, y, IW * 0.25, rh);
     y += rh;
-    campo('Tipo Sanguineo:',    s(cand.tipo_sang_esposa),   M,            y, IW * 0.25, rh);
-    campo('Profissao CBO:',     s(cand.profissao_esposa),   M + IW*0.25,  y, IW * 0.50, rh);
-    campo('Ha(em anos):',       s(cand.ha_anos_esposa),     M + IW*0.75,  y, IW * 0.25, rh);
+    // E-L2 — Profissao, Ha (anos), Cargo, Empresa, Renda
+    campo('Profissao:',       s(cand.profissao_esposa),M,            y, IW * 0.22, rh);
+    campo('Ha(em anos):',     s(cand.ha_anos_esposa),  M + IW*0.22, y, IW * 0.10, rh);
+    campo('Cargo:',           s(cand.cargo_esposa),    M + IW*0.32, y, IW * 0.24, rh);
+    campo('Empresa:',         s(cand.empresa_esposa),  M + IW*0.56, y, IW * 0.27, rh);
+    campo('Renda:',           s(cand.renda_esposa),    M + IW*0.83, y, IW * 0.17, rh);
     y += rh;
-    campo('Cargo:',             s(cand.cargo_esposa),       M,            y, IW * 0.50, rh);
-    campo('Empresa:',           s(cand.empresa_esposa),     M + IW*0.50,  y, IW * 0.50, rh);
-    y += rh;
-    campo('End Comercial esposa:', s(cand.end_comercial_esposa), M,        y, IW * 0.82, rh);
-    campo('No:',                s(cand.numero_esposa),      M + IW*0.82,  y, IW * 0.18, rh);
-    y += rh;
-    campo('Bairro:',            s(cand.bairro_esposa),      M,            y, IW * 0.28, rh);
-    campo('Cidade:',            s(cand.cidade_esposa),      M + IW*0.28,  y, IW * 0.36, rh);
-    campo('UF:',                s(cand.uf_esposa || 'MT'),  M + IW*0.64,  y, IW * 0.10, rh);
-    campo('CEP:',               s(cand.cep_esposa),         M + IW*0.74,  y, IW * 0.26, rh);
-    y += rh;
-    campo('Renda Aproximada:',  s(cand.renda_esposa),       M,            y, IW * 0.50, rh);
-    campo('Nome da Mae:',       s(cand.nome_mae_esposa),    M + IW*0.50,  y, IW * 0.50, rh);
+    // E-L3 — End Comercial, No, Bairro, Cidade, UF, CEP
+    campo('End Comercial esposa:', s(cand.end_comercial_esposa), M,   y, IW * 0.35, rh);
+    campo('No:',              s(cand.numero_esposa),   M + IW*0.35,  y, IW * 0.09, rh);
+    campo('Bairro:',          s(cand.bairro_esposa),   M + IW*0.44,  y, IW * 0.20, rh);
+    campo('Cidade:',          s(cand.cidade_esposa),   M + IW*0.64,  y, IW * 0.18, rh);
+    campo('UF:',              s(cand.uf_esposa || 'MT'), M + IW*0.82, y, IW * 0.07, rh);
+    campo('CEP:',             s(cand.cep_esposa),      M + IW*0.89,  y, IW * 0.11, rh);
     y += rh + 2;
 
     // ═══════════════════════════════════════════════════════════════════════
