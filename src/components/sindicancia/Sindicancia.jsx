@@ -291,9 +291,6 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
             <FI label="Data Nascimento" value={form.data_nasc_esposa} onChange={e => f('data_nasc_esposa', e.target.value)} type="date" />
             <FI label="Tipo Sanguíneo" value={form.tipo_sang_esposa} onChange={e => f('tipo_sang_esposa', e.target.value)} placeholder="A+" />
           </G>
-          <G cols="1fr 1fr">
-            <FI label="Nome da Mãe (Esposa)" value={form.nome_mae_esposa} onChange={e => f('nome_mae_esposa', e.target.value)} />
-          </G>
 
           {/* ── 6. PROFISSÃO E END. COMERCIAL DA ESPOSA ──── */}
           <SecTitle>6 · Profissão e Endereço Comercial da Esposa</SecTitle>
@@ -477,7 +474,6 @@ const ModalVisualizarCandidato = ({ aberto, onFechar, candidato, podeVerMotivo =
             <Row label="Nome" value={v(c.nome_esposa)} span={2} />
             <Row label="Nasc." value={fmtDt(c.data_nasc_esposa)} />
             <Row label="Tipo Sanguíneo" value={v(c.tipo_sang_esposa)} />
-            <Row label="Nome da Mãe" value={v(c.nome_mae_esposa)} span={2} />
           </Sec>
 
           <Sec title="6 · Profissão e Endereço Comercial da Esposa">
