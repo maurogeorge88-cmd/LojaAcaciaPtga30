@@ -876,14 +876,14 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
     const apoiador = s(cand.indicado_por_irmao || '');
     const dataInd  = cand.data_indicacao ? new Date(cand.data_indicacao + 'T00:00:00').toLocaleDateString('pt-BR') : '';
 
-    // L1 — Nome, Dt Nasc, Idade, Nacionalidade, Naturalidade
-    campo('Nome do candidato:', s(cand.nome),            M,            y, IW * 0.40, rh);
-    campo('Data Nasc:',  s(cand.data_nascimento ? new Date(cand.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.40, y, IW * 0.13, rh);
-    campo('Idade:',      s(cand.idade ? cand.idade+' anos' : ''),   M + IW*0.53, y, IW * 0.10, rh);
-    campo('Nacionalidade:', s(cand.nacionalidade || 'Brasileiro(a)'), M + IW*0.63, y, IW * 0.37, rh);
+    // L1 — Nome, Dt Nasc, Idade
+    campo('Nome do candidato:', s(cand.nome),            M,            y, IW * 0.55, rh);
+    campo('Data Nasc:',  s(cand.data_nascimento ? new Date(cand.data_nascimento+'T00:00:00').toLocaleDateString('pt-BR') : ''), M + IW*0.55, y, IW * 0.18, rh);
+    campo('Idade:',      s(cand.idade ? cand.idade+' anos' : ''),   M + IW*0.73, y, IW * 0.27, rh);
     y += rh;
-    // (Naturalidade na mesma "linha lógica" mas ocupa linha separada para caber bem)
-    campo('Naturalidade:',    s(cand.naturalidade),   M,           y, IW * 1.00, rh);
+    // L2 — Nacionalidade, Naturalidade
+    campo('Nacionalidade:', s(cand.nacionalidade || 'Brasileiro(a)'), M,           y, IW * 0.35, rh);
+    campo('Naturalidade:',  s(cand.naturalidade),                    M + IW*0.35, y, IW * 0.65, rh);
     y += rh;
     // L2 — RG, Org Exp, CPF, Tipo Sanguineo
     campo('RG:',             s(cand.rg),              M,           y, IW * 0.25, rh);
