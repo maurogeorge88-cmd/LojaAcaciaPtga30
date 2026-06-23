@@ -135,6 +135,35 @@ const CAND_VAZIO = {
   situacao: 'indicado', motivo_exclusao: '', observacoes: '',
 };
 
+// ─────────────────────────────────────────────────────────────────
+//  Helpers para seção do modal de cadastro
+// ─────────────────────────────────────────────────────────────────
+const SecTitle = ({ children }) => (
+  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase',
+    letterSpacing: '0.06em', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.25rem',
+    marginTop: '0.3rem' }}>
+    {children}
+  </div>
+);
+const inpSm = { ...({} ), width: '100%', padding: '0.4rem 0.7rem', fontSize: '0.82rem',
+  background: 'var(--color-surface-2)', border: '1px solid var(--color-border)',
+  borderRadius: 'var(--radius-md)', color: 'var(--color-text)', outline: 'none', boxSizing: 'border-box' };
+const lblSm = { display: 'block', fontSize: '0.68rem', fontWeight: 600, color: 'var(--color-text-muted)',
+  marginBottom: '0.2rem', textTransform: 'uppercase', letterSpacing: '0.04em' };
+const G = ({ cols, children }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: cols, gap: '0.5rem' }}>{children}</div>
+);
+const F = ({ label, children }) => (
+  <div><label style={lblSm}>{label}</label>{children}</div>
+);
+const FI = ({ label, value, onChange, placeholder, type = 'text', list }) => (
+  <F label={label}>
+    <input style={inpSm} type={type} value={value} onChange={onChange}
+      placeholder={placeholder} list={list}
+      {...(type === 'date' ? { colorScheme: 'dark' } : {})} />
+  </F>
+);
+
 const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVerMotivo = false }) => {
   const [form, setForm] = useState(CAND_VAZIO);
   const [salvando, setSalvando] = useState(false);
@@ -143,7 +172,6 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
   useEffect(() => {
     if (aberto) {
       if (candidato) {
-        // Merge com CAND_VAZIO, convertendo null/undefined para '' em todos os campos
         const merged = { ...CAND_VAZIO };
         Object.keys(CAND_VAZIO).forEach(k => {
           const v = candidato[k];
@@ -151,7 +179,6 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
         });
         setForm(merged);
       } else {
-        // Novo candidato — estado totalmente limpo
         setForm({ ...CAND_VAZIO });
       }
       setErro('');
@@ -174,179 +201,155 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
   if (!aberto) return null;
   return (
     <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onFechar()}>
-      <div style={modalBox('600px')}>
+      <div style={{ ...modalBox('920px'), width: '100%' }}>
         <div style={modalHeader}>
           <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
             {candidato ? '✏️ Editar Candidato' : '➕ Novo Candidato'}
           </h3>
           <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
         </div>
-        <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.85rem', overflowY: 'auto', maxHeight: '75vh' }}>
+        <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', overflowY: 'auto', maxHeight: '78vh' }}>
 
-          {/* ── IDENTIFICAÇÃO ───────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Identificação</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px 120px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Nome Completo *</label><input style={inp} value={form.nome} onChange={e => f('nome', e.target.value)} placeholder="Nome do profano" autoFocus /></div>
-            <div><label style={lbl}>Idade</label><input style={inp} type="number" min="18" max="99" value={form.idade} onChange={e => f('idade', e.target.value)} placeholder="35" /></div>
-            <div><label style={lbl}>Data Nascimento</label><input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.data_nascimento} onChange={e => f('data_nascimento', e.target.value)} /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>Nacionalidade</label><input style={inp} value={form.nacionalidade} onChange={e => f('nacionalidade', e.target.value)} /></div>
-            <div><label style={lbl}>Naturalidade</label><input style={inp} value={form.naturalidade} onChange={e => f('naturalidade', e.target.value)} placeholder="Cidade/UF" /></div>
-            <div><label style={lbl}>Estado Civil</label>
-              <select style={inp} value={form.estado_civil} onChange={e => f('estado_civil', e.target.value)}>
+          {/* ── 1. DADOS PESSOAIS ──────────────────────────── */}
+          <SecTitle>1 · Dados Pessoais</SecTitle>
+          <G cols="2fr 70px 120px 140px 140px">
+            <FI label="Nome Completo *" value={form.nome} onChange={e => f('nome', e.target.value)} placeholder="Nome do profano" />
+            <FI label="Idade" value={form.idade} onChange={e => f('idade', e.target.value)} placeholder="35" type="number" />
+            <FI label="Data Nascimento" value={form.data_nascimento} onChange={e => f('data_nascimento', e.target.value)} type="date" />
+            <F label="Tipo Sanguíneo">
+              <input style={inpSm} value={form.tipo_sanguineo} onChange={e => f('tipo_sanguineo', e.target.value)} placeholder="O+" />
+            </F>
+            <F label="Estado Civil">
+              <select style={inpSm} value={form.estado_civil} onChange={e => f('estado_civil', e.target.value)}>
                 <option value="">Selecione...</option>
                 {ESTADOS_CIVIS.map(ec => <option key={ec} value={ec}>{ec}</option>)}
               </select>
-            </div>
-          </div>
+            </F>
+          </G>
+          <G cols="1fr 1fr 100px">
+            <FI label="Nacionalidade" value={form.nacionalidade} onChange={e => f('nacionalidade', e.target.value)} />
+            <FI label="Naturalidade (Cidade/UF)" value={form.naturalidade} onChange={e => f('naturalidade', e.target.value)} placeholder="Cidade/MT" />
+            <FI label="Tempo MT (anos)" value={form.tempo_residencia_mt} onChange={e => f('tempo_residencia_mt', e.target.value)} placeholder="10" />
+          </G>
+          <G cols="1fr 1fr 1fr">
+            <FI label="Tel. Residencial" value={form.tel_residencial} onChange={e => f('tel_residencial', e.target.value)} placeholder="(66) 3333-3333" />
+            <FI label="Tel. Comercial" value={form.tel_comercial} onChange={e => f('tel_comercial', e.target.value)} placeholder="(66) 3333-3333" />
+            <FI label="Celular" value={form.tel_celular} onChange={e => f('tel_celular', e.target.value)} placeholder="(66) 99999-9999" />
+          </G>
+          <G cols="1fr 130px 1fr">
+            <FI label="RG" value={form.rg} onChange={e => f('rg', e.target.value)} placeholder="0000000-0" />
+            <FI label="Org. Exp./UF" value={form.orgao_expedidor} onChange={e => f('orgao_expedidor', e.target.value)} placeholder="SSP/MT" />
+            <FI label="CPF" value={form.cpf} onChange={e => f('cpf', e.target.value)} placeholder="000.000.000-00" />
+          </G>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 80px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Profissão</label><input style={inp} value={form.profissao} onChange={e => f('profissao', e.target.value)} placeholder="Ex: Bancário" /></div>
-            <div><label style={lbl}>Cargo</label><input style={inp} value={form.cargo} onChange={e => f('cargo', e.target.value)} placeholder="Ex: Gerente" /></div>
-            <div><label style={lbl}>Tipo Sanguíneo</label><input style={inp} value={form.tipo_sanguineo} onChange={e => f('tipo_sanguineo', e.target.value)} placeholder="O+" /></div>
-            <div><label style={lbl}>Há (anos)</label><input style={inp} value={form.ha_anos} onChange={e => f('ha_anos', e.target.value)} placeholder="5" /></div>
-          </div>
+          {/* ── 2. ENDEREÇO RESIDENCIAL ────────────────────── */}
+          <SecTitle>2 · Endereço Residencial</SecTitle>
+          <G cols="2fr 80px 1fr 80px 110px">
+            <FI label="Logradouro" value={form.end_residencial} onChange={e => f('end_residencial', e.target.value)} placeholder="Rua / Av." />
+            <FI label="Número" value={form.numero_end} onChange={e => f('numero_end', e.target.value)} />
+            <FI label="Bairro" value={form.bairro} onChange={e => f('bairro', e.target.value)} />
+            <FI label="UF" value={form.uf} onChange={e => f('uf', e.target.value)} placeholder="MT" />
+            <FI label="CEP" value={form.cep} onChange={e => f('cep', e.target.value)} placeholder="78000-000" />
+          </G>
+          <G cols="2fr 1fr">
+            <FI label="Cidade" value={form.cidade} onChange={e => f('cidade', e.target.value)} placeholder="Cidade - MT" />
+          </G>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>Empresa / Local de Trabalho</label><input style={inp} value={form.local_trabalho} onChange={e => f('local_trabalho', e.target.value)} placeholder="Empresa / Órgão" /></div>
-            <div><label style={lbl}>Renda Aproximada</label><input style={inp} value={form.renda_aproximada} onChange={e => f('renda_aproximada', e.target.value)} placeholder="Ex: R$ 5.000" /></div>
-          </div>
+          {/* ── 3. FILIAÇÃO ───────────────────────────────── */}
+          <SecTitle>3 · Filiação</SecTitle>
+          <G cols="1fr 1fr">
+            <FI label="Nome do Pai" value={form.nome_pai} onChange={e => f('nome_pai', e.target.value)} placeholder="Nome completo do pai" />
+            <FI label="Nome da Mãe" value={form.nome_mae} onChange={e => f('nome_mae', e.target.value)} placeholder="Nome completo da mãe" />
+          </G>
 
-          {/* ── ENDEREÇO COMERCIAL ───────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Endereço Comercial</div>
+          {/* ── 4. PROFISSÃO E END. COMERCIAL ─────────────── */}
+          <SecTitle>4 · Profissão e Endereço Comercial</SecTitle>
+          <G cols="1fr 1fr 70px 1fr">
+            <FI label="Profissão" value={form.profissao} onChange={e => f('profissao', e.target.value)} placeholder="Ex: Bancário" />
+            <FI label="Cargo" value={form.cargo} onChange={e => f('cargo', e.target.value)} placeholder="Ex: Gerente" />
+            <FI label="Há (anos)" value={form.ha_anos} onChange={e => f('ha_anos', e.target.value)} placeholder="5" />
+            <FI label="Empresa / Local de Trabalho" value={form.local_trabalho} onChange={e => f('local_trabalho', e.target.value)} placeholder="Empresa / Órgão" />
+          </G>
+          <G cols="1fr 1fr">
+            <FI label="Renda Aproximada" value={form.renda_aproximada} onChange={e => f('renda_aproximada', e.target.value)} placeholder="Ex: R$ 5.000" />
+          </G>
+          <G cols="2fr 80px 1fr 80px 110px">
+            <FI label="Logradouro Comercial" value={form.end_comercial} onChange={e => f('end_comercial', e.target.value)} placeholder="Rua / Av." />
+            <FI label="Número" value={form.numero_comercial} onChange={e => f('numero_comercial', e.target.value)} />
+            <FI label="Bairro" value={form.bairro_comercial} onChange={e => f('bairro_comercial', e.target.value)} />
+            <FI label="UF" value={form.uf_comercial} onChange={e => f('uf_comercial', e.target.value)} placeholder="MT" />
+            <FI label="CEP" value={form.cep_comercial} onChange={e => f('cep_comercial', e.target.value)} placeholder="78000-000" />
+          </G>
+          <G cols="2fr 1fr">
+            <FI label="Cidade Comercial" value={form.cidade_comercial} onChange={e => f('cidade_comercial', e.target.value)} placeholder="Cidade - MT" />
+          </G>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Logradouro</label><input style={inp} value={form.end_comercial} onChange={e => f('end_comercial', e.target.value)} placeholder="Rua / Av." /></div>
-            <div><label style={lbl}>Número</label><input style={inp} value={form.numero_comercial} onChange={e => f('numero_comercial', e.target.value)} /></div>
-          </div>
+          {/* ── 5. DADOS DA ESPOSA ────────────────────────── */}
+          <SecTitle>5 · Dados da Esposa</SecTitle>
+          <G cols="2fr 130px 110px">
+            <FI label="Nome da Esposa" value={form.nome_esposa} onChange={e => f('nome_esposa', e.target.value)} />
+            <FI label="Data Nascimento" value={form.data_nasc_esposa} onChange={e => f('data_nasc_esposa', e.target.value)} type="date" />
+            <FI label="Tipo Sanguíneo" value={form.tipo_sang_esposa} onChange={e => f('tipo_sang_esposa', e.target.value)} placeholder="A+" />
+          </G>
+          <G cols="1fr 1fr">
+            <FI label="Nome da Mãe (Esposa)" value={form.nome_mae_esposa} onChange={e => f('nome_mae_esposa', e.target.value)} />
+          </G>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 120px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Bairro</label><input style={inp} value={form.bairro_comercial} onChange={e => f('bairro_comercial', e.target.value)} /></div>
-            <div><label style={lbl}>Cidade</label><input style={inp} value={form.cidade_comercial} onChange={e => f('cidade_comercial', e.target.value)} placeholder="Cidade - MT" /></div>
-            <div><label style={lbl}>UF</label><input style={inp} value={form.uf_comercial} onChange={e => f('uf_comercial', e.target.value)} placeholder="MT" /></div>
-            <div><label style={lbl}>CEP</label><input style={inp} value={form.cep_comercial} onChange={e => f('cep_comercial', e.target.value)} placeholder="78000-000" /></div>
-          </div>
+          {/* ── 6. PROFISSÃO E END. COMERCIAL DA ESPOSA ──── */}
+          <SecTitle>6 · Profissão e Endereço Comercial da Esposa</SecTitle>
+          <G cols="1fr 1fr 70px 1fr">
+            <FI label="Profissão" value={form.profissao_esposa} onChange={e => f('profissao_esposa', e.target.value)} />
+            <FI label="Cargo" value={form.cargo_esposa} onChange={e => f('cargo_esposa', e.target.value)} />
+            <FI label="Há (anos)" value={form.ha_anos_esposa} onChange={e => f('ha_anos_esposa', e.target.value)} placeholder="5" />
+            <FI label="Empresa" value={form.empresa_esposa} onChange={e => f('empresa_esposa', e.target.value)} />
+          </G>
+          <G cols="1fr 1fr">
+            <FI label="Renda Aproximada" value={form.renda_esposa} onChange={e => f('renda_esposa', e.target.value)} placeholder="Ex: R$ 3.000" />
+          </G>
+          <G cols="2fr 80px 1fr 80px 110px">
+            <FI label="Logradouro Comercial" value={form.end_comercial_esposa} onChange={e => f('end_comercial_esposa', e.target.value)} />
+            <FI label="Número" value={form.numero_esposa} onChange={e => f('numero_esposa', e.target.value)} />
+            <FI label="Bairro" value={form.bairro_esposa} onChange={e => f('bairro_esposa', e.target.value)} />
+            <FI label="UF" value={form.uf_esposa} onChange={e => f('uf_esposa', e.target.value)} placeholder="MT" />
+            <FI label="CEP" value={form.cep_esposa} onChange={e => f('cep_esposa', e.target.value)} />
+          </G>
+          <G cols="2fr 1fr">
+            <FI label="Cidade Comercial" value={form.cidade_esposa} onChange={e => f('cidade_esposa', e.target.value)} />
+          </G>
 
-          {/* ── FILIAÇÃO ────────────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Filiação</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>Nome do Pai</label><input style={inp} value={form.nome_pai} onChange={e => f('nome_pai', e.target.value)} placeholder="Nome completo do pai" /></div>
-            <div><label style={lbl}>Nome da Mãe</label><input style={inp} value={form.nome_mae} onChange={e => f('nome_mae', e.target.value)} placeholder="Nome completo da mãe" /></div>
-          </div>
-
-          {/* ── CONTATO ─────────────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Contato</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>Tel. Residencial</label><input style={inp} value={form.tel_residencial} onChange={e => f('tel_residencial', e.target.value)} placeholder="(66) 99999-9999" /></div>
-            <div><label style={lbl}>Tel. Comercial</label><input style={inp} value={form.tel_comercial} onChange={e => f('tel_comercial', e.target.value)} placeholder="(66) 3333-3333" /></div>
-            <div><label style={lbl}>Celular</label><input style={inp} value={form.tel_celular} onChange={e => f('tel_celular', e.target.value)} placeholder="(66) 99999-9999" /></div>
-          </div>
-
-          {/* ── DOCUMENTOS ──────────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Documentos</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>RG</label><input style={inp} value={form.rg} onChange={e => f('rg', e.target.value)} placeholder="0000000-0" /></div>
-            <div><label style={lbl}>Org. Exp./UF</label><input style={inp} value={form.orgao_expedidor} onChange={e => f('orgao_expedidor', e.target.value)} placeholder="SSP/MT" /></div>
-            <div><label style={lbl}>CPF</label><input style={inp} value={form.cpf} onChange={e => f('cpf', e.target.value)} placeholder="000.000.000-00" /></div>
-          </div>
-
-          {/* ── ENDEREÇO RESIDENCIAL ────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Endereço Residencial</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Logradouro</label><input style={inp} value={form.end_residencial} onChange={e => f('end_residencial', e.target.value)} placeholder="Rua / Av." /></div>
-            <div><label style={lbl}>Número</label><input style={inp} value={form.numero_end} onChange={e => f('numero_end', e.target.value)} /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 120px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Bairro</label><input style={inp} value={form.bairro} onChange={e => f('bairro', e.target.value)} /></div>
-            <div><label style={lbl}>Cidade</label><input style={inp} value={form.cidade} onChange={e => f('cidade', e.target.value)} placeholder="Cidade - MT" /></div>
-            <div><label style={lbl}>CEP</label><input style={inp} value={form.cep} onChange={e => f('cep', e.target.value)} placeholder="78000-000" /></div>
-            <div><label style={lbl}>Reside em MT há (anos)</label><input style={inp} value={form.tempo_residencia_mt} onChange={e => f('tempo_residencia_mt', e.target.value)} placeholder="Ex: 10" /></div>
-          </div>
-
-          {/* ── ESPOSA ──────────────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Esposa</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Nome da Esposa</label><input style={inp} value={form.nome_esposa} onChange={e => f('nome_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>Data Nascimento</label><input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.data_nasc_esposa} onChange={e => f('data_nasc_esposa', e.target.value)} /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 100px 100px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Profissão</label><input style={inp} value={form.profissao_esposa} onChange={e => f('profissao_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>Cargo</label><input style={inp} value={form.cargo_esposa} onChange={e => f('cargo_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>Tipo Sanguíneo</label><input style={inp} value={form.tipo_sang_esposa} onChange={e => f('tipo_sang_esposa', e.target.value)} placeholder="A+" /></div>
-            <div><label style={lbl}>Há (em anos)</label><input style={inp} value={form.ha_anos_esposa} onChange={e => f('ha_anos_esposa', e.target.value)} placeholder="Ex: 5" /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>Empresa (Esposa)</label><input style={inp} value={form.empresa_esposa} onChange={e => f('empresa_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>Renda Aproximada</label><input style={inp} value={form.renda_esposa} onChange={e => f('renda_esposa', e.target.value)} placeholder="Ex: R$ 3.000" /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: '0.6rem' }}>
-            <div><label style={lbl}>End. Comercial (Esposa)</label><input style={inp} value={form.end_comercial_esposa} onChange={e => f('end_comercial_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>Número</label><input style={inp} value={form.numero_esposa} onChange={e => f('numero_esposa', e.target.value)} /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 80px 120px', gap: '0.6rem' }}>
-            <div><label style={lbl}>Bairro</label><input style={inp} value={form.bairro_esposa} onChange={e => f('bairro_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>Cidade</label><input style={inp} value={form.cidade_esposa} onChange={e => f('cidade_esposa', e.target.value)} /></div>
-            <div><label style={lbl}>UF</label><input style={inp} value={form.uf_esposa} onChange={e => f('uf_esposa', e.target.value)} placeholder="MT" /></div>
-            <div><label style={lbl}>CEP</label><input style={inp} value={form.cep_esposa} onChange={e => f('cep_esposa', e.target.value)} /></div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
-            <div><label style={lbl}>Nome da Mãe (Esposa)</label><input style={inp} value={form.nome_mae_esposa} onChange={e => f('nome_mae_esposa', e.target.value)} /></div>
-          </div>
-
-          {/* ── REFERÊNCIAS ─────────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Referências</div>
-
+          {/* ── 7. REFERÊNCIAS ────────────────────────────── */}
+          <SecTitle>7 · Referências</SecTitle>
           {[
             { label: 'Bancária', nomeKey: 'ref_bancaria_nome', endKey: 'ref_bancaria_end' },
             { label: 'Comercial', nomeKey: 'ref_comercial_nome', endKey: 'ref_comercial_end' },
             { label: 'Pessoal', nomeKey: 'ref_pessoal_nome', endKey: 'ref_pessoal_end' },
           ].map(ref => (
-            <div key={ref.label} style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr', gap: '0.6rem', alignItems: 'end' }}>
-              <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-muted)', paddingBottom: '0.5rem' }}>{ref.label}</div>
-              <div><label style={lbl}>Nome</label><input style={inp} value={form[ref.nomeKey]} onChange={e => f(ref.nomeKey, e.target.value)} /></div>
-              <div><label style={lbl}>Endereço / Contato</label><input style={inp} value={form[ref.endKey]} onChange={e => f(ref.endKey, e.target.value)} /></div>
-            </div>
+            <G key={ref.label} cols="90px 1fr 1fr">
+              <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.78rem', fontWeight: 700,
+                color: 'var(--color-text-muted)', paddingTop: '1.1rem' }}>{ref.label}</div>
+              <FI label="Nome" value={form[ref.nomeKey]} onChange={e => f(ref.nomeKey, e.target.value)} />
+              <FI label="Endereço / Contato" value={form[ref.endKey]} onChange={e => f(ref.endKey, e.target.value)} />
+            </G>
           ))}
 
-          {/* ── PROCESSO ────────────────────────────────────── */}
-          <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.3rem' }}>Processo</div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '0.75rem' }}>
-            <div>
-              <label style={lbl}>Indicado por (Irmão)</label>
-              <input style={inp} list="lista-irmaos" value={form.indicado_por_irmao}
+          {/* ── 8. PROCESSO ───────────────────────────────── */}
+          <SecTitle>8 · Processo</SecTitle>
+          <G cols="1fr 140px">
+            <F label="Indicado por (Irmão)">
+              <input style={inpSm} list="lista-irmaos-modal" value={form.indicado_por_irmao}
                 onChange={e => f('indicado_por_irmao', e.target.value)} placeholder="Nome do irmão indicante" />
-              <datalist id="lista-irmaos">
+              <datalist id="lista-irmaos-modal">
                 {irmaos.map(i => <option key={i.id} value={i.nome} />)}
               </datalist>
-            </div>
-            <div>
-              <label style={lbl}>Data Indicação</label>
-              <input style={{ ...inp, colorScheme: 'dark' }} type="date" value={form.data_indicacao} onChange={e => f('data_indicacao', e.target.value)} />
-            </div>
-          </div>
-
-          {/* Situação */}
+            </F>
+            <FI label="Data Indicação" value={form.data_indicacao} onChange={e => f('data_indicacao', e.target.value)} type="date" />
+          </G>
           <div>
-            <label style={lbl}>Situação</label>
+            <label style={lblSm}>Situação</label>
             <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
               {SITUACOES.map(s => (
                 <button key={s.value} onClick={() => f('situacao', s.value)} style={{
-                  padding: '0.35rem 0.85rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 600,
+                  padding: '0.3rem 0.8rem', borderRadius: '999px', fontSize: '0.78rem', fontWeight: 600,
                   cursor: 'pointer', transition: 'all 0.15s',
                   background: form.situacao === s.value ? s.bg : 'var(--color-surface-2)',
                   border: `1px solid ${form.situacao === s.value ? s.cor : 'var(--color-border)'}`,
@@ -357,36 +360,171 @@ const ModalCandidato = ({ aberto, onFechar, onSalvar, candidato, irmaos, podeVer
               ))}
             </div>
           </div>
-
-          {/* Motivo exclusão — só se excluído */}
           {form.situacao === 'excluido' && (
-            <div>
-              <label style={lbl}>Motivo da Exclusão *</label>
-              <textarea style={{ ...inp, resize: 'vertical' }} rows={3}
+            <F label="Motivo da Exclusão *">
+              <textarea style={{ ...inpSm, resize: 'vertical' }} rows={3}
                 value={form.motivo_exclusao} onChange={e => f('motivo_exclusao', e.target.value)}
                 placeholder="Descreva o motivo pelo qual o profano foi excluído do processo..." />
-            </div>
+            </F>
           )}
-
-          {/* Observações */}
-          <div>
-            <label style={lbl}>Observações</label>
-            <textarea style={{ ...inp, resize: 'vertical' }} rows={3}
+          <F label="Observações">
+            <textarea style={{ ...inpSm, resize: 'vertical' }} rows={3}
               value={form.observacoes} onChange={e => f('observacoes', e.target.value)}
               placeholder="Anotações do processo, discussões, pendências..." />
-          </div>
+          </F>
 
           {erro && (
-            <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: '#ef4444' }}>
+            <div style={{ padding: '0.5rem 0.8rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', borderRadius: 'var(--radius-md)', fontSize: '0.83rem', color: '#ef4444' }}>
               {erro}
             </div>
           )}
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
-            <button onClick={onFechar} style={{ padding: '0.6rem 1.1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.875rem' }}>Cancelar</button>
+            <button onClick={onFechar} style={{ padding: '0.5rem 1rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.875rem' }}>Cancelar</button>
             <button onClick={handleSalvar} disabled={salvando} style={{ ...btnPrimary, opacity: salvando ? 0.7 : 1 }}>
               {salvando ? 'Salvando...' : candidato ? '💾 Salvar' : '➕ Adicionar'}
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────────
+//  Modal Visualizar Candidato (somente leitura)
+// ─────────────────────────────────────────────────────────────────
+const ModalVisualizarCandidato = ({ aberto, onFechar, candidato, podeVerMotivo = false }) => {
+  if (!aberto || !candidato) return null;
+  const c = candidato;
+  const sit = getSit(c.situacao);
+  const fmtDt = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+  const v = (val) => val || '—';
+
+  const Row = ({ label, value, span }) => (
+    <div style={{ gridColumn: span ? `span ${span}` : undefined }}>
+      <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.15rem' }}>{label}</div>
+      <div style={{ fontSize: '0.85rem', color: 'var(--color-text)', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)', padding: '0.3rem 0.65rem', minHeight: '2rem', display: 'flex', alignItems: 'center' }}>{value}</div>
+    </div>
+  );
+  const Sec = ({ children, title }) => (
+    <>
+      <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.2rem', marginTop: '0.4rem' }}>{title}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>{children}</div>
+    </>
+  );
+
+  return (
+    <div style={overlayStyle} onClick={e => e.target === e.currentTarget && onFechar()}>
+      <div style={{ ...modalBox('900px'), width: '100%' }}>
+        <div style={modalHeader}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>
+              👤 {c.nome}
+            </h3>
+            <BadgeSit value={c.situacao} />
+          </div>
+          <button onClick={onFechar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-muted)', fontSize: '1.4rem', lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.65rem', overflowY: 'auto', maxHeight: '78vh' }}>
+
+          <Sec title="1 · Dados Pessoais">
+            <Row label="Nome Completo" value={v(c.nome)} span={2} />
+            <Row label="Idade" value={v(c.idade)} />
+            <Row label="Data Nascimento" value={fmtDt(c.data_nascimento)} />
+            <Row label="Tipo Sanguíneo" value={v(c.tipo_sanguineo)} />
+            <Row label="Estado Civil" value={v(c.estado_civil)} />
+            <Row label="Nacionalidade" value={v(c.nacionalidade)} />
+            <Row label="Naturalidade" value={v(c.naturalidade)} />
+            <Row label="Tempo MT (anos)" value={v(c.tempo_residencia_mt)} />
+            <Row label="Tel. Residencial" value={v(c.tel_residencial)} />
+            <Row label="Tel. Comercial" value={v(c.tel_comercial)} />
+            <Row label="Celular" value={v(c.tel_celular)} />
+            <Row label="RG" value={v(c.rg)} />
+            <Row label="Org. Exp./UF" value={v(c.orgao_expedidor)} />
+            <Row label="CPF" value={v(c.cpf)} />
+          </Sec>
+
+          <Sec title="2 · Endereço Residencial">
+            <Row label="Logradouro" value={v(c.end_residencial)} span={2} />
+            <Row label="Número" value={v(c.numero_end)} />
+            <Row label="Bairro" value={v(c.bairro)} />
+            <Row label="Cidade" value={v(c.cidade)} span={2} />
+            <Row label="UF" value={v(c.uf)} />
+            <Row label="CEP" value={v(c.cep)} />
+          </Sec>
+
+          <Sec title="3 · Filiação">
+            <Row label="Nome do Pai" value={v(c.nome_pai)} span={2} />
+            <Row label="Nome da Mãe" value={v(c.nome_mae)} span={2} />
+          </Sec>
+
+          <Sec title="4 · Profissão e Endereço Comercial">
+            <Row label="Profissão" value={v(c.profissao)} />
+            <Row label="Cargo" value={v(c.cargo)} />
+            <Row label="Há (anos)" value={v(c.ha_anos)} />
+            <Row label="Renda Aprox." value={v(c.renda_aproximada)} />
+            <Row label="Empresa/Local" value={v(c.local_trabalho)} span={2} />
+            <Row label="Logradouro Comercial" value={v(c.end_comercial)} span={2} />
+            <Row label="Número" value={v(c.numero_comercial)} />
+            <Row label="Bairro" value={v(c.bairro_comercial)} />
+            <Row label="Cidade" value={v(c.cidade_comercial)} span={2} />
+            <Row label="UF" value={v(c.uf_comercial)} />
+            <Row label="CEP" value={v(c.cep_comercial)} />
+          </Sec>
+
+          <Sec title="5 · Dados da Esposa">
+            <Row label="Nome" value={v(c.nome_esposa)} span={2} />
+            <Row label="Nasc." value={fmtDt(c.data_nasc_esposa)} />
+            <Row label="Tipo Sanguíneo" value={v(c.tipo_sang_esposa)} />
+            <Row label="Nome da Mãe" value={v(c.nome_mae_esposa)} span={2} />
+          </Sec>
+
+          <Sec title="6 · Profissão e Endereço Comercial da Esposa">
+            <Row label="Profissão" value={v(c.profissao_esposa)} />
+            <Row label="Cargo" value={v(c.cargo_esposa)} />
+            <Row label="Há (anos)" value={v(c.ha_anos_esposa)} />
+            <Row label="Renda Aprox." value={v(c.renda_esposa)} />
+            <Row label="Empresa" value={v(c.empresa_esposa)} span={2} />
+            <Row label="Logradouro" value={v(c.end_comercial_esposa)} span={2} />
+            <Row label="Número" value={v(c.numero_esposa)} />
+            <Row label="Bairro" value={v(c.bairro_esposa)} />
+            <Row label="Cidade" value={v(c.cidade_esposa)} span={2} />
+            <Row label="UF" value={v(c.uf_esposa)} />
+            <Row label="CEP" value={v(c.cep_esposa)} />
+          </Sec>
+
+          <Sec title="7 · Referências">
+            <Row label="Ref. Bancária — Nome" value={v(c.ref_bancaria_nome)} span={2} />
+            <Row label="Ref. Bancária — Contato" value={v(c.ref_bancaria_end)} span={2} />
+            <Row label="Ref. Comercial — Nome" value={v(c.ref_comercial_nome)} span={2} />
+            <Row label="Ref. Comercial — Contato" value={v(c.ref_comercial_end)} span={2} />
+            <Row label="Ref. Pessoal — Nome" value={v(c.ref_pessoal_nome)} span={2} />
+            <Row label="Ref. Pessoal — Contato" value={v(c.ref_pessoal_end)} span={2} />
+          </Sec>
+
+          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--color-accent)', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.2rem', marginTop: '0.4rem' }}>8 · Processo</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+            <Row label="Indicado por" value={v(c.indicado_por_irmao)} span={2} />
+            <Row label="Data Indicação" value={fmtDt(c.data_indicacao)} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Situação</div>
+              <BadgeSit value={c.situacao} />
+            </div>
+          </div>
+          {c.situacao === 'excluido' && c.motivo_exclusao && podeVerMotivo && (
+            <div style={{ padding: '0.6rem 0.85rem', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 'var(--radius-md)', fontSize: '0.83rem', color: '#ef4444' }}>
+              <strong>Motivo da Exclusão:</strong> {c.motivo_exclusao}
+            </div>
+          )}
+          {c.observacoes && (!['excluido','adiado','desistiu'].includes(c.situacao) || podeVerMotivo) && (
+            <div style={{ padding: '0.6rem 0.85rem', background: 'var(--color-surface-2)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontSize: '0.83rem', color: 'var(--color-text-muted)', fontStyle: 'italic' }}>
+              💬 {c.observacoes}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '0.5rem', borderTop: '1px solid var(--color-border)' }}>
+            <button onClick={onFechar} style={{ padding: '0.5rem 1.2rem', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)', background: 'transparent', color: 'var(--color-text-muted)', cursor: 'pointer', fontSize: '0.875rem' }}>Fechar</button>
           </div>
         </div>
       </div>
@@ -538,6 +676,7 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
   const [carregando, setCarregando] = useState(true);
   const [modalCand, setModalCand] = useState(false);
   const [candEditando, setCandEditando] = useState(null);
+  const [candVisualizando, setCandVisualizando] = useState(null);
   const [confirmExcluir, setConfirmExcluir] = useState(null);
   const [modalSituacao, setModalSituacao] = useState(false);
   const [modalEncerrar, setModalEncerrar] = useState(false);
@@ -1138,9 +1277,11 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
           <button onClick={() => setModalSituacao(true)} style={{ ...btnPrimary, background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)', color: '#8b5cf6' }}>
             📊 Situação
           </button>
-          <button onClick={gerarPDF} style={{ ...btnPrimary, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#3b82f6' }}>
-            📄 PDF
-          </button>
+          {podeVerMotivo && (
+            <button onClick={gerarPDF} style={{ ...btnPrimary, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#3b82f6' }}>
+              📄 PDF
+            </button>
+          )}
           {podeEditar && !encerrado && (
             <>
               <button onClick={() => { setCandEditando(null); setModalCand(true); }} style={btnPrimary}>
@@ -1254,9 +1395,20 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
                 </div>
                 {podeEditar && !encerrado && (
                   <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
-                    <button onClick={() => gerarFormularioI(c)} style={{ ...btnEdit, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)', color: '#c9a84c' }} title="Gerar Formulário I">📋</button>
+                    <button onClick={() => setCandVisualizando(c)} style={{ ...btnEdit, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }} title="Visualizar">👁️</button>
+                    {podeVerMotivo && (
+                      <button onClick={() => gerarFormularioI(c)} style={{ ...btnEdit, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)', color: '#c9a84c' }} title="Gerar Formulário I">📋</button>
+                    )}
                     <button onClick={() => { setCandEditando(c); setModalCand(true); }} style={btnEdit} title="Editar">✏️</button>
                     <button onClick={() => setConfirmExcluir(c)} style={btnDanger} title="Excluir">🗑️</button>
+                  </div>
+                )}
+                {!podeEditar && (
+                  <div style={{ display: 'flex', gap: '0.35rem', flexShrink: 0 }}>
+                    <button onClick={() => setCandVisualizando(c)} style={{ ...btnEdit, background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }} title="Visualizar">👁️</button>
+                    {podeVerMotivo && (
+                      <button onClick={() => gerarFormularioI(c)} style={{ ...btnEdit, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.4)', color: '#c9a84c' }} title="Gerar Formulário I">📋</button>
+                    )}
                   </div>
                 )}
               </div>
@@ -1312,6 +1464,9 @@ const DetalheProcesso = ({ processo, onVoltar, irmaos, podeEditar, podeVerMotivo
       {/* Modais */}
       <ModalCandidato aberto={modalCand} onFechar={() => { setModalCand(false); setCandEditando(null); }}
         onSalvar={handleSalvarCandidato} candidato={candEditando} irmaos={irmaos} podeVerMotivo={podeVerMotivo} />
+
+      <ModalVisualizarCandidato aberto={!!candVisualizando} onFechar={() => setCandVisualizando(null)}
+        candidato={candVisualizando} podeVerMotivo={podeVerMotivo} />
 
       <ModalSituacao aberto={modalSituacao} onFechar={() => setModalSituacao(false)}
         candidatos={candidatos} processo={processo} podeVerMotivo={podeVerMotivo} />
