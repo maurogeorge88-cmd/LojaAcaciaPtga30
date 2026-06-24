@@ -10,6 +10,8 @@ import { supabase } from '../../supabaseClient';
 export default function LancamentosLote({ showSuccess, showError }) {
   const [irmaos, setIrmaos] = useState([]);
   const [categorias, setCategorias] = useState([]);
+  const [eventosComemorativos, setEventosComemorativos] = useState([]);
+  const [projetosAtivos, setProjetosAtivos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [etapa, setEtapa] = useState(1); // 1=Itens, 2=Irmãos, 3=Resumo
 
@@ -23,7 +25,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
       valor: '',
       data_vencimento: new Date().toISOString().split('T')[0],
       parcelas: 1,
-      observacoes: ''
+      observacoes: '',
+      evento_comemorativo_id: '',
+      projeto_id: ''
     }
   ]);
 
@@ -57,6 +61,22 @@ export default function LancamentosLote({ showSuccess, showError }) {
       if (categoriasError) throw categoriasError;
       setCategorias(categoriasData || []);
 
+      // Carregar eventos comemorativos
+      const { data: eventosData } = await supabase
+        .from('eventos_comemorativos_fin')
+        .select('id, nome, ano, status')
+        .order('ano', { ascending: false })
+        .order('nome');
+      setEventosComemorativos(eventosData || []);
+
+      // Carregar projetos ativos
+      const { data: projData } = await supabase
+        .from('projetos')
+        .select('id, nome')
+        .eq('status', 'ativo')
+        .order('nome');
+      setProjetosAtivos(projData || []);
+
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
       showError('Erro ao carregar dados: ' + error.message);
@@ -73,7 +93,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
       valor: '',
       data_vencimento: new Date().toISOString().split('T')[0],
       parcelas: 1,
-      observacoes: ''
+      observacoes: '',
+      evento_comemorativo_id: '',
+      projeto_id: ''
     }]);
   };
 
@@ -211,7 +233,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
                 status: 'pendente',
                 origem_tipo: 'Irmao',
                 origem_irmao_id: irmaoId,
-                observacoes: item.observacoes || null
+                observacoes: item.observacoes || null,
+                evento_comemorativo_id: item.evento_comemorativo_id ? parseInt(item.evento_comemorativo_id) : null,
+                projeto_id: item.projeto_id ? parseInt(item.projeto_id) : null
               });
             }
           } else {
@@ -226,7 +250,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
               status: 'pendente',
               origem_tipo: 'Irmao',
               origem_irmao_id: irmaoId,
-              observacoes: item.observacoes || null
+              observacoes: item.observacoes || null,
+              evento_comemorativo_id: item.evento_comemorativo_id ? parseInt(item.evento_comemorativo_id) : null,
+              projeto_id: item.projeto_id ? parseInt(item.projeto_id) : null
             });
           }
         }
@@ -250,7 +276,9 @@ export default function LancamentosLote({ showSuccess, showError }) {
         valor: '',
         data_vencimento: new Date().toISOString().split('T')[0],
         parcelas: 1,
-        observacoes: ''
+        observacoes: '',
+        evento_comemorativo_id: '',
+        projeto_id: ''
       }]);
       setIrmaosSelecionados([]);
       setSelectAll(false);
@@ -459,6 +487,36 @@ export default function LancamentosLote({ showSuccess, showError }) {
                       rows="2"
                       placeholder="Observações adicionais..."
                     />
+                  </div>
+
+                  {/* LINHA 4: Evento e Projeto */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>🎉 Vincular a Evento (opcional)</label>
+                      <select
+                        value={item.evento_comemorativo_id}
+                        onChange={(e) => atualizarItem(item.id, 'evento_comemorativo_id', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      >
+                        <option value="">— Nenhum —</option>
+                        {eventosComemorativos.map(ev => (
+                          <option key={ev.id} value={ev.id}>{ev.nome} ({ev.ano})</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>📁 Vincular a Projeto (opcional)</label>
+                      <select
+                        value={item.projeto_id}
+                        onChange={(e) => atualizarItem(item.id, 'projeto_id', e.target.value)}
+                        className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                      >
+                        <option value="">— Nenhum —</option>
+                        {projetosAtivos.map(pj => (
+                          <option key={pj.id} value={pj.id}>{pj.nome}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               </div>
