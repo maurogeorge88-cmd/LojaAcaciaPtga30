@@ -378,13 +378,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const carregarEventosComemorativos = async () => {
-    const { data } = await supabase.from('eventos_comemorativos_fin').select('id, nome, ano, status').order('ano', { ascending: false }).order('nome');
+    const { data } = await supabase
+      .from('eventos_comemorativos_fin')
+      .select('id, nome, ano, status')
+      .in('status', ['ativo', 'em_andamento', 'aberto'])
+      .order('ano', { ascending: false })
+      .order('nome');
     setEventosComemorativos(data || []);
 
     const { data: projData } = await supabase
       .from('projetos')
       .select('id, nome, status')
-      .eq('status', 'em_andamento')
+      .in('status', ['ativo', 'em_andamento'])
       .order('nome');
     setProjetosAtivos(projData || []);
   };
