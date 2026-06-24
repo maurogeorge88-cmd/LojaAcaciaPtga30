@@ -151,7 +151,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     data_vencimento: new Date().toISOString().split('T')[0],
     tipo_pagamento: 'dinheiro',
     irmaos_selecionados: [],
-    eh_mensalidade: false  // NOVO: indica se é mensalidade
+    eh_mensalidade: false,
+    evento_comemorativo_id: '',
+    projeto_id: ''
   });
 
   // Para quitação individual
@@ -833,14 +835,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         return {
           tipo: 'receita',
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
-          descricao: lancamentoIrmaos.descricao, // ← REMOVER nome do irmão da descrição
+          descricao: lancamentoIrmaos.descricao,
           valor: parseFloat(lancamentoIrmaos.valor),
           data_lancamento: lancamentoIrmaos.data_lancamento,
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
           status: 'pendente',
-          origem_tipo: 'Irmao', 
-          origem_irmao_id: irmaoId 
+          origem_tipo: 'Irmao',
+          origem_irmao_id: irmaoId,
+          evento_comemorativo_id: lancamentoIrmaos.evento_comemorativo_id ? parseInt(lancamentoIrmaos.evento_comemorativo_id) : null,
+          projeto_id: lancamentoIrmaos.projeto_id ? parseInt(lancamentoIrmaos.projeto_id) : null
         };
       });
 
@@ -1180,7 +1184,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       data_vencimento: new Date().toISOString().split('T')[0],
       tipo_pagamento: 'dinheiro',
       irmaos_selecionados: [],
-      eh_mensalidade: false
+      eh_mensalidade: false,
+      evento_comemorativo_id: '',
+      projeto_id: ''
     });
   };
 
@@ -2562,6 +2568,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                    🎉 Vincular a Evento (opcional)
+                  </label>
+                  <select
+                    value={lancamentoIrmaos.evento_comemorativo_id}
+                    onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, evento_comemorativo_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                  >
+                    <option value="">— Nenhum —</option>
+                    {eventosComemorativos.map(ev => (
+                      <option key={ev.id} value={ev.id}>{ev.nome} ({ev.ano})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                    📁 Vincular a Projeto (opcional)
+                  </label>
+                  <select
+                    value={lancamentoIrmaos.projeto_id}
+                    onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, projeto_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                  >
+                    <option value="">— Nenhum —</option>
+                    {projetosAtivos.map(pj => (
+                      <option key={pj.id} value={pj.id}>{pj.nome}</option>
                     ))}
                   </select>
                 </div>
