@@ -642,13 +642,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     // Renovar sessão para evitar JWT expired
     await supabase.auth.refreshSession();
 
-    // Verificar se o mês está fechado
+    // Verificar se o mês está fechado — bloqueia apenas lançamentos não-pendentes
     const dataRef = dados.data_pagamento || dados.data_lancamento || dados.data_vencimento;
-    if (dataRef && verificarMesBloqueado(dataRef)) {
+    if (dataRef && verificarMesBloqueado(dataRef) && dados.status !== 'pendente') {
       const data = new Date(dataRef + 'T00:00:00');
       const nomeMes = meses[data.getMonth()];
       const ano = data.getFullYear();
-      showError(`🔒 ${nomeMes}/${ano} está fechado. Reabra o mês para lançar.`);
+      showError(`🔒 ${nomeMes}/${ano} está fechado. Apenas lançamentos pendentes podem ser alterados.`);
       return;
     }
 
@@ -934,13 +934,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     console.log('editarLancamento chamado:', lancamento.id, 'origem_irmao_id:', lancamento.origem_irmao_id);
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     const bloqueado = dataRef && verificarMesBloqueado(dataRef);
-    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado);
+    const ehPendente = lancamento.status === 'pendente';
+    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado, 'pendente:', ehPendente);
     // Verificar se irmão é inativo — se sim, ignorar bloqueio de mês para permitir gestão da dívida
     const irmaoInativo = lancamento.origem_irmao_id &&
       !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id));
-    if (bloqueado && !irmaoInativo) {
+    // Bloquear apenas se mês fechado E lançamento não é pendente
+    if (bloqueado && !irmaoInativo && !ehPendente) {
       const data = new Date(dataRef + 'T00:00:00');
-      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser editados.`);
       return;
     }
     // Se irmão não está na lista ativa (ex: desligado), usa dados já carregados no lançamento
@@ -988,9 +990,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const excluirLancamento = async (id) => {
     const lancamento = lancamentos.find(l => l.id === id);
     const dataRef = lancamento?.data_pagamento || lancamento?.data_lancamento || lancamento?.data_vencimento;
-    if (dataRef && verificarMesBloqueado(dataRef)) {
+    const ehPendente = lancamento?.status === 'pendente';
+    if (dataRef && verificarMesBloqueado(dataRef) && !ehPendente) {
       const data = new Date(dataRef + 'T00:00:00');
-      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para excluir.`);
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser excluídos.`);
       return;
     }
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
@@ -3550,17 +3553,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         
                         <button
                           onClick={() => editarLancamento(lanc)}
-                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
-                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Editar'}
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
+                          style={{color:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?"not-allowed":"pointer",fontSize:"0.85rem"}}
+                          title={(verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente') ? 'Mês fechado' : 'Editar'}
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
-                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
-                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Excluir'}
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
+                          style={{color:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?"not-allowed":"pointer",fontSize:"0.85rem"}}
+                          title={(verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente') ? 'Mês fechado' : 'Excluir'}
                         >
                           🗑️
                         </button>
