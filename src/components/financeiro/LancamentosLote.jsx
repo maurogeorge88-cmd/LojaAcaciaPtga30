@@ -61,10 +61,11 @@ export default function LancamentosLote({ showSuccess, showError }) {
       if (categoriasError) throw categoriasError;
       setCategorias(categoriasData || []);
 
-      // Carregar eventos comemorativos
+      // Carregar eventos comemorativos ativos
       const { data: eventosData } = await supabase
         .from('eventos_comemorativos_fin')
         .select('id, nome, ano, status')
+        .in('status', ['ativo', 'em_andamento', 'aberto'])
         .order('ano', { ascending: false })
         .order('nome');
       setEventosComemorativos(eventosData || []);
@@ -73,7 +74,7 @@ export default function LancamentosLote({ showSuccess, showError }) {
       const { data: projData } = await supabase
         .from('projetos')
         .select('id, nome')
-        .eq('status', 'ativo')
+        .in('status', ['ativo', 'em_andamento'])
         .order('nome');
       setProjetosAtivos(projData || []);
 
