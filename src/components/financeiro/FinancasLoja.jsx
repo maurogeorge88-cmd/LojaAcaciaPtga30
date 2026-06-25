@@ -1544,12 +1544,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     const saldoTotal = saldoBancario + caixaFisico;
 
     // CÁLCULO TRONCO DE SOLIDARIEDADE
+    // Lógica idêntica ao troncoTotalGlobal (buscarTroncoTotal):
+    //   receitasBanco   = receita + !dinheiro (inclui depósitos/transferências internas)
+    //   receitasEspecie = receita + dinheiro + !transferência interna
+    //   despesasBanco   = despesa + !dinheiro + !transferência interna
+    //   despesasEspecie = despesa + dinheiro (inclui sangrias — diminuem a espécie)
     const troncoReceitasBanco = lancamentos
       .filter(l =>
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'receita' &&
         l.status === 'pago' &&
         l.tipo_pagamento !== 'dinheiro'
+        // inclui transferências internas (depósitos entram no banco)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1558,7 +1564,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'receita' &&
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro'
+        l.tipo_pagamento === 'dinheiro' &&
+        !l.eh_transferencia_interna  // exclui sangrias de dinheiro
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1577,30 +1584,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'despesa' &&
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro' &&
-        !l.eh_transferencia_interna
+        l.tipo_pagamento === 'dinheiro'
+        // inclui sangrias (diminuem a espécie)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    const troncoSangriasBanco = lancamentos
-      .filter(l =>
-        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-        l.eh_transferencia_interna === true &&
-        l.categorias_financeiras?.tipo === 'receita'
-      )
-      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-    const troncoSangriasEspecie = lancamentos
-      .filter(l =>
-        l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-        l.eh_transferencia_interna === true &&
-        l.categorias_financeiras?.tipo === 'despesa'
-      )
-      .reduce((sum, l) => sum + parseFloat(l.valor), 0);
-
-    const troncoBanco = troncoReceitasBanco - troncoDespesasBanco + troncoSangriasBanco;
-    const troncoEspecie = troncoReceitasEspecie - troncoDespesasEspecie - troncoSangriasEspecie;
-    const troncoTotal = troncoBanco + troncoEspecie;
+    const troncoBanco   = troncoReceitasBanco  - troncoDespesasBanco;
+    const troncoEspecie = troncoReceitasEspecie - troncoDespesasEspecie;
+    const troncoTotal   = troncoBanco + troncoEspecie;
 
     return {
       receitas,            
