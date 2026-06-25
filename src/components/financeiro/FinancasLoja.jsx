@@ -1718,55 +1718,55 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const calcularTroncoTotal = async () => {
     try {
+      // 1. Buscar IDs das categorias de tronco primeiro
+      const { data: catsTronco } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo')
+        .ilike('nome', '%tronco%');
+
+      if (!catsTronco || catsTronco.length === 0) {
+        setTroncoTotalGlobal({ banco: 0, especie: 0, total: 0 });
+        return;
+      }
+
+      const idsCatTronco = catsTronco.map(c => c.id);
+
+      // 2. Buscar só lançamentos das categorias de tronco, pagos
       const { data, error } = await supabase
         .from('lancamentos_loja')
-        .select('*, categorias_financeiras(tipo, nome)')
+        .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
+        .in('categoria_id', idsCatTronco)
         .eq('status', 'pago');
 
       if (error) throw error;
 
-      // Receitas Banco (já inclui sangrias/depósitos porque são receitas em transferência)
-      const receitasBanco = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento !== 'dinheiro'
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const lista = data || [];
 
-      // Receitas Espécie (não inclui sangrias - só receitas normais em dinheiro)
-      const receitasEspecie = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento === 'dinheiro' &&
-          !l.eh_transferencia_interna
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      // BANCO: receitas não-dinheiro (entradas pix/transferência)
+      //        menos despesas não-dinheiro sem transferência interna (saídas pix)
+      // Nota: despesas em dinheiro NÃO afetam o banco — ficam só na espécie
+      const receitasBanco = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro')
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-      // Despesas Banco
-      const despesasBanco = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento !== 'dinheiro' &&
-          !l.eh_transferencia_interna
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const despesasBanco = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna)
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-      // Despesas Espécie (INCLUI sangrias em dinheiro - são despesas que diminuem espécie)
-      const despesasEspecie = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento === 'dinheiro'
-          // NÃO excluir transferências internas - sangrias devem diminuir espécie
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      // ESPÉCIE: receitas em dinheiro (não transferência interna)
+      //          menos despesas em dinheiro (inclui sangrias — diminuem a espécie)
+      // Nota: receitas/despesas pix NÃO afetam a espécie
+      const receitasEspecie = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna)
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-      const banco = receitasBanco - despesasBanco;
+      const despesasEspecie = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro')
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+      const banco   = receitasBanco - despesasBanco;
       const especie = receitasEspecie - despesasEspecie;
-      const total = banco + especie;
+      const total   = banco + especie;
 
       setTroncoTotalGlobal({ banco, especie, total });
 
