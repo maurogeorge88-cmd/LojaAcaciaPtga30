@@ -236,15 +236,15 @@ export default function MinhasFinancas({ userEmail, userData }) {
                         const bs = badgeStatus(lanc.status);
                         return (
                           <div key={lanc.id} style={{
-                            display:'grid', gridTemplateColumns:'4px 1fr auto',
+                            display:'flex',
                             borderBottom: idx < lancsDia.length-1 ? '1px solid var(--color-border)' : 'none',
                             background: idx%2===0 ? 'transparent' : 'rgba(0,0,0,0.06)',
                           }}>
                             {/* Barra lateral colorida */}
-                            <div style={{background:corBorda}}/>
+                            <div style={{width:'4px',flexShrink:0,background:corBorda,borderRadius:'0'}}/>
                             {/* Conteúdo */}
-                            <div style={{padding:'0.55rem 0.9rem 0.55rem 0.75rem',minWidth:0}}>
-                              <div style={{display:'flex',gap:'0.3rem',flexWrap:'wrap',alignItems:'center',marginBottom:'0.2rem'}}>
+                            <div style={{flex:1,padding:'0.6rem 0.9rem 0.6rem 0.75rem',minWidth:0}}>
+                              <div style={{display:'flex',gap:'0.3rem',flexWrap:'wrap',alignItems:'center',marginBottom:'0.25rem'}}>
                                 {lanc.categorias_financeiras?.nome && (
                                   <span style={{padding:'0.1rem 0.45rem',borderRadius:'999px',fontSize:'0.67rem',fontWeight:'700',
                                     background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'}}>
@@ -262,18 +262,18 @@ export default function MinhasFinancas({ userEmail, userData }) {
                                   {bs.txt}
                                 </span>
                               </div>
-                              <div style={{fontWeight:'600',color:'var(--color-text)',fontSize:'0.87rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                              <div style={{fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
                                 {lanc.descricao}
                               </div>
-                              <div style={{fontSize:'0.71rem',color:'var(--color-text-muted)',marginTop:'0.12rem'}}>
+                              <div style={{fontSize:'0.71rem',color:'var(--color-text-muted)',marginTop:'0.15rem'}}>
                                 Vence: {fmtD(lanc.data_vencimento)}
                                 {lanc.data_pagamento && <> · <span style={{color:'#10b981',fontWeight:'600'}}>Pago: {fmtD(lanc.data_pagamento)}</span></>}
                                 {lanc.tipo_pagamento && <> · {lanc.tipo_pagamento}</>}
                               </div>
                             </div>
                             {/* Valor */}
-                            <div style={{padding:'0.55rem 1rem 0.55rem 0',display:'flex',flexDirection:'column',alignItems:'flex-end',justifyContent:'center',flexShrink:0}}>
-                              <span style={{fontWeight:'800',fontSize:'0.95rem',color:corBorda,whiteSpace:'nowrap'}}>
+                            <div style={{padding:'0.6rem 1rem',display:'flex',flexDirection:'column',alignItems:'flex-end',justifyContent:'center',flexShrink:0}}>
+                              <span style={{fontWeight:'800',fontSize:'1rem',color:corBorda,whiteSpace:'nowrap'}}>
                                 {fmt(parseFloat(lanc.valor))}
                               </span>
                               {lanc.tem_pagamento_parcial && (
