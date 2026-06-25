@@ -232,54 +232,49 @@ export default function MinhasFinancas({ userEmail, userData }) {
                       {/* Lançamentos do dia */}
                       {lancsDia.map((lanc,idx)=>{
                         const ehReceita = lanc.categorias_financeiras?.tipo === 'receita';
-                        const corBorda  = ehReceita ? '#ef4444' : '#3b82f6';
+                        const corValor  = ehReceita ? '#ef4444' : '#3b82f6';
                         const bs = badgeStatus(lanc.status);
                         return (
                           <div key={lanc.id} style={{
-                            display:'flex',
+                            display:'flex', alignItems:'center', gap:'0.6rem',
+                            padding:'0.5rem 1rem 0.5rem 2rem',
                             borderBottom: idx < lancsDia.length-1 ? '1px solid var(--color-border)' : 'none',
-                            background: idx%2===0 ? 'transparent' : 'rgba(0,0,0,0.06)',
+                            background: idx%2===0 ? 'transparent' : 'rgba(0,0,0,0.05)',
                           }}>
-                            {/* Barra lateral colorida */}
-                            <div style={{width:'4px',flexShrink:0,background:corBorda,borderRadius:'0'}}/>
-                            {/* Conteúdo */}
-                            <div style={{flex:1,padding:'0.6rem 0.9rem 0.6rem 0.75rem',minWidth:0}}>
-                              <div style={{display:'flex',gap:'0.3rem',flexWrap:'wrap',alignItems:'center',marginBottom:'0.25rem'}}>
-                                {lanc.categorias_financeiras?.nome && (
-                                  <span style={{padding:'0.1rem 0.45rem',borderRadius:'999px',fontSize:'0.67rem',fontWeight:'700',
-                                    background:'var(--color-surface-2)',color:'var(--color-text-muted)',border:'1px solid var(--color-border)'}}>
-                                    {lanc.categorias_financeiras.nome}
-                                  </span>
-                                )}
-                                {lanc.eh_parcelado && (
-                                  <span style={{padding:'0.1rem 0.45rem',borderRadius:'999px',fontSize:'0.67rem',fontWeight:'700',
-                                    background:'rgba(99,102,241,0.12)',color:'#6366f1',border:'1px solid rgba(99,102,241,0.3)'}}>
-                                    {lanc.parcela_numero}/{lanc.parcela_total}
-                                  </span>
-                                )}
-                                <span style={{padding:'0.1rem 0.45rem',borderRadius:'999px',fontSize:'0.67rem',fontWeight:'700',
-                                  background:bs.bg,color:bs.cor,border:`1px solid ${bs.cor}40`}}>
-                                  {bs.txt}
-                                </span>
-                              </div>
-                              <div style={{fontWeight:'700',color:'var(--color-text)',fontSize:'0.9rem',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
-                                {lanc.descricao}
-                              </div>
-                              <div style={{fontSize:'0.71rem',color:'var(--color-text-muted)',marginTop:'0.15rem'}}>
-                                Vence: {fmtD(lanc.data_vencimento)}
-                                {lanc.data_pagamento && <> · <span style={{color:'#10b981',fontWeight:'600'}}>Pago: {fmtD(lanc.data_pagamento)}</span></>}
-                                {lanc.tipo_pagamento && <> · {lanc.tipo_pagamento}</>}
-                              </div>
-                            </div>
-                            {/* Valor */}
-                            <div style={{padding:'0.6rem 1rem',display:'flex',flexDirection:'column',alignItems:'flex-end',justifyContent:'center',flexShrink:0}}>
-                              <span style={{fontWeight:'800',fontSize:'1rem',color:corBorda,whiteSpace:'nowrap'}}>
-                                {fmt(parseFloat(lanc.valor))}
+                            {/* Categoria */}
+                            {lanc.categorias_financeiras?.nome && (
+                              <span style={{flexShrink:0,fontSize:'0.75rem',fontWeight:'600',color:'var(--color-text-muted)',
+                                whiteSpace:'nowrap',minWidth:'80px'}}>
+                                {lanc.categorias_financeiras.nome}
                               </span>
-                              {lanc.tem_pagamento_parcial && (
-                                <span style={{fontSize:'0.67rem',color:'#10b981'}}>Pago: {fmt(lanc.total_pago_parcial)}</span>
+                            )}
+                            {/* Separador */}
+                            <span style={{flexShrink:0,color:'var(--color-border)',fontSize:'0.8rem'}}>·</span>
+                            {/* Descrição */}
+                            <span style={{flex:1,fontWeight:'600',color:'var(--color-text)',fontSize:'0.85rem',
+                              overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>
+                              {lanc.descricao}
+                              {lanc.eh_parcelado && (
+                                <span style={{marginLeft:'0.4rem',fontSize:'0.68rem',fontWeight:'700',
+                                  color:'#6366f1',background:'rgba(99,102,241,0.12)',
+                                  padding:'0.05rem 0.35rem',borderRadius:'999px',
+                                  border:'1px solid rgba(99,102,241,0.3)'}}>
+                                  {lanc.parcela_numero}/{lanc.parcela_total}
+                                </span>
                               )}
-                            </div>
+                            </span>
+                            {/* Status */}
+                            <span style={{flexShrink:0,padding:'0.15rem 0.55rem',borderRadius:'999px',
+                              fontSize:'0.68rem',fontWeight:'700',
+                              background:bs.bg,color:bs.cor,border:`1px solid ${bs.cor}40`,
+                              whiteSpace:'nowrap'}}>
+                              {bs.txt}
+                            </span>
+                            {/* Valor */}
+                            <span style={{flexShrink:0,fontWeight:'800',fontSize:'0.9rem',
+                              color:corValor,textAlign:'right',minWidth:'90px'}}>
+                              {fmt(parseFloat(lanc.valor))}
+                            </span>
                           </div>
                         );
                       })}
