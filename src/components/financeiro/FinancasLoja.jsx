@@ -1833,19 +1833,40 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   // 💰 RESUMO FINANCEIRO DOS IRMÃOS
   const calcularResumoIrmaos = () => {
-    // Agrupar lançamentos por irmão
+    // Agrupar lançamentos por irmão — inclui TODOS os irmãos (ativos + inativos)
     const resumoPorIrmao = {};
-    
+
+    // 1. Irmãos ativos/licenciados (já carregados em `irmaos`)
     irmaos.forEach(irmao => {
       resumoPorIrmao[irmao.id] = {
         nomeIrmao: irmao.nome,
         cim: irmao.cim,
-        totalDespesas: 0,        // Total que o irmão deve (independente de pago)
-        totalReceitas: 0,        // Total que a loja deve ao irmão (independente de pago)
-        despesasPendentes: 0,    // O que o irmão ainda deve (não pago)
-        receitasPendentes: 0,    // O que a loja ainda deve ao irmão (não pago)
-        saldo: 0                 // Resultado final
+        situacao: irmao.situacao || 'regular',
+        totalDespesas: 0,
+        totalReceitas: 0,
+        despesasPendentes: 0,
+        receitasPendentes: 0,
+        saldo: 0
       };
+    });
+
+    // 2. Descobrir irmãos inativos via lançamentos (origem_irmao_id não está em `irmaos`)
+    const idsAtivos = new Set(irmaos.map(i => i.id));
+    lancamentos.forEach(lanc => {
+      if (lanc.origem_irmao_id && !idsAtivos.has(lanc.origem_irmao_id) && !resumoPorIrmao[lanc.origem_irmao_id]) {
+        // Irmão inativo — cria entrada com dados do lançamento
+        const nomeDoLanc = lanc.irmaos?.nome || `Irmão #${lanc.origem_irmao_id}`;
+        resumoPorIrmao[lanc.origem_irmao_id] = {
+          nomeIrmao: nomeDoLanc,
+          cim: null,
+          situacao: '_inativo',  // marcador especial
+          totalDespesas: 0,
+          totalReceitas: 0,
+          despesasPendentes: 0,
+          receitasPendentes: 0,
+          saldo: 0
+        };
+      }
     });
     
     // Percorrer TODOS os lançamentos (sem filtro de data)
@@ -1874,19 +1895,28 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
     });
     
-    // Calcular saldo final: despesasPendentes - receitasPendentes
-    // Positivo = Irmão deve para a Loja (vermelho)
-    // Zero = Está em dia (verde)
-    // Negativo = Loja deve para o Irmão (azul)
+    // Calcular saldo final
     Object.values(resumoPorIrmao).forEach(irmao => {
       irmao.saldo = irmao.despesasPendentes - irmao.receitasPendentes;
     });
-    
-    // Converter para array e filtrar apenas irmãos com movimentação
-    const resumoArray = Object.values(resumoPorIrmao).filter(
-      irmao => irmao.totalDespesas > 0 || irmao.totalReceitas > 0
+
+    // Separar ativos (regular/licenciado) de inativos
+    const SITUACOES_ATIVAS = ['regular', 'licenciado'];
+    const resumoAtivos   = Object.values(resumoPorIrmao).filter(
+      i => SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase()) &&
+           (i.totalDespesas > 0 || i.totalReceitas > 0)
     );
-    
+    const resumoInativos = Object.values(resumoPorIrmao).filter(
+      i => !SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase()) &&
+           (i.receitasPendentes > 0 || i.despesasPendentes > 0)
+    );
+
+    // Passa os dois grupos no mesmo array usando flag — o modal separa
+    const resumoArray = [
+      ...resumoAtivos.map(i => ({ ...i, _grupo: 'ativo' })),
+      ...resumoInativos.map(i => ({ ...i, _grupo: 'inativo' })),
+    ];
+
     setResumoIrmaos(resumoArray);
     setModalResumoAberto(true);
   };
