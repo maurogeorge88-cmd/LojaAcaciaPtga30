@@ -71,15 +71,21 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
 
       console.log('🎂 DEBUG: Aniversariantes encontrados:', aniversariantesLista.length);
 
-      // Buscar ESPOSAS
+      // Buscar IDs dos irmãos ativos (regular ou licenciado) para filtrar familiares
+      const irmaoIdsAtivos = new Set((irmaos || []).map(i => i.id));
+
+      // Buscar ESPOSAS — só de irmãos ativos
       const { data: esposas } = await supabase
         .from('esposas')
-        .select('*, irmaos(nome)')
-        ;
+        .select('*, irmaos(id, nome, situacao)')
+        .in('irmao_id', [...irmaoIdsAtivos]);
 
       if (esposas) {
         esposas.forEach(esposa => {
           if (!esposa.data_nascimento) return;
+          // Dupla verificação: irmão responsável deve ser ativo
+          const situacaoIrmao = esposa.irmaos?.situacao?.toLowerCase();
+          if (situacaoIrmao && situacaoIrmao !== 'regular' && situacaoIrmao !== 'licenciado') return;
           const dataNasc = new Date(esposa.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             aniversariantesLista.push({
@@ -93,15 +99,17 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
         });
       }
 
-      // Buscar FILHOS
+      // Buscar FILHOS — só de irmãos ativos
       const { data: filhos } = await supabase
         .from('filhos')
-        .select('*, irmaos(nome)')
-        ;
+        .select('*, irmaos(id, nome, situacao)')
+        .in('irmao_id', [...irmaoIdsAtivos]);
 
       if (filhos) {
         filhos.forEach(filho => {
           if (!filho.data_nascimento) return;
+          const situacaoIrmao = filho.irmaos?.situacao?.toLowerCase();
+          if (situacaoIrmao && situacaoIrmao !== 'regular' && situacaoIrmao !== 'licenciado') return;
           const dataNasc = new Date(filho.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             aniversariantesLista.push({
@@ -115,19 +123,21 @@ export function CardAniversariantesDashboard({ onVerTodos }) {
         });
       }
 
-      // Buscar PAIS e MÃES
+      // Buscar PAIS e MÃES — só de irmãos ativos
       const { data: pais } = await supabase
         .from('pais')
-        .select('nome, data_nascimento, tipo_pai, irmaos(nome)');
+        .select('nome, data_nascimento, tipo_pai, irmao_id, irmaos(id, nome, situacao)')
+        .in('irmao_id', [...irmaoIdsAtivos]);
 
       if (pais) {
         pais.forEach(pai => {
           if (!pai.data_nascimento) return;
+          const situacaoIrmao = pai.irmaos?.situacao?.toLowerCase();
+          if (situacaoIrmao && situacaoIrmao !== 'regular' && situacaoIrmao !== 'licenciado') return;
           const dataNasc = new Date(pai.data_nascimento + 'T00:00:00');
           if (dataNasc.getMonth() === hoje.getMonth() && dataNasc.getDate() === hoje.getDate()) {
             const sexo = pai.tipo_pai === 'mae' ? 'F' : 'M';
             const tipoExibicao = pai.tipo_pai === 'mae' ? 'Mãe' : 'Pai';
-            
             aniversariantesLista.push({
               tipo: tipoExibicao,
               nome: pai.nome,
