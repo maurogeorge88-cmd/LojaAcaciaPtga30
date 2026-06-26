@@ -363,8 +363,14 @@ export const Dashboard = ({ irmaos, balaustres, cronograma = [] }) => {
     console.log('🎂 Verificando aniversariantes...');
     console.log('Total irmãos:', irmaos.length);
 
-    // Irmãos (apenas VIVOS)
-    irmaos.forEach(irmao => {
+    // Apenas irmãos ativos (regular ou licenciado) para aniversários de familiares
+    const SITUACOES_ATIVAS = ['regular', 'licenciado'];
+    const irmaosParaAniversario = irmaos.filter(i =>
+      SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase())
+    );
+
+    // Irmãos (apenas VIVOS e ativos)
+    irmaosParaAniversario.forEach(irmao => {
       // Não mostrar irmãos falecidos
       if (irmao.falecido === true || irmao.data_falecimento) return;
       
