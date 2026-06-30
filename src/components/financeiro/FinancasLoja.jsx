@@ -37,6 +37,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
+  const [todosIrmaosIncInativos, setTodosIrmaosIncInativos] = useState([]);
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
@@ -365,6 +366,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
       
       setIrmaos(irmaosDisponiveis);
+      setTodosIrmaosIncInativos(todosIrmaos || []);
 
       await buscarAnosDisponiveis();
       await recarregarDados();
@@ -2384,6 +2386,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         setFormData={setFormLancamento}
         categorias={categorias}
         irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
+        todosIrmaos={todosIrmaosIncInativos}
         editando={editando}
         eventosComemorativos={eventosComemorativos}
         projetos={projetosAtivos}
