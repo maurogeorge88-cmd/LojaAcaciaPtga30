@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ModalBase from './ModalBase';
 
 /**
@@ -14,14 +14,24 @@ export default function ModalLancamento({
   setFormData,
   categorias,
   irmaos,
+  todosIrmaos = [],
   editando = false,
   eventosComemorativos = [],
   projetos = []
 }) {
+  const [mostrarInativos, setMostrarInativos] = useState(false);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSalvar(formData);
   };
+
+  // Lista de irmãos exibida no select — ativos ou todos (com inativos)
+  const SITUACOES_ATIVAS = ['regular', 'licenciado'];
+  const irmaosAtivos   = irmaos; // já filtrados pelo FinancasLoja
+  const irmaosInativos = todosIrmaos.filter(
+    i => !SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase())
+  ).sort((a, b) => a.nome.localeCompare(b.nome));
 
   // Filtrar categorias pelo tipo
   const categoriasFiltradas = categorias.filter(cat => cat.tipo === tipo);
@@ -140,20 +150,63 @@ export default function ModalLancamento({
 
           {formData.origem_tipo === 'Irmao' && (
             <div>
-              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                Irmão *
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>
+                  Irmão *
+                </label>
+                {/* Toggle incluir inativos */}
+                <button
+                  type="button"
+                  onClick={() => { setMostrarInativos(v => !v); setFormData({ ...formData, origem_irmao_id: '' }); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '0.35rem',
+                    padding: '0.2rem 0.6rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700',
+                    cursor: 'pointer', border: '1px solid',
+                    background: mostrarInativos ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
+                    color: mostrarInativos ? '#ef4444' : 'var(--color-text-muted)',
+                    borderColor: mostrarInativos ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {mostrarInativos ? '🔴 Inativos' : '⚪ Só Ativos'}
+                </button>
+              </div>
               <select
                 value={formData.origem_irmao_id}
                 onChange={(e) => setFormData({ ...formData, origem_irmao_id: e.target.value })}
-                className={`w-full px-3 py-2 border  rounded-lg  ${cfg.corFoco}`} style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                className={`w-full px-3 py-2 border rounded-lg ${cfg.corFoco}`}
+                style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
                 required
               >
                 <option value="">Selecione...</option>
-                {irmaos.map(irmao => (
-                  <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
-                ))}
+                {!mostrarInativos ? (
+                  irmaosAtivos.map(irmao => (
+                    <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                  ))
+                ) : (
+                  <>
+                    <optgroup label="── Inativos ──">
+                      {irmaosInativos.map(irmao => (
+                        <option key={irmao.id} value={irmao.id}>
+                          {irmao.nome} ({irmao.situacao})
+                        </option>
+                      ))}
+                    </optgroup>
+                    {irmaosAtivos.length > 0 && (
+                      <optgroup label="── Ativos / Licenciados ──">
+                        {irmaosAtivos.map(irmao => (
+                          <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </>
+                )}
               </select>
+              {mostrarInativos && (
+                <p style={{ fontSize: '0.7rem', color: '#f59e0b', marginTop: '0.3rem', fontWeight: '600' }}>
+                  ⚠️ Modo inativos ativo — lançamento será registrado para irmão fora da situação regular
+                </p>
+              )}
             </div>
           )}
         </div>
