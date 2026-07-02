@@ -40,6 +40,7 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
   const [irmaosSelec, setIrmaosSelec] = useState([]);
   const [tipoSelec, setTipoSelec] = useState('resumo_individual');
   const [opcoesConteudo, setOpcoesConteudo] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
+  const [periodoDados, setPeriodoDados] = useState('geral'); // 'geral' | 'ate_mes_anterior'
   const [enviando, setEnviando] = useState(false);
   const [resultados, setResultados] = useState([]);
   const [configs, setConfigs] = useState([]);
@@ -48,6 +49,7 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
   const [salvandoConfig, setSalvandoConfig] = useState(null);
   const [modalConfig, setModalConfig] = useState(null);
   const [formConfig, setFormConfig] = useState({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
+  const [periodoDadosConfig, setPeriodoDadosConfig] = useState('geral'); // para o modal de config automático
   const [irmaosConfigSelec, setIrmaosConfigSelec] = useState([]);
   const [opcoesConfig, setOpcoesConfig] = useState({ financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
   const [filtroBuscaConfig, setFiltroBuscaConfig] = useState('');
@@ -189,7 +191,7 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
         body: {
           acao: tipoSelec,
           irmaos_ids: irmaosSelec,
-          opcoes: opcoesConteudo,
+          opcoes: { ...opcoesConteudo, periodo_dados: periodoDados },
           mes_cronograma: mesCronograma,
           destaques_ids: eventosDestaque,
         },
@@ -214,9 +216,9 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
     try {
       const existente = configs.find(c => c.tipo === modalConfig);
       if (existente) {
-        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }).eq('id', existente.id);
+        await supabase.from('config_email_automatico').update({ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, periodo_dados: periodoDadosConfig }).eq('id', existente.id);
       } else {
-        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig }]);
+        await supabase.from('config_email_automatico').insert([{ ...formConfig, tipo: modalConfig, irmaos_ids: irmaosConfigSelec, opcoes_conteudo: opcoesConfig, periodo_dados: periodoDadosConfig }]);
       }
       showSuccess('✅ Configuração salva!');
       carregarConfigs();
@@ -234,6 +236,7 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
       setFormConfig({ ativo: existente.ativo, frequencia: existente.frequencia || 'mensal', dia_semana: existente.dia_semana || 1, dia_mes: existente.dia_mes || 1, hora: existente.hora ?? 8 });
       setIrmaosConfigSelec(existente.irmaos_ids || []);
       setOpcoesConfig(existente.opcoes_conteudo || { financeiro: true, presenca: true, comissoes: true, eventos: true, cronograma: false });
+        setPeriodoDadosConfig(existente.periodo_dados || 'geral');
     } else {
       setFormConfig({ ativo: false, frequencia: 'mensal', dia_semana: 1, dia_mes: 1, hora: 8 });
       setIrmaosConfigSelec([]);
@@ -320,6 +323,29 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
                     </label>
                   ))}
                 </div>
+
+                {/* Período dos dados financeiros */}
+                {opcoesConteudo.financeiro && (
+                  <div style={{ marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)' }}>
+                    <p style={{ fontWeight: '700', color: 'var(--color-text)', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                      📅 Período dos dados financeiros
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                      {[
+                        { id: 'geral', label: 'Geral — todos os registros (passado e futuro)', desc: 'Mostra todas as pendências e pagamentos sem corte de data' },
+                        { id: 'ate_mes_anterior', label: 'Até o mês anterior', desc: `Pendências e pagamentos até o mês passado. Pendências futuras aparecem em bloco separado.` },
+                      ].map(op => (
+                        <label key={op.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', background: periodoDados === op.id ? 'rgba(201,168,76,0.08)' : 'var(--color-surface-2)', border: '1px solid ' + (periodoDados === op.id ? '#c9a84c' : 'var(--color-border)') }}>
+                          <input type="radio" name="periodo_dados" value={op.id} checked={periodoDados === op.id} onChange={() => setPeriodoDados(op.id)} style={{ accentColor: '#c9a84c', marginTop: '0.15rem', flexShrink: 0 }} />
+                          <div>
+                            <span style={{ fontSize: '0.82rem', color: 'var(--color-text)', fontWeight: '600', display: 'block' }}>{op.label}</span>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{op.desc}</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -665,6 +691,29 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
                       </label>
                     ))}
                   </div>
+
+                  {/* Período dos dados financeiros */}
+                  {opcoesConfig.financeiro && (
+                    <div style={{ marginTop: '0.85rem', paddingTop: '0.75rem', borderTop: '1px solid var(--color-border)' }}>
+                      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: 'var(--color-text-muted)', marginBottom: '0.4rem' }}>
+                        📅 Período dos dados financeiros
+                      </label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        {[
+                          { id: 'geral', label: 'Geral — todos os registros', desc: 'Sem corte de data' },
+                          { id: 'ate_mes_anterior', label: 'Até o mês anterior', desc: 'Pendências futuras aparecem em bloco separado' },
+                        ].map(op => (
+                          <label key={op.id} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', cursor: 'pointer', padding: '0.5rem 0.6rem', borderRadius: 'var(--radius-md)', background: periodoDadosConfig === op.id ? 'rgba(201,168,76,0.08)' : 'var(--color-surface-2)', border: '1px solid ' + (periodoDadosConfig === op.id ? '#c9a84c' : 'var(--color-border)') }}>
+                            <input type="radio" name="periodo_dados_config" value={op.id} checked={periodoDadosConfig === op.id} onChange={() => setPeriodoDadosConfig(op.id)} style={{ accentColor: '#c9a84c', marginTop: '0.15rem', flexShrink: 0 }} />
+                            <div>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--color-text)', fontWeight: '600', display: 'block' }}>{op.label}</span>
+                              <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>{op.desc}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
