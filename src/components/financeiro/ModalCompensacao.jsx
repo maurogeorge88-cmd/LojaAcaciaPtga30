@@ -43,140 +43,91 @@ export default function ModalCompensacao({ irmao, debitos, creditos, onClose, on
     
     try {
       const dataCompensacao = new Date().toISOString().split('T')[0];
-      
-      // Processar débitos selecionados (receitas - irmão deve)
+
+      // ── Helper: quitar um lançamento inteiramente ──────────────────────────
+      const quitarLancamento = async (id) => {
+        const { error } = await supabase
+          .from('lancamentos_loja')
+          .update({ status: 'pago', data_pagamento: dataCompensacao, tipo_pagamento: 'compensacao' })
+          .eq('id', id);
+        if (error) throw error;
+      };
+
+      // ── Helper: abater parcialmente um lançamento ──────────────────────────
+      // Cria um registro de pagamento parcial e reduz o valor do original
+      const abaterParcial = async (lancamento, valorAbater, tipoLanc) => {
+        // Inserir registro do valor abatido (já pago por compensação)
+        const { error: errIns } = await supabase
+          .from('lancamentos_loja')
+          .insert({
+            tipo: tipoLanc,
+            categoria_id: lancamento.categoria_id,
+            descricao: `💰 Compensação: ${lancamento.descricao}`,
+            valor: valorAbater,
+            data_lancamento: dataCompensacao,
+            data_vencimento: dataCompensacao,
+            data_pagamento: dataCompensacao,
+            tipo_pagamento: 'compensacao',
+            status: 'pago',
+            origem_tipo: lancamento.origem_tipo,
+            origem_irmao_id: lancamento.origem_irmao_id,
+            evento_comemorativo_id: lancamento.evento_comemorativo_id || null,
+            eh_pagamento_parcial: true,
+            lancamento_principal_id: lancamento.id
+          });
+        if (errIns) throw errIns;
+
+        // Reduzir valor pendente do original
+        const valorRestante = parseFloat(lancamento.valor) - valorAbater;
+        let obs = lancamento.observacoes || '';
+        if (!obs.includes('Valor original:')) {
+          obs = `[Valor original: R$ ${parseFloat(lancamento.valor).toFixed(2)}]\n${obs}`.trim();
+        }
+        obs += `\n[Compensação de ${formatarMoeda(valorAbater)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`;
+
+        const { error: errUpd } = await supabase
+          .from('lancamentos_loja')
+          .update({ valor: valorRestante, observacoes: obs.trim() })
+          .eq('id', lancamento.id);
+        if (errUpd) throw errUpd;
+      };
+
+      // ── Processar DÉBITOS sequencialmente (receitas — irmão deve) ──────────
+      // Quita um a um até esgotar o saldo; apenas o último atingido é parcial
+      let saldoDebitos = valorCompensar;
       for (const debitoId of debitosSelecionados) {
+        if (saldoDebitos <= 0) break;
         const debito = debitos.find(d => d.id === debitoId);
         if (!debito) continue;
-        
         const valorDebito = parseFloat(debito.valor);
-        const proporcao = valorDebito / totalDebitos;
-        const valorACompensar = Math.min(valorDebito, valorCompensar * proporcao);
-        
-        if (valorACompensar >= valorDebito - 0.01) {
-          // Quitar completamente o débito
-          const { error } = await supabase
-            .from('lancamentos_loja')
-            .update({
-              status: 'pago',
-              data_pagamento: dataCompensacao,
-              tipo_pagamento: 'compensacao'
-            })
-            .eq('id', debitoId);
-            
-          if (error) throw error;
+
+        if (saldoDebitos >= valorDebito - 0.001) {
+          // Cobre inteiro → quitar
+          await quitarLancamento(debitoId);
+          saldoDebitos -= valorDebito;
         } else {
-          // Compensação parcial do débito
-          
-          const { error: errorInsert } = await supabase
-            .from('lancamentos_loja')
-            .insert({
-              tipo: 'receita', // Débito é sempre receita
-              categoria_id: debito.categoria_id,
-              descricao: `💰 Compensação: ${debito.descricao}`,
-              valor: valorACompensar,
-              data_lancamento: dataCompensacao,
-              data_vencimento: dataCompensacao,
-              data_pagamento: dataCompensacao,
-              tipo_pagamento: 'compensacao',
-              status: 'pago',
-              origem_tipo: debito.origem_tipo,
-              origem_irmao_id: debito.origem_irmao_id,
-              evento_comemorativo_id: debito.evento_comemorativo_id || null,
-              eh_pagamento_parcial: true,
-              lancamento_principal_id: debitoId
-            });
-            
-          if (errorInsert) throw errorInsert;
-          
-          // ATUALIZAR o valor do lançamento original para refletir a compensação
-          const novoValor = valorDebito - valorACompensar;
-          
-          // Preparar observações com valor original (se ainda não tiver)
-          let novasObservacoes = debito.observacoes || '';
-          if (!novasObservacoes.includes('Valor original:')) {
-            // Primeira alteração - guardar valor original
-            novasObservacoes = `[Valor original: R$ ${valorDebito.toFixed(2)}]\n${novasObservacoes}`.trim();
-          }
-          novasObservacoes += `\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`;
-          
-          const { error: errorUpdate } = await supabase
-            .from('lancamentos_loja')
-            .update({
-              valor: novoValor,
-              observacoes: novasObservacoes.trim()
-            })
-            .eq('id', debitoId);
-            
-          if (errorUpdate) throw errorUpdate;
+          // Cobre parcialmente → abater o que sobrou do saldo
+          await abaterParcial(debito, saldoDebitos, 'receita');
+          saldoDebitos = 0;
         }
       }
-      
-      // Processar créditos selecionados (despesas - loja deve)
+
+      // ── Processar CRÉDITOS sequencialmente (despesas — loja deve) ──────────
+      let saldoCreditos = valorCompensar;
       for (const creditoId of creditosSelecionados) {
+        if (saldoCreditos <= 0) break;
         const credito = creditos.find(c => c.id === creditoId);
         if (!credito) continue;
-        
         const valorCredito = parseFloat(credito.valor);
-        const proporcao = valorCredito / totalCreditos;
-        const valorACompensar = Math.min(valorCredito, valorCompensar * proporcao);
-        
-        if (valorACompensar >= valorCredito - 0.01) {
-          // Quitar completamente o crédito
-          const { error } = await supabase
-            .from('lancamentos_loja')
-            .update({
-              status: 'pago',
-              data_pagamento: dataCompensacao,
-              tipo_pagamento: 'compensacao'
-            })
-            .eq('id', creditoId);
-            
-          if (error) throw error;
+
+        if (saldoCreditos >= valorCredito - 0.001) {
+          // Cobre inteiro → quitar
+          await quitarLancamento(creditoId);
+          saldoCreditos -= valorCredito;
         } else {
-          // Compensação parcial do crédito
-          
-          const { error: errorInsert } = await supabase
-            .from('lancamentos_loja')
-            .insert({
-              tipo: 'despesa', // Crédito é sempre despesa
-              categoria_id: credito.categoria_id,
-              descricao: `💰 Compensação: ${credito.descricao}`,
-              valor: valorACompensar,
-              data_lancamento: dataCompensacao,
-              data_vencimento: dataCompensacao,
-              data_pagamento: dataCompensacao,
-              tipo_pagamento: 'compensacao',
-              status: 'pago',
-              origem_tipo: credito.origem_tipo,
-              origem_irmao_id: credito.origem_irmao_id,
-              evento_comemorativo_id: credito.evento_comemorativo_id || null,
-              eh_pagamento_parcial: true,
-              lancamento_principal_id: creditoId
-            });
-            
-          if (errorInsert) throw errorInsert;
-          
-          // ATUALIZAR o valor do lançamento original para refletir a compensação
-          const novoValor = valorCredito - valorACompensar;
-          
-          // Preparar observações com valor original (se ainda não tiver)
-          let novasObservacoes = credito.observacoes || '';
-          if (!novasObservacoes.includes('Valor original:')) {
-            // Primeira alteração - guardar valor original
-            novasObservacoes = `[Valor original: R$ ${valorCredito.toFixed(2)}]\n${novasObservacoes}`.trim();
-          }
-          novasObservacoes += `\n[Compensação de ${formatarMoeda(valorACompensar)} em ${new Date(dataCompensacao + 'T00:00:00').toLocaleDateString('pt-BR')}]`;
-          
-          const { error: errorUpdate } = await supabase
-            .from('lancamentos_loja')
-            .update({
-              valor: novoValor,
-              observacoes: novasObservacoes.trim()
-            })
-            .eq('id', creditoId);
-            
-          if (errorUpdate) throw errorUpdate;
+          // Cobre parcialmente → abater o que sobrou do saldo
+          await abaterParcial(credito, saldoCreditos, 'despesa');
+          saldoCreditos = 0;
         }
       }
       
