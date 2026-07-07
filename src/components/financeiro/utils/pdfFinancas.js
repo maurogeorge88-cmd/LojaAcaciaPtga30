@@ -403,7 +403,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
       .replace(/\u200B/g, '')
       .trim();
 
-    const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+    const MESES_NOME = ['Janeiro','Fevereiro','Marco','Abril','Maio','Junho',
                         'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
     // ── Agrupar pagos por mês (data_pagamento) ────────────────────────────
@@ -428,8 +428,8 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
       for (let p = 1; p <= tot; p++) {
         doc.setPage(p);
         doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(150);
-        doc.text('SysMaçom-MG — Desenvolvedor: Mauro George', 15, 290);
-        doc.text('Página ' + p + ' de ' + tot, 105, 290, { align: 'center' });
+        doc.text('SysMacom-MG - Desenvolvedor: Mauro George', 15, 290);
+        doc.text('Pagina ' + p + ' de ' + tot, 105, 290, { align: 'center' });
         doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR'), 195, 290, { align: 'right' });
         doc.setTextColor(0);
       }
@@ -441,23 +441,23 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
     }
 
     // Cabeçalho
-    const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga') + ' Nº ' + (dadosLoja?.numero_loja || '30');
+    const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acacia de Paranatinga') + ' No ' + (dadosLoja?.numero_loja || '30');
     doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
     doc.text(nomeLoja, 105, y, { align: 'center' }); y += 6;
     doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text('Jurisdicionada a Grande Loja Maçônica do Estado de Mato Grosso', 105, y, { align: 'center' }); y += 7;
+    doc.text('Jurisdicionada a Grande Loja Maconica do Estado de Mato Grosso', 105, y, { align: 'center' }); y += 7;
     doc.setFontSize(12); doc.setFont('helvetica', 'bold');
-    doc.text('Extrato de Movimentação Financeira — Por Mês', 105, y, { align: 'center' }); y += 10;
+    doc.text('Extrato de Movimentacao Financeira - Por Mes', 105, y, { align: 'center' }); y += 10;
 
     // Dados do irmão
     doc.setFillColor(240, 240, 240); doc.rect(15, y, 180, 22, 'F');
     y += 5;
     doc.setFontSize(9); doc.setFont('helvetica', 'normal');
-    doc.text('Irmão:', 18, y); doc.setFont('helvetica', 'bold'); doc.text(irmaoData.nome, 35, y); y += 5;
+    doc.text('Irmao:', 18, y); doc.setFont('helvetica', 'bold'); doc.text(irmaoData.nome, 35, y); y += 5;
     doc.setFont('helvetica', 'normal');
-    doc.text('CIM: ' + (irmaoData.cim || '—'), 18, y);
-    doc.text('CPF: ' + (irmaoData.cpf || '—'), 60, y);
-    doc.text('Período: ' + fmtData(dataInicio) + ' a ' + fmtData(dataFim), 115, y);
+    doc.text('CIM: ' + (irmaoData.cim || '-'), 18, y);
+    doc.text('CPF: ' + (irmaoData.cpf || '-'), 60, y);
+    doc.text('Periodo: ' + fmtData(dataInicio) + ' a ' + fmtData(dataFim), 115, y);
     y += 16;
 
     // ── Função renderizar tabela de lançamentos ───────────────────────────
@@ -472,7 +472,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
       doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
       doc.text(usarDataPag ? 'DtPag' : 'DtLanc', 17, y + 4);
       doc.text('DtVenc', 43, y + 4);
-      doc.text('Descrição', 69, y + 4);
+      doc.text('Descricao', 69, y + 4);
       doc.text('Valor', 192, y + 4, { align: 'right' });
       y += 11;
 
@@ -522,7 +522,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
     if (mesesPagos.length > 0) {
       checkPage(12);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
-      doc.text('HISTÓRICO DE PAGAMENTOS POR MÊS', 105, y, { align: 'center' }); y += 2;
+      doc.text('HISTORICO DE PAGAMENTOS POR MES', 105, y, { align: 'center' }); y += 2;
       doc.setDrawColor(30, 58, 95); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 6;
 
       mesesPagos.forEach(mesKey => {
@@ -539,8 +539,8 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
         doc.setFillColor(30, 58, 95); doc.rect(15, y, 180, 7, 'F');
         doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
         const totMes = soma(lancsMes);
-        doc.text('📅 ' + labelMes, 18, y + 5);
-        doc.text(lancsMes.length + ' lançamento(s)', 105, y + 5, { align: 'center' });
+        doc.text(labelMes, 18, y + 5);
+        doc.text(lancsMes.length + ' lancamento(s)', 105, y + 5, { align: 'center' });
         doc.text('Total: ' + fmtR(totMes), 192, y + 5, { align: 'right' });
         doc.setTextColor(0);
         y += 11;
@@ -558,7 +558,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
         doc.text('Resultado ' + labelMes + ':', 17, y + 5);
         doc.setTextColor(saldoMes > 0 ? 180 : saldoMes < 0 ? 30 : 0,
                          saldoMes > 0 ? 30  : saldoMes < 0 ? 100: 0, 0);
-        doc.text(fmtR(saldoMes) + (saldoMes > 0 ? ' (você pagou)' : saldoMes < 0 ? ' (loja pagou)' : ' (quitado)'), 192, y + 5, { align: 'right' });
+        doc.text(fmtR(saldoMes) + (saldoMes > 0 ? ' (voce pagou)' : saldoMes < 0 ? ' (loja pagou)' : ' (quitado)'), 192, y + 5, { align: 'right' });
         doc.setTextColor(0);
         y += 14;
       });
@@ -573,7 +573,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
     if (pendDesp.length > 0 || pendRec.length > 0) {
       checkPage(12);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(200, 80, 0);
-      doc.text('PENDÊNCIAS', 105, y, { align: 'center' }); y += 2;
+      doc.text('PENDENCIAS', 105, y, { align: 'center' }); y += 2;
       doc.setDrawColor(200, 80, 0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 6;
 
       totalDespPend = renderTabela('Despesas Pendentes (Irmao com a Loja)', pendDesp, [200, 80, 0], [200, 80, 0], false);
@@ -587,9 +587,9 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
     if (infoDesp.length > 0) {
       checkPage(12);
       doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
-      doc.text('INFORMATIVOS — Vencimentos Futuros', 105, y, { align: 'center' }); y += 2;
+      doc.text('INFORMATIVOS - Vencimentos Futuros', 105, y, { align: 'center' }); y += 2;
       doc.setDrawColor(150); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 6;
-      totalInfo = renderTabela('Parcelas Futuras (informativo — não compõem o saldo)', infoDesp, [100, 100, 100], [100, 100, 100], false);
+      totalInfo = renderTabela('Parcelas Futuras (informativo - nao compoem o saldo)', infoDesp, [100, 100, 100], [100, 100, 100], false);
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -602,8 +602,8 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
 
     doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
     const resumoLinhas = [
-      ['(+) Desp. Pagas (Irmao→Loja):', fmtR(totalDespPagas), [180, 30, 30]],
-      ['(-) Rec. Pagas (Loja→Irmao):',  fmtR(totalRecPagas),  [30, 100, 60]],
+      ['(+) Desp. Pagas (Irmao-Loja):', fmtR(totalDespPagas), [180, 30, 30]],
+      ['(-) Rec. Pagas (Loja-Irmao):',  fmtR(totalRecPagas),  [30, 100, 60]],
       ['(+) Desp. Pendentes:',           fmtR(totalDespPend),  [200, 80, 0]],
       ['(-) Rec. Pendentes:',            fmtR(totalRecPend),   [30, 100, 60]],
     ];
@@ -628,7 +628,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
     if (totalInfo > 0) {
       checkPage(8);
       doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(120);
-      doc.text('* Informativos (não incluídos no saldo): ' + fmtR(totalInfo), 80, y, { align: 'right' });
+      doc.text('* Informativos (nao incluidos no saldo): ' + fmtR(totalInfo), 80, y, { align: 'right' });
       y += 5;
     }
 
@@ -637,7 +637,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
       checkPage(25);
       y += 4;
       doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
-      doc.text('Dados Bancários', 15, y); y += 4;
+      doc.text('Dados Bancarios', 15, y); y += 4;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
       doc.text(dadosLoja.dados_bancarios, 15, y); y += 5;
     }
