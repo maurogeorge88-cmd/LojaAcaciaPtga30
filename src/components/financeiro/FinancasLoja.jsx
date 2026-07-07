@@ -24,6 +24,7 @@ import ModalPagamentoParcial from './ModalPagamentoParcial';
 import ModalCompensacao from './ModalCompensacao';
 import ModalQuitacao from './ModalQuitacao';
 import ModalQuitacaoLote from './ModalQuitacaoLote';
+import ModalEdicaoLote from './components/ModalEdicaoLote';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -109,6 +110,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
   const [modalMovAberto, setModalMovAberto]     = useState(false);
   const [mostrarInativosMovForm, setMostrarInativosMovForm] = useState(false);
+  const [modalEdicaoLoteAberto, setModalEdicaoLoteAberto] = useState(false);
   const [modalArcoRealAberto, setModalArcoRealAberto]   = useState(false);
   const [modalRenegocAberto, setModalRenegocAberto]     = useState(false);
   const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
@@ -1926,8 +1928,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 🔀 Parcelar
               </button>
               <button onClick={() => { setMostrarModalIrmaos(true); setMenuLancamentosAberto(false); }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 👥 Lanç. em Lote
+              </button>
+              <button onClick={() => { setModalEdicaoLoteAberto(true); setMenuLancamentosAberto(false); }}
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"#7c3aed",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
+                ✏️ Edição em Lote
               </button>
             </div>
           )}
@@ -3987,6 +3993,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         onClose={() => setModalRelatorioAberto(false)}
         showError={showError}
         showSuccess={showSuccess}
+      />
+
+      <ModalEdicaoLote
+        aberto={modalEdicaoLoteAberto}
+        onFechar={() => setModalEdicaoLoteAberto(false)}
+        categorias={categorias}
+        verificarMesBloqueado={verificarMesBloqueado}
+        onAtualizar={recarregarDados}
+        canEditFinancial={canEditFinancial}
       />
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
