@@ -2394,7 +2394,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   <>
                     <optgroup label="── Inativos ──">
                       {todosIrmaosIncInativos
-                        .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado')
+                        .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado'&&i.situacao!=='falecido'&&i.situacao!=='Falecido')
                         .sort((a,b)=>a.nome.localeCompare(b.nome))
                         .map(i=><option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>)}
                     </optgroup>
@@ -4046,7 +4046,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                     <>
                       <optgroup label="── Inativos ──">
                         {todosIrmaosIncInativos
-                          .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado')
+                          .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado'&&i.situacao!=='falecido'&&i.situacao!=='Falecido')
                           .sort((a,b)=>a.nome.localeCompare(b.nome))
                           .map(i=><option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>)}
                       </optgroup>
