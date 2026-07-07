@@ -344,7 +344,313 @@ export async function gerarRelatorioMovimentacao({ movForm, irmaos, supabase, sh
   }
 }
 
-export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { meses, supabase, showSuccess, showError }) {
+// ─────────────────────────────────────────────────────────────────────────────
+//  RELATÓRIO DE MOVIMENTAÇÃO — POR MÊS (Pagos separados por mês)
+// ─────────────────────────────────────────────────────────────────────────────
+export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supabase, showSuccess, showError }) {
+  const { irmaoId, dataInicio, dataFim } = movForm;
+  if (!irmaoId) { showError('Selecione um irmão.'); return; }
+  if (!dataInicio || !dataFim) { showError('Informe o período.'); return; }
+  if (dataInicio > dataFim) { showError('Data início deve ser anterior ao fim.'); return; }
+
+  try {
+    showSuccess('Gerando relatório por mês...');
+
+    const { data: dadosLoja } = await supabase.from('dados_loja').select('*').single();
+    const { data: irmaoData } = await supabase
+      .from('irmaos').select('nome, cpf, cim').eq('id', irmaoId).single();
+
+    // ── Buscar TODOS os lançamentos pagos do período ──────────────────────
+    const { data: lancsPagos } = await supabase
+      .from('lancamentos_loja')
+      .select('*, categorias_financeiras(nome, tipo)')
+      .eq('origem_irmao_id', irmaoId)
+      .eq('status', 'pago')
+      .gte('data_pagamento', dataInicio)
+      .lte('data_pagamento', dataFim)
+      .order('data_pagamento');
+
+    // ── Buscar pendentes do período + mês atual ───────────────────────────
+    const hojeGer = new Date();
+    const ultimoDiaMesAtual = new Date(hojeGer.getFullYear(), hojeGer.getMonth() + 1, 0)
+      .toISOString().split('T')[0];
+
+    const { data: lancsPend } = await supabase
+      .from('lancamentos_loja')
+      .select('*, categorias_financeiras(nome, tipo)')
+      .eq('origem_irmao_id', irmaoId)
+      .eq('status', 'pendente')
+      .gte('data_vencimento', dataInicio)
+      .lte('data_vencimento', ultimoDiaMesAtual)
+      .order('data_vencimento');
+
+    // ── Informativos (pendentes após mês atual) ───────────────────────────
+    const { data: lancsInfo } = await supabase
+      .from('lancamentos_loja')
+      .select('*, categorias_financeiras(nome, tipo)')
+      .eq('origem_irmao_id', irmaoId)
+      .eq('status', 'pendente')
+      .gt('data_vencimento', ultimoDiaMesAtual)
+      .order('data_vencimento');
+
+    const fmtData = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
+    const fmtR    = (v) => 'R$ ' + Math.abs(parseFloat(v || 0)).toFixed(2);
+    const soma    = (arr) => arr.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
+    const sanitize = (str) => (str || '')
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+      .replace(/[\u2600-\u27BF]/gu, '')
+      .replace(/[\uFE00-\uFE0F]/gu, '')
+      .replace(/\u200B/g, '')
+      .trim();
+
+    const MESES_NOME = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                        'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+    // ── Agrupar pagos por mês (data_pagamento) ────────────────────────────
+    const pagosPorMes = {};
+    (lancsPagos || []).forEach(l => {
+      const key = l.data_pagamento?.substring(0, 7); // 'YYYY-MM'
+      if (!pagosPorMes[key]) pagosPorMes[key] = [];
+      pagosPorMes[key].push(l);
+    });
+    const mesesPagos = Object.keys(pagosPorMes).sort();
+
+    // ── PDF ───────────────────────────────────────────────────────────────
+    const jsPDFModule = await import('jspdf');
+    const jsPDF = jsPDFModule.default;
+    const doc = new jsPDF();
+    let y = 10;
+
+    const checkPage = (esp = 15) => { if (y + esp > 275) { doc.addPage(); y = 15; } };
+
+    const rodape = () => {
+      const tot = doc.getNumberOfPages();
+      for (let p = 1; p <= tot; p++) {
+        doc.setPage(p);
+        doc.setFontSize(7); doc.setFont('helvetica', 'normal'); doc.setTextColor(150);
+        doc.text('SysMaçom-MG — Desenvolvedor: Mauro George', 15, 290);
+        doc.text('Página ' + p + ' de ' + tot, 105, 290, { align: 'center' });
+        doc.text('Emitido em ' + new Date().toLocaleDateString('pt-BR'), 195, 290, { align: 'right' });
+        doc.setTextColor(0);
+      }
+    };
+
+    // Logo
+    if (dadosLoja?.logo_url) {
+      try { doc.addImage(dadosLoja.logo_url, 'PNG', 88, y, 30, 30); y += 35; } catch {}
+    }
+
+    // Cabeçalho
+    const nomeLoja = (dadosLoja?.nome_loja || 'ARLS Acácia de Paranatinga') + ' Nº ' + (dadosLoja?.numero_loja || '30');
+    doc.setFontSize(13); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+    doc.text(nomeLoja, 105, y, { align: 'center' }); y += 6;
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Jurisdicionada a Grande Loja Maçônica do Estado de Mato Grosso', 105, y, { align: 'center' }); y += 7;
+    doc.setFontSize(12); doc.setFont('helvetica', 'bold');
+    doc.text('Extrato de Movimentação Financeira — Por Mês', 105, y, { align: 'center' }); y += 10;
+
+    // Dados do irmão
+    doc.setFillColor(240, 240, 240); doc.rect(15, y, 180, 22, 'F');
+    y += 5;
+    doc.setFontSize(9); doc.setFont('helvetica', 'normal');
+    doc.text('Irmão:', 18, y); doc.setFont('helvetica', 'bold'); doc.text(irmaoData.nome, 35, y); y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.text('CIM: ' + (irmaoData.cim || '—'), 18, y);
+    doc.text('CPF: ' + (irmaoData.cpf || '—'), 60, y);
+    doc.text('Período: ' + fmtData(dataInicio) + ' a ' + fmtData(dataFim), 115, y);
+    y += 16;
+
+    // ── Função renderizar tabela de lançamentos ───────────────────────────
+    const renderTabela = (titulo, lancs, corTitulo, corValor, usarDataPag = true) => {
+      if (!lancs.length) return 0;
+      checkPage(20);
+      doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...corTitulo);
+      doc.text(titulo, 15, y); y += 3;
+      doc.setDrawColor(180); doc.setLineWidth(0.3); doc.line(15, y, 195, y); y += 4;
+
+      doc.setFillColor(230, 230, 230); doc.rect(15, y, 180, 6, 'F');
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+      doc.text(usarDataPag ? 'DtPag' : 'DtLanc', 17, y + 4);
+      doc.text('DtVenc', 43, y + 4);
+      doc.text('Descrição', 69, y + 4);
+      doc.text('Valor', 192, y + 4, { align: 'right' });
+      y += 11;
+
+      let subtotal = 0;
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+      lancs.forEach(lanc => {
+        checkPage(7);
+        const dataRef = usarDataPag
+          ? fmtData(lanc.data_pagamento || lanc.data_lancamento)
+          : fmtData(lanc.data_lancamento || lanc.data_vencimento);
+        const dataVenc = fmtData(lanc.data_vencimento);
+        const desc  = sanitize(lanc.descricao).substring(0, 40);
+        const valor = parseFloat(lanc.valor || 0);
+        subtotal += valor;
+        doc.setTextColor(0);
+        doc.text(dataRef,  17, y);
+        doc.text(dataVenc, 43, y);
+        doc.text(desc,     69, y);
+        doc.setTextColor(...corValor);
+        doc.text(fmtR(valor), 192, y, { align: 'right' });
+        doc.setTextColor(0);
+        y += 5;
+      });
+
+      // Subtotal
+      checkPage(8);
+      doc.setDrawColor(180); doc.line(15, y, 195, y); y += 4;
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
+      doc.text('Sub Total:', 140, y, { align: 'right' });
+      doc.setTextColor(...corValor);
+      doc.text(fmtR(subtotal), 192, y, { align: 'right' });
+      doc.setTextColor(0);
+      y += 8;
+      return subtotal;
+    };
+
+    // ── Acumuladores gerais ───────────────────────────────────────────────
+    let totalDespPagas  = 0;
+    let totalRecPagas   = 0;
+    let totalDespPend   = 0;
+    let totalRecPend    = 0;
+    let totalInfo       = 0;
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SEÇÃO 1 — PAGAMENTOS MÊS A MÊS
+    // ════════════════════════════════════════════════════════════════════════
+    if (mesesPagos.length > 0) {
+      checkPage(12);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(30, 58, 95);
+      doc.text('HISTÓRICO DE PAGAMENTOS POR MÊS', 105, y, { align: 'center' }); y += 2;
+      doc.setDrawColor(30, 58, 95); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 6;
+
+      mesesPagos.forEach(mesKey => {
+        const [anoMes, mesMes] = mesKey.split('-');
+        const labelMes = MESES_NOME[parseInt(mesMes) - 1] + ' / ' + anoMes;
+        const lancsMes = pagosPorMes[mesKey];
+
+        // Separar por tipo dentro do mês
+        const despMes = lancsMes.filter(l => l.categorias_financeiras?.tipo === 'receita'); // irmão→loja
+        const recMes  = lancsMes.filter(l => l.categorias_financeiras?.tipo === 'despesa'); // loja→irmão
+
+        checkPage(16);
+        // Header do mês
+        doc.setFillColor(30, 58, 95); doc.rect(15, y, 180, 7, 'F');
+        doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(255, 255, 255);
+        const totMes = soma(lancsMes);
+        doc.text('📅 ' + labelMes, 18, y + 5);
+        doc.text(lancsMes.length + ' lançamento(s)', 105, y + 5, { align: 'center' });
+        doc.text('Total: ' + fmtR(totMes), 192, y + 5, { align: 'right' });
+        doc.setTextColor(0);
+        y += 11;
+
+        const sd = renderTabela('Despesas Pagas (Irmao com a Loja)', despMes, [180, 30, 30], [180, 30, 30]);
+        const sr = renderTabela('Receitas Pagas (Loja com o Irmao)', recMes,  [30, 100, 60], [30, 100, 60]);
+        totalDespPagas += sd;
+        totalRecPagas  += sr;
+
+        // Resultado do mês
+        checkPage(10);
+        const saldoMes = sd - sr;
+        doc.setFillColor(245, 245, 245); doc.rect(15, y, 180, 8, 'F');
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
+        doc.text('Resultado ' + labelMes + ':', 17, y + 5);
+        doc.setTextColor(saldoMes > 0 ? 180 : saldoMes < 0 ? 30 : 0,
+                         saldoMes > 0 ? 30  : saldoMes < 0 ? 100: 0, 0);
+        doc.text(fmtR(saldoMes) + (saldoMes > 0 ? ' (você pagou)' : saldoMes < 0 ? ' (loja pagou)' : ' (quitado)'), 192, y + 5, { align: 'right' });
+        doc.setTextColor(0);
+        y += 14;
+      });
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SEÇÃO 2 — PENDENTES DO PERÍODO
+    // ════════════════════════════════════════════════════════════════════════
+    const pendDesp = (lancsPend || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
+    const pendRec  = (lancsPend || []).filter(l => l.categorias_financeiras?.tipo === 'despesa');
+
+    if (pendDesp.length > 0 || pendRec.length > 0) {
+      checkPage(12);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(200, 80, 0);
+      doc.text('PENDÊNCIAS', 105, y, { align: 'center' }); y += 2;
+      doc.setDrawColor(200, 80, 0); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 6;
+
+      totalDespPend = renderTabela('Despesas Pendentes (Irmao com a Loja)', pendDesp, [200, 80, 0], [200, 80, 0], false);
+      totalRecPend  = renderTabela('Receitas Pendentes (Loja com o Irmao)', pendRec,  [30, 100, 60], [30, 100, 60], false);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  SEÇÃO 3 — INFORMATIVOS (pendentes meses futuros)
+    // ════════════════════════════════════════════════════════════════════════
+    const infoDesp = (lancsInfo || []).filter(l => l.categorias_financeiras?.tipo === 'receita');
+    if (infoDesp.length > 0) {
+      checkPage(12);
+      doc.setFontSize(11); doc.setFont('helvetica', 'bold'); doc.setTextColor(100, 100, 100);
+      doc.text('INFORMATIVOS — Vencimentos Futuros', 105, y, { align: 'center' }); y += 2;
+      doc.setDrawColor(150); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 6;
+      totalInfo = renderTabela('Parcelas Futuras (informativo — não compõem o saldo)', infoDesp, [100, 100, 100], [100, 100, 100], false);
+    }
+
+    // ════════════════════════════════════════════════════════════════════════
+    //  RESUMO GERAL
+    // ════════════════════════════════════════════════════════════════════════
+    checkPage(55);
+    doc.setDrawColor(30, 58, 95); doc.setLineWidth(0.5); doc.line(15, y, 195, y); y += 5;
+    doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+    doc.text('RESUMO GERAL', 105, y, { align: 'center' }); y += 8;
+
+    doc.setFontSize(8.5); doc.setFont('helvetica', 'normal');
+    const resumoLinhas = [
+      ['(+) Desp. Pagas (Irmao→Loja):', fmtR(totalDespPagas), [180, 30, 30]],
+      ['(-) Rec. Pagas (Loja→Irmao):',  fmtR(totalRecPagas),  [30, 100, 60]],
+      ['(+) Desp. Pendentes:',           fmtR(totalDespPend),  [200, 80, 0]],
+      ['(-) Rec. Pendentes:',            fmtR(totalRecPend),   [30, 100, 60]],
+    ];
+    resumoLinhas.forEach(([lbl, val, cor]) => {
+      checkPage(6);
+      doc.setTextColor(0); doc.text(lbl, 80, y, { align: 'right' });
+      doc.setTextColor(...cor); doc.text(val, 192, y, { align: 'right' });
+      doc.setTextColor(0);
+      y += 6;
+    });
+
+    const valorPagar = totalDespPend - totalRecPend;
+    checkPage(14);
+    doc.setDrawColor(0); doc.setLineWidth(0.3); doc.line(80, y, 195, y); y += 4;
+    doc.setFontSize(9.5); doc.setFont('helvetica', 'bold');
+    doc.text('Valor a Pagar:', 80, y, { align: 'right' });
+    doc.setTextColor(valorPagar > 0 ? 180 : 30, valorPagar > 0 ? 30 : 100, 0);
+    doc.text(fmtR(valorPagar), 192, y, { align: 'right' });
+    doc.setTextColor(0);
+    y += 6;
+
+    if (totalInfo > 0) {
+      checkPage(8);
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(120);
+      doc.text('* Informativos (não incluídos no saldo): ' + fmtR(totalInfo), 80, y, { align: 'right' });
+      y += 5;
+    }
+
+    // Dados bancários
+    if (dadosLoja?.dados_bancarios) {
+      checkPage(25);
+      y += 4;
+      doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(0);
+      doc.text('Dados Bancários', 15, y); y += 4;
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+      doc.text(dadosLoja.dados_bancarios, 15, y); y += 5;
+    }
+
+    rodape();
+    doc.save('Movimentacao_PorMes_' + irmaoData.nome.replace(/\s+/g, '_') + '.pdf');
+    showSuccess('Relatório por mês gerado!');
+  } catch (e) {
+    showError('Erro: ' + e.message);
+  }
+}
+
+(irmaoId, comPresenca = false, { meses, supabase, showSuccess, showError }) {
   try {
     showSuccess('Gerando relatório individual...');
     
