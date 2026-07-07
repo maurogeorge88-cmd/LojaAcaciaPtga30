@@ -108,6 +108,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
   const [modalMovAberto, setModalMovAberto]     = useState(false);
+  const [mostrarInativosMovForm, setMostrarInativosMovForm] = useState(false);
   const [modalArcoRealAberto, setModalArcoRealAberto]   = useState(false);
   const [modalRenegocAberto, setModalRenegocAberto]     = useState(false);
   const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
@@ -3995,14 +3996,46 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             <div style={{padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
               <div>
-                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Irmão *</label>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.3rem'}}>
+                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase'}}>Irmão *</label>
+                  <button type="button"
+                    onClick={()=>{ setMostrarInativosMovForm(v=>!v); setMovForm(f=>({...f,irmaoId:''})); }}
+                    style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.2rem 0.55rem',borderRadius:'999px',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer',border:'1px solid',
+                      background: mostrarInativosMovForm ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
+                      color:      mostrarInativosMovForm ? '#ef4444' : 'var(--color-text-muted)',
+                      borderColor:mostrarInativosMovForm ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
+                    }}>
+                    {mostrarInativosMovForm ? '🔴 Inativos' : '⚪ Só Ativos'}
+                  </button>
+                </div>
                 <select value={movForm.irmaoId} onChange={e=>setMovForm(f=>({...f,irmaoId:e.target.value}))}
                   style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
                   <option value="">-- Selecionar irmão --</option>
-                  {irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
-                    <option key={i.id} value={i.id}>{i.nome}</option>
-                  ))}
+                  {!mostrarInativosMovForm ? (
+                    irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
+                      <option key={i.id} value={i.id}>{i.nome}</option>
+                    ))
+                  ) : (
+                    <>
+                      <optgroup label="── Inativos ──">
+                        {todosIrmaosIncInativos
+                          .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado')
+                          .sort((a,b)=>a.nome.localeCompare(b.nome))
+                          .map(i=><option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>)}
+                      </optgroup>
+                      <optgroup label="── Ativos / Licenciados ──">
+                        {irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
+                          <option key={i.id} value={i.id}>{i.nome}</option>
+                        ))}
+                      </optgroup>
+                    </>
+                  )}
                 </select>
+                {mostrarInativosMovForm && (
+                  <p style={{fontSize:'0.7rem',color:'#f59e0b',marginTop:'0.3rem',fontWeight:'600'}}>
+                    ⚠️ Modo inativos — exibindo irmãos fora da situação regular
+                  </p>
+                )}
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div>
