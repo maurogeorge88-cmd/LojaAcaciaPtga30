@@ -30,23 +30,30 @@ export async function gerarRelatorioMovimentacao({ movForm, irmaos, supabase, sh
     // Para exibir no bloco de saldo anterior
     const lancsAnt = lancsAntPend || [];
 
-    // ── Buscar parcelas futuras (pendentes após o período) ──────────────
+    // ── Buscar parcelas futuras (pendentes após o mês atual) ─────────────
+    // Corte = último dia do mês atual — tudo dentro do mês corrente é pendente normal
+    const hojeGer = new Date();
+    const ultimoDiaMesAtual = new Date(hojeGer.getFullYear(), hojeGer.getMonth() + 1, 0)
+      .toISOString().split('T')[0]; // ex: '2026-07-31'
+
     const { data: lancsFuturos } = await supabase
       .from('lancamentos_loja')
       .select('*, categorias_financeiras(nome, tipo)')
       .eq('origem_irmao_id', irmaoId)
       .eq('status', 'pendente')
-      .gt('data_vencimento', dataFim)
+      .gt('data_vencimento', ultimoDiaMesAtual)
       .order('data_vencimento');
 
     // ── Buscar lançamentos DO período ────────────────────────────────────
+    // Pagos: dentro do período informado (data_pagamento)
+    // Pendentes: dentro do período OU até fim do mês atual (para não cair em "futuro")
     const { data: lancsPeriodo } = await supabase
       .from('lancamentos_loja')
       .select('*, categorias_financeiras(nome, tipo)')
       .eq('origem_irmao_id', irmaoId)
       .or(
         'and(status.eq.pago,data_pagamento.gte.' + dataInicio + ',data_pagamento.lte.' + dataFim + '),' +
-        'and(status.eq.pendente,data_vencimento.gte.' + dataInicio + ',data_vencimento.lte.' + dataFim + ')'
+        'and(status.eq.pendente,data_vencimento.gte.' + dataInicio + ',data_vencimento.lte.' + ultimoDiaMesAtual + ')'
       )
       .order('data_vencimento');
 
