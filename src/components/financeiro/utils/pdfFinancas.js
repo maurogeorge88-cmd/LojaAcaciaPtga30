@@ -54,6 +54,14 @@ export async function gerarRelatorioMovimentacao({ movForm, irmaos, supabase, sh
     const fmtR = (v) => 'R$ ' + Math.abs(parseFloat(v || 0)).toFixed(2);
     const soma = (arr) => arr.reduce((s, l) => s + parseFloat(l.valor || 0), 0);
 
+    // Remove emojis e caracteres não suportados pelo jsPDF
+    const sanitize = (str) => (str || '')
+      .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')   // emojis faixa alta
+      .replace(/[\u2600-\u27BF]/gu, '')           // símbolos miscelâneos
+      .replace(/[\uFE00-\uFE0F]/gu, '')           // variation selectors
+      .replace(/\u200B/g, '')                     // zero width space
+      .trim();
+
     // Saldo anterior: pendentes de receita (irmão devia) - pendentes de despesa (loja devia)
     const antDesp = lancsAnt.filter(l => l.categorias_financeiras?.tipo === 'receita');
     const antRec  = lancsAnt.filter(l => l.categorias_financeiras?.tipo === 'despesa');
@@ -150,7 +158,7 @@ export async function gerarRelatorioMovimentacao({ movForm, irmaos, supabase, sh
         checkPage(8);
         const dataLanc = fmtData(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento);
         const dataVenc = fmtData(lanc.data_vencimento);
-        const desc = (lanc.descricao || '').substring(0, 38);
+        const desc = sanitize(lanc.descricao).substring(0, 38);
         const valor = parseFloat(lanc.valor || 0);
         subtotal += valor;
         doc.setTextColor(0);
@@ -201,7 +209,7 @@ export async function gerarRelatorioMovimentacao({ movForm, irmaos, supabase, sh
         const cor = lanc.categorias_financeiras?.tipo === 'receita' ? [200, 0, 0] : [0, 80, 180];
         doc.setTextColor(0);
         doc.text(fmtData(lanc.data_vencimento), 17, y);
-        doc.text((lanc.descricao || '').substring(0, 50), 50, y);
+        doc.text(sanitize(lanc.descricao).substring(0, 50), 50, y);
         doc.setTextColor(...cor); doc.text(tipo, 148, y);
         doc.text(fmtR(lanc.valor), 192, y, { align: 'right' });
         doc.setTextColor(0);
@@ -247,7 +255,7 @@ export async function gerarRelatorioMovimentacao({ movForm, irmaos, supabase, sh
         totFut += parseFloat(lanc.valor || 0);
         doc.setTextColor(0);
         doc.text(fmtData(lanc.data_vencimento), 17, y);
-        doc.text((lanc.descricao || '').substring(0, 50), 50, y);
+        doc.text(sanitize(lanc.descricao).substring(0, 50), 50, y);
         doc.setTextColor(100, 100, 100); doc.text(parc, 148, y);
         doc.setTextColor(150, 0, 0); doc.text(fmtR(totFut - (totFut - parseFloat(lanc.valor || 0))), 192, y, { align: 'right' });
         doc.setTextColor(0);
@@ -558,7 +566,7 @@ export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { m
         if (yPos > 275) { doc.addPage(); yPos = 20; }
         const dataLanc = formatarDataBR(lanc.data_lancamento || lanc.data_vencimento);
         const dataVenc = formatarDataBR(lanc.data_vencimento);
-        const desc = (lanc.descricao || '').substring(0, 42);
+        const desc = sanitize(lanc.descricao).substring(0, 42);
         const valor = parseFloat(lanc.valor || 0);
         subtotal += valor;
 
@@ -616,7 +624,7 @@ export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { m
         const fmtDtInd = (d) => d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-BR') : '—';
         doc.setTextColor(0);
         doc.text(fmtDtInd(lanc.data_vencimento), 17, yPos);
-        doc.text((lanc.descricao || '').substring(0, 50), 50, yPos);
+        doc.text(sanitize(lanc.descricao).substring(0, 50), 50, yPos);
         doc.setTextColor(...cor); doc.text(tipo, 155, yPos);
         doc.setTextColor(200, 0, 0); doc.text('R$ ' + parseFloat(lanc.valor||0).toFixed(2), 192, yPos, { align: 'right' });
         doc.setTextColor(0);
@@ -669,7 +677,7 @@ export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { m
         totFutInd += valor;
         doc.setTextColor(0);
         doc.text(new Date(lanc.data_vencimento + 'T00:00:00').toLocaleDateString('pt-BR'), 17, yPos);
-        doc.text((lanc.descricao || '').substring(0, 52), 50, yPos);
+        doc.text(sanitize(lanc.descricao).substring(0, 52), 50, yPos);
         doc.setTextColor(100, 100, 100); doc.text(parc, 155, yPos);
         doc.setTextColor(150, 80, 0); doc.text('R$ ' + valor.toFixed(2), 192, yPos, { align: 'right' });
         doc.setTextColor(0);
