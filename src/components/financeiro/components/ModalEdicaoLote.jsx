@@ -19,13 +19,14 @@ const ANOS = Array.from({length:5}, (_,i) => anoAtual - i);
 
 export default function ModalEdicaoLote({ aberto, onFechar, categorias, verificarMesBloqueado, onAtualizar }) {
   // ── Filtros ───────────────────────────────────────────────────────────────
-  const [filtroMes,      setFiltroMes]      = useState(new Date().getMonth() + 1);
-  const [filtroAno,      setFiltroAno]      = useState(anoAtual);
-  const [filtroTipo,     setFiltroTipo]     = useState('');
-  const [filtroOrigem,   setFiltroOrigem]   = useState('');
-  const [filtroCategoria,setFiltroCategoria]= useState('');
-  const [filtroStatus,   setFiltroStatus]   = useState('');
-  const [filtroDescricao,setFiltroDescricao]= useState('');
+  const [filtroMes,        setFiltroMes]        = useState(new Date().getMonth() + 1);
+  const [filtroAno,        setFiltroAno]        = useState(anoAtual);
+  const [filtroTipo,       setFiltroTipo]       = useState('');
+  const [filtroOrigem,     setFiltroOrigem]     = useState('');
+  const [filtroCategoriaPai, setFiltroCategoriaPai] = useState('');  // categoria pai (nível 1)
+  const [filtroCategoria,  setFiltroCategoria]  = useState('');      // subcategoria (nível 2+)
+  const [filtroStatus,     setFiltroStatus]     = useState('');
+  const [filtroDescricao,  setFiltroDescricao]  = useState('');
 
   // ── Resultados e seleção ─────────────────────────────────────────────────
   const [resultados,   setResultados]   = useState([]);
@@ -52,7 +53,7 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
   const [confirmExcluir, setConfirmExcluir] = useState(false);
 
   useEffect(() => {
-    if (!aberto) { setResultados([]); setSelecionados(new Set()); setBuscaFeita(false); setMsg(''); setConfirmExcluir(false); }
+    if (!aberto) { setResultados([]); setSelecionados(new Set()); setBuscaFeita(false); setMsg(''); setConfirmExcluir(false); setFiltroCategoriaPai(''); setFiltroCategoria(''); }
   }, [aberto]);
 
   if (!aberto) return null;
@@ -212,6 +213,12 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
   const bloqueados = getBloqueados();
   const corMsg     = msgTipo==='ok'?'#10b981':msgTipo==='erro'?'#ef4444':'#f59e0b';
 
+  // Categorias hierárquicas para os selects
+  const categoriasPai = categorias.filter(c => c.nivel === 1 || !c.categoria_pai_id);
+  const subcategorias = filtroCategoriaPai
+    ? categorias.filter(c => String(c.categoria_pai_id) === String(filtroCategoriaPai))
+    : [];
+
   return (
     <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'flex-start',justifyContent:'center',zIndex:9999,padding:'1rem',overflowY:'auto'}}>
       <div style={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-xl)',width:'100%',maxWidth:'1100px',marginTop:'1rem',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.35)'}}>
@@ -230,7 +237,7 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
           {/* ── ETAPA 1: FILTROS ─────────────────────────────────────────── */}
           <div style={{background:'var(--color-surface-2)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-lg)',padding:'1rem'}}>
             <p style={{fontWeight:700,color:'var(--color-text)',margin:'0 0 0.75rem',fontSize:'0.9rem'}}>🔍 1. Filtrar Registros</p>
-            <div style={{display:'grid',gridTemplateColumns:'100px 80px 120px 120px 1fr 150px',gap:'0.6rem',alignItems:'end'}}>
+            <div style={{display:'grid',gridTemplateColumns:'100px 80px 120px 120px 1fr 150px 150px',gap:'0.6rem',alignItems:'end'}}>
               <div><label style={lbl}>Mês</label>
                 <select style={inp} value={filtroMes} onChange={e=>setFiltroMes(Number(e.target.value))}>
                   {MESES.map((m,i)=><option key={i+1} value={i+1}>{m}</option>)}
@@ -260,11 +267,17 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
                 <input style={inp} value={filtroDescricao} onChange={e=>setFiltroDescricao(e.target.value)}
                   placeholder="Ex: MENSALIDADE" onKeyDown={e=>e.key==='Enter'&&buscar()} />
               </div>
-              <div style={{display:'flex',flexDirection:'column',gap:'0.3rem'}}>
-                <label style={lbl}>Categoria</label>
-                <select style={inp} value={filtroCategoria} onChange={e=>setFiltroCategoria(e.target.value)}>
+              <div><label style={lbl}>Categoria</label>
+                <select style={inp} value={filtroCategoriaPai} onChange={e=>{ setFiltroCategoriaPai(e.target.value); setFiltroCategoria(''); }}>
                   <option value="">Todas</option>
-                  {categorias.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+                  {categoriasPai.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+              <div><label style={lbl}>Subcategoria</label>
+                <select style={{...inp, opacity: filtroCategoriaPai ? 1 : 0.45}} value={filtroCategoria}
+                  onChange={e=>setFiltroCategoria(e.target.value)} disabled={!filtroCategoriaPai}>
+                  <option value="">{filtroCategoriaPai ? 'Todas' : '← Selecione categoria'}</option>
+                  {subcategorias.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
             </div>
@@ -272,7 +285,7 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
               <button onClick={buscar} disabled={buscando} style={{...btn('#7c3aed'),opacity:buscando?0.7:1}}>
                 {buscando ? '⏳ Buscando...' : '🔍 Buscar'}
               </button>
-              <button onClick={()=>{setFiltroTipo('');setFiltroStatus('');setFiltroOrigem('');setFiltroCategoria('');setFiltroDescricao('');}}
+              <button onClick={()=>{setFiltroTipo('');setFiltroStatus('');setFiltroOrigem('');setFiltroCategoriaPai('');setFiltroCategoria('');setFiltroDescricao('');}}
                 style={btn('var(--color-surface-2)','var(--color-text-muted)')}>
                 ✕ Limpar filtros
               </button>
