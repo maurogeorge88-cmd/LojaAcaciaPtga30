@@ -2368,16 +2368,43 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* Filtro por Irmão (só aparece se origem = Irmão) */}
           {filtros.origem_tipo === 'Irmao' && (
             <div>
-              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Irmão</label>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.25rem'}}>
+                <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Irmão</label>
+                <button type="button"
+                  onClick={()=>{ setMostrarInativosMovForm(v=>!v); setFiltros(f=>({...f,origem_irmao_id:''})); }}
+                  style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'700',cursor:'pointer',border:'1px solid',
+                    background: mostrarInativosMovForm ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
+                    color:      mostrarInativosMovForm ? '#ef4444' : 'var(--color-text-muted)',
+                    borderColor:mostrarInativosMovForm ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
+                  }}>
+                  {mostrarInativosMovForm ? '🔴 Inativos' : '⚪ Só Ativos'}
+                </button>
+              </div>
               <select
                 value={filtros.origem_irmao_id}
                 onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Todos</option>
-                {irmaos.map(irmao => (
-                  <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
-                ))}
+                {!mostrarInativosMovForm ? (
+                  irmaos.map(irmao => (
+                    <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                  ))
+                ) : (
+                  <>
+                    <optgroup label="── Inativos ──">
+                      {todosIrmaosIncInativos
+                        .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado')
+                        .sort((a,b)=>a.nome.localeCompare(b.nome))
+                        .map(i=><option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>)}
+                    </optgroup>
+                    <optgroup label="── Ativos / Licenciados ──">
+                      {irmaos.map(irmao => (
+                        <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                      ))}
+                    </optgroup>
+                  </>
+                )}
               </select>
             </div>
           )}
