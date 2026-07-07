@@ -1631,16 +1631,27 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         dataLimite = `${ano}-01-01`;
       }
 
-      const { data, error } = await supabase
-        .from('lancamentos_loja')
-        .select('*, categorias_financeiras(tipo)')
-        .eq('status', 'pago')
-        .lt('data_pagamento', dataLimite)  
+      // Buscar em múltiplas páginas para superar o limite de 1000 linhas do Supabase
+      let todosDados = [];
+      let from = 0;
+      const pageSize = 1000;
 
-      if (error) throw error;
+      while (true) {
+        const { data, error } = await supabase
+          .from('lancamentos_loja')
+          .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
+          .eq('status', 'pago')
+          .lt('data_pagamento', dataLimite)
+          .range(from, from + pageSize - 1);
 
-      const receitasBancariasAnt = (data || [])
-        .filter(l => 
+        if (error) throw error;
+        todosDados = todosDados.concat(data || []);
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      const receitasBancariasAnt = todosDados
+        .filter(l =>
           l.categorias_financeiras?.tipo === 'receita' &&
           l.tipo_pagamento !== 'compensacao' &&
           l.tipo_pagamento !== 'dinheiro' &&
@@ -1648,15 +1659,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const depositosAnt = (data || [])
-        .filter(l => 
+      const depositosAnt = todosDados
+        .filter(l =>
           l.categorias_financeiras?.tipo === 'receita' &&
           l.eh_transferencia_interna === true
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const despesasAnteriores = (data || [])
-        .filter(l => 
+      const despesasAnteriores = todosDados
+        .filter(l =>
           l.categorias_financeiras?.tipo === 'despesa' &&
           l.tipo_pagamento !== 'compensacao' &&
           l.tipo_pagamento !== 'dinheiro' &&
