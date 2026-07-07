@@ -357,15 +357,18 @@ export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { m
       .eq('status', 'pendente')
       .order('data_vencimento');
 
-    // Separar: lançamentos com vencimento hoje ou antes = pendentes normais
-    //           lançamentos com vencimento futuro = parcelas futuras (bloco separado)
+    // Separar: lançamentos com vencimento até fim do mês atual = pendentes normais
+    //           lançamentos com vencimento a partir do mês seguinte = informativo
     const hojeDt = new Date();
-    const hojeStr = hojeDt.getFullYear() + '-' + String(hojeDt.getMonth()+1).padStart(2,'0') + '-' + String(hojeDt.getDate()).padStart(2,'0');
+    // Primeiro dia do mês seguinte — tudo antes disso é PENDENTE, a partir disso é INFORMATIVO
+    const primeiroMesSeguinte = new Date(hojeDt.getFullYear(), hojeDt.getMonth() + 1, 1);
+    const corteStr = primeiroMesSeguinte.toISOString().split('T')[0]; // ex: '2026-08-01'
+
     const parcFuturasInd = (lancsData || []).filter(l =>
-      l.categorias_financeiras?.tipo === 'receita' && l.data_vencimento > hojeStr
+      l.categorias_financeiras?.tipo === 'receita' && l.data_vencimento >= corteStr
     );
-    // Remover parcelas futuras do lancsData para não aparecerem no bloco Despesa
-    const lancsDataFiltrado = (lancsData || []).filter(l => l.data_vencimento <= hojeStr);
+    // Pendentes reais: vencimento antes do mês seguinte (inclui todo o mês atual)
+    const lancsDataFiltrado = (lancsData || []).filter(l => l.data_vencimento < corteStr);
 
     if (lancsError) throw lancsError;
 
