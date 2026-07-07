@@ -17,7 +17,7 @@ const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
 const anoAtual = new Date().getFullYear();
 const ANOS = Array.from({length:5}, (_,i) => anoAtual - i);
 
-export default function ModalEdicaoLote({ aberto, onFechar, categorias, verificarMesBloqueado, onAtualizar, canEditFinancial }) {
+export default function ModalEdicaoLote({ aberto, onFechar, categorias, verificarMesBloqueado, onAtualizar }) {
   // ── Filtros ───────────────────────────────────────────────────────────────
   const [filtroMes,      setFiltroMes]      = useState(new Date().getMonth() + 1);
   const [filtroAno,      setFiltroAno]      = useState(anoAtual);
@@ -68,23 +68,49 @@ export default function ModalEdicaoLote({ aberto, onFechar, categorias, verifica
       const ultimoDia  = new Date(filtroAno, filtroMes, 0).getDate();
       const dataFim    = `${filtroAno}-${String(filtroMes).padStart(2,'0')}-${String(ultimoDia).padStart(2,'0')}`;
 
-      let q = supabase.from('lancamentos_loja')
+      // Busca 1: por data_vencimento
+      let q1 = supabase.from('lancamentos_loja')
         .select('id, tipo, descricao, valor, status, data_vencimento, data_lancamento, data_pagamento, tipo_pagamento, categoria_id, origem_tipo, origem_irmao_id, eh_transferencia_interna, eh_pagamento_parcial, categorias_financeiras(nome, tipo), irmaos(nome)')
         .gte('data_vencimento', dataInicio)
         .lte('data_vencimento', dataFim)
         .order('data_vencimento', { ascending: true })
         .limit(500);
 
-      if (filtroTipo)      q = q.eq('tipo', filtroTipo);
-      if (filtroStatus)    q = q.eq('status', filtroStatus);
-      if (filtroOrigem)    q = q.eq('origem_tipo', filtroOrigem);
-      if (filtroCategoria) q = q.eq('categoria_id', filtroCategoria);
-      if (filtroDescricao) q = q.ilike('descricao', `%${filtroDescricao}%`);
+      if (filtroTipo)      q1 = q1.eq('tipo', filtroTipo);
+      if (filtroStatus)    q1 = q1.eq('status', filtroStatus);
+      if (filtroOrigem)    q1 = q1.eq('origem_tipo', filtroOrigem);
+      if (filtroCategoria) q1 = q1.eq('categoria_id', parseInt(filtroCategoria));
+      if (filtroDescricao) q1 = q1.ilike('descricao', `%${filtroDescricao}%`);
 
-      const { data, error } = await q;
-      if (error) throw error;
-      setResultados(data || []);
+      // Busca 2: por data_lancamento (fallback para lançamentos sem data_vencimento no mês)
+      let q2 = supabase.from('lancamentos_loja')
+        .select('id, tipo, descricao, valor, status, data_vencimento, data_lancamento, data_pagamento, tipo_pagamento, categoria_id, origem_tipo, origem_irmao_id, eh_transferencia_interna, eh_pagamento_parcial, categorias_financeiras(nome, tipo), irmaos(nome)')
+        .gte('data_lancamento', dataInicio)
+        .lte('data_lancamento', dataFim)
+        .order('data_lancamento', { ascending: true })
+        .limit(500);
+
+      if (filtroTipo)      q2 = q2.eq('tipo', filtroTipo);
+      if (filtroStatus)    q2 = q2.eq('status', filtroStatus);
+      if (filtroOrigem)    q2 = q2.eq('origem_tipo', filtroOrigem);
+      if (filtroCategoria) q2 = q2.eq('categoria_id', parseInt(filtroCategoria));
+      if (filtroDescricao) q2 = q2.ilike('descricao', `%${filtroDescricao}%`);
+
+      const [res1, res2] = await Promise.all([q1, q2]);
+      if (res1.error) throw res1.error;
+      if (res2.error) throw res2.error;
+
+      // Unir resultados removendo duplicatas por id
+      const map = new Map();
+      [...(res1.data||[]), ...(res2.data||[])].forEach(r => map.set(r.id, r));
+      const todos = [...map.values()].sort((a,b) => (a.data_vencimento||a.data_lancamento||'').localeCompare(b.data_vencimento||b.data_lancamento||''));
+
+      setResultados(todos);
       setBuscaFeita(true);
+      if (todos.length === 0) {
+        setMsg(`Nenhum registro encontrado em ${MESES[filtroMes-1]}/${filtroAno} com os filtros aplicados.`);
+        setMsgTipo('aviso');
+      }
     } catch(e) {
       setMsg('Erro ao buscar: ' + e.message); setMsgTipo('erro');
     } finally { setBuscando(false); }
