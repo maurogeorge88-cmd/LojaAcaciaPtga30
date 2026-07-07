@@ -30,7 +30,8 @@ export default function ModalLancamento({
   const SITUACOES_ATIVAS = ['regular', 'licenciado'];
   const irmaosAtivos   = irmaos; // já filtrados pelo FinancasLoja
   const irmaosInativos = todosIrmaos.filter(
-    i => !SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase())
+    i => !SITUACOES_ATIVAS.includes((i.situacao || '').toLowerCase()) &&
+         (i.situacao || '').toLowerCase() !== 'falecido'
   ).sort((a, b) => a.nome.localeCompare(b.nome));
 
   // Filtrar categorias pelo tipo
