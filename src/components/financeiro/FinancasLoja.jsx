@@ -16,6 +16,7 @@ import ArcoReal from './ArcoReal';
 import ModalRenegociacao from './ModalRenegociacao';
 import {
   gerarRelatorioMovimentacao,
+  gerarRelatorioMovimentacaoPorMes,
   gerarRelatorioIndividual,
   gerarRelatorioDeTodos
 } from './utils/pdfFinancas';
@@ -1849,6 +1850,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const gerarRelatorioMovimentacaoWrapper = async () => {
     setModalMovAberto(false);
     await gerarRelatorioMovimentacao({ movForm, irmaos, supabase, showSuccess, showError });
+  };
+
+  const gerarRelatorioMovimentacaoPorMesWrapper = async () => {
+    setModalMovAberto(false);
+    await gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supabase, showSuccess, showError });
   };
 
   const gerarRelatorioIndividualWrapper = async (irmaoId, comPresenca = false) => {
@@ -4099,6 +4105,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <button onClick={gerarRelatorioMovimentacaoWrapper}
                 style={{flex:2,padding:'0.6rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
                 📂 Gerar Relatório
+              </button>
+              <button onClick={gerarRelatorioMovimentacaoPorMesWrapper}
+                style={{flex:2,padding:'0.6rem',background:'#7c3aed',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
+                📅 Por Mês
               </button>
             </div>
           </div>
