@@ -650,7 +650,7 @@ export async function gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supaba
   }
 }
 
-(irmaoId, comPresenca = false, { meses, supabase, showSuccess, showError }) {
+export async function gerarRelatorioIndividual(irmaoId, comPresenca = false, { meses, supabase, showSuccess, showError }) {
   try {
     showSuccess('Gerando relatório individual...');
     
