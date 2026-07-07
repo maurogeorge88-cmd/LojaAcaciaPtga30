@@ -4001,7 +4001,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         categorias={categorias}
         verificarMesBloqueado={verificarMesBloqueado}
         onAtualizar={recarregarDados}
-        canEditFinancial={canEditFinancial}
       />
 
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
