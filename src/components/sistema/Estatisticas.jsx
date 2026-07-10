@@ -378,7 +378,11 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                 <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
                 <YAxis domain={[0,100]} tick={{fontSize:11,fill:'var(--color-text)'}} unit="%"/>
-                <Tooltip formatter={(v)=>[fmtP(v),'Presença']}/>
+                <Tooltip
+                    contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
+                    labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
+                    itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
+                    formatter={(v)=>[fmtP(v),'Presença']}/>
                 <Line type="monotone" dataKey="taxa" stroke={AZUL} strokeWidth={2} dot={{r:4,fill:AZUL}} activeDot={{r:6}}/>
               </LineChart>
             </ResponsiveContainer>
@@ -395,7 +399,11 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                   <XAxis type="number" domain={[0,100]} unit="%" tick={{fontSize:10}}/>
                   <YAxis type="category" dataKey="grau" tick={{fontSize:11,fill:'var(--color-text)'}} width={90}/>
-                  <Tooltip formatter={(v)=>[fmtP(v),'Presença']}/>
+                  <Tooltip
+                    contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
+                    labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
+                    itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
+                    formatter={(v)=>[fmtP(v),'Presença']}/>
                   <Bar dataKey="taxa" fill={AZUL} radius={[0,4,4,0]}/>
                 </BarChart>
               </ResponsiveContainer>
@@ -444,7 +452,11 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                 <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
                 <YAxis tick={{fontSize:10,fill:'var(--color-text)'}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
-                <Tooltip formatter={(v,n)=>[fmtR(v),n==='receita'?'Receita':'Despesa']}/>
+                <Tooltip
+                    contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
+                    labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
+                    itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
+                    formatter={(v,n)=>[fmtR(v),n==='receita'?'Receita':'Despesa']}/>
                 <Legend/>
                 <Bar dataKey="receita" fill={VERDE}    name="Receita"  radius={[4,4,0,0]}/>
                 <Bar dataKey="despesa" fill={VERMELHO} name="Despesa"  radius={[4,4,0,0]}/>
@@ -463,7 +475,11 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                   <XAxis dataKey="mes" tick={{fontSize:10}}/>
                   <YAxis tick={{fontSize:10}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
-                  <Tooltip formatter={(v)=>[fmtR(v),'Saldo']}/>
+                  <Tooltip
+                    contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
+                    labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
+                    itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
+                    formatter={(v)=>[fmtR(v),'Saldo']}/>
                   <Line type="monotone" dataKey="saldo" stroke={DOURADO} strokeWidth={2} dot={false}/>
                 </LineChart>
               </ResponsiveContainer>
@@ -474,12 +490,17 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           <div>
             <p style={{fontWeight:700,fontSize:'0.82rem',color:AZUL,marginBottom:'0.75rem'}}>Receita por Categoria</p>
             {isComp && stats.graficoRecCat.length>0 ? (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={stats.graficoRecCat} layout="vertical">
+              <ResponsiveContainer width="100%" height={Math.max(200, stats.graficoRecCat.length * 36)}>
+                <BarChart data={stats.graficoRecCat} layout="vertical" margin={{left:0,right:16,top:4,bottom:4}}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                  <XAxis type="number" tick={{fontSize:9}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
-                  <YAxis type="category" dataKey="nome" tick={{fontSize:9,fill:'var(--color-text)'}} width={120}/>
-                  <Tooltip formatter={(v)=>[fmtR(v),'Valor']}/>
+                  <XAxis type="number" tick={{fontSize:9,fill:'var(--color-text)'}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
+                  <YAxis type="category" dataKey="nome" tick={{fontSize:9,fill:'var(--color-text)'}} width={140} tickLine={false}/>
+                  <Tooltip
+                    contentStyle={{background:'var(--color-surface)',border:'1px solid var(--color-border)',borderRadius:'8px'}}
+                    labelStyle={{color:'var(--color-text)',fontWeight:700,fontSize:'0.8rem'}}
+                    itemStyle={{color:'var(--color-text)',fontSize:'0.8rem'}}
+                    formatter={(v)=>[fmtR(v),'Valor']}
+                  />
                   <Bar dataKey="valor" radius={[0,4,4,0]}>
                     {stats.graficoRecCat.map((_,i)=><Cell key={i} fill={CORES[i%CORES.length]}/>)}
                   </Bar>
