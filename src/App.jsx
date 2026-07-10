@@ -1756,6 +1756,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   <span className="text-base">📧</span>
                   {menuAberto && <span className="font-semibold">Central E-Mail</span>}
                 </button>
+                <button
+                  onClick={() => setCurrentPage('estatisticas')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'estatisticas'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Estatisticas"
+                >
+                  <span className="text-base">📊</span>
+                  {menuAberto && <span className="font-semibold">Estatísticas</span>}
+                </button>
+
 
                 <button
                   onClick={() => setCurrentPage('aniversariantes')}
@@ -2318,6 +2331,19 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
                   <span className="text-base">📧</span>
                   {menuAberto && <span className="font-semibold">Central E-Mail</span>}
                 </button>
+                <button
+                  onClick={() => setCurrentPage('estatisticas')}
+                  className={`w-full px-4 py-2 flex items-center gap-2 transition text-sm ${
+                    currentPage === 'estatisticas'
+                      ? 'bg-primary-700 border-l-4 border-white'
+                      : 'hover:bg-primary-800'
+                  }`}
+                  title="Estatisticas"
+                >
+                  <span className="text-base">📊</span>
+                  {menuAberto && <span className="font-semibold">Estatísticas</span>}
+                </button>
+
 
                 <button
                   onClick={() => setCurrentPage('aniversariantes')}
@@ -3149,10 +3175,6 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* SOBRE O SISTEMA */}
         {currentPage === 'sobre' && (
           <Sobre />
-        )}
-
-        {currentPage === 'estatisticas' && (
-          <Estatisticas grauUsuario={grauUsuarioLogado} permissoes={permissoes} />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
