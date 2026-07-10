@@ -86,6 +86,11 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
   const carregarDados = async () => {
     setLoading(true);
+    // Limpar estados antes de buscar novo ano
+    setSessoes([]);
+    setPresencas([]);
+    setLancamentos([]);
+    setCaridade([]);
     try {
       const [
         {data: irmaosD},
@@ -106,20 +111,36 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       ]);
 
       setIrmaos(irmaosD||[]);
-      setSessoes(sessoesD||[]);
-      setLancamentos(lancD||[]);
       setCategorias(catD||[]);
       setComissoes(comissoesD||[]);
-      setCaridade(caridadeD||[]);
       setCandidatos(candidatosD||[]);
+      setLancamentos(lancD||[]);
+      setCaridade(caridadeD||[]);
 
-      // Presença: buscar registros das sessões do ano
-      const ids = (sessoesD||[]).map(s=>s.id);
+      const sessoesAno = sessoesD||[];
+      setSessoes(sessoesAno);
+
+      // Buscar presenças das sessões do ano ANTES de liberar o loading
+      const ids = sessoesAno.map(s=>s.id);
       if (ids.length > 0) {
-        const {data: presD} = await supabase.from('registros_presenca')
-          .select('sessao_id,membro_id,presente,justificativa').in('sessao_id',ids);
-        setPresencas(presD||[]);
-      } else setPresencas([]);
+        // Paginar presencas para não perder dados em anos com muitas sessões
+        let todasPresencas = [];
+        let from = 0;
+        const pageSize = 1000;
+        while (true) {
+          const {data: presD} = await supabase
+            .from('registros_presenca')
+            .select('sessao_id,membro_id,presente,justificativa')
+            .in('sessao_id', ids)
+            .range(from, from + pageSize - 1);
+          todasPresencas = todasPresencas.concat(presD||[]);
+          if (!presD || presD.length < pageSize) break;
+          from += pageSize;
+        }
+        setPresencas(todasPresencas);
+      } else {
+        setPresencas([]);
+      }
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
   };
@@ -247,7 +268,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
       irmaosEmComissao,percComissao,caridade:(caridade||[]).length,
       candAtivos,candAprovados,
     };
-  }, [irmaos,sessoes,presencas,lancamentos,categorias,comissoes,caridade,candidatos,anoSel]);
+  }, [irmaos,sessoes,presencas,lancamentos,categorias,comissoes,caridade,candidatos,anoSel,loading]);
 
   const sBtn = (ativo) => ({
     padding:'0.35rem 0.9rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',
