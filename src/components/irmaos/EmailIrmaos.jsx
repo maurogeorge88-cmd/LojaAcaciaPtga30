@@ -7,6 +7,7 @@ const TIPOS = [
   { id: 'aniversariantes',     label: 'Aniversariantes',     emoji: '🎂', desc: 'Lista semanal enviada ao Venerável e Chanceler' },
   { id: 'lembrete_financeiro', label: 'Lembrete Financeiro', emoji: '⚠️', desc: 'Apenas irmãos com saldo devedor' },
   { id: 'cronograma_mes',      label: 'Cronograma do Mês',   emoji: '📅', desc: 'Eventos do mês selecionado enviados aos irmãos' },
+  { id: 'boletim_mensal',      label: 'Boletim Mensal',      emoji: '📊', desc: 'Indicadores gerais da Loja: quadro, presença, financeiro e próximos eventos' },
 ];
 
 const FREQ = [
@@ -187,6 +188,20 @@ export default function EmailIrmaos({ showSuccess, showError, permissoes }) {
     setEnviando(true);
     setResultados([]);
     try {
+      // Boletim mensal usa edge function própria
+      if (tipoSelec === 'boletim_mensal') {
+        const { data: json, error: fnError } = await supabase.functions.invoke('enviar-boletim-mensal', {
+          body: { acao: 'boletim_mensal', mes_ref: mesCronograma || '', irmaos_ids: irmaosSelec.length > 0 ? irmaosSelec : undefined },
+        });
+        if (fnError) throw fnError;
+        if (!json?.ok) throw new Error(json?.erro || 'Erro desconhecido');
+        setResultados(json.resultados || []);
+        const enviados = (json.resultados || []).filter((r: any) => r.status === 'enviado').length;
+        showSuccess(`✅ Boletim enviado para ${enviados} irmão(s)!`);
+        carregarLogs();
+        return;
+      }
+
       const { data: json, error: fnError } = await supabase.functions.invoke('enviar-email-irmao', {
         body: {
           acao: tipoSelec,
