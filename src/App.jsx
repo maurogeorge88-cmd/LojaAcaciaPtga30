@@ -33,6 +33,7 @@ import CategoriasFinanceiras from './components/financeiro/CategoriasFinanceiras
 import EventosComemorativos from './components/financeiro/EventosComemorativos';
 import VisualizarAltosGraus from './components/vida-maconica/VisualizarAltosGraus';
 import GerenciarGraus from './components/vida-maconica/GerenciarGraus';
+import Estatisticas from './components/sistema/Estatisticas';
 import PrimeiroAcesso from './components/PrimeiroAcesso';
 import MeuCadastroWrapper from './components/MeuCadastroWrapper';
 import MinhasFinancas from './components/MinhasFinancas';
@@ -3148,6 +3149,10 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {/* SOBRE O SISTEMA */}
         {currentPage === 'sobre' && (
           <Sobre />
+        )}
+
+        {currentPage === 'estatisticas' && (
+          <Estatisticas grauUsuario={grauUsuarioLogado} permissoes={permissoes} />
         )}
         </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
