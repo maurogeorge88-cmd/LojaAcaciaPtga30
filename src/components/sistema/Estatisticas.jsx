@@ -17,7 +17,6 @@ const fmtR = (v) => 'R$ ' + Number(v||0).toLocaleString('pt-BR', {minimumFractio
 const fmtP = (v) => Number(v||0).toFixed(1) + '%';
 const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 const anoAtual = new Date().getFullYear();
-const ANOS = Array.from({length:5},(_,i)=>anoAtual-i);
 
 // ── Card de indicador ────────────────────────────────────────────────────────
 const Card = ({label, valor, sub, cor='var(--color-accent)', icon}) => (
@@ -51,6 +50,7 @@ const GraficoVazio = () => (
 
 export default function Estatisticas({ grauUsuario, permissoes }) {
   const [anoSel, setAnoSel]   = useState(anoAtual);
+  const [anosDisp, setAnosDisp] = useState([anoAtual]);
   const [loading, setLoading] = useState(true);
 
   // ── Estados de dados ─────────────────────────────────────────────────────
@@ -65,6 +65,22 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
   const isMestre = !grauUsuario || ['mestre','mestre instalado','admin'].includes((grauUsuario||'').toLowerCase());
   const isComp   = isMestre || (grauUsuario||'').toLowerCase() === 'companheiro';
+
+  // Buscar anos disponíveis nos dados (só uma vez)
+  useEffect(() => {
+    const buscarAnos = async () => {
+      const [{ data: lanc }, { data: sess }] = await Promise.all([
+        supabase.from('lancamentos_loja').select('data_pagamento').not('data_pagamento','is',null).limit(1000),
+        supabase.from('sessoes_presenca').select('data_sessao').not('data_sessao','is',null).limit(1000),
+      ]);
+      const anos = new Set();
+      (lanc||[]).forEach(l => { if(l.data_pagamento) anos.add(parseInt(l.data_pagamento.substring(0,4))); });
+      (sess||[]).forEach(s => { if(s.data_sessao) anos.add(parseInt(s.data_sessao.substring(0,4))); });
+      const lista = [...anos].filter(a=>a>=2020).sort((a,b)=>b-a);
+      if (lista.length > 0) { setAnosDisp(lista); setAnoSel(lista[0]); }
+    };
+    buscarAnos();
+  }, []);
 
   useEffect(() => { carregarDados(); }, [anoSel]);
 
@@ -208,7 +224,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
         recCat[nome] = (recCat[nome]||0) + parseFloat(l.valor||0);
       }
     });
-    const graficoRecCat = Object.entries(recCat).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([n,v])=>({nome:n.length>20?n.substring(0,18)+'…':n,valor:Math.round(v*100)/100}));
+    const graficoRecCat = Object.entries(recCat).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([n,v])=>({nome:n.length>22?n.substring(0,20)+'…':n,valor:Math.round(v*100)/100}));
 
     // Inadimplência
     const inadimpMes = presencaMensal.map((m,i)=>({mes:m.mes,taxa:0}));
@@ -255,9 +271,13 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           <h2 style={{margin:0,fontWeight:800,fontSize:'1.3rem',color:AZUL}}>📊 Estatísticas e Indicadores</h2>
           <p style={{margin:'0.2rem 0 0',fontSize:'0.8rem',color:'var(--color-text-muted)'}}>Visão consolidada da Loja — dados em tempo real</p>
         </div>
-        <div style={{display:'flex',gap:'0.4rem',alignItems:'center'}}>
+        <div style={{display:'flex',gap:'0.5rem',alignItems:'center'}}>
           <span style={{fontSize:'0.75rem',color:'var(--color-text-muted)',fontWeight:600}}>Ano:</span>
-          {ANOS.map(a=><button key={a} onClick={()=>setAnoSel(a)} style={sBtn(anoSel===a)}>{a}</button>)}
+          <select value={anoSel} onChange={e=>setAnoSel(Number(e.target.value))}
+            style={{padding:'0.35rem 0.75rem',borderRadius:'var(--radius-md)',border:'1px solid var(--color-border)',
+              background:'var(--color-surface-2)',color:'var(--color-text)',fontSize:'0.85rem',fontWeight:600,cursor:'pointer'}}>
+            {anosDisp.map(a=><option key={a} value={a}>{a}</option>)}
+          </select>
         </div>
       </div>
 
@@ -305,7 +325,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                     {name:'Aprendiz',value:stats.porGrau.Aprendiz},
                     {name:'Companheiro',value:stats.porGrau.Companheiro},
                     {name:'Mestre',value:stats.porGrau.Mestre},
-                  ].filter(d=>d.value>0)} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({name,value})=>`${name}: ${value}`} labelLine={false}>
+                  ].filter(d=>d.value>0)} cx="45%" cy="50%" outerRadius={65} dataKey="value" label={({name,value,percent})=>`${name}: ${value}`} labelLine={true}>
                     {[DOURADO,AZUL,VERDE].map((c,i)=><Cell key={i} fill={c}/>)}
                   </Pie>
                   <Tooltip/>
@@ -335,8 +355,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={stats.presencaMensal}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text-muted)'}}/>
-                <YAxis domain={[0,100]} tick={{fontSize:11,fill:'var(--color-text-muted)'}} unit="%"/>
+                <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
+                <YAxis domain={[0,100]} tick={{fontSize:11,fill:'var(--color-text)'}} unit="%"/>
                 <Tooltip formatter={(v)=>[fmtP(v),'Presença']}/>
                 <Line type="monotone" dataKey="taxa" stroke={AZUL} strokeWidth={2} dot={{r:4,fill:AZUL}} activeDot={{r:6}}/>
               </LineChart>
@@ -353,7 +373,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <BarChart data={stats.graficoGrau} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                   <XAxis type="number" domain={[0,100]} unit="%" tick={{fontSize:10}}/>
-                  <YAxis type="category" dataKey="grau" tick={{fontSize:11,fill:'var(--color-text-muted)'}} width={80}/>
+                  <YAxis type="category" dataKey="grau" tick={{fontSize:11,fill:'var(--color-text)'}} width={90}/>
                   <Tooltip formatter={(v)=>[fmtP(v),'Presença']}/>
                   <Bar dataKey="taxa" fill={AZUL} radius={[0,4,4,0]}/>
                 </BarChart>
@@ -401,8 +421,8 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={stats.finMensal}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
-                <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text-muted)'}}/>
-                <YAxis tick={{fontSize:10,fill:'var(--color-text-muted)'}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
+                <XAxis dataKey="mes" tick={{fontSize:11,fill:'var(--color-text)'}}/>
+                <YAxis tick={{fontSize:10,fill:'var(--color-text)'}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
                 <Tooltip formatter={(v,n)=>[fmtR(v),n==='receita'?'Receita':'Despesa']}/>
                 <Legend/>
                 <Bar dataKey="receita" fill={VERDE}    name="Receita"  radius={[4,4,0,0]}/>
@@ -437,7 +457,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
                 <BarChart data={stats.graficoRecCat} layout="vertical">
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)"/>
                   <XAxis type="number" tick={{fontSize:9}} tickFormatter={v=>`R$${(v/1000).toFixed(0)}k`}/>
-                  <YAxis type="category" dataKey="nome" tick={{fontSize:9,fill:'var(--color-text-muted)'}} width={100}/>
+                  <YAxis type="category" dataKey="nome" tick={{fontSize:9,fill:'var(--color-text)'}} width={120}/>
                   <Tooltip formatter={(v)=>[fmtR(v),'Valor']}/>
                   <Bar dataKey="valor" radius={[0,4,4,0]}>
                     {stats.graficoRecCat.map((_,i)=><Cell key={i} fill={CORES[i%CORES.length]}/>)}
