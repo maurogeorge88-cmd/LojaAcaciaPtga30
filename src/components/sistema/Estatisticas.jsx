@@ -173,7 +173,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
     const totalAtivos = ativos.length;
     const presencaMensal = Array.from({length:12},(_,m)=>({mes:MESES_ABR[m],sessoes:0,presentes:0,taxa:0}));
     sessoes.forEach(s=>{
-      const mes = new Date(s.data_sessao+'T00:00:00').getMonth();
+      const mes = parseInt(s.data_sessao.substring(5, 7)) - 1; // 0=Jan, 11=Dez
       const regs = presencas.filter(p=>p.sessao_id===s.id);
       const pres = regs.filter(p=>p.presente).length;
       presencaMensal[mes].sessoes++;
@@ -220,7 +220,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
 
     lancamentos.forEach(l=>{
       if (!l.data_pagamento) return;
-      const mes = new Date(l.data_pagamento+'T00:00:00').getMonth();
+      const mes = parseInt(l.data_pagamento.substring(5, 7)) - 1; // 0=Jan, 11=Dez
       const cat = catMap[l.categoria_id];
       const valor = parseFloat(l.valor||0);
       if (cat?.tipo==='receita' && l.tipo_pagamento!=='compensacao' && !l.eh_transferencia_interna) {
@@ -440,7 +440,7 @@ export default function Estatisticas({ grauUsuario, permissoes }) {
           <Card label={`Receitas ${anoSel}`}  valor={fmtR(stats.totalReceita)} sub="Entradas pagas"           cor={VERDE}    icon="📈"/>
           <Card label={`Despesas ${anoSel}`}  valor={fmtR(stats.totalDespesa)} sub="Saídas pagas"             cor={VERMELHO} icon="📉"/>
           <Card label="Resultado"         valor={fmtR(stats.totalReceita-stats.totalDespesa)} sub={stats.totalReceita>=stats.totalDespesa?'Superávit':'Déficit'} cor={stats.totalReceita>=stats.totalDespesa?VERDE:VERMELHO} icon="⚖️"/>
-          <Card label="Melhor Mês (Rec.)" valor={stats.finMensal.sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor={AZUL} icon="🏆"/>
+          <Card label="Melhor Mês (Rec.)" valor={[...stats.finMensal].sort((a,b)=>b.receita-a.receita)[0]?.mes||'—'} sub={fmtR(Math.max(...stats.finMensal.map(m=>m.receita)))} cor={AZUL} icon="🏆"/>
         </div>
 
         {/* Receita vs Despesa mensal */}
