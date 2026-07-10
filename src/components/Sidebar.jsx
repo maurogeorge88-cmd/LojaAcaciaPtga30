@@ -110,6 +110,7 @@ export const Sidebar = ({ currentPage, setCurrentPage, permissoes, onLogout }) =
         <MenuItem page="projetos" icon="📊" label="Projetos" />
         <MenuItem page="comissoes" icon="📋" label="Comissões" />
         <MenuItem page="biblioteca" icon="📚" label="Biblioteca" />
+        <MenuItem page="estatisticas" icon="📊" label="Estatísticas" />
         
         {/* Menu Dropdown - Gestão do Sistema */}
         <MenuDropdown 
