@@ -3180,6 +3180,7 @@ ${filho.falecido ? `<div class="info-item"><span class="info-label">Status:</spa
         {currentPage === 'estatisticas' && (
           <Estatisticas grauUsuario={grauUsuarioLogado} permissoes={permissoes} />
         )}
+        </div> {/* Fecha div do conteúdo (px-8 py-6) */}
       </main>
 
       {/* MODAL PERFIL COMPLETO DO IRMÃO */}
