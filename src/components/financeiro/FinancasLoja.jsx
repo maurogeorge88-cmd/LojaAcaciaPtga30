@@ -151,7 +151,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     data_vencimento: new Date().toISOString().split('T')[0],
     tipo_pagamento: 'dinheiro',
     irmaos_selecionados: [],
-    eh_mensalidade: false  // NOVO: indica se é mensalidade
+    eh_mensalidade: false,
+    evento_comemorativo_id: '',
+    projeto_id: ''
   });
 
   // Para quitação individual
@@ -376,13 +378,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const carregarEventosComemorativos = async () => {
-    const { data } = await supabase.from('eventos_comemorativos_fin').select('id, nome, ano, status').order('ano', { ascending: false }).order('nome');
+    const { data } = await supabase
+      .from('eventos_comemorativos_fin')
+      .select('id, nome, ano, status')
+      .in('status', ['ativo', 'em_andamento', 'aberto'])
+      .order('ano', { ascending: false })
+      .order('nome');
     setEventosComemorativos(data || []);
 
     const { data: projData } = await supabase
       .from('projetos')
       .select('id, nome, status')
-      .eq('status', 'em_andamento')
+      .in('status', ['ativo', 'em_andamento'])
       .order('nome');
     setProjetosAtivos(projData || []);
   };
@@ -635,13 +642,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     // Renovar sessão para evitar JWT expired
     await supabase.auth.refreshSession();
 
-    // Verificar se o mês está fechado
+    // Verificar se o mês está fechado — bloqueia apenas lançamentos não-pendentes
     const dataRef = dados.data_pagamento || dados.data_lancamento || dados.data_vencimento;
-    if (dataRef && verificarMesBloqueado(dataRef)) {
+    if (dataRef && verificarMesBloqueado(dataRef) && dados.status !== 'pendente') {
       const data = new Date(dataRef + 'T00:00:00');
       const nomeMes = meses[data.getMonth()];
       const ano = data.getFullYear();
-      showError(`🔒 ${nomeMes}/${ano} está fechado. Reabra o mês para lançar.`);
+      showError(`🔒 ${nomeMes}/${ano} está fechado. Apenas lançamentos pendentes podem ser alterados.`);
       return;
     }
 
@@ -833,14 +840,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         return {
           tipo: 'receita',
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
-          descricao: lancamentoIrmaos.descricao, // ← REMOVER nome do irmão da descrição
+          descricao: lancamentoIrmaos.descricao,
           valor: parseFloat(lancamentoIrmaos.valor),
           data_lancamento: lancamentoIrmaos.data_lancamento,
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
           status: 'pendente',
-          origem_tipo: 'Irmao', 
-          origem_irmao_id: irmaoId 
+          origem_tipo: 'Irmao',
+          origem_irmao_id: irmaoId,
+          evento_comemorativo_id: lancamentoIrmaos.evento_comemorativo_id ? parseInt(lancamentoIrmaos.evento_comemorativo_id) : null,
+          projeto_id: lancamentoIrmaos.projeto_id ? parseInt(lancamentoIrmaos.projeto_id) : null
         };
       });
 
@@ -925,13 +934,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     console.log('editarLancamento chamado:', lancamento.id, 'origem_irmao_id:', lancamento.origem_irmao_id);
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     const bloqueado = dataRef && verificarMesBloqueado(dataRef);
-    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado);
+    const ehPendente = lancamento.status === 'pendente';
+    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado, 'pendente:', ehPendente);
     // Verificar se irmão é inativo — se sim, ignorar bloqueio de mês para permitir gestão da dívida
     const irmaoInativo = lancamento.origem_irmao_id &&
       !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id));
-    if (bloqueado && !irmaoInativo) {
+    // Bloquear apenas se mês fechado E lançamento não é pendente
+    if (bloqueado && !irmaoInativo && !ehPendente) {
       const data = new Date(dataRef + 'T00:00:00');
-      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser editados.`);
       return;
     }
     // Se irmão não está na lista ativa (ex: desligado), usa dados já carregados no lançamento
@@ -979,9 +990,10 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const excluirLancamento = async (id) => {
     const lancamento = lancamentos.find(l => l.id === id);
     const dataRef = lancamento?.data_pagamento || lancamento?.data_lancamento || lancamento?.data_vencimento;
-    if (dataRef && verificarMesBloqueado(dataRef)) {
+    const ehPendente = lancamento?.status === 'pendente';
+    if (dataRef && verificarMesBloqueado(dataRef) && !ehPendente) {
       const data = new Date(dataRef + 'T00:00:00');
-      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para excluir.`);
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser excluídos.`);
       return;
     }
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
@@ -1180,7 +1192,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       data_vencimento: new Date().toISOString().split('T')[0],
       tipo_pagamento: 'dinheiro',
       irmaos_selecionados: [],
-      eh_mensalidade: false
+      eh_mensalidade: false,
+      evento_comemorativo_id: '',
+      projeto_id: ''
     });
   };
 
@@ -1530,12 +1544,18 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     const saldoTotal = saldoBancario + caixaFisico;
 
     // CÁLCULO TRONCO DE SOLIDARIEDADE
+    // Lógica idêntica ao troncoTotalGlobal (buscarTroncoTotal):
+    //   receitasBanco   = receita + !dinheiro (inclui depósitos/transferências internas)
+    //   receitasEspecie = receita + dinheiro + !transferência interna
+    //   despesasBanco   = despesa + !dinheiro + !transferência interna
+    //   despesasEspecie = despesa + dinheiro (inclui sangrias — diminuem a espécie)
     const troncoReceitasBanco = lancamentos
       .filter(l =>
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'receita' &&
         l.status === 'pago' &&
         l.tipo_pagamento !== 'dinheiro'
+        // inclui transferências internas (depósitos entram no banco)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1544,7 +1564,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'receita' &&
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro'
+        l.tipo_pagamento === 'dinheiro' &&
+        !l.eh_transferencia_interna  // exclui sangrias de dinheiro
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1563,14 +1584,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'despesa' &&
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro' &&
-        !l.eh_transferencia_interna
+        l.tipo_pagamento === 'dinheiro'
+        // inclui sangrias (diminuem a espécie)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    const troncoBanco   = troncoReceitasBanco - troncoDespesasBanco;
+    const troncoBanco   = troncoReceitasBanco  - troncoDespesasBanco;
     const troncoEspecie = troncoReceitasEspecie - troncoDespesasEspecie;
-    const troncoTotal = troncoBanco + troncoEspecie;
+    const troncoTotal   = troncoBanco + troncoEspecie;
 
     return {
       receitas,            
@@ -1697,55 +1718,55 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const calcularTroncoTotal = async () => {
     try {
+      // 1. Buscar IDs das categorias de tronco primeiro
+      const { data: catsTronco } = await supabase
+        .from('categorias_financeiras')
+        .select('id, nome, tipo')
+        .ilike('nome', '%tronco%');
+
+      if (!catsTronco || catsTronco.length === 0) {
+        setTroncoTotalGlobal({ banco: 0, especie: 0, total: 0 });
+        return;
+      }
+
+      const idsCatTronco = catsTronco.map(c => c.id);
+
+      // 2. Buscar só lançamentos das categorias de tronco, pagos
       const { data, error } = await supabase
         .from('lancamentos_loja')
-        .select('*, categorias_financeiras(tipo, nome)')
+        .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
+        .in('categoria_id', idsCatTronco)
         .eq('status', 'pago');
 
       if (error) throw error;
 
-      // Receitas Banco (já inclui sangrias/depósitos porque são receitas em transferência)
-      const receitasBanco = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento !== 'dinheiro'
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const lista = data || [];
 
-      // Receitas Espécie (não inclui sangrias - só receitas normais em dinheiro)
-      const receitasEspecie = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'receita' &&
-          l.tipo_pagamento === 'dinheiro' &&
-          !l.eh_transferencia_interna
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      // BANCO: receitas não-dinheiro (entradas pix/transferência)
+      //        menos despesas não-dinheiro sem transferência interna (saídas pix)
+      // Nota: despesas em dinheiro NÃO afetam o banco — ficam só na espécie
+      const receitasBanco = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro')
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-      // Despesas Banco
-      const despesasBanco = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento !== 'dinheiro' &&
-          !l.eh_transferencia_interna
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      const despesasBanco = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna)
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-      // Despesas Espécie (INCLUI sangrias em dinheiro - são despesas que diminuem espécie)
-      const despesasEspecie = (data || [])
-        .filter(l =>
-          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
-          l.categorias_financeiras?.tipo === 'despesa' &&
-          l.tipo_pagamento === 'dinheiro'
-          // NÃO excluir transferências internas - sangrias devem diminuir espécie
-        )
-        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
+      // ESPÉCIE: receitas em dinheiro (não transferência interna)
+      //          menos despesas em dinheiro (inclui sangrias — diminuem a espécie)
+      // Nota: receitas/despesas pix NÃO afetam a espécie
+      const receitasEspecie = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna)
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
 
-      const banco = receitasBanco - despesasBanco;
+      const despesasEspecie = lista
+        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro')
+        .reduce((s, l) => s + parseFloat(l.valor), 0);
+
+      const banco   = receitasBanco - despesasBanco;
       const especie = receitasEspecie - despesasEspecie;
-      const total = banco + especie;
+      const total   = banco + especie;
 
       setTroncoTotalGlobal({ banco, especie, total });
 
@@ -1801,63 +1822,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
-  // 💰 RESUMO FINANCEIRO DOS IRMÃOS
+  // 💰 RESUMO FINANCEIRO DOS IRMÃOS — dados carregados pelo próprio modal
   const calcularResumoIrmaos = () => {
-    // Agrupar lançamentos por irmão
-    const resumoPorIrmao = {};
-    
-    irmaos.forEach(irmao => {
-      resumoPorIrmao[irmao.id] = {
-        nomeIrmao: irmao.nome,
-        cim: irmao.cim,
-        totalDespesas: 0,        // Total que o irmão deve (independente de pago)
-        totalReceitas: 0,        // Total que a loja deve ao irmão (independente de pago)
-        despesasPendentes: 0,    // O que o irmão ainda deve (não pago)
-        receitasPendentes: 0,    // O que a loja ainda deve ao irmão (não pago)
-        saldo: 0                 // Resultado final
-      };
-    });
-    
-    // Percorrer TODOS os lançamentos (sem filtro de data)
-    lancamentos.forEach(lanc => {
-      if (lanc.origem_irmao_id && resumoPorIrmao[lanc.origem_irmao_id]) {
-        const valor = parseFloat(lanc.valor) || 0;
-        
-        if (lanc.categorias_financeiras?.tipo === 'despesa') {
-          // DESPESA = Irmão deve para a Loja
-          resumoPorIrmao[lanc.origem_irmao_id].totalDespesas += valor;
-          
-          // Se não está pago, está pendente
-          if (lanc.status === 'pendente') {
-            resumoPorIrmao[lanc.origem_irmao_id].despesasPendentes += valor;
-          }
-          
-        } else if (lanc.categorias_financeiras?.tipo === 'receita') {
-          // RECEITA = Loja deve para o Irmão (crédito do irmão)
-          resumoPorIrmao[lanc.origem_irmao_id].totalReceitas += valor;
-          
-          // Se não está pago, está pendente
-          if (lanc.status === 'pendente') {
-            resumoPorIrmao[lanc.origem_irmao_id].receitasPendentes += valor;
-          }
-        }
-      }
-    });
-    
-    // Calcular saldo final: despesasPendentes - receitasPendentes
-    // Positivo = Irmão deve para a Loja (vermelho)
-    // Zero = Está em dia (verde)
-    // Negativo = Loja deve para o Irmão (azul)
-    Object.values(resumoPorIrmao).forEach(irmao => {
-      irmao.saldo = irmao.despesasPendentes - irmao.receitasPendentes;
-    });
-    
-    // Converter para array e filtrar apenas irmãos com movimentação
-    const resumoArray = Object.values(resumoPorIrmao).filter(
-      irmao => irmao.totalDespesas > 0 || irmao.totalReceitas > 0
-    );
-    
-    setResumoIrmaos(resumoArray);
     setModalResumoAberto(true);
   };
 
@@ -2546,6 +2512,38 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                    🎉 Vincular a Evento (opcional)
+                  </label>
+                  <select
+                    value={lancamentoIrmaos.evento_comemorativo_id}
+                    onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, evento_comemorativo_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                  >
+                    <option value="">— Nenhum —</option>
+                    {eventosComemorativos.map(ev => (
+                      <option key={ev.id} value={ev.id}>{ev.nome} ({ev.ano})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
+                    📁 Vincular a Projeto (opcional)
+                  </label>
+                  <select
+                    value={lancamentoIrmaos.projeto_id}
+                    onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, projeto_id: e.target.value })}
+                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
+                  >
+                    <option value="">— Nenhum —</option>
+                    {projetosAtivos.map(pj => (
+                      <option key={pj.id} value={pj.id}>{pj.nome}</option>
                     ))}
                   </select>
                 </div>
@@ -3491,17 +3489,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         
                         <button
                           onClick={() => editarLancamento(lanc)}
-                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
-                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Editar'}
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
+                          style={{color:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?"not-allowed":"pointer",fontSize:"0.85rem"}}
+                          title={(verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente') ? 'Mês fechado' : 'Editar'}
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
-                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
-                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
-                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Excluir'}
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
+                          style={{color:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?"not-allowed":"pointer",fontSize:"0.85rem"}}
+                          title={(verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente') ? 'Mês fechado' : 'Excluir'}
                         >
                           🗑️
                         </button>
@@ -3953,7 +3951,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       <ModalResumoIrmaos
         isOpen={modalResumoAberto}
         onClose={() => setModalResumoAberto(false)}
-        resumoIrmaos={resumoIrmaos}
       />
 
       {/* Modal Renegociação */}
