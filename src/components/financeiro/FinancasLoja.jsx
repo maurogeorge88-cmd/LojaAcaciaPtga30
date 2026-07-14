@@ -16,7 +16,6 @@ import ArcoReal from './ArcoReal';
 import ModalRenegociacao from './ModalRenegociacao';
 import {
   gerarRelatorioMovimentacao,
-  gerarRelatorioMovimentacaoPorMes,
   gerarRelatorioIndividual,
   gerarRelatorioDeTodos
 } from './utils/pdfFinancas';
@@ -25,7 +24,6 @@ import ModalPagamentoParcial from './ModalPagamentoParcial';
 import ModalCompensacao from './ModalCompensacao';
 import ModalQuitacao from './ModalQuitacao';
 import ModalQuitacaoLote from './ModalQuitacaoLote';
-import ModalEdicaoLote from './components/ModalEdicaoLote';
 
 // 💰 COMPONENTE: Finanças da Loja
 // Gerenciamento financeiro com regime de competência
@@ -39,7 +37,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   // 🕐 FUNÇÃO PARA CORRIGIR TIMEZONE
   const [categorias, setCategorias] = useState([]);
   const [irmaos, setIrmaos] = useState([]);
-  const [todosIrmaosIncInativos, setTodosIrmaosIncInativos] = useState([]);
   const [lancamentos, setLancamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modalLancamentoAberto, setModalLancamentoAberto] = useState(false);
@@ -110,8 +107,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const [menuLancamentosAberto, setMenuLancamentosAberto] = useState(false);
   const [menuRelatoriosAberto, setMenuRelatoriosAberto] = useState(false);
   const [modalMovAberto, setModalMovAberto]     = useState(false);
-  const [mostrarInativosMovForm, setMostrarInativosMovForm] = useState(false);
-  const [modalEdicaoLoteAberto, setModalEdicaoLoteAberto] = useState(false);
   const [modalArcoRealAberto, setModalArcoRealAberto]   = useState(false);
   const [modalRenegocAberto, setModalRenegocAberto]     = useState(false);
   const [inclPresenca, setInclPresenca]     = useState(false); // padrão: sem presença
@@ -156,9 +151,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     data_vencimento: new Date().toISOString().split('T')[0],
     tipo_pagamento: 'dinheiro',
     irmaos_selecionados: [],
-    eh_mensalidade: false,
-    evento_comemorativo_id: '',
-    projeto_id: ''
+    eh_mensalidade: false  // NOVO: indica se é mensalidade
   });
 
   // Para quitação individual
@@ -370,7 +363,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       }
       
       setIrmaos(irmaosDisponiveis);
-      setTodosIrmaosIncInativos(todosIrmaos || []);
 
       await buscarAnosDisponiveis();
       await recarregarDados();
@@ -384,18 +376,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   };
 
   const carregarEventosComemorativos = async () => {
-    const { data } = await supabase
-      .from('eventos_comemorativos_fin')
-      .select('id, nome, ano, status')
-      .in('status', ['ativo', 'em_andamento', 'aberto'])
-      .order('ano', { ascending: false })
-      .order('nome');
+    const { data } = await supabase.from('eventos_comemorativos_fin').select('id, nome, ano, status').order('ano', { ascending: false }).order('nome');
     setEventosComemorativos(data || []);
 
     const { data: projData } = await supabase
       .from('projetos')
       .select('id, nome, status')
-      .in('status', ['ativo', 'em_andamento'])
+      .eq('status', 'em_andamento')
       .order('nome');
     setProjetosAtivos(projData || []);
   };
@@ -648,13 +635,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     // Renovar sessão para evitar JWT expired
     await supabase.auth.refreshSession();
 
-    // Verificar se o mês está fechado — bloqueia apenas lançamentos não-pendentes
+    // Verificar se o mês está fechado
     const dataRef = dados.data_pagamento || dados.data_lancamento || dados.data_vencimento;
-    if (dataRef && verificarMesBloqueado(dataRef) && dados.status !== 'pendente') {
+    if (dataRef && verificarMesBloqueado(dataRef)) {
       const data = new Date(dataRef + 'T00:00:00');
       const nomeMes = meses[data.getMonth()];
       const ano = data.getFullYear();
-      showError(`🔒 ${nomeMes}/${ano} está fechado. Apenas lançamentos pendentes podem ser alterados.`);
+      showError(`🔒 ${nomeMes}/${ano} está fechado. Reabra o mês para lançar.`);
       return;
     }
 
@@ -846,16 +833,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         return {
           tipo: 'receita',
           categoria_id: parseInt(lancamentoIrmaos.categoria_id),
-          descricao: lancamentoIrmaos.descricao,
+          descricao: lancamentoIrmaos.descricao, // ← REMOVER nome do irmão da descrição
           valor: parseFloat(lancamentoIrmaos.valor),
           data_lancamento: lancamentoIrmaos.data_lancamento,
           data_vencimento: lancamentoIrmaos.data_vencimento,
           tipo_pagamento: lancamentoIrmaos.tipo_pagamento,
           status: 'pendente',
-          origem_tipo: 'Irmao',
-          origem_irmao_id: irmaoId,
-          evento_comemorativo_id: lancamentoIrmaos.evento_comemorativo_id ? parseInt(lancamentoIrmaos.evento_comemorativo_id) : null,
-          projeto_id: lancamentoIrmaos.projeto_id ? parseInt(lancamentoIrmaos.projeto_id) : null
+          origem_tipo: 'Irmao', 
+          origem_irmao_id: irmaoId 
         };
       });
 
@@ -940,15 +925,13 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     console.log('editarLancamento chamado:', lancamento.id, 'origem_irmao_id:', lancamento.origem_irmao_id);
     const dataRef = lancamento.data_pagamento || lancamento.data_lancamento || lancamento.data_vencimento;
     const bloqueado = dataRef && verificarMesBloqueado(dataRef);
-    const ehPendente = lancamento.status === 'pendente';
-    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado, 'pendente:', ehPendente);
+    console.log('dataRef:', dataRef, 'bloqueado:', bloqueado);
     // Verificar se irmão é inativo — se sim, ignorar bloqueio de mês para permitir gestão da dívida
     const irmaoInativo = lancamento.origem_irmao_id &&
       !irmaos.find(i => String(i.id) === String(lancamento.origem_irmao_id));
-    // Bloquear apenas se mês fechado E lançamento não é pendente
-    if (bloqueado && !irmaoInativo && !ehPendente) {
+    if (bloqueado && !irmaoInativo) {
       const data = new Date(dataRef + 'T00:00:00');
-      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser editados.`);
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para editar.`);
       return;
     }
     // Se irmão não está na lista ativa (ex: desligado), usa dados já carregados no lançamento
@@ -996,10 +979,9 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const excluirLancamento = async (id) => {
     const lancamento = lancamentos.find(l => l.id === id);
     const dataRef = lancamento?.data_pagamento || lancamento?.data_lancamento || lancamento?.data_vencimento;
-    const ehPendente = lancamento?.status === 'pendente';
-    if (dataRef && verificarMesBloqueado(dataRef) && !ehPendente) {
+    if (dataRef && verificarMesBloqueado(dataRef)) {
       const data = new Date(dataRef + 'T00:00:00');
-      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Apenas lançamentos pendentes podem ser excluídos.`);
+      showError(`🔒 ${meses[data.getMonth()]}/${data.getFullYear()} está fechado. Reabra o mês para excluir.`);
       return;
     }
     if (!window.confirm('Deseja realmente excluir este lançamento?')) return;
@@ -1198,9 +1180,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
       data_vencimento: new Date().toISOString().split('T')[0],
       tipo_pagamento: 'dinheiro',
       irmaos_selecionados: [],
-      eh_mensalidade: false,
-      evento_comemorativo_id: '',
-      projeto_id: ''
+      eh_mensalidade: false
     });
   };
 
@@ -1550,18 +1530,12 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     const saldoTotal = saldoBancario + caixaFisico;
 
     // CÁLCULO TRONCO DE SOLIDARIEDADE
-    // Lógica idêntica ao troncoTotalGlobal (buscarTroncoTotal):
-    //   receitasBanco   = receita + !dinheiro (inclui depósitos/transferências internas)
-    //   receitasEspecie = receita + dinheiro + !transferência interna
-    //   despesasBanco   = despesa + !dinheiro + !transferência interna
-    //   despesasEspecie = despesa + dinheiro (inclui sangrias — diminuem a espécie)
     const troncoReceitasBanco = lancamentos
       .filter(l =>
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'receita' &&
         l.status === 'pago' &&
         l.tipo_pagamento !== 'dinheiro'
-        // inclui transferências internas (depósitos entram no banco)
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1570,8 +1544,7 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'receita' &&
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro' &&
-        !l.eh_transferencia_interna  // exclui sangrias de dinheiro
+        l.tipo_pagamento === 'dinheiro'
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
@@ -1590,14 +1563,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
         l.categorias_financeiras?.tipo === 'despesa' &&
         l.status === 'pago' &&
-        l.tipo_pagamento === 'dinheiro'
-        // inclui sangrias (diminuem a espécie)
+        l.tipo_pagamento === 'dinheiro' &&
+        !l.eh_transferencia_interna
       )
       .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-    const troncoBanco   = troncoReceitasBanco  - troncoDespesasBanco;
+    const troncoBanco   = troncoReceitasBanco - troncoDespesasBanco;
     const troncoEspecie = troncoReceitasEspecie - troncoDespesasEspecie;
-    const troncoTotal   = troncoBanco + troncoEspecie;
+    const troncoTotal = troncoBanco + troncoEspecie;
 
     return {
       receitas,            
@@ -1635,27 +1608,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         dataLimite = `${ano}-01-01`;
       }
 
-      // Buscar em múltiplas páginas para superar o limite de 1000 linhas do Supabase
-      let todosDados = [];
-      let from = 0;
-      const pageSize = 1000;
+      const { data, error } = await supabase
+        .from('lancamentos_loja')
+        .select('*, categorias_financeiras(tipo)')
+        .eq('status', 'pago')
+        .lt('data_pagamento', dataLimite)  
 
-      while (true) {
-        const { data, error } = await supabase
-          .from('lancamentos_loja')
-          .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
-          .eq('status', 'pago')
-          .lt('data_pagamento', dataLimite)
-          .range(from, from + pageSize - 1);
+      if (error) throw error;
 
-        if (error) throw error;
-        todosDados = todosDados.concat(data || []);
-        if (!data || data.length < pageSize) break;
-        from += pageSize;
-      }
-
-      const receitasBancariasAnt = todosDados
-        .filter(l =>
+      const receitasBancariasAnt = (data || [])
+        .filter(l => 
           l.categorias_financeiras?.tipo === 'receita' &&
           l.tipo_pagamento !== 'compensacao' &&
           l.tipo_pagamento !== 'dinheiro' &&
@@ -1663,15 +1625,15 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const depositosAnt = todosDados
-        .filter(l =>
+      const depositosAnt = (data || [])
+        .filter(l => 
           l.categorias_financeiras?.tipo === 'receita' &&
           l.eh_transferencia_interna === true
         )
         .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const despesasAnteriores = todosDados
-        .filter(l =>
+      const despesasAnteriores = (data || [])
+        .filter(l => 
           l.categorias_financeiras?.tipo === 'despesa' &&
           l.tipo_pagamento !== 'compensacao' &&
           l.tipo_pagamento !== 'dinheiro' &&
@@ -1735,55 +1697,55 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
 
   const calcularTroncoTotal = async () => {
     try {
-      // 1. Buscar IDs das categorias de tronco primeiro
-      const { data: catsTronco } = await supabase
-        .from('categorias_financeiras')
-        .select('id, nome, tipo')
-        .ilike('nome', '%tronco%');
-
-      if (!catsTronco || catsTronco.length === 0) {
-        setTroncoTotalGlobal({ banco: 0, especie: 0, total: 0 });
-        return;
-      }
-
-      const idsCatTronco = catsTronco.map(c => c.id);
-
-      // 2. Buscar só lançamentos das categorias de tronco, pagos
       const { data, error } = await supabase
         .from('lancamentos_loja')
-        .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
-        .in('categoria_id', idsCatTronco)
+        .select('*, categorias_financeiras(tipo, nome)')
         .eq('status', 'pago');
 
       if (error) throw error;
 
-      const lista = data || [];
+      // Receitas Banco (já inclui sangrias/depósitos porque são receitas em transferência)
+      const receitasBanco = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento !== 'dinheiro'
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      // BANCO: receitas não-dinheiro (entradas pix/transferência)
-      //        menos despesas não-dinheiro sem transferência interna (saídas pix)
-      // Nota: despesas em dinheiro NÃO afetam o banco — ficam só na espécie
-      const receitasBanco = lista
-        .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro')
-        .reduce((s, l) => s + parseFloat(l.valor), 0);
+      // Receitas Espécie (não inclui sangrias - só receitas normais em dinheiro)
+      const receitasEspecie = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'receita' &&
+          l.tipo_pagamento === 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const despesasBanco = lista
-        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna)
-        .reduce((s, l) => s + parseFloat(l.valor), 0);
+      // Despesas Banco
+      const despesasBanco = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento !== 'dinheiro' &&
+          !l.eh_transferencia_interna
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      // ESPÉCIE: receitas em dinheiro (não transferência interna)
-      //          menos despesas em dinheiro (inclui sangrias — diminuem a espécie)
-      // Nota: receitas/despesas pix NÃO afetam a espécie
-      const receitasEspecie = lista
-        .filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna)
-        .reduce((s, l) => s + parseFloat(l.valor), 0);
+      // Despesas Espécie (INCLUI sangrias em dinheiro - são despesas que diminuem espécie)
+      const despesasEspecie = (data || [])
+        .filter(l =>
+          l.categorias_financeiras?.nome?.toLowerCase().includes('tronco') &&
+          l.categorias_financeiras?.tipo === 'despesa' &&
+          l.tipo_pagamento === 'dinheiro'
+          // NÃO excluir transferências internas - sangrias devem diminuir espécie
+        )
+        .reduce((sum, l) => sum + parseFloat(l.valor), 0);
 
-      const despesasEspecie = lista
-        .filter(l => l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro')
-        .reduce((s, l) => s + parseFloat(l.valor), 0);
-
-      const banco   = receitasBanco - despesasBanco;
+      const banco = receitasBanco - despesasBanco;
       const especie = receitasEspecie - despesasEspecie;
-      const total   = banco + especie;
+      const total = banco + especie;
 
       setTroncoTotalGlobal({ banco, especie, total });
 
@@ -1839,8 +1801,63 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
     }
   };
 
-  // 💰 RESUMO FINANCEIRO DOS IRMÃOS — dados carregados pelo próprio modal
+  // 💰 RESUMO FINANCEIRO DOS IRMÃOS
   const calcularResumoIrmaos = () => {
+    // Agrupar lançamentos por irmão
+    const resumoPorIrmao = {};
+    
+    irmaos.forEach(irmao => {
+      resumoPorIrmao[irmao.id] = {
+        nomeIrmao: irmao.nome,
+        cim: irmao.cim,
+        totalDespesas: 0,        // Total que o irmão deve (independente de pago)
+        totalReceitas: 0,        // Total que a loja deve ao irmão (independente de pago)
+        despesasPendentes: 0,    // O que o irmão ainda deve (não pago)
+        receitasPendentes: 0,    // O que a loja ainda deve ao irmão (não pago)
+        saldo: 0                 // Resultado final
+      };
+    });
+    
+    // Percorrer TODOS os lançamentos (sem filtro de data)
+    lancamentos.forEach(lanc => {
+      if (lanc.origem_irmao_id && resumoPorIrmao[lanc.origem_irmao_id]) {
+        const valor = parseFloat(lanc.valor) || 0;
+        
+        if (lanc.categorias_financeiras?.tipo === 'despesa') {
+          // DESPESA = Irmão deve para a Loja
+          resumoPorIrmao[lanc.origem_irmao_id].totalDespesas += valor;
+          
+          // Se não está pago, está pendente
+          if (lanc.status === 'pendente') {
+            resumoPorIrmao[lanc.origem_irmao_id].despesasPendentes += valor;
+          }
+          
+        } else if (lanc.categorias_financeiras?.tipo === 'receita') {
+          // RECEITA = Loja deve para o Irmão (crédito do irmão)
+          resumoPorIrmao[lanc.origem_irmao_id].totalReceitas += valor;
+          
+          // Se não está pago, está pendente
+          if (lanc.status === 'pendente') {
+            resumoPorIrmao[lanc.origem_irmao_id].receitasPendentes += valor;
+          }
+        }
+      }
+    });
+    
+    // Calcular saldo final: despesasPendentes - receitasPendentes
+    // Positivo = Irmão deve para a Loja (vermelho)
+    // Zero = Está em dia (verde)
+    // Negativo = Loja deve para o Irmão (azul)
+    Object.values(resumoPorIrmao).forEach(irmao => {
+      irmao.saldo = irmao.despesasPendentes - irmao.receitasPendentes;
+    });
+    
+    // Converter para array e filtrar apenas irmãos com movimentação
+    const resumoArray = Object.values(resumoPorIrmao).filter(
+      irmao => irmao.totalDespesas > 0 || irmao.totalReceitas > 0
+    );
+    
+    setResumoIrmaos(resumoArray);
     setModalResumoAberto(true);
   };
 
@@ -1850,11 +1867,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
   const gerarRelatorioMovimentacaoWrapper = async () => {
     setModalMovAberto(false);
     await gerarRelatorioMovimentacao({ movForm, irmaos, supabase, showSuccess, showError });
-  };
-
-  const gerarRelatorioMovimentacaoPorMesWrapper = async () => {
-    setModalMovAberto(false);
-    await gerarRelatorioMovimentacaoPorMes({ movForm, irmaos, supabase, showSuccess, showError });
   };
 
   const gerarRelatorioIndividualWrapper = async (irmaoId, comPresenca = false) => {
@@ -1934,12 +1946,8 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                 🔀 Parcelar
               </button>
               <button onClick={() => { setMostrarModalIrmaos(true); setMenuLancamentosAberto(false); }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",borderBottom:"1px solid var(--color-border)",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
+                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"var(--color-text)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
                 👥 Lanç. em Lote
-              </button>
-              <button onClick={() => { setModalEdicaoLoteAberto(true); setMenuLancamentosAberto(false); }}
-                style={{width:"100%",padding:"0.65rem 1rem",textAlign:"left",fontSize:"0.85rem",fontWeight:"600",background:"transparent",color:"#7c3aed",border:"none",cursor:"pointer",display:"flex",alignItems:"center",gap:"0.5rem"}}>
-                ✏️ Edição em Lote
               </button>
             </div>
           )}
@@ -2380,43 +2388,16 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
           {/* Filtro por Irmão (só aparece se origem = Irmão) */}
           {filtros.origem_tipo === 'Irmao' && (
             <div>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.25rem'}}>
-                <label className="block text-sm font-medium" style={{color:"var(--color-text-muted)"}}>Irmão</label>
-                <button type="button"
-                  onClick={()=>{ setMostrarInativosMovForm(v=>!v); setFiltros(f=>({...f,origem_irmao_id:''})); }}
-                  style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.15rem 0.5rem',borderRadius:'999px',fontSize:'0.65rem',fontWeight:'700',cursor:'pointer',border:'1px solid',
-                    background: mostrarInativosMovForm ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
-                    color:      mostrarInativosMovForm ? '#ef4444' : 'var(--color-text-muted)',
-                    borderColor:mostrarInativosMovForm ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
-                  }}>
-                  {mostrarInativosMovForm ? '🔴 Inativos' : '⚪ Só Ativos'}
-                </button>
-              </div>
+              <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>Irmão</label>
               <select
                 value={filtros.origem_irmao_id}
                 onChange={(e) => setFiltros({ ...filtros, origem_irmao_id: e.target.value })}
                 className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
               >
                 <option value="">Todos</option>
-                {!mostrarInativosMovForm ? (
-                  irmaos.map(irmao => (
-                    <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
-                  ))
-                ) : (
-                  <>
-                    <optgroup label="── Inativos ──">
-                      {todosIrmaosIncInativos
-                        .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado'&&i.situacao!=='falecido'&&i.situacao!=='Falecido')
-                        .sort((a,b)=>a.nome.localeCompare(b.nome))
-                        .map(i=><option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>)}
-                    </optgroup>
-                    <optgroup label="── Ativos / Licenciados ──">
-                      {irmaos.map(irmao => (
-                        <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
-                      ))}
-                    </optgroup>
-                  </>
-                )}
+                {irmaos.map(irmao => (
+                  <option key={irmao.id} value={irmao.id}>{irmao.nome}</option>
+                ))}
               </select>
             </div>
           )}
@@ -2437,7 +2418,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         setFormData={setFormLancamento}
         categorias={categorias}
         irmaos={irmaoEditando ? [...irmaos, irmaoEditando] : irmaos}
-        todosIrmaos={todosIrmaosIncInativos}
         editando={editando}
         eventosComemorativos={eventosComemorativos}
         projetos={projetosAtivos}
@@ -2566,38 +2546,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                   >
                     {tiposPagamento.map(tipo => (
                       <option key={tipo.value} value={tipo.value}>{tipo.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                    🎉 Vincular a Evento (opcional)
-                  </label>
-                  <select
-                    value={lancamentoIrmaos.evento_comemorativo_id}
-                    onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, evento_comemorativo_id: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                  >
-                    <option value="">— Nenhum —</option>
-                    {eventosComemorativos.map(ev => (
-                      <option key={ev.id} value={ev.id}>{ev.nome} ({ev.ano})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-1" style={{color:"var(--color-text-muted)"}}>
-                    📁 Vincular a Projeto (opcional)
-                  </label>
-                  <select
-                    value={lancamentoIrmaos.projeto_id}
-                    onChange={(e) => setLancamentoIrmaos({ ...lancamentoIrmaos, projeto_id: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg" style={{background:"var(--color-surface-2)",color:"var(--color-text)",border:"1px solid var(--color-border)"}}
-                  >
-                    <option value="">— Nenhum —</option>
-                    {projetosAtivos.map(pj => (
-                      <option key={pj.id} value={pj.id}>{pj.nome}</option>
                     ))}
                   </select>
                 </div>
@@ -3543,17 +3491,17 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                         
                         <button
                           onClick={() => editarLancamento(lanc)}
-                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
-                          style={{color:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?"not-allowed":"pointer",fontSize:"0.85rem"}}
-                          title={(verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente') ? 'Mês fechado' : 'Editar'}
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
+                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"var(--color-accent)",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
+                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Editar'}
                         >
                           ✏️
                         </button>
                         <button
                           onClick={() => excluirLancamento(lanc.id)}
-                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente'}
-                          style={{color:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:(verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)&&lanc.status!=='pendente')?"not-allowed":"pointer",fontSize:"0.85rem"}}
-                          title={(verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) && lanc.status !== 'pendente') ? 'Mês fechado' : 'Excluir'}
+                          disabled={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento)}
+                          style={{color:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?'var(--color-text-muted)':"#ef4444",background:"none",border:"none",cursor:verificarMesBloqueado(lanc.data_pagamento||lanc.data_lancamento||lanc.data_vencimento)?"not-allowed":"pointer",fontSize:"0.85rem"}}
+                          title={verificarMesBloqueado(lanc.data_pagamento || lanc.data_lancamento || lanc.data_vencimento) ? 'Mês fechado' : 'Excluir'}
                         >
                           🗑️
                         </button>
@@ -4001,18 +3949,11 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
         showSuccess={showSuccess}
       />
 
-      <ModalEdicaoLote
-        aberto={modalEdicaoLoteAberto}
-        onFechar={() => setModalEdicaoLoteAberto(false)}
-        categorias={categorias}
-        verificarMesBloqueado={verificarMesBloqueado}
-        onAtualizar={recarregarDados}
-      />
-
       {/* MODAL RESUMO FINANCEIRO DOS IRMÃOS */}
       <ModalResumoIrmaos
         isOpen={modalResumoAberto}
         onClose={() => setModalResumoAberto(false)}
+        resumoIrmaos={resumoIrmaos}
       />
 
       {/* Modal Renegociação */}
@@ -4043,46 +3984,14 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
             </div>
             <div style={{padding:'1.25rem',display:'flex',flexDirection:'column',gap:'0.75rem'}}>
               <div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'0.3rem'}}>
-                  <label style={{fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase'}}>Irmão *</label>
-                  <button type="button"
-                    onClick={()=>{ setMostrarInativosMovForm(v=>!v); setMovForm(f=>({...f,irmaoId:''})); }}
-                    style={{display:'flex',alignItems:'center',gap:'0.3rem',padding:'0.2rem 0.55rem',borderRadius:'999px',fontSize:'0.68rem',fontWeight:'700',cursor:'pointer',border:'1px solid',
-                      background: mostrarInativosMovForm ? 'rgba(239,68,68,0.12)' : 'var(--color-surface-2)',
-                      color:      mostrarInativosMovForm ? '#ef4444' : 'var(--color-text-muted)',
-                      borderColor:mostrarInativosMovForm ? 'rgba(239,68,68,0.4)' : 'var(--color-border)',
-                    }}>
-                    {mostrarInativosMovForm ? '🔴 Inativos' : '⚪ Só Ativos'}
-                  </button>
-                </div>
+                <label style={{display:'block',fontSize:'0.72rem',fontWeight:'700',color:'var(--color-text-muted)',textTransform:'uppercase',marginBottom:'0.3rem'}}>Irmão *</label>
                 <select value={movForm.irmaoId} onChange={e=>setMovForm(f=>({...f,irmaoId:e.target.value}))}
                   style={{background:'var(--color-surface-2)',color:'var(--color-text)',border:'1px solid var(--color-border)',borderRadius:'var(--radius-md)',padding:'0.5rem 0.75rem',fontSize:'0.875rem',width:'100%'}}>
                   <option value="">-- Selecionar irmão --</option>
-                  {!mostrarInativosMovForm ? (
-                    irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
-                      <option key={i.id} value={i.id}>{i.nome}</option>
-                    ))
-                  ) : (
-                    <>
-                      <optgroup label="── Inativos ──">
-                        {todosIrmaosIncInativos
-                          .filter(i=>i.situacao!=='regular'&&i.situacao!=='licenciado'&&i.situacao!=='falecido'&&i.situacao!=='Falecido')
-                          .sort((a,b)=>a.nome.localeCompare(b.nome))
-                          .map(i=><option key={i.id} value={i.id}>{i.nome} ({i.situacao})</option>)}
-                      </optgroup>
-                      <optgroup label="── Ativos / Licenciados ──">
-                        {irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
-                          <option key={i.id} value={i.id}>{i.nome}</option>
-                        ))}
-                      </optgroup>
-                    </>
-                  )}
+                  {irmaos.filter(i=>i.situacao==='regular'||i.situacao==='licenciado').sort((a,b)=>a.nome.localeCompare(b.nome)).map(i=>(
+                    <option key={i.id} value={i.id}>{i.nome}</option>
+                  ))}
                 </select>
-                {mostrarInativosMovForm && (
-                  <p style={{fontSize:'0.7rem',color:'#f59e0b',marginTop:'0.3rem',fontWeight:'600'}}>
-                    ⚠️ Modo inativos — exibindo irmãos fora da situação regular
-                  </p>
-                )}
               </div>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'0.75rem'}}>
                 <div>
@@ -4105,10 +4014,6 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
               <button onClick={gerarRelatorioMovimentacaoWrapper}
                 style={{flex:2,padding:'0.6rem',background:'var(--color-accent)',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
                 📂 Gerar Relatório
-              </button>
-              <button onClick={gerarRelatorioMovimentacaoPorMesWrapper}
-                style={{flex:2,padding:'0.6rem',background:'#7c3aed',color:'#fff',border:'none',borderRadius:'var(--radius-lg)',fontWeight:'700',cursor:'pointer'}}>
-                📅 Por Mês
               </button>
             </div>
           </div>
