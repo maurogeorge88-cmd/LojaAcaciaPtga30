@@ -228,13 +228,12 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
         setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
         setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
 
-        // Tronco de Solidariedade — histórico completo
-        // Lógica idêntica ao calcularTroncoTotal do FinancasLoja (corrigida):
-        //   recBanco   = receita + !dinheiro (inclui depósitos/transferências internas → entram no banco)
-        //   recEspecie = receita + dinheiro + !eh_transferencia_interna
-        //   despBanco  = despesa + !dinheiro + !eh_transferencia_interna
-        //   despEspecie= despesa + dinheiro (inclui sangrias — diminuem a espécie)
-        // NÃO usar variáveis de sangria separadas — causaria dupla contagem
+        // Tronco de Solidariedade — histórico completo (idêntico ao FinancasLoja)
+        // Lógica idêntica ao calcularTroncoTotal do FinancasLoja (sem dupla contagem):
+        // recBanco   = receita+!dinheiro (depósitos/transf.interna já incluídos → entram no banco)
+        // recEspecie = receita+dinheiro+!transf.interna
+        // despBanco  = despesa+!dinheiro+!transf.interna
+        // despEspecie= despesa+dinheiro (sangrias incluídas → diminuem a espécie)
         const troncoRecBanco   = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
         const troncoRecEspecie = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
         const troncoDespBanco  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
