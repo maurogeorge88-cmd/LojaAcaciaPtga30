@@ -228,15 +228,19 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
         setCaixaFisicoHistorico(dinheiroRec - sangriasHist - despDinhHist);
         setCaixaDetalhes({ recDinheiro: dinheiroRec, sangrias: sangriasHist, despDinheiro: despDinhHist });
 
-        // Tronco de Solidariedade — histórico completo (idêntico ao FinancasLoja)
+        // Tronco de Solidariedade — histórico completo
+        // Lógica idêntica ao calcularTroncoTotal do FinancasLoja (corrigida):
+        //   recBanco   = receita + !dinheiro (inclui depósitos/transferências internas → entram no banco)
+        //   recEspecie = receita + dinheiro + !eh_transferencia_interna
+        //   despBanco  = despesa + !dinheiro + !eh_transferencia_interna
+        //   despEspecie= despesa + dinheiro (inclui sangrias — diminuem a espécie)
+        // NÃO usar variáveis de sangria separadas — causaria dupla contagem
         const troncoRecBanco   = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
-        const troncoRecEspecie = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoRecEspecie = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
         const troncoDespBanco  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento !== 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
-        const troncoDespEspec  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro' && !l.eh_transferencia_interna).reduce((s,l) => s + parseFloat(l.valor), 0);
-        const troncoSangBanco  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.eh_transferencia_interna === true && l.categorias_financeiras?.tipo === 'receita').reduce((s,l) => s + parseFloat(l.valor), 0);
-        const troncoSangEspec  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.eh_transferencia_interna === true && l.categorias_financeiras?.tipo === 'despesa').reduce((s,l) => s + parseFloat(l.valor), 0);
-        const troncoBanco   = troncoRecBanco  - troncoDespBanco  + troncoSangBanco;
-        const troncoEspecie = troncoRecEspecie - troncoDespEspec - troncoSangEspec;
+        const troncoDespEspec  = dadosCaixa.filter(l => nc(l).includes('tronco') && l.categorias_financeiras?.tipo === 'despesa' && l.tipo_pagamento === 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
+        const troncoBanco   = troncoRecBanco  - troncoDespBanco;
+        const troncoEspecie = troncoRecEspecie - troncoDespEspec;
         setTroncoGlobal({ banco: troncoBanco, especie: troncoEspecie, total: troncoBanco + troncoEspecie });
       }
 
