@@ -482,6 +482,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   const [cotasSelecionadas, setCotasSelecionadas] = useState({});
   const [cotasJaLancadas, setCotasJaLancadas] = useState({});
   const [lancandoCotas, setLancandoCotas] = useState(false);
+  const [statusCotas, setStatusCotas] = useState({ total: 0, lancados: 0 });
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -490,9 +491,23 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
       supabase.from('evento_rateio_participantes').select('*, irmaos(nome)').eq('evento_id', evento.id).order('criado_em'),
       supabase.from('eventos_comemorativos_fin').select('*').eq('id', evento.id).single(),
     ]);
-    setDespesas(desp || []);
-    setParticipantes(parts || []);
+    const despArr = desp || [];
+    const partsArr = parts || [];
+    setDespesas(despArr);
+    setParticipantes(partsArr);
     if (ev) setEvento(ev);
+
+    // Calcular status das cotas — quantos participantes irmãos já têm lançamento
+    const { data: cotasExist } = await supabase
+      .from('lancamentos_loja')
+      .select('origem_irmao_id')
+      .eq('evento_comemorativo_id', evento.id)
+      .eq('origem_tipo', 'Irmao');
+    const idsComLanc = new Set((cotasExist || []).map(l => l.origem_irmao_id).filter(Boolean));
+    const totalParticIrmaos = partsArr.filter(p => p.irmao_id).length;
+    const lancados = partsArr.filter(p => p.irmao_id && idsComLanc.has(p.irmao_id)).length;
+    setStatusCotas({ total: totalParticIrmaos, lancados });
+
     setCarregando(false);
   }, [evento.id]);
 
@@ -774,11 +789,49 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
         </div>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
           {podeEditar && <button onClick={() => setModalEvento(true)} style={{ ...btnEdit, padding: '0.45rem 0.85rem' }}>✏️ Editar</button>}
-          {podeEditar && valorCota > 0 && (
-            <button onClick={abrirModalCotas} style={{ ...btnPrimary, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.35)', color: '#10b981' }}>
-              💰 Lançar Cotas
-            </button>
-          )}
+          {podeEditar && valorCota > 0 && (() => {
+            const todosLancados = statusCotas.total > 0 && statusCotas.lancados >= statusCotas.total;
+            const parcialLancado = statusCotas.lancados > 0 && !todosLancados;
+            return (
+              <div style={{display:'flex',gap:'0.4rem',alignItems:'center',flexWrap:'wrap'}}>
+                {/* Indicador de status */}
+                {statusCotas.lancados > 0 && (
+                  <span style={{fontSize:'0.72rem',fontWeight:700,padding:'0.2rem 0.6rem',borderRadius:'999px',
+                    background: todosLancados ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
+                    color: todosLancados ? '#10b981' : '#f59e0b',
+                    border: `1px solid ${todosLancados ? 'rgba(16,185,129,0.4)' : 'rgba(245,158,11,0.4)'}`,
+                  }}>
+                    {todosLancados ? `✅ Cotas lançadas (${statusCotas.lancados}/${statusCotas.total})` : `⚠️ Parcial (${statusCotas.lancados}/${statusCotas.total})`}
+                  </span>
+                )}
+                {/* Botão principal */}
+                <button onClick={abrirModalCotas}
+                  disabled={todosLancados}
+                  style={{...btnPrimary,
+                    background: todosLancados ? 'rgba(100,100,100,0.1)' : parcialLancado ? 'rgba(245,158,11,0.12)' : 'rgba(16,185,129,0.12)',
+                    border: `1px solid ${todosLancados ? 'rgba(100,100,100,0.3)' : parcialLancado ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)'}`,
+                    color: todosLancados ? 'var(--color-text-muted)' : parcialLancado ? '#f59e0b' : '#10b981',
+                    cursor: todosLancados ? 'not-allowed' : 'pointer',
+                    opacity: todosLancados ? 0.6 : 1,
+                  }}>
+                  {todosLancados ? '🔒 Cotas Enviadas' : parcialLancado ? '💰 Lançar Restantes' : '💰 Lançar Cotas'}
+                </button>
+                {/* Botão liberar — só aparece quando já lançado */}
+                {statusCotas.lancados > 0 && (
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Isso vai liberar o lançamento de cotas novamente para os ${statusCotas.lancados} irmão(s) que já possuem lançamento.\n\nUse esta opção apenas se os lançamentos anteriores foram excluídos manualmente no Finanças Loja.\n\nConfirma a liberação?`)) return;
+                      setStatusCotas({ total: statusCotas.total, lancados: 0 });
+                    }}
+                    style={{...btnPrimary,background:'rgba(239,68,68,0.1)',border:'1px solid rgba(239,68,68,0.3)',color:'#ef4444',fontSize:'0.72rem',padding:'0.35rem 0.65rem'}}
+                    title="Liberar para relançar cotas (use apenas se os lançamentos foram excluídos)"
+                  >
+                    🔓 Liberar
+                  </button>
+                )}
+              </div>
+            );
+          })()}
           {podeEditar && <button onClick={gerarPDF} style={{ ...btnPrimary, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.35)', color: '#3b82f6' }}>📄 PDF</button>}
           {podeEditar && !encerrado && <button onClick={() => setConfirmEncerrar(true)} style={{ ...btnPrimary, background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.35)', color: '#ef4444' }}>🔒 Encerrar</button>}
         </div>
