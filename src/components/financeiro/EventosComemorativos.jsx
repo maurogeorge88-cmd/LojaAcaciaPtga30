@@ -486,7 +486,7 @@ const DetalheEvento = ({ evento: eventoInit, onVoltar, irmaos, showSuccess, show
   const carregar = useCallback(async () => {
     setCarregando(true);
     const [{ data: desp }, { data: parts }, { data: ev }] = await Promise.all([
-      supabase.from('lancamentos_loja').select('id,descricao,valor,data_pagamento,data_vencimento,status,tipo_pagamento,tipo').eq('evento_comemorativo_id', evento.id).order('data_vencimento'),
+      supabase.from('lancamentos_loja').select('id,descricao,valor,data_pagamento,data_vencimento,status,tipo_pagamento,tipo').eq('evento_comemorativo_id', evento.id).eq('origem_tipo', 'Loja').order('data_vencimento'),
       supabase.from('evento_rateio_participantes').select('*, irmaos(nome)').eq('evento_id', evento.id).order('criado_em'),
       supabase.from('eventos_comemorativos_fin').select('*').eq('id', evento.id).single(),
     ]);
