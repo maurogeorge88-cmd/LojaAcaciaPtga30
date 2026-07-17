@@ -114,13 +114,24 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
       setIrmaosMap(mapa);
 
       // 2. Todos os lançamentos de irmãos (sem filtro de período)
-      const { data: lancData } = await supabase
-        .from('lancamentos_loja')
-        .select('origem_irmao_id, valor, status, data_vencimento, data_pagamento, categorias_financeiras(tipo), irmaos(nome, cim, situacao)')
-        .eq('origem_tipo', 'Irmao')
-        .not('origem_irmao_id', 'is', null);
+      // Buscar todos os lançamentos com paginação (evitar limite 1000 do Supabase)
+      let todosLancamentos = [];
+      let from = 0;
+      const PAGE = 1000;
+      while (true) {
+        const { data: lancData, error } = await supabase
+          .from('lancamentos_loja')
+          .select('origem_irmao_id, valor, status, tipo, data_vencimento, data_pagamento, categoria_id, categorias_financeiras(tipo), irmaos(nome, cim, situacao)')
+          .eq('origem_tipo', 'Irmao')
+          .not('origem_irmao_id', 'is', null)
+          .range(from, from + PAGE - 1);
+        if (error) break;
+        todosLancamentos = todosLancamentos.concat(lancData || []);
+        if (!lancData || lancData.length < PAGE) break;
+        from += PAGE;
+      }
 
-      const lista = lancData || [];
+      const lista = todosLancamentos;
       setTodosLanc(lista);
 
       // Anos disponíveis (por data_vencimento)
@@ -182,7 +193,9 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
         };
       }
       const valor = parseFloat(lanc.valor) || 0;
-      const tipo  = lanc.categorias_financeiras?.tipo;
+      // Usar tipo da categoria — fallback para tipo direto do lançamento
+      // (lançamentos com categoria deletada ou nula teriam tipo undefined sem isso)
+      const tipo = lanc.categorias_financeiras?.tipo || lanc.tipo;
       if (tipo === 'despesa') {
         resumoPorIrmao[id].totalDespesas += valor;
         if (lanc.status === 'pendente') resumoPorIrmao[id].despesasPendentes += valor;
