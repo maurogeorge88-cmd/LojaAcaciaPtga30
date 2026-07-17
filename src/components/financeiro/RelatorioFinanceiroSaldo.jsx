@@ -43,6 +43,29 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
 
   useEffect(() => { if (isOpen) carregarDados(); }, [isOpen]);
 
+  // ─── Paginação genérica — evita o limite de 1000 linhas do Supabase ────────
+  // queryFactory deve retornar SEMPRE uma nova query (sem .range()), pois cada
+  // página precisa reaplicar o range sobre uma query "fresca".
+  const buscarTodosRegistros = async (queryFactory) => {
+    let todos = [];
+    let inicio = 0;
+    const tamanhoPagina = 1000;
+    let continuar = true;
+
+    while (continuar) {
+      const { data, error } = await queryFactory().range(inicio, inicio + tamanhoPagina - 1);
+      if (error) throw error;
+      if (data && data.length > 0) {
+        todos = [...todos, ...data];
+        inicio += tamanhoPagina;
+        if (data.length < tamanhoPagina) continuar = false;
+      } else {
+        continuar = false;
+      }
+    }
+    return todos;
+  };
+
   // ─── Buscar saldo anterior do banco (igual ao calcularSaldoAnterior do FinancasLoja) ─
   const buscarSaldoAnterior = async (periodo) => {
     // ano=0 = histórico completo = sem saldo anterior
@@ -59,15 +82,19 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
       dataLimite = `${periodo.ano}-01-01`;
     }
 
-    const { data, error } = await supabase
-      .from('lancamentos_loja')
-      .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)')
-      .eq('status', 'pago')
-      .lt('data_pagamento', dataLimite);
-
-    if (error) { showError?.('Erro ao calcular saldo anterior'); return { bancario: 0, caixa: 0 }; }
-
-    const d = data || [];
+    let d = [];
+    try {
+      d = await buscarTodosRegistros(() =>
+        supabase
+          .from('lancamentos_loja')
+          .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)')
+          .eq('status', 'pago')
+          .lt('data_pagamento', dataLimite)
+      );
+    } catch (err) {
+      showError?.('Erro ao calcular saldo anterior');
+      return { bancario: 0, caixa: 0 };
+    }
     const nomeCat = (l) => l.categorias_financeiras?.nome?.toLowerCase() || '';
 
     // BANCO — idêntico ao calcularSaldoAnterior do FinancasLoja
@@ -124,32 +151,41 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
   }, [periodoA, isOpen, lancamentos.length]);
 
   const buscarPendentes = async (periodo, filtrarPorPeriodo) => {
-    let query = supabase
-      .from('lancamentos_loja')
-      .select('id, descricao, valor, tipo_pagamento, data_vencimento, eh_transferencia_interna, categorias_financeiras(id, nome, tipo, categoria_pai_id, nivel)')
-      .eq('status', 'pendente')
-      .neq('tipo_pagamento', 'compensacao');
+    const montarQuery = () => {
+      let query = supabase
+        .from('lancamentos_loja')
+        .select('id, descricao, valor, tipo_pagamento, data_vencimento, eh_transferencia_interna, categorias_financeiras(id, nome, tipo, categoria_pai_id, nivel)')
+        .eq('status', 'pendente')
+        .neq('tipo_pagamento', 'compensacao');
 
-    if (filtrarPorPeriodo && periodo.ano > 0) {
-      const anoStr = String(periodo.ano);
-      if (periodo.mes > 0) {
-        const mesStr = String(periodo.mes).padStart(2,'0');
-        const ultimoDia = new Date(periodo.ano, periodo.mes, 0).getDate(); // último dia real do mês
-        const diaStr = String(ultimoDia).padStart(2,'0');
-        query = query
-          .gte('data_vencimento', `${anoStr}-${mesStr}-01`)
-          .lte('data_vencimento', `${anoStr}-${mesStr}-${diaStr}`);
-      } else if (periodo.mes === -1) {
-        query = query.gte('data_vencimento', `${anoStr}-01-01`).lte('data_vencimento', `${anoStr}-06-30`);
-      } else if (periodo.mes === -2) {
-        query = query.gte('data_vencimento', `${anoStr}-07-01`).lte('data_vencimento', `${anoStr}-12-31`);
-      } else {
-        query = query.gte('data_vencimento', `${anoStr}-01-01`).lte('data_vencimento', `${anoStr}-12-31`);
+      if (filtrarPorPeriodo && periodo.ano > 0) {
+        const anoStr = String(periodo.ano);
+        if (periodo.mes > 0) {
+          const mesStr = String(periodo.mes).padStart(2,'0');
+          const ultimoDia = new Date(periodo.ano, periodo.mes, 0).getDate(); // último dia real do mês
+          const diaStr = String(ultimoDia).padStart(2,'0');
+          query = query
+            .gte('data_vencimento', `${anoStr}-${mesStr}-01`)
+            .lte('data_vencimento', `${anoStr}-${mesStr}-${diaStr}`);
+        } else if (periodo.mes === -1) {
+          query = query.gte('data_vencimento', `${anoStr}-01-01`).lte('data_vencimento', `${anoStr}-06-30`);
+        } else if (periodo.mes === -2) {
+          query = query.gte('data_vencimento', `${anoStr}-07-01`).lte('data_vencimento', `${anoStr}-12-31`);
+        } else {
+          query = query.gte('data_vencimento', `${anoStr}-01-01`).lte('data_vencimento', `${anoStr}-12-31`);
+        }
       }
-    }
 
-    const { data, error } = await query.order('data_vencimento');
-    if (error) { showError?.('Erro ao buscar pendentes'); return; }
+      return query.order('data_vencimento');
+    };
+
+    let data = [];
+    try {
+      data = await buscarTodosRegistros(montarQuery);
+    } catch (err) {
+      showError?.('Erro ao buscar pendentes');
+      return;
+    }
 
     const hoje = new Date().toISOString().split('T')[0];
     const norm = (data || []).map(l => ({
@@ -188,11 +224,12 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
       if (errCat) throw errCat;
       setCategorias(cats || []);
 
-      const { data: lancs, error: errLanc } = await supabase
-        .from('lancamentos_loja')
-        .select('id, descricao, valor, status, tipo_pagamento, eh_transferencia_interna, data_pagamento, data_vencimento, categorias_financeiras(id, nome, tipo, categoria_pai_id, nivel)')
-        .order('data_pagamento', { ascending: false });
-      if (errLanc) throw errLanc;
+      const lancs = await buscarTodosRegistros(() =>
+        supabase
+          .from('lancamentos_loja')
+          .select('id, descricao, valor, status, tipo_pagamento, eh_transferencia_interna, data_pagamento, data_vencimento, categorias_financeiras(id, nome, tipo, categoria_pai_id, nivel)')
+          .order('data_pagamento', { ascending: false })
+      );
 
       const norm = (lancs || []).map(l => ({
         ...l,
@@ -212,10 +249,13 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
       setAnosDisponiveis(anos);
 
       // Caixa físico histórico — query direta igual ao calcularCaixaFisicoTotal do FinancasLoja
-      const { data: dadosCaixa } = await supabase
-        .from('lancamentos_loja')
-        .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)')
-        .eq('status', 'pago');
+      // Paginado (blocos de 1000) — histórico completo pode ultrapassar o limite do Supabase
+      const dadosCaixa = await buscarTodosRegistros(() =>
+        supabase
+          .from('lancamentos_loja')
+          .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo, nome)')
+          .eq('status', 'pago')
+      );
       if (dadosCaixa) {
         const nc = (l) => l.categorias_financeiras?.nome?.toLowerCase() || '';
         const dinheiroRec = dadosCaixa
@@ -239,11 +279,13 @@ export default function RelatorioFinanceiroSaldo({ isOpen, onClose, showError, s
 
         if (catsTronco && catsTronco.length > 0) {
           const idsCatTronco = catsTronco.map(c => c.id);
-          const { data: dadosTronco } = await supabase
-            .from('lancamentos_loja')
-            .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
-            .in('categoria_id', idsCatTronco)
-            .eq('status', 'pago');
+          const dadosTronco = await buscarTodosRegistros(() =>
+            supabase
+              .from('lancamentos_loja')
+              .select('valor, tipo_pagamento, eh_transferencia_interna, categorias_financeiras(tipo)')
+              .in('categoria_id', idsCatTronco)
+              .eq('status', 'pago')
+          );
 
           const lt = dadosTronco || [];
           const troncoRecBanco   = lt.filter(l => l.categorias_financeiras?.tipo === 'receita' && l.tipo_pagamento !== 'dinheiro').reduce((s,l) => s + parseFloat(l.valor), 0);
