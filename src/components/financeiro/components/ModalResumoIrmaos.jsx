@@ -141,7 +141,7 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     if (filtroAno === 'todos') { setMesesDisp([]); setFiltroMes('todos'); return; }
     const meses = [...new Set(
       todosLanc
-        .filter(l => l.data_vencimento?.startsWith(filtroAno))
+        .filter(l => l.status !== 'pendente' && l.data_vencimento?.startsWith(filtroAno))
         .map(l => l.data_vencimento?.substring(5,7))
         .filter(Boolean)
     )].sort();
@@ -154,7 +154,11 @@ export default function ModalResumoIrmaos({ isOpen, onClose }) {
     if (!isOpen || todosLanc.length === 0) return;
 
     // Filtrar lançamentos pelo período
+    // Filtrar lançamentos pelo período
+    // PAGOS: filtrados pelo período (data_vencimento ou data_pagamento)
+    // PENDENTES: SEMPRE todos, sem corte de data — mostrar toda a dívida real
     const lancFiltrados = todosLanc.filter(l => {
+      if (l.status === 'pendente') return true; // pendentes: sem filtro de data
       const dataRef = l.data_vencimento;
       if (filtroAno !== 'todos' && !dataRef?.startsWith(filtroAno)) return false;
       if (filtroMes !== 'todos' && dataRef?.substring(5,7) !== filtroMes) return false;
