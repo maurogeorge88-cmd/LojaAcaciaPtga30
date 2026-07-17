@@ -3180,24 +3180,19 @@ export default function FinancasLoja({ showSuccess, showError, userEmail, userDa
                       <span style={{fontSize:'0.95rem',fontWeight:'800',color: origem.isLoja ? '#6366f1' : '#8b5cf6',flex:1}}>
                         {origem.label}
                       </span>
-                      <div style={{display:'flex',gap:'0.6rem',alignItems:'center',flexWrap:'wrap'}}>
-                        {totalRec > 0 && (
-                          <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#10b981',background:'rgba(16,185,129,0.1)',padding:'0.15rem 0.5rem',borderRadius:'999px',border:'1px solid rgba(16,185,129,0.3)'}}>
-                            📈 {formatarMoeda(totalRec)}
-                          </span>
-                        )}
-                        {totalDesp > 0 && (
-                          <span style={{fontSize:'0.72rem',fontWeight:'700',color:'#ef4444',background:'rgba(239,68,68,0.1)',padding:'0.15rem 0.5rem',borderRadius:'999px',border:'1px solid rgba(239,68,68,0.3)'}}>
-                            📉 {formatarMoeda(totalDesp)}
-                          </span>
-                        )}
-                        {pendentes > 0 && (
-                          <span style={{fontSize:'0.68rem',fontWeight:'700',color: vencidos > 0 ? '#ef4444' : '#f59e0b',background: vencidos > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',padding:'0.15rem 0.5rem',borderRadius:'999px',border:`1px solid ${vencidos > 0 ? 'rgba(239,68,68,0.3)' : 'rgba(245,158,11,0.3)'}`}}>
-                            {vencidos > 0 ? `⚠️ ${vencidos} vencido${vencidos>1?'s':''}` : `⏳ ${pendentes} pendente${pendentes>1?'s':''}`}
-                          </span>
-                        )}
+                      <div style={{display:'flex',gap:'1rem',alignItems:'center'}}>
+                        <span style={{fontSize:'0.78rem',fontWeight:'700',color:'#10b981',whiteSpace:'nowrap'}}>
+                          TR {formatarMoeda(totalRec)}
+                        </span>
+                        <span style={{color:'var(--color-border)'}}>|</span>
+                        <span style={{fontSize:'0.78rem',fontWeight:'700',color:'#ef4444',whiteSpace:'nowrap'}}>
+                          TD {formatarMoeda(totalDesp)}
+                        </span>
+                        <span style={{color:'var(--color-border)'}}>|</span>
+                        <span style={{fontSize:'0.78rem',fontWeight:'700',color:'#f59e0b',whiteSpace:'nowrap'}}>
+                          TP {formatarMoeda(origem.lancamentos.filter(l=>l.status==='pendente').reduce((s,l)=>s+parseFloat(l.valor||0),0))}
+                        </span>
                         <span style={{fontSize:'0.68rem',color:'var(--color-text-muted)',transform: origemAberta ? 'rotate(180deg)' : 'none',transition:'transform 0.2s'}}>▾</span>
-                        {/* Bolinha status */}
                         <span title={pendentes === 0 ? 'Quite' : 'Em débito'} style={{width:'10px',height:'10px',borderRadius:'50%',flexShrink:0,background: pendentes === 0 ? '#3b82f6' : '#ef4444',boxShadow:`0 0 5px ${pendentes === 0 ? 'rgba(59,130,246,0.6)' : 'rgba(239,68,68,0.6)'}`}}/>
                       </div>
                     </div>
